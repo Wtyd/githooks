@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Commands;
 
 use GitHooks\Configuration;
@@ -31,7 +32,7 @@ class CheckConfigurationFileCommand extends Command
             $errors = $this->configuration->check($configurationFile);
 
             if (empty($errors->getErrors())) {
-                $this->messageSuccess('El fichero '. Constants::CONFIGURATION_FILE_PATH . ' tiene el formato correcto.');
+                $this->messageSuccess('El fichero ' . Constants::CONFIGURATION_FILE_PATH . ' tiene el formato correcto.');
             } else {
                 $this->messageFailure('El fichero contiene los siguientes errores:');
                 echo "\n";

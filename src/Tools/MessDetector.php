@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Tools;
 
 use GitHooks\Constants;
@@ -37,7 +38,7 @@ class MessDetector extends ToolAbstract
     {
         $rules = $this->args[self::RULES];
 
-        $exclude = '--exclude "' . implode(',', $this->args[self::EXCLUDE]) .'"';
+        $exclude = '--exclude "' . implode(',', $this->args[self::EXCLUDE]) . '"';
 
         $arguments = " ./  text $rules $exclude";
 

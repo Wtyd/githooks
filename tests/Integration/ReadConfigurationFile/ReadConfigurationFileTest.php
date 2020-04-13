@@ -7,7 +7,8 @@ use PHPUnit\Framework\TestCase;
 class ReadConfigurationFileTest extends TestCase
 {
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-    /** 
+
+    /**
      * @test
      */
     function it_raise_exeption_when_configuration_file_does_not_exist()

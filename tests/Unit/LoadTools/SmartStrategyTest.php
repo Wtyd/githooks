@@ -19,13 +19,13 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Phpcs no tiene configuración' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcs'],
                 ],
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'Phpcs tiene configuración pero no hay directorios ignorados' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcs'],
                     'phpcs' => [
                         'standard' => './qa/phpcs-softruleset.xml',
@@ -36,7 +36,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'Phpcs tiene configuración con directorios ignorados pero algún fichero modificado no pertenece a esos directorios' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcs'],
                     'phpcs' => [
                         'standard' => './qa/phpcs-softruleset.xml',
@@ -48,7 +48,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'app/prueba.php']
             ],
             'Phpcs tiene configurado el tag ignore pero está vacío' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcs'],
                     'phpcs' => [
                         'standard' => './qa/phpcs-softruleset.xml',
@@ -71,7 +71,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -84,7 +84,7 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Todos los ficheros modificados pertenecen al mismo directorio ignorado' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcs'],
                     'phpcs' => [
                         'standard' => './qa/phpcs-softruleset.xml',
@@ -96,7 +96,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['app/file1.php', 'app/file2.php']
             ],
             'Cada fichero pertenece a un directorio ignorado distinto' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcs'],
                     'phpcs' => [
                         'standard' => './qa/phpcs-softruleset.xml',
@@ -119,7 +119,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -130,13 +130,13 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Phpcpd no tiene configuración' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcpd'],
                 ],
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'Phpcpd tiene configuración pero no hay directorios ignorados' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcpd'],
                     'phpcpd' => [
                         'min-lines' => 10,
@@ -145,7 +145,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'Phpcpd tiene configuración con directorios ignorados pero algún fichero modificado no pertenece a esos directorios' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcpd'],
                     'phpcpd' => [
                         'exclude' => ['app'],
@@ -155,7 +155,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'app/prueba.php']
             ],
             'Phpcpd tiene el tag exclude en la configuración pero está vacío' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcpd'],
                     'phpcpd' => [
                         'exclude' => [],
@@ -176,7 +176,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -189,7 +189,7 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Todos los ficheros modificados pertenecen al mismo directorio ignorado' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcpd'],
                     'phpcpd' => [
                         'exclude' => ['app'],
@@ -198,7 +198,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['app/file1.php', 'app/file2.php']
             ],
             'Cada fichero pertenece a un directorio ignorado distinto' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpcpd'],
                     'phpcpd' => [
                         'exclude' => ['app', 'src'],
@@ -218,7 +218,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -235,7 +235,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('isComposerModified')->andReturn(true);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -254,7 +254,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('isComposerModified')->andReturn(false);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -265,13 +265,13 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Phpmd no tiene configuración' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpmd'],
                 ],
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'Phpmd tiene configuración pero no hay directorios ignorados' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpmd'],
                     'phpmd' => [
                         'rules' => './qa/md-rulesheet.xml',
@@ -280,7 +280,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'Phpmd tiene configuración con directorios ignorados pero algún fichero modificado no pertenece a esos directorios' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpmd'],
                     'phpmd' => [
                         'rules' => './qa/md-rulesheet.xml',
@@ -290,7 +290,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'app/prueba.php']
             ],
             'Phpmd tiene el tag exclude en la configuración pero está vacío' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpmd'],
                     'phpmd' => [
                         'rules' => './qa/md-rulesheet.xml',
@@ -311,7 +311,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -324,7 +324,7 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Todos los ficheros modificados pertenecen al mismo directorio ignorado' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpmd'],
                     'phpmd' => [
                         'rules' => './qa/md-rulesheet.xml',
@@ -334,7 +334,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['app/file1.php', 'app/file2.php']
             ],
             'Cada fichero pertenece a un directorio ignorado distinto' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpmd'],
                     'phpmd' => [
                         'rules' => './qa/md-rulesheet.xml',
@@ -355,7 +355,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -366,13 +366,13 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'ParallelLint no tiene configuración' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['parallel-lint'],
                 ],
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'ParallelLint tiene configuración pero no hay directorios ignorados' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['parallel-lint'],
                     'parallel-lint' => [
                         'algunaConfig' => 'hola',
@@ -381,7 +381,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
             ],
             'ParallelLint tiene configuración con directorios ignorados pero algún fichero modificado no pertenece a esos directorios' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['parallel-lint'],
                     'parallel-lint' => [
                         'exclude' => ['app'],
@@ -390,7 +390,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['config/conf.php', 'app/prueba.php']
             ],
             'ParallelLint tiene el tag exclude en la configuración pero está vacío' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['parallel-lint'],
                     'parallel-lint' => [
                         'exclude' => ['app'],
@@ -410,7 +410,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -423,7 +423,7 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Todos los ficheros modificados pertenecen al mismo directorio ignorado' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['parallel-lint'],
                     'parallel-lint' => [
                         'exclude' => ['app'],
@@ -432,7 +432,7 @@ class SmartStrategyTest extends TestCase
                 'Ficheros Modificados' => ['app/file1.php', 'app/file2.php']
             ],
             'Cada fichero pertenece a un directorio ignorado distinto' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['parallel-lint'],
                     'parallel-lint' => [
                         'exclude' => ['app', 'src'],
@@ -452,7 +452,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -463,7 +463,7 @@ class SmartStrategyTest extends TestCase
     {
         return [
             'Phpstan no tiene configuración' => [
-                'Fichero de configuración' =>[
+                'Fichero de configuración' => [
                     'Tools' => ['phpstan'],
                 ],
                 'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
@@ -501,7 +501,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -547,7 +547,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
         $gitFiles->shouldReceive('isComposerModified')->andReturn(false);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -582,7 +582,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
         $gitFiles->shouldReceive('isComposerModified')->andReturn(true);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -617,7 +617,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
         $gitFiles->shouldReceive('isComposerModified')->andReturn(false);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -657,7 +657,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
         $gitFiles->shouldReceive('isComposerModified')->andReturn(true);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 

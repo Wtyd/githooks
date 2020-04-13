@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Exception;
 
 class ToolsIsEmptyException extends \RuntimeException implements GitHooksExceptionInterface
@@ -16,7 +17,7 @@ class ToolsIsEmptyException extends \RuntimeException implements GitHooksExcepti
         return $exception;
     }
 
-    public function getFilePath() : string
+    public function getFilePath(): string
     {
         return $this->filePath;
     }

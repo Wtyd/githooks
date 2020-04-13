@@ -21,13 +21,13 @@ parallel-lint:
     exclude: ['vendor']
 
 phpcs:
-    standard: './path/ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
+    standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
     ignore: ['vendor'] # Se podría configurar en el standard directamente
     error-severity: 1
     warning-severity: 6
   
 phpmd:
-  rules: './path/ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
+  rules: './qa/phpmd-tests-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:

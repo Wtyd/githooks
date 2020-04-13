@@ -11,9 +11,9 @@ use GitHooks\Tools\Stan;
 use GitHooks\Tools\ToolsFactoy;
 use PHPUnit\Framework\TestCase;
 
+class FullStrategyTest extends TestCase
+{
 
-class FullStrategyTest extends TestCase{
-    
     function allToolsProvider()
     {
         return [
@@ -68,10 +68,10 @@ class FullStrategyTest extends TestCase{
      */
     function it_can_load_one_tool($configurationFile, $toolClass, $tool)
     {
-        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy);
+        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy());
 
         $loadedTools = $fullStrategy->getTools();
-        
+
         $this->assertCount(1, $loadedTools);
 
         $this->assertInstanceOf($toolClass, $loadedTools[$tool]);
@@ -94,7 +94,7 @@ class FullStrategyTest extends TestCase{
             ],
         ];
 
-        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy);
+        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy());
 
         $loadedTools = $fullStrategy->getTools();
 
@@ -143,13 +143,13 @@ class FullStrategyTest extends TestCase{
         ];
     }
 
-    /** 
+    /**
      * @test
      * @dataProvider toolsWithToolThatDoesNotExistProvider
      */
     function it_raise_exception_when_try_to_load_a_tool_that_does_not_exist($configurationFile)
     {
-        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy);
+        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy());
 
         $this->expectException(ToolDoesNotExistException::class);
 

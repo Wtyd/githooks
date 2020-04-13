@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Tools\Exception;
 
 class ExitErrorException extends \RuntimeException implements ToolsExceptionInterface
@@ -16,7 +17,7 @@ class ExitErrorException extends \RuntimeException implements ToolsExceptionInte
         return $exception;
     }
 
-    public function getExit() : array
+    public function getExit(): array
     {
         return $this->exit;
     }

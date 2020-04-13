@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\LoadTools;
 
 interface StrategyInterface

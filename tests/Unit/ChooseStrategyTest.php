@@ -13,7 +13,7 @@ class ChooseStrategyTest extends TestCase
     /** @test*/
     function choose_smart_strategy_when_smart_strategy_is_true_in_Options_section()
     {
-        $chooseStrategy = new ChooseStrategy;
+        $chooseStrategy = new ChooseStrategy();
 
         $confFile = [
             'Options' => [
@@ -72,13 +72,13 @@ class ChooseStrategyTest extends TestCase
         ];
     }
 
-    /** 
+    /**
      * @test
      * @dataProvider configurationFileForFullStrategyProvider
      */
     function choose_full_strategy($confFile)
     {
-        $chooseStrategy = new ChooseStrategy;
+        $chooseStrategy = new ChooseStrategy();
 
         $strategy = $chooseStrategy->__invoke($confFile);
 

@@ -7,9 +7,11 @@ use GitHooks\Utils\GitFiles;
 use PHPUnit\Framework\TestCase;
 use Tests\VirtualFileSystemTrait;
 
-class SmartStrategyCanBeActivatedFromTheConfiguractionFileTest extends TestCase{
+class SmartStrategyCanBeActivatedFromTheConfiguractionFileTest extends TestCase
+{
     use VirtualFileSystemTrait;
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+
     /** @test*/
     function it_can_skip_all_tools_except_phpstan()
     {
@@ -18,7 +20,7 @@ class SmartStrategyCanBeActivatedFromTheConfiguractionFileTest extends TestCase{
             'file.php',
             'qa' => [
                 'githooks.yml' => //Por problemas de tabulación al leer yml debe de estar así
-'Options:
+        'Options:
     - smartExecution: true
 Tools: 
     #- phpstan
@@ -36,15 +38,15 @@ phpcs:
             ]
         ];
         $this->createFileSystem($fileSystem);
-        
+
         $modifiedFiles = ['app/file1.php', 'app/file2.php'];
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
         $gitFiles->shouldReceive('isComposerModified')->andReturn(false);
 
-        $conf = new Configuration;
+        $conf = new Configuration();
 
-        $smartStrategy = new SmartStrategy($conf->readFile($this->getFile('qa/githooks.yml')), $gitFiles, new ToolsFactoy);
+        $smartStrategy = new SmartStrategy($conf->readFile($this->getFile('qa/githooks.yml')), $gitFiles, new ToolsFactoy());
 
         // var_dump($conf->readFile($this->getFile('qa/githooks.yml')));
         var_dump($smartStrategy->getTools());

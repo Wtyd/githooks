@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 namespace Tests;
 
 use org\bovigo\vfs\vfsStream;
@@ -13,7 +14,7 @@ trait VirtualFileSystemTrait
 
     /**
      * Crea una estructura de ficheros virtuales que comienza en '/'
-     * 
+     *
      *
      * @param array $structure
      * @return void

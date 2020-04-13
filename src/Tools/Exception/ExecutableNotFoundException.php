@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Tools\Exception;
 
 class ExecutableNotFoundException extends \RuntimeException implements ToolsExceptionInterface
@@ -17,7 +18,7 @@ class ExecutableNotFoundException extends \RuntimeException implements ToolsExce
         return $exception;
     }
 
-    public function getExecutable() : string
+    public function getExecutable(): string
     {
         return $this->executable;
     }

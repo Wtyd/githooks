@@ -17,7 +17,6 @@ use PHPUnit\Framework\TestCase;
  */
 class ConfigurationTest extends TestCase
 {
-
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
     protected $yamlReaderMock;
@@ -27,7 +26,7 @@ class ConfigurationTest extends TestCase
         $this->yamlReaderMock = Mockery::mock('alias:Symfony\Component\Yaml\Yaml');
     }
 
-    /** 
+    /**
      * @test
      * @runInSeparateProcess
      * @preserveGlobalState disabled

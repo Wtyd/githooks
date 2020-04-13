@@ -65,7 +65,7 @@ class GitHooks
 
         $endTotalTime = microtime(true);
         $executionTotalTime = ($endTotalTime - $startTotalTime);
-        echo "\n\n  Tiempo total de ejecución = ". number_format($executionTotalTime, 2)." sec";
+        echo "\n\n  Tiempo total de ejecución = " . number_format($executionTotalTime, 2) . " sec";
 
         if ($exitCode === self::OK) {
             $message = "Tus cambios se han commiteado.";

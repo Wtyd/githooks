@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Tools\Exception;
 
 class ModifiedButUnstagedFilesException extends \RuntimeException implements ToolsExceptionInterface
@@ -16,7 +17,7 @@ class ModifiedButUnstagedFilesException extends \RuntimeException implements Too
         return $exception;
     }
 
-    public function getExit() : array
+    public function getExit(): array
     {
         return $this->exit;
     }

@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\LoadTools;
 
 use GitHooks\Constants;

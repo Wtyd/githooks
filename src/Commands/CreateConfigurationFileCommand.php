@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Commands;
 
 use Illuminate\Console\Command;
@@ -36,10 +37,10 @@ class CreateConfigurationFileCommand extends Command
 
     protected function copiarFichero($origen, $destino)
     {
-        if (copy($origen, $destino)===false) {
+        if (copy($origen, $destino) === false) {
             $this->error("Error al copiar $origen en $destino");
         } else {
-            if (chmod($destino, 0755)===false) {
+            if (chmod($destino, 0755) === false) {
                 $this->error('Error al dar permisos al fichero');
             } else {
                 $this->info('Fichero de configuración githooks.yml creado en la carpeta ./qa');

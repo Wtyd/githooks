@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Exception;
 
 class ToolsNotFoundException extends \RuntimeException implements GitHooksExceptionInterface
@@ -16,7 +17,7 @@ class ToolsNotFoundException extends \RuntimeException implements GitHooksExcept
         return $exception;
     }
 
-    public function getFilePath() : string
+    public function getFilePath(): string
     {
         return $this->filePath;
     }

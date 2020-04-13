@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Tools;
 
 use GitHooks\Tools\Exception\ExitErrorException;
@@ -27,7 +28,7 @@ class ToolExecutor
      * @return integer $exitCode El codigo de salida (por defecto 0) cambia a 1 cuando una herrmienta falla por cualquier motivo
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function __invoke(array $tools, $isLiveOutput=false) :int
+    public function __invoke(array $tools, $isLiveOutput = false): int
     {
         $exitCode = self::OK;
         foreach ($tools as $tool) {

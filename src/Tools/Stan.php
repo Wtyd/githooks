@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Tools;
 
 use GitHooks\Constants;
@@ -65,7 +66,7 @@ class Stan extends ToolAbstract
     public function isCrashed()
     {
         if (empty($this->exit)) {
-            $this->exitCode=1;
+            $this->exitCode = 1;
             throw ExitErrorException::forExit($this->exit);
         }
     }

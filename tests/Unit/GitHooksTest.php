@@ -9,7 +9,6 @@ use Tests\VirtualFileSystemTrait;
 
 class GitHooksTest extends TestCase
 {
-
     use VirtualFileSystemTrait;
 
     protected $githooks;
