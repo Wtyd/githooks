@@ -1,0 +1,38 @@
+#!/usr/bin/env php
+<?php
+
+require getcwd() .'/vendor/autoload.php';
+
+use GitHooks\Commands\{
+    CheckConfigurationFileCommand,
+    CheckSecurityCommand,
+    CodeSnifferCommand,
+    CopyPasteDetectorCommand,
+    CreateConfigurationFileCommand,
+    MessDetectorCommand,
+    ParallelLintCommand,
+    StanCommand
+};
+
+use Illuminate\Container\Container;
+use Illuminate\Events\Dispatcher;
+use Illuminate\Console\Application;
+
+$container = new Container;
+$events = new Dispatcher($container);
+
+$artisan = new Application($container, $events, 'Version 2.0');
+$artisan->setName('GitHooks');
+
+// Bind a command
+$artisan->resolve(CreateConfigurationFileCommand::class);
+$artisan->resolve(ParallelLintCommand::class);
+$artisan->resolve(CodeSnifferCommand::class);
+$artisan->resolve(CopyPasteDetectorCommand::class);
+$artisan->resolve(MessDetectorCommand::class);
+$artisan->resolve(StanCommand::class);
+$artisan->resolve(CheckSecurityCommand::class);
+$artisan->resolve(CheckConfigurationFileCommand::class);
+
+//TODO envolver try catch para no mostrar el stacktrace cuando explota algo
+$artisan->run();

@@ -1,0 +1,35 @@
+# Configuración general de la herramienta
+Options:
+  smartExecution: true #Si su valor es true solo se ejecutarán las herramientas que no tengan todos los ficheros modificados excluidos de su análisis
+
+# Herramientas que se van a ejecutar
+Tools:
+  - phpstan
+  - check-security
+  - parallel-lint
+  - phpcs
+  - phpmd
+  - phpcpd
+
+# Configuración de cada una de las herramientas
+phpstan:
+    config: './qa/phpstan-phpqa.neon'
+    level: 1
+
+#Se ejecuta contra la raiz del proyecto
+parallel-lint:
+    exclude: ['vendor']
+
+phpcs:
+    standard: './path/ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
+    ignore: ['vendor'] # Se podría configurar en el standard directamente
+    error-severity: 1
+    warning-severity: 6
+  
+phpmd:
+  rules: './path/ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
+  exclude: [vendor]  # Se podría configurar en las rules directamente
+
+phpcpd:
+  exclude: ['vendor']
+ 

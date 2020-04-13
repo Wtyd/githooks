@@ -1,0 +1,17 @@
+{
+    "timeout": 30,
+    "source": {
+        "directories": [
+            "src"
+        ],
+        "excludes": [
+            "Utils"
+        ]
+    },
+    "logs": {
+        "text": "infection.log"
+    },
+    "mutators": {
+        "@default": true
+    }
+}

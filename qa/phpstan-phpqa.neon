@@ -1,0 +1,9 @@
+# Phpqa copia este fichero de configuracion y lo ejecuta desde el directorio "build"
+# currentWorkingDirectory es donde se ejecuta phpstan, en este caso desde ./
+{
+    parameters: {
+        excludes_analyse: [
+            %currentWorkingDirectory%/app-backend
+        ]
+    }
+}
