@@ -44,7 +44,7 @@ abstract class ToolAbstract
         // }
 
         if ($this->libraryCheck($local)) {
-            return $root . '/vendor/bin/' . $this->executable;
+            return 'vendor/bin/' . $this->executable;
         }
 
         if ($this->libraryCheck($global)) {
