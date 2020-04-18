@@ -1,4 +1,5 @@
 <?php
+
 namespace GitHooks\Tools;
 
 use GitHooks\Tools\Exception\ExecutableNotFoundException;
@@ -26,7 +27,7 @@ class CheckSecurity extends ToolAbstract
     /**
      * Devuelve la primera versión del ejecutable que encuentra (como .phar, en local o global). Si no encuentra ninguna versión lanza excepción.
      * Sobreescritura del método padre.
-     * 
+     *
      * @return string Ruta completa al ejecutable. Si no lo encuentra lanza una ExecutableNotFoundException
      */
     protected function executableFinder(): string
