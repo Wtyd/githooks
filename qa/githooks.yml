@@ -27,7 +27,7 @@ phpcs:
     warning-severity: 6
   
 phpmd:
-  rules: './qa/phpmd-tests-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
+  rules: './qa/phpmd-src-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:

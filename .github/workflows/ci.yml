@@ -1,0 +1,67 @@
+name: PHP Composer CI
+# https://github.com/shivammathur/setup-php
+on:
+  push:
+    branches: [ master, ci ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  extensions: mbstring #intl, pcov
+jobs:
+  code_analysis:    
+    runs-on: ubuntu-latest
+    name: ${{ matrix.tool }} Code Analysis
+    strategy:
+      matrix:
+        tool: [phpcs, phpmd, phpstan]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: prestissimo, ${{ matrix.tool }}
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Execute Php Code Sniffer
+      run: ${{ matrix.tool }} --standard=./qa/psr12-ruleset.xml ./src
+      if: ${{ 'phpcs' == matrix.tool }}
+
+    - name: Execute Php Mess Detector
+      run: ${{ matrix.tool }} ./ text ./qa/phpmd-src-ruleset.xml
+      if: ${{ 'phpmd' == matrix.tool }}
+
+    - name: Execute Php Stan
+      run: ${{ matrix.tool }} analyse -c ./qa/phpstan-phpqa.neon --no-progress -n -l 1 ./src
+      if: ${{ 'phpstan' == matrix.tool }}
+
+  tests:    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #[ubuntu-latest, windows-latest, macOS-latest]
+        php-versions: ['7.3']
+    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: prestissimo
+        ini-values: "post_max_size=256M" #optional
+        coverage: none
+        
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Testing the Aplication
+      run: vendor/bin/phpunit

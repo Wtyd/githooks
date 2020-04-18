@@ -1,0 +1,78 @@
+name: PHP Composer
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    # Add a test script to composer.json, for instance: "test": "vendor/bin/phpunit"
+    # Docs: https://getcomposer.org/doc/articles/scripts.md
+
+    # - name: Run test suite
+    #   run: composer run-script test
+
+  phpcs:    
+    runs-on: ubuntu-latest
+    name: Php Code Sniffer
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: phpcs
+
+    - name: Php Code Sniffer
+      run: phpcs --standard=./qa/psr12-ruleset.xml ./src 
+
+  phpmd:    
+    runs-on: ubuntu-latest
+    name: Php Mess Detector
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: phpmd
+
+    - name: Php Mess Detector
+      run: phpmd ./ text ./qa/phpmd-src-ruleset.xml
+
+  phpstan:    
+    runs-on: ubuntu-latest
+    name: Php Stan
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: phpstan
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Php Stan
+      run: phpstan analyse -c ./qa/phpstan-phpqa.neon --no-progress -n -l 1 ./src

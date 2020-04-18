@@ -45,7 +45,7 @@ class Configuration
      * Valida el formato de $configurationFile
      *
      * @param array $configurationFile. Fichero de configuración.
-     * @return array de errores en el formato.
+     * @return ConfigurationErrors POPO que contiene un array de errores y uno de warnings.
      */
     public function check($configurationFile): ConfigurationErrors
     {
