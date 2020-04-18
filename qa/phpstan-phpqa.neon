@@ -2,6 +2,9 @@
 # currentWorkingDirectory es donde se ejecuta phpstan, en este caso desde ./
 {
     parameters: {
+        ignoreErrors: [
+            '#Result of method [a-zA-Z0-9\\_]+::toolShouldSkip\(\)#'
+        ]
         excludes_analyse: [
             %currentWorkingDirectory%/app-backend
         ]

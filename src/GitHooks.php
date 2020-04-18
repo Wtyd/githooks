@@ -6,8 +6,7 @@ use GitHooks\Exception\ExitException;
 use GitHooks\Exception\GitHooksExceptionInterface;
 use GitHooks\LoadTools\Exception\LoadToolsExceptionInterface;
 use GitHooks\Tools\ToolExecutor;
-
-;
+use Exception;
 use GitHooks\Utils\Printer;
 
 /**
@@ -38,7 +37,7 @@ class GitHooks
 
             $strategy = $chooseStrategy->__invoke($file);
 
-            $this->tools = $strategy->getTools($file);
+            $this->tools = $strategy->getTools();
         } catch (GitHooksExceptionInterface $ex) {
             $this->printer->generalFail($ex->getMessage());
             throw ExitException::forException($ex);
@@ -74,7 +73,7 @@ class GitHooks
         } else {
             $this->printer->generalFail('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.');
             echo "\n";
-            throw new \Exception("Cambios no commiteados");
+            throw new Exception("Cambios no commiteados");
         }
     }
 }
