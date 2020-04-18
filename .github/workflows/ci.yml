@@ -27,6 +27,7 @@ jobs:
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
+      if: ${{ 'phpstan' == matrix.tool }}
 
     - name: Execute Php Code Sniffer
       run: ${{ matrix.tool }} --standard=./qa/psr12-ruleset.xml ./src
