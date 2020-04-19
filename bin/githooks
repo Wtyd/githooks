@@ -1,7 +1,7 @@
-#!/usr/bin/env php
+#!/usr/bin/env php a
 <?php
 
-require getcwd() .'/vendor/autoload.php';
+require getcwd() . '/vendor/autoload.php';
 
 use GitHooks\Commands\{
     CheckConfigurationFileCommand,
@@ -18,7 +18,7 @@ use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Console\Application;
 
-$container = new Container;
+$container = new Container();
 $events = new Dispatcher($container);
 
 $artisan = new Application($container, $events, 'Version 2.0');
