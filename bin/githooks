@@ -1,4 +1,4 @@
-#!/usr/bin/env php a
+#!/usr/bin/env php
 <?php
 
 require getcwd() . '/vendor/autoload.php';
