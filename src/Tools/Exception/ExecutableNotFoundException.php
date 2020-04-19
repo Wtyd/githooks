@@ -4,9 +4,12 @@ namespace GitHooks\Tools\Exception;
 
 class ExecutableNotFoundException extends \RuntimeException implements ToolsExceptionInterface
 {
+    /**
+     * @var string
+     */
     private $executable;
 
-    public static function forExec(string $executable)
+    public static function forExec(string $executable): ExecutableNotFoundException
     {
         $exception = new self(sprintf(
             'No se encuentra el commando %s.',

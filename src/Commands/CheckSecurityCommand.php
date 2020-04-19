@@ -9,6 +9,10 @@ class CheckSecurityCommand extends Command
 {
     protected $signature = 'tool:check-security';
     protected $description = 'Ejecuta la herramienta que valida la seguridad de las librerías.';
+
+    /**
+     * @var ToolCommandExecutor
+     */
     protected $toolCommandExecutor;
 
     public function __construct(ToolCommandExecutor $toolCommandExecutor)

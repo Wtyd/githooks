@@ -22,9 +22,12 @@ class Stan extends ToolAbstract
 
     public const OPTIONS = [self::PHPSTAN_CONFIGURATION_FILE, self::LEVEL];
 
+    /**
+     * @var array
+     */
     protected $args;
 
-    public function __construct($configurationFile)
+    public function __construct(array $configurationFile)
     {
         $this->installer = 'phpstan/phpstan';
 
@@ -44,7 +47,7 @@ class Stan extends ToolAbstract
 
         $this->isCrashed();
 
-        $this->exit = null;
+        $this->exit = [];
     }
 
     protected function prepareCommand(): string
@@ -74,7 +77,7 @@ class Stan extends ToolAbstract
     /**
      * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
      *
-     * @param array $arguments
+     * @param array $configurationFile
      * @return void
      */
     public function setArguments($configurationFile)

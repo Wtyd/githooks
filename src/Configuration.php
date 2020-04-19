@@ -5,7 +5,6 @@ namespace GitHooks;
 use GitHooks\Exception\ParseConfigurationFileException;
 use GitHooks\Exception\ToolsIsEmptyException;
 use GitHooks\Exception\ToolsNotFoundException;
-use Illuminate\Container\Container;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 

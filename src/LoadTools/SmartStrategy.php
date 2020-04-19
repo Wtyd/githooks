@@ -17,10 +17,22 @@ use GitHooks\Utils\GitFiles;
 class SmartStrategy implements StrategyInterface
 {
 
+    /**
+     * Todo el fichero de configuración pasado a array. Su formato podria ser algo como lo siguiente:
+     * ['Options' => ['smartExecution' => true], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
+     *
+     * @var array
+    */
     protected $configurationFile;
 
+    /**
+     * @var GitFiles
+     */
     protected $gitFiles;
 
+    /**
+     * @var ToolsFactoy
+     */
     protected $toolsFactory;
 
     public function __construct(array $configurationFile, GitFiles $gitFiles, ToolsFactoy $toolsFactory)
@@ -34,7 +46,6 @@ class SmartStrategy implements StrategyInterface
      * Se cargan únicamente las herramientas si hay ficheros modificados que no están en sus carpetas de exclusión. Es decir, si modificamos
      * un fichero dentro de config/ y phpcpd tiene esa carpeta en exclusión, no se cargará y por tanto no se ejecutará.
      *
-     * @param array $file. Fichero de configuración en formato array asociativo
      * @return array. Cada elemento es la instancia de un objeto Tool distinto.
      */
     public function getTools(): array
@@ -57,7 +68,7 @@ class SmartStrategy implements StrategyInterface
      * 2. TODOS los ficheros modificados deben pertenecer a rutas de exclusión de la herramienta.
      *
      * @param string $tool
-     * @return void
+     * @return bool
      */
     protected function toolShouldSkip(string $tool): bool
     {
@@ -145,8 +156,7 @@ class SmartStrategy implements StrategyInterface
      * La verifica que la $tool tenga su apartado de configuración y en el su apartado de excludes/ignores definido
      *
      * @param string $tool
-     * @param array $configuration. Fichero de configuración en formato array asociativo
-     * @return boolean
+     * @return bool
      */
     protected function toolHasExclusionsConfigured(string $tool): bool
     {
@@ -167,8 +177,6 @@ class SmartStrategy implements StrategyInterface
      *
      * @param string $tool. Puede tomar los valores de las Constants como por ejemplo CODE_SNIFFER.
      *                      Se comprueba que la key $tools este en la raíz del array de configuración.
-     * @param array $configuration. Todo el fichero de configuración pasado a array. Su formato podria ser algo como lo siguiente:
-     * ['Options' => ['smartExecution' => true], 'Tools' => ['parallelLint', 'phpcs'], $tool => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
      * @return boolean
      */
     protected function toolHasConfiguration(string $tool): bool

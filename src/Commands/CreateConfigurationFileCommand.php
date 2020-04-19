@@ -35,7 +35,7 @@ class CreateConfigurationFileCommand extends Command
         // $this->comment("Mi password es $password");
     }
 
-    protected function copiarFichero($origen, $destino)
+    protected function copiarFichero(string $origen, string $destino): void
     {
         if (copy($origen, $destino) === false) {
             $this->error("Error al copiar $origen en $destino");

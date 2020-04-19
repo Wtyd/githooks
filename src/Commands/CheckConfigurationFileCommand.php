@@ -14,6 +14,10 @@ class CheckConfigurationFileCommand extends Command
 
     protected $signature = 'conf:check';
     protected $description = 'Verifica que existe el fichero de configuración githooks.yml en la carpeta ./qa y que tiene el formato adecuado.';
+
+    /**
+     * @var Configuration
+     */
     protected $configuration;
 
     public function __construct(Configuration $configuration)

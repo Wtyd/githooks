@@ -12,7 +12,7 @@
 
     <!-- Path absoluto -->
     <exclude-pattern>*/qa/*</exclude-pattern>
-	<exclude-pattern>*/vendor/*</exclude-pattern>
+	  <exclude-pattern>*/vendor/*</exclude-pattern>
 
 
 <!-- ****************** REGLAS ESTANDAR PSR12 ****************** -->
@@ -22,7 +22,6 @@
     </rule>
     <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
         <exclude-pattern>*/database/*</exclude-pattern>
-        <exclude-pattern>*/databasePhinx/*</exclude-pattern>
     </rule>
     <rule ref="Generic.Files.LineLength">
         <!-- Esta regla es un Warning -->

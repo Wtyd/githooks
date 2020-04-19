@@ -7,7 +7,7 @@ namespace GitHooks\Exception;
  */
 class ParseConfigurationFileException extends \RuntimeException implements GitHooksExceptionInterface
 {
-    public static function forMessage(string $message)
+    public static function forMessage(string $message): ParseConfigurationFileException
     {
         $exception = new self(
             $message

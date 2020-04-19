@@ -7,15 +7,30 @@ use GitHooks\Tools\Exception\ExecutableNotFoundException;
 abstract class ToolAbstract
 {
     //TODO Este atributo igual no tiene sentido ya que el nombre de las herramientas es el mismo comando con el que se ejecuta
+    /**
+     * @var string
+     */
     protected $executable;
 
+    /**
+     * @var string
+     */
     protected $installer;
 
+    /**
+     * @var int
+     */
     protected $exitCode;
 
+    /**
+     * @var array
+     */
     protected $exit;
 
     //TODO Creo que esta variable solo contiene errores al buscar el ejecutable
+    /**
+     * @var string
+     */
     protected $errors = '';
 
     public function __construct()
@@ -107,8 +122,8 @@ abstract class ToolAbstract
     /**
      * Sustituye la / por \ cuando se invoca la app desde Windows
      *
-     * @param string $path
-     * @return string path
+     * @param array $paths
+     * @return array path
      */
     protected function routeCorrector(array $paths)
     {
@@ -177,27 +192,27 @@ abstract class ToolAbstract
         }
     }
 
-    public function getExecutable()
+    public function getExecutable(): string
     {
         return $this->executable;
     }
 
-    public function getExitCode()
+    public function getExitCode(): int
     {
         return $this->exitCode;
     }
 
-    public function getExit()
+    public function getExit(): array
     {
         return $this->exit;
     }
 
-    public function getInstaller()
+    public function getInstaller(): string
     {
         return $this->installer;
     }
 
-    public function getErrors()
+    public function getErrors(): string
     {
         return $this->errors;
     }

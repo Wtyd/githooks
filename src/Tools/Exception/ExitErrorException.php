@@ -4,9 +4,12 @@ namespace GitHooks\Tools\Exception;
 
 class ExitErrorException extends \RuntimeException implements ToolsExceptionInterface
 {
+    /**
+     * @var array
+     */
     private $exit;
 
-    public static function forExit(array $exit)
+    public static function forExit(array $exit): ExitErrorException
     {
         $exception = new self(sprintf(
             'La herramienta ha detectado errores'

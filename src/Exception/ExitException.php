@@ -4,15 +4,9 @@ namespace GitHooks\Exception;
 
 class ExitException extends \RuntimeException implements GitHooksExceptionInterface
 {
-    protected $exception;
-
-    public static function forException(\Throwable $exception)
+    //TODO revisar esta exepcion
+    public static function forException(\Throwable $exception): \Throwable
     {
         return $exception;
-    }
-
-    public function getException()
-    {
-        return $this->exception;
     }
 }

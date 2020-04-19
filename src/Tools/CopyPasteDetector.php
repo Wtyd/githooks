@@ -16,9 +16,12 @@ class CopyPasteDetector extends ToolAbstract
 
     public const OPTIONS = [self::EXCLUDE];
 
+    /**
+     * @var array
+     */
     protected $args;
 
-    public function __construct($configurationFile)
+    public function __construct(array $configurationFile)
     {
         $this->installer = 'sebastian/phpcpd';
 
@@ -43,7 +46,7 @@ class CopyPasteDetector extends ToolAbstract
     /**
      * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
      *
-     * @param array $arguments
+     * @param array $configurationFile
      * @return void
      */
     public function setArguments($configurationFile)

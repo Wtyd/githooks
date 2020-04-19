@@ -4,6 +4,7 @@ namespace GitHooks\Commands;
 
 use GitHooks\Configuration;
 use GitHooks\Constants;
+use GitHooks\Tools\ToolAbstract;
 use GitHooks\Tools\ToolExecutor;
 use GitHooks\Tools\ToolsFactoy;
 
@@ -17,8 +18,19 @@ use GitHooks\Tools\ToolsFactoy;
  */
 class ToolCommandExecutor
 {
+    /**
+     * @var Configuration
+     */
     protected $config;
+
+    /**
+     * @var ToolsFactoy
+     */
     protected $toolsFactoy;
+
+    /**
+     * @var ToolExecutor
+     */
     protected $toolExecutor;
 
     public function __construct(Configuration $config, ToolsFactoy $toolsFactoy, ToolExecutor $toolExecutor)
@@ -28,7 +40,7 @@ class ToolCommandExecutor
         $this->toolExecutor = $toolExecutor;
     }
 
-    public function execute($tool)
+    public function execute(string $tool): void
     {
         $root = getcwd();
 

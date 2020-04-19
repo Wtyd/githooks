@@ -12,6 +12,9 @@ class ToolExecutor
 
     const KO = 1;
 
+    /**
+     * @var Printer
+     */
     protected $printer;
 
     public function __construct(Printer $printer)
@@ -28,7 +31,7 @@ class ToolExecutor
      * @return integer $exitCode El codigo de salida (por defecto 0) cambia a 1 cuando una herrmienta falla por cualquier motivo
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function __invoke(array $tools, $isLiveOutput = false): int
+    public function __invoke(array $tools, bool $isLiveOutput = false): int
     {
         $exitCode = self::OK;
         foreach ($tools as $tool) {
@@ -76,7 +79,7 @@ class ToolExecutor
         return $exitCode;
     }
 
-    protected function errorsFindingExecutable(string $errors)
+    protected function errorsFindingExecutable(string $errors): bool
     {
         if (empty($errors)) {
             return false;

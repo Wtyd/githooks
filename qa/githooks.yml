@@ -14,7 +14,7 @@ Tools:
 # Configuración de cada una de las herramientas
 phpstan:
     config: './qa/phpstan-phpqa.neon'
-    level: 1
+    level: 8 #level 0-8 (0 default, 8 max)
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:

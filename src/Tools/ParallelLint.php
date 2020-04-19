@@ -16,9 +16,12 @@ class ParallelLint extends ToolAbstract
 
     public const OPTIONS = [self::EXCLUDE];
 
+    /**
+     * @var array
+     */
     protected $excludes;
 
-    public function __construct($configurationFile)
+    public function __construct(array $configurationFile)
     {
         $this->installer = 'php-parallel-lint/php-parallel-lint';
 
@@ -54,7 +57,7 @@ class ParallelLint extends ToolAbstract
     /**
      * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
      *
-     * @param array $arguments
+     * @param array $configurationFile
      * @return void
      */
     public function setArguments($configurationFile)

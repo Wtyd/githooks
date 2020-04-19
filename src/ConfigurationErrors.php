@@ -7,7 +7,14 @@ namespace GitHooks;
  */
 class ConfigurationErrors
 {
+    /**
+     * @var array
+     */
     protected $errors = [];
+
+    /**
+     * @var array
+     */
     protected $warnings = [];
 
     public function __construct(array $errors, array $warnings)

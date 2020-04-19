@@ -9,6 +9,10 @@ class MessDetectorCommand extends Command
 {
     protected $signature = 'tool:phpmd';
     protected $description = 'Ejecuta la herramienta de análisis de código phpmd con la configuración extraída del fichero de configuración.';
+
+    /**
+     * @var ToolCommandExecutor
+     */
     protected $toolCommandExecutor;
 
     public function __construct(ToolCommandExecutor $toolCommandExecutor)

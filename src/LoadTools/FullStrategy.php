@@ -10,8 +10,17 @@ use GitHooks\Tools\ToolsFactoy;
  */
 class FullStrategy implements StrategyInterface
 {
+    /**
+     * Todo el fichero de configuración pasado a array. Su formato podria ser algo como lo siguiente:
+     * ['Options' => ['smartExecution' => true], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
+     *
+     * @var array
+    */
     protected $configurationFile;
 
+    /**
+     * @var ToolsFactoy
+     */
     protected $toolsFactory;
 
     public function __construct(array $configurationFile, ToolsFactoy $toolsFactory)
@@ -23,8 +32,7 @@ class FullStrategy implements StrategyInterface
     /**
      * Se cargan todas las herramientas configuradas
      *
-     * @param array $file. Fichero de configuración en formato array asociativo
-     * @return array. Cada elemento es la instancia de un objeto Tool distinto.
+     * @return array Cada elemento es la instancia de un objeto Tool distinto.
      */
     public function getTools(): array
     {

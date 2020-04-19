@@ -9,6 +9,10 @@ class CodeSnifferCommand extends Command
 {
     protected $signature = 'tool:phpcs';
     protected $description = 'Ejecuta la herramienta de formateado de código phpcs con la configuración extraída del fichero de configuración.';
+
+    /**
+     * @var ToolCommandExecutor
+     */
     protected $toolCommandExecutor;
 
     public function __construct(ToolCommandExecutor $toolCommandExecutor)

@@ -32,9 +32,12 @@ class CodeSniffer extends ToolAbstract
 
     const OPTIONS = [self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY];
 
+    /**
+     * @var array
+     */
     protected $args;
 
-    public function __construct($configurationFile)
+    public function __construct(array $configurationFile)
     {
         $this->installer = 'squizlabs/php_codesniffer';
 
@@ -104,10 +107,9 @@ class CodeSniffer extends ToolAbstract
     /**
      * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
      *
-     * @param array $arguments
      * @return void
      */
-    public function setArguments($configurationFile)
+    public function setArguments(array $configurationFile): void
     {
         $defaultStandard = 'qa/phpcs-softruleset.xml';
         $defaultIgnore = ['app-front','build', 'database', 'node_modules', 'storage', 'vendor'];

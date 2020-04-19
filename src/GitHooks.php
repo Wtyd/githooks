@@ -14,18 +14,23 @@ use GitHooks\Utils\Printer;
  */
 class GitHooks
 {
-    const OK = 0;
+    public const OK = 0;
 
-    const KO = 1;
+    public const KO = 1;
 
-    protected $ficheros;
-
+    /**
+     * @var array de Tools (AbstractTools)
+     */
     protected $tools;
 
-    protected $configurationFile;
-
+    /**
+     * @var Printer
+     */
     protected $printer;
 
+    /**
+     * @var ToolExecutor
+     */
     protected $toolExecutor;
 
     public function __construct(string $configFile, Configuration $config, ChooseStrategy $chooseStrategy, Printer $printer, ToolExecutor $toolExecutor)
