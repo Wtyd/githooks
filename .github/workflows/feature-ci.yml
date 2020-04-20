@@ -1,10 +1,12 @@
-name: PHP Composer CI
+name: Feature CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master, ci ]
+    branches-ignore:
+      - master
   pull_request:
-    branches: [ master ]
+    branches-ignore:
+      - master
 
 env:
   extensions: mbstring #intl, pcov
@@ -38,15 +40,15 @@ jobs:
       if: ${{ 'phpmd' == matrix.tool }}
 
     - name: Execute Php Stan
-      run: ${{ matrix.tool }} analyse -c ./qa/phpstan-phpqa.neon --no-progress -n -l 1 ./src
+      run: ${{ matrix.tool }} analyse -c ./qa/phpstan-phpqa.neon --no-progress -n -l 8 ./src
       if: ${{ 'phpstan' == matrix.tool }}
 
   tests:    
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest] #[ubuntu-latest, windows-latest, macOS-latest]
-        php-versions: ['7.3']
+        os: [ubuntu-latest]
+        php-versions: ['7.2']
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.os }}
     steps:
     - name: Checkout
