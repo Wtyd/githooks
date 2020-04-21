@@ -2,6 +2,7 @@
 # currentWorkingDirectory es donde se ejecuta phpstan, en este caso desde ./
 {
     parameters: {
+        level: 8
         paths: [
             %currentWorkingDirectory%/src,
             # %currentWorkingDirectory%/tests

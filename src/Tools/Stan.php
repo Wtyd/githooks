@@ -4,6 +4,7 @@ namespace GitHooks\Tools;
 
 use GitHooks\Constants;
 use GitHooks\Tools\Exception\ExitErrorException;
+use Exception;
 
 /**
  * Ejecuta la libreria phpstan/phpstan
@@ -32,7 +33,7 @@ class Stan extends ToolAbstract
      */
     protected $args;
 
-     public function __construct(array $configurationFile)
+    public function __construct(array $configurationFile)
     {
         $this->installer = 'phpstan/phpstan';
 
@@ -59,8 +60,11 @@ class Stan extends ToolAbstract
     {
         $config = '-c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
         $level = '-l ' . $this->args[self::LEVEL];
-        $path = $this->args[self::PATHS];
-        $arguments = " analyse $config --no-progress -n $level $path";
+        $paths = $this->args[self::PATHS];
+        $paths = ["./src"];
+        $arguments = " analyse $config --no-progress -n $level ./src";
+        echo "\n\n COMMAND ARGUMENTS => ";
+        var_dump($arguments);
         return $this->executable . $arguments;
     }
 
@@ -88,24 +92,21 @@ class Stan extends ToolAbstract
     public function setArguments($configurationFile)
     {
         if (!isset($configurationFile[Constants::PHPSTAN]) || empty($configurationFile[Constants::PHPSTAN])) {
-            //TODO Pablo: probar qué pasa en este caso
-            $this->args = [];
-            echo "\n\n PhpStan tool: Not detected arguments";
+            throw new Exception("Clave phpstan no encontrada en githooks.yml");
             return;
         }
         $arguments = $configurationFile[Constants::PHPSTAN];
 
         if (empty($arguments[self::PHPSTAN_CONFIGURATION_FILE])) {
-            //TODO Pablo: probar qué pasa en este caso
-            echo "PhpStan tool: configuration file not found";
+            throw new Exception("Clave config de phpstan no encontrada en githooks.yml");
         } else {
-            // args está vacío
             $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $arguments[self::PHPSTAN_CONFIGURATION_FILE];
         }
-
+        var_dump($arguments);
         if (empty($arguments[self::LEVEL])) {
-            //TODO Pablo: probar qué pasa en este caso
+            //TODO Pablo: Leer el parámetro level del archivo de configuración de phpstan
             echo "\n\n PhpStan tool: level configuration not found";
+            //$this->args[self::LEVEL] = '';
         } else {
             $this->args[self::LEVEL] = $arguments[self::LEVEL];
         }
