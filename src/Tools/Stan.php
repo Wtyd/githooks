@@ -61,10 +61,7 @@ class Stan extends ToolAbstract
         $config = '-c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
         $level = '-l ' . $this->args[self::LEVEL];
         $paths = $this->args[self::PATHS];
-        $paths = ["./src"];
-        $arguments = " analyse $config --no-progress -n $level ./src";
-        echo "\n\n COMMAND ARGUMENTS => ";
-        var_dump($arguments);
+        $arguments = " analyse $config --no-progress -n $level $paths";
         return $this->executable . $arguments;
     }
 
