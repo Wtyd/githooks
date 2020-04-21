@@ -20,6 +20,11 @@ class Stan extends ToolAbstract
      */
     public const LEVEL = 'level';
 
+    /**
+     * @var string PATHS Tag que indica sobre qué carpetas se debe ejecutar el análisis de phpstan en el fichero de configuracion .yml
+     */
+    public const PATHS = 'paths';
+
     public const OPTIONS = [self::PHPSTAN_CONFIGURATION_FILE, self::LEVEL];
 
     /**
@@ -27,7 +32,7 @@ class Stan extends ToolAbstract
      */
     protected $args;
 
-    public function __construct(array $configurationFile)
+     public function __construct(array $configurationFile)
     {
         $this->installer = 'phpstan/phpstan';
 
@@ -54,8 +59,8 @@ class Stan extends ToolAbstract
     {
         $config = '-c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
         $level = '-l ' . $this->args[self::LEVEL];
-        $arguments = " analyse $config --no-progress -n $level ./src";
-
+        $path = $this->args[self::PATHS];
+        $arguments = " analyse $config --no-progress -n $level $path";
         return $this->executable . $arguments;
     }
 
@@ -82,29 +87,35 @@ class Stan extends ToolAbstract
      */
     public function setArguments($configurationFile)
     {
-        $defaultConfig = './qa/phpstan-phpqa.neon';
-        $defaultLevel = 1;
-
         if (!isset($configurationFile[Constants::PHPSTAN]) || empty($configurationFile[Constants::PHPSTAN])) {
-            $this->args = [
-                self::PHPSTAN_CONFIGURATION_FILE => $defaultConfig,
-                self::LEVEL => $defaultLevel,
-            ];
+            //TODO Pablo: probar qué pasa en este caso
+            $this->args = [];
+            echo "\n\n PhpStan tool: Not detected arguments";
             return;
         }
-
         $arguments = $configurationFile[Constants::PHPSTAN];
 
         if (empty($arguments[self::PHPSTAN_CONFIGURATION_FILE])) {
-            $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $defaultConfig;
+            //TODO Pablo: probar qué pasa en este caso
+            echo "PhpStan tool: configuration file not found";
         } else {
+            // args está vacío
             $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $arguments[self::PHPSTAN_CONFIGURATION_FILE];
         }
 
         if (empty($arguments[self::LEVEL])) {
-            $this->args[self::LEVEL] = $defaultLevel;
+            //TODO Pablo: probar qué pasa en este caso
+            echo "\n\n PhpStan tool: level configuration not found";
         } else {
             $this->args[self::LEVEL] = $arguments[self::LEVEL];
+        }
+
+        if (empty($arguments[self::PATHS])) {
+            //TODO Pablo: probar qué pasa en este caso
+            echo "\n\n PhpStan tool: paths configuration not found";
+        } else {
+            //TODO Pablo: leer paths como array
+            $this->args[self::PATHS] = $arguments[self::PATHS];
         }
     }
 }

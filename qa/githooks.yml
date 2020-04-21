@@ -15,6 +15,7 @@ Tools:
 phpstan:
     config: './qa/phpstan-phpqa.neon'
     level: 8 #level 0-8 (0 default, 8 max)
+    paths: './src'
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
