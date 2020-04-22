@@ -100,12 +100,11 @@ class Stan extends ToolAbstract
     public function setArguments($configurationFile)
     {
         if (!isset($configurationFile[Constants::PHPSTAN]) || empty($configurationFile[Constants::PHPSTAN])) {
-            $message = "Tool PhpStan not configured";
-            echo "\n" . $message . "\n";
             return;
         }
         $arguments = $configurationFile[Constants::PHPSTAN];
 
+        // TODO Pablo: isset y array_key_exist
         if (!empty($arguments[self::PHPSTAN_CONFIGURATION_FILE])) {
             $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $arguments[self::PHPSTAN_CONFIGURATION_FILE];
         }
