@@ -59,16 +59,16 @@ class Stan extends ToolAbstract
     protected function prepareCommand(): string
     {
         $config = '';
-        if(!empty($this->args[self::PHPSTAN_CONFIGURATION_FILE])){
+        if (!empty($this->args[self::PHPSTAN_CONFIGURATION_FILE])) {
             $config = $this->args[self::PHPSTAN_CONFIGURATION_FILE];
         }
 
         $level = '';
-        if(!empty($this->args[self::LEVEL])){
+        if (!empty($this->args[self::LEVEL])) {
             $level = '-l ' . $this->args[self::LEVEL];
         }
         $paths = ''; // If path is empty phpStand will not work
-        if(!empty($this->args[self::PATHS])){
+        if (!empty($this->args[self::PATHS])) {
             $paths = $this->args[self::PATHS];
         }
 

@@ -2,20 +2,12 @@
 # currentWorkingDirectory es donde se ejecuta phpstan, en este caso desde ./
 {
     parameters: {
-<<<<<<< HEAD
         #level: 8 NO FUNCIONA
         #paths: './src' NO FUNCIONA
         # paths: [
         #     %currentWorkingDirectory%/src,
         #     # %currentWorkingDirectory%/tests
         # ]
-=======
-        # level: 8
-        paths: [
-            %currentWorkingDirectory%/src,
-            # %currentWorkingDirectory%/tests
-        ]
->>>>>>> 0ad16f4792fba2dfdd739cae4c8acc391223cf0b
         checkMissingIterableValueType: false
         ignoreErrors: [
            # '#Result of method [a-zA-Z0-9\\_]+::toolShouldSkip\(\)#'
