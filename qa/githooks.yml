@@ -13,7 +13,7 @@ Tools:
 
 # Configuración de cada una de las herramientas
 phpstan:
-    paths: './src' # REQUIRED. Array with blank space separation.
+    paths: ['./src'] # REQUIRED
     config: './qa/phpstan-phpqa.neon'
     level: 8 #level 0-8 (0 default, 8 max)
 

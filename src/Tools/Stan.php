@@ -69,7 +69,7 @@ class Stan extends ToolAbstract
         }
         $paths = ''; // If path is empty phpStand will not work
         if (!empty($this->args[self::PATHS])) {
-            $paths = $this->args[self::PATHS];
+            $paths = implode(" ", $this->args[self::PATHS]);
         }
 
         $arguments = " analyse $config --no-progress -n $level $paths";
