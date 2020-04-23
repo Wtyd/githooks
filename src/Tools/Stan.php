@@ -60,7 +60,7 @@ class Stan extends ToolAbstract
     {
         $config = '';
         if (!empty($this->args[self::PHPSTAN_CONFIGURATION_FILE])) {
-            $config = $this->args[self::PHPSTAN_CONFIGURATION_FILE];
+            $config = '-c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
         }
 
         $level = '';
@@ -72,7 +72,7 @@ class Stan extends ToolAbstract
             $paths = implode(" ", $this->args[self::PATHS]);
         }
 
-        $arguments = " analyse $config --no-progress -n $level $paths";
+        $arguments = " analyse $config --no-progress --ansi $level $paths";
         return $this->executable . $arguments;
     }
 
