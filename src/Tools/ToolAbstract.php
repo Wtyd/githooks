@@ -171,8 +171,9 @@ abstract class ToolAbstract
      */
     public function executeWithLiveOutput()
     {
-        echo $this->prepareCommand() . "\n";
-        passthru($this->prepareCommand(), $this->exitCode);
+        $command = $this->prepareCommand();
+        echo  $command . "\n";
+        passthru($command, $this->exitCode);
     }
 
     abstract protected function prepareCommand(): string;
