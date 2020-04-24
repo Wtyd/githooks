@@ -26,6 +26,11 @@ class Stan extends ToolAbstract
      */
     public const PATHS = 'paths';
 
+    /**
+     * @var string MEMORY_LIMIT Tag que indica de cuánta memoria puede disponer la herramienta en el fichero de configuracion .yml
+     */
+    public const MEMORY_LIMIT = 'memory-limit';
+
     public const OPTIONS = [self::PHPSTAN_CONFIGURATION_FILE, self::LEVEL];
 
     /**
@@ -72,7 +77,15 @@ class Stan extends ToolAbstract
             $paths = implode(" ", $this->args[self::PATHS]);
         }
 
-        $arguments = " analyse $config --no-progress --ansi $level $paths";
+        $memoryLimit = '';
+        if (!empty($this->args[self::MEMORY_LIMIT])) {
+            $memoryLimit = '--memory-limit=' . $this->args[self::MEMORY_LIMIT];
+        }
+
+        //Memory Limit example
+        // ./vendor/bin/phpstan analyse ./ --configuration=phpstan.neon --level=1 --memory-limit=1G
+        // Accepted: 1G, 1M 1024M
+        $arguments = " analyse $config --no-progress --ansi $level $memoryLimit $paths";
         return $this->executable . $arguments;
     }
 
@@ -113,6 +126,9 @@ class Stan extends ToolAbstract
         }
         if (!empty($arguments[self::PATHS])) {
             $this->args[self::PATHS] = $arguments[self::PATHS];
+        }
+        if (!empty($arguments[self::MEMORY_LIMIT])) {
+            $this->args[self::MEMORY_LIMIT] = $arguments[self::MEMORY_LIMIT];
         }
     }
 }
