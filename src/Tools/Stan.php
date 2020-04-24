@@ -116,8 +116,7 @@ class Stan extends ToolAbstract
             return;
         }
         $arguments = $configurationFile[Constants::PHPSTAN];
-
-        // TODO Pablo: isset y array_key_exist
+        
         if (!empty($arguments[self::PHPSTAN_CONFIGURATION_FILE])) {
             $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $arguments[self::PHPSTAN_CONFIGURATION_FILE];
         }
