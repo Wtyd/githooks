@@ -2,23 +2,18 @@
 # currentWorkingDirectory es donde se ejecuta phpstan, en este caso desde ./
 {
     parameters: {
-        # level: 8
+        level: 8
         paths: [
             %currentWorkingDirectory%/src,
             # %currentWorkingDirectory%/tests
         ]
         checkMissingIterableValueType: false
         ignoreErrors: [
-           # '#Result of method [a-zA-Z0-9\\_]+::toolShouldSkip\(\)#'
-           #'#Method [a-zA-Z0-9\\_]+::__invoke\(\)#' #Method GitHooks\ChooseStrategy::__invoke() has parameter $file with no value type specified in iterable type array
-           #'#Method [a-zA-Z0-9\\_]+::__construct\(\)#' # checkMissingIterableValueType: false tambien elimina este error
-           #'#Method [a-zA-Z0-9\\_]+::getTools\(\)#'
            '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#'
            '#Method GitHooks\\Commands\\CheckConfigurationFileCommand::message[a-zA-Z0-9\\_]+\(\) has parameter#'
            '#Method GitHooks\\Utils\\Printer::message[a-zA-Z0-9\\_]+\(\) has parameter#' #Method GitHooks\Utils\Printer::messageSuccess() has parameter $cadena with no typehint specified.
         ]
         excludes_analyse: [
-            %currentWorkingDirectory%/app-backend
         ]
     }
 }
