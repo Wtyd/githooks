@@ -1,6 +1,6 @@
 # Configuración general de la herramienta
 Options:
-  smartExecution: true #Si su valor es true solo se ejecutarán las herramientas que no tengan todos los ficheros modificados excluidos de su análisis
+  smartExecution: false #Si su valor es true solo se ejecutarán las herramientas que no tengan todos los ficheros modificados excluidos de su análisis
 
 # Herramientas que se van a ejecutar
 Tools:

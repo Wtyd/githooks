@@ -11,7 +11,8 @@ use GitHooks\Commands\{
     CreateConfigurationFileCommand,
     MessDetectorCommand,
     ParallelLintCommand,
-    StanCommand
+    StanCommand,
+    ExecuteAllToolsCommand
 };
 
 use Illuminate\Container\Container;
@@ -33,6 +34,7 @@ $artisan->resolve(MessDetectorCommand::class);
 $artisan->resolve(StanCommand::class);
 $artisan->resolve(CheckSecurityCommand::class);
 $artisan->resolve(CheckConfigurationFileCommand::class);
+$artisan->resolve(ExecuteAllToolsCommand::class);
 
 //TODO envolver try catch para no mostrar el stacktrace cuando explota algo
 $artisan->run();

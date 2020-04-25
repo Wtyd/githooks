@@ -40,7 +40,7 @@ class Constants
         self::PARALLEL_LINT => Tools\ParallelLint::EXCLUDE,
         self::MESS_DETECTOR => Tools\MessDetector::EXCLUDE,
         self::COPYPASTE_DETECTOR => Tools\CopyPasteDetector::EXCLUDE,
-        // self::PHPSTAN => Tools\Stan::class, //phpstan parece que ignora vendor
+        self::PHPSTAN => '',
     ];
 
     public const ERRORS = 'errors';

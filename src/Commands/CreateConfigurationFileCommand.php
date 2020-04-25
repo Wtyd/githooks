@@ -9,8 +9,7 @@ class CreateConfigurationFileCommand extends Command
     protected $signature = 'conf:init';
     protected $description = 'Crea el fichero de configuración githooks.yml en la carpeta ./qa';
 
-    //TODO Crear un comando que valide (en caso de que exista) el fichero de configuracion githooks.yml (que las opciones de las secciones y subsecciones son correctas, que se puede leer, y warning si tiene algun apartado o herramienta inventados)
-    //TODO Comando para copiar un fichero que ejecute githooks desde los eventos de git. El evento se pasara mediante parámetro.
+    //TODO Comando para copiar un fichero que ejecute githooks desde los eventos de git. El evento se pasará mediante parámetro.
     public function handle()
     {
         $root = getcwd();
