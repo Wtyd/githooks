@@ -43,7 +43,7 @@ abstract class ToolAbstract
     }
 
     /**
-     * Devuelve la primera versión del ejecutable que encuentra (como .phar, en local o global). Si no encuentra ninguna versión lanza excepción.
+     * Devuelve la primera versión del ejecutable que encuentra. La prioridad de búsqueda es local > .phar > global . Si no encuentra ninguna versión lanza excepción.
      *
      * @return string Ruta completa al ejecutable. Si no lo encuentra lanza una ExecutableNotFoundException
      */
@@ -51,100 +51,44 @@ abstract class ToolAbstract
     {
         //Step 1: Local
         //Search executable in vendor/bin
-        // Case 1: tested
-        $path = $this->searchInVendor();
-        if(!empty($path)) return $path;
-
-        //Search executable .phar in project root
-        // Case 2: tested
-        $path = $this->searchPhar();
-        if(!empty($path)) return $path;
-
-        //Step 2 : Global
-        // Search executable globally
-        
-        // Unix command for linux and MacOS
-        // Case 3: tested
-        $command = 'which ' . $this->executable;
-        $exitArray =  $exitCode = null;
-        exec($command, $exitArray, $exitCode);
-        if($exitCode == 0 && !empty($exitArray)){
-            return $exitArray[0];
-        }
-
-        // TODO Pablo try where (Windows)
-        // Windows command
-        // Case 4: TODO
-        // Option 1: Search in $PATH
-        // How to search executables in windows path :
-        // c:\> for %i in (cmd.exe) do @echo.   %~$PATH:i
-        //     C:\WINDOWS\system32\cmd.exe
-        // c:\> for %i in (python.exe) do @echo.   %~$PATH:i
-        //     C:\Python25\python.exe
-
-        // Option 2: powershell Get-Command or gcm as mentioned in another answer is equivalent to where
-
-        // Option 3: where command
-        //C:\Windows\System32\where.exe
-        // where may return several values, the first one will be the one invoked
-        // Remember that where.exe is not a shell builtin, you need to have %windir%\system32 on your %PATH% - which may not be the case, as using where suggests that you may be working on problems with your path
-
-        // Option 4: Windows which implmentantion (batch file) : https://ss64.com/nt/syntax-which.html
-        $command = 'where.exe ' . $this->executable;
-        $exitArray =  $exitCode = null;
-        exec($command, $exitArray, $exitCode);
-        if($exitCode == 0 && !empty($exitArray)){
-            return $exitArray[0];
-        }
-
-        //Step 3 : Composer dependency
-        // TODO Pablo test composer show
-        // Case 5: To test
-        echo "composer \n";
-        $local = 'composer show ' . $this->installer;
-        if ($this->libraryCheck($local)) {
-            echo 'VENDOR';
+        $command = 'vendor/bin/' . $this->executable . ' --version';
+        if ($this->libraryCheck($command)) {
             return 'vendor/bin/' . $this->executable;
         }
 
-        // Case 6: Tested
+        //Search executable .phar in project root
+        $command = 'php ' . $this->executable . '.phar --version';
+        if ($this->libraryCheck($command)) {
+            return 'php ' . $this->executable . '.phar';
+        }
+        //Step 2 : Composer dependency
         $global = 'composer global show ' . $this->installer;
-        
         if ($this->libraryCheck($global)) {
             return $this->executable;
         }
-
-        //TODO Pablo to test
-        $root = getcwd();
-        if ('php-parallel-lint/php-parallel-lint' === $this->installer) {
-            $local = 'composer show jakub-onderka/php-parallel-lint';
-            $global = 'composer global show jakub-onderka/php-parallel-lint';
-
-            // Repeat case 5 with old vendor
-            if ($this->libraryCheck($local)) {
-                return $root . '/vendor/bin/' . $this->executable;
-            }
-
-            // Repeat case 6 with old vendor
-            if ($this->libraryCheck($global)) {
-                return $this->executable;
-            }
+        //Step 3 : Global
+        // Search executable globally
+        // Unix command for linux and MacOS
+        $command = 'which ' . $this->executable;
+        $exitArray =  $exitCode = null;
+        exec($command, $exitArray, $exitCode);
+        if ($exitCode == 0 && !empty($exitArray)) {
+            return $exitArray[0];
         }
-
         throw ExecutableNotFoundException::forExec($this->executable);
     }
 
     /**
-     * Comprueba que una librería está instalada ejecutando un composer show.
+     * Comprueba que una librería está instalada ejecutando el comando de consola que se pase por parametro.
      *
-     * @param string $composer  Comando composer (composer.phar, composer o composer global) show
+     * @param string $command  Comando para intentar encontrar el ejecutable de la libreria
      * @return boolean
      *
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
-    protected function libraryCheck($composer): bool
+    protected function libraryCheck($command): bool
     {
-        $command = $composer . ' 2>&1';
+        $command = $command . ' 2>&1';
 
         //composer show libreria/libreria 2>&1
         $exitArray =  $exitCode = null;
@@ -268,37 +212,5 @@ abstract class ToolAbstract
     public function getErrors(): string
     {
         return $this->errors;
-    }
-
-    /**
-     * Devuelve la primera versión del ejecutable que encuentra (como .phar, en local o global). Si no encuentra ninguna versión lanza excepción.
-     *
-     * @return string Ruta completa al ejecutable. Si no lo encuentra lanza una ExecutableNotFoundException
-     */
-    private function searchInVendor() {
-        $path = '';
-        $command = 'vendor/bin/' . $this->executable . ' --version';
-        $exitArray =  $exitCode = null;
-        exec($command, $exitArray, $exitCode);
-        if($exitCode == 0 && !empty($exitArray)){
-            $path = 'vendor/bin/'. $this->executable;
-        }
-        return $path;
-    }
-
-    /**
-     * Devuelve la primera versión del ejecutable que encuentra (como .phar, en local o global). Si no encuentra ninguna versión lanza excepción.
-     *
-     * @return string Ruta completa al ejecutable. Si no lo encuentra lanza una ExecutableNotFoundException
-     */
-    private function searchPhar() {
-        $path = '';
-        $command = 'php ' . $this->executable . '.phar --version';
-        $exitArray =  $exitCode = null;
-        exec($command, $exitArray, $exitCode); // 127 when error, 0 when OK
-        if($exitCode == 0 && !empty($exitArray)){
-            $path = 'php '. $this->executable . '.phar';
-        }
-        return $path;
     }
 }
