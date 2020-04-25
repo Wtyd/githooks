@@ -43,56 +43,52 @@ abstract class ToolAbstract
     }
 
     /**
-     * Devuelve la primera versión del ejecutable que encuentra (como .phar, en local o global). Si no encuentra ninguna versión lanza excepción.
+     * Devuelve la primera versión del ejecutable que encuentra. La prioridad de búsqueda es local > .phar > global . Si no encuentra ninguna versión lanza excepción.
      *
      * @return string Ruta completa al ejecutable. Si no lo encuentra lanza una ExecutableNotFoundException
      */
     protected function executableFinder(): string
     {
-        //TODO por un lado el composer puede estar a nivel global o puede ser un phar y por otro lado el ejecutable
-        // $phar = 'php composer.phar show ' . $this->installer;
-        $local = 'composer show ' . $this->installer;
-        $global = 'composer global show ' . $this->installer;
-        $root = getcwd();
-        // if ($this->libraryCheck($phar)) {
-        //     return  $this->executable . '.phar';
-        // }
-
-        if ($this->libraryCheck($local)) {
+        //Step 1: Local
+        //Search executable in vendor/bin
+        $command = 'vendor/bin/' . $this->executable . ' --version';
+        if ($this->libraryCheck($command)) {
             return 'vendor/bin/' . $this->executable;
         }
 
+        //Search executable .phar in project root
+        $command = 'php ' . $this->executable . '.phar --version';
+        if ($this->libraryCheck($command)) {
+            return 'php ' . $this->executable . '.phar';
+        }
+        //Step 2 : Composer dependency
+        $global = 'composer global show ' . $this->installer;
         if ($this->libraryCheck($global)) {
             return $this->executable;
         }
-
-        if ('php-parallel-lint/php-parallel-lint' === $this->installer) {
-            $local = 'composer show jakub-onderka/php-parallel-lint';
-            $global = 'composer global show jakub-onderka/php-parallel-lint';
-
-            if ($this->libraryCheck($local)) {
-                return $root . '/vendor/bin/' . $this->executable;
-            }
-
-            if ($this->libraryCheck($global)) {
-                return $this->executable;
-            }
+        //Step 3 : Global
+        // Search executable globally
+        // Unix command for linux and MacOS
+        $command = 'which ' . $this->executable;
+        $exitArray =  $exitCode = null;
+        exec($command, $exitArray, $exitCode);
+        if ($exitCode == 0 && !empty($exitArray)) {
+            return $exitArray[0];
         }
-
         throw ExecutableNotFoundException::forExec($this->executable);
     }
 
     /**
-     * Comprueba que una librería está instalada ejecutando un composer show.
+     * Comprueba que una librería está instalada ejecutando el comando de consola que se pase por parametro.
      *
-     * @param string $composer  Comando composer (composer.phar, composer o composer global) show
+     * @param string $command  Comando para intentar encontrar el ejecutable de la libreria
      * @return boolean
      *
      * @SuppressWarnings(PHPMD.UnusedLocalVariable)
      */
-    protected function libraryCheck($composer): bool
+    protected function libraryCheck($command): bool
     {
-        $command = $composer . ' 2>&1';
+        $command = $command . ' 2>&1';
 
         //composer show libreria/libreria 2>&1
         $exitArray =  $exitCode = null;
