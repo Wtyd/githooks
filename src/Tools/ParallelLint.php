@@ -57,7 +57,7 @@ class ParallelLint extends ToolAbstract
         } catch (\Throwable $th) {
             if ('php-parallel-lint/php-parallel-lint' === $this->installer) {
                 $global = 'composer global show jakub-onderka/php-parallel-lint';
-    
+
                 if ($this->libraryCheck($global)) {
                     return $this->executable;
                 }
