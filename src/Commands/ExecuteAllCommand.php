@@ -12,12 +12,6 @@ class ExecuteAllCommand extends Command
     protected $signature = 'tool:execute-all';
     protected $description = 'Ejecuta todas las herramientas con la configuración que se encuentre en el fichero de configuración.';
 
-    public function __construct(ToolCommandExecutor $toolCommandExecutor)
-    {
-        $this->toolCommandExecutor = $toolCommandExecutor;
-        parent::__construct();
-    }
-
     public function handle()
     {
         $rootPath = getcwd();
