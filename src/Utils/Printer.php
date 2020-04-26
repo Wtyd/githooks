@@ -22,7 +22,7 @@ class Printer
     {
         $time = number_format($time, 2);
         $message = $excecutableTool . ' - OK. Time: ' . $time;
-        $this->messageSuccess($message);
+        $this->resultSuccess($message);
     }
 
     public function fail(ToolAbstract $tool, float $time): void
@@ -42,5 +42,40 @@ class Printer
     public function generalFail(string $exMessage): void
     {
         $this->messageFailure($exMessage);
+    }
+
+    // TODO Pablo: Crear los metodos basicos en el Printer (line, info, comment, error).
+    public function info(string $message): void
+    {
+        echo "$message\n";
+    }
+
+    public function error(string $message): void
+    {
+        echo "\e[41m\e[30m$message\033[0m\n";
+    }
+
+    public function warning($message): void
+    {
+        echo "\e[43m\e[30m$message\033[0m\n";
+    }
+
+    public function success2($message) : void
+    {
+        echo "\e[42m\e[30m$message\033[0m\n";
+    }
+
+    public function resultSuccess(string $message): void
+    {
+        echo "✔️ ";$this->success2($message);
+    }
+
+    public function resultWarning(string $message): void
+    {
+        echo "⚠️ ";$this->warning($message);
+    }
+    public function resultError(string $message): void
+    {
+        echo "❌ ";$this->error($message);
     }
 }
