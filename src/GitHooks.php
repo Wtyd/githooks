@@ -33,7 +33,7 @@ class GitHooks
      */
     protected $toolExecutor;
 
-    public function __construct(string $configFile, Configuration $config, ChooseStrategy $chooseStrategy, Printer $printer, ToolExecutor $toolExecutor, MyPrinter $myPrinter)
+    public function __construct(string $configFile, Configuration $config, ChooseStrategy $chooseStrategy, Printer $printer, ToolExecutor $toolExecutor)
     {
         $this->printer = $printer;
         $this->toolExecutor = $toolExecutor;

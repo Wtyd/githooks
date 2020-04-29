@@ -59,5 +59,4 @@ class ExecuteFullStrategySystemTest extends TestCase
         // $this->assertStringContainsString('parallel-lint - OK. Time:', $this->getActualOutput());
         // $this->assertStringContainsString('check-security - OK. Time:', $this->getActualOutput());
     }
-
 }
