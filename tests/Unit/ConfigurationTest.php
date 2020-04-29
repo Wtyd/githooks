@@ -1,14 +1,20 @@
 <?php
 
+namespace Tests\Unit;
+
 use GitHooks\Configuration;
 use GitHooks\Exception\ToolsIsEmptyException;
 use GitHooks\Exception\ToolsNotFoundException;
-use GitHooks\Tools\CodeSniffer;
-use GitHooks\Tools\CopyPasteDetector;
-use GitHooks\Tools\DependencyVulnerabilities;
-use GitHooks\Tools\MessDetector;
-use GitHooks\Tools\ParallelLint;
-use GitHooks\Tools\Stan;
+use GitHooks\Tools\{
+    CodeSniffer,
+    CopyPasteDetector,
+    DependencyVulnerabilities,
+    MessDetector,
+    ParallelLint,
+    Stan,
+};
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -17,7 +23,7 @@ use PHPUnit\Framework\TestCase;
  */
 class ConfigurationTest extends TestCase
 {
-    use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+    use MockeryPHPUnitIntegration;
 
     protected $yamlReaderMock;
 

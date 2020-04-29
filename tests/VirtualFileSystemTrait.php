@@ -24,7 +24,7 @@ trait VirtualFileSystemTrait
         $this->root = vfsStream::setup('/', null, $structure);
     }
 
-    public function getFile(string $path)
+    public function getUrl(string $path)
     {
         return vfsStream::url('/' . $path);
     }

@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Unit;
+
 use GitHooks\GitHooks;
 use GitHooks\Tools\ParallelLint;
 use GitHooks\Tools\ToolAbstract;

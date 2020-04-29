@@ -59,7 +59,6 @@ class CopyPasteDetector extends ToolAbstract
         }
 
         $arguments = $configurationFile[Constants::COPYPASTE_DETECTOR];
-
         if (empty($arguments[self::EXCLUDE])) {
             $this->args[self::EXCLUDE] = $defaultExclude;
         } else {

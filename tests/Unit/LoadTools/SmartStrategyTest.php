@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Unit\LoadTools;
+
 use GitHooks\LoadTools\SmartStrategy;
 use GitHooks\Tools\CodeSniffer;
 use GitHooks\Tools\CopyPasteDetector;
@@ -9,11 +11,13 @@ use GitHooks\Tools\ParallelLint;
 use GitHooks\Tools\Stan;
 use GitHooks\Tools\ToolsFactoy;
 use GitHooks\Utils\GitFiles;
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
 class SmartStrategyTest extends TestCase
 {
-    use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+    use MockeryPHPUnitIntegration;
 
     public function confFileForPhpcsProvider()
     {

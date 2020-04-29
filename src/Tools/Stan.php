@@ -85,7 +85,8 @@ class Stan extends ToolAbstract
         //Memory Limit example
         // ./vendor/bin/phpstan analyse ./ --configuration=phpstan.neon --level=1 --memory-limit=1G
         // Accepted: 1G, 1M 1024M
-        $arguments = " analyse $config --no-progress --ansi $level $memoryLimit $paths";
+        $arguments = " analyse $config --no-progress --ansi $level $memoryLimit /$paths";
+
         return $this->executable . $arguments;
     }
 

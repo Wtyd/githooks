@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Integration\ReadConfigurationFile;
+
 use GitHooks\Configuration;
 use GitHooks\Exception\ParseConfigurationFileException;
 use PHPUnit\Framework\TestCase;
