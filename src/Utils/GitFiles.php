@@ -25,7 +25,7 @@ class GitFiles
     public function isComposerModified(): bool
     {
         //TODO Corregir el error que hace que por pantalla se muestre sh: 1: Syntax error: Unterminated quoted string
-        $composer = shell_exec('git diff --cached --name-only --diff-filter=ACM |^composer.json$\\|^composer.lock$"');
+        $composer = shell_exec('git diff --cached --name-only --diff-filter=ACM |^composer.json$\\|^composer.lock$');
 
         if (empty($composer)) {
             return false;

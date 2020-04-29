@@ -33,7 +33,7 @@ class GitHooks
      */
     protected $toolExecutor;
 
-    public function __construct(string $configFile, Configuration $config, ChooseStrategy $chooseStrategy, Printer $printer, ToolExecutor $toolExecutor)
+    public function __construct(string $configFile, Configuration $config, ChooseStrategy $chooseStrategy, Printer $printer, ToolExecutor $toolExecutor, MyPrinter $myPrinter)
     {
         $this->printer = $printer;
         $this->toolExecutor = $toolExecutor;
@@ -64,16 +64,15 @@ class GitHooks
     public function __invoke()
     {
         $startTotalTime = microtime(true);
-
         $exitCode = $this->toolExecutor->__invoke($this->tools);
 
         $endTotalTime = microtime(true);
         $executionTotalTime = ($endTotalTime - $startTotalTime);
-        echo "\n\n  Tiempo total de ejecución = " . number_format($executionTotalTime, 2) . " sec";
+        $this->printer->info("\n\n  Tiempo total de ejecución = " . number_format($executionTotalTime, 2) . " sec");
 
         if ($exitCode === self::OK) {
             $message = "Tus cambios se han commiteado.";
-            $this->printer->messageSuccess($message);
+            $this->printer->success($message);
             echo "\n";
         } else {
             $this->printer->generalFail('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.');

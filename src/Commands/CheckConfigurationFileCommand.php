@@ -47,7 +47,8 @@ class CheckConfigurationFileCommand extends Command
                 $message = 'El fichero contiene los siguientes errores:';
                 $this->printer->resultError($message);
                 foreach ($errors->getErrors() as $error) {
-                    $this->line("    - $error");
+                    //TODO Pablo: cambiar $this->line por printer
+                    $this->printer->info("    - $error");
                 }
             }
 

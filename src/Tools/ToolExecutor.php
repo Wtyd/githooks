@@ -50,26 +50,32 @@ class ToolExecutor
 
                 $endToolTime = microtime(true);
                 $executionToolTime = ($endToolTime - $startToolTime);
+                $time = number_format($executionToolTime, 2);
 
                 if ($tool->getExitCode() === self::OK) {
-                    $this->printer->success($tool->getExecutable(), $executionToolTime);
+                    $message = $this->getSuccessString($tool->getExecutable(), $time);
+                    $this->printer->resultSuccess($message);
                 } else {
                     $exitCode = self::KO;
-                    $this->printer->fail($tool, $executionToolTime);
+                    $message = $this->getErrorString($tool->getExecutable(), $time);
+                    $this->printer->resultError($message);
                 }
             } catch (ModifiedButUnstagedFilesException $ex) {
                 $endToolTime = microtime(true);
                 $executionToolTime = ($endToolTime - $startToolTime);
+                $time = number_format($executionToolTime, 2);
                 //TODO cambiar $tool->getExecutable() por el nombre de la herramienta para que aparezcan cosas como var/www/html/distribucion/vendor/zataca/githooks/src/Tools/../../../bin/phpcbf - OK. Time: 8.07
                 $exitCode = self::KO;
-                $message = $tool->getExecutable() . ' - OK. Time: ' . number_format($executionToolTime, 2) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
-                $this->printer->messageWarning($message);
+                $message = $this->getSuccessString($tool->getExecutable(), $time) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
+                $this->printer->resultWarning($message);
             } catch (ExitErrorException $th) {
                 //TODO a lo mejor cuando revienta una herramienta queremos mostrar el stacktraces para poder corregir la configuración de la herramienta. Esto viene de PHPStan
                 $endToolTime = microtime(true);
                 $executionToolTime = ($endToolTime - $startToolTime);
                 $exitCode = self::KO;
-                $this->printer->fail($tool, $executionToolTime);
+                $time = number_format($executionToolTime, 2);
+                $message = $this->getErrorString($tool->getExecutable(), $time);
+                $this->printer->resultError($message);
             } catch (\Throwable $th) {
                 $exitCode = self::KO;
                 $this->printer->executionFail($tool->getExecutable(), $th->getMessage());
@@ -77,6 +83,16 @@ class ToolExecutor
         }
 
         return $exitCode;
+    }
+
+    protected function getErrorString(string $tool, string $time): string
+    {
+        return $tool . ' - KO. Time: ' . $time;
+    }
+
+    protected function getSuccessString(string $tool, string $time): string
+    {
+        return $tool . ' - OK. Time: ' . $time;
     }
 
     protected function errorsFindingExecutable(string $errors): bool

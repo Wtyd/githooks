@@ -10,8 +10,6 @@
         checkMissingIterableValueType: false
         ignoreErrors: [
            '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#'
-           '#Method GitHooks\\Commands\\CheckConfigurationFileCommand::message[a-zA-Z0-9\\_]+\(\) has parameter#'
-           '#Method GitHooks\\Utils\\Printer::message[a-zA-Z0-9\\_]+\(\) has parameter#' #Method GitHooks\Utils\Printer::messageSuccess() has parameter $cadena with no typehint specified.
         ]
         excludes_analyse: [
         ]
