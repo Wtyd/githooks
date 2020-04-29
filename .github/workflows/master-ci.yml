@@ -2,7 +2,7 @@ name: Production CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master, pipeline ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 

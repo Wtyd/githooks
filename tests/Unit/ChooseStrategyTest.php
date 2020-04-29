@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Unit;
+
 use GitHooks\ChooseStrategy;
 use GitHooks\LoadTools\FullStrategy;
 use GitHooks\LoadTools\SmartStrategy;

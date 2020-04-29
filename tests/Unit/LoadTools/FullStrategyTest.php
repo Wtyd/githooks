@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Unit\LoadTools;
+
 use GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use GitHooks\LoadTools\FullStrategy;
 use GitHooks\Tools\CodeSniffer;
