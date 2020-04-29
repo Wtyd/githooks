@@ -16,7 +16,7 @@ use Tests\VirtualFileSystemTrait;
 class ConfigurationFileBuilder
 {
     use VirtualFileSystemTrait;
-    
+
     protected $options;
 
     protected $tools;
