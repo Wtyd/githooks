@@ -33,8 +33,6 @@ class CheckConfigurationFileCommand extends Command
     public function handle()
     {
         $root = getcwd();
-        //TODO Pablo: cambiar $this->line por printer
-        $this->line('Verificando el formato de ' . Constants::CONFIGURATION_FILE_PATH . ': ' . "\n");
         try {
             $configurationFile = $this->configuration->readFile($root . '/' . Constants::CONFIGURATION_FILE_PATH);
 
@@ -47,8 +45,7 @@ class CheckConfigurationFileCommand extends Command
                 $message = 'El fichero contiene los siguientes errores:';
                 $this->printer->resultError($message);
                 foreach ($errors->getErrors() as $error) {
-                    //TODO Pablo: cambiar $this->line por printer
-                    $this->printer->info("    - $error");
+                    $this->printer->line("    - $error");
                 }
             }
 

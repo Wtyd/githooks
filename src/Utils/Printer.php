@@ -36,21 +36,31 @@ class Printer
         $this->error($message);
     }
 
-    public function info(string $message): void
+    // Standard print
+    public function line(string $message): void
     {
         echo "$message\n";
     }
 
+    // Green
+    public function info(string $message): void
+    {
+        $this->success($message);
+    }
+
+    // Red
     public function error(string $message): void
     {
         echo "\e[41m\e[30m$message\033[0m\n";
     }
 
+    // Yellow
     public function warning(string $message): void
     {
         echo "\e[43m\e[30m$message\033[0m\n";
     }
 
+    // Green
     public function success(string $message): void
     {
         echo "\e[42m\e[30m$message\033[0m\n";
