@@ -118,6 +118,20 @@ abstract class ToolAbstract
     /**
      * Sustituye la / por \ cuando se invoca la app desde Windows
      *
+     * @param string $path
+     * @return string path
+     */
+    protected function routeCorrectorString(string $path)
+    {
+        if (! $this->isWindows()) {
+            return $path;
+        }
+        return str_replace('/', '\\', $path);
+    }
+
+    /**
+     * Sustituye la / por \ cuando se invoca la app desde Windows
+     *
      * @param array $paths
      * @return array path
      */
