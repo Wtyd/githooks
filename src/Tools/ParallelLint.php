@@ -15,12 +15,17 @@ class ParallelLint extends ToolAbstract
      */
     public const EXCLUDE = 'exclude';
 
-    public const OPTIONS = [self::EXCLUDE];
+     /**
+     * @var string PATHS Tag que indica la ruta sobre la que se ejecutará parallel-lint en el fichero de configuracion .yml
+     */
+    public const PATHS = 'paths';
+
+    public const OPTIONS = [self::EXCLUDE, self::PATHS];
 
     /**
      * @var array
      */
-    protected $excludes;
+    protected $args;
 
     public function __construct(array $configurationFile)
     {
@@ -35,11 +40,18 @@ class ParallelLint extends ToolAbstract
 
     protected function prepareCommand(): string
     {
-        $prefix = $this->addPrefixToArray($this->excludes, '--exclude ');
+        $exclude = '';
+        if (!empty($this->args[self::EXCLUDE])) {
+            $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE], '--exclude ');
+            $exclude = implode(' ', $prefix);
+        }
 
-        $exclude = implode(' ', $prefix);
+        $paths = ''; // If path is empty phpmd will not work
+        if (!empty($this->args[self::PATHS])) {
+            $paths = implode(' ', $this->args[self::PATHS]);
+        }
 
-        $arguments = ' ' . $this->path() . ' ' . $exclude;
+        $arguments = ' ' . $paths . ' ' . $exclude;
 
         //parallel-lint ./ --exclude qa --exclude tests --exclude vendor
         return $this->executable . $arguments;
@@ -67,17 +79,7 @@ class ParallelLint extends ToolAbstract
     }
 
     /**
-     * Sirve para poder doblar el sistema de ficheros en las pruebas
-     *
-     * @return string
-     */
-    public function path()
-    {
-        return './';
-    }
-
-    /**
-     * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
+     * Lee los argumentos y los setea.
      *
      * @param array $configurationFile
      * @return void
@@ -85,16 +87,15 @@ class ParallelLint extends ToolAbstract
     public function setArguments($configurationFile)
     {
         if (!isset($configurationFile[Constants::PARALLEL_LINT]) || empty($configurationFile[Constants::PARALLEL_LINT])) {
-            $this->excludes = ['qa','docker','vendor'];
             return;
         }
-
         $arguments = $configurationFile[Constants::PARALLEL_LINT];
 
-        if (empty($arguments[self::EXCLUDE])) {
-            $this->excludes = ['qa','docker','vendor'];
-        } else {
-            $this->excludes = $this->routeCorrector($arguments[self::EXCLUDE]);
+        if (!empty($arguments[self::EXCLUDE])) {
+            $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);
+        }
+        if (!empty($arguments[self::PATHS])) {
+            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
         }
     }
 }

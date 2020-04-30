@@ -20,6 +20,7 @@ phpstan:
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
+    paths: ['./']
     exclude: ['vendor']
 
 phpcs:
@@ -30,11 +31,11 @@ phpcs:
     warning-severity: 6
   
 phpmd:
-  path: './src/'
+  paths: ['./src/']
   rules: './qa/phpmd-src-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:
-  path: './'
+  paths: ['./']
   exclude: ['vendor']
  

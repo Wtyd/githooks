@@ -106,7 +106,7 @@ class Stan extends ToolAbstract
     }
 
     /**
-     * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
+     * Lee los argumentos y los setea.
      *
      * @param array $configurationFile
      * @return void

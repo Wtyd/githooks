@@ -22,9 +22,9 @@ class MessDetector extends ToolAbstract
     /**
      * @var string PATH Tag que indica la ruta sobre la que se ejecutará phpmd en el fichero de configuracion .yml
      */
-    public const PATH = 'path';
+    public const PATHS = 'paths';
 
-    public const OPTIONS = [self::RULES, self::EXCLUDE, self::PATH];
+    public const OPTIONS = [self::RULES, self::EXCLUDE, self::PATHS];
 
     /**
      * @var array
@@ -55,8 +55,8 @@ class MessDetector extends ToolAbstract
         }
 
         $path = ''; // If path is empty phpmd will not work
-        if (!empty($this->args[self::PATH])) {
-            $path = $this->args[self::PATH];
+        if (!empty($this->args[self::PATHS])) {
+            $path = implode(',', $this->args[self::PATHS]);
         }
 
         $arguments = " $path text $rules $exclude";
@@ -87,8 +87,8 @@ class MessDetector extends ToolAbstract
             $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);
         }
 
-        if (!empty($arguments[self::PATH])) {
-            $this->args[self::PATH] = $this->routeCorrectorString($arguments[self::PATH]);
+        if (!empty($arguments[self::PATHS])) {
+            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
         }
     }
 }
