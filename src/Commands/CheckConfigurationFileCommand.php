@@ -32,6 +32,7 @@ class CheckConfigurationFileCommand extends Command
 
     public function handle()
     {
+        $this->printer->line('Verificando el formato de ' . Constants::CONFIGURATION_FILE_PATH . ':');
         $root = getcwd();
         try {
             $configurationFile = $this->configuration->readFile($root . '/' . Constants::CONFIGURATION_FILE_PATH);
