@@ -23,8 +23,9 @@ parallel-lint:
     exclude: ['vendor']
 
 phpcs:
+    paths: [bin, hooks, src, tests]
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
-    ignore: ['vendor'] # Se podría configurar en el standard directamente
+    ignore: [vendor,  otrodir] # Se podría configurar en el standard directamente
     error-severity: 1
     warning-severity: 6
   
