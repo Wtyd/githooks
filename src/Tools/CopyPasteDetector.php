@@ -14,7 +14,12 @@ class CopyPasteDetector extends ToolAbstract
      */
     public const EXCLUDE = 'exclude';
 
-    public const OPTIONS = [self::EXCLUDE];
+    /**
+     * @var string PATH Tag que indica los ficheros sobre los que se ejecutará phpcpd en el fichero de configuracion .yml
+     */
+    public const PATH = 'path';
+
+    public const OPTIONS = [self::EXCLUDE, self::PATH];
 
     /**
      * @var array
@@ -34,11 +39,18 @@ class CopyPasteDetector extends ToolAbstract
 
     protected function prepareCommand(): string
     {
-        $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE], '--exclude ');
+        $exclude = '';
+        if (!empty($this->args[self::EXCLUDE])) {
+            $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE], '--exclude ');
+            $exclude = implode(' ', $prefix);
+        }
 
-        $exclude = implode(' ', $prefix);
+        $path = ''; // If path is empty phpmd will not work
+        if (!empty($this->args[self::PATH])) {
+            $path = $this->args[self::PATH];
+        }
 
-        $arguments = "$exclude ./";
+        $arguments = "$exclude $path";
 
         return $this->executable . ' ' . $arguments;
     }
@@ -51,18 +63,19 @@ class CopyPasteDetector extends ToolAbstract
      */
     public function setArguments($configurationFile)
     {
-        $defaultExclude = ['app-front', 'database', 'tests', 'storage', 'vendor'];
+        //$defaultExclude = ['app-front', 'database', 'tests', 'storage', 'vendor'];
 
         if (!isset($configurationFile[Constants::COPYPASTE_DETECTOR]) || empty($configurationFile[Constants::COPYPASTE_DETECTOR])) {
-            $this->args = [self::EXCLUDE => $defaultExclude];
             return;
         }
-
         $arguments = $configurationFile[Constants::COPYPASTE_DETECTOR];
-        if (empty($arguments[self::EXCLUDE])) {
-            $this->args[self::EXCLUDE] = $defaultExclude;
-        } else {
+
+        if (!empty($arguments[self::EXCLUDE])) {
             $this->args[self::EXCLUDE] = $arguments[self::EXCLUDE];
+        }
+
+        if (!empty($arguments[self::PATH])) {
+            $this->args[self::PATH] = $this->routeCorrectorString($arguments[self::PATH]);
         }
     }
 }

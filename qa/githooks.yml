@@ -35,5 +35,6 @@ phpmd:
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:
+  path: './'
   exclude: ['vendor']
  
