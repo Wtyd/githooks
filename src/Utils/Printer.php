@@ -7,12 +7,6 @@ namespace GitHooks\Utils;
  */
 class Printer
 {
-    public function executionFail(string $excecutableTool, string $exMessage): void
-    {
-        $this->resultError("Error en la ejecución de $excecutableTool.");
-        echo " $exMessage \n";
-    }
-
     public function generalFail(string $exMessage): void
     {
         $this->resultError($exMessage);
@@ -59,7 +53,7 @@ class Printer
     }
 
     // Yellow
-    public function comment(string $message) : void
+    public function comment(string $message): void
     {
         $this->warning($message);
     }

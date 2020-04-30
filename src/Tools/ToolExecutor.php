@@ -78,7 +78,9 @@ class ToolExecutor
                 $this->printer->resultError($message);
             } catch (\Throwable $th) {
                 $exitCode = self::KO;
-                $this->printer->executionFail($tool->getExecutable(), $th->getMessage());
+                $message = "Error en la ejecución de $tool->getExecutable(). \n";
+                $this->printer->resultError($message);
+                $this->printer->line($th->getMessage());
             }
         }
 
