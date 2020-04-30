@@ -3,12 +3,22 @@
 namespace GitHooks\Commands;
 
 use Illuminate\Console\Command;
+use GitHooks\Utils\Printer;
 
 class CreateConfigurationFileCommand extends Command
 {
     protected $signature = 'conf:init';
     protected $description = 'Crea el fichero de configuración githooks.yml en la carpeta ./qa';
+     /**
+     * @var Printer
+     */
+    protected $printer;
 
+    public function __construct(Printer $printer)
+    {
+        $this->printer = $printer;
+        parent::__construct();
+    }
     //TODO Comando para copiar un fichero que ejecute githooks desde los eventos de git. El evento se pasará mediante parámetro.
     public function handle()
     {
@@ -37,12 +47,12 @@ class CreateConfigurationFileCommand extends Command
     protected function copiarFichero(string $origen, string $destino): void
     {
         if (copy($origen, $destino) === false) {
-            $this->error("Error al copiar $origen en $destino");
+            $this->printer->error("Error al copiar $origen en $destino");
         } else {
             if (chmod($destino, 0755) === false) {
-                $this->error('Error al dar permisos al fichero');
+                $this->printer->error('Error al dar permisos al fichero');
             } else {
-                $this->info('Fichero de configuración githooks.yml creado en la carpeta ./qa');
+                $this->printer->info('Fichero de configuración githooks.yml creado en la carpeta ./qa');
             }
         }
     }
