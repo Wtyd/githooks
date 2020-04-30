@@ -31,7 +31,7 @@ class Stan extends ToolAbstract
      */
     public const MEMORY_LIMIT = 'memory-limit';
 
-    public const OPTIONS = [self::PHPSTAN_CONFIGURATION_FILE, self::LEVEL];
+    public const OPTIONS = [self::PHPSTAN_CONFIGURATION_FILE, self::LEVEL, self::PATHS, self::MEMORY_LIMIT];
 
     /**
      * @var array
@@ -74,7 +74,7 @@ class Stan extends ToolAbstract
         }
         $paths = ''; // If path is empty phpStand will not work
         if (!empty($this->args[self::PATHS])) {
-            $paths = implode(" ", $this->args[self::PATHS]);
+            $paths = implode(' ', $this->args[self::PATHS]);
         }
 
         $memoryLimit = '';
@@ -85,7 +85,7 @@ class Stan extends ToolAbstract
         //Memory Limit example
         // ./vendor/bin/phpstan analyse ./ --configuration=phpstan.neon --level=1 --memory-limit=1G
         // Accepted: 1G, 1M 1024M
-        $arguments = " analyse $config --no-progress --ansi $level $memoryLimit /$paths";
+        $arguments = " analyse $config --no-progress --ansi $level $memoryLimit $paths";
 
         return $this->executable . $arguments;
     }
@@ -125,7 +125,7 @@ class Stan extends ToolAbstract
             $this->args[self::LEVEL] = $arguments[self::LEVEL];
         }
         if (!empty($arguments[self::PATHS])) {
-            $this->args[self::PATHS] = $arguments[self::PATHS];
+            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
         }
         if (!empty($arguments[self::MEMORY_LIMIT])) {
             $this->args[self::MEMORY_LIMIT] = $arguments[self::MEMORY_LIMIT];
