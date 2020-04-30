@@ -11,26 +11,31 @@ use GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
 class CodeSniffer extends ToolAbstract
 {
     /**
+     * @var string PATHS Tag que indica sobre qué carpetas se debe ejecutar el análisis de phpstan en el fichero de configuracion .yml
+     */
+    public const PATHS = 'paths';
+
+    /**
      * @var string STANDARD Tag que indica la ruta del fichero de configuración de phpcs-rulesheet.xml en el fichero de configuracion .yml
      */
-    const STANDARD = 'standard';
+    public const STANDARD = 'standard';
 
     /**
      * @var string IGNORE Tag que indica los ficheros excluidos para phpcs en el fichero de configuracion .yml. Su valor es un array de strings.
      */
-    const IGNORE = 'ignore';
+    public const IGNORE = 'ignore';
 
     /**
     * @var string ERROR_SEVERITY Tag que indica la sensibilidad a errores de phpcs en el fichero de configuracion .yml. Su valor es un entero de 1 a 7.
     */
-    const ERROR_SEVERITY = 'error-severity';
+    public const ERROR_SEVERITY = 'error-severity';
 
     /**
     * @var string WARNING_SEVERITY Tag que indica la sensibilidad a warnings de phpcs en el fichero de configuracion .yml. Su valor es un entero de 1 a 7.
     */
-    const WARNING_SEVERITY = 'warning-severity';
+    public const WARNING_SEVERITY = 'warning-severity';
 
-    const OPTIONS = [self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY];
+    public const OPTIONS = [self::PATHS, self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY];
 
     /**
      * @var array
@@ -82,13 +87,21 @@ class CodeSniffer extends ToolAbstract
 
     protected function prepareCommand(): string
     {
-        $standard = '--standard=' . $this->args[self::STANDARD];
-        $excludes = '--ignore=' . implode(',', $this->args[self::IGNORE]);//*/build/*,*/database/*,*/qa/*,*/node_modules/*,*/storage/*,*/tests/*,
-        $errorSeverity = '--error-severity=' . $this->args[self::ERROR_SEVERITY];
-        $warningSeverity = '--warning-severity=' . $this->args[self::WARNING_SEVERITY];
+        $arguments = '';
+        foreach (self::OPTIONS as $option) {
+            if (empty($this->args[$option])) {
+                continue;
+            }
+            if (self::PATHS === $option) {
+                $arguments .= implode(' ', $this->args[$option]) . ' ';
+            } elseif (self::IGNORE === $option) {
+                $arguments .= "--$option=" . implode(',', $this->args[$option]) . ' ';
+            } else {
+                $arguments .= "--$option=" . $this->args[$option] . ' ';
+            }
+        }
 
-        $arguments = "./  --colors $standard $excludes $errorSeverity $warningSeverity";
-
+        //hooks src --standard=./qa/psr12-ruleset.xml --ignore=vendor,otrodir --error-severity=1 --warning-severity=6
         return $arguments;
     }
 
@@ -111,59 +124,31 @@ class CodeSniffer extends ToolAbstract
      */
     public function setArguments(array $configurationFile): void
     {
-        $defaultStandard = 'qa/phpcs-softruleset.xml';
-        $defaultIgnore = ['app-front','build', 'database', 'node_modules', 'storage', 'vendor'];
-        $defaultErrorSeverity = 1;
-        $defaultWarningSeverity = 6;
 
         if (!isset($configurationFile[Constants::CODE_SNIFFER]) || empty($configurationFile[Constants::CODE_SNIFFER])) {
-            $this->args = [
-                self::STANDARD => $defaultStandard,
-                self::IGNORE => $defaultIgnore,
-            ];
             return;
         }
 
         $arguments = $configurationFile[Constants::CODE_SNIFFER];
 
-        if (empty($arguments[self::STANDARD])) {
-            $this->args[self::STANDARD] = $defaultStandard;
-        } else {
+        if (!empty($arguments[self::PATHS])) {
+            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
+        }
+
+        if (!empty($arguments[self::STANDARD])) {
             $this->args[self::STANDARD] = $arguments[self::STANDARD];
         }
 
-        if (empty($arguments[self::IGNORE])) {
-            $this->args[self::IGNORE] = $defaultIgnore;
-        } else {
+        if (!empty($arguments[self::IGNORE])) {
             $this->args[self::IGNORE] = $this->routeCorrector($arguments[self::IGNORE]);
         }
 
-        if (empty($arguments[self::ERROR_SEVERITY])) {
-            $this->args[self::ERROR_SEVERITY] = $defaultErrorSeverity;
-        } else {
+        if (!empty($arguments[self::ERROR_SEVERITY])) {
             $this->args[self::ERROR_SEVERITY] = $arguments[self::ERROR_SEVERITY];
         }
 
-        if (empty($arguments[self::WARNING_SEVERITY])) {
-            $this->args[self::WARNING_SEVERITY] = $defaultWarningSeverity;
-        } else {
+        if (!empty($arguments[self::WARNING_SEVERITY])) {
             $this->args[self::WARNING_SEVERITY] = $arguments[self::WARNING_SEVERITY];
         }
-    }
-
-    public function checkConfiguration(array $configuration): array
-    {
-        $configuration = $configuration[Constants::CODE_SNIFFER];
-        $expectedValues = [self::ERROR_SEVERITY, self::WARNING_SEVERITY, self::IGNORE, self::STANDARD];
-        $errors = [];
-        $warnings = [];
-
-        foreach (array_keys($configuration) as $key) {
-            if (! in_array($key, $expectedValues)) {
-                $errors[] = "El elemento $key no es válido para la herramienta " . Constants::CODE_SNIFFER;
-            }
-        }
-
-        return [Constants::ERRORS => $errors, Constants::WARNINGS => $warnings];
     }
 }

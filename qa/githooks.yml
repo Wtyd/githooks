@@ -20,18 +20,22 @@ phpstan:
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
+    paths: ['./']
     exclude: ['vendor']
 
 phpcs:
+    paths: [bin, hooks, src, tests]
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
-    ignore: ['vendor'] # Se podría configurar en el standard directamente
+    ignore: [vendor,  otrodir] # Se podría configurar en el standard directamente
     error-severity: 1
     warning-severity: 6
   
 phpmd:
+  paths: ['./src/']
   rules: './qa/phpmd-src-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:
+  paths: ['./']
   exclude: ['vendor']
  

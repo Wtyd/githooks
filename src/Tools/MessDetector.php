@@ -19,7 +19,12 @@ class MessDetector extends ToolAbstract
      */
     public const EXCLUDE = 'exclude';
 
-    public const OPTIONS = [self::RULES, self::EXCLUDE];
+    /**
+     * @var string PATH Tag que indica la ruta sobre la que se ejecutará phpmd en el fichero de configuracion .yml
+     */
+    public const PATHS = 'paths';
+
+    public const OPTIONS = [self::RULES, self::EXCLUDE, self::PATHS];
 
     /**
      * @var array
@@ -39,47 +44,51 @@ class MessDetector extends ToolAbstract
 
     protected function prepareCommand(): string
     {
-        $rules = $this->args[self::RULES];
+        $rules = '';
+        if (!empty($this->args[self::RULES])) {
+            $rules = $this->args[self::RULES];
+        }
 
-        $exclude = '--exclude "' . implode(',', $this->args[self::EXCLUDE]) . '"';
+        $exclude = '';
+        if (!empty($this->args[self::EXCLUDE])) {
+            $exclude = '--exclude "' . implode(',', $this->args[self::EXCLUDE]) . '"';
+        }
 
-        $arguments = " ./  text $rules $exclude";
+        $path = ''; // If path is empty phpmd will not work
+        if (!empty($this->args[self::PATHS])) {
+            $path = implode(',', $this->args[self::PATHS]);
+        }
+
+        $arguments = " $path text $rules $exclude";
 
         //text ./qa/md-rulesheet.xml --exclude "vendor,tests,views"
         return $this->executable . $arguments;
     }
 
     /**
-     * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
+     * Lee los argumentos y los setea.
      *
      * @param array $configurationFile
      * @return void
      */
     public function setArguments($configurationFile)
     {
-        $defaultRules = './qa/md-rulesheet.xml';
-        $defaultExclude = ['app-front','build', 'database', 'node_modules', 'storage', 'tests', 'vendor'];
-
         if (!isset($configurationFile[Constants::MESS_DETECTOR]) || empty($configurationFile[Constants::MESS_DETECTOR])) {
-            $this->args = [
-                self::RULES => $defaultRules,
-                self::EXCLUDE => $defaultExclude,
-            ];
             return;
         }
 
         $arguments = $configurationFile[Constants::MESS_DETECTOR];
 
-        if (empty($arguments[self::RULES])) {
-            $this->args[self::RULES] = $defaultRules;
-        } else {
+        if (!empty($arguments[self::RULES])) {
             $this->args[self::RULES] = $arguments[self::RULES];
         }
 
-        if (empty($arguments[self::EXCLUDE])) {
-            $this->args[self::EXCLUDE] = $defaultExclude;
-        } else {
+        if (!empty($arguments[self::EXCLUDE])) {
             $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);
+        }
+
+        if (!empty($arguments[self::PATHS])) {
+            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
         }
     }
 }
