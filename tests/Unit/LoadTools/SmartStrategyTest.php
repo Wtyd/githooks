@@ -236,10 +236,7 @@ class SmartStrategyTest extends TestCase
             'Tools' => ['check-security'],
         ];
 
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('isComposerModified')->andReturn(true);
-
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $smartStrategy = new SmartStrategy($configurationFile, new GitFiles(), new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
