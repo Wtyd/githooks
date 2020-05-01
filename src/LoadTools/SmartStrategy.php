@@ -73,12 +73,9 @@ class SmartStrategy implements StrategyInterface
     protected function toolShouldSkip(string $tool): bool
     {
         $toolShouldSkip = false;
-        if (Constants::CHECK_SECURITY === $tool) {
-            $toolShouldSkip = ! $this->gitFiles->isComposerModified();
-        } else {
+        if (Constants::CHECK_SECURITY !== $tool) {
             $toolShouldSkip = $this->toolHasExclusionsConfigured($tool) && $this->allModifiedFilesAreExcluded($tool);
         }
-
         return $toolShouldSkip;
     }
 
