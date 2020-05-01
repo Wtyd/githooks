@@ -248,22 +248,6 @@ class SmartStrategyTest extends TestCase
         $this->assertInstanceOf(CheckSecurity::class, $loadedTools['check-security']);
     }
 
-    /** @test */
-    function it_skip_DependencyVulnerabilities_when_composer_is_not_modified()
-    {
-        $configurationFile = [
-            'Tools' => ['check-security']
-        ];
-
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('isComposerModified')->andReturn(false);
-
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
-
-        $loadedTools = $smartStrategy->getTools();
-
-        $this->assertCount(0, $loadedTools);
-    }
 
     public function confFileForPhpmdProvider()
     {
@@ -514,6 +498,7 @@ class SmartStrategyTest extends TestCase
         $this->assertInstanceOf(Stan::class, $loadedTools['phpstan']);
     }
 
+    //TODO Las condiciones han cambiado (añadido paths... y security-check ahora debe ejecutarse siempre)
     /**
      * @test
      * Todas las herramientas, salvo PhpStan que se ejecutará siempre, pueden ejecutarse o excluirse.
@@ -549,15 +534,18 @@ class SmartStrategyTest extends TestCase
 
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
-        $gitFiles->shouldReceive('isComposerModified')->andReturn(false);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
-        $this->assertCount(1, $loadedTools);
+        $this->assertCount(2, $loadedTools);
 
-        $this->assertInstanceOf(Stan::class, $loadedTools['phpstan']);
+        $this->assertArrayHasKey('phpstan', $loadedTools);
+
+        $this->assertArrayHasKey('check-security', $loadedTools);
+
+        
     }
 
     /**
@@ -584,7 +572,6 @@ class SmartStrategyTest extends TestCase
 
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
-        $gitFiles->shouldReceive('isComposerModified')->andReturn(true);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -599,7 +586,7 @@ class SmartStrategyTest extends TestCase
      * @test
      * 3/4 Se saltan check-security y Parallel-Lint, el resto se ejecutan
      */
-    function it_skip_dependencyVulnerabilities_and_parallellLint_and_run_all_the_others()
+    function it_skip_parallellLint_and_run_all_the_others()
     {
         $configurationFile = [
             'Tools' => [
@@ -619,17 +606,14 @@ class SmartStrategyTest extends TestCase
 
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
-        $gitFiles->shouldReceive('isComposerModified')->andReturn(false);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
-        $this->assertCount(4, $loadedTools);
+        $this->assertCount(5, $loadedTools);
 
         $this->assertArrayNotHasKey('parallel-lint', $loadedTools);
-
-        $this->assertArrayNotHasKey('check-security', $loadedTools);
     }
 
     /**
@@ -659,7 +643,6 @@ class SmartStrategyTest extends TestCase
 
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
-        $gitFiles->shouldReceive('isComposerModified')->andReturn(true);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
