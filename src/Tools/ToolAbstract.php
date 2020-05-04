@@ -43,7 +43,8 @@ abstract class ToolAbstract
     }
 
     /**
-     * Devuelve la primera versión del ejecutable que encuentra. La prioridad de búsqueda es local > .phar > global . Si no encuentra ninguna versión lanza excepción.
+     * Devuelve la primera versión del ejecutable que encuentra. La prioridad de búsqueda es local > .phar > global.
+     * Si no encuentra ninguna versión lanza excepción.
      *
      * @return string Ruta completa al ejecutable. Si no lo encuentra lanza una ExecutableNotFoundException
      */
@@ -61,20 +62,26 @@ abstract class ToolAbstract
         if ($this->libraryCheck($command)) {
             return 'php ' . $this->executable . '.phar';
         }
-        //Step 2 : Composer dependency
-        $global = 'composer global show ' . $this->installer;
+
+        //Step 2: Global installation
+        $global = $this->executable . ' --version';
         if ($this->libraryCheck($global)) {
             return $this->executable;
         }
-        //Step 3 : Global
-        // Search executable globally
-        // Unix command for linux and MacOS
-        $command = 'which ' . $this->executable;
-        $exitArray =  $exitCode = null;
-        exec($command, $exitArray, $exitCode);
-        if ($exitCode == 0 && !empty($exitArray)) {
-            return $exitArray[0];
+
+        //TODO para Windows where para cmd y Get-Command para Ps
+        if (! $this->isWindows()) {
+            //Step 3 : Global (only in Unix)
+            // Search executable globally
+            // Unix command for linux and MacOS
+            $command = 'which ' . $this->executable;
+            $exitArray =  $exitCode = null;
+            exec($command, $exitArray, $exitCode);
+            if ($exitCode == 0 && !empty($exitArray)) {
+                return $exitArray[0];
+            }
         }
+
         throw ExecutableNotFoundException::forExec($this->executable);
     }
 

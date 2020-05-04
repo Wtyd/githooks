@@ -11,60 +11,57 @@ use GitHooks\Tools\{
     Stan
 };
 use Symfony\Component\Yaml\Yaml;
-use Tests\VirtualFileSystemTrait;
 
 class ConfigurationFileBuilder
 {
-    use VirtualFileSystemTrait;
-
     protected $options;
 
     protected $tools;
 
     protected $configurationTools;
 
-    protected $fileSystem;
-
-    public function __construct($fileSystem)
+    public function __construct(string $path)
     {
-        $this->options = [Constants::SMART_EXECUTION => false]; //vacio -> FullExecutor
+        $this->options = [Constants::SMART_EXECUTION => false];
 
         $this->tools = [
-            // Constants::CODE_SNIFFER,
-            // Constants::PARALLEL_LINT,
-            // Constants::MESS_DETECTOR,
-            // Constants::COPYPASTE_DETECTOR,
+            Constants::CODE_SNIFFER,
+            Constants::PARALLEL_LINT,
+            Constants::MESS_DETECTOR,
+            Constants::COPYPASTE_DETECTOR,
             Constants::PHPSTAN,
             // Constants::CHECK_SECURITY,
         ];
 
         $this->configurationTools = [
             Constants::CODE_SNIFFER => [
+                CodeSniffer::PATHS => [$path . '/src'],
                 CodeSniffer::STANDARD => 'PSR12',
-                CodeSniffer::IGNORE => ['vendor'],
+                CodeSniffer::IGNORE => [$path . 'vendor'],
                 CodeSniffer::ERROR_SEVERITY => 1,
                 CodeSniffer::WARNING_SEVERITY => 6
             ],
 
             Constants::PARALLEL_LINT => [
-                ParallelLint::EXCLUDE => ['vendor']
+                ParallelLint::PATHS => [$path . '/src'],
+                ParallelLint::EXCLUDE => [$path . '/vendor']
             ],
             Constants::MESS_DETECTOR => [
-                MessDetector::RULES => 'codesize,controversial,design,unusedcode,naming',
-                MessDetector::EXCLUDE => ['vendor']
+                MessDetector::PATHS => [$path . '/src'],
+                MessDetector::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
+                MessDetector::EXCLUDE => [$path . '/vendor']
             ],
             Constants::COPYPASTE_DETECTOR => [
-                CopyPasteDetector::EXCLUDE => [$this->getUrl('vendor')]
+                CopyPasteDetector::PATHS => [$path . '/src'],
+                CopyPasteDetector::EXCLUDE => [$path . '/vendor']
             ],
             Constants::PHPSTAN => [
                 // Stan::PHPSTAN_CONFIGURATION_FILE =>,
                 Stan::LEVEL => 0,
                 // Stan::MEMORY_LIMIT =>,
-                Stan::PATHS => [$this->getUrl('src')]
+                Stan::PATHS => [$path . '/src']
             ],
         ];
-
-        $this->fileSystem = $fileSystem;
     }
 
     public function build()

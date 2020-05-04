@@ -2,7 +2,7 @@ name: Production CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master ]
+    branches: [ master ] 
   pull_request:
     branches: [ master ]
 
@@ -45,7 +45,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         php-versions: ['7.2', '7.3', '7.4']
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.os }}
     steps:
@@ -57,12 +57,26 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo
+        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Export path
+      run: echo "::add-path::$(composer -q global config home)/vendor/bin"
+
+    - name: Install Phpcpd Unix
+      run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+      if: ${{ '7.2' == matrix.php-versions && ('ubuntu-latest' == matrix.os || 'macos-latest' == matrix.os)}}
+
+    - name: Install Phpcpd Windows
+      run:   curl -o phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+      if: ${{ '7.2' == matrix.php-versions && 'windows-latest' == matrix.os}}
 
     - name: Testing the Aplication
       run: vendor/bin/phpunit
