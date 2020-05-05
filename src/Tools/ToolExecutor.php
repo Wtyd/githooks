@@ -8,9 +8,9 @@ use GitHooks\Utils\Printer;
 
 class ToolExecutor
 {
-    const OK = 0;
+    public const OK = 0;
 
-    const KO = 1;
+    public const KO = 1;
 
     /**
      * @var Printer
@@ -68,14 +68,6 @@ class ToolExecutor
                 $exitCode = self::KO;
                 $message = $this->getSuccessString($tool->getExecutable(), $time) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
                 $this->printer->resultWarning($message);
-            } catch (ExitErrorException $th) {
-                $this->printErrors($tool);
-                $endToolTime = microtime(true);
-                $executionToolTime = ($endToolTime - $startToolTime);
-                $exitCode = self::KO;
-                $time = number_format($executionToolTime, 2);
-                $message = $this->getErrorString($tool->getExecutable(), $time);
-                $this->printer->resultError($message);
             } catch (\Throwable $th) {
                 $this->printErrors($tool);
                 $exitCode = self::KO;

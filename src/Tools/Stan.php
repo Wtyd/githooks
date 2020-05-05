@@ -49,14 +49,15 @@ class Stan extends ToolAbstract
         parent::__construct();
     }
 
-    public function execute()
-    {
-
-        exec($this->prepareCommand(), $this->exit, $this->exitCode);
-
-        $this->isCrashed();
-    }
-
+    /**
+     * Crea la cadena de argumentos que ejecutará phpstan
+     * -c (--configuration): .neon file with extra configuration
+     * -l (--level): rule level from 0 (default) to 8
+     * --memory-limit: increase memory limit by default of php. Example values: 1G, 1M 1024M
+     * paths: directories with code to analyse.
+     *
+     * @return string Example return: analyse -c=phpstan.neon --no-progress --ansi -l=1 --memory-limit=1G ./src1 ./src2
+     */
     protected function prepareCommand(): string
     {
         $config = '';
@@ -78,27 +79,9 @@ class Stan extends ToolAbstract
             $memoryLimit = '--memory-limit=' . $this->args[self::MEMORY_LIMIT];
         }
 
-        //Memory Limit example
-        // ./vendor/bin/phpstan analyse ./ --configuration=phpstan.neon --level=1 --memory-limit=1G
-        // Accepted: 1G, 1M 1024M
         $arguments = " analyse $config --no-progress --ansi $level $memoryLimit $paths";
 
         return $this->executable . $arguments;
-    }
-
-    /**
-     * PhpStan crashea (en lugar de dar error) por ejemplo cuando una clase que implementa una interfaz no implementa todos los métodos de dicha interfaz.
-     * Lo mismo ocurre cuando una clase hereda de una clase abstracta y no implementa alguno de los métodos abstractos de la clase padre.
-     * Para capturar el crasheo simplemente verificamos que el array de salida es un array vacio.
-     *
-     * @return void
-     */
-    public function isCrashed()
-    {
-        if (empty($this->exit)) {
-            $this->exitCode = 1;
-            throw ExitErrorException::forExit($this->exit);
-        }
     }
 
     /**
