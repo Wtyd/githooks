@@ -1,0 +1,59 @@
+name: Schedule CI
+# https://github.com/shivammathur/setup-php
+on:
+  push:
+    branches: [ jobs-programados ]
+  # schedule:
+    # * is a special character in YAML so you have to quote this string
+    # - cron:  '*/15 * * * *'
+
+env:
+  extensions: mbstring #intl, pcov
+jobs:
+  tests:    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        php-versions: ['7.2']
+    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        ini-values: "post_max_size=256M" #optional
+        coverage: xdebug
+        
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Export path
+      run: echo "::add-path::$(composer -q global config home)/vendor/bin"
+
+    - name: Install Phpcpd
+      run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+
+    - name: Tests with code coverage
+      run: vendor/bin/phpunit --coverage-html coverage
+
+    - name: Tests documentation
+      run: vendor/bin/phpunit --testdox-html documentation.html
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: CodeCoverage
+        path: coverage/
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Documentation
+        path: documentation.html
