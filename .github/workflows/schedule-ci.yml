@@ -10,13 +10,61 @@ on:
 env:
   extensions: mbstring #intl, pcov
 jobs:
-  tests:    
+  # code_coverage:    
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       os: [ubuntu-latest]
+  #       php-versions: ['7.2']
+  #   name: Code Coverage
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
+
+  #   - name: Install PHP
+  #     uses: shivammathur/setup-php@v2
+  #     with:
+  #       php-version: ${{ matrix.php-versions }}
+  #       extensions: ${{ env.extensions }} #optional
+  #       tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+  #       ini-values: "post_max_size=256M" #optional
+  #       coverage: xdebug
+        
+  #   - name: Install dependencies
+  #     run: composer install --prefer-dist --no-progress --no-suggest
+
+  #   - name: Install Parallel-Lint
+  #     run: composer global require php-parallel-lint/php-parallel-lint
+
+  #   - name: Export path
+  #     run: echo "::add-path::$(composer -q global config home)/vendor/bin"
+
+  #   - name: Install Phpcpd
+  #     run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+
+  #   - name: Tests with code coverage
+  #     run: vendor/bin/phpunit --coverage-html coverage
+
+  #   - name: Tests documentation
+  #     run: vendor/bin/phpunit --testdox-html documentation.html
+
+  #   - uses: actions/upload-artifact@v2
+  #     with:
+  #       name: CodeCoverage
+  #       path: coverage/
+
+  #   - uses: actions/upload-artifact@v2
+  #     with:
+  #       name: Documentation
+  #       path: documentation.html
+
+  infection:    
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
         php-versions: ['7.2']
-    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.os }}
+    name: Infection
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -26,7 +74,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd, phive
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
         
@@ -42,18 +90,25 @@ jobs:
     - name: Install Phpcpd
       run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
 
-    - name: Tests with code coverage
-      run: vendor/bin/phpunit --coverage-html coverage
+    - name: Infection Install
+      run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.14.0/infection.phar
 
-    - name: Tests documentation
-      run: vendor/bin/phpunit --testdox-html documentation.html
+    # - name: Infection Install
+    #   run: -O infection.phar.asc wget https://github.com/infection/infection/releases/download/0.14.0/infection.phar.asc
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: CodeCoverage
-        path: coverage/
+    - name: Infection Install
+      run: chmod +x infection.phar
 
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Documentation
-        path: documentation.html
+    - name: Infection move
+      run: mv infection.phar /usr/local/bin/infection
+
+    - name: Infection check
+      run: infection --version
+
+    - name: Infection execute
+      run: infection --threads=10
+
+    # - uses: actions/upload-artifact@v2
+    #   with:
+    #     name: CodeCoverage
+    #     path: coverage/
