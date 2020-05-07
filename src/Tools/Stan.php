@@ -54,11 +54,7 @@ class Stan extends ToolAbstract
 
         exec($this->prepareCommand(), $this->exit, $this->exitCode);
 
-        $this->exitCode = 0;
-
         $this->isCrashed();
-
-        $this->exit = [];
     }
 
     protected function prepareCommand(): string

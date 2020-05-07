@@ -70,7 +70,6 @@ class ToolExecutor
                 $this->printer->resultWarning($message);
             } catch (ExitErrorException $th) {
                 $this->printErrors($tool);
-                //TODO a lo mejor cuando revienta una herramienta queremos mostrar el stacktraces para poder corregir la configuración de la herramienta. Esto viene de PHPStan
                 $endToolTime = microtime(true);
                 $executionToolTime = ($endToolTime - $startToolTime);
                 $exitCode = self::KO;
@@ -95,7 +94,7 @@ class ToolExecutor
      *
      * @return void
      */
-    public function printErrors($tool)
+    public function printErrors(ToolAbstract $tool)
     {
         if (is_array($tool->getExit())) {
             foreach ($tool->getExit() as $line) {

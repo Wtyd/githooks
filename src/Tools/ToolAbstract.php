@@ -25,7 +25,7 @@ abstract class ToolAbstract
     /**
      * @var array
      */
-    protected $exit = '';
+    protected $exit = [];
 
     //TODO Creo que esta variable solo contiene errores al buscar el ejecutable
     /**
