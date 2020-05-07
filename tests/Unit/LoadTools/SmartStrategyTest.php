@@ -541,8 +541,6 @@ class SmartStrategyTest extends TestCase
         $this->assertArrayHasKey('phpstan', $loadedTools);
 
         $this->assertArrayHasKey('check-security', $loadedTools);
-
-        
     }
 
     /**

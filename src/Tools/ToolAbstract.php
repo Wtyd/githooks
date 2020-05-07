@@ -20,12 +20,12 @@ abstract class ToolAbstract
     /**
      * @var int
      */
-    protected $exitCode;
+    protected $exitCode = -1;
 
     /**
      * @var array
      */
-    protected $exit;
+    protected $exit = '';
 
     //TODO Creo que esta variable solo contiene errores al buscar el ejecutable
     /**
@@ -123,7 +123,6 @@ abstract class ToolAbstract
      */
     protected function routeCorrector(array $paths)
     {
-
         if (! $this->isWindows()) {
             return $paths;
         }
@@ -173,21 +172,6 @@ abstract class ToolAbstract
     }
 
     abstract protected function prepareCommand(): string;
-
-    /**
-     * Muestra los errores obtenidos por la herramienta. Es posible que una herramienta termine de forma inesperada.
-     * En estos casos no se mostrara nada.
-     *
-     * @return void
-     */
-    public function printErrors()
-    {
-        if (is_array($this->getExit())) {
-            foreach ($this->getExit() as $line) {
-                echo "\n$line";
-            }
-        }
-    }
 
     public function getExecutable(): string
     {
