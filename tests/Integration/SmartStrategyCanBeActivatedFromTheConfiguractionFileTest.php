@@ -1,5 +1,7 @@
 <?php
 
+namespace Tests\Integration;
+
 use GitHooks\Configuration;
 use GitHooks\LoadTools\SmartStrategy;
 use GitHooks\Tools\ToolsFactoy;

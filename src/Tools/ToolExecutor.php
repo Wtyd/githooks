@@ -8,9 +8,9 @@ use GitHooks\Utils\Printer;
 
 class ToolExecutor
 {
-    const OK = 0;
+    public const OK = 0;
 
-    const KO = 1;
+    public const KO = 1;
 
     /**
      * @var Printer
@@ -35,7 +35,7 @@ class ToolExecutor
     {
         $exitCode = self::OK;
         foreach ($tools as $tool) {
-            $startToolTime = microtime(true);
+            $startToolExecution = microtime(true);
             try {
                 if ($this->errorsFindingExecutable($tool->getErrors())) {
                     $this->printer->generalFail($tool->getErrors());
@@ -47,41 +47,27 @@ class ToolExecutor
                 } else {
                     $tool->execute();
                 }
-                $endToolTime = microtime(true);
-                $executionToolTime = ($endToolTime - $startToolTime);
-                $time = number_format($executionToolTime, 2);
+
+                $endToolExecution = microtime(true);
+                $executionTime = $this->executionTime($endToolExecution, $startToolExecution);
                 if ($tool->getExitCode() === self::OK) {
-                    $message = $this->getSuccessString($tool->getExecutable(), $time);
-                    $this->printer->resultSuccess($message);
+                    $this->printer->resultSuccess($this->getSuccessString($tool->getExecutable(), $executionTime));
                 } else {
-                    $this->printErrors($tool);
                     $exitCode = self::KO;
-                    $message = $this->getErrorString($tool->getExecutable(), $time);
-                    $this->printer->resultError($message);
+                    $this->printErrors($tool);
+                    $this->printer->resultError($this->getErrorString($tool->getExecutable(), $executionTime));
                 }
             } catch (ModifiedButUnstagedFilesException $ex) {
-                $this->printErrors($tool);
-                $endToolTime = microtime(true);
-                $executionToolTime = ($endToolTime - $startToolTime);
-                $time = number_format($executionToolTime, 2);
-                //TODO cambiar $tool->getExecutable() por el nombre de la herramienta para que aparezcan cosas como var/www/html/distribucion/vendor/zataca/githooks/src/Tools/../../../bin/phpcbf - OK. Time: 8.07
+                $endToolExecution = microtime(true);
                 $exitCode = self::KO;
-                $message = $this->getSuccessString($tool->getExecutable(), $time) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
+                $this->printErrors($tool);
+                $message = $this->getErrorString($tool->getExecutable(), $this->executionTime($endToolExecution, $startToolExecution)) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
                 $this->printer->resultWarning($message);
-            } catch (ExitErrorException $th) {
-                $this->printErrors($tool);
-                $endToolTime = microtime(true);
-                $executionToolTime = ($endToolTime - $startToolTime);
-                $exitCode = self::KO;
-                $time = number_format($executionToolTime, 2);
-                $message = $this->getErrorString($tool->getExecutable(), $time);
-                $this->printer->resultError($message);
             } catch (\Throwable $th) {
-                $this->printErrors($tool);
                 $exitCode = self::KO;
-                $message = "Error en la ejecución de $tool->getExecutable(). \n";
+                $this->printErrors($tool);
                 $this->printer->line($th->getMessage());
-                $this->printer->resultError($message);
+                $this->printer->resultError("Error en la ejecución de $tool->getExecutable().");
             }
         }
 
@@ -120,5 +106,17 @@ class ToolExecutor
         }
 
         return true;
+    }
+
+    /**
+     * Returns the time difference formatted to two decimal places
+     *
+     * @param float $endToolExecution
+     * @param float $startToolExecution
+     * @return string Total tool execution time
+     */
+    protected function executionTime(float $endToolExecution, float $startToolExecution): string
+    {
+        return number_format($endToolExecution - $startToolExecution, 2);
     }
 }
