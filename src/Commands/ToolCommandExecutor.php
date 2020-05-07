@@ -4,7 +4,6 @@ namespace GitHooks\Commands;
 
 use GitHooks\Configuration;
 use GitHooks\Constants;
-use GitHooks\Tools\ToolAbstract;
 use GitHooks\Tools\ToolExecutor;
 use GitHooks\Tools\ToolsFactoy;
 

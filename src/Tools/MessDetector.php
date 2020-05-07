@@ -59,9 +59,9 @@ class MessDetector extends ToolAbstract
             $path = implode(',', $this->args[self::PATHS]);
         }
 
-        $arguments = " $path text $rules $exclude";
+        $arguments = " $path ansi $rules $exclude";
 
-        //text ./qa/md-rulesheet.xml --exclude "vendor,tests,views"
+        // ./src/ ansi ./qa/phpmd-src-ruleset.xml --exclude "vendor"
         return $this->executable . $arguments;
     }
 
@@ -90,5 +90,33 @@ class MessDetector extends ToolAbstract
         if (!empty($arguments[self::PATHS])) {
             $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
         }
+    }
+
+      /**
+     * Método donde se ejecuta la herramienta mediante exec. La herramienta no producirá ninguna salida.
+     *
+     * @return void
+     */
+    public function execute()
+    {
+        parent::execute();
+        if ($this->exitCode == 0 && $this->isThereHiddenError()) {
+            $this->exitCode = 1;
+        }
+    }
+
+    /**
+     * Check if the exit of Mess detector is OK.
+     * If there is an error in the source file that prevents Mess detector from parsing it, Mess detector will return an exit code 0.
+     * But mess detector will not be able to check that file.
+     *
+     * @return bool
+     */
+    protected function isThereHiddenError()
+    {
+        if (is_int(strpos($this->exit[3], 'No mess detected'))) {
+            return false;
+        }
+        return true;
     }
 }

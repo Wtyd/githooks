@@ -47,20 +47,20 @@ class ToolExecutor
                 } else {
                     $tool->execute();
                 }
-
                 $endToolTime = microtime(true);
                 $executionToolTime = ($endToolTime - $startToolTime);
                 $time = number_format($executionToolTime, 2);
-
                 if ($tool->getExitCode() === self::OK) {
                     $message = $this->getSuccessString($tool->getExecutable(), $time);
                     $this->printer->resultSuccess($message);
                 } else {
+                    $this->printErrors($tool);
                     $exitCode = self::KO;
                     $message = $this->getErrorString($tool->getExecutable(), $time);
                     $this->printer->resultError($message);
                 }
             } catch (ModifiedButUnstagedFilesException $ex) {
+                $this->printErrors($tool);
                 $endToolTime = microtime(true);
                 $executionToolTime = ($endToolTime - $startToolTime);
                 $time = number_format($executionToolTime, 2);
@@ -69,7 +69,7 @@ class ToolExecutor
                 $message = $this->getSuccessString($tool->getExecutable(), $time) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
                 $this->printer->resultWarning($message);
             } catch (ExitErrorException $th) {
-                //TODO a lo mejor cuando revienta una herramienta queremos mostrar el stacktraces para poder corregir la configuración de la herramienta. Esto viene de PHPStan
+                $this->printErrors($tool);
                 $endToolTime = microtime(true);
                 $executionToolTime = ($endToolTime - $startToolTime);
                 $exitCode = self::KO;
@@ -77,14 +77,30 @@ class ToolExecutor
                 $message = $this->getErrorString($tool->getExecutable(), $time);
                 $this->printer->resultError($message);
             } catch (\Throwable $th) {
+                $this->printErrors($tool);
                 $exitCode = self::KO;
                 $message = "Error en la ejecución de $tool->getExecutable(). \n";
-                $this->printer->resultError($message);
                 $this->printer->line($th->getMessage());
+                $this->printer->resultError($message);
             }
         }
 
         return $exitCode;
+    }
+
+    /**
+     * Muestra los errores obtenidos por la herramienta. Es posible que una herramienta termine de forma inesperada.
+     * En estos casos no se mostrara nada.
+     *
+     * @return void
+     */
+    public function printErrors(ToolAbstract $tool)
+    {
+        if (is_array($tool->getExit())) {
+            foreach ($tool->getExit() as $line) {
+                $this->printer->line($line);
+            }
+        }
     }
 
     protected function getErrorString(string $tool, string $time): string
