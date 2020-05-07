@@ -108,12 +108,13 @@ class MessDetector extends ToolAbstract
     /**
      * Check if the exit of Mess detector is OK.
      * If there is an error in the source file that prevents Mess detector from parsing it, Mess detector will return an exit code 0.
-     * But mess detector will not be able to check that file. 
+     * But mess detector will not be able to check that file.
      *
      * @return bool
      */
-    protected function isThereHiddenError(){
-        if(is_int(strpos($this->exit[3], 'No mess detected'))){
+    protected function isThereHiddenError()
+    {
+        if (is_int(strpos($this->exit[3], 'No mess detected'))) {
             return false;
         }
         return true;
