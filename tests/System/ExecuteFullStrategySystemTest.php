@@ -23,6 +23,17 @@ class ExecuteFullStrategySystemTest extends TestCase
     // KO               KO              OK          KO              OK              KO
     // KO               OK              KO          OK              KO              OK
 
+    // Code Sniffer CPDectector Mess Detector       Stan    Parallellint    Check Security
+    // OK               KO              KO          KO          KO              KO
+    // OK               exclude         exclude     exclude     exclude         exclude
+    // KO               KO              exclude     OK          KO              exclude
+    // KO               exclude         OK          KO          exclude         OK
+    // KO               OK              KO          exclude     OK              KO
+    // exclude          exclude         KO          OK          exclude         KO
+    // exclude          OK              exclude     KO          OK              exclude
+    // exclude          KO              OK          exclude     KO              OK
+    // OK               OK              OK          OK          OK              OK
+
     protected function setUp(): void
     {
         $this->deleteDirStructure();

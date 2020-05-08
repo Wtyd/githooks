@@ -1,11 +1,10 @@
 name: Schedule CI
 # https://github.com/shivammathur/setup-php
 on:
-  push:
-    branches: [ jobs-programados ]
-  # schedule:
-    # * is a special character in YAML so you have to quote this string
-    # - cron:  '0 4 * * *' # Ejecución todos los días a las 4 de la mañana
+  # push:
+  #   branches: [ jobs-programados ]
+  schedule:
+    - cron:  '0 4 * * *' # Ejecución todos los días a las 4 de la mañana
 
 env:
   extensions: mbstring #intl, pcov
@@ -90,17 +89,11 @@ jobs:
     - name: Infection Install
       run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.14.0/infection.phar
 
-    # - name: Infection Install
-    #   run: -O infection.phar.asc wget https://github.com/infection/infection/releases/download/0.14.0/infection.phar.asc
-
     - name: Infection Install
       run: chmod +x infection.phar
 
     - name: Infection move
       run: mv infection.phar /usr/local/bin/infection
-
-    - name: Infection check
-      run: infection --version
 
     - name: Infection execute
       run: infection --threads=10 --no-progress --filter=src
