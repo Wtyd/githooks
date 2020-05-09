@@ -1,8 +1,8 @@
 name: Schedule CI
 # https://github.com/shivammathur/setup-php
 on:
-  # push:
-  #   branches: [ jobs-programados ]
+  push:
+    branches: [ jobs-programados ]
   schedule:
     - cron:  '0 4 * * *' # Ejecución todos los días a las 4 de la mañana
 
@@ -50,12 +50,17 @@ jobs:
       run: vendor/bin/phpunit --testdox-html ${{ env.report_path }}/documentation.html
 
     - name: Junit
-      run: vendor/bin/phpunit--log-junit ${{ env.report_path }}/junit.xml
+      run: vendor/bin/phpunit --log-junit ${{ env.report_path }}/junit.xml
 
     - uses: actions/upload-artifact@v2
       with:
         name: CodeCoverage
         path: ${{ env.report_path }}
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Junit
+        path: ${{ env.report_path }}/junit.xml
 
   infection:    
     runs-on: ${{ matrix.os }}
@@ -135,8 +140,12 @@ jobs:
     - name: Export path
       run: echo "::add-path::$(composer -q global config home)/vendor/bin"
 
+    - uses: actions/download-artifact@v2
+      with:
+        path: ${{ env.report_path }}/junit.xml
+
     - name: PhPMetrics execute
-      run: phpmetrics --report-html=${{ env.report_path }}/phpmetrics --junit=${{ env.report_path }}junit.xml ./src
+      run: phpmetrics --report-html=${{ env.report_path }}/phpmetrics --junit=${{ env.report_path }}/junit.xml ./src
 
     - uses: actions/upload-artifact@v2
       with:
