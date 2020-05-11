@@ -6,13 +6,13 @@ use GitHooks\GitHooks;
 use GitHooks\LoadTools\SmartStrategy;
 use GitHooks\Tools\CheckSecurity;
 use Illuminate\Container\Container;
-use PHPUnit\Framework\TestCase;
-use Tests\ManageFilesTrait;
+use Illuminate\Foundation\Testing\Concerns\InteractsWithContainer;
 use Mockery;
+use Tests\SystemTestCase;
 
-class SmartStrategySystemTest extends TestCase
+class SmartStrategySystemTest extends SystemTestCase
 {
-    use ManageFilesTrait;
+    // use InteractsWithContainer;
 
     //     Check Security   Code Sniffer    CPDectector Mess Detector   Parallellint    Stan
     // 1        OK              OK              OK          OK              OK          OK
@@ -31,6 +31,7 @@ class SmartStrategySystemTest extends TestCase
     {
         $this->deleteDirStructure();
 
+        $this->hiddenConsoleOutput();
         $this->createDirStructure();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
@@ -62,9 +63,15 @@ class SmartStrategySystemTest extends TestCase
         $container = Container::getInstance();
         $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
 
-        $smartStrategyMock = Mockery::mock(SmartStrategy::class)->shouldAllowMockingProtectedMethods()->makePartial();
-        $smartStrategyMock->shouldNotReceive('toolShouldSkip')->withArgs(['phpmd'])->andReturn(true);
-        $container->bind(SmartStrategy::class, $smartStrategyMock);
+        // $smartStrategyMock = $this->overload(SmartStrategy::class)->shouldAllowMockingProtectedMethods()->makePartial();
+        // $smartStrategyMock = Mockery::mock(SmartStrategy::class)->shouldAllowMockingProtectedMethods()->makePartial();
+        // $smartStrategyMock->shouldNotReceive('toolShouldSkip')->with('phpmd')->andReturn(true);
+
+
+        // $container->partialMock(SmartStrategy::class, function ($mock) {
+        //     $mock->shouldNotReceive('toolShouldSkip')->with('phpmd')->andReturn(true);
+        // });
+
         $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
@@ -88,5 +95,4 @@ class SmartStrategySystemTest extends TestCase
     {
         return Mockery::mock(sprintf('overload:%s', $class));
     }
-
 }

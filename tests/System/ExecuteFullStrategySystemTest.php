@@ -4,18 +4,14 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use Illuminate\Container\Container;
-use PHPUnit\Framework\TestCase;
-use Tests\ManageFilesTrait;
 use Tests\SystemTestCase;
 
 /**
  * No se tiene encuenta check-security ya que depende de la configuración de composer.json y de que no se hayan encontrado
  * vulnerabilidades en las librerías configuradas.
  */
-class ExecuteFullStrategySystemTest extends TestCase
+class ExecuteFullStrategySystemTest extends SystemTestCase
 {
-    use ManageFilesTrait;
-
     //Allgoritmo de todos los pares:
     // Check Security   Code Sniffer    CPDectector Mess Detector   Parallellint    Stan
     // OK               OK              OK          OK              OK              OK
@@ -28,6 +24,8 @@ class ExecuteFullStrategySystemTest extends TestCase
         $this->deleteDirStructure();
 
         $this->createDirStructure();
+
+        $this->hiddenConsoleOutput();
     }
 
     protected function tearDown(): void
@@ -52,7 +50,7 @@ class ExecuteFullStrategySystemTest extends TestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //throw $th;
+            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
         }
 
         $regExp = '(\.phar)? - OK\. Time: \d+\.\d{2}'; //phpcbf[.phar] - OK. Time: 0.18
