@@ -30,7 +30,7 @@ class ConfigurationFileBuilder
             Constants::MESS_DETECTOR,
             Constants::COPYPASTE_DETECTOR,
             Constants::PHPSTAN,
-            // Constants::CHECK_SECURITY,
+            Constants::CHECK_SECURITY,
         ];
 
         $this->configurationTools = [
