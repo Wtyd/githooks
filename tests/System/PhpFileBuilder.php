@@ -14,6 +14,8 @@ class PhpFileBuilder
 
     public const PARALLEL_LINT = 'parallel-lint';
 
+    public const PHPCPD = 'phpcpd';
+
     protected $name;
 
     protected $header;
@@ -62,6 +64,9 @@ class PhpFileBuilder
                 case self::PHPSTAN:
                     $file .= $this->addPhpStanError();
                     break;
+                case self::PHPCPD:
+                    $file .= $this->addPhpCPDError();
+                    break;
             }
         }
         return $file . $this->closeBody();
@@ -88,6 +93,14 @@ class ' . $this->name . "
     protected function closeBody()
     {
         return "}\n";
+    }
+
+    public function setFileName(string $name)
+    {
+        if ($name !== null) {
+            $this->name = $name;
+        }
+        return $this;
     }
 
     public function addMessDetectorError()
@@ -128,6 +141,97 @@ class ' . $this->name . "
         return "\n" . '    public function parallelLint()
     {
         echo "falta el ;"
+    }' . "\n";
+    }
+
+    public function addPhpCPDError()
+    {
+        return "\n" . '    public function originalMethod()
+    {
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+    }' . "\n" . '    public function copiedMethod()
+    {
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
+        echo "Hello World Hello World Hello World Hello World Hello World";
     }' . "\n";
     }
 }

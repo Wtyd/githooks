@@ -37,7 +37,7 @@ class ConfigurationFileBuilder
             Constants::CODE_SNIFFER => [
                 CodeSniffer::PATHS => [$path . '/src'],
                 CodeSniffer::STANDARD => 'PSR12',
-                CodeSniffer::IGNORE => [$path . 'vendor'],
+                CodeSniffer::IGNORE => [$path . '/vendor'],
                 CodeSniffer::ERROR_SEVERITY => 1,
                 CodeSniffer::WARNING_SEVERITY => 6
             ],
