@@ -46,6 +46,7 @@ class SmartStrategySystemTest extends SystemTestCase
     /** @test */
     function it_execute_all_tools_and_pass_all_checks_with_smartStrategy()
     {
+        $this->markTestIncomplete("work in progress...");
         $fileBuilder = new PhpFileBuilder('File');
 
         // $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
