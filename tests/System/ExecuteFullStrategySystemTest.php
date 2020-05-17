@@ -7,7 +7,6 @@ use GitHooks\Tools\CheckSecurity;
 use Illuminate\Container\Container;
 use Tests\SystemTestCase;
 
-
 /**
  * No se tiene encuenta check-security ya que depende de la configuración de composer.json y de que no se hayan encontrado
  * vulnerabilidades en las librerías configuradas.
