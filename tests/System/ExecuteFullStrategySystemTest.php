@@ -114,8 +114,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         ]));
 
         $container = Container::getInstance();
-        //TODO Pablo: mockear CheckSecurityFakeKO
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
         $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
@@ -149,8 +148,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         //file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors());
 
         $container = Container::getInstance();
-        //TODO Pablo: mockear CheckSecurityFakeKO
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
         $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
@@ -166,26 +164,5 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed(PhpFileBuilder::PHPCPD);
         $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.', $this->getActualOutput());
-    }
-
-    /** @test */
-    function prueba_regex()
-    {
-        $this->markTestSkipped('Test para probar las expresiones regulares');
-        $regExp = '%(phpcbf|phpmd|phpcpd|phpstan|parallel-lint)(\.phar)? - OK\. Time: \d+\.\d{2}%';
-        echo "✔️ phpcbf - OK. Time: 0.18
-        ✔️ phpmd - OK. Time: 0.17
-        ✔️ phpcpd - OK. Time: 0.07
-        ✔️ phpstan - OK. Time: 0.58
-        ✔️ parallel-lint - OK. Time: 0.58
-
-  Tiempo total de ejecución = 1.01 sec
-Tus cambios se han commiteado.";
-    //TODO conseguire que sea 5 repeteciiones de o phpcs o phpstan o phpmd... etc
-    //https://regex101.com/
-        $this->assertRegExp('%phpcbf(\.phar)? - OK\. Time: \d\.\d{2}%', $this->getActualOutput());
-        $this->assertRegExp('%phpmd(\.phar)? - OK\. Time: \d\.\d{2}%', $this->getActualOutput());
-        $this->assertRegExp('%phpcpd(\.phar)? - OK\. Time: \d\.\d{2}%', $this->getActualOutput());
-        $this->assertRegExp('%phpstan(\.phar)? - OK\. Time: \d\.\d{2}%', $this->getActualOutput());
     }
 }
