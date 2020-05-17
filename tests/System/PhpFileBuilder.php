@@ -69,7 +69,8 @@ class PhpFileBuilder
                     break;
             }
         }
-        return $file . $this->closeBody();
+        $file = $file . $this->closeBody();
+        return str_replace("\r\n", "\n", $file);
     }
 
     public function setHeader()
