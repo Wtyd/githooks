@@ -2,29 +2,52 @@
 
 namespace Tests\System;
 
+use GitHooks\ChooseStrategy;
 use GitHooks\GitHooks;
 use GitHooks\LoadTools\SmartStrategy;
 use GitHooks\Tools\CheckSecurity;
+use GitHooks\Tools\MessDetector;
+use GitHooks\Tools\ToolsFactoy;
+use GitHooks\Utils\GitFiles;
 use Illuminate\Container\Container;
 use Illuminate\Foundation\Testing\Concerns\InteractsWithContainer;
 use Mockery;
 use Tests\SystemTestCase;
 
+/*
+    En todos los casos consideramos que están configuradas TODAS las herramientas. Consideramos 3 escenarios para cada herramienta:
+    1. La herramienta termina sin detectar errores.
+    2. La herramienta termina detectando algún error.
+    3. La herramienta no llega a ejecutarse ya que cumple con las condiciones para ser saltada (este escenario no se cumple ni para
+    check-security ni para phpstan que se ejecutarán siempre que hayan sido configuradas).
+
+    Además, cuando se produce un fallo de sintaxis (Parallel-lint KO) las herramientas PhpStan y Mess Detector también son KO.
+
+    Si aplicamos el algoritmo de todos los pares (https://pairwise.teremokgames.com/memw/) tenemos los sigueintes casos de prueba:
+    |----------------------------------------------------------------------------------------------------
+    | nº Prueba |Check Security | Mess Detector | CPDetector | Code Sniffer |   Parallel-Lint |  PhpStan |
+    |-----------|---------------|---------------| -----------|--------------|-----------------|----------|
+    |    1      |       OK      |      OK       |    OK      |    OK        |       OK        |    OK    |
+    |    2      |       OK      |      KO       |    KO      |    KO        |       KO        |    KO    |
+    |    3      |       OK      |      exclude  |    exclude |    exclude   |       exclude   |    OK    |
+    |    4      |       OK      |      OK       |    OK      |    OK        |       OK        |    KO    |
+    |    5      |       KO      |      exclude  |    OK      |    KO        |       OK        |    KO    |
+    |    6      |       KO      |      KO       |    OK      |    KO        |       exclude   |    KO    |
+    |    7      |       KO      |      OK       |    KO      |    exclude   |       OK        |    OK    |
+    |    8      |       OK      |      exclude  |    KO      |    KO        |       OK        |    OK    |
+    |    9      |       OK      |      KO       |    KO      |    OK        |       OK        |    OK    |
+    |    10     |       OK      |      KO       |    OK      |    OK        |       exclude   |    OK    |
+    |    11     |       KO      |      OK       |    KO      |    KO        |       exclude   |    OK    |
+    |    12     |       KO      |      KO       |    exclude |    OK        |       OK        |    KO    |
+    |    13     |       KO      |      KO       |    KO      |    exclude   |       OK        |    KO    |
+    |    14     |       OK      |      OK       |    KO      |    OK        |       exclude   |    KO    |
+    |    15     |       OK      |      KO       |    OK      |    KO        |       OK        |    OK    |
+    |    16     |       OK      |      OK       |    exclude |    KO        |       OK        |    OK    |
+    |----------------------------------------------------------------------------------------------------|
+
+ */
 class SmartStrategySystemTest extends SystemTestCase
 {
-    // use InteractsWithContainer;
-
-    //     Check Security   Code Sniffer    CPDectector Mess Detector   Parallellint    Stan
-    // 1        OK              OK              OK          OK              OK          OK
-    // 2        OK              KO              KO          KO              KO          KO
-    // 3        OK              exclude         exclude     exclude         exclude     exclude
-    // 4        KO              KO              exclude     OK              KO          exclude
-    // 5        KO              exclude         OK          KO              exclude     OK
-    // 6        KO              OK              KO          exclude         OK          KO
-    // 7                        exclude         KO          OK              exclude     KO
-    // 8                        OK              exclude     KO              OK          exclude
-    // 9                        KO              OK          exclude         KO          OK
-
     protected $configurationFile;
 
     protected function setUp(): void
@@ -32,6 +55,7 @@ class SmartStrategySystemTest extends SystemTestCase
         $this->deleteDirStructure();
 
         $this->hiddenConsoleOutput();
+
         $this->createDirStructure();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
@@ -44,34 +68,20 @@ class SmartStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function it_execute_all_tools_and_pass_all_checks_with_smartStrategy()
+    function execute_all_tools_without_errors()
     {
-        $this->markTestIncomplete("work in progress...");
         $fileBuilder = new PhpFileBuilder('File');
-
-        // $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
 
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        // $checkSecurityMock = $this->overload(CheckSecurity::class)->makePartial();
-        // $checkSecurityMock->shouldReceive('execute')->once();
-
-        // $containerMock = Mockery::mock('Illuminate\Container\Container[make]')->makePartial();
-        // $containerMock->shouldReceive('make')->with('check-security')->twice()->andReturn(new CheckSecurityFakeOk());
-
         $container = Container::getInstance();
         $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-
-        // $smartStrategyMock = $this->overload(SmartStrategy::class)->shouldAllowMockingProtectedMethods()->makePartial();
-        // $smartStrategyMock = Mockery::mock(SmartStrategy::class)->shouldAllowMockingProtectedMethods()->makePartial();
-        // $smartStrategyMock->shouldNotReceive('toolShouldSkip')->with('phpmd')->andReturn(true);
-
-
-        // $container->partialMock(SmartStrategy::class, function ($mock) {
-        //     $mock->shouldNotReceive('toolShouldSkip')->with('phpmd')->andReturn(true);
-        // });
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+        });
 
         $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
@@ -80,20 +90,222 @@ class SmartStrategySystemTest extends SystemTestCase
         } catch (\Throwable $th) {
             //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
         }
-        //TODO tengo que doblar el acceso a los ficheros modificados de git
-        $regExp = '(\.phar)? - OK\. Time: \d+\.\d{2}'; //phpcbf[.phar] - OK. Time: 0.18
-        $this->assertRegExp("%phpcbf$regExp%", $this->getActualOutput());
-        $this->assertRegExp("%phpmd$regExp%", $this->getActualOutput());
-        $this->assertRegExp("%phpcpd$regExp%", $this->getActualOutput());
-        $this->assertRegExp("%phpstan$regExp%", $this->getActualOutput());
-        $this->assertRegExp("%parallel-lint$regExp%", $this->getActualOutput());
-        $this->assertRegExp("%check-security$regExp%", $this->getActualOutput());
+
+        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
+        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
+        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
+        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+        $this->assertToolHasBeenExecutedSuccessfully('check-security');
         $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Tus cambios se han commiteado.', $this->getActualOutput());
     }
 
-    public function overload(string $class)
+    /** @test */
+    function checkSecurity_finish_OK_and_the_other_tools_finish_KO()
     {
-        return Mockery::mock(sprintf('overload:%s', $class));
+        $fileBuilder = new PhpFileBuilder('File');
+
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
+
+        $container = Container::getInstance();
+        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+        });
+        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+
+        try {
+            $githooks();
+        } catch (\Throwable $th) {
+            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+        }
+
+        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasFailed('phpcbf');
+        $this->assertToolHasFailed('phpmd');
+        $this->assertToolHasFailed('phpcpd');
+        $this->assertToolHasFailed('phpstan');
+        $this->assertToolHasFailed('parallel-lint');
+        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.', $this->getActualOutput());
+    }
+
+    /** @test */
+    function checkSecurity_and_phpStan_finish_OK_and_other_tools_are_skipped()
+    {
+        $fileBuilder = new PhpFileBuilder('File');
+
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
+
+        $container = Container::getInstance();
+        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([]);
+        });
+
+        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+
+        try {
+            $githooks();
+        } catch (\Throwable $th) {
+            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+        }
+
+        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+        $this->assertToolDidNotRun('phpcbf');
+        $this->assertToolDidNotRun('phpmd');
+        $this->assertToolDidNotRun('phpcpd');
+        $this->assertToolDidNotRun('parallel-lint');
+        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Tus cambios se han commiteado.', $this->getActualOutput());
+    }
+
+    /** @test */
+    function phpStan_finish_KO_and_other_tools_finish_OK()
+    {
+        $fileBuilder = new PhpFileBuilder('File');
+
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
+
+        $container = Container::getInstance();
+        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+        });
+
+        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+
+        try {
+            $githooks();
+        } catch (\Throwable $th) {
+            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+        }
+
+        $this->assertToolHasFailed('phpstan');
+        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
+        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
+        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
+        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+    }
+
+    /** @test */
+    function CPDetector_and_ParallelLint_finish_OK_CheckSecurity_CodeSniffer_and_PhpStan_KO_and_MessDetector_is_skipped()
+    {
+        $fileBuilder = new PhpFileBuilder('File');
+
+        $this->configurationFile->setMessDetectorConfiguration([
+            'paths' => [$this->getPath() . '/vendor'],
+            'rules' => 'unusedcode',
+            'exclude' => [$this->getPath() . '/src']
+        ]);
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan','phpcs','phpcpd']));
+
+        $container = Container::getInstance();
+        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+        });
+
+        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+
+        try {
+            $githooks();
+        } catch (\Throwable $th) {
+            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+        }
+
+        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+        $this->assertToolHasFailed('phpstan');
+        $this->assertToolHasFailed('phpcbf');
+        $this->assertToolHasFailed('phpcpd');
+        $this->assertToolDidNotRun('phpmd');
+    }
+
+    /** @test */
+    function CPDetector_OK_CheckSecurity_MessDetector_CodeSniffer_and_PhpStan_KO_and_ParallelLint_is_skipped()
+    {
+        $fileBuilder = new PhpFileBuilder('File');
+
+        $this->configurationFile->setParallelLintConfiguration([
+            'paths' => [$this->getPath() . '/vendor'],
+            'exclude' => [$this->getPath() . '/src']
+        ]);
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan','phpcs','phpmd']));
+
+        $container = Container::getInstance();
+        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+        });
+
+        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+
+        try {
+            $githooks();
+        } catch (\Throwable $th) {
+            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+        }
+
+        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
+        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('phpstan');
+        $this->assertToolHasFailed('phpcbf');
+        $this->assertToolHasFailed('phpmd');
+        $this->assertToolDidNotRun('parallel-lint');
+    }
+
+    /** @test */
+    function CPDetector_and_CheckSecurity_KO_MessDetector_ParallelLint_and_PhpStan_OK_and_CodeSniffer_is_skipped()
+    {
+        $fileBuilder = new PhpFileBuilder('File');
+
+        $this->configurationFile->setPhpCSConfiguration([
+            'paths' => [$this->getPath() . '/vendor'],
+            'ignore' => [$this->getPath() . '/src']
+        ]);
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
+
+        $container = Container::getInstance();
+        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+        });
+
+        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+
+        try {
+            $githooks();
+        } catch (\Throwable $th) {
+            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+        }
+
+        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
+        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('phpcpd');
+        $this->assertToolDidNotRun('phpcbf');
     }
 }

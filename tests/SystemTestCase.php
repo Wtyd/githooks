@@ -71,4 +71,9 @@ class SystemTestCase extends TestCase
         //phpcbf[.phar] - KO. Time: 0.18
         $this->assertRegExp("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
     }
+
+    protected function assertToolDidNotRun(string $tool)
+    {
+        $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has not been executed");
+    }
 }
