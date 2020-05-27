@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        php-versions: ['7.2']
+        php-versions: ['7.4']
     name: Code Coverage
     steps:
     - name: Checkout
@@ -37,11 +37,8 @@ jobs:
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
 
-    - name: Export path
-      run: echo "::add-path::$(composer -q global config home)/vendor/bin"
-
-    - name: Install Phpcpd
-      run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+    # - name: Export path
+    #   run: echo "::add-path::$(composer -q global config home)/vendor/bin"
 
     - name: Tests with code coverage
       run: vendor/bin/phpunit --coverage-html ${{ env.report_path }}/coverage
@@ -67,7 +64,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        php-versions: ['7.2']
+        php-versions: ['7.4']
     name: Infection
     steps:
     - name: Checkout
@@ -88,11 +85,8 @@ jobs:
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
 
-    - name: Export path
-      run: echo "::add-path::$(composer -q global config home)/vendor/bin"
-
-    - name: Install Phpcpd
-      run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+    # - name: Export path
+    #   run: echo "::add-path::$(composer -q global config home)/vendor/bin"
 
     - name: Infection Install
       run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.14.0/infection.phar
@@ -137,8 +131,8 @@ jobs:
     - name: Install PhPMetrics
       run:  composer global require 'phpmetrics/phpmetrics'
 
-    - name: Export path
-      run: echo "::add-path::$(composer -q global config home)/vendor/bin"
+    # - name: Export path
+    #   run: echo "::add-path::$(composer -q global config home)/vendor/bin"
 
     - uses: actions/download-artifact@v2
       with:
