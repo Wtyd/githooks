@@ -37,27 +37,16 @@ jobs:
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
 
-    # - name: Export path
-    #   run: echo "::add-path::$(composer -q global config home)/vendor/bin"
-
     - name: Tests with code coverage
       run: vendor/bin/phpunit --coverage-html ${{ env.report_path }}/coverage
 
     - name: Tests documentation
       run: vendor/bin/phpunit --testdox-html ${{ env.report_path }}/documentation.html
 
-    - name: Junit
-      run: vendor/bin/phpunit --log-junit ${{ env.report_path }}/junit.xml
-
     - uses: actions/upload-artifact@v2
       with:
         name: CodeCoverage
         path: ${{ env.report_path }}
-
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Junit
-        path: ${{ env.report_path }}/junit.xml
 
   infection:    
     runs-on: ${{ matrix.os }}
@@ -85,11 +74,8 @@ jobs:
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
 
-    # - name: Export path
-    #   run: echo "::add-path::$(composer -q global config home)/vendor/bin"
-
     - name: Infection Install
-      run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.14.0/infection.phar
+      run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.16.3/infection.phar
 
     - name: Infection Install
       run: chmod +x infection.phar
@@ -98,7 +84,7 @@ jobs:
       run: mv infection.phar /usr/local/bin/infection
 
     - name: Infection execute
-      run: infection --threads=10 --no-progress --filter=src
+      run: infection --threads=10 --no-progress
 
     - uses: actions/upload-artifact@v2
       with:
@@ -131,12 +117,11 @@ jobs:
     - name: Install PhPMetrics
       run:  composer global require 'phpmetrics/phpmetrics'
 
-    # - name: Export path
-    #   run: echo "::add-path::$(composer -q global config home)/vendor/bin"
-
-    - uses: actions/download-artifact@v2
-      with:
-        path: ${{ env.report_path }}/junit.xml
+    # - uses: actions/download-artifact@v2
+    #   with:
+    #     path: ${{ env.report_path }}/junit.xml
+    - name: Junit
+      run: vendor/bin/phpunit --log-junit ${{ env.report_path }}/junit.xml
 
     - name: PhPMetrics execute
       run: phpmetrics --report-html=${{ env.report_path }}/phpmetrics --junit=${{ env.report_path }}/junit.xml ./src
