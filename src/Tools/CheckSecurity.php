@@ -2,8 +2,6 @@
 
 namespace GitHooks\Tools;
 
-use GitHooks\Tools\Exception\ExecutableNotFoundException;
-
 /**
  * Ejecuta la libreria funkjedi/composer-plugin-security-check
  * Encuentra vulnerabilidades en dependencias de composer.

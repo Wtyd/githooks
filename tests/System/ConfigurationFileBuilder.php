@@ -30,14 +30,14 @@ class ConfigurationFileBuilder
             Constants::MESS_DETECTOR,
             Constants::COPYPASTE_DETECTOR,
             Constants::PHPSTAN,
-            // Constants::CHECK_SECURITY,
+            Constants::CHECK_SECURITY,
         ];
 
         $this->configurationTools = [
             Constants::CODE_SNIFFER => [
                 CodeSniffer::PATHS => [$path . '/src'],
                 CodeSniffer::STANDARD => 'PSR12',
-                CodeSniffer::IGNORE => [$path . 'vendor'],
+                CodeSniffer::IGNORE => [$path . '/vendor'],
                 CodeSniffer::ERROR_SEVERITY => 1,
                 CodeSniffer::WARNING_SEVERITY => 6
             ],

@@ -35,7 +35,6 @@ class GitHooksTest extends TestCase
     function prueba()
     {
         $this->markTestSkipped("Pruebas de integracion con exit 1");
-        var_dump("\n==============================");
         $a = $this->getFile('src/parallel-lintOK.php');
         var_dump($a);
         $mockParallelLint = m::mock(ParallelLint::class)->makePartial();

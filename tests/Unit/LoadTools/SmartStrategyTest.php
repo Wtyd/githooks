@@ -486,7 +486,7 @@ class SmartStrategyTest extends TestCase
         $gitFiles = Mockery::mock(GitFiles::class);
         $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        //$smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -541,8 +541,6 @@ class SmartStrategyTest extends TestCase
         $this->assertArrayHasKey('phpstan', $loadedTools);
 
         $this->assertArrayHasKey('check-security', $loadedTools);
-
-        
     }
 
     /**

@@ -4,7 +4,7 @@ on:
   push:
     branches: [ jobs-programados ]
   schedule:
-    - cron:  '0 4 * * *' # Ejecución todos los días a las 4 de la mañana
+    - cron:  '0 4 * * sun' # Ejecución todos los días a las 4 de la mañana
 
 env:
   extensions: mbstring #intl, pcov
@@ -96,7 +96,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        php-versions: ['7.2']
+        php-versions: ['7.4']
     name: PhpMetrics
     steps:
     - name: Checkout
@@ -117,9 +117,9 @@ jobs:
     - name: Install PhPMetrics
       run:  composer global require 'phpmetrics/phpmetrics'
 
-    # - uses: actions/download-artifact@v2
-    #   with:
-    #     path: ${{ env.report_path }}/junit.xml
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
     - name: Junit
       run: vendor/bin/phpunit --log-junit ${{ env.report_path }}/junit.xml
 

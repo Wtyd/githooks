@@ -43,12 +43,8 @@ class GitHooks
             $strategy = $chooseStrategy->__invoke($file);
 
             $this->tools = $strategy->getTools();
-        } catch (GitHooksExceptionInterface $ex) {
-            $this->printer->generalFail($ex->getMessage());
-            throw ExitException::forException($ex);
-        } catch (LoadToolsExceptionInterface $ex) {
-            $this->printer->generalFail($ex->getMessage());
-            throw ExitException::forException($ex);
+        } catch (\Throwable $th) {
+            throw ExitException::forException($th);
         }
     }
 
@@ -67,16 +63,15 @@ class GitHooks
         $exitCode = $this->toolExecutor->__invoke($this->tools);
 
         $endTotalTime = microtime(true);
-        $executionTotalTime = ($endTotalTime - $startTotalTime);
-        $this->printer->line("\n\n  Tiempo total de ejecución = " . number_format($executionTotalTime, 2) . " sec");
+        $executionTotalTime = $endTotalTime - $startTotalTime;
+        $this->printer->line("\n  Tiempo total de ejecución = " . number_format($executionTotalTime, 2) . " sec");
 
+        //TODO Quizas es mejor que ToolExecutor lance excepcion si KO y nada si va bien. El mensaje OK se printaria en el camino normal y el fallo en el catch
         if ($exitCode === self::OK) {
             $message = "Tus cambios se han commiteado.";
             $this->printer->success($message);
-            echo "\n";
         } else {
             $this->printer->generalFail('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.');
-            echo "\n";
             throw new Exception("Cambios no commiteados");
         }
     }

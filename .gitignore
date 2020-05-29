@@ -1,5 +1,8 @@
+# libraries dont track *.lock
 composer.lock
 
+# phpunit
+coverage/
 .phpunit.result.cache
 
 infection.log*
@@ -10,3 +13,7 @@ vendor
 
 junit.xml
 myreport/
+
+# Dummy files for manual testing
+Dummy.php
+src/dummy/
