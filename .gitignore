@@ -7,7 +7,12 @@ coverage/
 
 infection.log*
 
+informes/
+codecoverage/
 vendor
+
+junit.xml
+myreport/
 
 # Dummy files for manual testing
 Dummy.php

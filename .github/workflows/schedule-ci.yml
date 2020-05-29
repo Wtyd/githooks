@@ -1,0 +1,132 @@
+name: Schedule CI
+# https://github.com/shivammathur/setup-php
+on:
+  push:
+    branches: [ jobs-programados ]
+  schedule:
+    - cron:  '0 4 * * sun' # Ejecución todos los días a las 4 de la mañana
+
+env:
+  extensions: mbstring #intl, pcov
+  report_path: informes
+
+jobs:
+  code_coverage:    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        php-versions: ['7.4']
+    name: Code Coverage
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        ini-values: "post_max_size=256M" #optional
+        coverage: xdebug
+        
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Tests with code coverage
+      run: vendor/bin/phpunit --coverage-html ${{ env.report_path }}/coverage
+
+    - name: Tests documentation
+      run: vendor/bin/phpunit --testdox-html ${{ env.report_path }}/documentation.html
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: CodeCoverage
+        path: ${{ env.report_path }}
+
+  infection:    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        php-versions: ['7.4']
+    name: Infection
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd, phive
+        ini-values: "post_max_size=256M" #optional
+        coverage: xdebug
+        
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Infection Install
+      run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.16.3/infection.phar
+
+    - name: Infection Install
+      run: chmod +x infection.phar
+
+    - name: Infection move
+      run: mv infection.phar /usr/local/bin/infection
+
+    - name: Infection execute
+      run: infection --threads=10 --no-progress
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Infection
+        path: ${{ env.report_path }}
+
+  PhpMetrics:    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        php-versions: ['7.4']
+    name: PhpMetrics
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        ini-values: "post_max_size=256M" #optional
+        coverage: xdebug
+        
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install PhPMetrics
+      run:  composer global require 'phpmetrics/phpmetrics'
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Junit
+      run: vendor/bin/phpunit --log-junit ${{ env.report_path }}/junit.xml
+
+    - name: PhPMetrics execute
+      run: phpmetrics --report-html=${{ env.report_path }}/phpmetrics --junit=${{ env.report_path }}/junit.xml ./src
+
+    - uses: actions/upload-artifact@v2
+      with:
+        name: PhPMetrics
+        path: ${{ env.report_path }}

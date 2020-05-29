@@ -2,8 +2,7 @@ name: Feature CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore:
-      - master
+    branches-ignore: [master]
 
   pull_request:
     branches-ignore:
@@ -69,9 +68,6 @@ jobs:
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
-
-    - name: Export path
-      run: echo "::add-path::$(composer -q global config home)/vendor/bin"
 
     - name: Install Phpcpd
       run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
