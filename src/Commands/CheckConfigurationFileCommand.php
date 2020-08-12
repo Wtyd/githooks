@@ -3,6 +3,7 @@
 namespace GitHooks\Commands;
 
 use GitHooks\Configuration;
+use GitHooks\ConfigurationFileValidator;
 use GitHooks\Constants;
 use GitHooks\Exception\ParseConfigurationFileException;
 use GitHooks\Utils\Printer;
@@ -19,39 +20,45 @@ class CheckConfigurationFileCommand extends Command
     protected $configuration;
 
     /**
+     * @var ConfigurationFileValidator
+     */
+    protected $configurationFileValidator;
+
+    /**
      * @var Printer
      */
     protected $printer;
 
-    public function __construct(Configuration $configuration, Printer $printer)
+    public function __construct(Configuration $configuration, ConfigurationFileValidator $configurationFileValidator, Printer $printer)
     {
         $this->configuration = $configuration;
+        $this->configurationFileValidator = $configurationFileValidator;
         $this->printer = $printer;
         parent::__construct();
     }
 
     public function handle()
     {
-        $this->printer->line('Verificando el formato de ' . Constants::CONFIGURATION_FILE_PATH . ':');
+        $this->printer->line('Checking the configuration file ' . Constants::CONFIGURATION_FILE_PATH . ':');
         $root = getcwd();
         try {
             $configurationFile = $this->configuration->readFile($root . '/' . Constants::CONFIGURATION_FILE_PATH);
 
-            $errors = $this->configuration->check($configurationFile);
+            $errors = $this->configurationFileValidator->__invoke($configurationFile);
 
-            if (empty($errors->getErrors())) {
-                $message = 'El fichero ' . Constants::CONFIGURATION_FILE_PATH . ' tiene el formato correcto.';
+            if (!$errors->hasErrors()) {
+                $message = 'The file ' . Constants::CONFIGURATION_FILE_PATH . ' has the correct format.';
                 $this->printer->resultSuccess($message);
             } else {
-                $message = 'El fichero contiene los siguientes errores:';
+                $message = 'The file contains the following errors:';
                 $this->printer->resultError($message);
-                foreach ($errors->getErrors() as $error) {
+                foreach ($errors->getAllErrors() as $error) {
                     $this->printer->line("    - $error");
                 }
             }
 
-            if (! empty($errors->getWarnings())) {
-                foreach ($errors->getWarnings() as $warning) {
+            if ($errors->hasWarnings()) {
+                foreach ($errors->getAllWarnings() as $warning) {
                     $this->printer->resultWarning($warning);
                 }
             }

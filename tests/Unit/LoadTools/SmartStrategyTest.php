@@ -444,56 +444,6 @@ class SmartStrategyTest extends TestCase
         $this->assertCount(0, $loadedTools);
     }
 
-    public function confFileForPhpstanProvider()
-    {
-        return [
-            'Phpstan no tiene configuración' => [
-                'Fichero de configuración' => [
-                    'Tools' => ['phpstan'],
-                ],
-                'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
-            ],
-            // 'Phpstan tiene configuración pero no hay directorios ignorados' => [
-            //     'Fichero de configuración' =>[
-            //         'Tools' => ['phpstan'],
-            //         'phpstan' => [
-            //             'config' => './qa/phpstan-phpqa.neon',
-            //             'level' => 1,
-            //         ],
-            //     ],
-            //     'Ficheros Modificados' => ['config/conf.php', 'prueba.php']
-            // ],
-            // 'Phpstan tiene configuración con directorios ignorados pero algún fichero modificado no pertenece a esos directorios' => [
-            //     'Fichero de configuración' =>[
-            //         'Tools' => ['phpstan'],
-            //         'phpstan' => [
-            //             'config' => './qa/phpstan-phpqa.neon',
-            //             'level' => 1,
-            //         ],
-            //     ],
-            //     'Ficheros Modificados' => ['config/conf.php', 'app/prueba.php']
-            // ],
-        ];
-    }
-
-    /**
-     * @test
-     * @dataProvider confFileForPhpstanProvider
-     */
-    function it_skip_phpstan_when_any_modified_files_is_in_src_directory($configurationFile, $modifiedFiles)
-    {
-        $this->markTestIncomplete('TODO implementar esta funcionalidad');
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
-
-        //$smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
-
-        $loadedTools = $smartStrategy->getTools();
-
-        $this->assertCount(1, $loadedTools);
-
-        $this->assertInstanceOf(Stan::class, $loadedTools['phpstan']);
-    }
 
     //TODO Las condiciones han cambiado (añadido paths... y security-check ahora debe ejecutarse siempre)
     /**

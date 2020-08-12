@@ -17,7 +17,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @group Configuration
- * Tengo que ponerle a los tests la anotacion runInSeparateProcess y @preserveGlobalState disabled para que cuando en los tests de integración use la clase original no me de error tras ejecutar estos tests
+ * The runInSeparateProcess annotation and @preserveGlobalState disabled  must be setted because are neede when the full battery of tests are launched.
+ * Otherwise this tests failed when the integration tests try to use the original class Symfony\Component\Yaml\Yaml.
  */
 class ConfigurationTest extends TestCase
 {
@@ -180,96 +181,5 @@ class ConfigurationTest extends TestCase
                 'dependencyVulnerabilities'
             ],
         ];
-    }
-
-    //TODO mover estos tests a donde corresponda
-    /**
-     * @dataProvider allToolsProvider
-     */
-    function it_can_load_one_tool($fileReaded, $toolClass, $tool)
-    {
-        $this->yamlReaderMock->shouldReceive('parseFile')->andReturn($fileReaded);
-
-        $conf = new Configuration('githooks.yml');
-
-        $this->assertCount(1, $conf->getTools());
-
-        $this->assertInstanceOf($toolClass, $conf->getTools()[$tool]);
-    }
-
-    function it_execute_full_strategy()
-    {
-        $fileReaded = [
-            'Options' => [
-                'OtraOpcion' => null,
-            ],
-            'Tools' => [
-                'phpcs',
-                'phpstan',
-                'phpmd',
-                'phpcpd',
-                'parallelLint',
-                'dependencyVulnerabilities'
-            ],
-        ];
-        $this->yamlReaderMock->shouldReceive('parseFile')->andReturn($fileReaded);
-
-        $conf = new Configuration('githooks.yml');
-
-        $this->assertCount(6, $conf->getTools());
-    }
-
-    function it_execute_smart_strategy_without_discard_any_tool()
-    {
-        $fileReaded = [
-            'Options' => [
-                'smartExecution' => true,
-                'OtraOpcion' => null,
-            ],
-            'Tools' => [
-                'phpcs',
-                'phpstan',
-                'phpmd',
-                'phpcpd',
-                'parallelLint',
-                'dependencyVulnerabilities'
-            ],
-        ];
-        $this->yamlReaderMock->shouldReceive('parseFile')->andReturn($fileReaded);
-
-        $conf = new Configuration('githooks.yml');
-
-        $this->assertCount(6, $conf->getTools());
-    }
-
-
-    function it_execute_smart_strategy_discarding_phpcs()
-    {
-        $this->markTestSkipped("Funcionalidad no terminada");
-        $fileReaded = [
-            'Options' => [
-                'smartExecution' => true,
-                'OtraOpcion' => null,
-            ],
-            'Tools' => [
-                'phpcs',
-                'phpstan',
-                'phpmd',
-                'phpcpd',
-                'parallelLint',
-                'dependencyVulnerabilities'
-            ],
-            'phpcs' => [
-                'standard' => './qa/phpcs-softruleset.xml',
-                'ignore' => ['qa','storage'],
-            ],
-        ];
-        $this->yamlReaderMock->shouldReceive('parseFile')->andReturn($fileReaded);
-
-        $conf = new Configuration('githooks.yml');
-
-        $this->assertCount(5, $conf->getTools());
-
-        $this->assertArrayNotHasKey('phpcs', $conf->getTools());
     }
 }

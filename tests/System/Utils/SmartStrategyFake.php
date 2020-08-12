@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System;
+namespace Tests\System\Utils;
 
 use GitHooks\Constants;
 use GitHooks\LoadTools\SmartStrategy;

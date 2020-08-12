@@ -5,6 +5,12 @@ namespace Tests\System;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use Illuminate\Container\Container;
+use Tests\System\Utils\{
+    CheckSecurityFakeKo,
+    CheckSecurityFakeOk,
+    ConfigurationFileBuilder,
+    PhpFileBuilder
+};
 use Tests\SystemTestCase;
 
 /**

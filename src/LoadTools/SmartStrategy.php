@@ -129,7 +129,6 @@ class SmartStrategy implements StrategyInterface
         if ('php' ===  pathinfo($filePath, PATHINFO_EXTENSION)) {
             return true;
         }
-
         return false;
     }
 

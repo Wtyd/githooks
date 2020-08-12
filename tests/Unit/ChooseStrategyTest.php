@@ -3,24 +3,28 @@
 namespace Tests\Unit;
 
 use GitHooks\ChooseStrategy;
+use GitHooks\LoadTools\FastStrategy;
 use GitHooks\LoadTools\FullStrategy;
 use GitHooks\LoadTools\SmartStrategy;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Tengo que ponerle a los tests la anotacion runInSeparateProcess para que cuando en los tests de integración use la clase original no me de error tras ejecutar estos tests
+ * It choose strategy for Githooks execution with the 'execution' tag inside 'Options'. The posibilities are:
+ * full (default): if 'execution' tag not exist, have an invalid value or is 'full', full strategy is choosen.
+ * smart: when 'execution' tag is 'smart'.
+ * fast: when 'execution' tag is 'fast'.
  */
 class ChooseStrategyTest extends TestCase
 {
     /** @test*/
-    function choose_smart_strategy_when_smart_strategy_is_true_in_Options_section()
+    function choose_smart_strategy_in_Options_section()
     {
         $chooseStrategy = new ChooseStrategy();
 
         $confFile = [
             'Options' => [
-                'smartExecution' => true,
-                'OtraOpcion' => null,
+                'execution' => 'smart',
+                'AnotherOption' => null,
             ],
             'Otro tag' => [],
         ];
@@ -29,45 +33,70 @@ class ChooseStrategyTest extends TestCase
         $this->assertInstanceOf(SmartStrategy::class, $strategy);
     }
 
+    /** @test*/
+    function choose_fast_strategy_in_Options_section()
+    {
+        $chooseStrategy = new ChooseStrategy();
+
+        $confFile = [
+            'Options' => [
+                'execution' => 'fast',
+                'AnotherOption' => null,
+            ],
+            'Otro tag' => [],
+        ];
+        $strategy = $chooseStrategy->__invoke($confFile);
+
+        $this->assertInstanceOf(FastStrategy::class, $strategy);
+    }
+
     public function configurationFileForFullStrategyProvider()
     {
         return [
-            'Smartstrategy está fuera de Options' => [
+            'Explicit "full" strategy' => [
                 [
                     'Options' => [
-                        'OtraOpcion' => null,
-                    ],
-                    'smartExecution' => true,
-                ],
-            ],
-            'Smartstrategy es false' => [
-                [
-                    'Options' => [
-                        'smartExecution' => false,
-                        'OtraOpcion' => null,
+                        'execution' => 'full',
+                        'AnotherOption' => null,
                     ],
                 ],
             ],
-            'Smartstrategy es entero' => [
+            '"execution" tag with another strategy is out of Options' => [
                 [
                     'Options' => [
-                        'smartExecution' => 12,
-                        'OtraOpcion' => null,
+                        'AnotherOption' => null,
+                    ],
+                    'execution' => 'fast',
+                ],
+            ],
+            '"execution" tag is false' => [
+                [
+                    'Options' => [
+                        'execution' => false,
+                        'AnotherOption' => null,
                     ],
                 ],
             ],
-            'Smartstrategy es cadena' => [
+            '"execution" tag is integer' => [
                 [
                     'Options' => [
-                        'smartExecution' => 'true',
-                        'OtraOpcion' => null,
+                        'execution' => 12,
+                        'AnotherOption' => null,
                     ],
                 ],
             ],
-            'Smartstrategy no está' => [
+            '"execution" tag is an invalid strategy' => [
                 [
                     'Options' => [
-                        'OtraOpcion' => null,
+                        'execution' => 'invalid-execution',
+                        'AnotherOption' => null,
+                    ],
+                ],
+            ],
+            '"execution" tag does not existe' => [
+                [
+                    'Options' => [
+                        'AnotherOption' => null,
                     ],
                 ],
             ],

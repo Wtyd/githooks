@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System;
+namespace Tests\System\Utils;
 
 use GitHooks\Constants;
 use GitHooks\Tools\{
@@ -22,7 +22,7 @@ class ConfigurationFileBuilder
 
     public function __construct(string $path)
     {
-        $this->options = [Constants::SMART_EXECUTION => false];
+        $this->options = [Constants::EXECUTION => Constants::FULL_EXECUTION];
 
         $this->tools = [
             Constants::CODE_SNIFFER,

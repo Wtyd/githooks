@@ -2,12 +2,9 @@
 
 namespace Tests;
 
-use Illuminate\Container\Container;
-use Mockery;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use Closure;
 
 /**
  * Al llamar a setOutputCallback escondemos cualquier output por la consola que no venga de phpunit
@@ -74,6 +71,6 @@ class SystemTestCase extends TestCase
 
     protected function assertToolDidNotRun(string $tool)
     {
-        $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has not been executed");
+        $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has been run");
     }
 }

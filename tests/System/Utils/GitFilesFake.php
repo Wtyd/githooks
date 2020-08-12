@@ -1,8 +1,7 @@
 <?php
 
-namespace Tests\System;
+namespace Tests\System\Utils;
 
-use GitHooks\Constants;
 use GitHooks\Utils\GitFiles;
 
 class GitFilesFake extends GitFiles

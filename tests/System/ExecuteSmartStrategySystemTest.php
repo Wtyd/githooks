@@ -2,16 +2,17 @@
 
 namespace Tests\System;
 
-use GitHooks\ChooseStrategy;
 use GitHooks\GitHooks;
-use GitHooks\LoadTools\SmartStrategy;
 use GitHooks\Tools\CheckSecurity;
-use GitHooks\Tools\MessDetector;
-use GitHooks\Tools\ToolsFactoy;
 use GitHooks\Utils\GitFiles;
 use Illuminate\Container\Container;
-use Illuminate\Foundation\Testing\Concerns\InteractsWithContainer;
-use Mockery;
+use Tests\System\Utils\{
+    CheckSecurityFakeKo,
+    CheckSecurityFakeOk,
+    ConfigurationFileBuilder,
+    GitFilesFake,
+    PhpFileBuilder
+};
 use Tests\SystemTestCase;
 
 /*
@@ -24,7 +25,7 @@ use Tests\SystemTestCase;
     Además, cuando se produce un fallo de sintaxis (Parallel-lint KO) las herramientas PhpStan y Mess Detector también son KO.
 
     Si aplicamos el algoritmo de todos los pares (https://pairwise.teremokgames.com/memw/) tenemos los sigueintes casos de prueba:
-    |----------------------------------------------------------------------------------------------------
+    |----------------------------------------------------------------------------------------------------|
     | nº Prueba |Check Security | Mess Detector | CPDetector | Code Sniffer |   Parallel-Lint |  PhpStan |
     |-----------|---------------|---------------| -----------|--------------|-----------------|----------|
     |    1      |       OK      |      OK       |    OK      |    OK        |       OK        |    OK    |
@@ -46,7 +47,8 @@ use Tests\SystemTestCase;
     |----------------------------------------------------------------------------------------------------|
 
  */
-class SmartStrategySystemTest extends SystemTestCase
+
+class ExecuteSmartStrategySystemTest extends SystemTestCase
 {
     protected $configurationFile;
 
@@ -59,7 +61,7 @@ class SmartStrategySystemTest extends SystemTestCase
         $this->createDirStructure();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-        $this->configurationFile->setOptions(['smartExecution' => true]);
+        $this->configurationFile->setOptions(['execution' => 'smart']);
     }
 
     protected function tearDown(): void
@@ -212,7 +214,7 @@ class SmartStrategySystemTest extends SystemTestCase
         ]);
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
 
-        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan','phpcs','phpcpd']));
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpcpd']));
 
         $container = Container::getInstance();
         $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
@@ -248,7 +250,7 @@ class SmartStrategySystemTest extends SystemTestCase
         ]);
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
 
-        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan','phpcs','phpmd']));
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpmd']));
 
         $container = Container::getInstance();
         $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);

@@ -1,6 +1,6 @@
 # Configuración general de la herramienta
 Options:
-  smartExecution: false #Si su valor es true solo se ejecutarán las herramientas que no tengan todos los ficheros modificados excluidos de su análisis
+  execution: full #full (default), smart, fast
 
 # Herramientas que se van a ejecutar
 Tools:
@@ -15,18 +15,18 @@ Tools:
 phpstan:
     config: './qa/phpstan-phpqa.neon'
     #memory-limit: '1G' # Examples: 1M 2000M 1G 5G
-    # paths: ['./src']
+    paths: ['./src']
     # level: 8 #level 0-8 (0 default, 8 max)
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
-    paths: ['./']
-    exclude: ['vendor']
+    paths: [bin, hooks, src, tests]
+    exclude: [vendor]
 
 phpcs:
     paths: [bin, hooks, src, tests]
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
-    ignore: [vendor,  otrodir] # Se podría configurar en el standard directamente
+    ignore: [vendor] # Se podría configurar en el standard directamente
     error-severity: 1
     warning-severity: 6
   
