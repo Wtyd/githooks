@@ -2,7 +2,7 @@ name: Schedule CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ jobs-programados ]
+    branches: [ master ]
   schedule:
     - cron:  '0 4 * * sun' # Ejecución todos los días a las 4 de la mañana
 
