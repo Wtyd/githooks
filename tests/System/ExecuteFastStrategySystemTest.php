@@ -40,7 +40,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function fast_strategy_1()
+    function fast_strategy_01()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -73,14 +73,21 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function fast_strategy_2()
+    function fast_strategy_02()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
+        $this->configurationFile->setCopyPasteDetectorConfiguration([
+            'paths' => [$this->getPath() . '/app'],
+        ]);
+
+        mkdir($this->getPath() . '/app');
+        $fileBuilderForApp = new PhpFileBuilder('FileForCopyPasteDetector');
+        file_put_contents($this->getPath() . '/app/FileForCopyPasteDetector.php', $fileBuilderForApp->build());
+
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
 
-        mkdir($this->path . '/app');
-        file_put_contents($this->getPath() . '/app/File.php', $fileBuilder->build());
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
         $container = Container::getInstance();
         $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
@@ -108,7 +115,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function fast_strategy_3()
+    function fast_strategy_03()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -154,7 +161,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function fast_strategy_4()
+    function fast_strategy_04()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -196,7 +203,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function fast_strategy_5()
+    function fast_strategy_05()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -236,7 +243,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
      * A error in Parallel-lint causes Mess Detector and Php Stan to fail. To avoid this, we make these tools run against other paths.
      * @test
      */
-    function fast_strategy_6()
+    function fast_strategy_06()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -285,8 +292,47 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpstan');
     }
 
+    // Tests    Check Security  CPDetector  Code Sniffer    Mess Detector   Parallel-Lint   PhpStan
+    // 7        KO              OK          OK              KO              skip             OK
+
     /** @test */
-    function fast_strategy_8()
+    function fast_strategy_07()
+    {
+        $fileBuilder = new PhpFileBuilder('File');
+
+        $this->configurationFile->setParallelLintConfiguration([
+            'paths' => [$this->getPath() . '/app'],
+        ]);
+
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
+
+        $container = Container::getInstance();
+        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $container->bind(GitFiles::class, GitFilesFake::class);
+        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+            $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
+        });
+
+        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+
+        try {
+            $githooks();
+        } catch (\Throwable $th) {
+            //If something goes wrong I avoid throwing the exception because it hides the asserts
+        }
+
+        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
+        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
+        $this->assertToolHasFailed('phpmd');
+        $this->assertToolDidNotRun('parallel-lint');
+        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+    }
+
+    /** @test */
+    function fast_strategy_08()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -327,7 +373,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function fast_strategy_9()
+    function fast_strategy_09()
     {
         $fileBuilder = new PhpFileBuilder('File');
 

@@ -37,5 +37,5 @@ phpmd:
 
 phpcpd:
   paths: ['./']
-  exclude: ['vendor']
+  exclude: ['vendor', 'tests']
  
