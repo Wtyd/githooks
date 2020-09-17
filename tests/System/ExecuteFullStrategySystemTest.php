@@ -67,8 +67,8 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios se han commiteado.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
     /** @test */
@@ -100,8 +100,8 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('parallel-lint');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have not been committed. Please correct the errors and try again.', $this->getActualOutput());
     }
 
     /** @test */
@@ -133,8 +133,8 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed(PhpFileBuilder::PARALLEL_LINT);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPCPD);
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have not been committed. Please correct the errors and try again.', $this->getActualOutput());
     }
 
     /** @test */
@@ -167,7 +167,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PARALLEL_LINT);
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolHasFailed(PhpFileBuilder::PHPCPD);
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have not been committed. Please correct the errors and try again.', $this->getActualOutput());
     }
 }

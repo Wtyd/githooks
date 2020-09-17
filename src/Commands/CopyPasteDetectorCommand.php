@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 class CopyPasteDetectorCommand extends Command
 {
     protected $signature = 'tool:phpcpd';
-    protected $description = 'Ejecuta la herramienta de validación de código duplicado phpcpd con la configuración extraída del fichero de configuración.';
+    protected $description = 'Run phpcp.';
 
     /**
      * @var ToolCommandExecutor

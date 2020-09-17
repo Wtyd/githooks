@@ -99,8 +99,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios se han commiteado.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
     /** @test */
@@ -132,8 +132,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('parallel-lint');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have not been committed. Please correct the errors and try again.', $this->getActualOutput());
     }
 
     /** @test */
@@ -166,8 +166,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpcpd');
         $this->assertToolDidNotRun('parallel-lint');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios se han commiteado.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
     /** @test */

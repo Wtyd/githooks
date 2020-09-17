@@ -13,7 +13,7 @@ class ToolDoesNotExistException extends \DomainException implements LoadToolsExc
     public static function forTool(string $tool): ToolDoesNotExistException
     {
         $exception = new self(sprintf(
-            'La herramienta %s no está contemplada por GiHooks',
+            'The %s tool is not supported by GiHooks.',
             $tool
         ));
 

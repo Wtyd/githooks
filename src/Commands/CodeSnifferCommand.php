@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 class CodeSnifferCommand extends Command
 {
     protected $signature = 'tool:phpcs';
-    protected $description = 'Ejecuta la herramienta de formateado de código phpcs con la configuración extraída del fichero de configuración.';
+    protected $description = 'Run phpcs';
 
     /**
      * @var ToolCommandExecutor

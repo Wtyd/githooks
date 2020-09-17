@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 class StanCommand extends Command
 {
     protected $signature = 'tool:phpstan';
-    protected $description = 'Ejecuta la herramienta de análisis de código phpstan con la configuración extraída del fichero de configuración.';
+    protected $description = 'Run phpstan.';
 
     /**
      * @var ToolCommandExecutor

@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 class MessDetectorCommand extends Command
 {
     protected $signature = 'tool:phpmd';
-    protected $description = 'Ejecuta la herramienta de análisis de código phpmd con la configuración extraída del fichero de configuración.';
+    protected $description = 'Run phpmd.';
 
     /**
      * @var ToolCommandExecutor

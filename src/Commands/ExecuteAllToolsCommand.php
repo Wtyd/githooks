@@ -10,7 +10,7 @@ use Illuminate\Container\Container;
 class ExecuteAllToolsCommand extends Command
 {
     protected $signature = 'tool:all';
-    protected $description = 'Ejecuta todas las herramientas con la configuración que se encuentre en el fichero de configuración.';
+    protected $description = 'Runs all the tools setted in githooks.yml';
 
     public function handle(Printer $printer)
     {

@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 class CheckSecurityCommand extends Command
 {
     protected $signature = 'tool:check-security';
-    protected $description = 'Ejecuta la herramienta que valida la seguridad de las librerías.';
+    protected $description = 'Run check-security';
 
     /**
      * @var ToolCommandExecutor

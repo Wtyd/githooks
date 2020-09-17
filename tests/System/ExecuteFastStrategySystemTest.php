@@ -68,8 +68,8 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('parallel-lint');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} seconds.%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have not been committed. Please correct the errors and try again.', $this->getActualOutput());
     }
 
     /** @test */
@@ -110,8 +110,8 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpstan');
         $this->assertToolDidNotRun('parallel-lint');
-        $this->assertRegExp('%Tiempo total de ejecución = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Tus cambios se han commiteado.', $this->getActualOutput());
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
     /** @test */

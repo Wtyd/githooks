@@ -12,7 +12,7 @@ class ModifiedButUnstagedFilesException extends \RuntimeException implements Too
     public static function forExit(array $exit): ModifiedButUnstagedFilesException
     {
         $exception = new self(sprintf(
-            'Se han modificado algunos ficheros pero no se ha commiteado'
+            'Some files have been modified but it has not been committed'
         ));
 
         $exception->exit = $exit;

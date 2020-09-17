@@ -12,7 +12,7 @@ class ToolsIsEmptyException extends \RuntimeException implements GitHooksExcepti
     public static function forFile(string $file): ToolsIsEmptyException
     {
         $exception = new self(
-            "El tag'Tools' del fichero '$file' no contiene elementos."
+            "The 'Tools' key from '$file' file has no items."
         );
 
         $exception->filePath = $file;

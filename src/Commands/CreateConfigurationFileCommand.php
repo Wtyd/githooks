@@ -8,8 +8,8 @@ use GitHooks\Utils\Printer;
 class CreateConfigurationFileCommand extends Command
 {
     protected $signature = 'conf:init';
-    protected $description = 'Crea el fichero de configuración githooks.yml en la carpeta ./qa';
-     /**
+    protected $description = 'Creates the configuration file githooks.yml in the project path and copies the githook precommit';
+    /**
      * @var Printer
      */
     protected $printer;

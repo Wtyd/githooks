@@ -12,7 +12,7 @@ class ExecutableNotFoundException extends \RuntimeException implements ToolsExce
     public static function forExec(string $executable): ExecutableNotFoundException
     {
         $exception = new self(sprintf(
-            'No se encuentra el commando %s.',
+            'Command %s not found.',
             $executable
         ));
 

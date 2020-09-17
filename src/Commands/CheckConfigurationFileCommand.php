@@ -12,7 +12,7 @@ use Illuminate\Console\Command;
 class CheckConfigurationFileCommand extends Command
 {
     protected $signature = 'conf:check';
-    protected $description = 'Verifica que existe el fichero de configuración githooks.yml en la carpeta ./qa y que tiene el formato adecuado.';
+    protected $description = 'Check that the githooks.yml configuration file exists and that it is in the proper format.';
 
     /**
      * @var Configuration

@@ -12,7 +12,7 @@ class ToolsNotFoundException extends \RuntimeException implements GitHooksExcept
     public static function forFile(string $file): ToolsNotFoundException
     {
         $exception = new self(
-            "No se encuentra el tag 'Tools' en el fichero '$file'."
+            "There is no 'Tools' key in the '$file' file."
         );
 
         $exception->filePath = $file;

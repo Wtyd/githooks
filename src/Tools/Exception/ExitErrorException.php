@@ -12,7 +12,7 @@ class ExitErrorException extends \RuntimeException implements ToolsExceptionInte
     public static function forExit(array $exit): ExitErrorException
     {
         $exception = new self(sprintf(
-            'La herramienta ha detectado errores'
+            'An error has occurred'
         ));
 
         $exception->exit = $exit;

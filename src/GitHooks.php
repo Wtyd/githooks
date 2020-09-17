@@ -3,8 +3,6 @@
 namespace GitHooks;
 
 use GitHooks\Exception\ExitException;
-use GitHooks\Exception\GitHooksExceptionInterface;
-use GitHooks\LoadTools\Exception\LoadToolsExceptionInterface;
 use GitHooks\Tools\ToolExecutor;
 use Exception;
 use GitHooks\Utils\Printer;
@@ -64,15 +62,15 @@ class GitHooks
 
         $endTotalTime = microtime(true);
         $executionTotalTime = $endTotalTime - $startTotalTime;
-        $this->printer->line("\n  Tiempo total de ejecución = " . number_format($executionTotalTime, 2) . " sec");
+        $this->printer->line("\n  Total run time = " . number_format($executionTotalTime, 2) . " seconds.");
 
         //TODO Quizas es mejor que ToolExecutor lance excepcion si KO y nada si va bien. El mensaje OK se printaria en el camino normal y el fallo en el catch
         if ($exitCode === self::OK) {
-            $message = "Tus cambios se han commiteado.";
+            $message = 'Your changes have been committed.';
             $this->printer->success($message);
         } else {
-            $this->printer->generalFail('Tus cambios no se han commiteado. Por favor, corrige los errores y vuelve a intentarlo.');
-            throw new Exception("Cambios no commiteados");
+            $this->printer->generalFail('Your changes have not been committed. Please correct the errors and try again.');
+            throw new Exception('Uncommitted changes');
         }
     }
 }
