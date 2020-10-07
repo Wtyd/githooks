@@ -49,8 +49,6 @@ class ToolCommandExecutor
 
         $file[Constants::TOOLS] = [$tool];
 
-        // $strategy = $this->chooseStrategy->__invoke($file);
-        // $strategy->getTools();
         $this->toolExecutor->__invoke($this->toolsFactoy->__invoke($file[Constants::TOOLS], $file), true);
     }
 }

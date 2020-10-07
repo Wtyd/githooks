@@ -17,3 +17,5 @@ myreport/
 # Dummy files for manual testing
 Dummy.php
 src/dummy/
+
+*.md

@@ -26,13 +26,13 @@ class CodeSniffer extends ToolAbstract
     public const IGNORE = 'ignore';
 
     /**
-    * @var string ERROR_SEVERITY Tag que indica la sensibilidad a errores de phpcs en el fichero de configuracion .yml. Su valor es un entero de 1 a 7.
-    */
+     * @var string ERROR_SEVERITY Tag que indica la sensibilidad a errores de phpcs en el fichero de configuracion .yml. Su valor es un entero de 1 a 7.
+     */
     public const ERROR_SEVERITY = 'error-severity';
 
     /**
-    * @var string WARNING_SEVERITY Tag que indica la sensibilidad a warnings de phpcs en el fichero de configuracion .yml. Su valor es un entero de 1 a 7.
-    */
+     * @var string WARNING_SEVERITY Tag que indica la sensibilidad a warnings de phpcs en el fichero de configuracion .yml. Su valor es un entero de 1 a 7.
+     */
     public const WARNING_SEVERITY = 'warning-severity';
 
     public const OPTIONS = [self::PATHS, self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY];
@@ -62,7 +62,7 @@ class CodeSniffer extends ToolAbstract
      */
     public function execute()
     {
-        $phpcbf = 'phpcbf ' . $this->prepareCommand();
+        $phpcbf = $this->prepareCommand();
 
         $exitBF = $exitCodeBF = null;
         exec($phpcbf, $exitBF, $exitCodeBF);
@@ -70,7 +70,8 @@ class CodeSniffer extends ToolAbstract
         if (0 === $exitCodeBF) {
             $this->exit = $exitBF;
         } else {
-            $phpcs = 'phpcs ' . $this->prepareCommand();
+            //change 'phpcbf args' by 'phpcs args'
+            $phpcs = str_replace('phpcbf', 'phpcs', $this->prepareCommand());
 
             $exitCS = $exitCodeCS = null;
             exec($phpcs, $exitCS, $exitCodeCS);
@@ -101,20 +102,8 @@ class CodeSniffer extends ToolAbstract
             }
         }
 
-        //hooks src --standard=./qa/psr12-ruleset.xml --ignore=vendor,otrodir --error-severity=1 --warning-severity=6
-        return $arguments;
-    }
-
-    /**
-     * Sobreescritura del método padre.
-     *
-     * @return void
-     */
-    public function executeWithLiveOutput()
-    {
-        $command = 'phpcbf ' . $this->prepareCommand();
-        echo "$command\n";
-        passthru($command, $this->exitCode);
+        //phpcbf src --standard=./qa/psr12-ruleset.xml --ignore=vendor,otrodir --error-severity=1 --warning-severity=6
+        return $this->executable . ' ' . $arguments;
     }
 
     /**

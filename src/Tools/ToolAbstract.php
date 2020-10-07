@@ -27,7 +27,6 @@ abstract class ToolAbstract
      */
     protected $exit = [];
 
-    //TODO Creo que esta variable solo contiene errores al buscar el ejecutable
     /**
      * @var string
      */
@@ -70,7 +69,7 @@ abstract class ToolAbstract
         }
 
         //TODO para Windows where para cmd y Get-Command para Ps
-        if (! $this->isWindows()) {
+        if (!$this->isWindows()) {
             //Step 3 : Global (only in Unix)
             // Search executable globally
             // Unix command for linux and MacOS
@@ -130,7 +129,7 @@ abstract class ToolAbstract
      */
     protected function routeCorrector(array $paths)
     {
-        if (! $this->isWindows()) {
+        if (!$this->isWindows()) {
             return $paths;
         }
 
@@ -167,11 +166,12 @@ abstract class ToolAbstract
     }
 
     /**
-     * Método donde se ejecuta la herramienta mediante passthru. Se mostrará por pantalla la salida de la herramienta en tiempo real.
+     * This method is run by 'vendor/bin/githooks tool:...' commands. The output of the tool/s will be displayed in real time.
+     * This method has the key word 'final' because is equal for any tool.
      *
      * @return void
      */
-    public function executeWithLiveOutput()
+    final public function executeWithLiveOutput()
     {
         $command = $this->prepareCommand();
         echo  $command . "\n";
