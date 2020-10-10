@@ -1,35 +1,140 @@
-## Introducción
-El principal objetivo de la entrega continua de software es entregar software lo más rápido posible de la mayor calidad posible. Para ello es necesario encontrar los errores lo antes posible.
-El propósito de esta librería es establecer ciertos git hooks en un proyecto. Un git hook no es más que script que se ejecuta antes de realizar una acción con git (pre-commit, pre-push, etc). Estos scripts pueden tener las siguientes funciones:
-1. Validar que el código sigue los estándares del proyecto.
-1. Verificar que el código no tiene errores de sintaxis del lenguaje.
-1. Buscar errores en el código.
-1. Ejecutar pruebas unitarios y/o smoke tests.
+# GitHooks
 
-La herramienta GitHooks incluye las siguientes herramientas:
-- Php CodeSniffer.
-- Php Copy Paste Detector.
-- Php Mess Detector.
-- Parallel-lint.
-- Php Stan.
-- Composer - Security Check Plugin.
+<p align="center">
+    <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Production+CI%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Production%20CI/badge.svg"></a>
+    <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
+    <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
+    <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
+    <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
+</p>
 
-## Instalación
-Esta librería se instala mediante el `composer.json` del proyecto. Para ello:
+It manages the php code validation tools that will be executed in the git hook *precommit* (in the future we want all the git hooks to be managed).
 
-1. En el apartado `require-dev` añadimos la librería:
+GitHooks helps to reduce the feedback loop by doing the following checks in the precommit phase:
+1. Validate that the code follows the project standards.
+1. Verify that the code has no language syntax errors.
+1. Look for errors in the code (unused variables, excessive cyclomatic complexity, etc.).
 
-`composer require --dev githooks/githooks`
+GitHooks only manages the php validation tools but it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
 
-1. Instalar las herramientas que deba ejecutar GitHooks:
-    - `squizlabs/php_codesniffer`
-    - `sebastian/phpcpd`
-    - `phpmd/phpmd`
-    - `php-parallel-lint/php-parallel-lint`
-    - `phpstan/phpstan`
-    - `funkjedi/composer-plugin-security-check`
+# Requirements
+* PHP >= 7.1
+* The tools you need to check the precommit hook.
 
-1. La forma de instalación de las herramientas puede ser:
-    - En el composer global.
-    - En el proyecto.
-    - Como .phar siempre que la herramienta lo permita y este accesible de forma global.
+# Install
+1. GitHooks must be installed like dev requirement with composer. Actually, it does not have [.phar](https://www.php.net/phar) support.
+
+    ```bash
+    composer require --dev wtyd/githooks
+    ```
+
+1. Install all needed [supported tools](#supported-tools). The installation method for the tools can be:
+    - Like global dependency with composer: `composer global require squizlabs/php_codesniffer`
+    - Like dev requirement in the project: `composer require --dev sebastian/phpcpd`
+    - Like .phar on the root of the project or with global access.
+
+1. Initialize GitHooks with `vendor/bin/githooks conf:init`. This command creates the configuration file in the root paths (`githooks.yml`) and copies the script for launch GitHooks on the precommit event in `.git/hooks` directory.
+
+1. [Set the configuration file](#Set-the-configuration-file).
+
+
+# Usage
+When you commit, all the configured code check tools are automatically launched. If your code pass all checks, GitHooks allows you to commit. If not, you have to fix the code and try again:
+<p>
+    <img src="https://i.ibb.co/F0m9ZfV/Git-Hooks-OK.png" alt="Imagen todo OK">
+</p>
+<p>
+    <img src="https://i.ibb.co/VWb6Ks4/Git-Hooks-KO.png" alt="Imagen con KO">
+</p>
+
+We can also launch all the tools one by one by command line in the way they are setted for the project:
+<p>
+    <img src="https://i.ibb.co/QQYNWZj/Git-Hooks-Tool.png" alt="Imagen de una herramienta">
+</p>
+
+# Supported Tools
+At this moment, the supported tools are:
+* [Php CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
+* [Php Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd)
+* [Php Mess Detector](https://phpmd.org/)
+* [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint)
+* [Php Stan](https://github.com/phpstan/phpstan)
+* [Composer - Security Check Plugin](https://github.com/funkjedi/composer-plugin-security-check)
+
+# Set the Configuration File
+The `githooks.yml` file is splitted on three parts:
+
+## Options
+Actually the only option is `execution`. This flag marks how GitHooks will run:
+* `full` (the default option): executes always all tools setted against all path setted for each tool.
+    For example, you setted phpcs for run in `src` and `app` directories. The commit only contains modified files from `database` directory. Phpcs will check `src` and `app` directories even if no files in these directories have been modified.
+* `smart`: This option tries to save execution time when running the application. For this, it may not execute any of the configured tools if all the commit files do not belong to any of the directories against which the tool is launched or are files that are in excluded or ignored directories.
+For example: in the above case of phpcs, phpcs will not be executed. Another case, if you modify a test and phpmd has the `tests` folder excluded,  phpmd won't run either.
+    * The tools this option affects are: phpcs, phpmd, phpcpd, and parallel-lint. That is, they may not be executed even if they are configured.
+    * The tools that are NOT affected by this strategy are: phpstan (you can only mark exclusions in its configuration file) and security-check. These tools will run as long as they are configured even if the `smart` option is active.
+* `fast`: this option runs the tools only files modified by commit.
+    * This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint. The rest of the tools will run as the full option.
+    * **WARNING!!!** You must set the excludes of the tools either in githooks.yml or in the configuration file of eath tool since this
+option overwrites the key `paths` of the tools so that they are executed only against the modified files.
+
+## Tools
+It is an array with the name of the tools that GitHooks will run. The name of the tools is their executable. If you want all the tools to be executed, the `Tools` key will be as follows:
+```yml
+Tools:
+    - phpstan
+    - check-security
+    - parallel-lint
+    - phpcs
+    - phpmd
+    - phpcpd
+```
+The order in which the tools are is the order in which they will be executed.
+
+## Setting Tools
+In next step you must configure the tools with the same name as in the *Tools* key. For example, for set phpcs:
+```yml
+phpcs:
+    paths: [src, tests]
+    ignore: [vendor]
+    standard: 'PSR12'
+```
+
+All the available options are:
+
+| Option           | Description                                               | Examples                                            |
+|------------------|-----------------------------------------------------------|-----------------------------------------------------|
+| **phpstan**          |||
+| config           | String. Path to configuration file                        | 'phpstan.neon', 'path/to/phpstan.neon'              |
+| memory-limit     | String. Set the php memory limit while phpstan is running | '1M', '2000M', '1G'                                 |
+| paths            | Array. Paths or files against the tool will be executed   | ['./src'], ['./src', './app/MiFile.php']            |
+| level            | Integer. Default 0, max 8.                                | 0, 1, 5, 8                                          |
+| **parallel-lint**    |||
+| paths            | Array. Paths or files against the tool will be executed   | [src], [src, './app/MiFile.php']                    |
+| exclude          | Array. Paths or files to exclude.                         | [vendor], [vendor, './app/MiFile.php']              |
+| **phpcs**            |||
+| paths            | Array. Paths or files against the tool will be executed   | [src], [src, './app/MiFile.php']                    |
+| standard         | String. Rules or configuration file with the rules.       | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml' |
+| ignore           | Array. Paths or files to exclude.                         | [vendor], [vendor, './app/MiFile.php']              |
+| error-severity   | Integer. Level of error to detect.                        | 1, 5                                                |
+| warning-severity | Integer. Level of warning to detect.                      | 5, 7, 9                                             |
+| **phpmd**            |||
+| paths            | Array. Paths or files against the tool will be executed   | ['./src'], ['./src', './app/MiFile.php']            |
+| rules            | String. Rules or configuration file with the rules.       | 'controversial,codesize', 'naming', 'myrules.xml'   |
+| exclude          | Array. Paths or files to exclude.                         | ['./vendor'], ['./vendor', './app/MiFile.php']      |
+| **phpcpd**           |||
+| paths            | Array. Paths or files against the tool will be executed   | [src], [src, './app/MiFile.php']                    |
+| exclude          | Array. Paths or files to exclude.                         | [vendor], [vendor, './app/MiFile.php']              |
+
+
+These are the options supported by GitHooks. Obviously, each tool has many other options. More precise configuration is possible with each tool configuration file. The *check-security* tool has no configuration.
+
+Many of the options are *optional* as long as the tool has a properly established configuration file. The `conf:init` command copies a githooks.yml file template to the root of the project with all the options commented of each the tool. To make sure that when you finish configuring it, all the options are valid, you can launch the command `conf:check`:
+<p>
+    <img src="https://i.ibb.co/Qfjf0vv/Git-Hooks-Conf.png" alt="conf:check">
+</p>
+
+# Contributing
+Contributions from others would be very much appreciated! Send pull [request](https://github.com/Wtyd/githooks/pulls)/[issue](https://github.com/Wtyd/githooks/issues). Check all steps for do that at Wiki section for [Contributing](https://github.com/Wtyd/githooks/wiki). Thanks!
+
+# License
+The MIT License (MIT). Please see [License File](/LICENSE) for more information.

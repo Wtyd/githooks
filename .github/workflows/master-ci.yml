@@ -1,4 +1,4 @@
-name: Production CI
+name: Master
 # https://github.com/shivammathur/setup-php
 on:
   push:

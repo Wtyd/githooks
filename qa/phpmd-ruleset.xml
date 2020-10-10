@@ -1,17 +1,16 @@
 <?xml version="1.0"?>
-<ruleset name="Tests Ruleset" 
+<ruleset name="Domain Ruleset" 
     xmlns="http://pmd.sf.net/ruleset/1.0.0" 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd" xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
     <description>
-        Reglas para aplicar a los tests de la aplicación
+        Reglas para aplicar al dominio de la aplicación (src)
     </description>
 
-
 <!-- **************** EXCLUDES **************** -->
-    <exclude-pattern>*src/*</exclude-pattern>
+    <exclude-pattern>*tests/*</exclude-pattern>
     <exclude-pattern>*vendor/*</exclude-pattern>
-
-<!-- **************** CLEAN CODE **************** -->     
+  
+<!-- **************** CLEAN CODE **************** --> 
     <rule ref="rulesets/cleancode.xml">
         <!-- <exclude name="BooleanArgumentFlag" /> Hacerlo warning en lugar de error que joda verlo -->
         <exclude name="ElseExpression" />
@@ -22,22 +21,26 @@
         <!-- <exclude name="UndefinedVariable" /> -->
     </rule>
 
+<!-- **************** CODE SIZE **************** --> 
     <rule ref="rulesets/codesize.xml">
         <exclude name="CyclomaticComplexity"/>
         <exclude name="NPathComplexity"/>
         <exclude name="ExcessiveMethodLength"/>
-        <exclude name="ExcessiveClassLength"/> <!-- excluida -->
+        <exclude name="ExcessiveClassLength"/>
         <exclude name="ExcessiveParameterList"/>
         <!-- 10 por defecto -->
-        <exclude name="ExcessivePublicCount"/> <!-- excluida -->
-        <exclude name="TooManyFields"/> <!-- excluida -->
-        <exclude name="TooManyMethods"/> <!-- excluida -->
-        <exclude name="TooManyPublicMethods"/> <!-- excluida -->
+        <exclude name="ExcessivePublicCount"/>
+        <!-- 45 por defecto -->
+        <exclude name="TooManyFields"/>
+        <!-- 15 por defecto -->
+        <exclude name="TooManyMethods"/>
+        <!-- 25 por defecto -->
+        <exclude name="TooManyPublicMethods"/>
+        <!-- 10 por defecto -->
         <exclude name="ExcessiveClassComplexity"/>
         <!-- 50 por defecto -->
     </rule>
 
-<!-- **************** CODE SIZE **************** --> 
     <rule ref="rulesets/codesize.xml/CyclomaticComplexity">
         <properties>
             <property name="reportLevel" value="10" />
@@ -62,6 +65,14 @@
         </properties>
     </rule>
 
+    <rule ref="rulesets/codesize.xml/ExcessiveClassLength">
+        <properties>
+            <property name="minimum" value="1000" />
+            <!-- el valor por defecto es 1000 -->
+            <property name="ignore-whitespace" value="false" />
+        </properties>
+    </rule>
+
     <rule ref="rulesets/codesize.xml/ExcessiveParameterList">
         <properties>
             <property name="minimum" value="10" />
@@ -70,10 +81,34 @@
         </properties>
     </rule>
 
+    <rule ref="rulesets/codesize.xml/ExcessivePublicCount">
+        <properties>
+            <property name="minimum" value="45" />
+            <!-- el valor por defecto es 45 -->
+            <property name="ignore-whitespace" value="false" />
+        </properties>
+    </rule>
+
     <rule ref="rulesets/codesize.xml/TooManyFields">
         <properties>
             <property name="maxfields" value="15" />
             <!-- el valor por defecto es 15 -->
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/TooManyMethods">
+        <properties>
+            <property name="maxfields" value="25" />
+            <!-- el valor por defecto es 25 -->
+            <!-- Por defecto se ignoran los métodos get y set -->
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/TooManyPublicMethods">
+        <properties>
+            <property name="maxfields" value="10" />
+            <!-- el valor por defecto es 10 -->
+            <!-- Por defecto se ignoran los métodos get y set -->
         </properties>
     </rule>
 
@@ -89,11 +124,12 @@
         <!--<exclude name="Superglobals"/> el acceso directo a var globales esta desaconsejado, mejor encapsularlas en objetos-->
         <!--<exclude name="CamelCaseClassName"/> -->
         <!--<exclude name="CamelCasePropertyName"/>-->
-        <exclude name="CamelCaseMethodName"/>
+        <!--<exclude name="CamelCaseMethodName"/>-->
         <!--<exclude name="CamelCaseParameterName"/>-->
         <!--<exclude name="CamelCaseVariableName"/>-->
     </rule>
     
+<!-- **************** DESIGN **************** --> 
     <rule ref="rulesets/design.xml">
         <!--<exclude name="ExitExpression"/> -->
         <!--<exclude name="EvalExpression"/> -->
@@ -108,7 +144,6 @@
         <!--<exclude name="CountInLoopExpression"/> -->
     </rule>
 
-<!-- **************** DESIGN **************** -->  
     <rule ref="rulesets/design.xml/NumberOfChildren">
         <properties>
             <property name="maxfields" value="15" />
@@ -142,7 +177,7 @@
 
     <rule ref="rulesets/naming.xml/ShortVariable">
         <properties>
-            <property name="exceptions" description="Nombres de variables permitidas de menos de 3 carácteres" value="id,ip,up,i,j,k,ex,db"/>
+            <property name="exceptions" description="Allowed variable names of less than 3 characters" value="id,ip,up,i,j,k,ex,th,db"/>
         </properties>
     </rule>
 
@@ -155,7 +190,7 @@
 
     <rule ref="rulesets/naming.xml/ShortMethodName">
         <properties>
-            <property name="exceptions" description="Nombres de métodos permitidas de menos de 3 carácteres" value="up"/>
+            <property name="exceptions" description="Allowed method names of less than 3 characters" value="up"/>
         </properties>
     </rule>
 

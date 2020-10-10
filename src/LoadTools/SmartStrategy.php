@@ -7,12 +7,12 @@ use GitHooks\Tools\ToolsFactoy;
 use GitHooks\Utils\GitFiles;
 
 /**
- * Esta estrategia prepara solo las herramientas que son indispensables. Trata de ahorrar tiempo de ejecución al ejecutar la aplicación.
- * Podemos no ejecutar una o mas herramientas en estos casos.
- * 1. Modificamos ficheros que no son php. No tiene sentido ejecutar phpmd o cualquier otro que analice código php si no hemos modificado código php.
- * 2. Modificamos ciertos ficheros pero todos están en la zona de exclusión/ignore de una o más herramientas. Pj: modificamos un test y phpmd tiene excluida la carpeta tests.
- * Las herramientas que se pueden excluir del analisis son: phpcs, phpmd, phpcpd y parallel-lint.
- * Las herramientas que NO se pueden excluir son: phpstan (solo se pueden marcar exclusiones en su fichero de configuración) y dependencyVulnerabilites.
+ * This strategy tries to save execution time when running the application. For this, it may not execute any of the configured tools if all the commit files do
+ * not belong to any of the directories against which the tool is launched or are files that are in excluded or ignored directories.
+ * For example: we modify a test and phpmd has the tests folder excluded. In this case, phpmd will not be executed.
+ * - The tools this strategy affects are: phpcs, phpmd, phpcpd, and parallel-lint. That is, they may not be executed even if they are configured.
+ * - The tools that are NOT affected by this strategy are: phpstan (you can only mark exclusions in its configuration file) and security-check. These tools will
+ * run as long as they are configured even if the smart option is active.
  */
 class SmartStrategy implements StrategyInterface
 {
@@ -22,7 +22,7 @@ class SmartStrategy implements StrategyInterface
      * ['Options' => ['smartExecution' => true], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
      *
      * @var array
-    */
+     */
     protected $configurationFile;
 
     /**
@@ -92,7 +92,7 @@ class SmartStrategy implements StrategyInterface
         $modifiedFiles = $this->gitFiles->getModifiedFiles();
 
         foreach ($modifiedFiles as $file) {
-            if (! $this->isFileExcluded($file, $excludes)) {
+            if (!$this->isFileExcluded($file, $excludes)) {
                 return false;
             }
         }
@@ -178,7 +178,7 @@ class SmartStrategy implements StrategyInterface
     protected function toolHasConfiguration(string $tool): bool
     {
         if (array_key_exists($tool, $this->configurationFile)) {
-                return true;
+            return true;
         }
 
         return false;

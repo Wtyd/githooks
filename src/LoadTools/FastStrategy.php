@@ -7,10 +7,11 @@ use GitHooks\Tools\ToolsFactoy;
 use GitHooks\Utils\GitFiles;
 
 /**
- * Esta estrategia ejecuta las herramientas únicamente contra los ficheros modificados por el commit.
- * 1. Solo las ACCELERABLE_TOOLS estarán afectadas por esta estrategia.
- * 2. IMPORTANTE!!! Debemos de configurar los excludes de las herramientas ya sea en el githooks.yml o en los ficheros de configuración propios ya que esta
- * estrategia obreescribe la key 'paths' de las herramientas para que se ejecuten únicamente contra los ficheros modificados.
+ * This strategy runs the tools only against files modified by commit.
+ * 1. This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint (ACCELERABLE_TOOLS). The rest of the tools will run as the full
+ * option.
+ * 2. WARNING!!! You must set the excludes of the tools either in githooks.yml or in the configuration file of eath tool since this option overwrites the key
+ * paths of the tools so that they are executed only against the modified files.
  */
 class FastStrategy implements StrategyInterface
 {

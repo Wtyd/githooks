@@ -11,12 +11,9 @@ on:
 env:
   extensions: mbstring #intl, pcov
 jobs:
-  code_analysis:    
+  phpstan:
     runs-on: ubuntu-latest
-    name: ${{ matrix.tool }} Code Analysis
-    strategy:
-      matrix:
-        tool: [phpcs, phpmd, phpstan]
+    name: PhpStan
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -25,23 +22,88 @@ jobs:
       uses: shivammathur/setup-php@v2
       with:
         php-version: '7.4'
-        tools: prestissimo, ${{ matrix.tool }}
+        tools: prestissimo, phpcpd
+
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
-      if: ${{ 'phpstan' == matrix.tool }}
+
+    - name: Execute PhpStan
+      run: php bin/githooks tool:phpstan
+
+  phpcs:    
+    runs-on: ubuntu-latest
+    name: Php Code Sniffer
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: prestissimo
+
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
 
     - name: Execute Php Code Sniffer
-      run: ${{ matrix.tool }} --standard=./qa/psr12-ruleset.xml ./src
-      if: ${{ 'phpcs' == matrix.tool }}
+      run: php bin/githooks tool:phpcs
+
+  phpmd:    
+    runs-on: ubuntu-latest
+    name: Php Mess Detector
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: prestissimo
+
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
 
     - name: Execute Php Mess Detector
-      run: ${{ matrix.tool }} ./ text ./qa/phpmd-src-ruleset.xml
-      if: ${{ 'phpmd' == matrix.tool }}
+      run: php bin/githooks tool:phpmd
 
-    - name: Execute Php Stan
-      run: ${{ matrix.tool }} analyse -c ./qa/phpstan-phpqa.neon --no-progress -n -l 8 ./src
-      if: ${{ 'phpstan' == matrix.tool }}
 
   tests:    
     runs-on: ${{ matrix.os }}
@@ -62,7 +124,18 @@ jobs:
         tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: none
-        
+  
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
 

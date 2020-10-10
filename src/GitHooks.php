@@ -69,7 +69,7 @@ class GitHooks
             $message = 'Your changes have been committed.';
             $this->printer->success($message);
         } else {
-            $this->printer->generalFail('Your changes have not been committed. Please correct the errors and try again.');
+            $this->printer->generalFail('Your changes have not been committed. Please fix the errors and try again.');
             throw new Exception('Uncommitted changes');
         }
     }

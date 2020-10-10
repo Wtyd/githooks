@@ -5,7 +5,6 @@ Options:
 # Herramientas que se van a ejecutar
 Tools:
   - phpstan
-  - check-security
   - parallel-lint
   - phpcs
   - phpmd
@@ -13,18 +12,18 @@ Tools:
 
 # Configuración de cada una de las herramientas
 phpstan:
-    config: './qa/phpstan-phpqa.neon'
+    config: './qa/phpstan.neon'
     #memory-limit: '1G' # Examples: 1M 2000M 1G 5G
     paths: ['./src']
     # level: 8 #level 0-8 (0 default, 8 max)
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
-    paths: [bin, hooks, src, tests]
+    paths: ['./']
     exclude: [vendor]
 
 phpcs:
-    paths: [bin, hooks, src, tests]
+    paths: ['./']
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
     ignore: [vendor] # Se podría configurar en el standard directamente
     error-severity: 1
@@ -32,7 +31,7 @@ phpcs:
   
 phpmd:
   paths: ['./src/']
-  rules: './qa/phpmd-src-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
+  rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:
