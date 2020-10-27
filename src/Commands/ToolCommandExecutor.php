@@ -49,6 +49,8 @@ class ToolCommandExecutor
 
         $file[Constants::TOOLS] = [$tool];
 
-        $this->toolExecutor->__invoke($this->toolsFactoy->__invoke($file[Constants::TOOLS], $file), true);
+        $exitCode = $this->toolExecutor->__invoke($this->toolsFactoy->__invoke($file[Constants::TOOLS], $file), true);
+
+        exit($exitCode);
     }
 }
