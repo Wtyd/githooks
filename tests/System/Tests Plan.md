@@ -3,15 +3,13 @@
 ## Fast Strategy
 The system tests for the Fast Strategy are in the `ExecuteFastStrategySystemTest` file. In all cases we consider that ALL the tools are configured.
 * For the **Non-accelerable tools** (Check Security and Php Copy Paste Detector) there are two possible results, OK and KO.
-* For the **accelerable tools** (Code Sniffer, Parallel-Lint and Php Stan) there are 3 possible results:
-        1. OK: the tool runs and ends successfully.
-        2. KO: the tool runs and ends with some error.
-        3. Skip: the tool does not runs. For this, all the modified files are not in the tool's paths.
-        4. OK (exclude). This means that the tool runs but the modified files are in the tool's exclude.
-* For Mess Detector is the same that accelerable tools but OK (exclude) change to OK (exclude):
-        - OK (exclude): is the same scenario but change the response of Php Mess Detector. Phpmd causes error in GitHooks.
+* For the **accelerable tools** (Code Sniffer, Parallel-Lint and Php Stan) there are 4 possible results:
+    1. OK: the tool runs and ends successfully.
+    2. KO: the tool runs and ends with some error.
+    3. Skip: the tool does not runs. For this, all the modified files are not in the tool's paths.
+    4. OK (exclude). This means that the tool runs but the modified files are in the tool's exclude.
 
-    The true table is:
+    The table with the tools and their possible outputs is:
     |Check Security | CPDetector | Code Sniffer | Mess Detector |   Parallel-Lint |   PhpStan  |
     |:-------------:|:----------:|:------------:|---------------|:---------------:|:----------:|
     |       OK      |   OK       |      OK      |      OK       |       OK        |     OK     |

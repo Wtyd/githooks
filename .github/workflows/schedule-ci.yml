@@ -4,7 +4,7 @@ on:
   push:
     branches: [ master ]
   schedule:
-    - cron:  '0 4 * * sun' # Ejecución todos los días a las 4 de la mañana
+    - cron:  '0 4 * * sun' # Sundays at 04 am
 
 env:
   extensions: mbstring #intl, pcov

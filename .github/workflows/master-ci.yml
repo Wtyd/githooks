@@ -9,12 +9,13 @@ on:
 env:
   extensions: mbstring #intl, pcov
 jobs:
-  code_analysis:    
-    runs-on: ubuntu-latest
-    name: ${{ matrix.tool }} Code Analysis
+  executable_finder_test_local: 
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        tool: [phpcs, phpmd, phpstan]
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+        php-versions: ['7.4']
+    name: Executable Finder on Local Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -22,32 +23,102 @@ jobs:
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '7.4'
-        tools: prestissimo, ${{ matrix.tool }}
-
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        ini-values: "post_max_size=256M" #optional
+        coverage: none
+        
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
-      if: ${{ 'phpstan' == matrix.tool }}
 
-    - name: Execute Php Code Sniffer
-      run: ${{ matrix.tool }} --standard=./qa/psr12-ruleset.xml ./src
-      if: ${{ 'phpcs' == matrix.tool }}
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
 
-    - name: Execute Php Mess Detector
-      run: ${{ matrix.tool }} ./ text ./qa/phpmd-src-ruleset.xml
-      if: ${{ 'phpmd' == matrix.tool }}
+    - name: Testing the Executable Finder
+      run: vendor/bin/phpunit tests/System/ExecutableFinderTest.php
 
-    - name: Execute Php Stan
-      run: ${{ matrix.tool }} analyse -c ./qa/phpstan-phpqa.neon --no-progress -n -l 8 ./src
-      if: ${{ 'phpstan' == matrix.tool }}
-
-  tests:    
-    runs-on: ${{ matrix.os }}
+  executable_finder_test_phar: 
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+        php-versions: ['7.4']
+    name: Executable Finder on Phar Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: prestissimo, phpunit:8.5.0 #, phpcs, phpcbf, phpmd, phpstan, phpcpd, 
+        ini-values: "post_max_size=256M" #optional
+        coverage: none
+        
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest --no-dev
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Composer dumpautoload
+      run: composer dumpautoload
+
+    - name: Download tools as .Phars in Unix
+      run: wget https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar && wget https://squizlabs.github.io/PHP_CodeSniffer/phpcbf.phar && wget https://phpmd.org/static/latest/phpmd.phar &&
+            wget https://github.com/phpstan/phpstan/releases/download/0.12.49/phpstan.phar && wget https://phar.phpunit.de/phpcpd.phar
+      if: ${{ ('ubuntu-latest' == matrix.operating-system || 'macos-latest' == matrix.operating-system) }}
+
+    - name: Download tools as .Phars in Windows
+      run: curl -o phpcs.phar https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar && curl -o phpcbf.phar https://squizlabs.github.io/PHP_CodeSniffer/phpcbf.phar && curl -o phpmd.phar https://phpmd.org/static/latest/phpmd.phar &&
+            curl -o phpstan.phar https://github.com/phpstan/phpstan/releases/download/0.12.49/phpstan.phar && curl -o phpcpd.phar https://phar.phpunit.de/phpcpd.phar
+      if: ${{ 'windows-latest' == matrix.operating-system }}
+      
+    - name: Testing the Executable Finder
+      run: phpunit tests/System/ExecutableFinderTest.php
+
+  executable_finder_test_global: 
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, macos-latest, windows-latest]
+        php-versions: ['7.4']
+    name: Executable Finder on Global Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd, phpunit:8.5.0
+        ini-values: "post_max_size=256M" #optional
+        coverage: none
+        
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest --no-dev
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Composer dumpautoload
+      run: composer dumpautoload
+
+    - name: Testing the Executable Finder
+      run: phpunit tests/System/ExecutableFinderTest.php
+
+  all-tests:    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest] #ubuntu-latest, macos-latest, windows-latest
         php-versions: ['7.1', '7.2', '7.3', '7.4']
-    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.os }}
+    name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.os }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -60,7 +131,7 @@ jobs:
         tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: none
-        
+
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
 
@@ -75,6 +146,5 @@ jobs:
       run:   curl -o phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
       if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && 'windows-latest' == matrix.os}}
 
-      #4.1.0 para php 7.1.33
     - name: Testing the Aplication
       run: vendor/bin/phpunit

@@ -51,34 +51,65 @@ abstract class ToolAbstract
     {
         //Step 1: Local
         //Search executable in vendor/bin
-        $command = 'vendor/bin/' . $this->executable . ' --version';
+        $localPaths = $this->routeCorrector(['vendor/bin/' . $this->executable])[0];
+        $command = $localPaths  . ' --version';
         if ($this->libraryCheck($command)) {
-            return 'vendor/bin/' . $this->executable;
+            return $localPaths;
         }
 
+        //Step 2: Local as .phar
         //Search executable .phar in project root
         $command = 'php ' . $this->executable . '.phar --version';
         if ($this->libraryCheck($command)) {
             return 'php ' . $this->executable . '.phar';
         }
 
-        //Step 2: Global installation
+        //Step 3: Global installation with global access
         $global = $this->executable . ' --version';
         if ($this->libraryCheck($global)) {
             return $this->executable;
         }
 
-        //TODO para Windows where para cmd y Get-Command para Ps
+        //Step 4: Global installation without global access
         if (!$this->isWindows()) {
-            //Step 3 : Global (only in Unix)
-            // Search executable globally
-            // Unix command for linux and MacOS
             $command = 'which ' . $this->executable;
             $exitArray =  $exitCode = null;
             exec($command, $exitArray, $exitCode);
             if ($exitCode == 0 && !empty($exitArray)) {
                 return $exitArray[0];
             }
+        } else {
+            $command = 'where ' . $this->executable;
+            $exitArray =  $exitCode = null;
+            exec($command, $exitArray, $exitCode);
+            if ($exitCode == 0 && !empty($exitArray)) {
+                return $exitArray[1];
+            }
+
+            // $command = '(dir 2>&1 *`|echo CMD)';
+            // $exitArray =  $exitCode = null;
+            // exec($command, $exitArray, $exitCode);
+
+            // var_dump($exitArray[0]);
+            //In CMD
+            // if ('CMD' === $exitArray[0]) {
+            //     $command = 'where ' . $this->executable;
+            //     $exitArray =  $exitCode = null;
+            //     exec($command, $exitArray, $exitCode);
+            //     if ($exitCode == 0 && !empty($exitArray)) {
+            //         return $exitArray[1];
+            //     }
+            // } else {
+            //     //In PowerShell
+            //     //En PS se puede encontrar con $command = Get-Command -showcommandinfo phpcs y $command.Definition ya que $command sería un SwitchParameter que es algo aprecido a un Enum
+            //     //pero para generalizar lo hacemos con where.exe que también funciona en GitBash.
+            //     $command = 'where.exe ' . $this->executable;
+            //     $exitArray =  $exitCode = null;
+            //     exec($command, $exitArray, $exitCode);
+            //     if ($exitCode == 0 && !empty($exitArray)) {
+            //         return $exitArray[1];
+            //     }
+            // }
         }
 
         throw ExecutableNotFoundException::forExec($this->executable);

@@ -4,7 +4,7 @@ composer.lock
 # phpunit
 coverage/
 .phpunit.result.cache
-
+*.phar
 infection.log*
 
 informes/

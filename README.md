@@ -1,10 +1,11 @@
 # GitHooks
 
 <p align="center">
-    <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Production+CI%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Production%20CI/badge.svg"></a>
+    <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Master%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Master/badge.svg"></a>
     <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
+    <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%207.4-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
 
@@ -12,8 +13,8 @@ It manages the php code validation tools that will be executed in the git hook *
 
 GitHooks helps to reduce the feedback loop by doing the following checks in the precommit phase:
 1. Validate that the code follows the project standards.
-1. Verify that the code has no language syntax errors.
-1. Look for errors in the code (unused variables, excessive cyclomatic complexity, etc.).
+2. Verify that the code has no language syntax errors.
+3. Look for errors in the code (unused variables, excessive cyclomatic complexity, etc.).
 
 GitHooks only manages the php validation tools but it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
 

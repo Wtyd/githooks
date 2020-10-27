@@ -9,6 +9,7 @@
         </testsuite>
         <testsuite name="System">
             <directory>./tests/System</directory>
+            <exclude>./tests/System/ExecutableFinderTest.php</exclude>
         </testsuite>
     </testsuites>
     <filter>

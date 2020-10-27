@@ -1,0 +1,101 @@
+name: Code Analysis
+# https://github.com/shivammathur/setup-php
+on:
+  push:
+    branches-ignore: [ master-flow ]
+
+env:
+  extensions: mbstring #intl, pcov
+jobs:
+  phpstan:
+    runs-on: ubuntu-latest
+    name: PhpStan
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: prestissimo, phpcpd
+
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Parallel-Lint
+      run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Execute PhpStan
+      run: php bin/githooks tool:phpstan
+
+  phpcs:    
+    runs-on: ubuntu-latest
+    name: Php Code Sniffer
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: prestissimo
+
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Execute Php Code Sniffer
+      run: php bin/githooks tool:phpcs
+
+  phpmd:    
+    runs-on: ubuntu-latest
+    name: Php Mess Detector
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.4'
+        tools: prestissimo
+
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Execute Php Mess Detector
+      run: php bin/githooks tool:phpmd
