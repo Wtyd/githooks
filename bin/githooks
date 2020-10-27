@@ -22,10 +22,10 @@ use Illuminate\Console\Application;
 $container = new Container();
 $events = new Dispatcher($container);
 
-$artisan = new Application($container, $events, 'Version 2.0');
+$artisan = new Application($container, $events, 'Version 1.0');
 $artisan->setName('GitHooks');
 
-// Bind a command
+// Bind Commands
 $artisan->resolve(CreateConfigurationFileCommand::class);
 $artisan->resolve(ParallelLintCommand::class);
 $artisan->resolve(CodeSnifferCommand::class);
@@ -36,5 +36,4 @@ $artisan->resolve(CheckSecurityCommand::class);
 $artisan->resolve(CheckConfigurationFileCommand::class);
 $artisan->resolve(ExecuteAllToolsCommand::class);
 
-//TODO envolver try catch para no mostrar el stacktrace cuando explota algo
 $artisan->run();
