@@ -2,7 +2,7 @@ name: Code Analysis
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master-flow ]
+    branches-ignore: [ master ]
 
 env:
   extensions: mbstring #intl, pcov
