@@ -12,6 +12,13 @@ use GitHooks\Tools\{
 };
 use Symfony\Component\Yaml\Yaml;
 
+/**
+ * Facilitates the creation of custom 'githooks.yml' configuration files for testing.
+ * By default prepares a full configuration file. After, you can change each part of the file with the 'set' methods.
+ * Finally you must 'build' the file:
+ *      1. build method: build the file on array associative format.
+ *      2. buildYalm: build the file on yalm format.
+ */
 class ConfigurationFileBuilder
 {
     protected $options;
@@ -20,7 +27,12 @@ class ConfigurationFileBuilder
 
     protected $configurationTools;
 
-    public function __construct(string $path)
+    /**
+     * Set the attributes with default values.
+     *
+     * @param string $rootPath Customize what path you would as project root
+     */
+    public function __construct(string $rootPath)
     {
         $this->options = [Constants::EXECUTION => Constants::FULL_EXECUTION];
 
@@ -35,31 +47,29 @@ class ConfigurationFileBuilder
 
         $this->configurationTools = [
             Constants::CODE_SNIFFER => [
-                CodeSniffer::PATHS => [$path . '/src'],
+                CodeSniffer::PATHS => [$rootPath . '/src'],
                 CodeSniffer::STANDARD => 'PSR12',
-                CodeSniffer::IGNORE => [$path . '/vendor'],
+                CodeSniffer::IGNORE => [$rootPath . '/vendor'],
                 CodeSniffer::ERROR_SEVERITY => 1,
                 CodeSniffer::WARNING_SEVERITY => 6
             ],
 
             Constants::PARALLEL_LINT => [
-                ParallelLint::PATHS => [$path . '/src'],
-                ParallelLint::EXCLUDE => [$path . '/vendor']
+                ParallelLint::PATHS => [$rootPath . '/src'],
+                ParallelLint::EXCLUDE => [$rootPath . '/vendor']
             ],
             Constants::MESS_DETECTOR => [
-                MessDetector::PATHS => [$path . '/src'],
+                MessDetector::PATHS => [$rootPath . '/src'],
                 MessDetector::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
-                MessDetector::EXCLUDE => [$path . '/vendor']
+                MessDetector::EXCLUDE => [$rootPath . '/vendor']
             ],
             Constants::COPYPASTE_DETECTOR => [
-                CopyPasteDetector::PATHS => [$path . '/src'],
-                CopyPasteDetector::EXCLUDE => [$path . '/vendor']
+                CopyPasteDetector::PATHS => [$rootPath . '/src'],
+                CopyPasteDetector::EXCLUDE => [$rootPath . '/vendor']
             ],
             Constants::PHPSTAN => [
-                // Stan::PHPSTAN_CONFIGURATION_FILE =>,
                 Stan::LEVEL => 0,
-                // Stan::MEMORY_LIMIT =>,
-                Stan::PATHS => [$path . '/src']
+                Stan::PATHS => [$rootPath . '/src']
             ],
         ];
     }
@@ -84,9 +94,10 @@ class ConfigurationFileBuilder
     }
 
     /**
-     * El único valor que admite ahora mismo es el booleano "smartExecution" que
+     * Now only there one option: 'execution'. This option can be 'full', 'smart' and 'fast'.
+     * No value is like value 'full' (option per default).
      *
-     * @param array $options ['smartExecution' => true]
+     * @param array $options Example: ['execution' => 'fast']
      * @return ConfigurationFileBuilder
      */
     public function setOptions(array $options): ConfigurationFileBuilder
@@ -97,9 +108,9 @@ class ConfigurationFileBuilder
     }
 
     /**
-     * Undocumented function
+     * Set the tools Githooks will run
      *
-     * @param array $tools Puede contener los valores de las keys de Constants::TOOL_LIST
+     * @param array $tools The possible values of this array are the keys of the Constants::TOOL_LIST array
      * @return ConfigurationFileBuilder
      */
     public function setTools(array $tools): ConfigurationFileBuilder
@@ -110,10 +121,10 @@ class ConfigurationFileBuilder
     }
 
     /**
-     * El resto del fichero con la configuración de las herramientas
+     * The rest of the file with the configuration of the tools
      *
-     * @param array $configurationTools Cada key es el nombre de la herramienta que a su vez tiene otro array asociativo donde las keys
-     * son los parámetros de configuracion.
+     * @param array $configurationTools Each key is the name of the tool that in turn has another associative array where the keys
+     *  are the configuration parameters.
      * @return ConfigurationFileBuilder
      */
     public function setConfigurationTools(array $configurationTools): ConfigurationFileBuilder

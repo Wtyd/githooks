@@ -58,7 +58,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            //If something goes wrong I avoid throwing the exception because it hides the asserts
         }
 
 

@@ -2,15 +2,18 @@
 
 namespace Tests;
 
-use Mockery;
-
 /**
  * Simplifica el uso de la sobrecarga de clases
  */
-class Mock extends Mockery
+class Mock extends \Mockery
 {
-    public function overload(string $class)
+    public static function overload(string $class)
     {
         return self::mock(sprintf('overload:%s', $class));
+    }
+
+    public static function alias(string $class)
+    {
+        return self::mock(sprintf('alias:%s', $class));
     }
 }

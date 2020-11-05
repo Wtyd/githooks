@@ -2,6 +2,7 @@
 
 namespace GitHooks;
 
+use GitHooks\Exception\ConfigurationFileNotFoundException;
 use GitHooks\Exception\ParseConfigurationFileException;
 use GitHooks\Exception\ToolsIsEmptyException;
 use GitHooks\Exception\ToolsNotFoundException;
@@ -17,26 +18,46 @@ class Configuration
      * 3. Existe la clave Tools pero está vacía. Se lanza una ToolsIsEmptyException.
      * 4. Existe la clave Tools y contiene herramientas. Se devuelve el fichero transformado a array asociativo.
      *
-     * @param string $filePath Ruta al fichero de configuración.
      * @return array Los valores del fichero githooks.yml en formato de array asociativo.
      */
-    public function readFile(string $filePath): array
+    public function readFile(): array
     {
+        $configurationFilePath = $this->findConfigurationFile();
 
         try {
-            $configurationFile = Yaml::parseFile($filePath);
+            $configurationFile = Yaml::parseFile($configurationFilePath);
         } catch (ParseException $exception) {
             throw ParseConfigurationFileException::forMessage($exception->getMessage());
         }
 
         if (!is_array($configurationFile) || !array_key_exists(Constants::TOOLS, $configurationFile)) {
-            throw ToolsNotFoundException::forFile($filePath);
+            throw ToolsNotFoundException::forFile($configurationFilePath);
         }
 
         if (empty($configurationFile[Constants::TOOLS])) {
-            throw ToolsIsEmptyException::forFile($filePath);
+            throw ToolsIsEmptyException::forFile($configurationFilePath);
         }
 
         return $configurationFile;
+    }
+
+    /**
+     * Searchs configuration file 'githooks.yml' on root path and qa/ directory
+     *
+     * @return string The path of configuration file
+     */
+    protected function findConfigurationFile(): string
+    {
+        $root = getcwd();
+
+        if (file_exists("$root/githooks.yml")) {
+            $configFile = "$root/githooks.yml";
+        } elseif (file_exists("$root/qa/githooks.yml")) {
+            $configFile = "$root/qa/githooks.yml";
+        } else {
+            throw new ConfigurationFileNotFoundException();
+        }
+
+        return $configFile;
     }
 }

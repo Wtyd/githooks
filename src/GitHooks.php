@@ -31,12 +31,12 @@ class GitHooks
      */
     protected $toolExecutor;
 
-    public function __construct(string $configFile, Configuration $config, ChooseStrategy $chooseStrategy, Printer $printer, ToolExecutor $toolExecutor)
+    public function __construct(Configuration $config, ChooseStrategy $chooseStrategy, Printer $printer, ToolExecutor $toolExecutor)
     {
         $this->printer = $printer;
         $this->toolExecutor = $toolExecutor;
         try {
-            $file = $config->readfile($configFile);
+            $file = $config->readfile();
 
             $strategy = $chooseStrategy->__invoke($file);
 

@@ -5,45 +5,142 @@ namespace Tests\Unit;
 use GitHooks\Configuration;
 use GitHooks\Exception\ToolsIsEmptyException;
 use GitHooks\Exception\ToolsNotFoundException;
-use GitHooks\Tools\CodeSniffer;
-use GitHooks\Tools\CopyPasteDetector;
-use GitHooks\Tools\DependencyVulnerabilities;
-use GitHooks\Tools\MessDetector;
-use GitHooks\Tools\ParallelLint;
-use GitHooks\Tools\Stan;
-use Mockery;
+use Symfony\Component\Yaml\Yaml;
+use Tests\Mock;
+use Tests\System\Utils\ConfigurationFileBuilder;
+use Tests\VirtualFileSystemTrait;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use phpmock\MockBuilder;
+use phpmock\Mock as PhpmockMock;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @group Configuration
  * The runInSeparateProcess annotation and @preserveGlobalState disabled  must be setted because are neede when the full battery of tests are launched.
- * Otherwise this tests failed when the integration tests try to use the original class Symfony\Component\Yaml\Yaml.
+ * Otherwise other tests failed when they try to use the original class Symfony\Component\Yaml\Yaml.
  */
 class ConfigurationTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
+    use VirtualFileSystemTrait;
 
     protected $yamlReaderMock;
 
     protected function setUp(): void
     {
-        $this->yamlReaderMock = Mockery::mock('alias:Symfony\Component\Yaml\Yaml');
+        $this->configuration = Mock::mock(Configuration::class)->shouldAllowMockingProtectedMethods()->makePartial();
+
+        $this->configurationFileBuilder = new ConfigurationFileBuilder($this->getUrl(''));
+    }
+
+    /**
+     * Helps to use ConfigurationFileBuilder in dataProvider methods.
+     *
+     * @return ConfigurationFileBuilder
+     */
+    public function setConfigurationFileBuilder(): ConfigurationFileBuilder
+    {
+        $builder = new ConfigurationFileBuilder($this->getUrl(''));
+
+        return $builder;
+    }
+
+    /**
+     * Mock 'getcwd' method used in Configuration.php for return the root path of the file system structure created in memory with vfsStream
+     *
+     * @return PhpmockMock
+     */
+    public function getMockRootDirectory(): PhpmockMock
+    {
+        $builder = new MockBuilder();
+        $builder->setNamespace('GitHooks')
+            ->setName('getcwd')
+            ->setFunction(
+                function () {
+                    return $this->getUrl('');
+                }
+            );
+
+        return $builder->build();
+    }
+
+    public function validConfigurationFilesDataProvider()
+    {
+        return [
+            'From root directory' => [
+                ['githooks.yml' => $this->setConfigurationFileBuilder()->buildYalm()]
+            ],
+            'From qa/ directory' => [
+                'qa' => ['githooks.yml' => $this->setConfigurationFileBuilder()->buildYalm()]
+            ]
+        ];
     }
 
     /**
      * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState disabled
-     *  */
+     * @dataProvider validConfigurationFilesDataProvider
+     */
+    function it_can_read_file_configuration_githooksDotYml($fileSystemStructure)
+    {
+        $mock = $this->getMockRootDirectory();
+        $mock->enable();
+
+        $this->createFileSystem($fileSystemStructure);
+
+        $this->assertEquals($this->configurationFileBuilder->build(), $this->configuration->readFile());
+
+        $mock->disable();
+    }
+
+    /**
+     * @test
+     * When there are two valid configuration files it always returns the one in the root directory
+     */
+    function it_searchs_configuration_file_first_in_the_root_directory()
+    {
+        $mock = $this->getMockRootDirectory();
+        $mock->enable();
+
+        $rootFileYalm = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
+        $rootFileArray = $this->configurationFileBuilder->build();
+
+        $qaFileYalm = $this->configurationFileBuilder->setTools(['parrallel-lint'])->buildYalm();
+        $qaFileArray = $this->configurationFileBuilder->build();
+
+        $fileSystemStructure = [
+            'githooks.yml' => $rootFileYalm,
+            'qa' => ['githooks.yml' => $qaFileYalm]
+        ];
+
+        $this->createFileSystem($fileSystemStructure);
+
+        $fileReaded = $this->configuration->readFile();
+
+        $this->assertEquals($rootFileArray, $fileReaded);
+
+        $this->assertNotEquals($qaFileArray, $fileReaded);
+
+        $mock->disable();
+    }
+
+    /** @test */
     public function it_raise_exception_when_configuration_file_is_empty()
     {
+        $mock = $this->getMockRootDirectory();
+        $mock->enable();
+
+        $fileSystemStructure = [
+            'githooks.yml' => '',
+        ];
+
+        $this->createFileSystem($fileSystemStructure);
+
+
         $this->expectException(ToolsNotFoundException::class);
 
-        $this->yamlReaderMock->shouldReceive('parseFile')->andReturn(null);
+        $this->configuration->readFile();
 
-        $conf = new Configuration();
-        $conf->readfile('githooks.yml');
+        $mock->disable();
     }
 
     function fileReadedWithNoToolsTagProvider()
@@ -52,7 +149,7 @@ class ConfigurationTest extends TestCase
             'Fichero sin Tools tag' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'Otro tag' => [],
@@ -61,7 +158,7 @@ class ConfigurationTest extends TestCase
             'Fichero con tools tag en minusculas' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'tools' => null,
@@ -75,15 +172,20 @@ class ConfigurationTest extends TestCase
      * @dataProvider fileReadedWithNoToolsTagProvider
      * @runInSeparateProcess
      * @preserveGlobalState disabled
+     * The 'runInSeparateProcess' annotation and '@preserveGlobalState disabled' must be setted.
+     * Otherwise other tests will fail when they try to use the Symfony\Component\Yaml\Yaml class.
      */
     function it_raise_exception_when_there_is_no_tools_tag($fileReaded)
     {
-        $this->expectException(ToolsNotFoundException::class);
+        $this->configuration->shouldReceive('findConfigurationFile');
+
+        $this->yamlReaderMock = Mock::alias(Yaml::class);
 
         $this->yamlReaderMock->shouldReceive('parseFile')->andReturn($fileReaded);
 
-        $conf = new Configuration();
-        $conf->readfile('githooks.yml');
+        $this->expectException(ToolsNotFoundException::class);
+
+        $this->configuration->readfile();
     }
 
     function fileReadedWithEmptyToolsProvider()
@@ -92,7 +194,7 @@ class ConfigurationTest extends TestCase
             'Array Tools vacio' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'Tools' => [],
@@ -101,7 +203,7 @@ class ConfigurationTest extends TestCase
             'Array Tools es null' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'Tools' => null,
@@ -110,7 +212,7 @@ class ConfigurationTest extends TestCase
             'Array Tools es cadena vacia' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'Tools' => '',
@@ -124,62 +226,19 @@ class ConfigurationTest extends TestCase
      * @dataProvider fileReadedWithEmptyToolsProvider
      * @runInSeparateProcess
      * @preserveGlobalState disabled
-    */
+     * The 'runInSeparateProcess' annotation and '@preserveGlobalState disabled' must be setted.
+     * Otherwise other tests will fail when they try to use the Symfony\Component\Yaml\Yaml class.
+     */
     function it_raise_exception_when_the_tools_tag_is_empty($fileReaded)
     {
-        $this->expectException(ToolsIsEmptyException::class);
+        $this->configuration->shouldReceive('findConfigurationFile');
+
+        $this->yamlReaderMock = Mock::alias(Yaml::class);
 
         $this->yamlReaderMock->shouldReceive('parseFile')->andReturn($fileReaded);
 
-        $conf = new Configuration();
-        $conf->readfile('githooks.yml');
-    }
+        $this->expectException(ToolsIsEmptyException::class);
 
-    function allToolsProvider()
-    {
-        return [
-            'Php Code Sniffer' => [
-                [
-                    'Tools' => ['phpcs'],
-                ],
-                CodeSniffer::class,
-                'phpcs'
-            ],
-            'Php Stan' => [
-                [
-                    'Tools' => ['phpstan'],
-                ],
-                Stan::class,
-                'phpstan'
-            ],
-            'Php Mess Detector' => [
-                [
-                    'Tools' => ['phpmd'],
-                ],
-                MessDetector::class,
-                'phpmd'
-            ],
-            'Php Copy Paste Detector' => [
-                [
-                    'Tools' => ['phpcpd'],
-                ],
-                CopyPasteDetector::class,
-                'phpcpd'
-            ],
-            'Parallel-Lint' => [
-                [
-                    'Tools' => ['parallelLint'],
-                ],
-                ParallelLint::class,
-                'parallelLint'
-            ],
-            'Composer Check-security' => [
-                [
-                    'Tools' => ['dependencyVulnerabilities'],
-                ],
-                DependencyVulnerabilities::class,
-                'dependencyVulnerabilities'
-            ],
-        ];
+        $this->configuration->readfile();
     }
 }

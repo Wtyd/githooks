@@ -2,9 +2,13 @@
 
 namespace Tests;
 
+use GitHooks\Configuration;
+use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Tests\System\ExecutableFinderTest;
+use Tests\System\Utils\ConfigurationFake;
 
 /**
  * Al llamar a setOutputCallback escondemos cualquier output por la consola que no venga de phpunit
@@ -12,6 +16,34 @@ use RecursiveIteratorIterator;
 class SystemTestCase extends TestCase
 {
     protected $path = __DIR__ . '/System/tmp';
+
+    public function __construct()
+    {
+        $this->mockPathGitHooksConfigurationFile();
+        parent::__construct();
+    }
+
+    /**
+     * For system tests I need to read the configuration file 'githooks.yml' but the SUT looks for it in the root or qa / directories.
+     * In order to use a configuration file created expressly for each test, I mock the 'findConfigurationFile' method so that
+     * return the root directory where I create the file structure for the tests ($this->path)
+     *
+     * For ExecutableFinderTest I can't use Mockery in two of three stages (only when I install the application with dev dependencies).
+     * For this, I have created ConfigurationFake.
+     *
+     * @return void
+     */
+    protected function mockPathGitHooksConfigurationFile()
+    {
+        $container = Container::getInstance();
+        if ($this instanceof ExecutableFinderTest) {
+            $container->bind(Configuration::class, ConfigurationFake::class);
+        } else {
+            $mockConfiguration = Mock::mock(Configuration::class)->shouldAllowMockingProtectedMethods()->makePartial();
+            $mockConfiguration->shouldReceive('findConfigurationFile')->andReturn($this->path . '/githooks.yml');
+            $container->instance(Configuration::class, $mockConfiguration);
+        }
+    }
 
     protected function hiddenConsoleOutput(): void
     {
@@ -37,7 +69,7 @@ class SystemTestCase extends TestCase
         rmdir($dir);
     }
 
-    public function getPath()
+    public function getPath(): string
     {
         return $this->path;
     }

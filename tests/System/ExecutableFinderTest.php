@@ -17,7 +17,7 @@ use Tests\SystemTestCase;
  * For it, three scenarios must be considered:
  * 1. All tools are installed globally.
  * 2. All tools are installed how project dependencies.
- * 3. All toolas are downloaded as phar in project root path.
+ * 3. All tools are downloaded as phar in project root path.
  * The test must be run three times, once per scenario. This scenario is configured in pipeline.
  */
 class ExecutableFinderTest extends SystemTestCase
@@ -33,7 +33,7 @@ class ExecutableFinderTest extends SystemTestCase
         $this->createDirStructure();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-        $this->configurationFile->setOptions(['execution' => 'fast']);
+        $this->configurationFile->setOptions(['execution' => 'full']);
     }
 
     protected function tearDown(): void
@@ -54,12 +54,12 @@ class ExecutableFinderTest extends SystemTestCase
 
         $container = Container::getInstance();
         $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $container->makeWith(GitHooks::class);
 
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            //If something goes wrong I avoid throwing the exception because it hides the asserts
         }
 
 

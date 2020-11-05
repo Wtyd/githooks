@@ -7,12 +7,10 @@ $rootPath = getcwd();
 require $rootPath . '/vendor/autoload.php';
 
 $backFiles = shell_exec('git diff --cached --name-only --diff-filter=ACM | grep ".php$\\|^composer.json$\\|^composer.lock$"');
-if (! empty($backFiles)) {
-    $configFile = $rootPath . '/qa/githooks.yml';
-
+if (!empty($backFiles)) {
     $container = Container::getInstance();
 
-    $githooks = $container->makeWith(GitHooks\GitHooks::class, ['configFile' => $configFile]);
+    $githooks = $container->makeWith(GitHooks\GitHooks::class);
 
     try {
         $githooks();

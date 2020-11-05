@@ -39,10 +39,10 @@ class CheckConfigurationFileCommand extends Command
 
     public function handle()
     {
-        $this->printer->line('Checking the configuration file ' . Constants::CONFIGURATION_FILE_PATH . ':');
-        $root = getcwd();
+        $this->printer->line('Checking the configuration file:');
+
         try {
-            $configurationFile = $this->configuration->readFile($root . '/' . Constants::CONFIGURATION_FILE_PATH);
+            $configurationFile = $this->configuration->readFile();
 
             $errors = $this->configurationFileValidator->__invoke($configurationFile);
 

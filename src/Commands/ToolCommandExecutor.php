@@ -4,6 +4,7 @@ namespace GitHooks\Commands;
 
 use GitHooks\Configuration;
 use GitHooks\Constants;
+use GitHooks\Exception\ConfigurationFileNotFoundException;
 use GitHooks\Tools\ToolExecutor;
 use GitHooks\Tools\ToolsFactoy;
 
@@ -14,6 +15,8 @@ use GitHooks\Tools\ToolsFactoy;
  * 3. Registrar el Command en el fichero bin/githooks.
  *
  * Todos los comandos leerán la configuración del fichero qa/githooks.yml
+ *
+ * @SuppressWarnings(PHPMD.ExitExpression)
  */
 class ToolCommandExecutor
 {
@@ -41,11 +44,7 @@ class ToolCommandExecutor
 
     public function execute(string $tool): void
     {
-        $root = getcwd();
-
-        $configFile = "$root/qa/githooks.yml";
-
-        $file = $this->config->readfile($configFile);
+        $file = $this->config->readfile();
 
         $file[Constants::TOOLS] = [$tool];
 

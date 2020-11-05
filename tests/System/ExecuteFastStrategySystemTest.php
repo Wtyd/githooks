@@ -54,7 +54,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $container->makeWith(GitHooks::class);
 
         try {
             $githooks();

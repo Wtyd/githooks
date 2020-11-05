@@ -65,6 +65,9 @@ jobs:
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
 
+    - name: Install Mockery
+      run: composer global require mockery/mockery
+
     - name: Composer dumpautoload
       run: composer dumpautoload
 
@@ -106,6 +109,9 @@ jobs:
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
+
+    - name: Install Mockery
+      run: composer global require mockery/mockery
 
     - name: Composer dumpautoload
       run: composer dumpautoload
