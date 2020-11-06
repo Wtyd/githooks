@@ -3,16 +3,21 @@
 
 require getcwd() . '/vendor/autoload.php';
 
-use GitHooks\Commands\{
-    CheckConfigurationFileCommand,
+use GitHooks\Commands\Tools\{
     CheckSecurityCommand,
     CodeSnifferCommand,
     CopyPasteDetectorCommand,
-    CreateConfigurationFileCommand,
     MessDetectorCommand,
     ParallelLintCommand,
     StanCommand,
     ExecuteAllToolsCommand
+};
+
+use GitHooks\Commands\{
+    CheckConfigurationFileCommand,
+    CleanHookCommand,
+    CreateConfigurationFileCommand,
+    HookCommand
 };
 
 use Illuminate\Container\Container;
@@ -25,15 +30,19 @@ $events = new Dispatcher($container);
 $artisan = new Application($container, $events, 'Version 1.0');
 $artisan->setName('GitHooks');
 
-// Bind Commands
-$artisan->resolve(CreateConfigurationFileCommand::class);
+// Bind Tools Commands
 $artisan->resolve(ParallelLintCommand::class);
 $artisan->resolve(CodeSnifferCommand::class);
 $artisan->resolve(CopyPasteDetectorCommand::class);
 $artisan->resolve(MessDetectorCommand::class);
 $artisan->resolve(StanCommand::class);
 $artisan->resolve(CheckSecurityCommand::class);
+
+// Other Commands
+$artisan->resolve(CreateConfigurationFileCommand::class);
 $artisan->resolve(CheckConfigurationFileCommand::class);
 $artisan->resolve(ExecuteAllToolsCommand::class);
+$artisan->resolve(HookCommand::class);
+$artisan->resolve(CleanHookCommand::class);
 
 $artisan->run();

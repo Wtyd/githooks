@@ -9,7 +9,8 @@
         ]
         checkMissingIterableValueType: false
         ignoreErrors: [
-           '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#'
+           '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
+           '#root of method GitHooks\Commands\HookCommand::[a-zA-Z0-9\\_]+() expects string, string|false given#'
         ]
         excludes_analyse: [
         ]

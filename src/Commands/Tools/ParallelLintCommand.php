@@ -1,14 +1,14 @@
 <?php
 
-namespace GitHooks\Commands;
+namespace GitHooks\Commands\Tools;
 
 use GitHooks\Constants;
 use Illuminate\Console\Command;
 
-class MessDetectorCommand extends Command
+class ParallelLintCommand extends Command
 {
-    protected $signature = 'tool:phpmd';
-    protected $description = 'Run phpmd.';
+    protected $signature = 'tool:parallel-lint';
+    protected $description = 'Run parallel-lint.';
 
     /**
      * @var ToolCommandExecutor
@@ -23,6 +23,6 @@ class MessDetectorCommand extends Command
 
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::MESS_DETECTOR);
+        $this->toolCommandExecutor->execute(Constants::PARALLEL_LINT);
     }
 }

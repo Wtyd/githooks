@@ -1,14 +1,14 @@
 <?php
 
-namespace GitHooks\Commands;
+namespace GitHooks\Commands\Tools;
 
 use GitHooks\Constants;
 use Illuminate\Console\Command;
 
-class CodeSnifferCommand extends Command
+class MessDetectorCommand extends Command
 {
-    protected $signature = 'tool:phpcs';
-    protected $description = 'Run phpcs';
+    protected $signature = 'tool:phpmd';
+    protected $description = 'Run phpmd.';
 
     /**
      * @var ToolCommandExecutor
@@ -23,6 +23,6 @@ class CodeSnifferCommand extends Command
 
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER);
+        $this->toolCommandExecutor->execute(Constants::MESS_DETECTOR);
     }
 }

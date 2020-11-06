@@ -1,14 +1,14 @@
 <?php
 
-namespace GitHooks\Commands;
+namespace GitHooks\Commands\Tools;
 
 use GitHooks\Constants;
 use Illuminate\Console\Command;
 
-class ParallelLintCommand extends Command
+class CopyPasteDetectorCommand extends Command
 {
-    protected $signature = 'tool:parallel-lint';
-    protected $description = 'Run parallel-lint.';
+    protected $signature = 'tool:phpcpd';
+    protected $description = 'Run phpcp.';
 
     /**
      * @var ToolCommandExecutor
@@ -23,6 +23,6 @@ class ParallelLintCommand extends Command
 
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::PARALLEL_LINT);
+        $this->toolCommandExecutor->execute(Constants::COPYPASTE_DETECTOR);
     }
 }

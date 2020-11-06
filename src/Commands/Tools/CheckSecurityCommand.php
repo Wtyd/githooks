@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\Commands;
+namespace GitHooks\Commands\Tools;
 
 use GitHooks\Constants;
 use Illuminate\Console\Command;

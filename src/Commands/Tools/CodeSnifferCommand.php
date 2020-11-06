@@ -1,14 +1,14 @@
 <?php
 
-namespace GitHooks\Commands;
+namespace GitHooks\Commands\Tools;
 
 use GitHooks\Constants;
 use Illuminate\Console\Command;
 
-class CopyPasteDetectorCommand extends Command
+class CodeSnifferCommand extends Command
 {
-    protected $signature = 'tool:phpcpd';
-    protected $description = 'Run phpcp.';
+    protected $signature = 'tool:phpcs';
+    protected $description = 'Run phpcs';
 
     /**
      * @var ToolCommandExecutor
@@ -23,6 +23,6 @@ class CopyPasteDetectorCommand extends Command
 
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::COPYPASTE_DETECTOR);
+        $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER);
     }
 }

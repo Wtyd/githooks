@@ -1,3 +1,4 @@
+#!/bin/php
 <?php
 
 use Illuminate\Container\Container;
