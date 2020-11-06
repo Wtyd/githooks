@@ -1,5 +1,5 @@
 {
-    "name": "githooks/githooks",
+    "name": "wtyd/githooks",
     "type": "library",
     "description": "Ejecuta herramientas de validación y análisis de código cuando suceden eventos de git",
     "keywords": [
