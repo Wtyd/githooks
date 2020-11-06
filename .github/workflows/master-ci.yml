@@ -25,6 +25,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }}
+        tools: phpcpd #I can't put it as dependency
         ini-values: "post_max_size=256M"
         coverage: none
         
@@ -53,7 +54,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpunit:8.5.0
+        tools: phpunit:8.5.0
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
@@ -98,7 +99,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd, phpunit:8.5.0
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, phpunit:8.5.0
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
@@ -118,13 +119,13 @@ jobs:
       run: phpunit tests/System/ExecutableFinderTest.php
 
   all-tests:    
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest] #windows-latest
+        operating-system: [ubuntu-latest, macos-latest] #windows-latest
         php-versions: ['7.1', '7.2', '7.3', '7.4']
-    name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.os }}
+    name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.operating-system }}
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -134,7 +135,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: none
 
@@ -145,12 +146,12 @@ jobs:
       run: composer global require php-parallel-lint/php-parallel-lint
 
     - name: Install Phpcpd Unix
+      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-latest' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
       run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
-      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-latest' == matrix.os || 'macos-latest' == matrix.os)}}
-
+      
     - name: Install Phpcpd Windows
+      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('windows-latest' == matrix.operating-system)}}
       run:   curl -o phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
-      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && 'windows-latest' == matrix.os}}
 
     - name: Testing the Aplication
       run: vendor/bin/phpunit

@@ -14,10 +14,8 @@ class ExecuteAllToolsCommand extends Command
 
     public function handle(Printer $printer)
     {
-        $rootPath = getcwd();
-        $configFile = $rootPath . '/qa/githooks.yml';
         $container = Container::getInstance();
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $configFile]);
+        $githooks = $container->makeWith(GitHooks::class);
 
         try {
             $githooks();

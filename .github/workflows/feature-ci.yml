@@ -27,6 +27,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }}
+        tools: phpcpd #I can't put it as dependency
         ini-values: "post_max_size=256M"
         coverage: none
         
@@ -55,7 +56,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpunit:8.5.0
+        tools: phpunit:8.5.0
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
@@ -100,7 +101,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd, phpunit:8.5.0
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, phpunit:8.5.0
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
@@ -124,7 +125,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.2']
+        php-versions: ['7.1']
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
     steps:
     - name: Checkout
@@ -135,7 +136,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan
         ini-values: "post_max_size=256M" #optional
         coverage: none
   
@@ -152,6 +153,10 @@ jobs:
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install Phpcpd Unix
+      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-latest' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
+      run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
 
     - name: Testing the Aplication
       run: vendor/bin/phpunit

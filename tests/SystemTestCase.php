@@ -36,6 +36,7 @@ class SystemTestCase extends TestCase
     protected function mockPathGitHooksConfigurationFile()
     {
         $container = Container::getInstance();
+
         if ($this instanceof ExecutableFinderTest) {
             $container->bind(Configuration::class, ConfigurationFake::class);
         } else {
