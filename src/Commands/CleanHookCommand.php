@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 class CleanHookCommand extends Command
 {
     protected $signature = 'hook:clean  {hook=pre-commit}';
-    protected $description = 'Deletes the hook (default pre-commit)';
+    protected $description = 'Deletes the hook passed as argument (default pre-commit)';
 
     /**
      * @var Printer

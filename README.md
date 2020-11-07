@@ -9,18 +9,19 @@
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
 
-It manages the php code validation tools that will be executed in the git hook *precommit* (in the future we want all the git hooks to be managed).
-
-GitHooks helps to reduce the feedback loop by doing the following checks in the precommit phase:
+GitHooks helps you to manage the code validation tools. For example, in precommit stage, you can:
 1. Validate that the code follows the project standards.
 2. Verify that the code has no language syntax errors.
 3. Look for errors in the code (unused variables, excessive cyclomatic complexity, etc.).
 
-GitHooks only manages the php validation tools but it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
+You can also create your own scripts and configure any git hook.
+
+GitHooks centralizes the configuration of the code validation tools and makes it easy for the team to execute them in the same way every time. Further, it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
 
 # Requirements
 * PHP >= 7.1
-* The tools you need to check the precommit hook.
+* The tools you need to check the code.
+* Or your owns scripts for the hooks.
 
 # Install
 1. GitHooks must be installed like dev requirement with composer. Actually, it does not have [.phar](https://www.php.net/phar) support.
@@ -34,7 +35,8 @@ GitHooks only manages the php validation tools but it can be used together with 
     - Like dev requirement in the project: `composer require --dev sebastian/phpcpd`
     - Like .phar on the root of the project or with global access.
 
-1. Initialize GitHooks with `vendor/bin/githooks conf:init`. This command creates the configuration file in the root paths (`githooks.yml`) and copies the script for launch GitHooks on the precommit event in `.git/hooks` directory.
+1. Initialize GitHooks with `vendor/bin/githooks conf:init`. This command creates the configuration file in the root paths (`githooks.yml`).
+1. Run `vendor/bin/githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `vendor/bin/githooks hook otherHook MyScriptFile.php` for set any hook with a custom script.
 
 1. [Set the configuration file](#Set-the-configuration-file).
 
