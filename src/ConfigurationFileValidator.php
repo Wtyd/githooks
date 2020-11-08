@@ -5,10 +5,11 @@ namespace GitHooks;
 class ConfigurationFileValidator
 {
     /**
-     * Valida el formato de $configurationFile
+     * Validate the $configurationFile format
      *
-     * @param array $configurationFile. Fichero de configuración.
-     * @return ConfigurationErrors POPO que contiene un array de errores y uno de warnings.
+     * @param array $configurationFile. Configuration File.
+     *
+     * @return ConfigurationErrors POPO that contains an array of errors and one of warnings.
      */
     public function __invoke(array $configurationFile): ConfigurationErrors
     {

@@ -18,8 +18,8 @@ class SmartStrategy implements StrategyInterface
 {
 
     /**
-     * Todo el fichero de configuración pasado a array. Su formato podria ser algo como lo siguiente:
-     * ['Options' => ['smartExecution' => true], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
+     * Configuration file 'githooks.yml' in array format. It could be like this:
+     * ['Options' => ['execution' => 'smart], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
      *
      * @var array
      */

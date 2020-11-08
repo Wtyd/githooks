@@ -4,13 +4,15 @@ namespace Tests\Unit\LoadTools;
 
 use GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use GitHooks\LoadTools\FullStrategy;
-use GitHooks\Tools\CodeSniffer;
-use GitHooks\Tools\CopyPasteDetector;
-use GitHooks\Tools\CheckSecurity;
-use GitHooks\Tools\MessDetector;
-use GitHooks\Tools\ParallelLint;
-use GitHooks\Tools\Stan;
-use GitHooks\Tools\ToolsFactoy;
+use GitHooks\Tools\{
+    CodeSniffer,
+    CopyPasteDetector,
+    CheckSecurity,
+    MessDetector,
+    ParallelLint,
+    Stan,
+    ToolsFactoy
+};
 use PHPUnit\Framework\TestCase;
 
 class FullStrategyTest extends TestCase
@@ -110,7 +112,7 @@ class FullStrategyTest extends TestCase
             'Únicamente una herramienta que no existe' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'Tools' => [
@@ -121,7 +123,7 @@ class FullStrategyTest extends TestCase
             'Una herramienta que existe y una que NO existe' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'Tools' => [
@@ -133,7 +135,7 @@ class FullStrategyTest extends TestCase
             'Una herramienta que NO existe y una que  existe' => [
                 [
                     'Options' => [
-                        'smartExecution' => true,
+                        'execution' => 'full',
                         'OtraOpcion' => null,
                     ],
                     'Tools' => [
