@@ -5,14 +5,12 @@ namespace GitHooks\Utils;
 class GitFiles
 {
     /**
-     * Array de ficheros modificados desde el último commit
-     *
-     * @return array
+     * @return array Files modified since the last commit.
      */
     public function getModifiedFiles(): array
     {
-        $modifiedFiles = null;
-        exec('git diff --name-only', $modifiedFiles);
+        $modifiedFiles = [];
+        exec('git diff --cached --name-only', $modifiedFiles);
 
         return $modifiedFiles;
     }

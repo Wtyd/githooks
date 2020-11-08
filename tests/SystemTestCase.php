@@ -17,8 +17,14 @@ class SystemTestCase extends TestCase
 {
     protected $path = __DIR__ . '/System/tmp';
 
+    /**
+     * @var Container
+     */
+    protected $container;
+
     public function __construct()
     {
+        $this->container = Container::getInstance();
         $this->mockPathGitHooksConfigurationFile();
         parent::__construct();
     }
