@@ -5,7 +5,6 @@ namespace Tests\System;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFiles;
-use Illuminate\Container\Container;
 use Tests\System\Utils\{
     CheckSecurityFakeKo,
     CheckSecurityFakeOk,
@@ -48,13 +47,12 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
-        $githooks = $container->makeWith(GitHooks::class);
+        $githooks = $this->container->makeWith(GitHooks::class);
 
         try {
             $githooks();
@@ -89,14 +87,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/app/File.php']);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -137,14 +134,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -179,14 +175,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -216,14 +211,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -261,22 +255,21 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'parallel-lint']));
 
-
         mkdir($this->getPath() . '/app');
         $fileBuilderForApp = new PhpFileBuilder('FileForMessDetector');
         file_put_contents($this->getPath() . '/app/FileForMessDetector.php', $fileBuilderForApp->build());
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/FileForMessDetector.php'
             ]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -308,14 +301,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -349,14 +341,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpstan']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -386,14 +377,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -428,14 +418,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -476,17 +465,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('AppFile');
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/AppFile.php',
             ]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -520,14 +508,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpstan']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -554,14 +541,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -593,14 +579,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -632,14 +617,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -666,14 +650,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -713,17 +696,17 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('AppFile');
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/AppFile.php',
             ]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -764,17 +747,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('AppFile');
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/AppFile.php',
             ]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -807,14 +789,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -846,14 +827,14 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -878,14 +859,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -912,14 +892,13 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs', 'phpmd', 'phpstan']));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $container->bind(GitFiles::class, GitFilesFake::class);
-        $container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
