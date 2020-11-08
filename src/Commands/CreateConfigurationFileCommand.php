@@ -9,6 +9,7 @@ class CreateConfigurationFileCommand extends Command
 {
     protected $signature = 'conf:init';
     protected $description = 'Creates the configuration file githooks.yml in the project path';
+
     /**
      * @var Printer
      */

@@ -21,6 +21,7 @@
             "email": "pablolilao@protonmail.com"
         }
     ],
+    "minimum-stability": "stable",
     "autoload": {
         "psr-4": {
             "GitHooks\\": "src/"

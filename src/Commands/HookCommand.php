@@ -66,17 +66,17 @@ class HookCommand extends Command
      * 1. When GitHooks will be a library, it returns the path through 'vendor'.
      * 2. To work on developing GitHooks itself, it will return the local path to 'hooks'
      *
-     * @param string $root
-     * @return string
+     * @param string $root Root path of the project.
+     *
+     * @return string The default script to run GitHooks in the hook.
      */
     public function defaultPrecommit(string $root): string
     {
         $origin = '';
-        if (file_exists($root . 'vendor/githooks/githooks/hooks/pre-commit.php')) {
-            $origin = $root . 'vendor/githooks/githooks/hooks/pre-commit.php';
-        } else {
-            $origin = $root . '/hooks/pre-commit.php';
+        if (file_exists($root . '/vendor/wtyd/githooks/hooks/pre-commit.php')) {
+            $origin = $root . '/vendor/wtyd/githooks/hooks/pre-commit.php';
         }
+
         if (file_exists($root . '/hooks/pre-commit.php')) {
             $origin = $root . '/hooks/pre-commit.php';
         }

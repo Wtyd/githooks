@@ -1,0 +1,38 @@
+Options:
+  execution: full #full (default), smart, fast
+
+Tools:
+  - check-security
+  - phpstan
+  - parallel-lint
+  - phpcs
+  - phpmd
+  - phpcpd
+
+# Configuration of each tool
+# phpstan:
+#     config: './qa/phpstan.neon'
+#     memory-limit: '1G' # Examples: 1M 2000M 1G 5G
+#     paths: ['./src']
+#     level: 8 #level 0-8 (0 default, 8 max)
+
+# parallel-lint:
+#     paths: ['./']
+#     exclude: [vendor]
+
+# phpcs:
+#     paths: ['./']
+#     standard: './myRules.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
+#     ignore: [vendor]
+#     error-severity: 1
+#     warning-severity: 6
+  
+# phpmd:
+#   paths: ['./src/']
+#   rules: './myRules.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
+#   exclude: [vendor]
+
+# phpcpd:
+#   paths: ['./']
+#   exclude: ['vendor']
+ 
