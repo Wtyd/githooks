@@ -39,6 +39,7 @@
         "bin/githooks"
     ],
     "require-dev": {
+        "larapack/dd": "^1.1",
         "laravel-zero/foundation": "^5.0 | ^6.0 | ^7.0 | ^8.0",
         "mikey179/vfsstream": "^1.6",
         "mockery/mockery": "^1.3",
