@@ -5,6 +5,8 @@ namespace Tests\System;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFiles;
+use Illuminate\Container\Container;
+use phpDocumentor\Reflection\Types\Void_;
 use Tests\System\Utils\{
     CheckSecurityFakeKo,
     CheckSecurityFakeOk,
@@ -20,6 +22,13 @@ use Tests\SystemTestCase;
 class ExecuteFastStrategySystemTest extends SystemTestCase
 {
     protected $configurationFile;
+
+    // public static function setUpBeforeClass(): void
+    // {
+    //     var_dump("\n================== BEFORE CLASS =============================");
+    //     Container::setInstance(null);
+    //     // $this->container = new Container();
+    // }
 
     protected function setUp(): void
     {

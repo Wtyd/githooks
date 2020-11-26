@@ -6,7 +6,7 @@ use Exception;
 use GitHooks\Utils\Printer;
 use Illuminate\Console\Command;
 
-class HookCommand extends Command
+class CreateHookCommand extends Command
 {
     protected $signature = 'hook  {hook=pre-commit} {scriptFile?}';
     protected $description = 'Copies the hook for the GitHooks execution. The default hook is pre-commit. You can pass scriptFile as argument to set custom scripts.';

@@ -19,7 +19,7 @@ use GitHooks\Commands\{
     CreateConfigurationFileCommand,
     HookCommand
 };
-
+use GitHooks\Commands\Console\RegisterCommands;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Console\Application;
@@ -30,19 +30,10 @@ $events = new Dispatcher($container);
 $artisan = new Application($container, $events, 'Version 1.0');
 $artisan->setName('GitHooks');
 
-// Bind Tools Commands
-$artisan->resolve(ParallelLintCommand::class);
-$artisan->resolve(CodeSnifferCommand::class);
-$artisan->resolve(CopyPasteDetectorCommand::class);
-$artisan->resolve(MessDetectorCommand::class);
-$artisan->resolve(StanCommand::class);
-$artisan->resolve(CheckSecurityCommand::class);
+$registerCommands = new RegisterCommands();
 
-// Other Commands
-$artisan->resolve(CreateConfigurationFileCommand::class);
-$artisan->resolve(CheckConfigurationFileCommand::class);
-$artisan->resolve(ExecuteAllToolsCommand::class);
-$artisan->resolve(HookCommand::class);
-$artisan->resolve(CleanHookCommand::class);
+foreach ($registerCommands->__invoke() as $command) {
+    $artisan->resolve($command);
+}
 
 $artisan->run();

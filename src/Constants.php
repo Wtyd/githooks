@@ -6,8 +6,6 @@ class Constants
 {
     public const CONFIGURATION_FILE = 'configurationFile';
 
-    public const CONFIGURATION_FILE_PATH = 'qa/githooks.yml';
-
     public const TOOLS = 'Tools';
 
     public const OPTIONS = 'Options';

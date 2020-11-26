@@ -47,7 +47,7 @@ class CheckConfigurationFileCommand extends Command
             $errors = $this->configurationFileValidator->__invoke($configurationFile);
 
             if (!$errors->hasErrors()) {
-                $message = 'The file ' . Constants::CONFIGURATION_FILE_PATH . ' has the correct format.';
+                $message = 'The file githooks.yml has the correct format.';
                 $this->printer->resultSuccess($message);
             } else {
                 $message = 'The file contains the following errors:';

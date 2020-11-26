@@ -78,6 +78,8 @@ class ConfigurationTest extends TestCase
 
     /**
      * @test
+     * @runInSeparateProcess
+     * @preserveGlobalState
      * @dataProvider validConfigurationFilesDataProvider
      */
     function it_can_read_file_configuration_githooksDotYml($fileSystemStructure)

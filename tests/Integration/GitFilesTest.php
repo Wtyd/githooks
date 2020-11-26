@@ -8,6 +8,7 @@ use Tests\SystemTestCase;
 
 /**
  * Before executing this test suite after any changes, you must commit these changes
+ * @group git
  */
 class GitFilesTest extends SystemTestCase
 {
