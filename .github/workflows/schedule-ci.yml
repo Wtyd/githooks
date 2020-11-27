@@ -2,9 +2,9 @@ name: Schedule CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ invent ]
-  # schedule:
-  #   - cron:  '0 4 * * sun' # Sundays at 04 am
+    branches: [ master ]
+  schedule:
+    - cron:  '0 4 * * sun' # Sundays at 04 am
 
 env:
   extensions: mbstring #intl, pcov
@@ -75,7 +75,7 @@ jobs:
       run: composer global require php-parallel-lint/php-parallel-lint
 
     - name: Infection Install
-      run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.16.3/infection.phar
+      run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.20.2/infection.phar
 
     - name: Infection Install
       run: chmod +x infection.phar

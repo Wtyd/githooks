@@ -2,6 +2,7 @@
 
 namespace Tests\System;
 
+use GitHooks\Exception\ExitException;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use Illuminate\Container\Container;
@@ -33,6 +34,9 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->createDirStructure();
 
         $this->hiddenConsoleOutput();
+
+        $this->container = Container::getInstance();
+        $this->mockPathGitHooksConfigurationFile();
     }
 
     protected function tearDown(): void
@@ -55,18 +59,13 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
         $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
-        try {
-            $githooks();
-        } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
-        }
-
+        $githooks();
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
-        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPMD);
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPCPD);
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPSTAN);
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PARALLEL_LINT);
         $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
@@ -92,16 +91,14 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('phpcbf');
-        $this->assertToolHasFailed('phpmd');
-        $this->assertToolHasFailed('phpcpd');
-        $this->assertToolHasFailed('phpstan');
-        $this->assertToolHasFailed('parallel-lint');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
+        $this->assertToolHasFailed(PhpFileBuilder::PHPMD);
+        $this->assertToolHasFailed(PhpFileBuilder::PHPCPD);
+        $this->assertToolHasFailed(PhpFileBuilder::PHPSTAN);
+        $this->assertToolHasFailed(PhpFileBuilder::PARALLEL_LINT);
     }
 
     /** @test */
@@ -125,7 +122,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed(PhpFileBuilder::PHPSTAN);
@@ -133,8 +130,6 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed(PhpFileBuilder::PARALLEL_LINT);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPCPD);
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
 
     /** @test */
@@ -150,7 +145,6 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors([
             PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCPD
         ]));
-        //file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors());
 
         $container = Container::getInstance();
         $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
@@ -159,7 +153,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPSTAN);
@@ -167,7 +161,5 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PARALLEL_LINT);
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolHasFailed(PhpFileBuilder::PHPCPD);
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
 }

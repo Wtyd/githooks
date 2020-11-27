@@ -2,9 +2,11 @@
 
 namespace Tests\System;
 
+use GitHooks\Exception\ExitException;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFiles;
+use Illuminate\Container\Container;
 use Tests\System\Utils\{
     CheckSecurityFakeKo,
     CheckSecurityFakeOk,
@@ -59,6 +61,9 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         $this->createDirStructure();
 
+        $this->container = Container::getInstance();
+        $this->mockPathGitHooksConfigurationFile();
+
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'smart']);
     }
@@ -85,11 +90,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
-        try {
-            $githooks();
-        } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
-        }
+        $githooks();
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -121,7 +122,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -154,7 +155,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -187,7 +188,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('phpstan');
@@ -223,7 +224,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -258,7 +259,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
@@ -294,7 +295,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //Si algo sale mal evito lanzar la excepcion porque oculta los asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');

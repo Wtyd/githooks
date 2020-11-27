@@ -3,6 +3,7 @@
 namespace Tests;
 
 use GitHooks\Configuration;
+use GitHooks\Exception\ExitException;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
@@ -22,13 +23,6 @@ class SystemTestCase extends TestCase
      */
     protected $container;
 
-    public function __construct()
-    {
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
-        parent::__construct();
-    }
-
     /**
      * For system tests I need to read the configuration file 'githooks.yml' but the SUT looks for it in the root or qa / directories.
      * In order to use a configuration file created expressly for each test, I mock the 'findConfigurationFile' method so that
@@ -39,7 +33,7 @@ class SystemTestCase extends TestCase
      *
      * @return void
      */
-    protected function mockPathGitHooksConfigurationFile()
+    protected function mockPathGitHooksConfigurationFile(): void
     {
         if ($this instanceof ExecutableFinderTest) {
             $this->container->bind(Configuration::class, ConfigurationFake::class);
@@ -56,7 +50,7 @@ class SystemTestCase extends TestCase
         });
     }
 
-    protected function deleteDir()
+    protected function deleteDir(): void
     {
         $dir = $this->path;
         $it = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
@@ -79,14 +73,14 @@ class SystemTestCase extends TestCase
         return $this->path;
     }
 
-    public function createDirStructure()
+    public function createDirStructure(): void
     {
         mkdir($this->path);
         mkdir($this->path . '/src');
         mkdir($this->path . '/vendor');
     }
 
-    public function deleteDirStructure()
+    public function deleteDirStructure(): void
     {
         if (is_dir($this->path)) {
             $this->deleteDir();
@@ -94,20 +88,37 @@ class SystemTestCase extends TestCase
     }
 
 
-    protected function assertToolHasBeenExecutedSuccessfully(string $tool)
+    protected function assertToolHasBeenExecutedSuccessfully(string $tool): void
     {
         //phpcbf[.phar] - OK. Time: 0.18
         $this->assertRegExp("%$tool(\.phar)? - OK\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
     }
 
-    protected function assertToolHasFailed(string $tool)
+    protected function assertToolHasFailed(string $tool): void
     {
         //phpcbf[.phar] - KO. Time: 0.18
         $this->assertRegExp("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
     }
 
-    protected function assertToolDidNotRun(string $tool)
+    protected function assertToolDidNotRun(string $tool): void
     {
         $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has been run");
+    }
+
+    /**
+     * Verifies that some tool of all launched has failed.
+     * 1. ExitException must be throwed.
+     * 2. The summation of run time of all tools.
+     * 3. Fail message.
+     *
+     * @param \Throwable $exception All errors and exceptions are cached for no break phpunit's flow.
+     * @param string $failMessage Message printed when GitHooks finds an error.
+     * @return void
+     */
+    protected function assertSomeToolHasFailed(\Throwable $exception, string $failMessage): void
+    {
+        $this->assertInstanceOf(ExitException::class, $exception);
+        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
 }

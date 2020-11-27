@@ -5,7 +5,6 @@ namespace GitHooks\Commands\Console;
 use Illuminate\Foundation\Bootstrap\RegisterFacades as BootstrapRegisterFacades;
 use Illuminate\Foundation\AliasLoader;
 use Illuminate\Support\Facades\Facade;
-use Illuminate\Foundation\PackageManifest;
 use Illuminate\Contracts\Foundation\Application;
 
 class RegisterFacades extends BootstrapRegisterFacades
@@ -21,33 +20,6 @@ class RegisterFacades extends BootstrapRegisterFacades
         Facade::clearResolvedInstances();
 
         Facade::setFacadeApplication($app);
-
-        // $manifest = $app->make(PackageManifest::class);
-        // AliasLoader::getInstance(array_merge(
-        //     // $app->make('config')->get('app.aliases', []),
-        //     // $app->make('src/Commands/Console')->get('app.aliases', []),
-        //     [
-        //         'App' => Illuminate\Support\Facades\App::class,
-        //         'Arr' => Illuminate\Support\Arr::class,
-        //         'Artisan' => Illuminate\Support\Facades\Artisan::class,
-        //         'Blade' => Illuminate\Support\Facades\Blade::class,
-        //         'Broadcast' => Illuminate\Support\Facades\Broadcast::class,
-        //         'Bus' => Illuminate\Support\Facades\Bus::class,
-        //         'Cache' => Illuminate\Support\Facades\Cache::class,
-        //         'Config' => Illuminate\Support\Facades\Config::class,
-        //         'Event' => Illuminate\Support\Facades\Event::class,
-        //         // 'File' => Illuminate\Support\Facades\File::class,
-        //         'Lang' => Illuminate\Support\Facades\Lang::class,
-        //         'Log' => Illuminate\Support\Facades\Log::class,
-        //         'Notification' => Illuminate\Support\Facades\Notification::class,
-        //         'Password' => Illuminate\Support\Facades\Password::class,
-        //         'Queue' => Illuminate\Support\Facades\Queue::class,
-        //         'Schema' => Illuminate\Support\Facades\Schema::class,
-        //         'Storage' => Illuminate\Support\Facades\Storage::class,
-        //         'Str' => Illuminate\Support\Str::class,
-        //     ],
-        //     $manifest->aliases()
-        // ))->register();
 
         AliasLoader::getInstance(
             [

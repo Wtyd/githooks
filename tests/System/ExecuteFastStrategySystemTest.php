@@ -2,11 +2,11 @@
 
 namespace Tests\System;
 
+use GitHooks\Exception\ExitException;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFiles;
 use Illuminate\Container\Container;
-use phpDocumentor\Reflection\Types\Void_;
 use Tests\System\Utils\{
     CheckSecurityFakeKo,
     CheckSecurityFakeOk,
@@ -27,7 +27,6 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     // {
     //     var_dump("\n================== BEFORE CLASS =============================");
     //     Container::setInstance(null);
-    //     // $this->container = new Container();
     // }
 
     protected function setUp(): void
@@ -37,6 +36,9 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->hiddenConsoleOutput();
 
         $this->createDirStructure();
+
+        $this->container = Container::getInstance();
+        $this->mockPathGitHooksConfigurationFile();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'fast']);
@@ -66,7 +68,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -104,11 +106,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
-        try {
-            $githooks();
-        } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
-        }
+        $githooks();
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
@@ -154,7 +152,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -195,7 +193,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -231,7 +229,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -283,7 +281,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -293,9 +291,6 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('parallel-lint');
         $this->assertToolDidNotRun('phpstan');
     }
-
-    // Tests    Check Security  CPDetector  Code Sniffer    Mess Detector   Parallel-Lint   PhpStan
-    // 7        KO              OK          OK              KO              skip             OK
 
     /** @test */
     function fast_strategy_07()
@@ -321,7 +316,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -361,7 +356,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -397,7 +392,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -438,7 +433,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -488,7 +483,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -528,7 +523,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -561,7 +556,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -599,7 +594,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -637,7 +632,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -670,7 +665,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -720,7 +715,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasFailed('check-security');
@@ -770,7 +765,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -809,7 +804,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -848,7 +843,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -879,7 +874,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -912,7 +907,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
+            $this->assertInstanceOf(ExitException::class, $th);
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');

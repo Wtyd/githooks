@@ -7,7 +7,6 @@ use Illuminate\Events\Dispatcher;
 use Tests\ConsoleTestCase;
 use Tests\System\Utils\ConfigurationFileBuilder;
 
-
 /**
  * This test is exluded from automated test suite. Only must by runned on pipeline and on isolation. It run all tools and test where is the executable.
  * For it, three scenarios must be considered:

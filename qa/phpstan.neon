@@ -13,6 +13,10 @@
            '#root of method GitHooks\Commands\HookCommand::[a-zA-Z0-9\\_]+() expects string, string|false given#'
         ]
         excludes_analyse: [
+            # Exclude all files relatives to Artisan Console
+            %currentWorkingDirectory%/src/Commands/Console/console.php,
+            %currentWorkingDirectory%/src/Commands/Console/Kernel.php,
+            %currentWorkingDirectory%/src/Commands/Console/RegisterFacades.php
         ]
     }
 }

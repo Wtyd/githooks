@@ -3,6 +3,7 @@
 namespace Tests\Integration;
 
 use GitHooks\Utils\GitFiles;
+use Illuminate\Container\Container;
 use Tests\System\Utils\PhpFileBuilder;
 use Tests\SystemTestCase;
 
@@ -19,12 +20,14 @@ class GitFilesTest extends SystemTestCase
         $this->hiddenConsoleOutput();
 
         $this->createDirStructure();
+
+        $this->container = Container::getInstance();
+        $this->mockPathGitHooksConfigurationFile();
     }
 
     protected function tearDown(): void
     {
         $this->deleteDirStructure();
-        shell_exec('git add .');
     }
 
     /** @test */
@@ -34,13 +37,17 @@ class GitFilesTest extends SystemTestCase
 
         $filename = $this->getPath() . '/src/NewFile.php';
         file_put_contents($filename, $fileBuilder->build());
-        shell_exec('git add .');
+        shell_exec('git add ' . $this->getPath() . '/src/NewFile.php');
 
         $gitFiles = $this->container->make(GitFiles::class);
 
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
         $this->assertEquals([$this->deletePathPrefix($filename)], $modifiedFiles);
+
+        $this->deleteDirStructure();
+
+        shell_exec('git add ' . $this->getPath() . '/src/NewFile.php');
     }
 
     /** @test */

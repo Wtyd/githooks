@@ -2,11 +2,13 @@
 
 namespace GitHooks\Exception;
 
+/**
+ * Exception launched when some tool detects errors.
+ */
 class ExitException extends \RuntimeException implements GitHooksExceptionInterface
 {
-    //TODO revisar esta exepcion
-    public static function forException(\Throwable $exception): \Throwable
+    public function __construct()
     {
-        return $exception;
+        $this->message = 'Some tool has found errors';
     }
 }

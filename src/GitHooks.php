@@ -35,15 +35,12 @@ class GitHooks
     {
         $this->printer = $printer;
         $this->toolExecutor = $toolExecutor;
-        try {
-            $file = $config->readfile();
 
-            $strategy = $chooseStrategy->__invoke($file);
+        $file = $config->readfile();
 
-            $this->tools = $strategy->getTools();
-        } catch (\Throwable $th) {
-            throw ExitException::forException($th);
-        }
+        $strategy = $chooseStrategy->__invoke($file);
+
+        $this->tools = $strategy->getTools();
     }
 
     /**
@@ -70,7 +67,7 @@ class GitHooks
             $this->printer->success($message);
         } else {
             $this->printer->generalFail('Your changes have not been committed. Please fix the errors and try again.');
-            throw new Exception('Uncommitted changes');
+            throw new ExitException();
         }
     }
 }
