@@ -2,7 +2,6 @@
 
 namespace Tests\System;
 
-use GitHooks\Exception\ExitException;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFiles;
@@ -98,7 +97,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
@@ -122,7 +122,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -131,7 +131,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('parallel-lint');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
 
@@ -155,7 +156,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -164,7 +165,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpcpd');
         $this->assertToolDidNotRun('parallel-lint');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
@@ -188,7 +190,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('phpstan');
@@ -224,7 +226,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -259,7 +261,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
@@ -295,7 +297,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');

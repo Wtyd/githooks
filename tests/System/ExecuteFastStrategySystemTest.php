@@ -2,7 +2,6 @@
 
 namespace Tests\System;
 
-use GitHooks\Exception\ExitException;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFiles;
@@ -22,12 +21,6 @@ use Tests\SystemTestCase;
 class ExecuteFastStrategySystemTest extends SystemTestCase
 {
     protected $configurationFile;
-
-    // public static function setUpBeforeClass(): void
-    // {
-    //     var_dump("\n================== BEFORE CLASS =============================");
-    //     Container::setInstance(null);
-    // }
 
     protected function setUp(): void
     {
@@ -68,7 +61,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -77,8 +70,6 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('parallel-lint');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} seconds.%', $this->getActualOutput());
-        $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
 
     /** @test */
@@ -114,7 +105,8 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpstan');
         $this->assertToolDidNotRun('parallel-lint');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
@@ -152,7 +144,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -193,7 +185,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -229,7 +221,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -281,7 +273,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -316,7 +308,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -356,7 +348,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -392,7 +384,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -433,7 +425,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -483,7 +475,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -523,7 +515,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -556,7 +548,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -594,7 +586,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -632,7 +624,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -665,7 +657,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -715,7 +707,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasFailed('check-security');
@@ -765,7 +757,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -804,7 +796,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -843,7 +835,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -874,7 +866,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
@@ -907,7 +899,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         try {
             $githooks();
         } catch (\Throwable $th) {
-            $this->assertInstanceOf(ExitException::class, $th);
+            $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('check-security');

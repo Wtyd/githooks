@@ -54,7 +54,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpunit:8.5.0
+        tools: phpunit:9
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
@@ -99,7 +99,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, phpunit:8.5.0
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, phpunit:9
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
@@ -123,7 +123,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ubuntu-latest, macos-latest] #windows-latest
+        operating-system: [ windows-latest, ubuntu-latest, macos-latest-latest ]
         php-versions: ['7.1', '7.2', '7.3', '7.4']
     name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.operating-system }}
     steps:
@@ -155,7 +155,7 @@ jobs:
 
     - name: Testing the Aplication
       run: |
-        echo "\e[42m\e[30m**** Main Test Suite ****\033[0m"
+        echo "**** Main Test Suite ****"
         vendor/bin/phpunit
-        echo "\e[42m\e[30m**** GitfilesTest ****\033[0m"
-        vendor/bin/phpunit tests/Integration/GitFilesTest
+        echo "**** GitfilesTest ****"
+        vendor/bin/phpunit tests/Integration/GitFilesTest.php

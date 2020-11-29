@@ -3,6 +3,8 @@ name: Code Analysis
 on:
   push:
     branches-ignore: [ master ]
+  pull_request:
+    branches-ignore: [ master ]
 
 env:
   extensions: mbstring #intl, pcov

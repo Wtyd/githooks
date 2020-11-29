@@ -6,6 +6,7 @@ use GitHooks\Configuration;
 use GitHooks\Exception\ExitException;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Runner\Version as PhpunitVersion;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Tests\System\ExecutableFinderTest;
@@ -22,6 +23,30 @@ class SystemTestCase extends TestCase
      * @var Container
      */
     protected $container;
+
+    protected $assertMatchesRegularExpression;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->assertMatchesRegularExpression = $this->setassertMatchesRegularExpressionpForm();
+    }
+
+    /**
+     * The assertMatchesRegularExpressionp method is deprecated as of phpunit version 9. Replaced by the assertMatchesRegularExpression method.
+     * This method checks the phpunit version and returns the name of the correct method.
+     *
+     * @return string
+     */
+    protected function setassertMatchesRegularExpressionpForm(): string
+    {
+        if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
+            return 'assertRegExp';
+        } else {
+            return 'assertMatchesRegularExpression';
+        }
+    }
 
     /**
      * For system tests I need to read the configuration file 'githooks.yml' but the SUT looks for it in the root or qa / directories.
@@ -87,17 +112,20 @@ class SystemTestCase extends TestCase
         }
     }
 
-
+    //assertMatchesRegularExpression
+    //assertMatchesRegularExpressionp
     protected function assertToolHasBeenExecutedSuccessfully(string $tool): void
     {
         //phpcbf[.phar] - OK. Time: 0.18
-        $this->assertRegExp("%$tool(\.phar)? - OK\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput(), "The tool $tool has not been executed successfully");
     }
 
     protected function assertToolHasFailed(string $tool): void
     {
         //phpcbf[.phar] - KO. Time: 0.18
-        $this->assertRegExp("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput(), "The tool $tool has not failed");
     }
 
     protected function assertToolDidNotRun(string $tool): void
@@ -118,7 +146,8 @@ class SystemTestCase extends TestCase
     protected function assertSomeToolHasFailed(\Throwable $exception, string $failMessage): void
     {
         $this->assertInstanceOf(ExitException::class, $exception);
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
 }
