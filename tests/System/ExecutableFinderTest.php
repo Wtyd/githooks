@@ -58,19 +58,15 @@ class ExecutableFinderTest extends SystemTestCase
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
         $githooks = $this->container->makeWith(GitHooks::class);
 
-        try {
-            $githooks();
-        } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
-        }
-
+        $githooks();
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
-        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
-        $this->assertRegExp('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPMD);
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPCPD);
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPSTAN);
+        $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PARALLEL_LINT);
+        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 }
