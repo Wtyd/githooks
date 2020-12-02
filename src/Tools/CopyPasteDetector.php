@@ -26,7 +26,7 @@ class CopyPasteDetector extends ToolAbstract
      */
     protected $args;
 
-    //TODO añadir el flag  --names-exclude que funciona como --exclude pero para ficheros. Es decir exclude es para directorios y exclude-name para ficheros
+    //TODO add --names-exclude option. Is like --exclude but for files. Check 6.* interfaces because bring changes.
     public function __construct(array $configurationFile)
     {
         $this->installer = 'sebastian/phpcpd';

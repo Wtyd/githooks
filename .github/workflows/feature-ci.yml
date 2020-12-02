@@ -52,6 +52,6 @@ jobs:
     - name: Testing the Aplication
       run: |
         echo "**** Main Test Suite ****"
-        vendor/bin/phpunit
+        vendor/bin/phpunit --order-by random
         echo "**** GitfilesTest ****"
         vendor/bin/phpunit tests/Integration/GitFilesTest.php

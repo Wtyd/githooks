@@ -12,10 +12,11 @@ env:
 
 jobs:
   code_coverage:    
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.operating-system }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
+        operating-system: [ubuntu-latest]
         php-versions: ['7.4']
     name: Code Coverage
     steps:
@@ -27,15 +28,26 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
-        
+    
+    - name: Get composer cache directory
+      id: composercache
+      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+
+    - name: Cache dependencies
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.composercache.outputs.dir }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
 
-    - name: Install Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
+    - name: Tests
+      run: vendor/bin/phpunit
 
     - name: Tests with code coverage
       run: vendor/bin/phpunit --coverage-html ${{ env.report_path }}/coverage
@@ -49,10 +61,10 @@ jobs:
         path: ${{ env.report_path }}
 
   infection:    
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        operating-system: [ubuntu-latest]
         php-versions: ['7.4']
     name: Infection
     steps:
@@ -64,7 +76,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd, phive
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, phive
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
         
@@ -92,10 +104,10 @@ jobs:
         path: ${{ env.report_path }}
 
   PhpMetrics:    
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        operating-system: [ubuntu-latest]
         php-versions: ['7.4']
     name: PhpMetrics
     steps:
@@ -107,7 +119,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
         

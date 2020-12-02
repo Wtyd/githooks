@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @group Configuration
- * The runInSeparateProcess annotation and @preserveGlobalState disabled  must be setted because are neede when the full battery of tests are launched.
+ * The @runInSeparateProcess annotation and @preserveGlobalState disabled  must be setted because are needed when the full battery of tests are launched.
  * Otherwise other tests failed when they try to use the original class Symfony\Component\Yaml\Yaml.
  */
 class ConfigurationTest extends TestCase
@@ -96,11 +96,14 @@ class ConfigurationTest extends TestCase
 
     /**
      * @test
+     * @runInSeparateProcess
+     * @preserveGlobalState
      * When there are two valid configuration files it always returns the one in the root directory
      */
     function it_searchs_configuration_file_first_in_the_root_directory()
     {
         $mock = $this->getMockRootDirectory();
+
         $mock->enable();
 
         $rootFileYalm = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();

@@ -11,7 +11,6 @@ class Printer
     {
         $this->resultError($exMessage);
     }
-    // TODO Pablo: Crear los metodos basicos en el Printer (line, info, comment, error).
 
     public function resultSuccess(string $message): void
     {
@@ -41,6 +40,7 @@ class Printer
     {
         $this->success($message);
     }
+
     public function success(string $message): void
     {
         echo "\e[42m\e[30m$message\033[0m\n";

@@ -167,20 +167,4 @@ class SmartStrategy implements StrategyInterface
 
         return $exclusionConfigured;
     }
-
-    /**
-     * Busca la key de la $tool en el array $configuracion
-     *
-     * @param string $tool. Puede tomar los valores de las Constants como por ejemplo CODE_SNIFFER.
-     *                      Se comprueba que la key $tools este en la raíz del array de configuración.
-     * @return boolean
-     */
-    protected function toolHasConfiguration(string $tool): bool
-    {
-        if (array_key_exists($tool, $this->configurationFile)) {
-            return true;
-        }
-
-        return false;
-    }
 }

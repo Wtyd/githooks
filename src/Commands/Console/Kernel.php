@@ -60,8 +60,6 @@ class Kernel extends ConsoleKernel
     protected function commands(): void
     {
         $this->load($this->registerCommands->__invoke());
-        // $this->load(__DIR__ . '/../Tools');
-        // require base_path(__DIR__ . '/console.php');
     }
 
     /**
@@ -78,10 +76,7 @@ class Kernel extends ConsoleKernel
     {
         $this->bootstrap();
 
-        $this->app = $this->getArtisan();
-
-        return $this->app->call($command, $parameters, $outputBuffer);
-        // return $this->getArtisan()->call($command, $parameters, $outputBuffer);
+        return $this->getArtisan()->call($command, $parameters, $outputBuffer);
     }
 
     /**
@@ -112,30 +107,10 @@ class Kernel extends ConsoleKernel
      */
     protected function load($commands)
     {
-        // $container = Container::getInstance();
-        // Bind Tools Commands
-        // $commands = [
-        //     ParallelLintCommand::class,
-        //     CodeSnifferCommand::class,
-        //     CopyPasteDetectorCommand::class,
-        //     MessDetectorCommand::class,
-        //     StanCommand::class,
-        //     CheckSecurityCommand::class,
-        //     CreateConfigurationFileCommand::class,
-        //     CheckConfigurationFileCommand::class
-        // ];
-
         foreach ($commands as $command) {
             Artisan::starting(function ($artisan) use ($command) {
                 $artisan->resolve($command);
             });
         }
-
-        // Other Commands
-        // $this->app->resolve(CreateConfigurationFileCommand::class);
-        // $this->app->resolve(CheckConfigurationFileCommand::class);
-        // $this->app->resolve(ExecuteAllToolsCommand::class);
-        // $this->app->resolve(HookCommand::class);
-        // $this->app->resolve(CleanHookCommand::class);
     }
 }

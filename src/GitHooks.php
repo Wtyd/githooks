@@ -61,7 +61,6 @@ class GitHooks
         $executionTotalTime = $endTotalTime - $startTotalTime;
         $this->printer->line("\n  Total run time = " . number_format($executionTotalTime, 2) . " seconds.");
 
-        //TODO Quizas es mejor que ToolExecutor lance excepcion si KO y nada si va bien. El mensaje OK se printaria en el camino normal y el fallo en el catch
         if ($exitCode === self::OK) {
             $message = 'Your changes have been committed.';
             $this->printer->success($message);

@@ -6,7 +6,6 @@ use GitHooks\Tools\Exception\ExecutableNotFoundException;
 
 abstract class ToolAbstract
 {
-    //TODO Este atributo igual no tiene sentido ya que el nombre de las herramientas es el mismo comando con el que se ejecuta
     /**
      * @var string
      */
