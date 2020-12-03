@@ -46,9 +46,6 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress --no-suggest
 
-    - name: Tests
-      run: vendor/bin/phpunit
-
     - name: Tests with code coverage
       run: vendor/bin/phpunit --coverage-html ${{ env.report_path }}/coverage
 
@@ -76,7 +73,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, phive
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, infection
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
         
@@ -85,15 +82,6 @@ jobs:
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
-
-    - name: Infection Install
-      run: wget -O infection.phar https://github.com/infection/infection/releases/download/0.20.2/infection.phar
-
-    - name: Infection Install
-      run: chmod +x infection.phar
-
-    - name: Infection move
-      run: mv infection.phar /usr/local/bin/infection
 
     - name: Infection execute
       run: infection --threads=10 --no-progress

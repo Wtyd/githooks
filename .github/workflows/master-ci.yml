@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest]
+        operating-system: [ubuntu-18.04]
         php-versions: ['7.4']
     name: Executable Finder on Local Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest]
+        operating-system: [ubuntu-18.04]
         php-versions: ['7.4']
     name: Executable Finder on Phar Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
@@ -71,11 +71,11 @@ jobs:
       run: composer dumpautoload
 
     - name: Download tools as .Phars in Unix
-      if: ${{ ('ubuntu-latest' == matrix.operating-system || 'macos-latest' == matrix.operating-system) }}
+      if: ${{ ('ubuntu-18.04' == matrix.operating-system || 'macos-latest' == matrix.operating-system) }}
       run: |
         wget https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
         wget https://squizlabs.github.io/PHP_CodeSniffer/phpcbf.phar
-        wget https://phpmd.org/static/latest/phpmd.phar &&
+        wget https://phpmd.org/static/latest/phpmd.phar
         wget https://github.com/phpstan/phpstan/releases/download/0.12.49/phpstan.phar
         wget https://phar.phpunit.de/phpcpd.phar
 
@@ -84,7 +84,7 @@ jobs:
       run: |
         curl -o phpcs.phar https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
         curl -o phpcbf.phar https://squizlabs.github.io/PHP_CodeSniffer/phpcbf.phar
-        curl -o phpmd.phar https://phpmd.org/static/latest/phpmd.phar &&
+        curl -o phpmd.phar https://phpmd.org/static/latest/phpmd.phar
         curl -o phpstan.phar https://github.com/phpstan/phpstan/releases/download/0.12.49/phpstan.phar
         curl -o phpcpd.phar https://phar.phpunit.de/phpcpd.phar
 
@@ -95,7 +95,7 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest]
+        operating-system: [ubuntu-18.04]
         php-versions: ['7.4']
     name: Executable Finder on Global Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
@@ -131,7 +131,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        operating-system: [ windows-latest, ubuntu-latest, macos-latest ]
+        operating-system: [ windows-latest, ubuntu-18.04, macos-latest ]
         php-versions: ['7.1', '7.2', '7.3', '7.4']
     name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.operating-system }}
     steps:
@@ -154,7 +154,7 @@ jobs:
       run: composer global require php-parallel-lint/php-parallel-lint
 
     - name: Install Phpcpd Unix
-      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-latest' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
+      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-18.04' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
       run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
       
     - name: Install Phpcpd Windows

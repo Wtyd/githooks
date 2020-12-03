@@ -15,7 +15,7 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-latest]
+        operating-system: [ubuntu-18.04]
         php-versions: ['7.1']
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
     steps:
@@ -46,7 +46,7 @@ jobs:
       run: composer install --prefer-dist --no-progress --no-suggest
 
     - name: Install Phpcpd Unix
-      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-latest' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
+      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-18.04' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
       run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
 
     - name: Testing the Aplication
