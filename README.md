@@ -1,15 +1,20 @@
-# GitHooks
+# Wtyd/GitHooks
 
 <p align="center">
-    <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Master%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Master/badge.svg"></a>
     <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
     <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%207.4-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
+<p align="center">
+  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Master%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Master/badge.svg"></a>
+  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Code Analysis%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Code Analysis/badge.svg"></a>
+  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Executable Finder%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Executable Finder/badge.svg"></a>
+  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Schedule CI%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Schedule CI/badge.svg"></a>
+</p>
 
-GitHooks helps you to manage the code validation tools. For example, in precommit stage, you can:
+GitHooks helps you to manage the code validation tools in git hooks. For example, in precommit stage, you can:
 1. Validate that the code follows the project standards.
 2. Verify that the code has no language syntax errors.
 3. Look for errors in the code (unused variables, excessive cyclomatic complexity, etc.).
@@ -24,21 +29,20 @@ GitHooks centralizes the configuration of the code validation tools and makes it
 * Or your owns scripts for the hooks.
 
 # Install
-1. GitHooks must be installed like dev requirement with composer. Actually, it does not have [.phar](https://www.php.net/phar) support.
-
+1. GitHooks must be installed like dev requirement with composer. Currently, it does not have [.phar](https://www.php.net/phar) packaging.
     ```bash
     composer require --dev wtyd/githooks
     ```
 
-1. Install all needed [supported tools](#supported-tools). The installation method for the tools can be:
+2. Install all needed [supported tools](#supported-tools). The installation method for the tools can be:
     - Like global dependency with composer: `composer global require squizlabs/php_codesniffer`
     - Like dev requirement in the project: `composer require --dev sebastian/phpcpd`
     - Like .phar on the root of the project or with global access.
 
-1. Initialize GitHooks with `vendor/bin/githooks conf:init`. This command creates the configuration file in the root paths (`githooks.yml`).
-1. Run `vendor/bin/githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `vendor/bin/githooks hook otherHook MyScriptFile.php` for set any hook with a custom script.
+3. Initialize GitHooks with `vendor/bin/githooks conf:init`. This command creates the configuration file in the root paths (`githooks.yml`).
+4. Run `vendor/bin/githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `vendor/bin/githooks hook otherHook MyScriptFile.php` for set any hook with a custom script.
 
-1. [Set the configuration file](#Set-the-configuration-file).
+5. [Set the configuration file](#Set-the-configuration-file).
 
 
 # Usage
@@ -63,6 +67,8 @@ At this moment, the supported tools are:
 * [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint)
 * [Php Stan](https://github.com/phpstan/phpstan)
 * [Composer - Security Check Plugin](https://github.com/funkjedi/composer-plugin-security-check)
+
+But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#Hook) on any git hook.
 
 # Set the Configuration File
 The `githooks.yml` file is splitted on three parts:
@@ -137,7 +143,7 @@ Many of the options are *optional* as long as the tool has a properly establishe
 </p>
 
 # Contributing
-Contributions from others would be very much appreciated! Send pull [request](https://github.com/Wtyd/githooks/pulls)/[issue](https://github.com/Wtyd/githooks/issues). Check all steps for do that at Wiki section for [Contributing](https://github.com/Wtyd/githooks/wiki). Thanks!
+Contributions from others would be very much appreciated! Send pull [request](https://github.com/Wtyd/githooks/pulls)/[issue](https://github.com/Wtyd/githooks/issues). Check all steps for do that at Wiki section for [Contributing](https://github.com/Wtyd/githooks/wiki/Contributing). Thanks!
 
 # License
 The MIT License (MIT). Please see [License File](/LICENSE) for more information.
