@@ -2,7 +2,6 @@
 
 namespace GitHooks\Commands\Console;
 
-use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Tests\Artisan\Application;

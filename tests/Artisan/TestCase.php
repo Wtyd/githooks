@@ -1,15 +1,17 @@
 <?php
 
-namespace Tests\System\Utils\Console;
+namespace Tests\Artisan;
 
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Application as Artisan;
+use Illuminate\Foundation\Testing\Concerns\InteractsWithContainer;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Str;
 use Mockery;
 use Mockery\Exception\InvalidCountException;
 use PHPUnit\Framework\TestCase as BaseTestCase;
+
 use Throwable;
 
 /**
@@ -18,6 +20,7 @@ use Throwable;
 abstract class TestCase extends BaseTestCase
 {
     use InteractsWithConsole;
+    use InteractsWithContainer;
 
     /**
      * The Illuminate application instance.

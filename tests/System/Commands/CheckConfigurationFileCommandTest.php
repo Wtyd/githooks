@@ -2,42 +2,42 @@
 
 namespace Tests\System\Commands;
 
-use Illuminate\Console\Application;
-use Illuminate\Events\Dispatcher;
-use Tests\ConsoleTestCase;
+use GitHooks\Configuration;
+use Illuminate\Container\Container;
+use Tests\Artisan\ConsoleTestCase;
+use Tests\FileSystemTrait;
+use Tests\Mock;
+use Tests\System\Utils\ConfigurationFake;
 use Tests\System\Utils\ConfigurationFileBuilder;
 
-/**
- * This test is exluded from automated test suite. Only must by runned on pipeline and on isolation. It run all tools and test where is the executable.
- * For it, three scenarios must be considered:
- * 1. All tools are installed globally.
- * 2. All tools are installed how project dependencies.
- * 3. All tools are downloaded as phar in project root path.
- * The test must be run three times, once per scenario. This scenario is configured in pipeline.
- */
 class CheckConfigurationFileCommandTest extends ConsoleTestCase
 {
+    use FileSystemTrait;
+
     protected $configurationFile;
 
     protected $artisan;
 
-    // protected function setUp(): void
-    // {
-    //     $this->deleteDirStructure();
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->deleteDirStructure();
 
-    //     // $this->hiddenConsoleOutput();
+        // $this->hiddenConsoleOutput(); //En console tests no sirve
 
-    //     $this->createDirStructure();
+        $this->createDirStructure();
 
-    //     $events = new Dispatcher($this->container);
+        $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
 
-    //     $this->artisan = new Application($this->container, $events, 'Version');
 
-    //     $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-    // }
+
+        // $this->mockConfigurationFile();
+        // dd($this->app);
+    }
 
     // protected function tearDown(): void
     // {
+    //     parent::tearDown();
     //     $this->deleteDirStructure();
     // }
 
@@ -49,19 +49,37 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     /** @test */
     function it_pass_all_file_configuration_checks2432()
     {
-        $this->markTestIncomplete('no');
-        $this->configurationFile->setOptions(['unacosa' => false]);
-        // file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
+        var_dump("\n======================TESTS=========================");
+        $this->container = Container::getInstance();
+        // $this->container = Container::getInstance();
+        // dd($this->path);
+        $mockConfiguration = Mock::mock(Configuration::class)->shouldAllowMockingProtectedMethods()->makePartial();
+        $mockConfiguration->shouldReceive('findConfigurationFile')->andReturn($this->getPath() . '/githooks.yml');
 
-        try {
-            // $exit = shell_exec('php bin/githooks conf:check');
-            $this->artisan('conf:check')
-                ->expectsOutput('Your name is Taylor Otwell and you program in PHP.');
-            // var_dump($exit);
-            // var_dump($exitCode);
-            exit;
-        } catch (\Throwable $th) {
-            //If something goes wrong I avoid throwing the exception because it hides the asserts
-        }
+
+        // $this->container->instance(Configuration::class, ConfigurationFake::class, true);
+
+
+        $this->app->bind(Configuration::class, ConfigurationFake::class, false);
+        // dd($this->app->make(Configuration::class));
+
+        // $mock = $this->partialMock(Configuration::class, function ($mock) {
+        //     $mock->shouldAllowMockingProtectedMethods();
+        //     $mock->shouldReceive('findConfigurationFile')->andReturn($this->getPath() . '/githooks.yml');
+        // });
+
+        // $mock = $this->mock(Configuration::class, function ($mock) {
+        //     return new ConfigurationFake();
+        // });
+
+        // dd(Container::getInstance());
+        $this->configurationFile->setOptions(['unacosa' => false]);
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        $this->artisan('conf:check')
+            ->containsStringInOutput("The key 'unacosa' is not a valid option")
+            // ->showOutput();
+            ->containsStringInOutput("Checking the configuration file:\n")
+            ->containsStringInOutput('The file githooks.yml has the correct format.');
     }
 }

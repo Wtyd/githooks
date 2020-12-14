@@ -13,6 +13,7 @@ class ConfigurationFileValidator
      */
     public function __invoke(array $configurationFile): ConfigurationErrors
     {
+        // dd($configurationFile);
         $configurationErrors = new ConfigurationErrors();
 
         $optionsErrorsAndWarnings = $this->checkOptionsKey($configurationFile);

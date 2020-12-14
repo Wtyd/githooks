@@ -2,27 +2,22 @@
 
 namespace Tests;
 
-use GitHooks\Configuration;
 use GitHooks\Exception\ExitException;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Runner\Version as PhpunitVersion;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
-use Tests\System\ExecutableFinderTest;
-use Tests\System\Utils\ConfigurationFake;
 
 /**
  * Al llamar a setOutputCallback escondemos cualquier output por la consola que no venga de phpunit
  */
 class SystemTestCase extends TestCase
 {
+    use FileSystemTrait;
+    use MockConfigurationFileTrait;
+
     protected $path = __DIR__ . '/System/tmp';
 
-    /**
-     * @var Container
-     */
-    protected $container;
+
 
     protected $assertMatchesRegularExpression;
 
@@ -48,69 +43,12 @@ class SystemTestCase extends TestCase
         }
     }
 
-    /**
-     * For system tests I need to read the configuration file 'githooks.yml' but the SUT looks for it in the root or qa / directories.
-     * In order to use a configuration file created expressly for each test, I mock the 'findConfigurationFile' method so that
-     * return the root directory where I create the file structure for the tests ($this->path)
-     *
-     * For ExecutableFinderTest I can't use Mockery in two of three stages (only when I install the application with dev dependencies).
-     * For this, I have created ConfigurationFake.
-     *
-     * @return void
-     */
-    protected function mockPathGitHooksConfigurationFile(): void
-    {
-        if ($this instanceof ExecutableFinderTest) {
-            $this->container->bind(Configuration::class, ConfigurationFake::class);
-        } else {
-            $mockConfiguration = Mock::mock(Configuration::class)->shouldAllowMockingProtectedMethods()->makePartial();
-            $mockConfiguration->shouldReceive('findConfigurationFile')->andReturn($this->path . '/githooks.yml');
-            $this->container->instance(Configuration::class, $mockConfiguration);
-        }
-    }
-
     protected function hiddenConsoleOutput(): void
     {
         $this->setOutputCallback(function () {
         });
     }
 
-    protected function deleteDir(): void
-    {
-        $dir = $this->path;
-        $it = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
-        $files = new RecursiveIteratorIterator(
-            $it,
-            RecursiveIteratorIterator::CHILD_FIRST
-        );
-        foreach ($files as $file) {
-            if ($file->isDir()) {
-                rmdir($file->getRealPath());
-            } else {
-                unlink($file->getRealPath());
-            }
-        }
-        rmdir($dir);
-    }
-
-    public function getPath(): string
-    {
-        return $this->path;
-    }
-
-    public function createDirStructure(): void
-    {
-        mkdir($this->path);
-        mkdir($this->path . '/src');
-        mkdir($this->path . '/vendor');
-    }
-
-    public function deleteDirStructure(): void
-    {
-        if (is_dir($this->path)) {
-            $this->deleteDir();
-        }
-    }
 
     //assertMatchesRegularExpression
     //assertMatchesRegularExpressionp

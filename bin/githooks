@@ -3,22 +3,6 @@
 
 require getcwd() . '/vendor/autoload.php';
 
-use GitHooks\Commands\Tools\{
-    CheckSecurityCommand,
-    CodeSnifferCommand,
-    CopyPasteDetectorCommand,
-    MessDetectorCommand,
-    ParallelLintCommand,
-    StanCommand,
-    ExecuteAllToolsCommand
-};
-
-use GitHooks\Commands\{
-    CheckConfigurationFileCommand,
-    CleanHookCommand,
-    CreateConfigurationFileCommand,
-    HookCommand
-};
 use GitHooks\Commands\Console\RegisterCommands;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;

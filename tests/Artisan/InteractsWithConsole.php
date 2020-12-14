@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System\Utils\Console;
+namespace Tests\Artisan;
 
 // namespace Illuminate\Foundation\Testing\Concerns;
 
@@ -33,6 +33,13 @@ trait InteractsWithConsole
      * @var array
      */
     public $containsStringInOutput = [];
+
+    /**
+     * The string is contained in the output.
+     *
+     * @var array
+     */
+    public $notContainsStringInOutput = [];
 
     /**
      * All of the expected questions.

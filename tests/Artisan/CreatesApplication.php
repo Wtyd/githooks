@@ -1,9 +1,14 @@
 <?php
 
-namespace Tests\System\Utils\Console;
+namespace Tests\Artisan;
 
 use GitHooks\Commands\Console\Kernel as GitHooksKernel;
+use GitHooks\Commands\Console\RegisterCommands;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Contracts\Events\Dispatcher;
+use Illuminate\Events\Dispatcher as EventsDispatcher;
+use Illuminate\Foundation\Application as FoundationApplication;
 use Illuminate\Foundation\Console\Kernel as ConcreteKernel;
 use Mockery;
 use Tests\Artisan\Application;
@@ -26,9 +31,16 @@ trait CreatesApplication
             $_ENV['APP_BASE_PATH'] ?? dirname(getcwd())
         );
 
+
+        $app->singleton(Container::class, Container::class);
+        Container::setInstance($app->make(Container::class));
+
         $app->bind(PendingCommand::class, Tests\System\Utils\Console\PendingCommand::class);
 
-        $app->singleton(GitHooksKernel::class, GitHooksKernel::class);
+        $app->singleton(Dispatcher::class, EventsDispatcher::class);
+        $app->singleton(GitHooksKernel::class, function () use ($app) {
+            return new GitHooksKernel($app, $app->make(Dispatcher::class), $app->make(RegisterCommands::class));
+        });
 
         $app->singleton(ConcreteKernel::class, GitHooksKernel::class);
 
@@ -46,6 +58,6 @@ trait CreatesApplication
     {
         Mockery::resetContainer();
         // $container = Mockery::getContainer();
-        // var_dump($container->mockery_getExpectationCount()); //se extra asserts
+        // var_dump($container->mockery_getExpectationCount()); //see extra asserts
     }
 }

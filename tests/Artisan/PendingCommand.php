@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System\Utils\Console;
+namespace Tests\Artisan;
 
 use Mockery;
 use Mockery\Exception\NoMatchingExpectationException;
@@ -59,6 +59,8 @@ class PendingCommand
     protected $hasExecuted = false;
 
     protected $showOutput = false;
+
+    protected $itsOkWithoutWarnings = [];
 
     /**
      * Create a new pending console command run.
@@ -138,12 +140,25 @@ class PendingCommand
     /**
      * Specify output that should be printed when the command runs.
      *
-     * @param  string  $output
+     * @param  string  $stringInOutput
      * @return $this
      */
-    public function containsStringInOutput($output)
+    public function containsStringInOutput($stringInOutput)
     {
-        $this->test->containsStringInOutput[] = $output;
+        $this->test->containsStringInOutput[] = $stringInOutput;
+
+        return $this;
+    }
+
+    /**
+     * Specify output that should be printed when the command runs.
+     *
+     * @param  string  $string
+     * @return $this
+     */
+    public function notContainsStringInOutput($string)
+    {
+        $this->test->notContainsStringInOutput[] = $string;
 
         return $this;
     }
@@ -226,7 +241,7 @@ class PendingCommand
      *
      * @return void
      */
-    public function OutputShouldBeShown()
+    public function outputShouldBeShown()
     {
         if (!$this->showOutput) {
             $this->test->setOutputCallback(function () {
@@ -268,6 +283,17 @@ class PendingCommand
                     $string,
                     $this->test->getActualOutput(),
                     'Output "' . $string . '" was not printed.'
+                );
+                unset($this->test->containsStringInOutput[$key]);
+            }
+        }
+
+        if (count($this->test->notContainsStringInOutput)) {
+            foreach ($this->test->notContainsStringInOutput as $key => $string) {
+                $this->test->assertStringNotContainsString(
+                    $string,
+                    $this->test->getActualOutput(),
+                    'Output "' . $string . '" was printed.'
                 );
                 unset($this->test->containsStringInOutput[$key]);
             }

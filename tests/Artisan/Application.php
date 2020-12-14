@@ -2,6 +2,7 @@
 
 namespace Tests\Artisan;
 
+use Illuminate\Container\Container;
 use Illuminate\Events\EventServiceProvider;
 use Illuminate\Foundation\Application as FoundationApplication;
 use Illuminate\Contracts\Console\Kernel;
@@ -11,6 +12,7 @@ class Application extends FoundationApplication
     public function __construct()
     {
         $this->namespace = 'GitHooks';
+
         parent::__construct();
     }
 
@@ -21,14 +23,16 @@ class Application extends FoundationApplication
      */
     protected function registerBaseBindings()
     {
-        static::setInstance($this);
+        // static::setInstance($this);
+        static::setInstance(Container::getInstance());
 
-        $this->instance('app', $this);
+        // $this->instance('app', $this);
+        $this->instance('app', Container::getInstance());
 
-        $this->instance(Container::class, $this);
+        // $this->instance(Container::class, $this);
         $this->singleton(Mix::class);
 
-        //No quiero instanciar el fFilesystem, de momento
+        //No quiero instanciar el Filesystem, de momento
         // $this->instance(PackageManifest::class, new PackageManifest(
         //     new Filesystem, $this->basePath(), $this->getCachedPackagesPath()
         // ));
@@ -53,9 +57,8 @@ class Application extends FoundationApplication
      */
     public function registerCoreContainerAliases()
     {
-        foreach (
-            [
-                'app'                  => [\Illuminate\Foundation\Application::class, \Illuminate\Contracts\Container\Container::class, \Illuminate\Contracts\Foundation\Application::class,  \Psr\Container\ContainerInterface::class],
+        foreach ([
+            'app'                  => [\Illuminate\Foundation\Application::class, \Illuminate\Contracts\Container\Container::class, \Illuminate\Contracts\Foundation\Application::class,  \Psr\Container\ContainerInterface::class],
             // 'auth'                 => [\Illuminate\Auth\AuthManager::class, \Illuminate\Contracts\Auth\Factory::class],
             // 'auth.driver'          => [\Illuminate\Contracts\Auth\Guard::class],
             // 'blade.compiler'       => [\Illuminate\View\Compilers\BladeCompiler::class],
@@ -66,7 +69,7 @@ class Application extends FoundationApplication
             // 'encrypter'            => [\Illuminate\Encryption\Encrypter::class, \Illuminate\Contracts\Encryption\Encrypter::class],
             // 'db'                   => [\Illuminate\Database\DatabaseManager::class],
             // 'db.connection'        => [\Illuminate\Database\Connection::class, \Illuminate\Database\ConnectionInterface::class],
-                'events'               => [\Illuminate\Events\Dispatcher::class, \Illuminate\Contracts\Events\Dispatcher::class],
+            'events'               => [\Illuminate\Events\Dispatcher::class, \Illuminate\Contracts\Events\Dispatcher::class],
             // 'files'                => [\Illuminate\Filesystem\Filesystem::class],
             // 'filesystem'           => [\Illuminate\Filesystem\FilesystemManager::class, \Illuminate\Contracts\Filesystem\Factory::class],
             // 'filesystem.disk'      => [\Illuminate\Contracts\Filesystem\Filesystem::class],
@@ -90,8 +93,7 @@ class Application extends FoundationApplication
             // 'url'                  => [\Illuminate\Routing\UrlGenerator::class, \Illuminate\Contracts\Routing\UrlGenerator::class],
             // 'validator'            => [\Illuminate\Validation\Factory::class, \Illuminate\Contracts\Validation\Factory::class],
             // 'view'                 => [\Illuminate\View\Factory::class, \Illuminate\Contracts\View\Factory::class],
-            ] as $key => $aliases
-        ) {
+        ] as $key => $aliases) {
             foreach ($aliases as $alias) {
                 $this->alias($key, $alias);
             }
