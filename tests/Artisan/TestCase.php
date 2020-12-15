@@ -11,7 +11,6 @@ use Illuminate\Support\Str;
 use Mockery;
 use Mockery\Exception\InvalidCountException;
 use PHPUnit\Framework\TestCase as BaseTestCase;
-
 use Throwable;
 
 /**

@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Tests;
 
 use GitHooks\Configuration;
@@ -16,7 +15,7 @@ trait MockConfigurationFileTrait
     protected $container;
 
     /**
-     * For system tests I need to read the configuration file 'githooks.yml' but the SUT looks for it in the root or qa / directories.
+     * For system tests I need to read the configuration file 'githooks.yml' but the SUT looks for it in the root or qa/ directories.
      * In order to use a configuration file created expressly for each test, I mock the 'findConfigurationFile' method so that
      * return the root directory where I create the file structure for the tests ($this->path)
      *
@@ -36,7 +35,12 @@ trait MockConfigurationFileTrait
         }
     }
 
-    protected function mockConfigurationFile(): void
+    /**
+     * It's the same method as 'mockPathGitHooksConfigurationFile' for command tests. In these tests the Container it's implicit in $this->app
+     *
+     * @return void
+     */
+    protected function mockConfigurationFileForCommandsTests(): void
     {
         $mockConfiguration = Mock::mock(Configuration::class)->shouldAllowMockingProtectedMethods()->makePartial();
         $mockConfiguration->shouldReceive('findConfigurationFile')->andReturn($this->path . '/githooks.yml');
