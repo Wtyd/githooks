@@ -2,21 +2,12 @@
 
 namespace Tests\System\Commands;
 
-use GitHooks\Configuration;
-use Illuminate\Container\Container;
 use Tests\Artisan\ConsoleTestCase;
-use Tests\FileSystemTrait;
-use Tests\Mock;
-use Tests\System\Utils\ConfigurationFake;
 use Tests\System\Utils\ConfigurationFileBuilder;
 
 class CheckConfigurationFileCommandTest extends ConsoleTestCase
 {
-    use FileSystemTrait;
-
     protected $configurationFile;
-
-    protected $artisan;
 
     protected function setUp(): void
     {
