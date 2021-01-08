@@ -2,17 +2,20 @@
 
 namespace Tests\Artisan;
 
-use Mockery;
-use Mockery\Exception\NoMatchingExpectationException;
+
 use Illuminate\Console\OutputStyle;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
+use Mockery;
+use Mockery\Exception\NoMatchingExpectationException;
+use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
-use PHPUnit\Framework\TestCase as PHPUnitTestCase;
+
 
 /**
- * Illuminate\Testing\PendingCommand adaptation
+ * Illuminate\Testing\PendingCommand adaptation (https://github.com/laravel/framework/blob/8.x/src/Illuminate/Testing/PendingCommand.php)
  */
 class PendingCommand
 {
@@ -60,8 +63,6 @@ class PendingCommand
 
     protected $showOutput = false;
 
-    protected $itsOkWithoutWarnings = [];
-
     /**
      * Create a new pending console command run.
      *
@@ -71,7 +72,7 @@ class PendingCommand
      * @param  array  $parameters
      * @return void
      */
-    public function __construct(PHPUnitTestCase $test, $app, $command, $parameters)
+    public function __construct(PHPUnitTestCase $test, \Illuminate\Contracts\Foundation\Application $app, $command, $parameters)
     {
         $this->app = $app;
         $this->test = $test;
@@ -80,10 +81,10 @@ class PendingCommand
     }
 
     /**
-     * Specify a question that should be asked when the command runs.
+     * Specify an expected question that will be asked when the command runs.
      *
      * @param  string  $question
-     * @param  string  $answer
+     * @param  string|bool  $answer
      * @return $this
      */
     public function expectsQuestion($question, $answer)
@@ -109,7 +110,7 @@ class PendingCommand
      * Specify an expected choice question with expected answers that will be asked/shown when the command runs.
      *
      * @param  string  $question
-     * @param  string  $answer
+     * @param  string|array  $answer
      * @param  array  $answers
      * @param  bool  $strict
      * @return $this
@@ -138,6 +139,19 @@ class PendingCommand
     }
 
     /**
+     * Specify output that should never be printed when the command runs.
+     *
+     * @param  string  $output
+     * @return $this
+     */
+    public function doesntExpectOutput($output)
+    {
+        $this->test->unexpectedOutput[$output] = false;
+
+        return $this;
+    }
+
+    /**
      * Specify output that should be printed when the command runs.
      *
      * @param  string  $stringInOutput
@@ -159,6 +173,27 @@ class PendingCommand
     public function notContainsStringInOutput($string)
     {
         $this->test->notContainsStringInOutput[] = $string;
+
+        return $this;
+    }
+
+    /**
+     * Specify a table that should be printed when the command runs.
+     *
+     * @param  array  $headers
+     * @param  \Illuminate\Contracts\Support\Arrayable|array  $rows
+     * @param  string  $tableStyle
+     * @param  array  $columnStyles
+     * @return $this
+     */
+    public function expectsTable($headers, $rows, $tableStyle = 'default', array $columnStyles = [])
+    {
+        $this->test->expectedTables[] = [
+            'headers' => (array) $headers,
+            'rows' => $rows instanceof Arrayable ? $rows->toArray() : $rows,
+            'tableStyle' => $tableStyle,
+            'columnStyles' => $columnStyles,
+        ];
 
         return $this;
     }
@@ -204,16 +239,18 @@ class PendingCommand
      * Execute the command.
      *
      * @return int
+     *
+     * @throws \Mockery\Exception\NoMatchingExpectationException
      */
     public function run()
     {
         $this->hasExecuted = true;
 
-        $this->mockConsoleOutput();
+        $mock = $this->mockConsoleOutput();
 
         try {
             $this->OutputShouldBeShown();
-            $exitCode = $this->app->make(Kernel::class)->call($this->command, $this->parameters);
+            $exitCode = $this->app->make(Kernel::class)->call($this->command, $this->parameters, $mock);
         } catch (NoMatchingExpectationException $e) {
             if ($e->getMethodName() === 'askQuestion') {
                 $this->test->fail('Unexpected question "' . $e->getActualArguments()[0]->getQuestion() . '" was asked.');
@@ -231,6 +268,7 @@ class PendingCommand
         }
 
         $this->verifyExpectations();
+        $this->flushExpectations();
 
         return $exitCode;
     }
@@ -273,7 +311,13 @@ class PendingCommand
         }
 
         if (count($this->test->expectedOutput)) {
-            $this->test->fail('Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.');
+            // var_dump($this->test->expectedOutput);
+            $this->test->assertEquals(
+                $this->test->expectedOutput[0],
+                $this->test->getActualOutput(),
+                'Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.'
+            );
+            // $this->test->fail('Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.');
         }
 
 
@@ -303,7 +347,7 @@ class PendingCommand
     /**
      * Mock the application's console output.
      *
-     * @return void
+     * @return \Mockery\MockInterface
      */
     protected function mockConsoleOutput()
     {
@@ -332,6 +376,8 @@ class PendingCommand
         $this->app->bind(OutputStyle::class, function () use ($mock) {
             return $mock;
         });
+
+        return $mock;
     }
 
     /**
@@ -345,6 +391,7 @@ class PendingCommand
             ->shouldAllowMockingProtectedMethods()
             ->shouldIgnoreMissing();
 
+        $this->applyTableOutputExpectations($mock);
         foreach ($this->test->expectedOutput as $i => $output) {
             $mock->shouldReceive('doWrite')
                 ->once()
@@ -355,7 +402,63 @@ class PendingCommand
                 });
         }
 
+        foreach ($this->test->unexpectedOutput as $output => $displayed) {
+            $mock->shouldReceive('doWrite')
+                ->once()
+                ->ordered()
+                ->with($output, Mockery::any())
+                ->andReturnUsing(function () use ($output) {
+                    $this->test->unexpectedOutput[$output] = true;
+                });
+        }
+
         return $mock;
+    }
+
+    /**
+     * Apply the output table expectations to the mock.
+     *
+     * @param  \Mockery\MockInterface  $mock
+     * @return void
+     */
+    private function applyTableOutputExpectations($mock)
+    {
+        foreach ($this->test->expectedTables as $i => $consoleTable) {
+            $table = (new Table($output = new BufferedOutput))
+                ->setHeaders($consoleTable['headers'])
+                ->setRows($consoleTable['rows'])
+                ->setStyle($consoleTable['tableStyle']);
+
+            foreach ($consoleTable['columnStyles'] as $columnIndex => $columnStyle) {
+                $table->setColumnStyle($columnIndex, $columnStyle);
+            }
+
+            $table->render();
+
+            $lines = array_filter(
+                explode(PHP_EOL, $output->fetch())
+            );
+
+            foreach ($lines as $line) {
+                $this->expectsOutput($line);
+            }
+
+            unset($this->test->expectedTables[$i]);
+        }
+    }
+
+    /**
+     * Flush the expectations from the test case.
+     *
+     * @return void
+     */
+    protected function flushExpectations()
+    {
+        $this->test->expectedOutput = [];
+        $this->test->unexpectedOutput = [];
+        $this->test->expectedTables = [];
+        $this->test->expectedQuestions = [];
+        $this->test->expectedChoices = [];
     }
 
     /**

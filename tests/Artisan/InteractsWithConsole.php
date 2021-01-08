@@ -28,6 +28,21 @@ trait InteractsWithConsole
     public $expectedOutput = [];
 
     /**
+     * All of the output lines that aren't expected to be displayed.
+     *
+     * @var array
+     */
+    public $unexpectedOutput = [];
+
+
+    /**
+     * All of the expected ouput tables.
+     *
+     * @var array
+     */
+    public $expectedTables = [];
+
+    /**
      * The string is contained in the output.
      *
      * @var array
@@ -68,15 +83,15 @@ trait InteractsWithConsole
             return $this->app[Kernel::class]->call($command, $parameters);
         }
 
-        $this->beforeApplicationDestroyed(function () {
-            if (count($this->expectedQuestions)) {
-                $this->fail('Question "' . Arr::first($this->expectedQuestions)[0] . '" was not asked.');
-            }
+        // $this->beforeApplicationDestroyed(function () { //Todo esto ya no está en la ultima version
+        //     if (count($this->expectedQuestions)) {
+        //         $this->fail('Question "' . Arr::first($this->expectedQuestions)[0] . '" was not asked.');
+        //     }
 
-            if (count($this->expectedOutput)) {
-                $this->fail('Output "' . Arr::first($this->expectedOutput) . '" was not printed.');
-            }
-        });
+        //     if (count($this->expectedOutput)) {
+        //         $this->fail('Output "' . Arr::first($this->expectedOutput) . '" was not printed.');
+        //     }
+        // });
 
         return new PendingCommand($this, $this->app, $command, $parameters);
     }
