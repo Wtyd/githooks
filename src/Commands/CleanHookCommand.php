@@ -2,13 +2,16 @@
 
 namespace GitHooks\Commands;
 
+use GitHooks\Constants;
 use GitHooks\Utils\Printer;
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
 
 class CleanHookCommand extends Command
 {
     protected $signature = 'hook:clean  {hook=pre-commit}';
     protected $description = 'Deletes the hook passed as argument (default pre-commit)';
+    protected $help = 'Without arguments deletes the pre-commit hook. A optional argument can be the name of another hook. Example: hook:clean pre-push.';
 
     /**
      * @var Printer
@@ -17,19 +20,35 @@ class CleanHookCommand extends Command
 
     public function __construct(Printer $printer)
     {
-        $this->printer = $printer;
         parent::__construct();
+        $this->printer = $printer;
     }
 
     public function handle()
     {
-        $root = getcwd();
         $hook = strval($this->argument('hook'));
 
-        if (unlink("$root/.git/hooks/$hook")) {
+        if (!in_array($hook, Constants::HOOKS)) {
+            $this->printer->error("'$hook' is not a valid git hook. Avaliable hooks are:");
+            $this->printer->error(implode(', ', Constants::HOOKS));
+            return;
+        }
+
+        $file = $this->getHooksPath() . "/$hook";
+        if (!file_exists($file)) {
+            $this->printer->warning("The hook $hook cannot be deleted because it cannot be found");
+            return;
+        }
+
+        if (unlink($file)) {
             $this->printer->success("Hook $hook has been deleted");
         } else {
-            $this->printer->error("Could not delete hook $hook");
+            $this->printer->error("Could not delete $hook hook");
         }
+    }
+
+    public function getHooksPath(): string
+    {
+        return getcwd() . "/.git/hooks";
     }
 }
