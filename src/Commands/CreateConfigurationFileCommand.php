@@ -33,10 +33,14 @@ class CreateConfigurationFileCommand extends Command
 
     protected function copyFile(string $origin, string $destiny): void
     {
-        if (copy($origin, $destiny) === false) {
-            $this->printer->error("Error copying $origin to $destiny");
-        } else {
-            $this->printer->success('Configuration file githooks.yml created in root path');
+        try {
+            if (copy($origin, $destiny) === false) {
+                $this->printer->error("Failed to copy $origin to $destiny");
+            } else {
+                $this->printer->success('Configuration file githooks.yml has been created in root path');
+            }
+        } catch (\Throwable $th) {
+            $this->printer->error("Failed to copy $origin to $destiny");
         }
     }
 }
