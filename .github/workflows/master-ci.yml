@@ -2,7 +2,7 @@ name: Master
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master ] 
+    branches: [ master, fix-assertFileDoesNotExist ] 
   pull_request:
     branches: [ master ]
 
