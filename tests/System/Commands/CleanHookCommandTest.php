@@ -78,7 +78,7 @@ class CleanHookCommandTest extends ConsoleTestCase
     }
 
     /**
-     * @test
+     * 
      * @dataProvider hooksDataProvider
      */
     function it_deletes_the_hook_passed_as_argument($hook)
