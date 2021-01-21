@@ -31,23 +31,23 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
         }
     }
 
-    /**
-     * Asserts that a file does not exist.
-     * Wrapper for phpunit's method. This allows to use the old way (assertFileNotExists) deprecated in phpunit 10.
-     *
-     * @throws ExpectationFailedException
-     * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
-     * @return void
-     */
-    public static function assertFileDoesNotExist(string $filename, string $message = ''): void
-    {
-        $assertFileDoesNotExist = '';
-        if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
-            $assertFileDoesNotExist = 'assertFileNotExists';
-        } else {
-            $assertFileDoesNotExist = 'assertFileDoesNotExist';
-        }
-        // $assertFileDoesNotExist = $this->assertFileDoesNotExist;
-        self::$assertFileDoesNotExist($filename, $message);
-    }
+    // /**
+    //  * Asserts that a file does not exist.
+    //  * Wrapper for phpunit's method. This allows to use the old way (assertFileNotExists) deprecated in phpunit 10.
+    //  *
+    //  * @throws ExpectationFailedException
+    //  * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+    //  * @return void
+    //  */
+    // public static function assertFileDoesNotExist(string $filename, string $message = ''): void
+    // {
+    //     $assertFileDoesNotExist = '';
+    //     if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
+    //         $assertFileDoesNotExist = 'assertFileNotExists';
+    //     } else {
+    //         $assertFileDoesNotExist = 'assertFileDoesNotExist';
+    //     }
+    //     // $assertFileDoesNotExist = $this->assertFileDoesNotExist;
+    //     self::$assertFileDoesNotExist($filename, $message);
+    // }
 }

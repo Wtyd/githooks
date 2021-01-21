@@ -6,6 +6,9 @@ use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
 use Tests\Artisan\ConsoleTestCase;
 
+/**
+ * @group pete
+ */
 class CleanHookCommandTest extends ConsoleTestCase
 {
 

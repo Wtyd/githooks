@@ -5,6 +5,9 @@ namespace Tests\System\Commands;
 use Tests\Artisan\ConsoleTestCase;
 use Tests\System\Utils\ConfigurationFileBuilder;
 
+/**
+ * @group pete
+ */
 class CheckConfigurationFileCommandTest extends ConsoleTestCase
 {
     protected $configurationFile;
