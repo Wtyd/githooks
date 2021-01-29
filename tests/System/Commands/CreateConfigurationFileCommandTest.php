@@ -6,9 +6,6 @@ use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
 use Tests\Artisan\ConsoleTestCase;
 
-/**
- * @group pete
- */
 class CreateConfigurationFileCommandTest extends ConsoleTestCase
 {
 
