@@ -11,8 +11,6 @@ class CreateConfigurationFileCommandTest extends ConsoleTestCase
 
     protected $configurationFile;
 
-    protected $artisan;
-
     protected function setUp(): void
     {
         parent::setUp();
