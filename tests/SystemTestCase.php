@@ -17,8 +17,6 @@ class SystemTestCase extends TestCase
 
     protected $path = __DIR__ . '/System/tmp';
 
-
-
     protected $assertMatchesRegularExpression;
 
     public function __construct()

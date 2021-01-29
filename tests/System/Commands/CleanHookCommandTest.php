@@ -57,36 +57,36 @@ class CleanHookCommandTest extends ConsoleTestCase
         $mock->disable();
     }
 
-    public function hooksDataProvider()
-    {
-        return [
-            'applypatch-msg' => ['applypatch-msg'],
-            'commit-msg' => ['commit-msg'],
-            'fsmonitor-watchman' => ['fsmonitor-watchman'],
-            'post-update' => ['post-update'],
-            'pre-applypatch' => ['pre-applypatch'],
-            'pre-commit' => ['pre-commit'],
-            'prepare-commit-msg' => ['prepare-commit-msg'],
-            'pre-push' => ['pre-push'],
-            'pre-rebase' => ['pre-rebase'],
-            'pre-receive' => ['pre-receive'],
-            'update' => ['update'],
-        ];
-    }
-
     /**
      * @test
-     * @dataProvider hooksDataProvider
+     * //FIXME Phpunit dataProviders don't work in this tests
      */
-    function it_deletes_the_hook_passed_as_argument($hook)
+    function it_deletes_the_hook_passed_as_argument()
     {
-        file_put_contents($this->getPath() . '/.git/hooks/' . $hook, '');
+        $hooks = [
+            'applypatch-msg' => 'applypatch-msg',
+            'commit-msg' => 'commit-msg',
+            'fsmonitor-watchman' => 'fsmonitor-watchman',
+            'post-update' => 'post-update',
+            'pre-applypatch' => 'pre-applypatch',
+            'pre-commit' => 'pre-commit',
+            'prepare-commit-msg' => 'prepare-commit-msg',
+            'pre-push' => 'pre-push',
+            'pre-rebase' => 'pre-rebase',
+            'pre-receive' => 'pre-receive',
+            'update' => 'update',
+        ];
 
         $mock = $this->getMockRootDirectory();
         $mock->enable();
 
-        $this->artisan("hook:clean $hook")
-            ->containsStringInOutput("Hook $hook has been deleted");
+        foreach ($hooks as $hook) {
+            file_put_contents($this->getPath() . '/.git/hooks/' . $hook, '');
+
+            $this->artisan("hook:clean $hook")
+                ->containsStringInOutput("Hook $hook has been deleted");
+        }
+
 
         $mock->disable();
     }
