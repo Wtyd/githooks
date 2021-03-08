@@ -68,7 +68,6 @@ class CreateConfigurationFileCommandTest extends ConsoleTestCase
 
         $assertFileDoesNotExist = $this->assertFileDoesNotExist;
         $this->$assertFileDoesNotExist($this->path . '/githooks.yml');
-        // $this->assertFileDoesNotExist($this->path . '/githooks.yml');
 
         $mock->disable();
     }
