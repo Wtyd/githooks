@@ -1,6 +1,5 @@
 <?php
 
-
 namespace GitHooks;
 
 class Hooks

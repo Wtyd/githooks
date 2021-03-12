@@ -3,13 +3,16 @@
 namespace GitHooks\Commands;
 
 use Exception;
+use GitHooks\Hooks;
 use GitHooks\Utils\Printer;
 use Illuminate\Console\Command;
 
 class CreateHookCommand extends Command
 {
-    protected $signature = 'hook  {hook=pre-commit} {scriptFile?}';
+    protected $signature = 'hook  {hook=pre-commit : The hook to be setted} {scriptFile? : The custom script to be setted as the hook (default:GitHooks)}';
     protected $description = 'Copies the hook for the GitHooks execution. The default hook is pre-commit. You can pass scriptFile as argument to set custom scripts.';
+    protected $help = 'The default script is the default GitHooks execution. You can custom your script to execute what ever you want.
+Even the default script and after, other tools which GitHooks not support or vice versa';
 
     /**
      * @var Printer
@@ -27,6 +30,13 @@ class CreateHookCommand extends Command
         $root = getcwd();
         $hook = strval($this->argument('hook'));
         $scriptFile = $this->argument('scriptFile') ?? '';
+
+
+        if (!Hooks::validate($hook)) {
+            $this->printer->error("'$hook' is not a valid git hook. Avaliable hooks are:");
+            $this->printer->error(implode(', ', Hooks::HOOKS));
+            return;
+        }
 
         $origin = $this->path2OriginFile($root, strval($scriptFile));
         try {
