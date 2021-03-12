@@ -10,6 +10,12 @@ class CleanHookCommand extends Command
 {
     protected $signature = 'hook:clean  {hook=pre-commit}';
     protected $description = 'Deletes the hook passed as argument (default pre-commit)';
+
+    /**
+     * Extra information about the command invoked with the --help flag.
+     *
+     * @var string
+     */
     protected $help = 'Without arguments deletes the pre-commit hook. A optional argument can be the name of another hook. Example: hook:clean pre-push.';
 
     /**

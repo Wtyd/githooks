@@ -11,6 +11,12 @@ class CreateHookCommand extends Command
 {
     protected $signature = 'hook  {hook=pre-commit : The hook to be setted} {scriptFile? : The custom script to be setted as the hook (default:GitHooks)}';
     protected $description = 'Copies the hook for the GitHooks execution. The default hook is pre-commit. You can pass scriptFile as argument to set custom scripts.';
+
+    /**
+     * Extra information about the command invoked with the --help flag.
+     *
+     * @var string
+     */
     protected $help = 'The default script is the default GitHooks execution. You can custom your script to execute what ever you want.
 Even the default script and after, other tools which GitHooks not support or vice versa';
 
@@ -18,6 +24,27 @@ Even the default script and after, other tools which GitHooks not support or vic
      * @var Printer
      */
     protected $printer;
+
+    /**
+     * Path to the root project
+     *
+     * @var string
+     */
+    protected $root;
+
+    /**
+     * First argument. The hook that will be setted.
+     *
+     * @var string
+     */
+    protected $hook;
+
+    /**
+     * Second argument. The custom script to be setted as the hook. Per default is the GitHooks script to execute the tools setted in githooks.yml file.
+     *
+     * @var string
+     */
+    protected $scriptFile;
 
     public function __construct(Printer $printer)
     {
@@ -27,46 +54,42 @@ Even the default script and after, other tools which GitHooks not support or vic
 
     public function handle()
     {
-        $root = getcwd();
-        $hook = strval($this->argument('hook'));
-        $scriptFile = $this->argument('scriptFile') ?? '';
+        $this->root = getcwd();
+        $this->hook = strval($this->argument('hook'));
+        $this->scriptFile = strval($this->argument('scriptFile')) ?? '';
 
-
-        if (!Hooks::validate($hook)) {
-            $this->printer->error("'$hook' is not a valid git hook. Avaliable hooks are:");
+        if (!Hooks::validate($this->hook)) {
+            $this->printer->error("'{$this->hook}' is not a valid git hook. Avaliable hooks are:");
             $this->printer->error(implode(', ', Hooks::HOOKS));
             return;
         }
 
-        $origin = $this->path2OriginFile($root, strval($scriptFile));
+        $origin = $this->path2OriginFile();
         try {
-            $destiny = "$root/.git/hooks/$hook";
+            $destiny = "{$this->root}/.git/hooks/{$this->hook}";
             copy($origin, $destiny);
             chmod($destiny, 0755);
-            $this->printer->success("Hook $hook created");
+            $this->printer->success("Hook {$this->hook} created");
         } catch (\Throwable $th) {
-            $this->printer->error("Error copying $origin in $hook");
+            $this->printer->error("Error copying $origin in {$this->hook}");
         }
     }
 
     /**
      * Find the origin of the scripts for the hook
      *
-     * @param string $root Path to the root of the project.
-     * @param string $scriptFile File with the custom script. It's optional.
-     *
      * @return string File to be executed in the hook.
      */
-    public function path2OriginFile(string $root, string $scriptFile): string
+    public function path2OriginFile(): string
     {
         $origin = '';
-        if (empty($scriptFile)) {
-            $origin = $this->defaultPrecommit($root);
+        if (empty($this->scriptFile)) {
+            $origin = $this->defaultPrecommit();
         } else {
-            if (!file_exists($scriptFile)) {
-                throw new Exception("$scriptFile file not found");
+            if (!file_exists($this->scriptFile)) {
+                throw new Exception("{$this->scriptFile} file not found");
             }
-            $origin = $scriptFile;
+            $origin = $this->scriptFile;
         }
         return $origin;
     }
@@ -76,19 +99,17 @@ Even the default script and after, other tools which GitHooks not support or vic
      * 1. When GitHooks will be a library, it returns the path through 'vendor'.
      * 2. To work on developing GitHooks itself, it will return the local path to 'hooks'
      *
-     * @param string $root Root path of the project.
-     *
      * @return string The default script to run GitHooks in the hook.
      */
-    public function defaultPrecommit(string $root): string
+    public function defaultPrecommit(): string
     {
         $origin = '';
-        if (file_exists($root . '/vendor/wtyd/githooks/hooks/pre-commit.php')) {
-            $origin = $root . '/vendor/wtyd/githooks/hooks/pre-commit.php';
+        if (file_exists($this->root . '/vendor/wtyd/githooks/hooks/pre-commit.php')) {
+            $origin = $this->root . '/vendor/wtyd/githooks/hooks/pre-commit.php';
         }
 
-        if (file_exists($root . '/hooks/pre-commit.php')) {
-            $origin = $root . '/hooks/pre-commit.php';
+        if (file_exists($this->root . '/hooks/pre-commit.php')) {
+            $origin = $this->root . '/hooks/pre-commit.php';
         }
 
         if (empty($origin)) {

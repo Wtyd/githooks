@@ -1,5 +1,3 @@
-# Phpqa copia este fichero de configuracion y lo ejecuta desde el directorio "build"
-# currentWorkingDirectory es donde se ejecuta phpstan, en este caso desde ./
 {
     parameters: {
         level: 8
@@ -10,7 +8,7 @@
         checkMissingIterableValueType: false
         ignoreErrors: [
            '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
-           '#root of method GitHooks\Commands\HookCommand::[a-zA-Z0-9\\_]+() expects string, string|false given#'
+            '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
         ]
         excludes_analyse: [
             # Exclude all files relatives to Artisan Console
