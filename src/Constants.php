@@ -54,18 +54,4 @@ class Constants
     public const ERRORS = 'errors';
 
     public const WARNINGS = 'warnings';
-
-    public const HOOKS = [
-        'applypatch-msg',
-        'commit-msg',
-        'fsmonitor-watchman',
-        'post-update',
-        'pre-applypatch',
-        'pre-commit',
-        'prepare-commit-msg',
-        'pre-push',
-        'pre-rebase',
-        'pre-receive',
-        'update',
-    ];
 }

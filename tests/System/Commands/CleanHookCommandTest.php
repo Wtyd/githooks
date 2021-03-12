@@ -11,7 +11,38 @@ class CleanHookCommandTest extends ConsoleTestCase
 
     protected $configurationFile;
 
-    protected $artisan;
+    protected $mock;
+
+    protected $supportedHooks = [
+        'applypatch-msg',
+        'pre-applypatch',
+        'post-applypatch',
+        'pre-commit',
+        'pre-merge-commit',
+        'prepare-commit-msg',
+        'commit-msg',
+        'post-commit',
+        'pre-rebase',
+        'post-checkout',
+        'post-merge',
+        'pre-push',
+        'pre-receive',
+        'update',
+        'proc-receive',
+        'post-receive',
+        'post-update',
+        'reference-transaction',
+        'push-to-checkout',
+        'pre-auto-gc',
+        'post-rewrite',
+        'sendemail-validate',
+        'fsmonitor-watchman',
+        'p4-changelist',
+        'p4-prepare-changelist',
+        'p4-post-changelist',
+        'p4-pre-submit',
+        'post-index-change',
+    ];
 
     protected function setUp(): void
     {
@@ -19,10 +50,14 @@ class CleanHookCommandTest extends ConsoleTestCase
         $this->deleteDirStructure();
 
         mkdir($this->path . '/.git/hooks', 0777, true);
+
+        $this->mock = $this->getMockRootDirectory();
+        $this->mock->enable();
     }
 
     protected function tearDown(): void
     {
+        $this->mock->disable();
         $this->deleteDirStructure();
     }
 
@@ -48,13 +83,8 @@ class CleanHookCommandTest extends ConsoleTestCase
     {
         file_put_contents($this->getPath() . '/.git/hooks/pre-commit', '');
 
-        $mock = $this->getMockRootDirectory();
-        $mock->enable();
-
         $this->artisan('hook:clean')
             ->containsStringInOutput('Hook pre-commit has been deleted');
-
-        $mock->disable();
     }
 
     /**
@@ -63,57 +93,29 @@ class CleanHookCommandTest extends ConsoleTestCase
      */
     function it_deletes_the_hook_passed_as_argument()
     {
-        $hooks = [
-            'applypatch-msg' => 'applypatch-msg',
-            'commit-msg' => 'commit-msg',
-            'fsmonitor-watchman' => 'fsmonitor-watchman',
-            'post-update' => 'post-update',
-            'pre-applypatch' => 'pre-applypatch',
-            'pre-commit' => 'pre-commit',
-            'prepare-commit-msg' => 'prepare-commit-msg',
-            'pre-push' => 'pre-push',
-            'pre-rebase' => 'pre-rebase',
-            'pre-receive' => 'pre-receive',
-            'update' => 'update',
-        ];
-
-        $mock = $this->getMockRootDirectory();
-        $mock->enable();
-
-        foreach ($hooks as $hook) {
+        foreach ($this->supportedHooks as $hook) {
             file_put_contents($this->getPath() . '/.git/hooks/' . $hook, '');
 
             $this->artisan("hook:clean $hook")
                 ->containsStringInOutput("Hook $hook has been deleted");
         }
-
-
-        $mock->disable();
     }
 
     /** @test */
     function it_does_not_delete_a_hook_that_cannot_be_found()
     {
-        $mock = $this->getMockRootDirectory();
-        $mock->enable();
-
         $this->artisan('hook:clean pre-commit')
             ->containsStringInOutput('The hook pre-commit cannot be deleted because it cannot be found');
-
-        $mock->disable();
     }
 
     /** @test */
     function it_does_not_delete_a_no_valid_hook()
     {
         $noSupportedHook = 'no-valid';
-        $mock = $this->getMockRootDirectory();
-        $mock->enable();
 
+        $supportedHooks2String = implode(', ', $this->supportedHooks);
         $this->artisan("hook:clean $noSupportedHook")
             ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Avaliable hooks are:")
-            ->containsStringInOutput('applypatch-msg, commit-msg, fsmonitor-watchman, post-update, pre-applypatch, pre-commit, prepare-commit-msg, pre-push, pre-rebase, pre-receive, update');
-
-        $mock->disable();
+            ->containsStringInOutput($supportedHooks2String);
     }
 }

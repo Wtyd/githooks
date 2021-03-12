@@ -2,10 +2,9 @@
 
 namespace GitHooks\Commands;
 
-use GitHooks\Constants;
+use GitHooks\Hooks;
 use GitHooks\Utils\Printer;
 use Illuminate\Console\Command;
-use Illuminate\Support\Arr;
 
 class CleanHookCommand extends Command
 {
@@ -28,9 +27,9 @@ class CleanHookCommand extends Command
     {
         $hook = strval($this->argument('hook'));
 
-        if (!in_array($hook, Constants::HOOKS)) {
+        if (!Hooks::validate($hook)) {
             $this->printer->error("'$hook' is not a valid git hook. Avaliable hooks are:");
-            $this->printer->error(implode(', ', Constants::HOOKS));
+            $this->printer->error(implode(', ', Hooks::HOOKS));
             return;
         }
 
