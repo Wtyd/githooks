@@ -30,7 +30,7 @@ jobs:
         coverage: none
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
@@ -59,7 +59,7 @@ jobs:
         coverage: none
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest --no-dev
+      run: composer install --prefer-dist --no-progress --no-dev
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
@@ -112,7 +112,7 @@ jobs:
         coverage: none
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest --no-dev
+      run: composer install --prefer-dist --no-progress --no-dev
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
@@ -148,7 +148,7 @@ jobs:
         coverage: none
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint

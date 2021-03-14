@@ -44,7 +44,7 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Tests with code coverage
       run: vendor/bin/phpunit --coverage-html ${{ env.report_path }}/coverage
@@ -78,7 +78,7 @@ jobs:
         coverage: xdebug
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
@@ -112,7 +112,7 @@ jobs:
         coverage: xdebug
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Install PhPMetrics
       run:  composer global require 'phpmetrics/phpmetrics'
