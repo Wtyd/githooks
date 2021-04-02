@@ -12,10 +12,6 @@ use GitHooks\Utils\Printer;
  */
 class GitHooks
 {
-    public const OK = 0;
-
-    public const KO = 1;
-
     /**
      * @var array de Tools (AbstractTools)
      */
@@ -55,18 +51,19 @@ class GitHooks
     public function __invoke()
     {
         $startTotalTime = microtime(true);
-        $exitCode = $this->toolExecutor->__invoke($this->tools);
+        $errors = null;
+        $errors = $this->toolExecutor->__invoke($this->tools);
 
         $endTotalTime = microtime(true);
         $executionTotalTime = $endTotalTime - $startTotalTime;
         $this->printer->line("\n  Total run time = " . number_format($executionTotalTime, 2) . " seconds.");
 
-        if ($exitCode === self::OK) {
+        if ($errors->isEmpty()) {
             $message = 'Your changes have been committed.';
             $this->printer->success($message);
         } else {
             $this->printer->generalFail('Your changes have not been committed. Please fix the errors and try again.');
-            throw new ExitException();
+            throw ExitException::forErrors($errors->__toString());
         }
     }
 }
