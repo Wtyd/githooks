@@ -2,7 +2,7 @@ name: Feature CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master ]
+    branches-ignore: [ master, php8 ]
 
   pull_request:
     branches-ignore: [ master ]
@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.4', '8.0']
+        php-versions: ['7.1', '8.0'] 
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
     steps:
     - name: Checkout
