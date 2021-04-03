@@ -2,9 +2,9 @@ name: Master
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master ] 
+    branches: [ master, 1.x, php8 ] 
   pull_request:
-    branches: [ master ]
+    branches: [ master, 1.x ]
 
 env:
   extensions: mbstring #intl, pcov
@@ -132,7 +132,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ windows-latest, ubuntu-18.04, macos-latest ]
-        php-versions: ['7.1', '7.2', '7.3', '7.4']
+        php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0']
     name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.operating-system }}
     steps:
     - name: Checkout
