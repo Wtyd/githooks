@@ -2,7 +2,7 @@ name: Feature CI
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master ]
+    branches-ignore: [ master, php8 ]
 
   pull_request:
     branches-ignore: [ master ]
@@ -15,8 +15,8 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ubuntu-18.04]
-        php-versions: ['7.1']
+        operating-system: [ubuntu-latest]
+        php-versions: ['7.1', '8.0'] 
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
     steps:
     - name: Checkout
@@ -27,7 +27,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: none
   
@@ -43,7 +43,7 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Install Phpcpd Unix
       if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-18.04' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}

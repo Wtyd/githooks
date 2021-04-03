@@ -84,6 +84,6 @@ class SystemTestCase extends TestCase
         $this->assertInstanceOf(ExitException::class, $exception);
         $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
         $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
+        $this->assertStringContainsString($failMessage, $this->getActualOutput());
     }
 }

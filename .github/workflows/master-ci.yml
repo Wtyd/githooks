@@ -2,9 +2,9 @@ name: Master
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master ] 
+    branches: [ master, 1.x ] 
   pull_request:
-    branches: [ master ]
+    branches: [ master, 1.x ]
 
 env:
   extensions: mbstring #intl, pcov
@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-18.04]
-        php-versions: ['7.4']
+        php-versions: ['8.0']
     name: Executable Finder on Local Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
     - name: Checkout
@@ -30,7 +30,7 @@ jobs:
         coverage: none
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
@@ -43,7 +43,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-18.04]
-        php-versions: ['7.4']
+        php-versions: ['8.0']
     name: Executable Finder on Phar Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
     - name: Checkout
@@ -59,7 +59,7 @@ jobs:
         coverage: none
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest --no-dev
+      run: composer install --prefer-dist --no-progress --no-dev
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
@@ -96,7 +96,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-18.04]
-        php-versions: ['7.4']
+        php-versions: ['8.0']
     name: Executable Finder on Global Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
     - name: Checkout
@@ -112,7 +112,7 @@ jobs:
         coverage: none
         
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest --no-dev
+      run: composer install --prefer-dist --no-progress --no-dev
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
@@ -126,44 +126,44 @@ jobs:
     - name: Testing the Executable Finder
       run: phpunit tests/System/ExecutableFinderTest.php
 
-  all-tests:    
-    runs-on: ${{ matrix.operating-system }}
-    strategy:
-      fail-fast: false
-      matrix:
-        operating-system: [ windows-latest, ubuntu-18.04, macos-latest ]
-        php-versions: ['7.1', '7.2', '7.3', '7.4']
-    name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.operating-system }}
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
+  # all-tests:    
+  #   runs-on: ${{ matrix.operating-system }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       operating-system: [ windows-latest, ubuntu-18.04, macos-latest ]
+  #       php-versions: ['7.1', '7.2', '7.3', '7.4', '8.0']
+  #   name: PHP ${{ matrix.php-versions }} Full Tests on ${{ matrix.operating-system }}
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v2
 
-    - name: Install PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-versions }}
-        extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
-        ini-values: "post_max_size=256M" #optional
-        coverage: none
+  #   - name: Install PHP
+  #     uses: shivammathur/setup-php@v2
+  #     with:
+  #       php-version: ${{ matrix.php-versions }}
+  #       extensions: ${{ env.extensions }} #optional
+  #       tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
+  #       ini-values: "post_max_size=256M" #optional
+  #       coverage: none
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+  #   - name: Install dependencies
+  #     run: composer install --prefer-dist --no-progress
 
-    - name: Install Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
+  #   - name: Install Parallel-Lint
+  #     run: composer global require php-parallel-lint/php-parallel-lint
 
-    - name: Install Phpcpd Unix
-      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-18.04' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
-      run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+  #   - name: Install Phpcpd Unix
+  #     if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-18.04' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
+  #     run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
       
-    - name: Install Phpcpd Windows
-      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('windows-latest' == matrix.operating-system)}}
-      run:   curl -o phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+  #   - name: Install Phpcpd Windows
+  #     if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('windows-latest' == matrix.operating-system)}}
+  #     run:   curl -o phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
 
-    - name: Testing the Aplication
-      run: |
-        echo "**** Main Test Suite ****"
-        vendor/bin/phpunit
-        echo "**** GitfilesTest ****"
-        vendor/bin/phpunit tests/Integration/GitFilesTest.php
+  #   - name: Testing the Aplication
+  #     run: |
+  #       echo "**** Main Test Suite ****"
+  #       vendor/bin/phpunit
+  #       echo "**** GitfilesTest ****"
+  #       vendor/bin/phpunit tests/Integration/GitFilesTest.php
