@@ -5,6 +5,9 @@ namespace GitHooks\Commands\Tools;
 use GitHooks\Constants;
 use Illuminate\Console\Command;
 
+/**
+ * @SuppressWarnings(PHPMD.ExitExpression)
+ */
 class CodeSnifferCommand extends Command
 {
     protected $signature = 'tool:phpcs';
@@ -23,6 +26,7 @@ class CodeSnifferCommand extends Command
 
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER);
+        $errors = $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER);
+        dd($errors->isEmpty());
     }
 }

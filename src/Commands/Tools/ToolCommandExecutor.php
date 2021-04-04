@@ -5,6 +5,7 @@ namespace GitHooks\Commands\Tools;
 use GitHooks\Configuration;
 use GitHooks\Constants;
 use GitHooks\Exception\ConfigurationFileNotFoundException;
+use GitHooks\Tools\Errors;
 use GitHooks\Tools\ToolExecutor;
 use GitHooks\Tools\ToolsFactoy;
 
@@ -16,7 +17,6 @@ use GitHooks\Tools\ToolsFactoy;
  *
  * Todos los comandos leerán la configuración del fichero qa/githooks.yml
  *
- * @SuppressWarnings(PHPMD.ExitExpression)
  */
 class ToolCommandExecutor
 {
@@ -42,14 +42,12 @@ class ToolCommandExecutor
         $this->toolExecutor = $toolExecutor;
     }
 
-    public function execute(string $tool): void
+    public function execute(string $tool): Errors
     {
         $file = $this->config->readfile();
 
         $file[Constants::TOOLS] = [$tool];
 
-        $exitCode = $this->toolExecutor->__invoke($this->toolsFactoy->__invoke($file[Constants::TOOLS], $file), true);
-
-        exit($exitCode);
+        return $this->toolExecutor->__invoke($this->toolsFactoy->__invoke($file[Constants::TOOLS], $file), true);
     }
 }
