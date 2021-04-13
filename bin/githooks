@@ -4,6 +4,7 @@
 require getcwd() . '/vendor/autoload.php';
 
 use GitHooks\Commands\Console\RegisterCommands;
+use GitHooks\Constants;
 use Illuminate\Container\Container;
 use Illuminate\Events\Dispatcher;
 use Illuminate\Console\Application;
@@ -11,7 +12,7 @@ use Illuminate\Console\Application;
 $container = new Container();
 $events = new Dispatcher($container);
 
-$artisan = new Application($container, $events, 'Version 1.0');
+$artisan = new Application($container, $events, Constants::VERSION);
 $artisan->setName('GitHooks');
 
 $registerCommands = new RegisterCommands();

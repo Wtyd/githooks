@@ -4,6 +4,8 @@ namespace GitHooks;
 
 class Constants
 {
+    public const VERSION = '1.1.0';
+
     public const CONFIGURATION_FILE = 'configurationFile';
 
     public const TOOLS = 'Tools';
