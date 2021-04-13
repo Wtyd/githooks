@@ -23,9 +23,10 @@ class RegisterCommands
     public function __invoke(): array
     {
         return [
+            CodeSnifferCommand::class,
             //Tools Commands
             CheckSecurityCommand::class,
-            CodeSnifferCommand::class,
+
             CopyPasteDetectorCommand::class,
             ExecuteAllToolsCommand::class,
             MessDetectorCommand::class,

@@ -2,9 +2,14 @@
 
 namespace Tests\System\Commands\Tools;
 
+use GitHooks\Commands\Tools\CodeSnifferCommand;
 use GitHooks\Tools\CheckSecurity;
+use GitHooks\Tools\Errors;
 use Illuminate\Container\Container;
+use Mockery;
+use Mockery\MockInterface;
 use Tests\Artisan\ConsoleTestCase;
+use Tests\Mock;
 use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\System\Utils\PhpFileBuilder;
 
@@ -26,6 +31,17 @@ class CodeSnifferCommandTest extends ConsoleTestCase
         $this->fileBuilder = new PhpFileBuilder('File');
 
         $this->mockConfigurationFileForCommandsTests();
+
+        $commandMock = Mock::mock(CodeSnifferCommand::class)->makePartial();
+        $commandMock->shouldReceive('exit')->andReturn(true);
+
+        // $container = Container::getInstance();
+        // $container->bind(CodeSnifferCommand::class, function () {
+        //     $commandMock = Mock::mock(CodeSnifferCommand::class)->makePartial();
+        //     $commandMock->shouldReceive('exit')->andReturn(false);
+        //     return $commandMock;
+        // });
+
     }
 
     protected function tearDown(): void
@@ -43,12 +59,20 @@ class CodeSnifferCommandTest extends ConsoleTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors(['phpcs']));
 
-        // $container = Container::getInstance();
-        // $container->resolving(GitHooks::class, function ($gitFiles) {
-        //     $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
-        // });
-        // $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
+        // $command = $container->make(CodeSnifferCommand::class);
+        // dd($command->exit(new Errors()));
+
+        $this->partialMock(CodeSnifferCommand::class, function (MockInterface $mock) {
+            // $commandMock = Mockery::mock(CodeSnifferCommand::class)->makePartial();
+            $mock->shouldReceive('exit')->andReturn(true);
+            // return $commandMock;
+        });
+
+
+
+        // $command = $this->app->make(CodeSnifferCommand::class);
+        // dd($command->exit(new Errors()));
         $this->artisan('tool:phpcs')
             ->containsStringInOutput("fadsfasdfasd");
     }

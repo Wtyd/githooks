@@ -248,6 +248,8 @@ class PendingCommand
 
         try {
             $this->OutputShouldBeShown();
+            // $c = $this->app->make(\GitHooks\Commands\Tools\CodeSnifferCommand::class);
+            // dd($c->exit(new \GitHooks\Tools\Errors()));
             $exitCode = $this->app->make(Kernel::class)->call($this->command, $this->parameters, $mock);
         } catch (NoMatchingExpectationException $e) {
             if ($e->getMethodName() === 'askQuestion') {

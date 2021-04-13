@@ -2,10 +2,11 @@
 
 namespace GitHooks\Commands\Console;
 
+use GitHooks\Constants;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Tests\Artisan\Application;
-use Illuminate\Console\Application as Artisan;
+use Tests\Artisan\Artisan;
 
 class Kernel extends ConsoleKernel
 {
@@ -106,10 +107,23 @@ class Kernel extends ConsoleKernel
      */
     protected function load($commands)
     {
+        $artisan = $this->app->makeWith(Artisan::class, ['version' => Constants::VERSION]);
+
+        //TODO me he quedado por aqui intentando registrar los commands y doblarlos
+        // dd($commands);
         foreach ($commands as $command) {
+            // dd($artisan);
+            // $artisan->resolve($command);
             Artisan::starting(function ($artisan) use ($command) {
                 $artisan->resolve($command);
             });
         }
+        // Artisan::starting(function ($artisan) {
+        //     // dd($artisan->container());
+        //     $c = $artisan->resolve(\GitHooks\Commands\Tools\CodeSnifferCommand::class);
+        //     dd($c->exit(new \GitHooks\Tools\Errors()));
+        // });
+        // $c = $this->app->make(\GitHooks\Commands\Tools\CodeSnifferCommand::class);
+        // dd($c->exit(new \GitHooks\Tools\Errors()));
     }
 }
