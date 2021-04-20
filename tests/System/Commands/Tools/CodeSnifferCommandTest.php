@@ -31,17 +31,6 @@ class CodeSnifferCommandTest extends ConsoleTestCase
         $this->fileBuilder = new PhpFileBuilder('File');
 
         $this->mockConfigurationFileForCommandsTests();
-
-        $commandMock = Mock::mock(CodeSnifferCommand::class)->makePartial();
-        $commandMock->shouldReceive('exit')->andReturn(true);
-
-        // $container = Container::getInstance();
-        // $container->bind(CodeSnifferCommand::class, function () {
-        //     $commandMock = Mock::mock(CodeSnifferCommand::class)->makePartial();
-        //     $commandMock->shouldReceive('exit')->andReturn(false);
-        //     return $commandMock;
-        // });
-
     }
 
     protected function tearDown(): void
@@ -59,22 +48,8 @@ class CodeSnifferCommandTest extends ConsoleTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors(['phpcs']));
 
-
-        // $command = $container->make(CodeSnifferCommand::class);
-        // dd($command->exit(new Errors()));
-
-        $this->partialMock(CodeSnifferCommand::class, function (MockInterface $mock) {
-            // $commandMock = Mockery::mock(CodeSnifferCommand::class)->makePartial();
-            $mock->shouldReceive('exit')->andReturn(true);
-            // return $commandMock;
-        });
-
-
-
-        // $command = $this->app->make(CodeSnifferCommand::class);
-        // dd($command->exit(new Errors()));
-        $this->artisan('tool:phpcs')
-            ->containsStringInOutput("fadsfasdfasd");
+        $this->artisan('tool:phpcs')->assertExitCode(1)
+            ->containsStringInOutput("A TOTAL OF 3 ERRORS WERE FIXED IN");
     }
     //1. error
     //2. no error

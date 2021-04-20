@@ -7,8 +7,8 @@ class Errors
     protected $errors = [];
     public function setError(string $tool, string $error)
     {
-        if (!empty($tool) && !empty($error)) {
-            $this->errors[$tool] = $error;
+        if (!empty($tool)) {
+            $this->errors[$tool] = $error ?? 'register error in live output execution';
         }
     }
 
@@ -24,6 +24,7 @@ class Errors
 
     public function __toString()
     {
+
         if (empty($this->errors)) {
             return 'There are no errors.';
         } else {
