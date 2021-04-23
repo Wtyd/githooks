@@ -2,14 +2,7 @@
 
 namespace Tests\System\Commands\Tools;
 
-use GitHooks\Commands\Tools\CodeSnifferCommand;
-use GitHooks\Tools\CheckSecurity;
-use GitHooks\Tools\Errors;
-use Illuminate\Container\Container;
-use Mockery;
-use Mockery\MockInterface;
 use Tests\Artisan\ConsoleTestCase;
-use Tests\Mock;
 use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\System\Utils\PhpFileBuilder;
 
@@ -41,18 +34,47 @@ class CodeSnifferCommandTest extends ConsoleTestCase
     /** @test */
     function it_run_phpcs_command_without_errors()
     {
-        // Establecer el fichero de configuración (me da igual solo phpcs o mas pq el comando solo ejecuta phpcs)
-        // Establecer un fichero a ser validado. Si es uno que tenga errores, me aseguro que lo tiro contra ese aunque pueda tardar un poco mas. Si es un fichero correcto podría "equivocarme en el test" y tirarlo contra otra ruta.
-        // Tengo que sustituir las rutas tanto del fichero de configuración como la de los ficheros a evaluar
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+
+        $this->artisan('tool:phpcs')
+            ->assertExitCode(0)
+            ->containsStringInOutput('phpcbf - OK.');
+    }
+
+    /** @test */
+    function it_always_prints_by_console_the_command_that_it_executes_under_the_hood()
+    {
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+
+        $commandUnderTheHood = "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6";
+
+        $this->artisan('tool:phpcs')
+            ->assertExitCode(0)
+            ->containsStringInOutput($commandUnderTheHood);
+
+        file_put_contents($this->path . '/src/FileWithErrors.php', $this->fileBuilder->buildWithErrors(['phpcs']));
+
+        $this->artisan('tool:phpcs')
+            ->assertExitCode(1)
+            ->containsStringInOutput($commandUnderTheHood);
+    }
+
+    /** @test */
+    function it_run_phpcs_command_with_fixable_errors()
+    {
         file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors(['phpcs']));
 
-        $this->artisan('tool:phpcs')->assertExitCode(1)
-            ->containsStringInOutput("A TOTAL OF 3 ERRORS WERE FIXED IN");
+        $this->artisan('tool:phpcs')
+            ->assertExitCode(1)
+            ->containsStringInOutput('phpcbf - KO.')
+            ->containsStringInOutput('The following errors have occurred:');
     }
-    //1. error
-    //2. no error
     //3. sobreescribo la estrategia
 
 }
