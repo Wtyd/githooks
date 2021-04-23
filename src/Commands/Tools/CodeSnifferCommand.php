@@ -40,8 +40,6 @@ class CodeSnifferCommand extends Command
     public function exit(Errors $errors): int
     {
         if (!$errors->isEmpty()) {
-            // throw ExitException::forErrors('Se han producido algunos errores');
-            $this->printer->resultError($errors->__toString());
             return 1;
         }
         return 0;

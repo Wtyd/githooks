@@ -73,7 +73,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
         $this->artisan('tool:phpcs')
             ->assertExitCode(1)
             ->containsStringInOutput('phpcbf - KO.')
-            ->containsStringInOutput('The following errors have occurred:');
+            ->containsStringInOutput('A TOTAL OF 3 ERRORS WERE FIXED IN 1 FILE');
     }
     //3. sobreescribo la estrategia
 
