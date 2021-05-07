@@ -26,6 +26,7 @@ class ExecutableFinderTest extends SystemTestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
         $this->deleteDirStructure();
 
         $this->hiddenConsoleOutput();
