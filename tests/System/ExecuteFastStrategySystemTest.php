@@ -5,6 +5,7 @@ namespace Tests\System;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFiles;
+use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 use Tests\System\Utils\{
     CheckSecurityFakeKo,
@@ -35,6 +36,8 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'fast']);
+
+        parent::setUp();
     }
 
     protected function tearDown(): void
@@ -52,10 +55,11 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
+
         $githooks = $this->container->makeWith(GitHooks::class);
 
         try {
@@ -90,7 +94,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/app/File.php']);
         });
@@ -105,7 +109,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpstan');
         $this->assertToolDidNotRun('parallel-lint');
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
         $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
@@ -134,7 +138,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -175,7 +179,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -211,7 +215,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -260,7 +264,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -298,7 +302,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -338,7 +342,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpstan']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -374,7 +378,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -415,7 +419,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -462,7 +466,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -505,7 +509,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpstan']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -538,7 +542,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -576,7 +580,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -614,7 +618,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -647,7 +651,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -694,7 +698,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -744,7 +748,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -786,7 +790,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -825,7 +829,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -856,7 +860,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -889,7 +893,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs', 'phpmd', 'phpstan']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });

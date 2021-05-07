@@ -2,6 +2,7 @@
 
 namespace Tests\Artisan;
 
+use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Console\OutputStyle;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Contracts\Support\Arrayable;
@@ -248,8 +249,7 @@ class PendingCommand
 
         try {
             $this->OutputShouldBeShown();
-            // $c = $this->app->make(\GitHooks\Commands\Tools\CodeSnifferCommand::class);
-            // dd($c->exit(new \GitHooks\Tools\Errors()));
+
             $exitCode = $this->app->make(Kernel::class)->call($this->command, $this->parameters, $mock);
         } catch (NoMatchingExpectationException $e) {
             if ($e->getMethodName() === 'askQuestion') {
@@ -311,13 +311,12 @@ class PendingCommand
         }
 
         if (count($this->test->expectedOutput)) {
-            // var_dump($this->test->expectedOutput);
+
             $this->test->assertEquals(
                 $this->test->expectedOutput[0],
                 $this->test->getActualOutput(),
                 'Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.'
             );
-            // $this->test->fail('Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.');
         }
 
 

@@ -15,9 +15,9 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
 
     protected $assertFileDoesNotExist;
 
-    public function __construct()
+    protected function setUp(): void
     {
-        parent::__construct();
+        parent::setUp();
 
         $this->assertFileDoesNotExist = $this->setAssertFileDoesNotExistForm();
     }

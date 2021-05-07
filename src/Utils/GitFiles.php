@@ -2,10 +2,10 @@
 
 namespace GitHooks\Utils;
 
-class GitFiles
+class GitFiles implements GitFilesInterface
 {
     /**
-     * @return array Files modified since the last commit.
+     * @return array Files modified and staged since last commit.
      */
     public function getModifiedFiles(): array
     {

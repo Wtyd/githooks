@@ -65,6 +65,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'smart']);
+
+        parent::setUp();
     }
 
     protected function tearDown(): void
@@ -82,7 +84,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -97,7 +99,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
         $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
@@ -113,7 +115,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -131,7 +133,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('parallel-lint');
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
         $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
@@ -146,7 +148,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([]);
         });
@@ -165,7 +167,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpcpd');
         $this->assertToolDidNotRun('parallel-lint');
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
+        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
         $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
@@ -180,7 +182,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -216,7 +218,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpcpd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -251,7 +253,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpmd']));
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -287,7 +289,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });

@@ -4,7 +4,7 @@ namespace GitHooks\LoadTools;
 
 use GitHooks\Constants;
 use GitHooks\Tools\ToolsFactoy;
-use GitHooks\Utils\GitFiles;
+use GitHooks\Utils\GitFilesInterface;
 
 /**
  * This strategy tries to save execution time when running the application. For this, it may not execute any of the configured tools if all the commit files do
@@ -26,7 +26,7 @@ class SmartStrategy implements StrategyInterface
     protected $configurationFile;
 
     /**
-     * @var GitFiles
+     * @var GitFilesInterface
      */
     protected $gitFiles;
 
@@ -35,7 +35,7 @@ class SmartStrategy implements StrategyInterface
      */
     protected $toolsFactory;
 
-    public function __construct(array $configurationFile, GitFiles $gitFiles, ToolsFactoy $toolsFactory)
+    public function __construct(array $configurationFile, GitFilesInterface $gitFiles, ToolsFactoy $toolsFactory)
     {
         $this->configurationFile = $configurationFile;
         $this->gitFiles = $gitFiles;

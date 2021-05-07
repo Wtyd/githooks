@@ -3,14 +3,22 @@
 namespace GitHooks\Commands\Console;
 
 use GitHooks\Constants;
+use GitHooks\Utils\GitFiles;
+use GitHooks\Utils\GitFilesInterface;
+use Illuminate\Foundation\Application as FoundationApplication;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 use Tests\Artisan\Application;
 use Tests\Artisan\Artisan;
+use Throwable;
 
 class Kernel extends ConsoleKernel
 {
+    // use RegisterBindings;
+
     protected $registerCommands;
+    protected $registerBindings;
 
     public function __construct(Application $app, Dispatcher $events, RegisterCommands $registerCommands)
     {
@@ -22,6 +30,7 @@ class Kernel extends ConsoleKernel
         $this->events = $events;
         $this->registerCommands = $registerCommands;
 
+        $this->app::setInstance($this->app);
         $this->app->booted(function () {
             $this->defineConsoleSchedule();
         });
@@ -74,6 +83,7 @@ class Kernel extends ConsoleKernel
      */
     public function call($command, array $parameters = [], $outputBuffer = null)
     {
+
         $this->bootstrap();
 
         return $this->getArtisan()->call($command, $parameters, $outputBuffer);
@@ -107,23 +117,33 @@ class Kernel extends ConsoleKernel
      */
     protected function load($commands)
     {
-        $artisan = $this->app->makeWith(Artisan::class, ['version' => Constants::VERSION]);
-
         //TODO me he quedado por aqui intentando registrar los commands y doblarlos
-        // dd($commands);
+
         foreach ($commands as $command) {
-            // dd($artisan);
-            // $artisan->resolve($command);
             Artisan::starting(function ($artisan) use ($command) {
                 $artisan->resolve($command);
             });
         }
-        // Artisan::starting(function ($artisan) {
-        //     // dd($artisan->container());
-        //     $c = $artisan->resolve(\GitHooks\Commands\Tools\CodeSnifferCommand::class);
-        //     dd($c->exit(new \GitHooks\Tools\Errors()));
-        // });
-        // $c = $this->app->make(\GitHooks\Commands\Tools\CodeSnifferCommand::class);
-        // dd($c->exit(new \GitHooks\Tools\Errors()));
+    }
+    /**
+     * Run the console application.
+     *
+     * @param  \Symfony\Component\Console\Input\InputInterface  $input
+     * @param  \Symfony\Component\Console\Output\OutputInterface|null  $output
+     * @return int
+     */
+    public function handle($input, $output = null)
+    {
+        try {
+            $this->bootstrap();
+
+            return $this->getArtisan()->run($input, $output);
+        } catch (Throwable $e) {
+            $this->reportException($e);
+
+            $this->renderException($output, $e);
+
+            return 1;
+        }
     }
 }

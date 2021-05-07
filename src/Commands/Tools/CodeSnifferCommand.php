@@ -3,17 +3,19 @@
 namespace GitHooks\Commands\Tools;
 
 use GitHooks\Constants;
-use GitHooks\Exception\ExitException;
 use GitHooks\Tools\Errors;
+use GitHooks\Utils\GitFiles;
+use GitHooks\Utils\GitFilesInterface;
 use GitHooks\Utils\Printer;
 use Illuminate\Console\Command;
+use Illuminate\Container\Container;
 
 /**
  * @SuppressWarnings(PHPMD.ExitExpression)
  */
 class CodeSnifferCommand extends Command
 {
-    protected $signature = 'tool:phpcs';
+    protected $signature = 'tool:phpcs {execution?}';
     protected $description = 'Run phpcs';
 
     /**
@@ -32,9 +34,10 @@ class CodeSnifferCommand extends Command
 
     public function handle()
     {
-        $errors = $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER);
+        $execution = strval($this->argument('execution'));
+
+        $errors = $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER, $execution);
         return $this->exit($errors);
-        // dd($this->exit($errors));
     }
 
     public function exit(Errors $errors): int

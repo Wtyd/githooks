@@ -20,6 +20,7 @@ class CreateConfigurationFileCommandTest extends ConsoleTestCase
     protected function tearDown(): void
     {
         $this->deleteDirStructure();
+        parent::tearDown();
     }
 
     /**

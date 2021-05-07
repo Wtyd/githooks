@@ -6,7 +6,7 @@ use GitHooks\ChooseStrategy;
 use GitHooks\LoadTools\FastStrategy;
 use GitHooks\LoadTools\FullStrategy;
 use GitHooks\LoadTools\SmartStrategy;
-use PHPUnit\Framework\TestCase;
+use Tests\UnitTestCase;
 
 /**
  * It choose strategy for Githooks execution with the 'execution' tag inside 'Options'. The posibilities are:
@@ -14,7 +14,7 @@ use PHPUnit\Framework\TestCase;
  * smart: when 'execution' tag is 'smart'.
  * fast: when 'execution' tag is 'fast'.
  */
-class ChooseStrategyTest extends TestCase
+class ChooseStrategyTest extends UnitTestCase
 {
     /** @test*/
     function choose_smart_strategy_in_Options_section()

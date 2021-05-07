@@ -62,6 +62,7 @@ class CreateHookCommandTest extends ConsoleTestCase
     {
         $this->mock->disable();
         $this->deleteDirStructure();
+        parent::tearDown();
     }
 
     /**
@@ -104,18 +105,50 @@ class CreateHookCommandTest extends ConsoleTestCase
         $this->assertFileExists($this->path . '/.git/hooks/pre-commit', file_get_contents('hooks/pre-commit.php'));
     }
 
+    public function hooksProvider()
+    {
+        return [
+            'applypatch-msg' => ['applypatch-msg'],
+            'pre-applypatch' => ['pre-applypatch'],
+            'post-applypatch' => ['post-applypatch'],
+            'pre-commit' => ['pre-commit'],
+            'pre-merge-commit' => ['pre-merge-commit'],
+            'prepare-commit-msg' => ['prepare-commit-msg'],
+            'commit-msg' => ['commit-msg'],
+            'post-commit' => ['post-commit'],
+            'pre-rebase' => ['pre-rebase'],
+            'post-checkout' => ['post-checkout'],
+            'post-merge' => ['post-merge'],
+            'pre-push' => ['pre-push'],
+            'pre-receive' => ['pre-receive'],
+            'update' => ['update'],
+            'proc-receive' => ['proc-receive'],
+            'post-receive' => ['post-receive'],
+            'post-update' => ['post-update'],
+            'reference-transaction' => ['reference-transaction'],
+            'push-to-checkout' => ['push-to-checkout'],
+            'pre-auto-gc' => ['pre-auto-gc'],
+            'post-rewrite' => ['post-rewrite'],
+            'sendemail-validate' => ['sendemail-validate'],
+            'fsmonitor-watchman' => ['fsmonitor-watchman'],
+            'p4-changelist' => ['p4-changelist'],
+            'p4-prepare-changelist' => ['p4-prepare-changelist'],
+            'p4-post-changelist' => ['p4-post-changelist'],
+            'p4-pre-submit' => ['p4-pre-submit'],
+            'post-index-change' => ['post-index-change'],
+        ];
+    }
+
     /**
      * @test
-     * //FIXME Phpunit dataProviders don't work in this tests
+     * @dataProvider hooksProvider
      */
-    function it_creates_default_script_in_the_hook_passed_as_argument()
+    function it_creates_default_script_in_the_hook_passed_as_argument($hook)
     {
-        foreach ($this->supportedHooks as $hook) {
-            $this->artisan("hook $hook")
-                ->containsStringInOutput("Hook $hook created");
+        $this->artisan("hook $hook")
+            ->containsStringInOutput("Hook $hook created");
 
-            $this->assertFileExists($this->path . "/.git/hooks/$hook", file_get_contents('hooks/pre-commit.php'));
-        }
+        $this->assertFileExists($this->path . "/.git/hooks/$hook", file_get_contents('hooks/pre-commit.php'));
     }
 
     /**
@@ -155,9 +188,45 @@ class CreateHookCommandTest extends ConsoleTestCase
     {
         $noSupportedHook = 'no-valid';
 
-        $supportedHooks2String = implode(', ', $this->supportedHooks);
+        $supportedHooks = [
+            'applypatch-msg',
+            'pre-applypatch',
+            'post-applypatch',
+            'pre-commit',
+            'pre-merge-commit',
+            'prepare-commit-msg',
+            'commit-msg',
+            'post-commit',
+            'pre-rebase',
+            'post-checkout',
+            'post-merge',
+            'pre-push',
+            'pre-receive',
+            'update',
+            'proc-receive',
+            'post-receive',
+            'post-update',
+            'reference-transaction',
+            'push-to-checkout',
+            'pre-auto-gc',
+            'post-rewrite',
+            'sendemail-validate',
+            'fsmonitor-watchman',
+            'p4-changelist',
+            'p4-prepare-changelist',
+            'p4-post-changelist',
+            'p4-pre-submit',
+            'post-index-change',
+        ];
+
+        $supportedHooks2String = implode(', ', $supportedHooks);
         $this->artisan("hook $noSupportedHook")
             ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Avaliable hooks are:")
             ->containsStringInOutput($supportedHooks2String);
+
+        $supportedHooksInOutput = explode(',', $this->getActualOutput());
+
+        //Verifies that neither hook has been forgotten
+        $this->assertCount(count($supportedHooks), $supportedHooksInOutput);
     }
 }

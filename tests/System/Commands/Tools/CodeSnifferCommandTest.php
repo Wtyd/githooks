@@ -2,8 +2,15 @@
 
 namespace Tests\System\Commands\Tools;
 
+use GitHooks\Commands\Tools\ToolCommandExecutor;
+use GitHooks\LoadTools\FastStrategy;
+use GitHooks\Utils\GitFiles;
+use GitHooks\Utils\GitFilesInterface;
+use Illuminate\Container\Container;
+use Mockery\MockInterface;
 use Tests\Artisan\ConsoleTestCase;
 use Tests\System\Utils\ConfigurationFileBuilder;
+use Tests\System\Utils\GitFilesFake;
 use Tests\System\Utils\PhpFileBuilder;
 
 class CodeSnifferCommandTest extends ConsoleTestCase
@@ -29,6 +36,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
     protected function tearDown(): void
     {
         $this->deleteDirStructure();
+        parent::tearDown();
     }
 
     /** @test */
@@ -75,6 +83,31 @@ class CodeSnifferCommandTest extends ConsoleTestCase
             ->containsStringInOutput('phpcbf - KO.')
             ->containsStringInOutput('A TOTAL OF 3 ERRORS WERE FIXED IN 1 FILE');
     }
-    //3. sobreescribo la estrategia
 
+    /** @test */
+    function it_can_be_override_execution_mode()
+    {
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
+
+        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+
+        file_put_contents($this->path . '/src/FileWithErrors.php', $this->fileBuilder->buildWithErrors(['phpcs']));
+
+        $this->partialMock(GitFilesInterface::class, function (MockInterface $mock) {
+            $mock->shouldReceive('getModifiedFiles')->andReturn([$this->path . '/src/FileWithErrors.php']);
+        });
+
+        // Alternative syntaxis to partialMock
+        // $this->app->bind(GitFilesInterface::class, GitFilesFake::class);
+        // $this->app->resolving(GitFilesFake::class, function ($gitFiles) {
+        //     $gitFiles->setModifiedfiles([$this->path . '/src/FileWithErrors.php']);
+        // });
+
+        $commandUnderTheHood = "phpcbf $this->path/src/FileWithErrors.php";
+        $this->artisan('tool:phpcs fast')
+            ->containsStringInOutput($commandUnderTheHood)
+            ->assertExitCode(1)
+            ->containsStringInOutput('phpcbf - KO.')
+            ->containsStringInOutput('A TOTAL OF 3 ERRORS WERE FIXED IN 1 FILE');
+    }
 }

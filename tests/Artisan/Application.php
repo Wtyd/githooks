@@ -2,6 +2,7 @@
 
 namespace Tests\Artisan;
 
+use GitHooks\Commands\Console\RegisterBindings;
 use Illuminate\Container\Container;
 use Illuminate\Events\EventServiceProvider;
 use Illuminate\Foundation\Application as FoundationApplication;
@@ -23,14 +24,12 @@ class Application extends FoundationApplication
      */
     protected function registerBaseBindings()
     {
-        // static::setInstance($this);
-        static::setInstance(Container::getInstance());
+        static::setInstance($this);
 
-        // $this->instance('app', $this);
-        $this->instance('app', Container::getInstance());
+        $this->instance('app', $this);
 
-        // $this->instance(Container::class, $this);
-        $this->singleton(Mix::class);
+        $this->instance(Container::class, $this);
+        // $this->singleton(Mix::class);
 
         //No quiero instanciar el Filesystem, de momento
         // $this->instance(PackageManifest::class, new PackageManifest(
@@ -57,10 +56,11 @@ class Application extends FoundationApplication
      */
     public function registerCoreContainerAliases()
     {
-        foreach ([
-            'app'                  => [\Illuminate\Foundation\Application::class, \Illuminate\Contracts\Container\Container::class, \Illuminate\Contracts\Foundation\Application::class,  \Psr\Container\ContainerInterface::class],
-            'events'               => [\Illuminate\Events\Dispatcher::class, \Illuminate\Contracts\Events\Dispatcher::class],
-        ] as $key => $aliases) {
+        $aliases = [
+            'app'  => [\Illuminate\Foundation\Application::class, \Illuminate\Contracts\Container\Container::class, \Illuminate\Contracts\Foundation\Application::class,  \Psr\Container\ContainerInterface::class],
+            'events' => [\Illuminate\Events\Dispatcher::class, \Illuminate\Contracts\Events\Dispatcher::class],
+        ];
+        foreach ($aliases as $key => $aliases) {
             foreach ($aliases as $alias) {
                 $this->alias($key, $alias);
             }
