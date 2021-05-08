@@ -9,12 +9,12 @@ class InvalidArgumentValueException extends \InvalidArgumentException implements
      * Raise an InvalidArgumentValueException
      *
      * @param string $argument Name of the argument
-     * @param mixed $expectedValues The invalid value for the argument
-     * @param array $values All posible values
+     * @param mixed $value All posible values
+     * @param array $expectedValues The invalid value for the argument
      *
      * @return InvalidArgumentValueException
      */
-    public static function forArgument(string $argument, $value, array $expectedValues): InvalidArgumentValueException
+    public static function forArgument(string $argument, mixed $value, array $expectedValues): InvalidArgumentValueException
     {
         $value = strval($value);
         $expectedValues = implode(', ', $expectedValues);

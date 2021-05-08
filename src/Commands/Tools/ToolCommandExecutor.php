@@ -27,6 +27,11 @@ class ToolCommandExecutor
     protected $config;
 
     /**
+     * @var ChooseStrategy
+     */
+    protected $chooseStrategy;
+
+    /**
      * @var ToolsFactoy
      */
     protected $toolsFactoy;
@@ -65,9 +70,11 @@ class ToolCommandExecutor
 
         $file = $this->config->readfile();
 
+        //Override execution strategy
         if (!empty($execution)) {
-            in_array($execution, Constants::EXECUTION_KEY);
-            $file[Constants::OPTIONS][Constants::EXECUTION] = $execution;
+            if (in_array($execution, Constants::EXECUTION_KEY)) {
+                $file[Constants::OPTIONS][Constants::EXECUTION] = $execution;
+            }
         }
 
         $file[Constants::OPTIONS][Constants::EXECUTION] = $this->checkExecution($file, $execution);
@@ -76,7 +83,7 @@ class ToolCommandExecutor
 
         $strategy = $this->chooseStrategy->__invoke($file);
 
-        $tools = $strategy->getTools($file[Constants::TOOLS], $file);
+        $tools = $strategy->getTools();
         // $tools = $this->toolsFactoy->__invoke($file[Constants::TOOLS], $file);
 
         return $this->toolExecutor->__invoke($tools, true);

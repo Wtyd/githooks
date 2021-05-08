@@ -1,6 +1,6 @@
 # Configuración general de la herramienta
 Options:
-  execution: fast #full (default), smart, fast
+  execution: full #full (default), smart, fast
 
 # Herramientas que se van a ejecutar
 Tools:

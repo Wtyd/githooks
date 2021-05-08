@@ -24,7 +24,7 @@ class ToolExecutor
      * @param array $tools
      * @param boolean $isLiveOutput Si es true ejecutará la herramienta mostrando la salida en tiempo real como si la ejecutaramos manualmente por consola.
      *                  Si es false la ejecución de la herramienta no muestra ninguna.
-     * @return array $exitCode El codigo de salida (por defecto 0) cambia a 1 cuando una herrmienta falla por cualquier motivo
+     * @return Errors $exitCode El codigo de salida (por defecto 0) cambia a 1 cuando una herrmienta falla por cualquier motivo
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function __invoke(array $tools, bool $isLiveOutput = false): Errors

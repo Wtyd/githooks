@@ -311,7 +311,6 @@ class PendingCommand
         }
 
         if (count($this->test->expectedOutput)) {
-
             $this->test->assertEquals(
                 $this->test->expectedOutput[0],
                 $this->test->getActualOutput(),
