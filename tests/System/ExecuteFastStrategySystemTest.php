@@ -423,7 +423,8 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasFailed('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
+        //TODO phpmd no funciona correctamente. Esperando la respuesta del issue: https://github.com/phpmd/phpmd/issues/888
+        // $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolDidNotRun('phpstan');
     }

@@ -18,8 +18,6 @@ class SystemTestCase extends TestCase
     use FileSystemTrait;
     use MockConfigurationFileTrait;
 
-    protected $path = __DIR__ . '/System/tmp';
-
     protected static $assertMatchesRegularExpression;
 
     /**
