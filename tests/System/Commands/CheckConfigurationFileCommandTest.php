@@ -12,19 +12,12 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->deleteDirStructure();
 
         $this->createDirStructure();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
 
         $this->mockConfigurationFileForCommandsTests();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
-        parent::tearDown();
     }
 
     /** @test */

@@ -27,22 +27,12 @@ class ExecutableFinderTest extends SystemTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->deleteDirStructure();
-
-        $this->hiddenConsoleOutput();
-
-        $this->createDirStructure();
 
         $this->container = Container::getInstance();
         $this->mockPathGitHooksConfigurationFile();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'full']);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
     }
 
     /** @test */

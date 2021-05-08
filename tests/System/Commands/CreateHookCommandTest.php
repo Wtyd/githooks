@@ -10,37 +10,6 @@ class CreateHookCommandTest extends ConsoleTestCase
 {
     protected $mock;
 
-    protected $supportedHooks = [
-        'applypatch-msg',
-        'pre-applypatch',
-        'post-applypatch',
-        'pre-commit',
-        'pre-merge-commit',
-        'prepare-commit-msg',
-        'commit-msg',
-        'post-commit',
-        'pre-rebase',
-        'post-checkout',
-        'post-merge',
-        'pre-push',
-        'pre-receive',
-        'update',
-        'proc-receive',
-        'post-receive',
-        'post-update',
-        'reference-transaction',
-        'push-to-checkout',
-        'pre-auto-gc',
-        'post-rewrite',
-        'sendemail-validate',
-        'fsmonitor-watchman',
-        'p4-changelist',
-        'p4-prepare-changelist',
-        'p4-post-changelist',
-        'p4-pre-submit',
-        'post-index-change',
-    ];
-
     /**
      * Creates the temporal filesystem structure for the tests and mocks the 'getcwd' method for return this path.
      *
@@ -49,7 +18,6 @@ class CreateHookCommandTest extends ConsoleTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->deleteDirStructure();
 
         $this->copyDefaultPrecommitToTestDirectory();
         mkdir($this->path . '/.git/hooks', 0777, true);
@@ -61,7 +29,6 @@ class CreateHookCommandTest extends ConsoleTestCase
     protected function tearDown(): void
     {
         $this->mock->disable();
-        $this->deleteDirStructure();
         parent::tearDown();
     }
 
@@ -174,12 +141,43 @@ class CreateHookCommandTest extends ConsoleTestCase
         $scriptFilePath = $this->path . '/MyScript.php';
         file_put_contents($scriptFilePath, $hookContent);
 
-        $supportedHooks2String = implode(', ', $this->supportedHooks);
+        $supportedHooks = [
+            'applypatch-msg',
+            'pre-applypatch',
+            'post-applypatch',
+            'pre-commit',
+            'pre-merge-commit',
+            'prepare-commit-msg',
+            'commit-msg',
+            'post-commit',
+            'pre-rebase',
+            'post-checkout',
+            'post-merge',
+            'pre-push',
+            'pre-receive',
+            'update',
+            'proc-receive',
+            'post-receive',
+            'post-update',
+            'reference-transaction',
+            'push-to-checkout',
+            'pre-auto-gc',
+            'post-rewrite',
+            'sendemail-validate',
+            'fsmonitor-watchman',
+            'p4-changelist',
+            'p4-prepare-changelist',
+            'p4-post-changelist',
+            'p4-pre-submit',
+            'post-index-change',
+        ];
+
+        $supportedHooks2String = implode(', ', $supportedHooks);
         $this->artisan("hook $scriptFilePath")
             ->containsStringInOutput("'$scriptFilePath' is not a valid git hook. Avaliable hooks are:")
             ->containsStringInOutput($supportedHooks2String);
 
-        $assertFileDoesNotExist = $this->assertFileDoesNotExist;
+        $assertFileDoesNotExist = self::$assertFileDoesNotExist;
         $this->$assertFileDoesNotExist($this->path . "/.git/hooks/pre-commit", $scriptFilePath);
     }
 

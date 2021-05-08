@@ -13,16 +13,34 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
     use MockConfigurationFileTrait;
     use FileSystemTrait;
 
-    protected $assertFileDoesNotExist;
+    protected static $assertFileDoesNotExist;
+
+    /**
+     * @param int|string $dataName
+     *
+     * @internal This method is not covered by the backward compatibility promise for PHPUnit
+     */
+    public function __construct(?string $name = null, array $data = [], $dataName = '')
+    {
+        parent::__construct($name, $data, $dataName);
+
+        self::$assertFileDoesNotExist = self::setAssertFileDoesNotExistForm();
+    }
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->assertFileDoesNotExist = $this->setAssertFileDoesNotExistForm();
+        $this->deleteDirStructure();
     }
 
-    protected function setAssertFileDoesNotExistForm()
+    protected function tearDown(): void
+    {
+        $this->deleteDirStructure();
+        parent::setUp();
+    }
+
+    protected static function setAssertFileDoesNotExistForm()
     {
         if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
             return 'assertFileNotExists';

@@ -16,7 +16,6 @@ class CleanHookCommandTest extends ConsoleTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->deleteDirStructure();
 
         mkdir($this->path . '/.git/hooks', 0777, true);
 
@@ -27,7 +26,6 @@ class CleanHookCommandTest extends ConsoleTestCase
     protected function tearDown(): void
     {
         $this->mock->disable();
-        $this->deleteDirStructure();
         parent::tearDown();
     }
 

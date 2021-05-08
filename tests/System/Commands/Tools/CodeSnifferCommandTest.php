@@ -22,7 +22,6 @@ class CodeSnifferCommandTest extends ConsoleTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->deleteDirStructure();
 
         $this->createDirStructure();
 
@@ -31,12 +30,6 @@ class CodeSnifferCommandTest extends ConsoleTestCase
         $this->fileBuilder = new PhpFileBuilder('File');
 
         $this->mockConfigurationFileForCommandsTests();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
-        parent::tearDown();
     }
 
     /** @test */

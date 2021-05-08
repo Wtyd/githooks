@@ -54,24 +54,13 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
     protected function setUp(): void
     {
-        $this->deleteDirStructure();
-
-        $this->hiddenConsoleOutput();
-
-        $this->createDirStructure();
+        parent::setUp();
 
         $this->container = Container::getInstance();
         $this->mockPathGitHooksConfigurationFile();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'smart']);
-
-        parent::setUp();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
     }
 
     /** @test */

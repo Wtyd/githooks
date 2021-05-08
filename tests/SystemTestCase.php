@@ -22,17 +22,36 @@ class SystemTestCase extends TestCase
 
     protected static $assertMatchesRegularExpression;
 
-    protected function setUp(): void
+    /**
+     * @param int|string $dataName
+     *
+     * @internal This method is not covered by the backward compatibility promise for PHPUnit
+     */
+    public function __construct(?string $name = null, array $data = [], $dataName = '')
     {
+        parent::__construct($name, $data, $dataName);
+
         $registerBindings = new RegisterBindings();
         $registerBindings();
+
+        self::$assertMatchesRegularExpression = self::setassertMatchesRegularExpressionpForm();
+    }
+
+    protected function setUp(): void
+    {
+        $this->deleteDirStructure();
+
+        $this->hiddenConsoleOutput();
+
+        $this->createDirStructure();
+
         $container =  Container::getInstance();
         $container->bind(GitFilesInterface::class, GitFilesFake::class);
     }
 
-    public static function setUpBeforeClass(): void
+    protected function tearDown(): void
     {
-        self::$assertMatchesRegularExpression = self::setassertMatchesRegularExpressionpForm();
+        $this->deleteDirStructure();
     }
 
     /**

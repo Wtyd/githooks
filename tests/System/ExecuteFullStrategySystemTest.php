@@ -29,20 +29,10 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
 
     protected function setUp(): void
     {
-        $this->deleteDirStructure();
-
-        $this->createDirStructure();
-
-        $this->hiddenConsoleOutput();
+        parent::setUp();
 
         $this->container = Container::getInstance();
         $this->mockPathGitHooksConfigurationFile();
-        parent::setUp();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
     }
 
     /** @test */
