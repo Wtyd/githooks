@@ -27,7 +27,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan
         ini-values: "post_max_size=256M" #optional
         coverage: none
   
@@ -45,9 +45,13 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
-    - name: Install Phpcpd Unix
-      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) && ('ubuntu-18.04' == matrix.operating-system || 'macos-latest' == matrix.operating-system)}}
+    - name: Install Phpcpd for php 7.1
+      if: ${{ ('7.2' == matrix.php-versions || '7.1' == matrix.php-versions) }}
       run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-3.0.1.phar
+
+    - name: Install Phpcpd for php 8.0
+      if: ${{ ('8.0' == matrix.php-versions) }}
+      run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-6.0.3.phar
 
     - name: Testing the Aplication
       run: |
