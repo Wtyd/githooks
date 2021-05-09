@@ -26,13 +26,13 @@ trait MockConfigurationFileTrait
      */
     protected function mockPathGitHooksConfigurationFile(): void
     {
-        if ($this instanceof ExecutableFinderTest) {
-            $this->container->bind(Configuration::class, ConfigurationFake::class);
-        } else {
-            $mockConfiguration = Mock::mock(Configuration::class)->shouldAllowMockingProtectedMethods()->makePartial();
-            $mockConfiguration->shouldReceive('findConfigurationFile')->andReturn($this->path . '/githooks.yml');
-            $this->container->instance(Configuration::class, $mockConfiguration);
-        }
+        // if ($this instanceof ExecutableFinderTest) {
+        //     $this->container->bind(Configuration::class, ConfigurationFake::class);
+        // } else {
+        $mockConfiguration = Mock::mock(Configuration::class)->shouldAllowMockingProtectedMethods()->makePartial();
+        $mockConfiguration->shouldReceive('findConfigurationFile')->andReturn($this->path . '/githooks.yml');
+        $this->container->instance(Configuration::class, $mockConfiguration);
+        // }
     }
 
     /**
