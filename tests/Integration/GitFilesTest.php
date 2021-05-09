@@ -13,6 +13,13 @@ use Tests\SystemTestCase;
  */
 class GitFilesTest extends SystemTestCase
 {
+    protected static $gitFilesPathTest = __DIR__ . '/../../testsDir/gitTests';
+
+    // public static function setUpBeforeClass()
+    // {
+    //     mkdir(self::$gitFilesPathTest);
+    // }
+
     protected function setUp(): void
     {
         $this->deleteDirStructure();
@@ -20,8 +27,10 @@ class GitFilesTest extends SystemTestCase
         $this->hiddenConsoleOutput();
 
         $this->createDirStructure();
+        mkdir(self::$gitFilesPathTest);
 
         $this->container = Container::getInstance();
+        $this->container->bind(GitFilesInterface::class, GitFiles::class);
         $this->mockPathGitHooksConfigurationFile();
     }
 
@@ -35,9 +44,10 @@ class GitFilesTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('NewFile');
 
-        $filename = $this->getPath() . '/src/NewFile.php';
+        $filename = self::$gitFilesPathTest . '/NewFile.php';
         file_put_contents($filename, $fileBuilder->build());
-        shell_exec('git add ' . $this->getPath() . '/src/NewFile.php');
+        // dd('git add ' . self::$gitFilesPathTest . '/NewFile.php');
+        shell_exec('git add ' . self::$gitFilesPathTest . '/NewFile.php');
 
         $gitFiles = $this->container->make(GitFiles::class);
 
@@ -47,7 +57,7 @@ class GitFilesTest extends SystemTestCase
 
         $this->deleteDirStructure();
 
-        shell_exec('git add ' . $this->getPath() . '/src/NewFile.php');
+        shell_exec('git add ' . self::$gitFilesPathTest . '/NewFile.php');
     }
 
     /** @test */
@@ -65,7 +75,7 @@ class GitFilesTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('NewFile');
 
-        file_put_contents($this->getPath() . '/src/NewFile.php', $fileBuilder->build());
+        file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
 
         $gitFiles = $this->container->make(GitFiles::class);
 
@@ -75,14 +85,14 @@ class GitFilesTest extends SystemTestCase
     }
 
     /**
-     * @param string $path Absolute path. For example: /var/www/html/githooks/tests/src/NewFile.php
+     * @param string $path Absolute path. For example: /var/www/html/githooks/tests/NewFile.php
      *
-     * @return string Only the relative path of the file to root project. For example: tests/src/NewFile.php
+     * @return string Only the relative path of the file to root project. For example: tests/NewFile.php
      */
     public function deletePathPrefix(string $path): string
     {
-        $path = explode('tests/', $path);
+        $path = explode('testsDir/', $path);
 
-        return 'tests/' . $path[1];
+        return 'testsDir/' . $path[1];
     }
 }

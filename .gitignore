@@ -18,6 +18,11 @@ myreport/
 Dummy.php
 src/dummy/
 
-testsDir/
+
+# Tests directory
+testsDir/src
+testsDir/app
+testsDir/vendor
+
 
 *.md
