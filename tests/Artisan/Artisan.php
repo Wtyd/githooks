@@ -3,7 +3,6 @@
 namespace Tests\Artisan;
 
 use Closure;
-use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Illuminate\Console\Application;
 
 class Artisan extends Application

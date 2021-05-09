@@ -8,7 +8,6 @@ use GitHooks\Tools\CopyPasteDetector;
 use GitHooks\Tools\CheckSecurity;
 use GitHooks\Tools\MessDetector;
 use GitHooks\Tools\ParallelLint;
-use GitHooks\Tools\Stan;
 use GitHooks\Tools\ToolsFactoy;
 use GitHooks\Utils\GitFiles;
 use Mockery;

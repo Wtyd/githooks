@@ -2,11 +2,9 @@
 
 namespace Tests\Artisan;
 
-use GitHooks\Commands\Console\RegisterBindings;
 use Illuminate\Container\Container;
 use Illuminate\Events\EventServiceProvider;
 use Illuminate\Foundation\Application as FoundationApplication;
-use Illuminate\Contracts\Console\Kernel;
 
 class Application extends FoundationApplication
 {
@@ -45,8 +43,6 @@ class Application extends FoundationApplication
     protected function registerBaseServiceProviders()
     {
         $this->register(new EventServiceProvider($this));
-        // $this->register(new LogServiceProvider($this));
-        // $this->register(new RoutingServiceProvider($this));
     }
 
     /**
@@ -127,5 +123,29 @@ class Application extends FoundationApplication
         }
 
         throw new RuntimeException('Unable to detect application namespace.');
+    }
+
+    /**
+     * Load the deferred provider if the given type is a deferred service and the instance has not been loaded.
+     *
+     * @param  string  $abstract
+     * @return void
+     */
+    protected function loadDeferredProviderIfNeeded($abstract)
+    {
+        if ($this->isDeferredService($abstract) && !isset($this->instances[$abstract])) {
+            $this->loadDeferredProvider($abstract);
+        }
+    }
+
+    /**
+     * Determine if the given service is a deferred service.
+     *
+     * @param  string  $service
+     * @return bool
+     */
+    public function isDeferredService($service)
+    {
+        return isset($this->deferredServices[$service]);
     }
 }

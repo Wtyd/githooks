@@ -2,7 +2,6 @@
 
 namespace Tests\System;
 
-use GitHooks\Exception\ExitException;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use Illuminate\Container\Container;

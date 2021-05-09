@@ -4,8 +4,6 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use GitHooks\Utils\GitFiles;
-use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 use Tests\System\Utils\{
     CheckSecurityFakeKo,

@@ -90,12 +90,6 @@ class CodeSnifferCommandTest extends ConsoleTestCase
             $mock->shouldReceive('getModifiedFiles')->andReturn([$this->path . '/src/FileWithErrors.php']);
         });
 
-        // Alternative syntaxis to partialMock
-        // $this->app->bind(GitFilesInterface::class, GitFilesFake::class);
-        // $this->app->resolving(GitFilesFake::class, function ($gitFiles) {
-        //     $gitFiles->setModifiedfiles([$this->path . '/src/FileWithErrors.php']);
-        // });
-
         $commandUnderTheHood = "phpcbf $this->path/src/FileWithErrors.php";
         $this->artisan('tool:phpcs fast')
             ->containsStringInOutput($commandUnderTheHood)

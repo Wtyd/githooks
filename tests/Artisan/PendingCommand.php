@@ -2,7 +2,6 @@
 
 namespace Tests\Artisan;
 
-use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Console\OutputStyle;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Contracts\Support\Arrayable;

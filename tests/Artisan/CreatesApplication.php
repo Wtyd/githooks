@@ -58,7 +58,4 @@ trait CreatesApplication
         // $container = Mockery::getContainer();
         // var_dump($container->mockery_getExpectationCount()); //see extra asserts
     }
-    // $app->singleton(Container::class, Container::class);
-    // $app->singleton(\Illuminate\Contracts\Foundation\Application::class, $app);
-    // $app->singleton(Illuminate\Contracts\Container\Container::class, Container::class);
 }
