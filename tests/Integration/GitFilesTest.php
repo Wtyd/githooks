@@ -31,7 +31,6 @@ class GitFilesTest extends SystemTestCase
 
         $this->container = Container::getInstance();
         $this->container->bind(GitFilesInterface::class, GitFiles::class);
-        $this->mockPathGitHooksConfigurationFile();
     }
 
     protected function tearDown(): void
@@ -46,7 +45,7 @@ class GitFilesTest extends SystemTestCase
 
         $filename = self::$gitFilesPathTest . '/NewFile.php';
         file_put_contents($filename, $fileBuilder->build());
-        // dd('git add ' . self::$gitFilesPathTest . '/NewFile.php');
+
         shell_exec('git add ' . self::$gitFilesPathTest . '/NewFile.php');
 
         $gitFiles = $this->container->make(GitFiles::class);

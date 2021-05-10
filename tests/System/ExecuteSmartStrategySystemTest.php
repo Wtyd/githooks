@@ -55,8 +55,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
     {
         parent::setUp();
 
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
+        // $this->container = Container::getInstance();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'smart']);

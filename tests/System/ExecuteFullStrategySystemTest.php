@@ -30,8 +30,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         parent::setUp();
 
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
+        // $this->container = Container::getInstance();
     }
 
     /** @test */

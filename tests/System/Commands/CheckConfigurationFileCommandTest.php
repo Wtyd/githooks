@@ -16,8 +16,6 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
         $this->createDirStructure();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-
-        $this->mockConfigurationFileForCommandsTests();
     }
 
     /** @test */

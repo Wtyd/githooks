@@ -28,8 +28,6 @@ class CodeSnifferCommandTest extends ConsoleTestCase
         $this->configurationFile = new ConfigurationFileBuilder($this->path);
 
         $this->fileBuilder = new PhpFileBuilder('File');
-
-        $this->mockConfigurationFileForCommandsTests();
     }
 
     /** @test */

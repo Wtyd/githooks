@@ -2,15 +2,15 @@
 
 namespace Tests\Artisan;
 
+use GitHooks\Configuration;
 use Tests\Artisan\TestCase as IlluminateBaseTestCase;
 use Tests\FileSystemTrait;
-use Tests\MockConfigurationFileTrait;
 use PHPUnit\Runner\Version as PhpunitVersion;
+use Tests\Utils\ConfigurationFake;
 
 abstract class ConsoleTestCase extends IlluminateBaseTestCase
 {
     use CreatesApplication;
-    use MockConfigurationFileTrait;
     use FileSystemTrait;
 
     protected static $assertFileDoesNotExist;
@@ -32,6 +32,8 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
         parent::setUp();
 
         $this->deleteDirStructure();
+
+        $this->app->bind(Configuration::class, ConfigurationFake::class);
     }
 
     protected function tearDown(): void

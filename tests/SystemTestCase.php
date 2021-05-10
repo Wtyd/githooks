@@ -3,11 +3,13 @@
 namespace Tests;
 
 use GitHooks\Commands\Console\RegisterBindings;
+use GitHooks\Configuration;
 use GitHooks\Exception\ExitException;
 use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Runner\Version as PhpunitVersion;
+use Tests\Utils\ConfigurationFake;
 use Tests\System\Utils\GitFilesFake;
 
 /**
@@ -16,9 +18,15 @@ use Tests\System\Utils\GitFilesFake;
 class SystemTestCase extends TestCase
 {
     use FileSystemTrait;
-    use MockConfigurationFileTrait;
+
+    public const TESTS_PATH = __DIR__ . '/../testsDir';
 
     protected static $assertMatchesRegularExpression;
+
+    /**
+     * @var Container
+     */
+    protected $container;
 
     /**
      * @param int|string $dataName
@@ -43,8 +51,9 @@ class SystemTestCase extends TestCase
 
         $this->createDirStructure();
 
-        $container =  Container::getInstance();
-        $container->bind(GitFilesInterface::class, GitFilesFake::class);
+        $this->container =  Container::getInstance();
+        $this->container->bind(GitFilesInterface::class, GitFilesFake::class);
+        $this->container->bind(Configuration::class, ConfigurationFake::class);
     }
 
     protected function tearDown(): void

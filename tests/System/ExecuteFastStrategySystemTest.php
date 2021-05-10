@@ -24,8 +24,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
+        // $this->container = Container::getInstance();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'fast']);

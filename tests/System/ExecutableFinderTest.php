@@ -4,7 +4,6 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use Illuminate\Container\Container;
 use Tests\System\Utils\{
     CheckSecurityFakeOk,
     ConfigurationFileBuilder,
@@ -28,9 +27,6 @@ class ExecutableFinderTest extends SystemTestCase
     {
         parent::setUp();
 
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
-
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'full']);
     }
@@ -48,6 +44,7 @@ class ExecutableFinderTest extends SystemTestCase
 
         $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
         $githooks = $this->container->makeWith(GitHooks::class);
+
 
         $githooks();
 

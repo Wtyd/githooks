@@ -10,7 +10,7 @@ trait FileSystemTrait
     /**
      * @var string Path to directory for tests that require filesystem
      */
-    protected $path = __DIR__ . '/../testsDir';
+    protected $path = SystemTestCase::TESTS_PATH;
 
     public function getPath(): string
     {
