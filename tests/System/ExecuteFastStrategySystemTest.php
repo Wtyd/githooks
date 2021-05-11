@@ -4,15 +4,14 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use Illuminate\Container\Container;
 use Tests\System\Utils\{
     CheckSecurityFakeKo,
     CheckSecurityFakeOk,
     ConfigurationFileBuilder,
-    GitFilesFake,
     PhpFileBuilder
 };
 use Tests\SystemTestCase;
+use Tests\Utils\GitFilesFake;
 
 /**
  * The tests plan is explained in Tests Plain.md file
@@ -24,7 +23,6 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // $this->container = Container::getInstance();
 
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'fast']);

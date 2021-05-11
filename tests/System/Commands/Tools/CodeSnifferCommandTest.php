@@ -2,15 +2,10 @@
 
 namespace Tests\System\Commands\Tools;
 
-use GitHooks\Commands\Tools\ToolCommandExecutor;
-use GitHooks\LoadTools\FastStrategy;
-use GitHooks\Utils\GitFiles;
 use GitHooks\Utils\GitFilesInterface;
-use Illuminate\Container\Container;
 use Mockery\MockInterface;
 use Tests\Artisan\ConsoleTestCase;
 use Tests\System\Utils\ConfigurationFileBuilder;
-use Tests\System\Utils\GitFilesFake;
 use Tests\System\Utils\PhpFileBuilder;
 
 class CodeSnifferCommandTest extends ConsoleTestCase

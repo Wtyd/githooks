@@ -9,9 +9,9 @@ use Tests\System\Utils\{
     CheckSecurityFakeKo,
     CheckSecurityFakeOk,
     ConfigurationFileBuilder,
-    GitFilesFake,
     PhpFileBuilder
 };
+use Tests\Utils\GitFilesFake;
 use Tests\SystemTestCase;
 
 /*

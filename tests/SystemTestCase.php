@@ -10,7 +10,7 @@ use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Runner\Version as PhpunitVersion;
 use Tests\Utils\ConfigurationFake;
-use Tests\System\Utils\GitFilesFake;
+use Tests\Utils\GitFilesFake;
 
 /**
  * Al llamar a setOutputCallback escondemos cualquier output por la consola que no venga de phpunit
