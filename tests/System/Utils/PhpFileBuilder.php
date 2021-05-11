@@ -77,7 +77,7 @@ class PhpFileBuilder
     {
         return '<?php
 
-namespace Tests\System\tmp\src;
+namespace TestsDir\Src;
 
 class ' . $this->name . "
 {\n";

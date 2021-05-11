@@ -15,11 +15,6 @@ class GitFilesTest extends SystemTestCase
 {
     protected static $gitFilesPathTest = __DIR__ . '/../../testsDir/gitTests';
 
-    // public static function setUpBeforeClass()
-    // {
-    //     mkdir(self::$gitFilesPathTest);
-    // }
-
     protected function setUp(): void
     {
         $this->deleteDirStructure();
