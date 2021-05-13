@@ -35,7 +35,7 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Install Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
+      run: composer global require php-parallel-lint/php-parallel-lint johnkary/phpunit-speedtrap
 
     - name: Testing the Executable Finder
       run: vendor/bin/phpunit tests/System/ExecutableFinderTest.php
@@ -117,7 +117,7 @@ jobs:
         composer dumpautoload
 
     - name: Install Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
+      run: composer global require php-parallel-lint/php-parallel-lint johnkary/phpunit-speedtrap
 
     - name: Testing the Executable Finder
       run: phpunit tests/System/ExecutableFinderTest.php
