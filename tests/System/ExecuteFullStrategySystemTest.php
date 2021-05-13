@@ -4,12 +4,10 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use Tests\System\Utils\{
-    ConfigurationFileBuilder,
-    PhpFileBuilder
-};
+use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\SystemTestCase;
 use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\PhpFileBuilder;
 
 /**
  * No se tiene encuenta check-security ya que depende de la configuración de composer.json y de que no se hayan encontrado

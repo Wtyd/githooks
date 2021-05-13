@@ -4,13 +4,11 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use Tests\System\Utils\{
-    ConfigurationFileBuilder,
-    PhpFileBuilder
-};
+use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\SystemTestCase;
 use Tests\Utils\GitFilesFake;
 use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\PhpFileBuilder;
 
 /**
  * The tests plan is explained in Tests Plain.md file

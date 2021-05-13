@@ -4,7 +4,7 @@ namespace Tests\Integration;
 
 use GitHooks\Utils\GitFiles;
 use Illuminate\Container\Container;
-use Tests\System\Utils\PhpFileBuilder;
+use Tests\Utils\PhpFileBuilder;
 use Tests\SystemTestCase;
 
 /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System\Utils;
+namespace Tests\Utils;
 
 class PhpFileBuilder
 {
