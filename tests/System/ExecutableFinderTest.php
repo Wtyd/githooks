@@ -5,11 +5,11 @@ namespace Tests\System;
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
 use Tests\System\Utils\{
-    CheckSecurityFakeOk,
     ConfigurationFileBuilder,
     PhpFileBuilder
 };
 use Tests\SystemTestCase;
+use Tests\Utils\CheckSecurityFake;
 
 /**
  * This test is exluded from automated test suite. Only must by runned on pipeline and on isolation. It run all tools and test where is the executable.
@@ -42,15 +42,14 @@ class ExecutableFinderTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setOKExit();
+        });
+
         $githooks = $this->container->makeWith(GitHooks::class);
 
-        try {
-            $githooks();
-        } catch (\Throwable $th) {
-            //throw $th;
-        }
-
+        $githooks();
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPMD);

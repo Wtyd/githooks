@@ -4,14 +4,12 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use Illuminate\Container\Container;
 use Tests\System\Utils\{
-    CheckSecurityFakeKo,
-    CheckSecurityFakeOk,
     ConfigurationFileBuilder,
     PhpFileBuilder
 };
 use Tests\Utils\GitFilesFake;
+use Tests\Utils\CheckSecurityFake;
 use Tests\SystemTestCase;
 
 /*
@@ -55,8 +53,6 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
     {
         parent::setUp();
 
-        // $this->container = Container::getInstance();
-
         $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
         $this->configurationFile->setOptions(['execution' => 'smart']);
     }
@@ -70,7 +66,10 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setOKExit();
+        });
 
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
@@ -101,7 +100,10 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
 
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setOKExit();
+        });
 
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
@@ -134,7 +136,10 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setOKExit();
+        });
 
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([]);
@@ -168,7 +173,10 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setOKExit();
+        });
 
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
@@ -204,7 +212,10 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpcpd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setOKExit();
+        });
 
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
@@ -239,7 +250,10 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpmd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setKOExit();
+        });
 
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
@@ -275,7 +289,10 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
+        $this->container->extend(CheckSecurity::class, function () {
+            $checkSecurity = new CheckSecurityFake();
+            return $checkSecurity->setKOExit();
+        });
 
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
