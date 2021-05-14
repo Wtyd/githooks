@@ -4,12 +4,10 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use Tests\System\Utils\{
-    ConfigurationFileBuilder,
-    PhpFileBuilder
-};
+use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\SystemTestCase;
 use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\PhpFileBuilder;
 
 /**
  * No se tiene encuenta check-security ya que depende de la configuración de composer.json y de que no se hayan encontrado
@@ -35,8 +33,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
@@ -67,8 +64,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
             PhpFileBuilder::PHPMD, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPSTAN, PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPCPD
         ]));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
@@ -100,8 +96,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
             PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPMD, PhpFileBuilder::PHPSTAN,
         ]));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -134,8 +129,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
             PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCPD
         ]));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 

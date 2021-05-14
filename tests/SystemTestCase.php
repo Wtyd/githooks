@@ -5,10 +5,12 @@ namespace Tests;
 use GitHooks\Commands\Console\RegisterBindings;
 use GitHooks\Configuration;
 use GitHooks\Exception\ExitException;
+use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Runner\Version as PhpunitVersion;
+use Tests\Utils\CheckSecurityFake;
 use Tests\Utils\ConfigurationFake;
 use Tests\Utils\GitFilesFake;
 
@@ -54,6 +56,7 @@ class SystemTestCase extends TestCase
         $this->container =  Container::getInstance();
         $this->container->bind(GitFilesInterface::class, GitFilesFake::class);
         $this->container->bind(Configuration::class, ConfigurationFake::class);
+        $this->container->bind(CheckSecurity::class, CheckSecurityFake::class);
     }
 
     protected function tearDown(): void

@@ -46,9 +46,9 @@ The result for this combination are 768 test cases. Applying the [pairwise algor
 ## Annexed
 Actually GitHooks uses th Laravel's Dependency Injection Container. For a deep understanding, I recommend to read this [article](https://gist.github.com/davejamesmiller/bd857d9b0ac895df7604dd2e63b23afe). As a summary, I will explain how a few methods work:
 
-* **make**: instead of usen **new MyClass**. By *autowiring* it creates automatically all dependencies.
+* **make**: instead of usen **new MyClass()**. By *reflection* and *autowiring* it creates automatically all dependencies.
 * **bind**: bind interfaces to implementations.
 * **resolving**: instead of overriding the binding completely, you can use *resolving()* to register a callback that's called after the binding is revolved.
 * **singleton**: return a new instance the first time. After, return always the same instance.
 * **instance**:  if you already have an instance that you want to reuse, use the *instance()* method instead of *singleton()*.
-
+* **extend**: alternatively you can also use `extend()` to wrap a class and return a different object. Very useful for *faker* classes.

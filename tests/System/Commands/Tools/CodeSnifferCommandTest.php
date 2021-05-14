@@ -6,7 +6,7 @@ use GitHooks\Utils\GitFilesInterface;
 use Mockery\MockInterface;
 use Tests\Artisan\ConsoleTestCase;
 use Tests\System\Utils\ConfigurationFileBuilder;
-use Tests\System\Utils\PhpFileBuilder;
+use Tests\Utils\PhpFileBuilder;
 
 class CodeSnifferCommandTest extends ConsoleTestCase
 {

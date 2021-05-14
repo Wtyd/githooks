@@ -4,13 +4,11 @@ namespace Tests\System;
 
 use GitHooks\GitHooks;
 use GitHooks\Tools\CheckSecurity;
-use Tests\System\Utils\{
-    ConfigurationFileBuilder,
-    PhpFileBuilder
-};
+use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\SystemTestCase;
 use Tests\Utils\GitFilesFake;
 use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\PhpFileBuilder;
 
 /**
  * The tests plan is explained in Tests Plain.md file
@@ -36,8 +34,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -78,8 +75,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -125,8 +121,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -169,8 +164,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -208,8 +202,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -260,8 +253,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/app/FileForMessDetector.php', $fileBuilderForApp->build());
 
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -301,8 +293,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -344,8 +335,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpstan']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -383,8 +373,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -427,8 +416,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -478,8 +466,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('AppFile');
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -524,8 +511,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpstan']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -560,8 +546,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -601,8 +586,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -642,8 +626,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -678,8 +661,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -728,8 +710,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setKOExit();
         });
 
@@ -781,8 +762,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('AppFile');
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -826,8 +806,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -868,8 +847,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -902,8 +880,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
@@ -938,8 +915,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs', 'phpmd', 'phpstan']));
 
-        $this->container->extend(CheckSecurity::class, function () {
-            $checkSecurity = new CheckSecurityFake();
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
             return $checkSecurity->setOKExit();
         });
 
