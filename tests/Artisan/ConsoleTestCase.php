@@ -49,7 +49,7 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
     protected function tearDown(): void
     {
         $this->deleteDirStructure();
-        parent::setUp();
+        parent::tearDown();
     }
 
     protected static function setAssertFileDoesNotExistForm()
