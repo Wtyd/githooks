@@ -3,8 +3,6 @@
 namespace Tests\System;
 
 use GitHooks\GitHooks;
-use GitHooks\Tools\CheckSecurity;
-use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\SystemTestCase;
 use Tests\Utils\CheckSecurityFake;
 use Tests\Utils\PhpFileBuilder;
@@ -25,8 +23,7 @@ class ExecutableFinderTest extends SystemTestCase
     {
         parent::setUp();
 
-        $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-        $this->configurationFile->setOptions(['execution' => 'full']);
+        $this->configurationFileBuilder->setOptions(['execution' => 'full']);
     }
 
     /** @test */
@@ -34,9 +31,7 @@ class ExecutableFinderTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
@@ -47,7 +42,6 @@ class ExecutableFinderTest extends SystemTestCase
         $githooks = $this->container->makeWith(GitHooks::class);
 
         $githooks();
-
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPMD);

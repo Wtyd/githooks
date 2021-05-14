@@ -7,6 +7,7 @@ use Tests\Artisan\TestCase as IlluminateBaseTestCase;
 use Tests\FileSystemTrait;
 use PHPUnit\Runner\Version as PhpunitVersion;
 use Tests\Utils\ConfigurationFake;
+use Tests\Utils\ConfigurationFileBuilder;
 
 abstract class ConsoleTestCase extends IlluminateBaseTestCase
 {
@@ -14,6 +15,11 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
     use FileSystemTrait;
 
     protected static $assertFileDoesNotExist;
+
+    /**
+     * @var ConfigurationFileBuilder
+     */
+    protected $configurationFileBuilder;
 
     /**
      * @param int|string $dataName
@@ -33,7 +39,11 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
 
         $this->deleteDirStructure();
 
+        $this->createDirStructure();
+
         $this->app->bind(Configuration::class, ConfigurationFake::class);
+
+        $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path);
     }
 
     protected function tearDown(): void

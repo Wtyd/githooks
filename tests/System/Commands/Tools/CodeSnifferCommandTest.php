@@ -5,22 +5,15 @@ namespace Tests\System\Commands\Tools;
 use GitHooks\Utils\GitFilesInterface;
 use Mockery\MockInterface;
 use Tests\Artisan\ConsoleTestCase;
-use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
 
 class CodeSnifferCommandTest extends ConsoleTestCase
 {
-    protected $configurationFile;
-
     protected $phpFileBuilder;
 
     protected function setUp(): void
     {
         parent::setUp();
-
-        $this->createDirStructure();
-
-        $this->configurationFile = new ConfigurationFileBuilder($this->path);
 
         $this->fileBuilder = new PhpFileBuilder('File');
     }
@@ -28,7 +21,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
     /** @test */
     function it_run_phpcs_command_without_errors()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
@@ -40,7 +33,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
     /** @test */
     function it_always_prints_by_console_the_command_that_it_executes_under_the_hood()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
@@ -60,7 +53,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
     /** @test */
     function it_run_phpcs_command_with_fixable_errors()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors(['phpcs']));
 
@@ -73,7 +66,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
     /** @test */
     function it_can_be_override_execution_mode()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 

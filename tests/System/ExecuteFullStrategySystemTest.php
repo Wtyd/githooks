@@ -3,8 +3,6 @@
 namespace Tests\System;
 
 use GitHooks\GitHooks;
-use GitHooks\Tools\CheckSecurity;
-use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\SystemTestCase;
 use Tests\Utils\CheckSecurityFake;
 use Tests\Utils\PhpFileBuilder;
@@ -27,9 +25,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
@@ -55,10 +51,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
-
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors([
             PhpFileBuilder::PHPMD, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPSTAN, PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPCPD
@@ -87,10 +80,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
-
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors([
             PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPMD, PhpFileBuilder::PHPSTAN,
@@ -120,9 +110,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors([

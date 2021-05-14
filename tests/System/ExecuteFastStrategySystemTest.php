@@ -3,8 +3,6 @@
 namespace Tests\System;
 
 use GitHooks\GitHooks;
-use GitHooks\Tools\CheckSecurity;
-use Tests\System\Utils\ConfigurationFileBuilder;
 use Tests\SystemTestCase;
 use Tests\Utils\GitFilesFake;
 use Tests\Utils\CheckSecurityFake;
@@ -21,8 +19,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         parent::setUp();
 
-        $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-        $this->configurationFile->setOptions(['execution' => 'fast']);
+        $this->configurationFileBuilder->setOptions(['execution' => 'fast']);
     }
 
     /** @test */
@@ -30,7 +27,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
 
@@ -63,7 +60,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setCopyPasteDetectorConfiguration([
+        $this->configurationFileBuilder->setCopyPasteDetectorConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
@@ -71,7 +68,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('FileForCopyPasteDetector');
         file_put_contents($this->getPath() . '/app/FileForCopyPasteDetector.php', $fileBuilderForApp->build());
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
@@ -103,21 +100,21 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'ignore' => [$this->getPath() . '/src/File.php'],
         ]);
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
@@ -150,17 +147,17 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
@@ -193,12 +190,12 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'ignore' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
@@ -234,17 +231,17 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpStanConfiguration([
+        $this->configurationFileBuilder->setPhpStanConfiguration([
             'paths' => [$this->getPath() . '/other'],
         ]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/app'],
             'rules' => 'unusedcode',
             'exclude' => ['vendor']
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'parallel-lint']));
 
@@ -285,11 +282,11 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
@@ -322,16 +319,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpstan']));
 
@@ -364,12 +361,12 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
@@ -402,17 +399,17 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setPhpStanConfiguration([
+        $this->configurationFileBuilder->setPhpStanConfiguration([
             'paths' => [$this->getPath() . '/other'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd']));
 
@@ -449,16 +446,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/other'],
             'rules' => 'unusedcode',
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
@@ -498,16 +495,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/other'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpstan']));
 
@@ -540,9 +537,9 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs']));
 
@@ -575,14 +572,14 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
@@ -615,14 +612,14 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
@@ -655,9 +652,9 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
@@ -693,15 +690,15 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
@@ -745,16 +742,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/other']]);
+        $this->configurationFileBuilder->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/other']]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
@@ -794,15 +791,15 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
@@ -835,14 +832,14 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
@@ -876,7 +873,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs']));
 
@@ -909,9 +906,9 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs', 'phpmd', 'phpstan']));
 

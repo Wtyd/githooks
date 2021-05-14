@@ -7,7 +7,7 @@ use GitHooks\Exception\ToolsIsEmptyException;
 use GitHooks\Exception\ToolsNotFoundException;
 use Symfony\Component\Yaml\Yaml;
 use Tests\Mock;
-use Tests\System\Utils\ConfigurationFileBuilder;
+use Tests\Utils\ConfigurationFileBuilder;
 use Tests\VirtualFileSystemTrait;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use phpmock\MockBuilder;
@@ -89,7 +89,7 @@ class ConfigurationTest extends TestCase
 
         $this->createFileSystem($fileSystemStructure);
 
-        $this->assertEquals($this->configurationFileBuilder->build(), $this->configuration->readFile());
+        $this->assertEquals($this->configurationFileBuilder->buildArray(), $this->configuration->readFile());
 
         $mock->disable();
     }
@@ -107,10 +107,10 @@ class ConfigurationTest extends TestCase
         $mock->enable();
 
         $rootFileYalm = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
-        $rootFileArray = $this->configurationFileBuilder->build();
+        $rootFileArray = $this->configurationFileBuilder->buildArray();
 
         $qaFileYalm = $this->configurationFileBuilder->setTools(['parrallel-lint'])->buildYalm();
-        $qaFileArray = $this->configurationFileBuilder->build();
+        $qaFileArray = $this->configurationFileBuilder->buildArray();
 
         $fileSystemStructure = [
             'githooks.yml' => $rootFileYalm,

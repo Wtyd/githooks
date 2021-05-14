@@ -8,9 +8,6 @@ use Tests\Artisan\ConsoleTestCase;
 
 class CreateConfigurationFileCommandTest extends ConsoleTestCase
 {
-
-    protected $configurationFile;
-
     /**
      * @return PhpmockMock
      */

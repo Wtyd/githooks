@@ -12,6 +12,7 @@ use PHPUnit\Framework\TestCase;
 use PHPUnit\Runner\Version as PhpunitVersion;
 use Tests\Utils\CheckSecurityFake;
 use Tests\Utils\ConfigurationFake;
+use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\GitFilesFake;
 
 /**
@@ -29,6 +30,11 @@ class SystemTestCase extends TestCase
      * @var Container
      */
     protected $container;
+
+    /**
+     * @var ConfigurationFileBuilder
+     */
+    protected $configurationFileBuilder;
 
     /**
      * @param int|string $dataName
@@ -57,6 +63,8 @@ class SystemTestCase extends TestCase
         $this->container->bind(GitFilesInterface::class, GitFilesFake::class);
         $this->container->bind(Configuration::class, ConfigurationFake::class);
         $this->container->bind(CheckSecurity::class, CheckSecurityFake::class);
+
+        $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path);
     }
 
     protected function tearDown(): void
