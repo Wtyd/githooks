@@ -3,12 +3,11 @@
 namespace Tests\Artisan;
 
 use GitHooks\Commands\Console\Kernel as GitHooksKernel;
+use GitHooks\Commands\Console\RegisterBindings;
 use GitHooks\Commands\Console\RegisterCommands;
-use Illuminate\Container\Container;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Events\Dispatcher as EventsDispatcher;
-use Illuminate\Foundation\Application as FoundationApplication;
 use Illuminate\Foundation\Console\Kernel as ConcreteKernel;
 use Mockery;
 use Tests\Artisan\Application;
@@ -31,9 +30,8 @@ trait CreatesApplication
             $_ENV['APP_BASE_PATH'] ?? dirname(getcwd())
         );
 
-
-        $app->singleton(Container::class, Container::class);
-        Container::setInstance($app->make(Container::class));
+        $registerBindings = new RegisterBindings();
+        $registerBindings();
 
         $app->bind(PendingCommand::class, Tests\System\Utils\Console\PendingCommand::class);
 

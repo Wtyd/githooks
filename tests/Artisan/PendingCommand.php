@@ -248,6 +248,7 @@ class PendingCommand
 
         try {
             $this->OutputShouldBeShown();
+
             $exitCode = $this->app->make(Kernel::class)->call($this->command, $this->parameters, $mock);
         } catch (NoMatchingExpectationException $e) {
             if ($e->getMethodName() === 'askQuestion') {
@@ -309,13 +310,11 @@ class PendingCommand
         }
 
         if (count($this->test->expectedOutput)) {
-            // var_dump($this->test->expectedOutput);
             $this->test->assertEquals(
                 $this->test->expectedOutput[0],
                 $this->test->getActualOutput(),
                 'Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.'
             );
-            // $this->test->fail('Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.');
         }
 
 

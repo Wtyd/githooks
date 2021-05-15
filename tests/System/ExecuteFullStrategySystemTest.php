@@ -2,17 +2,10 @@
 
 namespace Tests\System;
 
-use GitHooks\Exception\ExitException;
 use GitHooks\GitHooks;
-use GitHooks\Tools\CheckSecurity;
-use Illuminate\Container\Container;
-use Tests\System\Utils\{
-    CheckSecurityFakeKo,
-    CheckSecurityFakeOk,
-    ConfigurationFileBuilder,
-    PhpFileBuilder
-};
 use Tests\SystemTestCase;
+use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\PhpFileBuilder;
 
 /**
  * No se tiene encuenta check-security ya que depende de la configuración de composer.json y de que no se hayan encontrado
@@ -27,37 +20,19 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     // KO               KO              OK          KO              OK              KO      --> it_execute_all_tools_codesniffer_and_copypastedetector_ok
     // KO               OK              KO          OK              KO              OK      --> it_execute_all_tools_codesniffer_and_copypastedetector_ko
 
-    protected function setUp(): void
-    {
-        $this->deleteDirStructure();
-
-        $this->createDirStructure();
-
-        $this->hiddenConsoleOutput();
-
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
-    }
-
     /** @test */
     function it_execute_all_tools_and_pass_all_checks()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         $githooks();
 
@@ -66,8 +41,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPCPD);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPSTAN);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PARALLEL_LINT);
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
@@ -76,18 +50,16 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
-
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors([
             PhpFileBuilder::PHPMD, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPSTAN, PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPCPD
         ]));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -107,18 +79,17 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
-
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors([
             PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPMD, PhpFileBuilder::PHPSTAN,
         ]));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();
@@ -138,18 +109,18 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors([
             PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCPD
         ]));
 
-        $container = Container::getInstance();
-        $container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $githooks = $container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
+        $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
         try {
             $githooks();

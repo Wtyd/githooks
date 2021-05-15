@@ -5,7 +5,6 @@ namespace Tests\Artisan;
 use Illuminate\Container\Container;
 use Illuminate\Events\EventServiceProvider;
 use Illuminate\Foundation\Application as FoundationApplication;
-use Illuminate\Contracts\Console\Kernel;
 
 class Application extends FoundationApplication
 {
@@ -23,14 +22,12 @@ class Application extends FoundationApplication
      */
     protected function registerBaseBindings()
     {
-        // static::setInstance($this);
-        static::setInstance(Container::getInstance());
+        static::setInstance($this);
 
-        // $this->instance('app', $this);
-        $this->instance('app', Container::getInstance());
+        $this->instance('app', $this);
 
-        // $this->instance(Container::class, $this);
-        $this->singleton(Mix::class);
+        $this->instance(Container::class, $this);
+        // $this->singleton(Mix::class);
 
         //No quiero instanciar el Filesystem, de momento
         // $this->instance(PackageManifest::class, new PackageManifest(
@@ -46,8 +43,6 @@ class Application extends FoundationApplication
     protected function registerBaseServiceProviders()
     {
         $this->register(new EventServiceProvider($this));
-        // $this->register(new LogServiceProvider($this));
-        // $this->register(new RoutingServiceProvider($this));
     }
 
     /**
@@ -57,45 +52,11 @@ class Application extends FoundationApplication
      */
     public function registerCoreContainerAliases()
     {
-        foreach (
-            [
-                'app'                  => [\Illuminate\Foundation\Application::class, \Illuminate\Contracts\Container\Container::class, \Illuminate\Contracts\Foundation\Application::class,  \Psr\Container\ContainerInterface::class],
-            // 'auth'                 => [\Illuminate\Auth\AuthManager::class, \Illuminate\Contracts\Auth\Factory::class],
-            // 'auth.driver'          => [\Illuminate\Contracts\Auth\Guard::class],
-            // 'blade.compiler'       => [\Illuminate\View\Compilers\BladeCompiler::class],
-            // 'cache'                => [\Illuminate\Cache\CacheManager::class, \Illuminate\Contracts\Cache\Factory::class],
-            // 'cache.store'          => [\Illuminate\Cache\Repository::class, \Illuminate\Contracts\Cache\Repository::class],
-            // 'config'               => [\Illuminate\Config\Repository::class, \Illuminate\Contracts\Config\Repository::class],
-            // 'cookie'               => [\Illuminate\Cookie\CookieJar::class, \Illuminate\Contracts\Cookie\Factory::class, \Illuminate\Contracts\Cookie\QueueingFactory::class],
-            // 'encrypter'            => [\Illuminate\Encryption\Encrypter::class, \Illuminate\Contracts\Encryption\Encrypter::class],
-            // 'db'                   => [\Illuminate\Database\DatabaseManager::class],
-            // 'db.connection'        => [\Illuminate\Database\Connection::class, \Illuminate\Database\ConnectionInterface::class],
-                'events'               => [\Illuminate\Events\Dispatcher::class, \Illuminate\Contracts\Events\Dispatcher::class],
-            // 'files'                => [\Illuminate\Filesystem\Filesystem::class],
-            // 'filesystem'           => [\Illuminate\Filesystem\FilesystemManager::class, \Illuminate\Contracts\Filesystem\Factory::class],
-            // 'filesystem.disk'      => [\Illuminate\Contracts\Filesystem\Filesystem::class],
-            // 'filesystem.cloud'     => [\Illuminate\Contracts\Filesystem\Cloud::class],
-            // 'hash'                 => [\Illuminate\Hashing\HashManager::class],
-            // 'hash.driver'          => [\Illuminate\Contracts\Hashing\Hasher::class],
-            // 'translator'           => [\Illuminate\Translation\Translator::class, \Illuminate\Contracts\Translation\Translator::class],
-            // 'log'                  => [\Illuminate\Log\LogManager::class, \Psr\Log\LoggerInterface::class],
-            // 'mailer'               => [\Illuminate\Mail\Mailer::class, \Illuminate\Contracts\Mail\Mailer::class, \Illuminate\Contracts\Mail\MailQueue::class],
-            // 'auth.password'        => [\Illuminate\Auth\Passwords\PasswordBrokerManager::class, \Illuminate\Contracts\Auth\PasswordBrokerFactory::class],
-            // 'auth.password.broker' => [\Illuminate\Auth\Passwords\PasswordBroker::class, \Illuminate\Contracts\Auth\PasswordBroker::class],
-            // 'queue'                => [\Illuminate\Queue\QueueManager::class, \Illuminate\Contracts\Queue\Factory::class, \Illuminate\Contracts\Queue\Monitor::class],
-            // 'queue.connection'     => [\Illuminate\Contracts\Queue\Queue::class],
-            // 'queue.failer'         => [\Illuminate\Queue\Failed\FailedJobProviderInterface::class],
-            // 'redirect'             => [\Illuminate\Routing\Redirector::class],
-            // 'redis'                => [\Illuminate\Redis\RedisManager::class, \Illuminate\Contracts\Redis\Factory::class],
-            // 'request'              => [\Illuminate\Http\Request::class, \Symfony\Component\HttpFoundation\Request::class],
-            // 'router'               => [\Illuminate\Routing\Router::class, \Illuminate\Contracts\Routing\Registrar::class, \Illuminate\Contracts\Routing\BindingRegistrar::class],
-            // 'session'              => [\Illuminate\Session\SessionManager::class],
-            // 'session.store'        => [\Illuminate\Session\Store::class, \Illuminate\Contracts\Session\Session::class],
-            // 'url'                  => [\Illuminate\Routing\UrlGenerator::class, \Illuminate\Contracts\Routing\UrlGenerator::class],
-            // 'validator'            => [\Illuminate\Validation\Factory::class, \Illuminate\Contracts\Validation\Factory::class],
-            // 'view'                 => [\Illuminate\View\Factory::class, \Illuminate\Contracts\View\Factory::class],
-            ] as $key => $aliases
-        ) {
+        $aliases = [
+            'app'  => [\Illuminate\Foundation\Application::class, \Illuminate\Contracts\Container\Container::class, \Illuminate\Contracts\Foundation\Application::class,  \Psr\Container\ContainerInterface::class],
+            'events' => [\Illuminate\Events\Dispatcher::class, \Illuminate\Contracts\Events\Dispatcher::class],
+        ];
+        foreach ($aliases as $key => $aliases) {
             foreach ($aliases as $alias) {
                 $this->alias($key, $alias);
             }
@@ -121,5 +82,70 @@ class Application extends FoundationApplication
 
         $instance = parent::make($abstract, $parameters);
         return $instance;
+    }
+
+    /**
+     * Resolve the given type from the container.
+     *
+     * @param  string  $abstract
+     * @param  array  $parameters
+     * @param  bool  $raiseEvents
+     * @return mixed
+     */
+    protected function resolve($abstract, $parameters = [], $raiseEvents = true)
+    {
+        $this->loadDeferredProviderIfNeeded($abstract = $this->getAlias($abstract));
+
+        return parent::resolve($abstract, $parameters, $raiseEvents);
+    }
+
+    /**
+     * Get the application namespace.
+     *
+     * @return string
+     *
+     * @throws \RuntimeException
+     */
+    public function getNamespace()
+    {
+        if (!is_null($this->namespace)) {
+            return $this->namespace;
+        }
+
+        $composer = json_decode(file_get_contents($this->basePath('composer.json')), true);
+
+        foreach ((array) data_get($composer, 'autoload.psr-4') as $namespace => $path) {
+            foreach ((array) $path as $pathChoice) {
+                if (realpath($this->path()) === realpath($this->basePath($pathChoice))) {
+                    return $this->namespace = $namespace;
+                }
+            }
+        }
+
+        throw new RuntimeException('Unable to detect application namespace.');
+    }
+
+    /**
+     * Load the deferred provider if the given type is a deferred service and the instance has not been loaded.
+     *
+     * @param  string  $abstract
+     * @return void
+     */
+    protected function loadDeferredProviderIfNeeded($abstract)
+    {
+        if ($this->isDeferredService($abstract) && !isset($this->instances[$abstract])) {
+            $this->loadDeferredProvider($abstract);
+        }
+    }
+
+    /**
+     * Determine if the given service is a deferred service.
+     *
+     * @param  string  $service
+     * @return bool
+     */
+    public function isDeferredService($service)
+    {
+        return isset($this->deferredServices[$service]);
     }
 }

@@ -7,7 +7,10 @@ use RecursiveIteratorIterator;
 
 trait FileSystemTrait
 {
-    protected $path = __DIR__ . '/System/tmp';
+    /**
+     * @var string Path to directory for tests that require filesystem
+     */
+    protected $path = SystemTestCase::TESTS_PATH;
 
     public function getPath(): string
     {
@@ -22,7 +25,6 @@ trait FileSystemTrait
      */
     public function createDirStructure(): void
     {
-        mkdir($this->path);
         mkdir($this->path . '/src');
         mkdir($this->path . '/vendor');
     }
@@ -39,6 +41,11 @@ trait FileSystemTrait
         }
     }
 
+    /**
+     * Delete all content from diretory for testing
+     *
+     * @return void
+     */
     protected function deleteDir(): void
     {
         $dir = $this->path;
@@ -47,13 +54,13 @@ trait FileSystemTrait
             $it,
             RecursiveIteratorIterator::CHILD_FIRST
         );
+
         foreach ($files as $file) {
             if ($file->isDir()) {
                 rmdir($file->getRealPath());
-            } else {
+            } elseif ('.gitkeep' !== $file->getFileName()) {
                 unlink($file->getRealPath());
             }
         }
-        rmdir($dir);
     }
 }

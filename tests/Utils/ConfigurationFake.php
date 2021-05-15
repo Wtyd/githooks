@@ -1,9 +1,10 @@
 <?php
 
-namespace Tests\System\Utils;
+namespace Tests\Utils;
 
 use GitHooks\Configuration;
 use GitHooks\Exception\ConfigurationFileNotFoundException;
+use Tests\SystemTestCase;
 
 class ConfigurationFake extends Configuration
 {
@@ -14,11 +15,10 @@ class ConfigurationFake extends Configuration
      */
     protected function findConfigurationFile(): string
     {
-        $root = getcwd();
-        $path = 'tests/System/tmp/githooks.yml';
+        $configFile = SystemTestCase::TESTS_PATH . '/githooks.yml';
 
-        if (file_exists("$root/$path")) {
-            $configFile = "$root/$path";
+        if (file_exists($configFile)) {
+            return $configFile;
         } else {
             throw new ConfigurationFileNotFoundException();
         }

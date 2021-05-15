@@ -2,10 +2,17 @@
 
 namespace Tests;
 
+use GitHooks\Commands\Console\RegisterBindings;
+use GitHooks\Configuration;
 use GitHooks\Exception\ExitException;
+use GitHooks\Tools\CheckSecurity;
+use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Runner\Version as PhpunitVersion;
+use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\ConfigurationFake;
+use Tests\Utils\ConfigurationFileBuilder;
+use Tests\Utils\GitFilesFake;
 
 /**
  * Al llamar a setOutputCallback escondemos cualquier output por la consola que no venga de phpunit
@@ -13,32 +20,52 @@ use PHPUnit\Runner\Version as PhpunitVersion;
 class SystemTestCase extends TestCase
 {
     use FileSystemTrait;
-    use MockConfigurationFileTrait;
+    use RetroCompatibilityAssertsTrait;
 
-    protected $path = __DIR__ . '/System/tmp';
-
-    protected $assertMatchesRegularExpression;
-
-    public function __construct()
-    {
-        parent::__construct();
-
-        $this->assertMatchesRegularExpression = $this->setassertMatchesRegularExpressionpForm();
-    }
+    public const TESTS_PATH = __DIR__ . '/../testsDir';
 
     /**
-     * The assertMatchesRegularExpressionp method is deprecated as of phpunit version 9. Replaced by the assertMatchesRegularExpression method.
-     * This method checks the phpunit version and returns the name of the correct method.
-     *
-     * @return string
+     * @var Container
      */
-    protected function setassertMatchesRegularExpressionpForm(): string
+    protected $container;
+
+    /**
+     * @var ConfigurationFileBuilder
+     */
+    protected $configurationFileBuilder;
+
+    /**
+     * @param int|string $dataName
+     *
+     * @internal This method is not covered by the backward compatibility promise for PHPUnit
+     */
+    public function __construct(?string $name = null, array $data = [], $dataName = '')
     {
-        if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
-            return 'assertRegExp';
-        } else {
-            return 'assertMatchesRegularExpression';
-        }
+        parent::__construct($name, $data, $dataName);
+
+        $registerBindings = new RegisterBindings();
+        $registerBindings();
+    }
+
+    protected function setUp(): void
+    {
+        $this->deleteDirStructure();
+
+        $this->hiddenConsoleOutput();
+
+        $this->createDirStructure();
+
+        $this->container =  Container::getInstance();
+        $this->container->bind(GitFilesInterface::class, GitFilesFake::class);
+        $this->container->bind(Configuration::class, ConfigurationFake::class);
+        $this->container->bind(CheckSecurity::class, CheckSecurityFake::class);
+
+        $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path);
+    }
+
+    protected function tearDown(): void
+    {
+        $this->deleteDirStructure();
     }
 
     protected function hiddenConsoleOutput(): void
@@ -48,20 +75,23 @@ class SystemTestCase extends TestCase
     }
 
 
-    //assertMatchesRegularExpression
-    //assertMatchesRegularExpressionp
+    /**
+     * Checks if the $tool has been executed Successfully by regular expression assert. This assert was renamed and is deprecated
+     * sinse phpunit 9.
+     *
+     * @param string $tool
+     * @return void
+     */
     protected function assertToolHasBeenExecutedSuccessfully(string $tool): void
     {
         //phpcbf[.phar] - OK. Time: 0.18
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput(), "The tool $tool has not been executed successfully");
+        $this->assertMatchesRegularExpression("%$tool(\.phar)? - OK\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
     }
 
     protected function assertToolHasFailed(string $tool): void
     {
         //phpcbf[.phar] - KO. Time: 0.18
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput(), "The tool $tool has not failed");
+        $this->assertMatchesRegularExpression("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
     }
 
     protected function assertToolDidNotRun(string $tool): void
@@ -82,8 +112,7 @@ class SystemTestCase extends TestCase
     protected function assertSomeToolHasFailed(\Throwable $exception, string $failMessage): void
     {
         $this->assertInstanceOf(ExitException::class, $exception);
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString($failMessage, $this->getActualOutput());
     }
 }

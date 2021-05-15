@@ -6,10 +6,12 @@ use GitHooks\LoadTools\FastStrategy;
 use GitHooks\LoadTools\FullStrategy;
 use GitHooks\LoadTools\SmartStrategy;
 use GitHooks\LoadTools\StrategyInterface;
+use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 
 class ChooseStrategy
 {
+
     /**
      * Crea y devuelve la estrategia configurada en el fichero de configuración.
      * Por defecto, exista o no la que EXECUTION, se ejecuta la FullStrategy.
@@ -21,9 +23,9 @@ class ChooseStrategy
      */
     public function __invoke(array $file): StrategyInterface
     {
-        $container = Container::getInstance();
-
-        if (! empty($file[Constants::OPTIONS][Constants::EXECUTION])) {
+        $container =  Container::getInstance();
+        // dd($container->getBindings());
+        if (!empty($file[Constants::OPTIONS][Constants::EXECUTION])) {
             switch ($file[Constants::OPTIONS][Constants::EXECUTION]) {
                 case Constants::SMART_EXECUTION:
                     $strategy = $container->makeWith(SmartStrategy::class, ['configurationFile' => $file]);

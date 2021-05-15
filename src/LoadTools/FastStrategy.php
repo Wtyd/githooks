@@ -4,7 +4,7 @@ namespace GitHooks\LoadTools;
 
 use GitHooks\Constants;
 use GitHooks\Tools\ToolsFactoy;
-use GitHooks\Utils\GitFiles;
+use GitHooks\Utils\GitFilesInterface;
 
 /**
  * This strategy runs the tools only against files modified by commit.
@@ -37,7 +37,7 @@ class FastStrategy implements StrategyInterface
     protected $configurationFile;
 
     /**
-     * @var GitFiles
+     * @var GitFilesInterface
      */
     protected $gitFiles;
 
@@ -46,7 +46,7 @@ class FastStrategy implements StrategyInterface
      */
     protected $toolsFactory;
 
-    public function __construct(array $configurationFile, GitFiles $gitFiles, ToolsFactoy $toolsFactory)
+    public function __construct(array $configurationFile, GitFilesInterface $gitFiles, ToolsFactoy $toolsFactory)
     {
         $this->configurationFile = $configurationFile;
         $this->gitFiles = $gitFiles;

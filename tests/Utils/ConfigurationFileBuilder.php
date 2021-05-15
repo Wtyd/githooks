@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System\Utils;
+namespace Tests\Utils;
 
 use GitHooks\Constants;
 use GitHooks\Tools\{
@@ -74,7 +74,12 @@ class ConfigurationFileBuilder
         ];
     }
 
-    public function build()
+    /**
+     * Builds the configuration file like an array
+     *
+     * @return array
+     */
+    public function buildArray(): array
     {
         $file = [
             Constants::OPTIONS => $this->options,
@@ -88,9 +93,14 @@ class ConfigurationFileBuilder
         return $file;
     }
 
-    public function buildYalm()
+    /**
+     * Builds the configuration file like string with yalm format
+     *
+     * @return string
+     */
+    public function buildYalm(): string
     {
-        return Yaml::dump($this->build());
+        return Yaml::dump($this->buildArray());
     }
 
     /**

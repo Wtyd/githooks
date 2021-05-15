@@ -3,14 +3,9 @@
 namespace Tests\System;
 
 use GitHooks\GitHooks;
-use GitHooks\Tools\CheckSecurity;
-use Illuminate\Container\Container;
-use Tests\System\Utils\{
-    CheckSecurityFakeOk,
-    ConfigurationFileBuilder,
-    PhpFileBuilder
-};
 use Tests\SystemTestCase;
+use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\PhpFileBuilder;
 
 /**
  * This test is exluded from automated test suite. Only must by runned on pipeline and on isolation. It run all tools and test where is the executable.
@@ -26,22 +21,9 @@ class ExecutableFinderTest extends SystemTestCase
 
     protected function setUp(): void
     {
-        $this->deleteDirStructure();
+        parent::setUp();
 
-        $this->hiddenConsoleOutput();
-
-        $this->createDirStructure();
-
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
-
-        $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-        $this->configurationFile->setOptions(['execution' => 'full']);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
+        $this->configurationFileBuilder->setOptions(['execution' => 'full']);
     }
 
     /** @test */
@@ -49,13 +31,14 @@ class ExecutableFinderTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $configurationFileBuilder = new ConfigurationFileBuilder($this->getPath());
-
-        file_put_contents($this->getPath() . '/githooks.yml', $configurationFileBuilder->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $githooks = $this->container->makeWith(GitHooks::class);
 
         $githooks();
@@ -65,8 +48,7 @@ class ExecutableFinderTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPCPD);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPSTAN);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PARALLEL_LINT);
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 }

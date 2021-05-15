@@ -4,15 +4,19 @@ namespace GitHooks\Tools;
 
 class Errors
 {
+    /**
+     * @var array
+     */
     protected $errors = [];
-    public function setError(string $tool, string $error)
+
+    public function setError(string $tool, string $error): void
     {
-        if (!empty($tool) && !empty($error)) {
-            $this->errors[$tool] = $error;
+        if (!empty($tool)) {
+            $this->errors[$tool] = $error ?? 'register error in live output execution';
         }
     }
 
-    public function getErrors()
+    public function getErrors(): array
     {
         return $this->errors;
     }
@@ -24,6 +28,7 @@ class Errors
 
     public function __toString()
     {
+
         if (empty($this->errors)) {
             return 'There are no errors.';
         } else {

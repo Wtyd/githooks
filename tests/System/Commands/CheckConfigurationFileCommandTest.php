@@ -3,33 +3,13 @@
 namespace Tests\System\Commands;
 
 use Tests\Artisan\ConsoleTestCase;
-use Tests\System\Utils\ConfigurationFileBuilder;
 
 class CheckConfigurationFileCommandTest extends ConsoleTestCase
 {
-    protected $configurationFile;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->deleteDirStructure();
-
-        $this->createDirStructure();
-
-        $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-
-        $this->mockConfigurationFileForCommandsTests();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
-    }
-
     /** @test */
     function it_pass_all_file_configuration_checks()
     {
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         $this->artisan('conf:check')
             ->containsStringInOutput("Checking the configuration file:\n")
@@ -39,9 +19,9 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     /** @test */
     function it_not_pass_file_configuration_checks()
     {
-        $this->configurationFile->setOptions(['execution' => 'invalid value']);
+        $this->configurationFileBuilder->setOptions(['execution' => 'invalid value']);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         $this->artisan('conf:check')
             ->containsStringInOutput("Checking the configuration file:\n")
@@ -53,10 +33,10 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     /** @test */
     function it_pass_all_checks_with_warnings()
     {
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'execution' => 'invalid value'
         ]);
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
 
         $this->artisan('conf:check')

@@ -3,17 +3,10 @@
 namespace Tests\System;
 
 use GitHooks\GitHooks;
-use GitHooks\Tools\CheckSecurity;
-use GitHooks\Utils\GitFiles;
-use Illuminate\Container\Container;
-use Tests\System\Utils\{
-    CheckSecurityFakeKo,
-    CheckSecurityFakeOk,
-    ConfigurationFileBuilder,
-    GitFilesFake,
-    PhpFileBuilder
-};
 use Tests\SystemTestCase;
+use Tests\Utils\GitFilesFake;
+use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\PhpFileBuilder;
 
 /**
  * The tests plan is explained in Tests Plain.md file
@@ -24,22 +17,9 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
     protected function setUp(): void
     {
-        $this->deleteDirStructure();
+        parent::setUp();
 
-        $this->hiddenConsoleOutput();
-
-        $this->createDirStructure();
-
-        $this->container = Container::getInstance();
-        $this->mockPathGitHooksConfigurationFile();
-
-        $this->configurationFile = new ConfigurationFileBuilder($this->getPath());
-        $this->configurationFile->setOptions(['execution' => 'fast']);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
+        $this->configurationFileBuilder->setOptions(['execution' => 'fast']);
     }
 
     /** @test */
@@ -47,15 +27,18 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
+
         $githooks = $this->container->makeWith(GitHooks::class);
 
         try {
@@ -77,7 +60,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setCopyPasteDetectorConfiguration([
+        $this->configurationFileBuilder->setCopyPasteDetectorConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
@@ -85,12 +68,14 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('FileForCopyPasteDetector');
         file_put_contents($this->getPath() . '/app/FileForCopyPasteDetector.php', $fileBuilderForApp->build());
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/app/File.php']);
         });
@@ -105,8 +90,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpstan');
         $this->assertToolDidNotRun('parallel-lint');
-        $assertMatchesRegularExpression = $this->assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
@@ -115,26 +99,28 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'ignore' => [$this->getPath() . '/src/File.php'],
         ]);
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -160,22 +146,24 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -201,17 +189,19 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'ignore' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
@@ -240,17 +230,17 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpStanConfiguration([
+        $this->configurationFileBuilder->setPhpStanConfiguration([
             'paths' => [$this->getPath() . '/other'],
         ]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/app'],
             'rules' => 'unusedcode',
             'exclude' => ['vendor']
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'parallel-lint']));
 
@@ -259,8 +249,10 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/app/FileForMessDetector.php', $fileBuilderForApp->build());
 
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -289,16 +281,18 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -324,21 +318,23 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpstan']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -364,17 +360,19 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -400,22 +398,24 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setPhpStanConfiguration([
+        $this->configurationFileBuilder->setPhpStanConfiguration([
             'paths' => [$this->getPath() . '/other'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -431,7 +431,8 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasFailed('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
+        //TODO phpmd no funciona correctamente. Esperando la respuesta del issue: https://github.com/phpmd/phpmd/issues/888
+        // $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolDidNotRun('phpstan');
     }
@@ -444,16 +445,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/other'],
             'rules' => 'unusedcode',
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/app'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
@@ -461,8 +462,10 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('AppFile');
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -491,21 +494,23 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/other'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpstan']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -531,14 +536,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -564,19 +571,21 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -602,19 +611,21 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration([
+        $this->configurationFileBuilder->setPhpCSConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpmd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -640,14 +651,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -676,15 +689,15 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
@@ -693,8 +706,10 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeKo::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setKOExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -726,16 +741,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/other']]);
+        $this->configurationFileBuilder->setMessDetectorConfiguration(['paths' => [$this->getPath() . '/other']]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
@@ -743,8 +758,10 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $fileBuilderForApp = new PhpFileBuilder('AppFile');
         file_put_contents($this->getPath() . '/app/AppFile.php', $fileBuilderForApp->buildWithErrors(['parallel-lint']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
@@ -773,20 +790,22 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setParallelLintConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setMessDetectorConfiguration([
+        $this->configurationFileBuilder->setMessDetectorConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'rules' => 'unusedcode',
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -812,20 +831,22 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpStanConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        $this->configurationFile->setParallelLintConfiguration([
+        $this->configurationFileBuilder->setParallelLintConfiguration([
             'paths' => [$this->getPath() . '/src'],
             'exclude' => [$this->getPath() . '/src/File.php'],
         ]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -851,12 +872,14 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
@@ -882,14 +905,16 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
     {
         $fileBuilder = new PhpFileBuilder('File');
 
-        $this->configurationFile->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
+        $this->configurationFileBuilder->setPhpCSConfiguration(['paths' => [$this->getPath() . '/app']]);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFile->buildYalm());
+        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd', 'phpcs', 'phpmd', 'phpstan']));
 
-        $this->container->bind(CheckSecurity::class, CheckSecurityFakeOk::class);
-        $this->container->bind(GitFiles::class, GitFilesFake::class);
+        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
+            return $checkSecurity->setOKExit();
+        });
+
         $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });

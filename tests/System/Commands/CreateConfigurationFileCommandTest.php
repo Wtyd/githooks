@@ -8,20 +8,6 @@ use Tests\Artisan\ConsoleTestCase;
 
 class CreateConfigurationFileCommandTest extends ConsoleTestCase
 {
-
-    protected $configurationFile;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->deleteDirStructure();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
-    }
-
     /**
      * @return PhpmockMock
      */
@@ -66,8 +52,7 @@ class CreateConfigurationFileCommandTest extends ConsoleTestCase
         $this->artisan('conf:init')
             ->containsStringInOutput('Failed to copy ' . $this->path . '/vendor/wtyd/githooks/qa/githooks.dist.yml' . ' to ' . $this->path . '/githooks.yml');
 
-        $assertFileDoesNotExist = $this->assertFileDoesNotExist;
-        $this->$assertFileDoesNotExist($this->path . '/githooks.yml');
+        $this->assertFileDoesNotExist($this->path . '/githooks.yml');
 
         $mock->disable();
     }

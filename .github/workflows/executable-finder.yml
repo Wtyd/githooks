@@ -45,7 +45,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest, macos-latest, windows-latest]
-        php-versions: ['8.0']
+        php-versions: ['7.4'] # Some troubles with php 8.0
     name: Executable Finder on Phar Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
     - name: Checkout
@@ -60,17 +60,14 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
+    # Dumpautoload is required for found Tests\System\TestCase
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-dev
+      run: |
+        composer install --prefer-dist --no-progress --no-dev
+        composer dumpautoload
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
-
-    - name: Install Mockery
-      run: composer global require mockery/mockery
-
-    - name: Composer dumpautoload
-      run: composer dumpautoload
 
     - name: Download tools as .Phars in Unix
       if: ${{ ('ubuntu-latest' == matrix.operating-system || 'macos-latest' == matrix.operating-system) }}
@@ -98,7 +95,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest, macos-latest, windows-latest]
-        php-versions: ['8.0']
+        php-versions: ['7.4'] # Some troubles with php 8.0
     name: Executable Finder on Global Test (${{ matrix.operating-system }}, PHP ${{ matrix.php-versions }})
     steps:
     - name: Checkout
@@ -113,17 +110,14 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: none
         
+    # Dumpautoload is required for found Tests\System\TestCase
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-dev
+      run: |
+        composer install --prefer-dist --no-progress --no-dev
+        composer dumpautoload
 
     - name: Install Parallel-Lint
       run: composer global require php-parallel-lint/php-parallel-lint
-
-    - name: Install Mockery
-      run: composer global require mockery/mockery
-
-    - name: Composer dumpautoload
-      run: composer dumpautoload
 
     - name: Testing the Executable Finder
       run: phpunit tests/System/ExecutableFinderTest.php

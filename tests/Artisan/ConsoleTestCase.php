@@ -2,52 +2,50 @@
 
 namespace Tests\Artisan;
 
+use GitHooks\Configuration;
 use Tests\Artisan\TestCase as IlluminateBaseTestCase;
 use Tests\FileSystemTrait;
-use Tests\MockConfigurationFileTrait;
-use PHPUnit\Runner\Version as PhpunitVersion;
+use Tests\RetroCompatibilityAssertsTrait;
+use Tests\Utils\ConfigurationFake;
+use Tests\Utils\ConfigurationFileBuilder;
 
 abstract class ConsoleTestCase extends IlluminateBaseTestCase
 {
     use CreatesApplication;
-    use MockConfigurationFileTrait;
     use FileSystemTrait;
+    use RetroCompatibilityAssertsTrait;
 
-    protected $assertFileDoesNotExist;
+    /**
+     * @var ConfigurationFileBuilder
+     */
+    protected $configurationFileBuilder;
 
-    public function __construct()
+    /**
+     * @param int|string $dataName
+     *
+     * @internal This method is not covered by the backward compatibility promise for PHPUnit
+     */
+    public function __construct(?string $name = null, array $data = [], $dataName = '')
     {
-        parent::__construct();
-
-        $this->assertFileDoesNotExist = $this->setAssertFileDoesNotExistForm();
+        parent::__construct($name, $data, $dataName);
     }
 
-    protected function setAssertFileDoesNotExistForm()
+    protected function setUp(): void
     {
-        if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
-            return 'assertFileNotExists';
-        } else {
-            return 'assertFileDoesNotExist';
-        }
+        parent::setUp();
+
+        $this->deleteDirStructure();
+
+        $this->createDirStructure();
+
+        $this->app->bind(Configuration::class, ConfigurationFake::class);
+
+        $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path);
     }
 
-    // /**
-    //  * Asserts that a file does not exist.
-    //  * Wrapper for phpunit's method. This allows to use the old way (assertFileNotExists) deprecated in phpunit 10.
-    //  *
-    //  * @throws ExpectationFailedException
-    //  * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
-    //  * @return void
-    //  */
-    // public static function assertFileDoesNotExist(string $filename, string $message = ''): void
-    // {
-    //     $assertFileDoesNotExist = '';
-    //     if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
-    //         $assertFileDoesNotExist = 'assertFileNotExists';
-    //     } else {
-    //         $assertFileDoesNotExist = 'assertFileDoesNotExist';
-    //     }
-    //     // $assertFileDoesNotExist = $this->assertFileDoesNotExist;
-    //     self::$assertFileDoesNotExist($filename, $message);
-    // }
+    protected function tearDown(): void
+    {
+        $this->deleteDirStructure();
+        parent::tearDown();
+    }
 }

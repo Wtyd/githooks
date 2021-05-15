@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System\Utils;
+namespace Tests\Utils;
 
 class PhpFileBuilder
 {
@@ -77,7 +77,7 @@ class PhpFileBuilder
     {
         return '<?php
 
-namespace Tests\System\tmp\src;
+namespace TestsDir\Src;
 
 class ' . $this->name . "
 {\n";
