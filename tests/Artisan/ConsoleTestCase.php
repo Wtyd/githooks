@@ -5,7 +5,7 @@ namespace Tests\Artisan;
 use GitHooks\Configuration;
 use Tests\Artisan\TestCase as IlluminateBaseTestCase;
 use Tests\FileSystemTrait;
-use PHPUnit\Runner\Version as PhpunitVersion;
+use Tests\AssertionCompatibilityTrait;
 use Tests\Utils\ConfigurationFake;
 use Tests\Utils\ConfigurationFileBuilder;
 
@@ -13,8 +13,7 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
 {
     use CreatesApplication;
     use FileSystemTrait;
-
-    protected static $assertFileDoesNotExist;
+    use AssertionCompatibilityTrait;
 
     /**
      * @var ConfigurationFileBuilder
@@ -30,7 +29,7 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
     {
         parent::__construct($name, $data, $dataName);
 
-        self::$assertFileDoesNotExist = self::setAssertFileDoesNotExistForm();
+        self::setDeprecatedAsserts();
     }
 
     protected function setUp(): void
@@ -50,14 +49,5 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
     {
         $this->deleteDirStructure();
         parent::tearDown();
-    }
-
-    protected static function setAssertFileDoesNotExistForm()
-    {
-        if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
-            return 'assertFileNotExists';
-        } else {
-            return 'assertFileDoesNotExist';
-        }
     }
 }

@@ -9,7 +9,6 @@ use GitHooks\Tools\CheckSecurity;
 use GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
-use PHPUnit\Runner\Version as PhpunitVersion;
 use Tests\Utils\CheckSecurityFake;
 use Tests\Utils\ConfigurationFake;
 use Tests\Utils\ConfigurationFileBuilder;
@@ -21,10 +20,9 @@ use Tests\Utils\GitFilesFake;
 class SystemTestCase extends TestCase
 {
     use FileSystemTrait;
+    use AssertionCompatibilityTrait;
 
     public const TESTS_PATH = __DIR__ . '/../testsDir';
-
-    protected static $assertMatchesRegularExpression;
 
     /**
      * @var Container
@@ -48,7 +46,7 @@ class SystemTestCase extends TestCase
         $registerBindings = new RegisterBindings();
         $registerBindings();
 
-        self::$assertMatchesRegularExpression = self::setassertMatchesRegularExpressionpForm();
+        self::setDeprecatedAsserts();
     }
 
     protected function setUp(): void
@@ -70,21 +68,6 @@ class SystemTestCase extends TestCase
     protected function tearDown(): void
     {
         $this->deleteDirStructure();
-    }
-
-    /**
-     * The assertRegExp method is deprecated as of phpunit version 9. Replaced by the assertMatchesRegularExpression method.
-     * This method checks the phpunit version and returns the name of the good method.
-     *
-     * @return string
-     */
-    protected static function setassertMatchesRegularExpressionpForm(): string
-    {
-        if (version_compare(PhpunitVersion::id(), '9.0.0', '<')) {
-            return 'assertRegExp';
-        } else {
-            return 'assertMatchesRegularExpression';
-        }
     }
 
     protected function hiddenConsoleOutput(): void
