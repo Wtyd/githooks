@@ -3,10 +3,10 @@
 namespace Tests\System;
 
 use GitHooks\GitHooks;
-use Tests\Utils\GitFilesFake;
-use Tests\Utils\CheckSecurityFake;
 use Tests\SystemTestCase;
 use Tests\Utils\PhpFileBuilder;
+use Tests\Utils\GitFilesFake;
+use Tests\Utils\CheckSecurityFake;
 
 /*
     En todos los casos consideramos que están configuradas TODAS las herramientas. Consideramos 3 escenarios para cada herramienta:
@@ -79,8 +79,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasBeenExecutedSuccessfully('check-security');
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 
@@ -115,8 +114,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('parallel-lint');
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have not been committed. Please fix the errors and try again.', $this->getActualOutput());
     }
 
@@ -151,8 +149,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpcpd');
         $this->assertToolDidNotRun('parallel-lint');
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 

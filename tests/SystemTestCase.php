@@ -20,7 +20,7 @@ use Tests\Utils\GitFilesFake;
 class SystemTestCase extends TestCase
 {
     use FileSystemTrait;
-    use AssertionCompatibilityTrait;
+    use RetroCompatibilityAssertsTrait;
 
     public const TESTS_PATH = __DIR__ . '/../testsDir';
 
@@ -45,8 +45,6 @@ class SystemTestCase extends TestCase
 
         $registerBindings = new RegisterBindings();
         $registerBindings();
-
-        self::setDeprecatedAsserts();
     }
 
     protected function setUp(): void
@@ -87,15 +85,13 @@ class SystemTestCase extends TestCase
     protected function assertToolHasBeenExecutedSuccessfully(string $tool): void
     {
         //phpcbf[.phar] - OK. Time: 0.18
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression("%$tool(\.phar)? - OK\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
+        $this->assertMatchesRegularExpression("%$tool(\.phar)? - OK\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
     }
 
     protected function assertToolHasFailed(string $tool): void
     {
         //phpcbf[.phar] - KO. Time: 0.18
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
+        $this->assertMatchesRegularExpression("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
     }
 
     protected function assertToolDidNotRun(string $tool): void
@@ -116,8 +112,7 @@ class SystemTestCase extends TestCase
     protected function assertSomeToolHasFailed(\Throwable $exception, string $failMessage): void
     {
         $this->assertInstanceOf(ExitException::class, $exception);
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString($failMessage, $this->getActualOutput());
     }
 }

@@ -177,8 +177,7 @@ class CreateHookCommandTest extends ConsoleTestCase
             ->containsStringInOutput("'$scriptFilePath' is not a valid git hook. Avaliable hooks are:")
             ->containsStringInOutput($supportedHooks2String);
 
-        $assertFileDoesNotExist = self::$assertFileDoesNotExist;
-        $this->$assertFileDoesNotExist($this->path . "/.git/hooks/pre-commit", $scriptFilePath);
+        $this->assertFileDoesNotExist($this->path . "/.git/hooks/pre-commit", $scriptFilePath);
     }
 
     /** @test */

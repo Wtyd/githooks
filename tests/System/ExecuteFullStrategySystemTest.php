@@ -41,8 +41,7 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPCPD);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PHPSTAN);
         $this->assertToolHasBeenExecutedSuccessfully(PhpFileBuilder::PARALLEL_LINT);
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 

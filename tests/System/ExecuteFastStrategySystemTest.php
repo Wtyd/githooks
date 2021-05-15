@@ -90,8 +90,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
         $this->assertToolDidNotRun('phpmd');
         $this->assertToolDidNotRun('phpstan');
         $this->assertToolDidNotRun('parallel-lint');
-        $assertMatchesRegularExpression = self::$assertMatchesRegularExpression;
-        $this->$assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
+        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
 

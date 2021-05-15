@@ -5,7 +5,7 @@ namespace Tests\Artisan;
 use GitHooks\Configuration;
 use Tests\Artisan\TestCase as IlluminateBaseTestCase;
 use Tests\FileSystemTrait;
-use Tests\AssertionCompatibilityTrait;
+use Tests\RetroCompatibilityAssertsTrait;
 use Tests\Utils\ConfigurationFake;
 use Tests\Utils\ConfigurationFileBuilder;
 
@@ -13,7 +13,7 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
 {
     use CreatesApplication;
     use FileSystemTrait;
-    use AssertionCompatibilityTrait;
+    use RetroCompatibilityAssertsTrait;
 
     /**
      * @var ConfigurationFileBuilder
@@ -28,8 +28,6 @@ abstract class ConsoleTestCase extends IlluminateBaseTestCase
     public function __construct(?string $name = null, array $data = [], $dataName = '')
     {
         parent::__construct($name, $data, $dataName);
-
-        self::setDeprecatedAsserts();
     }
 
     protected function setUp(): void
