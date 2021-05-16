@@ -52,7 +52,7 @@ jobs:
     - name: Install Phpcpd for php 8.0
       if: ${{ ('8.0' == matrix.php-versions) }}
       run:   wget -O phpcpd.phar https://phar.phpunit.de/phpcpd-6.0.3.phar
-
+ 
     - name: Testing the Aplication
       run: |
         echo -e "\e[42m\e[30m**** Main Test Suite ****\033[0m"
