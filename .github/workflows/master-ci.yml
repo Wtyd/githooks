@@ -2,9 +2,9 @@ name: Master
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master, 1.x ] 
+    branches: [ master, 1.x, ci-refactor ] 
   pull_request:
-    branches: [ master, 1.x ]
+    branches: [ master, 1.x, ci-refactor ]
 
 env:
   extensions: mbstring #intl, pcov

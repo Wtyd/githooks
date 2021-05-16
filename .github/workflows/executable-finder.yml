@@ -1,11 +1,11 @@
-name: Executable Finder
+name: Executable Finder Tests
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master, 1.x ]
+    branches-ignore: [ master, 1.x, ci-refactor ]
 
   pull_request:
-    branches-ignore: [ master, 1.x ]
+    branches-ignore: [ master, 1.x, ci-refactor ]
 
 env:
   extensions: mbstring #intl, pcov
@@ -34,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
-    - name: Install Parallel-Lint
+    - name: Install Parallel-Lint # Esta instalación creo que no hace falta
       run: composer global require php-parallel-lint/php-parallel-lint
 
     - name: Testing the Executable Finder

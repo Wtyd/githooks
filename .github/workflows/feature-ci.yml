@@ -1,11 +1,11 @@
-name: Feature CI
+name: Feature Tests
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master ]
+    branches-ignore: [ master, 1.x ]
 
   pull_request:
-    branches-ignore: [ master ]
+    branches-ignore: [ master, 1.x ]
 
 env:
   extensions: mbstring #intl, pcov
@@ -59,3 +59,5 @@ jobs:
         vendor/bin/phpunit --order-by random
         echo -e "\e[42m\e[30m**** GitfilesTest ****\033[0m"
         vendor/bin/phpunit tests/Integration/GitFilesTest.php
+        echo -e "\e[42m\e[30m**** ExecutableFinderTest ****\033[0m"
+        vendor/bin/phpunit tests/System/ExecutableFinderTest.php

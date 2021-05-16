@@ -2,9 +2,9 @@ name: Code Analysis
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master ]
+    branches-ignore: [ master, ci-refactor ]
   pull_request:
-    branches-ignore: [ master ]
+    branches-ignore: [ master, ci-refactor ]
 
 env:
   extensions: mbstring #intl, pcov
