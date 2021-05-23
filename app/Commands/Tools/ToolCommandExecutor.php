@@ -3,22 +3,13 @@
 namespace App\Commands\Tools;
 
 use Wtyd\GitHooks\ChooseStrategy;
-use Wtyd\GitHooks\Commands\Exception\InvalidArgumentValueException;
+use App\Commands\Exception\InvalidArgumentValueException;
 use Wtyd\GitHooks\Configuration;
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\ToolExecutor;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 
-/**
- * Pasos para crear un ToolCommand:
- * 1. Crear un command que extienda de Illuminate\Console\Command y tenga una propiedad ToolCommandExecutor.
- * 2. En el método handle() pasar por parámetro el nombre de la herramienta.
- * 3. Registrar el Command en el fichero bin/githooks.
- *
- * Todos los comandos leerán la configuración del fichero qa/githooks.yml
- *
- */
 class ToolCommandExecutor
 {
     /**

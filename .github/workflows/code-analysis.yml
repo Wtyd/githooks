@@ -36,7 +36,7 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Execute PhpStan
-      run: php bin/githooks tool:phpstan
+      run: php githooks tool:phpstan
 
   phpcs:    
     runs-on: ubuntu-latest
@@ -65,7 +65,7 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Execute Php Code Sniffer
-      run: php bin/githooks tool:phpcs
+      run: php githooks tool:phpcs
 
   phpmd:    
     runs-on: ubuntu-latest
@@ -94,4 +94,4 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Execute Php Mess Detector
-      run: php bin/githooks tool:phpmd
+      run: php githooks tool:phpmd
