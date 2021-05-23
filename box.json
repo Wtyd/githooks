@@ -4,6 +4,7 @@
         "app",
         "bootstrap",
         "config",
+        "src",
         "vendor"
     ],
     "files": [
