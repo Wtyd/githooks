@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\Tools\Exception;
+namespace Wtyd\GitHooks\Tools\Exception;
 
 class ExecutableNotFoundException extends \RuntimeException implements ToolsExceptionInterface
 {

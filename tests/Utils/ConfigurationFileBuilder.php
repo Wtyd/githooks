@@ -2,8 +2,8 @@
 
 namespace Tests\Utils;
 
-use GitHooks\Constants;
-use GitHooks\Tools\{
+use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\Tools\{
     CodeSniffer,
     CopyPasteDetector,
     MessDetector,

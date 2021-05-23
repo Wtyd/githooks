@@ -1,8 +1,8 @@
 <?php
 
-namespace GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools;
 
-use GitHooks\Tools\Exception\ExecutableNotFoundException;
+use Wtyd\GitHooks\Tools\Exception\ExecutableNotFoundException;
 
 abstract class ToolAbstract
 {

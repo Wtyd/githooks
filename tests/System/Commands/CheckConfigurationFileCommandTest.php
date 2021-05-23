@@ -2,7 +2,12 @@
 
 namespace Tests\System\Commands;
 
-use Tests\Artisan\ConsoleTestCase;
+use App\Commands\CheckConfigurationFileCommand;
+use Mockery\MockInterface;
+use Tests\ConsoleTestCase;
+use Tests\SystemTestCase;
+use Wtyd\GitHooks\Configuration;
+use Wtyd\GitHooks\Exception\ConfigurationFileNotFoundException;
 
 class CheckConfigurationFileCommandTest extends ConsoleTestCase
 {

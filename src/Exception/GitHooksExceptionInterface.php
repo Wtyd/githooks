@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\Exception;
+namespace Wtyd\GitHooks\Exception;
 
 interface GitHooksExceptionInterface
 {

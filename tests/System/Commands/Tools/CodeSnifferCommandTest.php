@@ -2,9 +2,9 @@
 
 namespace Tests\System\Commands\Tools;
 
-use GitHooks\Utils\GitFilesInterface;
+use Wtyd\GitHooks\Utils\GitFilesInterface;
 use Mockery\MockInterface;
-use Tests\Artisan\ConsoleTestCase;
+use Tests\ConsoleTestCase;
 use Tests\Utils\PhpFileBuilder;
 
 class CodeSnifferCommandTest extends ConsoleTestCase

@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks;
+namespace Wtyd\GitHooks;
 
 /**
  * DTO for storage errors and warnings founds with to the configuration file validation.

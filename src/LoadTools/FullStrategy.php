@@ -1,9 +1,9 @@
 <?php
 
-namespace GitHooks\LoadTools;
+namespace Wtyd\GitHooks\LoadTools;
 
-use GitHooks\Constants;
-use GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\Tools\ToolsFactoy;
 
 /**
  * Prepara todas las herramientas que estén configuradas con la etiqueta Tools en el fichero de configuración.

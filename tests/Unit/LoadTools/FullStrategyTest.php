@@ -2,9 +2,9 @@
 
 namespace Tests\Unit\LoadTools;
 
-use GitHooks\LoadTools\Exception\ToolDoesNotExistException;
-use GitHooks\LoadTools\FullStrategy;
-use GitHooks\Tools\{
+use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
+use Wtyd\GitHooks\LoadTools\FullStrategy;
+use Wtyd\GitHooks\Tools\{
     CodeSniffer,
     CopyPasteDetector,
     CheckSecurity,

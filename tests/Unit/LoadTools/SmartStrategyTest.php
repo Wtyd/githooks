@@ -2,14 +2,14 @@
 
 namespace Tests\Unit\LoadTools;
 
-use GitHooks\LoadTools\SmartStrategy;
-use GitHooks\Tools\CodeSniffer;
-use GitHooks\Tools\CopyPasteDetector;
-use GitHooks\Tools\CheckSecurity;
-use GitHooks\Tools\MessDetector;
-use GitHooks\Tools\ParallelLint;
-use GitHooks\Tools\ToolsFactoy;
-use GitHooks\Utils\GitFiles;
+use Wtyd\GitHooks\LoadTools\SmartStrategy;
+use Wtyd\GitHooks\Tools\CodeSniffer;
+use Wtyd\GitHooks\Tools\CopyPasteDetector;
+use Wtyd\GitHooks\Tools\CheckSecurity;
+use Wtyd\GitHooks\Tools\MessDetector;
+use Wtyd\GitHooks\Tools\ParallelLint;
+use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Utils\GitFiles;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;

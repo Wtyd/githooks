@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\Utils;
+namespace Wtyd\GitHooks\Utils;
 
 /**
  * Muestra mensajes por la consola

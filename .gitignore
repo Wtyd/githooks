@@ -1,3 +1,8 @@
+/vendor
+/.idea
+/.vscode
+/.vagrant
+
 # libraries dont track *.lock
 composer.lock
 

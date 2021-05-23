@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\Exception;
+namespace Wtyd\GitHooks\Exception;
 
 /**
  * Envuelve una Symfony\Component\Yaml\Exception\ParseException

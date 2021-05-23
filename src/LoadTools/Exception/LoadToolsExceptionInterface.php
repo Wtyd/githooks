@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\LoadTools\Exception;
+namespace Wtyd\GitHooks\LoadTools\Exception;
 
 interface LoadToolsExceptionInterface
 {

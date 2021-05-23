@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\LoadTools;
+namespace Wtyd\GitHooks\LoadTools;
 
 interface StrategyInterface
 {

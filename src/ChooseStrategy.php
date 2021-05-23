@@ -1,12 +1,11 @@
 <?php
 
-namespace GitHooks;
+namespace Wtyd\GitHooks;
 
-use GitHooks\LoadTools\FastStrategy;
-use GitHooks\LoadTools\FullStrategy;
-use GitHooks\LoadTools\SmartStrategy;
-use GitHooks\LoadTools\StrategyInterface;
-use GitHooks\Utils\GitFilesInterface;
+use Wtyd\GitHooks\LoadTools\FastStrategy;
+use Wtyd\GitHooks\LoadTools\FullStrategy;
+use Wtyd\GitHooks\LoadTools\SmartStrategy;
+use Wtyd\GitHooks\LoadTools\StrategyInterface;
 use Illuminate\Container\Container;
 
 class ChooseStrategy

@@ -11,11 +11,12 @@ use Mockery\Exception\NoMatchingExpectationException;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Illuminate\Testing\PendingCommand as BasePendingCommand;
 
 /**
  * Illuminate\Testing\PendingCommand adaptation (https://github.com/laravel/framework/blob/8.x/src/Illuminate/Testing/PendingCommand.php)
  */
-class PendingCommand
+class PendingCommand extends BasePendingCommand
 {
     /**
      * The test being run.

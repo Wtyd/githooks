@@ -1,8 +1,8 @@
 <?php
 
-namespace GitHooks\Exception;
+namespace Wtyd\GitHooks\Exception;
 
-use GitHooks\Tools\Errors;
+use Wtyd\GitHooks\Tools\Errors;
 
 /**
  * Exception launched when some tool detects errors.

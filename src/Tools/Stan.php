@@ -1,9 +1,9 @@
 <?php
 
-namespace GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools;
 
-use GitHooks\Constants;
-use GitHooks\Tools\Exception\ExitErrorException;
+use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\Tools\Exception\ExitErrorException;
 use Exception;
 
 /**
