@@ -2,11 +2,13 @@
 
 namespace Tests\Unit;
 
-use GitHooks\ChooseStrategy;
-use GitHooks\LoadTools\FastStrategy;
-use GitHooks\LoadTools\FullStrategy;
-use GitHooks\LoadTools\SmartStrategy;
+use Illuminate\Container\Container;
+use Wtyd\GitHooks\ChooseStrategy;
+use Wtyd\GitHooks\LoadTools\FastStrategy;
+use Wtyd\GitHooks\LoadTools\FullStrategy;
+use Wtyd\GitHooks\LoadTools\SmartStrategy;
 use Tests\UnitTestCase;
+use Wtyd\GitHooks\Container\RegisterBindings;
 
 /**
  * It choose strategy for Githooks execution with the 'execution' tag inside 'Options'. The posibilities are:
@@ -16,6 +18,11 @@ use Tests\UnitTestCase;
  */
 class ChooseStrategyTest extends UnitTestCase
 {
+    public function setUp(): void
+    {
+        $this->registerBindings();
+    }
+
     /** @test*/
     function choose_smart_strategy_in_Options_section()
     {

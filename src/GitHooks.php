@@ -1,11 +1,11 @@
 <?php
 
-namespace GitHooks;
+namespace Wtyd\GitHooks;
 
-use GitHooks\Exception\ExitException;
-use GitHooks\Tools\ToolExecutor;
+use Wtyd\GitHooks\Exception\ExitException;
+use Wtyd\GitHooks\Tools\ToolExecutor;
 use Exception;
-use GitHooks\Utils\Printer;
+use Wtyd\GitHooks\Utils\Printer;
 
 /**
  * @SuppressWarnings(PHPMD.ExitExpression)

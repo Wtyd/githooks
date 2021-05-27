@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests;
+namespace Tests\Unit;
 
-use GitHooks\ConfigurationErrors;
+use Wtyd\GitHooks\ConfigurationErrors;
 use PHPUnit\Framework\TestCase;
 
 class ConfigurationErrorsTest extends TestCase

@@ -4,7 +4,7 @@ namespace Tests\System\Commands;
 
 use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
-use Tests\Artisan\ConsoleTestCase;
+use Tests\ConsoleTestCase;
 
 class CleanHookCommandTest extends ConsoleTestCase
 {
@@ -35,7 +35,7 @@ class CleanHookCommandTest extends ConsoleTestCase
     public function getMockRootDirectory(): PhpmockMock
     {
         $builder = new MockBuilder();
-        $builder->setNamespace('GitHooks\Commands')
+        $builder->setNamespace('App\Commands')
             ->setName('getcwd')
             ->setFunction(
                 function () {

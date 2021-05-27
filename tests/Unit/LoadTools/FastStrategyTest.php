@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\Unit;
+namespace Tests\Unit\LoadTools;
 
-use GitHooks\LoadTools\FastStrategy;
-use GitHooks\Tools\CopyPasteDetector;
-use GitHooks\Tools\CheckSecurity;
-use GitHooks\Tools\ToolsFactoy;
-use GitHooks\Utils\GitFiles;
+use Wtyd\GitHooks\LoadTools\FastStrategy;
+use Wtyd\GitHooks\Tools\CopyPasteDetector;
+use Wtyd\GitHooks\Tools\CheckSecurity;
+use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Utils\GitFiles;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;

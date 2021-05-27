@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use GitHooks\ConfigurationErrors;
-use GitHooks\ConfigurationFileValidator;
+use Wtyd\GitHooks\ConfigurationErrors;
+use Wtyd\GitHooks\ConfigurationFileValidator;
 use PHPUnit\Framework\TestCase;
 
 class ConfigurationFileValidatorTest extends TestCase

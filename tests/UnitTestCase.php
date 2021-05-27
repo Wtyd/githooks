@@ -2,16 +2,14 @@
 
 namespace Tests;
 
-use GitHooks\Commands\Console\RegisterBindings;
-use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
+use Wtyd\GitHooks\Container\RegisterBindings;
 
 class UnitTestCase extends TestCase
 {
-
-    protected function setUp(): void
+    protected function registerBindings()
     {
-        $registerBindings = new RegisterBindings();
-        $registerBindings();
+        $register = new RegisterBindings();
+        $register->register();
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks;
+namespace Wtyd\GitHooks;
 
 class ConfigurationFileValidator
 {

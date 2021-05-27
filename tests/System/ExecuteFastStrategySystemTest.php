@@ -2,7 +2,7 @@
 
 namespace Tests\System;
 
-use GitHooks\GitHooks;
+use Wtyd\GitHooks\GitHooks;
 use Tests\SystemTestCase;
 use Tests\Utils\GitFilesFake;
 use Tests\Utils\CheckSecurityFake;

@@ -2,8 +2,8 @@
 
 namespace Tests\Utils;
 
-use GitHooks\Configuration;
-use GitHooks\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Configuration;
+use Wtyd\GitHooks\Exception\ConfigurationFileNotFoundException;
 use Tests\SystemTestCase;
 
 class ConfigurationFake extends Configuration

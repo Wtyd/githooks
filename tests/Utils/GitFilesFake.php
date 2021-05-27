@@ -2,7 +2,7 @@
 
 namespace Tests\Utils;
 
-use GitHooks\Utils\GitFiles;
+use Wtyd\GitHooks\Utils\GitFiles;
 
 class GitFilesFake extends GitFiles
 {

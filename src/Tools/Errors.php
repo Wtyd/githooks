@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools;
 
 class Errors
 {

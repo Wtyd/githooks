@@ -1,10 +1,10 @@
 <?php
 
-namespace GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools;
 
 use Error;
-use GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
-use GitHooks\Utils\Printer;
+use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
+use Wtyd\GitHooks\Utils\Printer;
 
 class ToolExecutor
 {

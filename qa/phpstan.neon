@@ -6,10 +6,10 @@
             # %currentWorkingDirectory%/tests
         ]
         checkMissingIterableValueType: false
-        ignoreErrors: [
-           '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
-            '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
-        ]
+        # ignoreErrors: [
+        #     '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
+        #     '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
+        # ]
         excludes_analyse: [
             # Exclude all files relatives to Artisan Console
             %currentWorkingDirectory%/src/Commands/Console/console.php,

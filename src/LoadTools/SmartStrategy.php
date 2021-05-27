@@ -1,10 +1,10 @@
 <?php
 
-namespace GitHooks\LoadTools;
+namespace Wtyd\GitHooks\LoadTools;
 
-use GitHooks\Constants;
-use GitHooks\Tools\ToolsFactoy;
-use GitHooks\Utils\GitFilesInterface;
+use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Utils\GitFilesInterface;
 
 /**
  * This strategy tries to save execution time when running the application. For this, it may not execute any of the configured tools if all the commit files do

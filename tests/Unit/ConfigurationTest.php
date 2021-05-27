@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use GitHooks\Configuration;
-use GitHooks\Exception\ToolsIsEmptyException;
-use GitHooks\Exception\ToolsNotFoundException;
+use Wtyd\GitHooks\Configuration;
+use Wtyd\GitHooks\Exception\ToolsIsEmptyException;
+use Wtyd\GitHooks\Exception\ToolsNotFoundException;
 use Symfony\Component\Yaml\Yaml;
 use Tests\Mock;
 use Tests\Utils\ConfigurationFileBuilder;
@@ -53,7 +53,7 @@ class ConfigurationTest extends TestCase
     public function getMockRootDirectory(): PhpmockMock
     {
         $builder = new MockBuilder();
-        $builder->setNamespace('GitHooks')
+        $builder->setNamespace('Wtyd\GitHooks')
             ->setName('getcwd')
             ->setFunction(
                 function () {

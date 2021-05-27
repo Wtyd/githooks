@@ -1,11 +1,11 @@
 <?php
 
-namespace GitHooks;
+namespace Wtyd\GitHooks;
 
-use GitHooks\Exception\ConfigurationFileNotFoundException;
-use GitHooks\Exception\ParseConfigurationFileException;
-use GitHooks\Exception\ToolsIsEmptyException;
-use GitHooks\Exception\ToolsNotFoundException;
+use Wtyd\GitHooks\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Exception\ParseConfigurationFileException;
+use Wtyd\GitHooks\Exception\ToolsIsEmptyException;
+use Wtyd\GitHooks\Exception\ToolsNotFoundException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 

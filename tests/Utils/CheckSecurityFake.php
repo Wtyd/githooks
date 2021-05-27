@@ -2,7 +2,7 @@
 
 namespace Tests\Utils;
 
-use GitHooks\Tools\CheckSecurity;
+use Wtyd\GitHooks\Tools\CheckSecurity;
 
 /**
  * This tool cannot be runned in testing environment

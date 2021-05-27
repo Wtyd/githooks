@@ -2,7 +2,7 @@
 
 namespace Tests\System\Commands;
 
-use Tests\Artisan\ConsoleTestCase;
+use Tests\ConsoleTestCase;
 
 class CheckConfigurationFileCommandTest extends ConsoleTestCase
 {
@@ -11,9 +11,13 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     {
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
-        $this->artisan('conf:check')
-            ->containsStringInOutput("Checking the configuration file:\n")
-            ->containsStringInOutput('The file githooks.yml has the correct format.');
+        try {
+            $this->artisan('conf:check')
+                ->containsStringInOutput("Checking the configuration file:\n")
+                ->containsStringInOutput('The file githooks.yml has the correct format.');
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     /** @test */

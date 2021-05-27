@@ -1,9 +1,9 @@
 <?php
 
-namespace GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools;
 
-use GitHooks\Constants;
-use GitHooks\LoadTools\Exception\ToolDoesNotExistException;
+use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Illuminate\Container\Container;
 
 class ToolsFactoy

@@ -2,11 +2,11 @@
 
 namespace Tests;
 
-use GitHooks\Commands\Console\RegisterBindings;
-use GitHooks\Configuration;
-use GitHooks\Exception\ExitException;
-use GitHooks\Tools\CheckSecurity;
-use GitHooks\Utils\GitFilesInterface;
+use Wtyd\GitHooks\Commands\Console\RegisterBindings;
+use Wtyd\GitHooks\Configuration;
+use Wtyd\GitHooks\Exception\ExitException;
+use Wtyd\GitHooks\Tools\CheckSecurity;
+use Wtyd\GitHooks\Utils\GitFilesInterface;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\CheckSecurityFake;
@@ -34,19 +34,6 @@ class SystemTestCase extends TestCase
      */
     protected $configurationFileBuilder;
 
-    /**
-     * @param int|string $dataName
-     *
-     * @internal This method is not covered by the backward compatibility promise for PHPUnit
-     */
-    public function __construct(?string $name = null, array $data = [], $dataName = '')
-    {
-        parent::__construct($name, $data, $dataName);
-
-        $registerBindings = new RegisterBindings();
-        $registerBindings();
-    }
-
     protected function setUp(): void
     {
         $this->deleteDirStructure();
@@ -55,12 +42,17 @@ class SystemTestCase extends TestCase
 
         $this->createDirStructure();
 
+        $this->registerBindings();
+
+        $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path);
+    }
+
+    protected function registerBindings()
+    {
         $this->container =  Container::getInstance();
         $this->container->bind(GitFilesInterface::class, GitFilesFake::class);
         $this->container->bind(Configuration::class, ConfigurationFake::class);
         $this->container->bind(CheckSecurity::class, CheckSecurityFake::class);
-
-        $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path);
     }
 
     protected function tearDown(): void

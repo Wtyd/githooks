@@ -1,8 +1,8 @@
 #!/bin/php
 <?php
 
-use GitHooks\Commands\Console\RegisterBindings;
 use Illuminate\Container\Container;
+use Wtyd\GitHooks\Container\RegisterBindings;
 
 $rootPath = getcwd();
 
@@ -14,9 +14,9 @@ if (!empty($backFiles)) {
 
     $registerBindings = new RegisterBindings();
 
-    $registerBindings->__invoke();
+    $registerBindings->register();
 
-    $githooks = $container->makeWith(GitHooks\GitHooks::class);
+    $githooks = $container->makeWith(Wtyd\GitHooks\GitHooks::class);
 
     try {
         $githooks();
