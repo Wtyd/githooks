@@ -3,12 +3,13 @@
 namespace Tests;
 
 use LaravelZero\Framework\Testing\TestCase as BaseTestCase;
-use Tests\Artisan\PendingCommand;
+use Tests\Zero\PendingCommand;
 use Tests\FileSystemTrait;
 use Tests\RetroCompatibilityAssertsTrait;
 use Tests\Utils\ConfigurationFileBuilder;
+use Tests\Zero\ZeroTestCase;
 
-abstract class ConsoleTestCase extends BaseTestCase
+abstract class ConsoleTestCase extends ZeroTestCase
 {
     use CreatesApplication;
     use FileSystemTrait;
@@ -27,6 +28,8 @@ abstract class ConsoleTestCase extends BaseTestCase
      * @var array
      */
     public $notContainsStringInOutput = [];
+
+    public $expectedTables = [];
 
     /**
      * @var ConfigurationFileBuilder

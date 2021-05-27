@@ -2,12 +2,7 @@
 
 namespace Tests\System\Commands;
 
-use App\Commands\CheckConfigurationFileCommand;
-use Mockery\MockInterface;
 use Tests\ConsoleTestCase;
-use Tests\SystemTestCase;
-use Wtyd\GitHooks\Configuration;
-use Wtyd\GitHooks\Exception\ConfigurationFileNotFoundException;
 
 class CheckConfigurationFileCommandTest extends ConsoleTestCase
 {
@@ -16,9 +11,13 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     {
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
-        $this->artisan('conf:check')
-            ->containsStringInOutput("Checking the configuration file:\n")
-            ->containsStringInOutput('The file githooks.yml has the correct format.');
+        try {
+            $this->artisan('conf:check')
+                ->containsStringInOutput("Checking the configuration file:\n")
+                ->containsStringInOutput('The file githooks.yml has the correct format.');
+        } catch (\Throwable $th) {
+            throw $th;
+        }
     }
 
     /** @test */

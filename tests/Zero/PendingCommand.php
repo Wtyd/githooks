@@ -1,22 +1,20 @@
 <?php
 
-namespace Tests\Artisan;
+namespace Tests\Zero;
 
 use Illuminate\Console\OutputStyle;
 use Illuminate\Contracts\Console\Kernel;
-use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 use Mockery;
 use Mockery\Exception\NoMatchingExpectationException;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Illuminate\Testing\PendingCommand as BasePendingCommand;
 
 /**
  * Illuminate\Testing\PendingCommand adaptation (https://github.com/laravel/framework/blob/8.x/src/Illuminate/Testing/PendingCommand.php)
  */
-class PendingCommand extends BasePendingCommand
+class PendingCommand
 {
     /**
      * The test being run.
@@ -185,17 +183,17 @@ class PendingCommand extends BasePendingCommand
      * @param  array  $columnStyles
      * @return $this
      */
-    public function expectsTable($headers, $rows, $tableStyle = 'default', array $columnStyles = [])
-    {
-        $this->test->expectedTables[] = [
-            'headers' => (array) $headers,
-            'rows' => $rows instanceof Arrayable ? $rows->toArray() : $rows,
-            'tableStyle' => $tableStyle,
-            'columnStyles' => $columnStyles,
-        ];
+    // public function expectsTable($headers, $rows, $tableStyle = 'default', array $columnStyles = [])
+    // {
+    //     $this->test->expectedTables[] = [
+    //         'headers' => (array) $headers,
+    //         'rows' => $rows instanceof Arrayable ? $rows->toArray() : $rows,
+    //         'tableStyle' => $tableStyle,
+    //         'columnStyles' => $columnStyles,
+    //     ];
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     /**
      * Print the output. By default, unlike in Laravel, the output is hidden. In this way, when executing the test suite, messages are not printed by
