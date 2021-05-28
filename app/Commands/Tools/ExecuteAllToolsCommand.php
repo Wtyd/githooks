@@ -21,6 +21,7 @@ class ExecuteAllToolsCommand extends Command
             $githooks();
         } catch (\Throwable $th) {
             $printer->generalFail($th->getMessage());
+            return 1;
         }
     }
 }
