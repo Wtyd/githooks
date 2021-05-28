@@ -60,6 +60,8 @@ return [
         Illuminate\Console\Scheduling\ScheduleRunCommand::class,
         Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
         Illuminate\Foundation\Console\VendorPublishCommand::class,
+        // LaravelZero\Framework\Commands\BuildCommand::class,
+        App\Commands\BuildCommand::class,
     ],
 
     /*
