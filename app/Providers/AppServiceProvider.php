@@ -29,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
         $register = new RegisterBindings();
         $register->register();
 
+        // For php 7.1 self-update
+        // $this->app->bind(Humbug\SelfUpdate\Updater::class, App\Updater\Updater::class);
+
         $this->testsRegister();
     }
 
