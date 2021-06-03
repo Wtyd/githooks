@@ -2,7 +2,7 @@
 
 namespace App\Updater;
 
-// use Humbug\SelfUpdate\Strategy\GithubStrategy;
+use Humbug\SelfUpdate\Strategy\GithubStrategy;
 use LaravelZero\Framework\Components\Updater\Strategy\StrategyInterface;
 // use LaravelZero\Framework\Components\Updater\Strategy\GitHubStrategy;
 
