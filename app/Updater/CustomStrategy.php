@@ -2,7 +2,7 @@
 
 namespace App\Updater;
 
-use Humbug\SelfUpdate\Strategy\GithubStrategy;
+// use Humbug\SelfUpdate\Strategy\GithubStrategy;
 use LaravelZero\Framework\Components\Updater\Strategy\StrategyInterface;
 // use LaravelZero\Framework\Components\Updater\Strategy\GitHubStrategy;
 
@@ -32,3 +32,4 @@ class CustomStrategy extends GithubStrategy implements StrategyInterface
         return $downloadUrl . $pathToBuild . basename(Phar::running());
     }
 }
+//https://github.com/Wtyd/githooks/raw/1.0.2-alpha//builds/githooks
