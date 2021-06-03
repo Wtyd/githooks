@@ -16,6 +16,11 @@ use Symfony\Component\Process\Process;
 final class BuildCommand extends Command
 {
     /**
+     * Path to build the phar to php 7.1 version
+     */
+    public const BUILD_PHP_71 = 'php7.1';
+
+    /**
      * {@inheritdoc}
      */
     protected $signature = 'app:build
@@ -94,8 +99,8 @@ final class BuildCommand extends Command
 
     private function compile(string $name): BuildCommand
     {
-        if (!File::exists($this->app->buildsPath())) {
-            File::makeDirectory($this->app->buildsPath());
+        if (!File::exists($this->app->buildsPath(self::BUILD_PHP_71))) {
+            File::makeDirectory($this->app->buildsPath(self::BUILD_PHP_71));
         }
 
         // $boxBinary = windows_os() ? '.\box.bat' : './box';
@@ -135,7 +140,10 @@ final class BuildCommand extends Command
 
         $this->output->newLine();
 
-        File::move($this->app->basePath($this->getBinary()) . '.phar', $this->app->buildsPath($name));
+        File::move(
+            $this->app->basePath($this->getBinary()) . '.phar',
+            $this->app->buildsPath(self::BUILD_PHP_71 . DIRECTORY_SEPARATOR . $name)
+        );
 
         return $this;
     }
