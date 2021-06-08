@@ -99,8 +99,9 @@ final class BuildCommand extends Command
 
     private function compile(string $name): BuildCommand
     {
-        if (!File::exists($this->app->buildsPath(self::BUILD_PHP_71))) {
-            File::makeDirectory($this->app->buildsPath(self::BUILD_PHP_71));
+        $buildPath = $this->getBuildPath();
+        if (!File::exists($this->app->buildsPath($buildPath))) {
+            File::makeDirectory($this->app->buildsPath($buildPath));
         }
 
         // $boxBinary = windows_os() ? '.\box.bat' : './box';
@@ -142,10 +143,19 @@ final class BuildCommand extends Command
 
         File::move(
             $this->app->basePath($this->getBinary()) . '.phar',
-            $this->app->buildsPath(self::BUILD_PHP_71 . DIRECTORY_SEPARATOR . $name)
+            $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name)
         );
 
         return $this;
+    }
+
+    protected function getBuildPath(): string
+    {
+        if (version_compare(\PHP_VERSION, '7.3', '<')) {
+            return self::BUILD_PHP_71;
+        } else {
+            return '';
+        }
     }
 
     private function prepare(): BuildCommand
