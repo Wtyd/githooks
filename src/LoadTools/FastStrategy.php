@@ -2,9 +2,12 @@
 
 namespace Wtyd\GitHooks\LoadTools;
 
+use Illuminate\Support\Facades\Storage as FacadesStorage;
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\GitFilesInterface;
+// use Illuminate\Support\Facades\Storage;
+use Storage;
 
 /**
  * This strategy runs the tools only against files modified by commit.
@@ -27,6 +30,8 @@ class FastStrategy implements StrategyInterface
         Constants::MESS_DETECTOR,
         Constants::PHPSTAN,
     ];
+
+    public const ROOT_PATH = './';
 
     /**
      * Todo el fichero de configuración pasado a array. Su formato podria ser algo como lo siguiente:
@@ -63,7 +68,6 @@ class FastStrategy implements StrategyInterface
      */
     public function getTools(): array
     {
-
         $tools = [];
         foreach ($this->configurationFile[Constants::TOOLS] as $tool) {
             if (!in_array($tool, self::ACCELERABLE_TOOLS)) {
@@ -74,7 +78,7 @@ class FastStrategy implements StrategyInterface
             $originalPaths = $this->configurationFile[$tool][Constants::TOOL_LIST[$tool]::PATHS];
             $modifiedFiles = $this->gitFiles->getModifiedFiles();
 
-            $paths = $this->addFilesToPaths($modifiedFiles, $originalPaths);
+            $paths = $this->addFilesToToolPaths($modifiedFiles, $originalPaths);
 
             if (!empty($paths)) {
                 $this->configurationFile[$tool][Constants::TOOL_LIST[$tool]::PATHS] = $paths;
@@ -85,9 +89,10 @@ class FastStrategy implements StrategyInterface
         return $this->toolsFactory->__invoke($tools, $this->configurationFile);
     }
 
-    protected function addFilesToPaths(array $modifiedFiles, array $originalPaths): array
+    protected function addFilesToToolPaths(array $modifiedFiles, array $originalPaths): array
     {
         $paths = [];
+
         foreach ($modifiedFiles as $file) {
             if ($this->fileIsInPaths($file, $originalPaths)) {
                 $paths[] = $file;
@@ -96,14 +101,16 @@ class FastStrategy implements StrategyInterface
         return $paths;
     }
 
+
+
     protected function fileIsInPaths(string $file, array $paths): bool
     {
         foreach ($paths as $path) {
-            if ($this->isFile($path) && $file === $path) {
+            if (is_file($path) && $this->isSameFile($file, $path)) {
                 return true;
             }
 
-            if ($this->isSubstring($file, $path)) {
+            if ($this->directoryContainsFile($path, $file)) {
                 return true;
             }
 
@@ -113,6 +120,47 @@ class FastStrategy implements StrategyInterface
         return false;
     }
 
+    /**
+     * Check if two files are the same file. The problem comes when the configuration file file is preceded by the string
+     * ROOT_PATH.
+     *
+     * @param string $file1
+     * @param string $file2
+     * @return boolean
+     */
+    public function isSameFile($file1, $file2): bool
+    {
+        $file1 = explode(self::ROOT_PATH, $file1);
+        $file1 = count($file1) > 1 ? $file1[1] : $file1[0];
+
+        $file2 = explode(self::ROOT_PATH, $file2);
+        $file2 = count($file2) > 1 ? $file2[1] : $file2[0];
+
+        return $file1 === $file2;
+    }
+
+    protected function directoryContainsFile(string $directory, string $file): bool
+    {
+        // dd('directoryContainsFile');
+        if ($directory === self::ROOT_PATH) {
+            // $rootFiles = Storage::files($directory);
+            // $rootDirectories = Storage::directories($directory);
+
+            // //Remove vendor directory (node_modules??)
+            // if (($key = array_search('vendor', $rootDirectories)) !== false) {
+            //     unset($rootDirectories[$key]);
+            // }
+            return true;
+        }
+        return in_array($file, Storage::allFiles($directory));
+    }
+
+    /**
+     * ya no se usa
+     *
+     * @param string $filePath
+     * @return boolean
+     */
     protected function isFile(string $filePath): bool
     {
         if ('php' ===  pathinfo($filePath, PATHINFO_EXTENSION)) {
@@ -130,6 +178,7 @@ class FastStrategy implements StrategyInterface
      */
     protected function isSubstring(string $file, string $exclude): bool
     {
+
         if (is_int(strpos($file, $exclude))) { //exclude es un substring de $file
             return true;
         }

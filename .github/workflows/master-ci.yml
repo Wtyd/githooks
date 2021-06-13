@@ -2,7 +2,7 @@ name: Master
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ master, 1.x, phar ] 
+    branches: [ master ] 
   pull_request:
     branches: [ master, 1.x ]
 

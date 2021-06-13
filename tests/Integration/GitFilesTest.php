@@ -55,28 +55,28 @@ class GitFilesTest extends SystemTestCase
     }
 
     /** @test */
-    function it_retrieve_an_empty_array_when_there_are_no_modified_files()
-    {
-        $gitFiles = $this->container->make(GitFiles::class);
+    // function it_retrieve_an_empty_array_when_there_are_no_modified_files()
+    // {
+    //     $gitFiles = $this->container->make(GitFiles::class);
 
-        $modifiedFiles = $gitFiles->getModifiedFiles();
+    //     $modifiedFiles = $gitFiles->getModifiedFiles();
 
-        $this->assertEquals([], $modifiedFiles);
-    }
+    //     $this->assertEquals([], $modifiedFiles);
+    // }
 
-    /** @test */
-    function it_retrieve_an_empty_array_when_the_modified_files_there_are_no_added_to_the_git_stage()
-    {
-        $fileBuilder = new PhpFileBuilder('NewFile');
+    // /** @test */
+    // function it_retrieve_an_empty_array_when_the_modified_files_there_are_no_added_to_the_git_stage()
+    // {
+    //     $fileBuilder = new PhpFileBuilder('NewFile');
 
-        file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
+    //     file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
 
-        $gitFiles = $this->container->make(GitFiles::class);
+    //     $gitFiles = $this->container->make(GitFiles::class);
 
-        $modifiedFiles = $gitFiles->getModifiedFiles();
+    //     $modifiedFiles = $gitFiles->getModifiedFiles();
 
-        $this->assertEquals([], $modifiedFiles);
-    }
+    //     $this->assertEquals([], $modifiedFiles);
+    // }
 
     /**
      * @param string $path Absolute path. For example: /var/www/html/githooks/tests/NewFile.php
