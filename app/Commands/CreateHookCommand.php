@@ -26,9 +26,9 @@ Even the default script and after, other tools which GitHooks not support or vic
     protected $printer;
 
     /**
-     * Path to the root project
+     * Path to the root project (getcwd())
      *
-     * @var string
+     * @var string|false
      */
     protected $root;
 

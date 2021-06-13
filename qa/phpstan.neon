@@ -1,20 +1,18 @@
 {
     parameters: {
         level: 8
-        paths: [
-            %currentWorkingDirectory%/src,
+        # paths: [
+            # %currentWorkingDirectory%/src,
             # %currentWorkingDirectory%/tests
-        ]
-        checkMissingIterableValueType: false
-        # ignoreErrors: [
-        #     '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
-        #     '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
         # ]
-        excludes_analyse: [
-            # Exclude all files relatives to Artisan Console
-            %currentWorkingDirectory%/src/Commands/Console/console.php,
-            %currentWorkingDirectory%/src/Commands/Console/Kernel.php,
-            %currentWorkingDirectory%/src/Commands/Console/RegisterFacades.php
+        checkMissingIterableValueType: false
+        ignoreErrors: [
+            '#Call to static method [a-zA-Z0-9\\_]+\(\) on an unknown class Storage#',
+            # '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
+            # '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
         ]
+        # excludes_analyse: [
+        #     %currentWorkingDirectory%/vendor
+        # ]
     }
 }
