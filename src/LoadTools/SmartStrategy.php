@@ -5,6 +5,7 @@ namespace Wtyd\GitHooks\LoadTools;
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\GitFilesInterface;
+use Storage;
 
 /**
  * This strategy tries to save execution time when running the application. For this, it may not execute any of the configured tools if all the commit files do
@@ -16,6 +17,7 @@ use Wtyd\GitHooks\Utils\GitFilesInterface;
  */
 class SmartStrategy implements StrategyInterface
 {
+    public const ROOT_PATH = './';
 
     /**
      * Configuration file 'githooks.yml' in array format. It could be like this:
@@ -80,6 +82,26 @@ class SmartStrategy implements StrategyInterface
     }
 
     /**
+     * La verifica que la $tool tenga su apartado de configuración y en el su apartado de excludes/ignores definido
+     *
+     * @param string $tool
+     * @return bool
+     */
+    protected function toolHasExclusionsConfigured(string $tool): bool
+    {
+        $exclusionConfigured = false;
+        try {
+            if (isset($this->configurationFile[$tool]) && array_key_exists(Constants::EXCLUDE_ARGUMENT[$tool], $this->configurationFile[$tool])) {
+                $exclusionConfigured = true;
+            }
+        } catch (\Throwable $th) {
+            $exclusionConfigured = false;
+        }
+
+        return $exclusionConfigured;
+    }
+
+    /**
      * Comprueba que todos los ficheros modificados están excluidos del análisis de la herramienta
      *
      * @param string $tool. Nombre de la herramienta
@@ -110,11 +132,11 @@ class SmartStrategy implements StrategyInterface
     protected function isFileExcluded(string $file, array $excludes): bool
     {
         foreach ($excludes as $exclude) {
-            if ($this->isFile($exclude) && $file === $exclude) {
+            if (is_file($exclude) && $this->isSameFile($file, $exclude)) {
                 return true;
             }
 
-            if ($this->isSubstring($file, $exclude)) {
+            if ($this->directoryContainsFile($exclude, $file)) {
                 return true;
             }
 
@@ -124,47 +146,37 @@ class SmartStrategy implements StrategyInterface
         return false;
     }
 
-    protected function isFile(string $filePath): bool
-    {
-        if ('php' ===  pathinfo($filePath, PATHINFO_EXTENSION)) {
-            return true;
-        }
-        return false;
-    }
-
     /**
-     * Verifica que $exclude sea un substring de $file
+     * Check if two files are the same file. The problem comes when the configuration file file is preceded by the string
+     * ROOT_PATH.
      *
-     * @param string $file. Ruta de un fichero. Pj, 'app/Controllers/MiController.php'.
-     * @param string $exclude. Ruta excluida. Pj, 'app'.
+     * @param string $file1
+     * @param string $file2
      * @return boolean
      */
-    protected function isSubstring($file, $exclude): bool
+    public function isSameFile($file1, $file2): bool
     {
-        if (is_int(strpos($file, $exclude))) { //exclude es un substring de $file
-            return true;
-        }
+        $file1 = explode(self::ROOT_PATH, $file1);
+        $file1 = count($file1) > 1 ? $file1[1] : $file1[0];
 
-        return false;
+        $file2 = explode(self::ROOT_PATH, $file2);
+        $file2 = count($file2) > 1 ? $file2[1] : $file2[0];
+
+        return $file1 === $file2;
     }
 
     /**
-     * La verifica que la $tool tenga su apartado de configuración y en el su apartado de excludes/ignores definido
+     * If the $directory is root of work directory it is sure that the modified file is in $directory.
      *
-     * @param string $tool
-     * @return bool
+     * @param string $directory
+     * @param string $file
+     * @return boolean
      */
-    protected function toolHasExclusionsConfigured(string $tool): bool
+    protected function directoryContainsFile(string $directory, string $file): bool
     {
-        $exclusionConfigured = false;
-        try {
-            if (isset($this->configurationFile[$tool]) && array_key_exists(Constants::EXCLUDE_ARGUMENT[$tool], $this->configurationFile[$tool])) {
-                $exclusionConfigured = true;
-            }
-        } catch (\Throwable $th) {
-            $exclusionConfigured = false;
+        if ($directory === self::ROOT_PATH) {
+            return true;
         }
-
-        return $exclusionConfigured;
+        return in_array($file, Storage::allFiles($directory));
     }
 }
