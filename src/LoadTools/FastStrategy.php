@@ -2,16 +2,14 @@
 
 namespace Wtyd\GitHooks\LoadTools;
 
-use Illuminate\Support\Facades\Storage as FacadesStorage;
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\GitFilesInterface;
-// use Illuminate\Support\Facades\Storage;
 use Storage;
 
 /**
  * This strategy runs the tools only against files modified by commit.
- * 1. This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint (ACCELERABLE_TOOLS). The rest of the tools will run as the full
+ * 1. This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint (ACCELERABLE_TOOLS). The other tools will run as the full
  * option.
  * 2. WARNING!!! You must set the excludes of the tools either in githooks.yml or in the configuration file of eath tool since this option overwrites the key
  * paths of the tools so that they are executed only against the modified files.
@@ -89,6 +87,13 @@ class FastStrategy implements StrategyInterface
         return $this->toolsFactory->__invoke($tools, $this->configurationFile);
     }
 
+    /**
+     * Only add to $paths the $modifiedFiles that are in the $originalPaths
+     *
+     * @param array $modifiedFiles  Files modified by the commit.
+     * @param array $originalPaths Paths setted for each tool in githooks.yml
+     * @return array Files that are in the $originalPaths.
+     */
     protected function addFilesToToolPaths(array $modifiedFiles, array $originalPaths): array
     {
         $paths = [];
@@ -100,8 +105,6 @@ class FastStrategy implements StrategyInterface
         }
         return $paths;
     }
-
-
 
     protected function fileIsInPaths(string $file, array $paths): bool
     {
@@ -139,50 +142,18 @@ class FastStrategy implements StrategyInterface
         return $file1 === $file2;
     }
 
+    /**
+     * If the $directory is root of work directory it is sure that the modified file is in $directory.
+     *
+     * @param string $directory
+     * @param string $file
+     * @return boolean
+     */
     protected function directoryContainsFile(string $directory, string $file): bool
     {
-        // dd('directoryContainsFile');
         if ($directory === self::ROOT_PATH) {
-            // $rootFiles = Storage::files($directory);
-            // $rootDirectories = Storage::directories($directory);
-
-            // //Remove vendor directory (node_modules??)
-            // if (($key = array_search('vendor', $rootDirectories)) !== false) {
-            //     unset($rootDirectories[$key]);
-            // }
             return true;
         }
         return in_array($file, Storage::allFiles($directory));
-    }
-
-    /**
-     * ya no se usa
-     *
-     * @param string $filePath
-     * @return boolean
-     */
-    protected function isFile(string $filePath): bool
-    {
-        if ('php' ===  pathinfo($filePath, PATHINFO_EXTENSION)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Verifica que $exclude sea un substring de $file
-     *
-     * @param string $file. Ruta de un fichero. Pj, 'app/Controllers/MiController.php'.
-     * @param string $exclude. Ruta excluida. Pj, 'app'.
-     * @return boolean
-     */
-    protected function isSubstring(string $file, string $exclude): bool
-    {
-
-        if (is_int(strpos($file, $exclude))) { //exclude es un substring de $file
-            return true;
-        }
-
-        return false;
     }
 }
