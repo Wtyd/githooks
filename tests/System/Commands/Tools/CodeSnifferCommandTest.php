@@ -2,9 +2,9 @@
 
 namespace Tests\System\Commands\Tools;
 
-use Wtyd\GitHooks\Utils\GitFilesInterface;
-use Mockery\MockInterface;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Tests\ConsoleTestCase;
+use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
 
 class CodeSnifferCommandTest extends ConsoleTestCase
@@ -63,24 +63,33 @@ class CodeSnifferCommandTest extends ConsoleTestCase
             ->containsStringInOutput('A TOTAL OF 3 ERRORS WERE FIXED IN 1 FILE');
     }
 
-    /** @test */
-    function it_can_be_override_execution_mode()
+    /**
+     * @test
+     * 1. It creates a githooks.yml with the standard configuration (PSR12 rules, path src, etc)
+     * 2. It creates two files: one without erros and another with errors.
+     * 3. It add to git stage only the file without errors.
+     * 4. It runs the command with the option 'fast'.
+     * 5. It overrides the execution: phpcs only runs over files added to git stage (the file with errors) instead 'src'
+     */
+    function it_can_be_override_full_execution_from_githooksyml_for_fast_execution_from_cli()
     {
         file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+        $pathForFileWithoutErrors = $this->path . '/src/File.php';
+        file_put_contents($pathForFileWithoutErrors, $this->fileBuilder->build());
 
-        file_put_contents($this->path . '/src/FileWithErrors.php', $this->fileBuilder->buildWithErrors(['phpcs']));
+        $pathForFileWithErrors = $this->path . '/src/FileWithErrors.php';
+        file_put_contents($pathForFileWithErrors, $this->fileBuilder->buildWithErrors(['phpcs']));
 
-        $this->partialMock(GitFilesInterface::class, function (MockInterface $mock) {
-            $mock->shouldReceive('getModifiedFiles')->andReturn([$this->path . '/src/FileWithErrors.php']);
+        $this->app->resolving(FileUtilsFake::class, function ($gitFiles) use ($pathForFileWithoutErrors) {
+            $gitFiles->setModifiedfiles([$pathForFileWithoutErrors]);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([$pathForFileWithoutErrors]);
         });
 
-        $commandUnderTheHood = "phpcbf $this->path/src/FileWithErrors.php";
+        $commandUnderTheHood = "phpcbf $pathForFileWithoutErrors";
         $this->artisan('tool:phpcs fast')
             ->containsStringInOutput($commandUnderTheHood)
-            ->assertExitCode(1)
-            ->containsStringInOutput('phpcbf - KO.')
-            ->containsStringInOutput('A TOTAL OF 3 ERRORS WERE FIXED IN 1 FILE');
+            ->containsStringInOutput('phpcbf - OK.')
+        ;
     }
 }

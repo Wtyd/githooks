@@ -4,7 +4,7 @@ namespace Tests\System;
 
 use Wtyd\GitHooks\GitHooks;
 use Tests\SystemTestCase;
-use Tests\Utils\GitFilesFake;
+use Tests\Utils\FileUtilsFake;
 use Tests\Utils\CheckSecurityFake;
 use Tests\Utils\PhpFileBuilder;
 
@@ -35,7 +35,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
 
@@ -76,7 +76,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/app/File.php']);
         });
 
@@ -121,7 +121,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
 
@@ -164,7 +164,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
 
@@ -202,7 +202,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
         });
 
@@ -253,7 +253,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/FileForMessDetector.php'
@@ -293,7 +293,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -335,7 +335,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -373,7 +373,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -416,7 +416,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -466,7 +466,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/AppFile.php',
@@ -511,7 +511,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -546,7 +546,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -586,7 +586,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -626,7 +626,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -661,7 +661,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -710,7 +710,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setKOExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/AppFile.php',
@@ -762,7 +762,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/AppFile.php',
@@ -806,7 +806,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -847,7 +847,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -880,7 +880,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 
@@ -915,7 +915,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             return $checkSecurity->setOKExit();
         });
 
-        $this->container->resolving(GitFilesFake::class, function ($gitFiles) {
+        $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php',]);
         });
 

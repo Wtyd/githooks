@@ -6,7 +6,7 @@
         </testsuite>
         <testsuite name="Integration">
             <directory>./tests/Integration</directory>
-            <exclude>./tests/Integration/GitFilesTest.php</exclude>
+            <exclude>./tests/Integration/FileUtilsTest.php</exclude>
         </testsuite>
         <testsuite name="System">
             <directory>./tests/System</directory>

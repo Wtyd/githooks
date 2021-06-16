@@ -4,8 +4,7 @@ namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
-use Wtyd\GitHooks\Utils\GitFilesInterface;
-use Storage;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
  * This strategy tries to save execution time when running the application. For this, it may not execute any of the configured tools if all the commit files do
@@ -17,8 +16,6 @@ use Storage;
  */
 class SmartStrategy implements StrategyInterface
 {
-    public const ROOT_PATH = './';
-
     /**
      * Configuration file 'githooks.yml' in array format. It could be like this:
      * ['Options' => ['execution' => 'smart], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
@@ -28,19 +25,19 @@ class SmartStrategy implements StrategyInterface
     protected $configurationFile;
 
     /**
-     * @var GitFilesInterface
+     * @var FileUtilsInterface
      */
-    protected $gitFiles;
+    protected $fileUtils;
 
     /**
      * @var ToolsFactoy
      */
     protected $toolsFactory;
 
-    public function __construct(array $configurationFile, GitFilesInterface $gitFiles, ToolsFactoy $toolsFactory)
+    public function __construct(array $configurationFile, FileUtilsInterface $fileUtils, ToolsFactoy $toolsFactory)
     {
         $this->configurationFile = $configurationFile;
-        $this->gitFiles = $gitFiles;
+        $this->fileUtils = $fileUtils;
         $this->toolsFactory = $toolsFactory;
     }
 
@@ -111,7 +108,7 @@ class SmartStrategy implements StrategyInterface
     {
         $excludes = $this->configurationFile[$tool][Constants::EXCLUDE_ARGUMENT[$tool]];
 
-        $modifiedFiles = $this->gitFiles->getModifiedFiles();
+        $modifiedFiles = $this->fileUtils->getModifiedFiles();
 
         foreach ($modifiedFiles as $file) {
             if (!$this->isFileExcluded($file, $excludes)) {
@@ -129,14 +126,15 @@ class SmartStrategy implements StrategyInterface
      * @param array $excludes. Directorios o ficheros excluidos.
      * @return boolean
      */
+
     protected function isFileExcluded(string $file, array $excludes): bool
     {
         foreach ($excludes as $exclude) {
-            if (is_file($exclude) && $this->isSameFile($file, $exclude)) {
+            if (is_file($exclude) && $this->fileUtils->isSameFile($file, $exclude)) {
                 return true;
             }
 
-            if ($this->directoryContainsFile($exclude, $file)) {
+            if ($this->fileUtils->directoryContainsFile($exclude, $file)) {
                 return true;
             }
 
@@ -144,39 +142,5 @@ class SmartStrategy implements StrategyInterface
         }
 
         return false;
-    }
-
-    /**
-     * Check if two files are the same file. The problem comes when the configuration file file is preceded by the string
-     * ROOT_PATH.
-     *
-     * @param string $file1
-     * @param string $file2
-     * @return boolean
-     */
-    public function isSameFile($file1, $file2): bool
-    {
-        $file1 = explode(self::ROOT_PATH, $file1);
-        $file1 = count($file1) > 1 ? $file1[1] : $file1[0];
-
-        $file2 = explode(self::ROOT_PATH, $file2);
-        $file2 = count($file2) > 1 ? $file2[1] : $file2[0];
-
-        return $file1 === $file2;
-    }
-
-    /**
-     * If the $directory is root of work directory it is sure that the modified file is in $directory.
-     *
-     * @param string $directory
-     * @param string $file
-     * @return boolean
-     */
-    protected function directoryContainsFile(string $directory, string $file): bool
-    {
-        if ($directory === self::ROOT_PATH) {
-            return true;
-        }
-        return in_array($file, Storage::allFiles($directory));
     }
 }

@@ -4,8 +4,7 @@ namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
-use Wtyd\GitHooks\Utils\GitFilesInterface;
-use Storage;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
  * This strategy runs the tools only against files modified by commit.
@@ -29,8 +28,6 @@ class FastStrategy implements StrategyInterface
         Constants::PHPSTAN,
     ];
 
-    public const ROOT_PATH = './';
-
     /**
      * Todo el fichero de configuración pasado a array. Su formato podria ser algo como lo siguiente:
      * ['Options' => ['execution' => 'fast], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
@@ -40,19 +37,19 @@ class FastStrategy implements StrategyInterface
     protected $configurationFile;
 
     /**
-     * @var GitFilesInterface
+     * @var FileUtilsInterface
      */
-    protected $gitFiles;
+    protected $fileUtils;
 
     /**
      * @var ToolsFactoy
      */
     protected $toolsFactory;
 
-    public function __construct(array $configurationFile, GitFilesInterface $gitFiles, ToolsFactoy $toolsFactory)
+    public function __construct(array $configurationFile, FileUtilsInterface $fileUtils, ToolsFactoy $toolsFactory)
     {
         $this->configurationFile = $configurationFile;
-        $this->gitFiles = $gitFiles;
+        $this->fileUtils = $fileUtils;
         $this->toolsFactory = $toolsFactory;
     }
 
@@ -74,7 +71,7 @@ class FastStrategy implements StrategyInterface
             }
 
             $originalPaths = $this->configurationFile[$tool][Constants::TOOL_LIST[$tool]::PATHS];
-            $modifiedFiles = $this->gitFiles->getModifiedFiles();
+            $modifiedFiles = $this->fileUtils->getModifiedFiles();
 
             $paths = $this->addFilesToToolPaths($modifiedFiles, $originalPaths);
 
@@ -109,11 +106,11 @@ class FastStrategy implements StrategyInterface
     protected function fileIsInPaths(string $file, array $paths): bool
     {
         foreach ($paths as $path) {
-            if (is_file($path) && $this->isSameFile($file, $path)) {
+            if (is_file($path) && $this->fileUtils->isSameFile($file, $path)) {
                 return true;
             }
 
-            if ($this->directoryContainsFile($path, $file)) {
+            if ($this->fileUtils->directoryContainsFile($path, $file)) {
                 return true;
             }
 
@@ -121,39 +118,5 @@ class FastStrategy implements StrategyInterface
         }
 
         return false;
-    }
-
-    /**
-     * Check if two files are the same file. The problem comes when the configuration file file is preceded by the string
-     * ROOT_PATH.
-     *
-     * @param string $file1
-     * @param string $file2
-     * @return boolean
-     */
-    public function isSameFile($file1, $file2): bool
-    {
-        $file1 = explode(self::ROOT_PATH, $file1);
-        $file1 = count($file1) > 1 ? $file1[1] : $file1[0];
-
-        $file2 = explode(self::ROOT_PATH, $file2);
-        $file2 = count($file2) > 1 ? $file2[1] : $file2[0];
-
-        return $file1 === $file2;
-    }
-
-    /**
-     * If the $directory is root of work directory it is sure that the modified file is in $directory.
-     *
-     * @param string $directory
-     * @param string $file
-     * @return boolean
-     */
-    protected function directoryContainsFile(string $directory, string $file): bool
-    {
-        if ($directory === self::ROOT_PATH) {
-            return true;
-        }
-        return in_array($file, Storage::allFiles($directory));
     }
 }

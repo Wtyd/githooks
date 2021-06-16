@@ -6,10 +6,10 @@ use Wtyd\GitHooks\LoadTools\FastStrategy;
 use Wtyd\GitHooks\Tools\CopyPasteDetector;
 use Wtyd\GitHooks\Tools\CheckSecurity;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
-use Wtyd\GitHooks\Utils\GitFiles;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
+use Tests\Utils\FileUtilsFake;
 
 class FastStrategyTest extends TestCase
 {
@@ -32,10 +32,9 @@ class FastStrategyTest extends TestCase
     function it_replaces_the_Paths_array_of_the_configuration_file_of_each_acelerable_tool_with_the_modified_files_that_are_inside_the_tool_Paths(
         $tool
     ) {
-
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $modifiedFiles = ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php', 'database/my_migration.php', 'otherPath/file3.php'];
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php', 'database/my_migration.php', 'otherPath/file3.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php']);
 
         $ToolsFactorySpy = Mockery::spy(ToolsFactoy::class);
         $configurationFile = [
@@ -73,10 +72,9 @@ class FastStrategyTest extends TestCase
      */
     function it_dont_replaces_the_Paths_array_of_the_configuration_file_of_each_NO_acerelerable_tool($toolName)
     {
-
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $modifiedFiles = ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php', 'database/my_migration.php', 'otherPath/file3.php'];
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php', 'database/my_migration.php', 'otherPath/file3.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php']);
 
         $ToolsFactorySpy = Mockery::spy(ToolsFactoy::class);
 
@@ -99,9 +97,9 @@ class FastStrategyTest extends TestCase
      */
     function it_skips_the_acelerable_tool_when_substituting_Paths_and_Paths_are_left_empty($tool)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $modifiedFilesOnOtherPathsThanSrc = ['database/my_migration.php', 'otherPath/file3.php'];
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFilesOnOtherPathsThanSrc);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['database/my_migration.php', 'otherPath/file3.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories([]);
 
         $configurationFile = [
             'Tools' => [$tool],
@@ -122,9 +120,9 @@ class FastStrategyTest extends TestCase
      */
     function it_instance_the_no_acelerable_tool_even_if_the_modified_files_are_not_in_they_Paths($toolName, $toolClass)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $modifiedFilesOnOtherPathsThanSrc = ['database/my_migration.php', 'otherPath/file3.php'];
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFilesOnOtherPathsThanSrc);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['database/my_migration.php', 'otherPath/file3.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories([]);
 
         $configurationFile = [
             'Tools' => [$toolName],

@@ -59,4 +59,4 @@ jobs:
         echo -e "\e[42m\e[30m**** Main Test Suite ****\033[0m"
         vendor/bin/phpunit --order-by random
         echo -e "\e[42m\e[30m**** GitfilesTest ****\033[0m"
-        vendor/bin/phpunit tests/Integration/GitFilesTest.php
+        vendor/bin/phpunit tests/Integration/FileUtilsTest.php

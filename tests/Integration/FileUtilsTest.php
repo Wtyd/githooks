@@ -2,7 +2,7 @@
 
 namespace Tests\Integration;
 
-use Wtyd\GitHooks\Utils\GitFiles;
+use Wtyd\GitHooks\Utils\FileUtils;
 use Illuminate\Container\Container;
 use Tests\Utils\PhpFileBuilder;
 use Tests\SystemTestCase;
@@ -11,7 +11,7 @@ use Tests\SystemTestCase;
  * Before executing this test suite after any changes, you must commit these changes
  * @group git
  */
-class GitFilesTest extends SystemTestCase
+class FileUtilsTest extends SystemTestCase
 {
     protected static $gitFilesPathTest = __DIR__ . '/../../testsDir/gitTests';
 
@@ -25,7 +25,7 @@ class GitFilesTest extends SystemTestCase
         mkdir(self::$gitFilesPathTest);
 
         $this->container = Container::getInstance();
-        $this->container->bind(GitFilesInterface::class, GitFiles::class);
+        $this->container->bind(FileUtilsInterface::class, FileUtils::class);
     }
 
     protected function tearDown(): void
@@ -43,7 +43,7 @@ class GitFilesTest extends SystemTestCase
 
         shell_exec('git add ' . self::$gitFilesPathTest . '/NewFile.php');
 
-        $gitFiles = $this->container->make(GitFiles::class);
+        $gitFiles = $this->container->make(FileUtils::class);
 
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
@@ -57,7 +57,7 @@ class GitFilesTest extends SystemTestCase
     /** @test */
     // function it_retrieve_an_empty_array_when_there_are_no_modified_files()
     // {
-    //     $gitFiles = $this->container->make(GitFiles::class);
+    //     $gitFiles = $this->container->make(FileUtils::class);
 
     //     $modifiedFiles = $gitFiles->getModifiedFiles();
 
@@ -71,7 +71,7 @@ class GitFilesTest extends SystemTestCase
 
     //     file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
 
-    //     $gitFiles = $this->container->make(GitFiles::class);
+    //     $gitFiles = $this->container->make(FileUtils::class);
 
     //     $modifiedFiles = $gitFiles->getModifiedFiles();
 

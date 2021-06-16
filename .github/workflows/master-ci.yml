@@ -166,4 +166,4 @@ jobs:
   #       echo "**** Main Test Suite ****"
   #       vendor/bin/phpunit
   #       echo "**** GitfilesTest ****"
-  #       vendor/bin/phpunit tests/Integration/GitFilesTest.php
+  #       vendor/bin/phpunit tests/Integration/FileUtilsTest.php

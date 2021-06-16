@@ -2,12 +2,13 @@
 
 namespace Tests;
 
-use LaravelZero\Framework\Testing\TestCase as BaseTestCase;
 use Tests\Zero\PendingCommand;
 use Tests\FileSystemTrait;
 use Tests\RetroCompatibilityAssertsTrait;
 use Tests\Utils\ConfigurationFileBuilder;
+use Tests\Utils\FileUtilsFake;
 use Tests\Zero\ZeroTestCase;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 abstract class ConsoleTestCase extends ZeroTestCase
 {
@@ -55,6 +56,8 @@ abstract class ConsoleTestCase extends ZeroTestCase
         $this->createDirStructure();
 
         $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path);
+
+        $this->app->bind(FileUtilsInterface::class, FileUtilsFake::class);
     }
 
     protected function tearDown(): void

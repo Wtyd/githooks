@@ -3,8 +3,8 @@
 namespace Wtyd\GitHooks\Container;
 
 use Illuminate\Container\Container;
-use Wtyd\GitHooks\Utils\GitFiles;
-use Wtyd\GitHooks\Utils\GitFilesInterface;
+use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class RegisterBindings
 {
@@ -33,7 +33,7 @@ class RegisterBindings
      */
     protected function binds(): array
     {
-        return [GitFilesInterface::class => GitFiles::class];
+        return [FileUtilsInterface::class => FileUtils::class];
     }
 
     /**

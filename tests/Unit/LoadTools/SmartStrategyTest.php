@@ -9,10 +9,11 @@ use Wtyd\GitHooks\Tools\CheckSecurity;
 use Wtyd\GitHooks\Tools\MessDetector;
 use Wtyd\GitHooks\Tools\ParallelLint;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
-use Wtyd\GitHooks\Utils\GitFiles;
+use Wtyd\GitHooks\Utils\FileUtils;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
+use Tests\Utils\FileUtilsFake;
 
 class SmartStrategyTest extends TestCase
 {
@@ -71,8 +72,8 @@ class SmartStrategyTest extends TestCase
      */
     function it_run_phpcs($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -119,8 +120,9 @@ class SmartStrategyTest extends TestCase
      */
     function it_skip_phpcs_when_all_modified_files_are_in_ignore_paths($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -176,8 +178,8 @@ class SmartStrategyTest extends TestCase
      */
     function it_run_phpcpd($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -218,8 +220,9 @@ class SmartStrategyTest extends TestCase
      */
     function it_skip_phpcpd_when_all_modified_files_are_in_ignore_paths($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -235,7 +238,7 @@ class SmartStrategyTest extends TestCase
             'Tools' => ['check-security'],
         ];
 
-        $smartStrategy = new SmartStrategy($configurationFile, new GitFiles(), new ToolsFactoy());
+        $smartStrategy = new SmartStrategy($configurationFile, new FileUtils(), new ToolsFactoy());
 
         $loadedTools = $smartStrategy->getTools();
 
@@ -292,8 +295,8 @@ class SmartStrategyTest extends TestCase
      */
     function it_run_phpmd($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -336,8 +339,9 @@ class SmartStrategyTest extends TestCase
      */
     function it_skip_phpmd_when_all_modified_files_are_in_ignore_paths($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -391,8 +395,8 @@ class SmartStrategyTest extends TestCase
      */
     function it_run_parallellLint($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -433,8 +437,9 @@ class SmartStrategyTest extends TestCase
      */
     function it_skip_parallellLint_when_all_modified_files_are_in_ignore_paths($configurationFile, $modifiedFiles)
     {
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -478,8 +483,9 @@ class SmartStrategyTest extends TestCase
 
         $modifiedFiles = ['app/conf.php', 'src/prueba.php'];
 
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -514,8 +520,9 @@ class SmartStrategyTest extends TestCase
 
         $modifiedFiles = ['app/conf.php', 'src/prueba.php'];
 
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -548,8 +555,9 @@ class SmartStrategyTest extends TestCase
 
         $modifiedFiles = ['app/conf.php', 'src/prueba.php'];
 
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 
@@ -585,8 +593,9 @@ class SmartStrategyTest extends TestCase
 
         $modifiedFiles = ['app/conf.php', 'src/prueba.php'];
 
-        $gitFiles = Mockery::mock(GitFiles::class);
-        $gitFiles->shouldReceive('getModifiedFiles')->andReturn($modifiedFiles);
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles($modifiedFiles);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
         $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
 

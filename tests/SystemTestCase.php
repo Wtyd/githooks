@@ -6,13 +6,13 @@ use Wtyd\GitHooks\Commands\Console\RegisterBindings;
 use Wtyd\GitHooks\Configuration;
 use Wtyd\GitHooks\Exception\ExitException;
 use Wtyd\GitHooks\Tools\CheckSecurity;
-use Wtyd\GitHooks\Utils\GitFilesInterface;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\CheckSecurityFake;
 use Tests\Utils\ConfigurationFake;
 use Tests\Utils\ConfigurationFileBuilder;
-use Tests\Utils\GitFilesFake;
+use Tests\Utils\FileUtilsFake;
 
 /**
  * Al llamar a setOutputCallback escondemos cualquier output por la consola que no venga de phpunit
@@ -50,7 +50,7 @@ class SystemTestCase extends TestCase
     protected function registerBindings()
     {
         $this->container =  Container::getInstance();
-        $this->container->bind(GitFilesInterface::class, GitFilesFake::class);
+        $this->container->bind(FileUtilsInterface::class, FileUtilsFake::class);
         $this->container->bind(Configuration::class, ConfigurationFake::class);
         $this->container->bind(CheckSecurity::class, CheckSecurityFake::class);
     }
