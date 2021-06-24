@@ -2,7 +2,6 @@
 
 namespace Wtyd\GitHooks\Tools;
 
-use Error;
 use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
 use Wtyd\GitHooks\Utils\Printer;
 

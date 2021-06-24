@@ -4,7 +4,6 @@ namespace Wtyd\GitHooks;
 
 use Wtyd\GitHooks\Exception\ExitException;
 use Wtyd\GitHooks\Tools\ToolExecutor;
-use Exception;
 use Wtyd\GitHooks\Utils\Printer;
 
 /**

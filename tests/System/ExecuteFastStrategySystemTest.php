@@ -37,6 +37,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([$this->getPath() . '/src/File.php']);
         });
 
         $githooks = $this->container->makeWith(GitHooks::class);
@@ -78,6 +79,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/app/File.php']);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([$this->getPath() . '/app/File.php']);
         });
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
@@ -123,6 +125,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([$this->getPath() . '/src/File.php']);
         });
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
@@ -166,6 +169,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([$this->getPath() . '/src/File.php']);
         });
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
@@ -204,6 +208,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([$this->getPath() . '/src/File.php']);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([$this->getPath() . '/src/File.php']);
         });
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
@@ -255,6 +260,10 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
             $gitFiles->setModifiedfiles([
+                $this->getPath() . '/src/File.php',
+                $this->getPath() . '/app/FileForMessDetector.php'
+            ]);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([
                 $this->getPath() . '/src/File.php',
                 $this->getPath() . '/app/FileForMessDetector.php'
             ]);

@@ -32,11 +32,10 @@ class ToolCommandExecutor
      */
     protected $toolExecutor;
 
-    public function __construct(Configuration $config, ChooseStrategy $chooseStrategy, ToolsFactoy $toolsFactoy, ToolExecutor $toolExecutor)
+    public function __construct(Configuration $config, ChooseStrategy $chooseStrategy, ToolExecutor $toolExecutor)
     {
         $this->config = $config;
         $this->chooseStrategy = $chooseStrategy;
-        $this->toolsFactoy = $toolsFactoy;
         $this->toolExecutor = $toolExecutor;
     }
 
@@ -50,15 +49,6 @@ class ToolCommandExecutor
      */
     public function execute(string $tool, string $execution = ''): Errors
     {
-        //TODO en lugar de invocar al toolsFActory directamente hay que pasar primero por ChooseStrategy
-        //El orden en GitHOoks es:
-        // 1. $file = $config->readfile();
-
-        // 2. $strategy = $chooseStrategy->__invoke($file);
-
-        // 3. $this->tools = $strategy->getTools();
-        // 4. $errors = $this->toolExecutor->__invoke($this->tools);
-
         $file = $this->config->readfile();
 
         //Override execution strategy
@@ -75,10 +65,10 @@ class ToolCommandExecutor
         $strategy = $this->chooseStrategy->__invoke($file);
 
         $tools = $strategy->getTools();
-        // $tools = $this->toolsFactoy->__invoke($file[Constants::TOOLS], $file);
 
         return $this->toolExecutor->__invoke($tools, true);
     }
+
     protected function checkExecution(array $configurationFile, string $execution): string
     {
         if (empty($execution)) {

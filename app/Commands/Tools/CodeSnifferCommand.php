@@ -20,15 +20,9 @@ class CodeSnifferCommand extends Command
      */
     protected $toolCommandExecutor;
 
-    /**
-     * @var Printer
-     */
-    protected $printer;
-
-    public function __construct(ToolCommandExecutor $toolCommandExecutor, Printer $printer)
+    public function __construct(ToolCommandExecutor $toolCommandExecutor)
     {
         $this->toolCommandExecutor = $toolCommandExecutor;
-        $this->printer = $printer;
         parent::__construct();
     }
 
