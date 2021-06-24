@@ -4,9 +4,9 @@ Options:
 
 # Herramientas que se van a ejecutar
 Tools:
-  - phpstan
-  - parallel-lint
-  - phpcs
+  # - phpstan
+  # - parallel-lint
+  # - phpcs
   - phpmd
   - phpcpd
 

@@ -43,36 +43,31 @@ class ToolCommandExecutor
      * Executes the tool with the githooks.yml arguments.
      * The Option 'execution' can be overriden with the $execution variable.
      *
-     * @param string $tool Some of GitHooks\Tools\ToolAbstract supported tools
+     * @param string $tool Name of the tool to be executed. 'all' for execute all tools setted in githooks.yml
      * @param string $execution Strategy of execution. Can be 'smart', 'fast' or 'full'. Default from githooks.yml.
+     * @param boolean $isLiveOutput True for print the command under the hood and the result of the tool in live. False for only final summary.
+     *
      * @return Errors
      */
-    public function execute(string $tool, string $execution = ''): Errors
+    public function execute(string $tool = 'all', string $execution = '', bool $isLiveOutput = false): Errors
     {
         $file = $this->config->readfile();
 
-        //Override execution strategy
-        if (!empty($execution)) {
-            if (in_array($execution, Constants::EXECUTION_KEY)) {
-                $file[Constants::OPTIONS][Constants::EXECUTION] = $execution;
-            }
-        }
+        $file[Constants::OPTIONS][Constants::EXECUTION] = $this->setExecution($file[Constants::OPTIONS][Constants::EXECUTION], $execution);
 
-        $file[Constants::OPTIONS][Constants::EXECUTION] = $this->checkExecution($file, $execution);
-
-        $file[Constants::TOOLS] = [$tool];
+        $file[Constants::TOOLS] = $this->setTools($file[Constants::TOOLS], $tool);
 
         $strategy = $this->chooseStrategy->__invoke($file);
 
         $tools = $strategy->getTools();
 
-        return $this->toolExecutor->__invoke($tools, true);
+        return $this->toolExecutor->__invoke($tools, $isLiveOutput);
     }
 
-    protected function checkExecution(array $configurationFile, string $execution): string
+    protected function setExecution(string $defaultExecution, string $execution): string
     {
         if (empty($execution)) {
-            return $configurationFile[Constants::OPTIONS][Constants::EXECUTION];
+            return $defaultExecution;
         }
 
         if (in_array($execution, Constants::EXECUTION_KEY)) {
@@ -80,5 +75,10 @@ class ToolCommandExecutor
         } else {
             throw InvalidArgumentValueException::forArgument('execution', $execution, Constants::EXECUTION_KEY);
         }
+    }
+
+    protected function setTools(array $defaultTools, string $tool): array
+    {
+        return ($tool === 'all') ? $defaultTools : [$tool];
     }
 }

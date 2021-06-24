@@ -33,6 +33,7 @@ abstract class ToolAbstract
 
     public function __construct()
     {
+        // $a = 10;
         try {
             $this->executable = $this->executableFinder();
         } catch (ExecutableNotFoundException $th) {

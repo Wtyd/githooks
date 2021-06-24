@@ -12,13 +12,17 @@ class ExecuteAllToolsCommand extends Command
     protected $signature = 'tool:all';
     protected $description = 'Runs all the tools setted in githooks.yml';
 
-    public function handle(Printer $printer)
+    public function handle(Printer $printer, ToolCommandExecutor $toolCommandExecutor): int
     {
-        $container = Container::getInstance();
-        $githooks = $container->makeWith(GitHooks::class);
-
         try {
-            $githooks();
+            $startTotalTime = microtime(true);
+            $result = $toolCommandExecutor->execute('all', '', false);
+            $endTotalTime = microtime(true);
+            $executionTotalTime = $endTotalTime - $startTotalTime;
+
+            $printer->line("  Total run time = " . number_format($executionTotalTime, 2) . " seconds.");
+
+            return $result->isEmpty() ? 0 : 1;
         } catch (\Throwable $th) {
             $printer->generalFail($th->getMessage());
             return 1;

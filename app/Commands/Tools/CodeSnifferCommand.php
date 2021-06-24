@@ -30,7 +30,7 @@ class CodeSnifferCommand extends Command
     {
         $execution = strval($this->argument('execution'));
 
-        $errors = $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER, $execution);
+        $errors = $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER, $execution, true);
         return $this->exit($errors);
     }
 
