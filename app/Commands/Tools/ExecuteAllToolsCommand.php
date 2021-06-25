@@ -2,27 +2,27 @@
 
 namespace App\Commands\Tools;
 
-use Wtyd\GitHooks\GitHooks;
 use Wtyd\GitHooks\Utils\Printer;
-use LaravelZero\Framework\Commands\Command;
-use Illuminate\Container\Container;
 
-class ExecuteAllToolsCommand extends Command
+class ExecuteAllToolsCommand extends ToolCommand
 {
     protected $signature = 'tool:all';
     protected $description = 'Runs all the tools setted in githooks.yml';
 
-    public function handle(Printer $printer, ToolCommandExecutor $toolCommandExecutor): int
+    public function handle(Printer $printer): int
     {
         try {
             $startTotalTime = microtime(true);
-            $result = $toolCommandExecutor->execute('all', '', false);
+
+            $tools = $this->toolsPreparer->execute('all', '');
+            $errors = $this->toolExecutor->__invoke($tools, false);
+
             $endTotalTime = microtime(true);
             $executionTotalTime = $endTotalTime - $startTotalTime;
 
             $printer->line("  Total run time = " . number_format($executionTotalTime, 2) . " seconds.");
 
-            return $result->isEmpty() ? 0 : 1;
+            return $this->exit($errors);
         } catch (\Throwable $th) {
             $printer->generalFail($th->getMessage());
             return 1;

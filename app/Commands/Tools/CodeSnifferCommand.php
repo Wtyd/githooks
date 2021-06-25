@@ -3,42 +3,22 @@
 namespace App\Commands\Tools;
 
 use Wtyd\GitHooks\Constants;
-use Wtyd\GitHooks\Tools\Errors;
-use Wtyd\GitHooks\Utils\Printer;
-use LaravelZero\Framework\Commands\Command;
 
 /**
  * @SuppressWarnings(PHPMD.ExitExpression)
  */
-class CodeSnifferCommand extends Command
+class CodeSnifferCommand extends ToolCommand
 {
     protected $signature = 'tool:phpcs {execution?}';
     protected $description = 'Run phpcs';
-
-    /**
-     * @var ToolCommandExecutor
-     */
-    protected $toolCommandExecutor;
-
-    public function __construct(ToolCommandExecutor $toolCommandExecutor)
-    {
-        $this->toolCommandExecutor = $toolCommandExecutor;
-        parent::__construct();
-    }
 
     public function handle()
     {
         $execution = strval($this->argument('execution'));
 
-        $errors = $this->toolCommandExecutor->execute(Constants::CODE_SNIFFER, $execution, true);
-        return $this->exit($errors);
-    }
+        $tools = $this->toolsPreparer->execute(Constants::CODE_SNIFFER, $execution);
+        $errors = $this->toolExecutor->__invoke($tools, true);
 
-    public function exit(Errors $errors): int
-    {
-        if (!$errors->isEmpty()) {
-            return 1;
-        }
-        return 0;
+        return $this->exit($errors);
     }
 }

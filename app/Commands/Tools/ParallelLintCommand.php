@@ -3,26 +3,17 @@
 namespace App\Commands\Tools;
 
 use Wtyd\GitHooks\Constants;
-use LaravelZero\Framework\Commands\Command;
 
-class ParallelLintCommand extends Command
+class ParallelLintCommand extends ToolCommand
 {
     protected $signature = 'tool:parallel-lint';
     protected $description = 'Run parallel-lint.';
 
-    /**
-     * @var ToolCommandExecutor
-     */
-    protected $toolCommandExecutor;
-
-    public function __construct(ToolCommandExecutor $toolCommandExecutor)
-    {
-        $this->toolCommandExecutor = $toolCommandExecutor;
-        parent::__construct();
-    }
-
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::PARALLEL_LINT);
+        $tools = $this->toolsPreparer->execute(Constants::PARALLEL_LINT);
+        $errors = $this->toolExecutor->__invoke($tools, true);
+
+        return $this->exit($errors);
     }
 }

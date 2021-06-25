@@ -3,26 +3,17 @@
 namespace App\Commands\Tools;
 
 use Wtyd\GitHooks\Constants;
-use LaravelZero\Framework\Commands\Command;
 
-class CopyPasteDetectorCommand extends Command
+class CopyPasteDetectorCommand extends ToolCommand
 {
     protected $signature = 'tool:phpcpd';
     protected $description = 'Run phpcp.';
 
-    /**
-     * @var App\Commands\Tools\ToolCommandExecutor
-     */
-    protected $toolCommandExecutor;
-
-    public function __construct(ToolCommandExecutor $toolCommandExecutor)
-    {
-        $this->toolCommandExecutor = $toolCommandExecutor;
-        parent::__construct();
-    }
-
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::COPYPASTE_DETECTOR);
+        $tools = $this->toolsPreparer->execute(Constants::COPYPASTE_DETECTOR);
+        $errors = $this->toolExecutor->__invoke($tools, true);
+
+        return $this->exit($errors);
     }
 }

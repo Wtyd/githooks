@@ -3,26 +3,17 @@
 namespace App\Commands\Tools;
 
 use Wtyd\GitHooks\Constants;
-use LaravelZero\Framework\Commands\Command;
 
-class MessDetectorCommand extends Command
+class MessDetectorCommand extends ToolCommand
 {
     protected $signature = 'tool:phpmd';
     protected $description = 'Run phpmd.';
 
-    /**
-     * @var ToolCommandExecutor
-     */
-    protected $toolCommandExecutor;
-
-    public function __construct(ToolCommandExecutor $toolCommandExecutor)
-    {
-        $this->toolCommandExecutor = $toolCommandExecutor;
-        parent::__construct();
-    }
-
     public function handle()
     {
-        $this->toolCommandExecutor->execute(Constants::MESS_DETECTOR);
+        $tools = $this->toolsPreparer->execute(Constants::MESS_DETECTOR);
+        $errors = $this->toolExecutor->__invoke($tools, true);
+
+        return $this->exit($errors);
     }
 }

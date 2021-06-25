@@ -1,16 +1,14 @@
 <?php
 
-namespace App\Commands\Tools;
+namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\ChooseStrategy;
 use App\Commands\Exception\InvalidArgumentValueException;
 use Wtyd\GitHooks\Configuration;
 use Wtyd\GitHooks\Constants;
-use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\ToolExecutor;
-use Wtyd\GitHooks\Tools\ToolsFactoy;
 
-class ToolCommandExecutor
+class ToolsPreparer
 {
     /**
      * @var Configuration
@@ -21,11 +19,6 @@ class ToolCommandExecutor
      * @var ChooseStrategy
      */
     protected $chooseStrategy;
-
-    /**
-     * @var ToolsFactoy
-     */
-    protected $toolsFactoy;
 
     /**
      * @var ToolExecutor
@@ -45,11 +38,10 @@ class ToolCommandExecutor
      *
      * @param string $tool Name of the tool to be executed. 'all' for execute all tools setted in githooks.yml
      * @param string $execution Strategy of execution. Can be 'smart', 'fast' or 'full'. Default from githooks.yml.
-     * @param boolean $isLiveOutput True for print the command under the hood and the result of the tool in live. False for only final summary.
      *
-     * @return Errors
+     * @return array Tools created and prepared for run.
      */
-    public function execute(string $tool = 'all', string $execution = '', bool $isLiveOutput = false): Errors
+    public function execute(string $tool = 'all', string $execution = ''): array
     {
         $file = $this->config->readfile();
 
@@ -59,9 +51,7 @@ class ToolCommandExecutor
 
         $strategy = $this->chooseStrategy->__invoke($file);
 
-        $tools = $strategy->getTools();
-
-        return $this->toolExecutor->__invoke($tools, $isLiveOutput);
+        return $strategy->getTools();
     }
 
     protected function setExecution(string $defaultExecution, string $execution): string
