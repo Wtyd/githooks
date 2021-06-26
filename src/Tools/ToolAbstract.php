@@ -6,6 +6,27 @@ use Wtyd\GitHooks\Tools\Exception\ExecutableNotFoundException;
 
 abstract class ToolAbstract
 {
+    public const CODE_SNIFFER = 'phpcs';
+
+    public const CHECK_SECURITY = 'check-security';
+
+    public const PARALLEL_LINT = 'parallel-lint';
+
+    public const MESS_DETECTOR = 'phpmd';
+
+    public const COPYPASTE_DETECTOR = 'phpcpd';
+
+    public const PHPSTAN = 'phpstan';
+
+    public const SUPPORTED_TOOLS = [
+        self::CODE_SNIFFER => CodeSniffer::class,
+        self::CHECK_SECURITY => CheckSecurity::class,
+        self::PARALLEL_LINT => ParallelLint::class,
+        self::MESS_DETECTOR => MessDetector::class,
+        self::COPYPASTE_DETECTOR => CopyPasteDetector::class,
+        self::PHPSTAN => Stan::class,
+    ];
+
     /**
      * @var string
      */
@@ -234,5 +255,9 @@ abstract class ToolAbstract
     public function getErrors(): string
     {
         return $this->errors;
+    }
+    public static function checkTool(string $tool): bool
+    {
+        return array_key_exists($tool, self::SUPPORTED_TOOLS);
     }
 }

@@ -14,6 +14,7 @@ class FileUtils implements FileUtilsInterface
     {
         $modifiedFiles = [];
         exec('git diff --cached --name-only', $modifiedFiles);
+        //git diff --cached --name-status
 
         return $modifiedFiles;
     }
