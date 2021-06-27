@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\LoadTools;
 
-use Wtyd\GitHooks\LoadTools\SmartStrategy;
+use Wtyd\GitHooks\LoadTools\SmartExecution;
 use Wtyd\GitHooks\Tools\CodeSniffer;
 use Wtyd\GitHooks\Tools\CopyPasteDetector;
 use Wtyd\GitHooks\Tools\CheckSecurity;
@@ -15,7 +15,7 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\FileUtilsFake;
 
-class SmartStrategyTest extends TestCase
+class SmartExecutionTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
@@ -75,9 +75,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(1, $loadedTools);
 
@@ -124,9 +124,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(0, $loadedTools);
     }
@@ -181,9 +181,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(1, $loadedTools);
 
@@ -224,9 +224,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(0, $loadedTools);
     }
@@ -238,9 +238,9 @@ class SmartStrategyTest extends TestCase
             'Tools' => ['check-security'],
         ];
 
-        $smartStrategy = new SmartStrategy($configurationFile, new FileUtils(), new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, new FileUtils(), new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(1, $loadedTools);
 
@@ -298,9 +298,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(1, $loadedTools);
 
@@ -343,9 +343,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(0, $loadedTools);
     }
@@ -398,9 +398,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(1, $loadedTools);
 
@@ -441,9 +441,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories($modifiedFiles);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(0, $loadedTools);
     }
@@ -487,9 +487,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(2, $loadedTools);
 
@@ -524,9 +524,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(5, $loadedTools);
 
@@ -559,9 +559,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(5, $loadedTools);
 
@@ -597,9 +597,9 @@ class SmartStrategyTest extends TestCase
         $gitFiles->setModifiedfiles($modifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/conf.php', 'src/prueba.php']);
 
-        $smartStrategy = new SmartStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $SmartExecution = new SmartExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $smartStrategy->getTools();
+        $loadedTools = $SmartExecution->getTools();
 
         $this->assertCount(4, $loadedTools);
 

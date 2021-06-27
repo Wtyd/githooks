@@ -8,7 +8,7 @@ use Wtyd\GitHooks\Tools\ToolsFactoy;
 /**
  * Prepara todas las herramientas que estén configuradas con la etiqueta Tools en el fichero de configuración.
  */
-class FullStrategy implements StrategyInterface
+class FullExecution implements ExecutionMode
 {
     /**
      * Configuration file 'githooks.yml' in array format. It could be like this:

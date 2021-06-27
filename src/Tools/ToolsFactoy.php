@@ -21,15 +21,15 @@ class ToolsFactoy
 
         $container = Container::getInstance();
         foreach ($tools as $tool) {
-            if (! array_key_exists($tool, Constants::TOOL_LIST)) {
+            if (!array_key_exists($tool, ToolAbstract::SUPPORTED_TOOLS)) {
                 throw ToolDoesNotExistException::forTool($tool);
             }
 
             //No necesita recibir parametros del fichero de configuracion
-            if (Constants::CHECK_SECURITY === $tool) {
-                $loadedTools[$tool] = $container->make(Constants::TOOL_LIST[$tool]);
+            if (ToolAbstract::CHECK_SECURITY === $tool) {
+                $loadedTools[$tool] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool]);
             } else {
-                $loadedTools[$tool] = $container->make(Constants::TOOL_LIST[$tool], [Constants::CONFIGURATION_FILE => $configurationFile]);
+                $loadedTools[$tool] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool], [Constants::CONFIGURATION_FILE => $configurationFile]);
             }
         }
 

@@ -8,7 +8,8 @@ use Wtyd\GitHooks\Tools\{
     CopyPasteDetector,
     MessDetector,
     ParallelLint,
-    Stan
+    Stan,
+    ToolAbstract
 };
 use Symfony\Component\Yaml\Yaml;
 
@@ -37,16 +38,16 @@ class ConfigurationFileBuilder
         $this->options = [Constants::EXECUTION => Constants::FULL_EXECUTION];
 
         $this->tools = [
-            Constants::CODE_SNIFFER,
-            Constants::PARALLEL_LINT,
-            Constants::MESS_DETECTOR,
-            Constants::COPYPASTE_DETECTOR,
-            Constants::PHPSTAN,
-            Constants::CHECK_SECURITY,
+            ToolAbstract::CODE_SNIFFER,
+            ToolAbstract::PARALLEL_LINT,
+            ToolAbstract::MESS_DETECTOR,
+            ToolAbstract::COPYPASTE_DETECTOR,
+            ToolAbstract::PHPSTAN,
+            ToolAbstract::CHECK_SECURITY,
         ];
 
         $this->configurationTools = [
-            Constants::CODE_SNIFFER => [
+            ToolAbstract::CODE_SNIFFER => [
                 CodeSniffer::PATHS => [$rootPath . '/src'],
                 CodeSniffer::STANDARD => 'PSR12',
                 CodeSniffer::IGNORE => [$rootPath . '/vendor'],
@@ -54,20 +55,20 @@ class ConfigurationFileBuilder
                 CodeSniffer::WARNING_SEVERITY => 6
             ],
 
-            Constants::PARALLEL_LINT => [
+            ToolAbstract::PARALLEL_LINT => [
                 ParallelLint::PATHS => [$rootPath . '/src'],
                 ParallelLint::EXCLUDE => [$rootPath . '/vendor']
             ],
-            Constants::MESS_DETECTOR => [
+            ToolAbstract::MESS_DETECTOR => [
                 MessDetector::PATHS => [$rootPath . '/src'],
                 MessDetector::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
                 MessDetector::EXCLUDE => [$rootPath . '/vendor']
             ],
-            Constants::COPYPASTE_DETECTOR => [
+            ToolAbstract::COPYPASTE_DETECTOR => [
                 CopyPasteDetector::PATHS => [$rootPath . '/src'],
                 CopyPasteDetector::EXCLUDE => [$rootPath . '/vendor']
             ],
-            Constants::PHPSTAN => [
+            ToolAbstract::PHPSTAN => [
                 Stan::LEVEL => 0,
                 Stan::PATHS => [$rootPath . '/src']
             ],
@@ -120,7 +121,7 @@ class ConfigurationFileBuilder
     /**
      * Set the tools Githooks will run
      *
-     * @param array $tools The possible values of this array are the keys of the Constants::TOOL_LIST array
+     * @param array $tools The possible values of this array are the keys of the ToolAbstract::SUPPORTED_TOOLS array
      * @return ConfigurationFileBuilder
      */
     public function setTools(array $tools): ConfigurationFileBuilder
@@ -146,35 +147,35 @@ class ConfigurationFileBuilder
 
     public function setPhpCSConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[Constants::CODE_SNIFFER] = $configuration;
+        $this->configurationTools[ToolAbstract::CODE_SNIFFER] = $configuration;
 
         return $this;
     }
 
     public function setParallelLintConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[Constants::PARALLEL_LINT] = $configuration;
+        $this->configurationTools[ToolAbstract::PARALLEL_LINT] = $configuration;
 
         return $this;
     }
 
     public function setMessDetectorConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[Constants::MESS_DETECTOR] = $configuration;
+        $this->configurationTools[ToolAbstract::MESS_DETECTOR] = $configuration;
 
         return $this;
     }
 
     public function setCopyPasteDetectorConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[Constants::COPYPASTE_DETECTOR] = $configuration;
+        $this->configurationTools[ToolAbstract::COPYPASTE_DETECTOR] = $configuration;
 
         return $this;
     }
 
     public function setPhpStanConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[Constants::PHPSTAN] = $configuration;
+        $this->configurationTools[ToolAbstract::PHPSTAN] = $configuration;
 
         return $this;
     }

@@ -35,7 +35,7 @@ class MessDetector extends ToolAbstract
     {
         $this->installer = 'phpmd/phpmd';
 
-        $this->executable = 'phpmd';
+        $this->executable = self::MESS_DETECTOR;
 
         $this->setArguments($configurationFile);
 
@@ -73,11 +73,11 @@ class MessDetector extends ToolAbstract
      */
     public function setArguments($configurationFile)
     {
-        if (!isset($configurationFile[Constants::MESS_DETECTOR]) || empty($configurationFile[Constants::MESS_DETECTOR])) {
+        if (!isset($configurationFile[ToolAbstract::MESS_DETECTOR]) || empty($configurationFile[ToolAbstract::MESS_DETECTOR])) {
             return;
         }
 
-        $arguments = $configurationFile[Constants::MESS_DETECTOR];
+        $arguments = $configurationFile[ToolAbstract::MESS_DETECTOR];
 
         if (!empty($arguments[self::RULES])) {
             $this->args[self::RULES] = $arguments[self::RULES];

@@ -4,9 +4,9 @@ namespace Tests\Unit;
 
 use Illuminate\Container\Container;
 use Wtyd\GitHooks\ChooseStrategy;
-use Wtyd\GitHooks\LoadTools\FastStrategy;
-use Wtyd\GitHooks\LoadTools\FullStrategy;
-use Wtyd\GitHooks\LoadTools\SmartStrategy;
+use Wtyd\GitHooks\LoadTools\ExecutionMode;
+use Wtyd\GitHooks\LoadTools\FullExecution;
+use Wtyd\GitHooks\LoadTools\SmartExecution;
 use Tests\UnitTestCase;
 use Wtyd\GitHooks\Container\RegisterBindings;
 
@@ -37,7 +37,7 @@ class ChooseStrategyTest extends UnitTestCase
         ];
         $strategy = $chooseStrategy->__invoke($confFile);
 
-        $this->assertInstanceOf(SmartStrategy::class, $strategy);
+        $this->assertInstanceOf(SmartExecution::class, $strategy);
     }
 
     /** @test*/
@@ -54,10 +54,10 @@ class ChooseStrategyTest extends UnitTestCase
         ];
         $strategy = $chooseStrategy->__invoke($confFile);
 
-        $this->assertInstanceOf(FastStrategy::class, $strategy);
+        $this->assertInstanceOf(ExecutionMode::class, $strategy);
     }
 
-    public function configurationFileForFullStrategyProvider()
+    public function configurationFileForFullExecutionProvider()
     {
         return [
             'Explicit "full" strategy' => [
@@ -112,7 +112,7 @@ class ChooseStrategyTest extends UnitTestCase
 
     /**
      * @test
-     * @dataProvider configurationFileForFullStrategyProvider
+     * @dataProvider configurationFileForFullExecutionProvider
      */
     function choose_full_strategy($confFile)
     {
@@ -120,6 +120,6 @@ class ChooseStrategyTest extends UnitTestCase
 
         $strategy = $chooseStrategy->__invoke($confFile);
 
-        $this->assertInstanceOf(FullStrategy::class, $strategy);
+        $this->assertInstanceOf(FullExecution::class, $strategy);
     }
 }

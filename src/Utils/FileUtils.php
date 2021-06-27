@@ -2,7 +2,7 @@
 
 namespace Wtyd\GitHooks\Utils;
 
-use Wtyd\GitHooks\LoadTools\StrategyInterface;
+use Wtyd\GitHooks\LoadTools\ExecutionMode;
 use Storage;
 
 class FileUtils implements FileUtilsInterface
@@ -29,10 +29,10 @@ class FileUtils implements FileUtilsInterface
      */
     public function isSameFile(string $file1, string $file2): bool
     {
-        $file1 = explode(StrategyInterface::ROOT_PATH, $file1);
+        $file1 = explode(ExecutionMode::ROOT_PATH, $file1);
         $file1 = count($file1) > 1 ? $file1[1] : $file1[0];
 
-        $file2 = explode(StrategyInterface::ROOT_PATH, $file2);
+        $file2 = explode(ExecutionMode::ROOT_PATH, $file2);
         $file2 = count($file2) > 1 ? $file2[1] : $file2[0];
 
         return $file1 === $file2;
@@ -47,7 +47,7 @@ class FileUtils implements FileUtilsInterface
      */
     public function directoryContainsFile(string $directory, string $file): bool
     {
-        if ($directory === StrategyInterface::ROOT_PATH) {
+        if ($directory === ExecutionMode::ROOT_PATH) {
             return true;
         }
         return in_array($file, Storage::allFiles($directory));

@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\Tools\ToolAbstract;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
@@ -13,19 +14,19 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
  * 2. WARNING!!! You must set the excludes of the tools either in githooks.yml or in the configuration file of eath tool since this option overwrites the key
  * paths of the tools so that they are executed only against the modified files.
  */
-class FastStrategy implements StrategyInterface
+class FastExecution implements ExecutionMode
 {
 
     /**
-     * Tools which execution can be improve by FastStrategy. The following tools are not affected:
+     * Tools which execution can be improve by ExecutionMode. The following tools are not affected:
      * 1. Check-Security no executes against any path.
      * 2. Copy Paste Detector needs all files to be able to compare
      */
     public const ACCELERABLE_TOOLS = [
-        Constants::CODE_SNIFFER,
-        Constants::PARALLEL_LINT,
-        Constants::MESS_DETECTOR,
-        Constants::PHPSTAN,
+        ToolAbstract::CODE_SNIFFER,
+        ToolAbstract::PARALLEL_LINT,
+        ToolAbstract::MESS_DETECTOR,
+        ToolAbstract::PHPSTAN,
     ];
 
     /**
@@ -54,7 +55,7 @@ class FastStrategy implements StrategyInterface
     }
 
     /**
-     * Se cargan todas las herramientas configuradas como en la FullStrategy. La diferencia es que editamos en el fichero de configuración los 'paths'
+     * Se cargan todas las herramientas configuradas como en la FullExecution. La diferencia es que editamos en el fichero de configuración los 'paths'
      * contra los que se ejecutan las herramientas. Ahora, en lugar de contra directorios 'pahts' se ejecuta contra los ficheros modificados que pertenezcan
      * a esos 'paths' o a sus subdirectorios.
      * Si un fichero estuviera excluído o perteneciera a un subdirectorio dejamos que sea la herramienta, con su configuración, la que excluya el fichero.
@@ -70,13 +71,13 @@ class FastStrategy implements StrategyInterface
                 continue;
             }
 
-            $originalPaths = $this->configurationFile[$tool][Constants::TOOL_LIST[$tool]::PATHS];
+            $originalPaths = $this->configurationFile[$tool][ToolAbstract::SUPPORTED_TOOLS[$tool]::PATHS];
             $modifiedFiles = $this->fileUtils->getModifiedFiles();
 
             $paths = $this->addFilesToToolPaths($modifiedFiles, $originalPaths);
 
             if (!empty($paths)) {
-                $this->configurationFile[$tool][Constants::TOOL_LIST[$tool]::PATHS] = $paths;
+                $this->configurationFile[$tool][ToolAbstract::SUPPORTED_TOOLS[$tool]::PATHS] = $paths;
                 $tools[] = $tool;
             }
         }

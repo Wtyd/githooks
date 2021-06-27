@@ -25,7 +25,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
-        $this->artisan('tool:phpcs')
+        $this->artisan('tool phpcs')
             ->assertExitCode(0)
             ->containsStringInOutput('phpcbf - OK.');
     }
@@ -39,13 +39,13 @@ class CodeSnifferCommandTest extends ConsoleTestCase
 
         $commandUnderTheHood = "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6";
 
-        $this->artisan('tool:phpcs')
+        $this->artisan('tool phpcs')
             ->assertExitCode(0)
             ->containsStringInOutput($commandUnderTheHood);
 
         file_put_contents($this->path . '/src/FileWithErrors.php', $this->fileBuilder->buildWithErrors(['phpcs']));
 
-        $this->artisan('tool:phpcs')
+        $this->artisan('tool phpcs')
             ->assertExitCode(1)
             ->containsStringInOutput($commandUnderTheHood);
     }
@@ -57,7 +57,7 @@ class CodeSnifferCommandTest extends ConsoleTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors(['phpcs']));
 
-        $this->artisan('tool:phpcs')
+        $this->artisan('tool phpcs')
             ->assertExitCode(1)
             ->containsStringInOutput('phpcbf - KO.')
             ->containsStringInOutput('A TOTAL OF 3 ERRORS WERE FIXED IN 1 FILE');
@@ -87,9 +87,8 @@ class CodeSnifferCommandTest extends ConsoleTestCase
         });
 
         $commandUnderTheHood = "phpcbf $pathForFileWithoutErrors";
-        $this->artisan('tool:phpcs fast')
+        $this->artisan('tool phpcs fast')
             ->containsStringInOutput($commandUnderTheHood)
-            ->containsStringInOutput('phpcbf - OK.')
-        ;
+            ->containsStringInOutput('phpcbf - OK.');
     }
 }

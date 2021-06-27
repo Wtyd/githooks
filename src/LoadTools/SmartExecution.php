@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\Tools\ToolAbstract;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
@@ -14,7 +15,7 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
  * - The tools that are NOT affected by this strategy are: phpstan (you can only mark exclusions in its configuration file) and security-check. These tools will
  * run as long as they are configured even if the smart option is active.
  */
-class SmartStrategy implements StrategyInterface
+class SmartExecution implements ExecutionMode
 {
     /**
      * Configuration file 'githooks.yml' in array format. It could be like this:
@@ -72,7 +73,7 @@ class SmartStrategy implements StrategyInterface
     protected function toolShouldSkip(string $tool): bool
     {
         $toolShouldSkip = false;
-        if (Constants::CHECK_SECURITY !== $tool) {
+        if (ToolAbstract::CHECK_SECURITY !== $tool) {
             $toolShouldSkip = $this->toolHasExclusionsConfigured($tool) && $this->allModifiedFilesAreExcluded($tool);
         }
         return $toolShouldSkip;
@@ -88,7 +89,7 @@ class SmartStrategy implements StrategyInterface
     {
         $exclusionConfigured = false;
         try {
-            if (isset($this->configurationFile[$tool]) && array_key_exists(Constants::EXCLUDE_ARGUMENT[$tool], $this->configurationFile[$tool])) {
+            if (isset($this->configurationFile[$tool]) && array_key_exists(ToolAbstract::excludeArgumentForTool($tool), $this->configurationFile[$tool])) {
                 $exclusionConfigured = true;
             }
         } catch (\Throwable $th) {
@@ -106,7 +107,7 @@ class SmartStrategy implements StrategyInterface
      */
     protected function allModifiedFilesAreExcluded(string $tool): bool
     {
-        $excludes = $this->configurationFile[$tool][Constants::EXCLUDE_ARGUMENT[$tool]];
+        $excludes = $this->configurationFile[$tool][ToolAbstract::excludeArgumentForTool($tool)];
 
         $modifiedFiles = $this->fileUtils->getModifiedFiles();
 

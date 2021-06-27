@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\LoadTools;
 
-use Wtyd\GitHooks\LoadTools\FastStrategy;
+use Wtyd\GitHooks\LoadTools\FastExecution;
 use Wtyd\GitHooks\Tools\CopyPasteDetector;
 use Wtyd\GitHooks\Tools\CheckSecurity;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
@@ -11,7 +11,7 @@ use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\FileUtilsFake;
 
-class FastStrategyTest extends TestCase
+class FastExecutionTest extends TestCase
 {
     use MockeryPHPUnitIntegration;
 
@@ -43,9 +43,9 @@ class FastStrategyTest extends TestCase
                 'paths' => ['src', 'app', 'tests']
             ]
         ];
-        $fastStrategy = new FastStrategy($configurationFile, $gitFiles, $ToolsFactorySpy);
+        $FastExecution = new FastExecution($configurationFile, $gitFiles, $ToolsFactorySpy);
 
-        $fastStrategy->getTools();
+        $FastExecution->getTools();
 
         $expectedFiles = ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php'];
         $configurationFile[$tool]['paths'] = $expectedFiles;
@@ -84,9 +84,9 @@ class FastStrategyTest extends TestCase
                 'paths' => ['src', 'app', 'tests']
             ]
         ];
-        $fastStrategy = new FastStrategy($configurationFile, $gitFiles, $ToolsFactorySpy);
+        $FastExecution = new FastExecution($configurationFile, $gitFiles, $ToolsFactorySpy);
 
-        $fastStrategy->getTools();
+        $FastExecution->getTools();
 
         $ToolsFactorySpy->shouldHaveReceived('__invoke', [[$toolName], $configurationFile]);
     }
@@ -107,9 +107,9 @@ class FastStrategyTest extends TestCase
                 'paths' => ['src',]
             ]
         ];
-        $fastStrategy = new FastStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $FastExecution = new FastExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $fastStrategy->getTools();
+        $loadedTools = $FastExecution->getTools();
 
         $this->assertCount(0, $loadedTools);
     }
@@ -130,9 +130,9 @@ class FastStrategyTest extends TestCase
                 'paths' => ['src',]
             ]
         ];
-        $fastStrategy = new FastStrategy($configurationFile, $gitFiles, new ToolsFactoy());
+        $FastExecution = new FastExecution($configurationFile, $gitFiles, new ToolsFactoy());
 
-        $loadedTools = $fastStrategy->getTools();
+        $loadedTools = $FastExecution->getTools();
 
         $this->assertCount(1, $loadedTools);
 

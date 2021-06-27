@@ -2,6 +2,8 @@
 
 namespace Wtyd\GitHooks;
 
+use Wtyd\GitHooks\Tools\ToolAbstract;
+
 class ConfigurationFileValidator
 {
     /**
@@ -114,7 +116,7 @@ class ConfigurationFileValidator
     /**
      * Validate the 'Tools' key:
      * 1. The 'Tools' key must exist and not be null.
-     * 2. The 'Tools' key must have at least one valid tool. The valid tools are the keys of Constants::TOOL_LIST array.
+     * 2. The 'Tools' key must have at least one valid tool. The valid tools are the keys of ToolAbstract::SUPPORTED_TOOLS array.
      * 3. All tools except 'check-security' must have a key at the root of $configurationFile with their configuration.
      * 4. The parameters extracted from the $configurationFile of each tool are compared with their possible configuration parameters.
      *
@@ -134,17 +136,17 @@ class ConfigurationFileValidator
         }
 
         foreach ($configurationFile[Constants::TOOLS] as $tool) {
-            if (Constants::CHECK_SECURITY === $tool) {
+            if (ToolAbstract::CHECK_SECURITY === $tool) {
                 $atLeastOneValidTool = true;
                 continue;
             }
 
-            if (!array_key_exists($tool, Constants::TOOL_LIST)) {
+            if (!array_key_exists($tool, ToolAbstract::SUPPORTED_TOOLS)) {
                 $warnings[] = "The tool $tool is not supported by GitHooks.";
             } elseif (!array_key_exists($tool, $configurationFile)) {
                 $errors[] = "The tool $tool is not setting.";
             } else {
-                $toolErrors = $this->checkConfiguration($configurationFile[$tool], Constants::TOOL_LIST[$tool]::OPTIONS, $tool);
+                $toolErrors = $this->checkConfiguration($configurationFile[$tool], ToolAbstract::SUPPORTED_TOOLS[$tool]::OPTIONS, $tool);
 
                 $atLeastOneValidTool = true;
 

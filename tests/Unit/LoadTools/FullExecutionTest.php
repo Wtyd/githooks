@@ -3,7 +3,7 @@
 namespace Tests\Unit\LoadTools;
 
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
-use Wtyd\GitHooks\LoadTools\FullStrategy;
+use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\{
     CodeSniffer,
     CopyPasteDetector,
@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Tools\{
 };
 use PHPUnit\Framework\TestCase;
 
-class FullStrategyTest extends TestCase
+class FullExecutionTest extends TestCase
 {
 
     function allToolsProvider()
@@ -72,9 +72,9 @@ class FullStrategyTest extends TestCase
      */
     function it_can_load_one_tool($configurationFile, $toolClass, $tool)
     {
-        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy());
+        $FullExecution = new FullExecution($configurationFile, new ToolsFactoy());
 
-        $loadedTools = $fullStrategy->getTools();
+        $loadedTools = $FullExecution->getTools();
 
         $this->assertCount(1, $loadedTools);
 
@@ -98,9 +98,9 @@ class FullStrategyTest extends TestCase
             ],
         ];
 
-        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy());
+        $FullExecution = new FullExecution($configurationFile, new ToolsFactoy());
 
-        $loadedTools = $fullStrategy->getTools();
+        $loadedTools = $FullExecution->getTools();
 
         $this->assertCount(6, $loadedTools);
     }
@@ -153,10 +153,10 @@ class FullStrategyTest extends TestCase
      */
     function it_raise_exception_when_try_to_load_a_tool_that_does_not_exist($configurationFile)
     {
-        $fullStrategy = new FullStrategy($configurationFile, new ToolsFactoy());
+        $FullExecution = new FullExecution($configurationFile, new ToolsFactoy());
 
         $this->expectException(ToolDoesNotExistException::class);
 
-        $fullStrategy->getTools();
+        $FullExecution->getTools();
     }
 }

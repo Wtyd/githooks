@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
+use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Wtyd\GitHooks\Tools\Exception\ExecutableNotFoundException;
 
 abstract class ToolAbstract
@@ -25,6 +26,15 @@ abstract class ToolAbstract
         self::MESS_DETECTOR => MessDetector::class,
         self::COPYPASTE_DETECTOR => CopyPasteDetector::class,
         self::PHPSTAN => Stan::class,
+    ];
+
+    public const EXCLUDE_ARGUMENT = [
+        self::CODE_SNIFFER => CodeSniffer::IGNORE,
+        self::CHECK_SECURITY => '',
+        self::PARALLEL_LINT => ParallelLint::EXCLUDE,
+        self::MESS_DETECTOR => MessDetector::EXCLUDE,
+        self::COPYPASTE_DETECTOR => CopyPasteDetector::EXCLUDE,
+        self::PHPSTAN => '',
     ];
 
     /**
@@ -256,8 +266,17 @@ abstract class ToolAbstract
     {
         return $this->errors;
     }
+
     public static function checkTool(string $tool): bool
     {
         return array_key_exists($tool, self::SUPPORTED_TOOLS);
+    }
+
+    public static function excludeArgumentForTool(string $tool): string
+    {
+        if (!self::checkTool($tool)) {
+            throw ToolDoesNotExistException::forTool($tool);
+        }
+        return self::EXCLUDE_ARGUMENT[$tool];
     }
 }

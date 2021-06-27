@@ -31,7 +31,7 @@ class CopyPasteDetector extends ToolAbstract
     {
         $this->installer = 'sebastian/phpcpd';
 
-        $this->executable = 'phpcpd';
+        $this->executable = self::COPYPASTE_DETECTOR;
 
         $this->setArguments($configurationFile);
 
@@ -64,10 +64,10 @@ class CopyPasteDetector extends ToolAbstract
      */
     public function setArguments($configurationFile)
     {
-        if (!isset($configurationFile[Constants::COPYPASTE_DETECTOR]) || empty($configurationFile[Constants::COPYPASTE_DETECTOR])) {
+        if (!isset($configurationFile[self::COPYPASTE_DETECTOR]) || empty($configurationFile[self::COPYPASTE_DETECTOR])) {
             return;
         }
-        $arguments = $configurationFile[Constants::COPYPASTE_DETECTOR];
+        $arguments = $configurationFile[self::COPYPASTE_DETECTOR];
 
         if (!empty($arguments[self::EXCLUDE])) {
             $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);

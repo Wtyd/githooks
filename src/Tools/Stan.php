@@ -42,7 +42,7 @@ class Stan extends ToolAbstract
     {
         $this->installer = 'phpstan/phpstan';
 
-        $this->executable = 'phpstan';
+        $this->executable = self::PHPSTAN;
 
         $this->setArguments($configurationFile);
 
@@ -92,10 +92,10 @@ class Stan extends ToolAbstract
      */
     public function setArguments($configurationFile)
     {
-        if (!isset($configurationFile[Constants::PHPSTAN]) || empty($configurationFile[Constants::PHPSTAN])) {
+        if (!isset($configurationFile[self::PHPSTAN]) || empty($configurationFile[self::PHPSTAN])) {
             return;
         }
-        $arguments = $configurationFile[Constants::PHPSTAN];
+        $arguments = $configurationFile[self::PHPSTAN];
 
         if (!empty($arguments[self::PHPSTAN_CONFIGURATION_FILE])) {
             $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $arguments[self::PHPSTAN_CONFIGURATION_FILE];

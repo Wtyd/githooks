@@ -2,7 +2,7 @@
 
 namespace Wtyd\GitHooks\LoadTools;
 
-interface StrategyInterface
+interface ExecutionMode
 {
     public const ROOT_PATH = './';
 

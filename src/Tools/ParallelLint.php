@@ -15,7 +15,7 @@ class ParallelLint extends ToolAbstract
      */
     public const EXCLUDE = 'exclude';
 
-     /**
+    /**
      * @var string PATHS Tag que indica la ruta sobre la que se ejecutará parallel-lint en el fichero de configuracion .yml
      */
     public const PATHS = 'paths';
@@ -31,7 +31,7 @@ class ParallelLint extends ToolAbstract
     {
         $this->installer = 'php-parallel-lint/php-parallel-lint';
 
-        $this->executable = Constants::PARALLEL_LINT;
+        $this->executable = self::PARALLEL_LINT;
 
         $this->setArguments($configurationFile);
 
@@ -86,10 +86,10 @@ class ParallelLint extends ToolAbstract
      */
     public function setArguments($configurationFile)
     {
-        if (!isset($configurationFile[Constants::PARALLEL_LINT]) || empty($configurationFile[Constants::PARALLEL_LINT])) {
+        if (!isset($configurationFile[self::PARALLEL_LINT]) || empty($configurationFile[self::PARALLEL_LINT])) {
             return;
         }
-        $arguments = $configurationFile[Constants::PARALLEL_LINT];
+        $arguments = $configurationFile[self::PARALLEL_LINT];
 
         if (!empty($arguments[self::EXCLUDE])) {
             $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);

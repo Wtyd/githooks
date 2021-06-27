@@ -114,11 +114,11 @@ class CodeSniffer extends ToolAbstract
     public function setArguments(array $configurationFile): void
     {
 
-        if (!isset($configurationFile[Constants::CODE_SNIFFER]) || empty($configurationFile[Constants::CODE_SNIFFER])) {
+        if (!isset($configurationFile[self::CODE_SNIFFER]) || empty($configurationFile[self::CODE_SNIFFER])) {
             return;
         }
 
-        $arguments = $configurationFile[Constants::CODE_SNIFFER];
+        $arguments = $configurationFile[self::CODE_SNIFFER];
 
         if (!empty($arguments[self::PATHS])) {
             $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
