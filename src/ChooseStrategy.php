@@ -26,10 +26,10 @@ class ChooseStrategy
         // dd($container->getBindings());
         if (!empty($file[Constants::OPTIONS][Constants::EXECUTION])) {
             switch ($file[Constants::OPTIONS][Constants::EXECUTION]) {
-                case Constants::SMART_EXECUTION:
+                case ExecutionMode::SMART_EXECUTION:
                     $strategy = $container->makeWith(SmartExecution::class, ['configurationFile' => $file]);
                     break;
-                case Constants::FAST_EXECUTION:
+                case ExecutionMode::FAST_EXECUTION:
                     $strategy = $container->makeWith(FastExecution::class, ['configurationFile' => $file]);
                     break;
                 default:

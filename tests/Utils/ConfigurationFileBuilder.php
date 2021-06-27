@@ -12,6 +12,7 @@ use Wtyd\GitHooks\Tools\{
     ToolAbstract
 };
 use Symfony\Component\Yaml\Yaml;
+use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
 /**
  * Facilitates the creation of custom 'githooks.yml' configuration files for testing.
@@ -35,7 +36,7 @@ class ConfigurationFileBuilder
      */
     public function __construct(string $rootPath)
     {
-        $this->options = [Constants::EXECUTION => Constants::FULL_EXECUTION];
+        $this->options = [Constants::EXECUTION => ExecutionMode::FULL_EXECUTION];
 
         $this->tools = [
             ToolAbstract::CODE_SNIFFER,

@@ -6,6 +6,7 @@ use Wtyd\GitHooks\ChooseStrategy;
 use App\Commands\Exception\InvalidArgumentValueException;
 use Wtyd\GitHooks\Configuration;
 use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\LoadTools\ExecutionMode;
 use Wtyd\GitHooks\Tools\ToolExecutor;
 
 class ToolsPreparer
@@ -60,10 +61,10 @@ class ToolsPreparer
             return $defaultExecution;
         }
 
-        if (in_array($execution, Constants::EXECUTION_KEY)) {
+        if (in_array($execution, ExecutionMode::EXECUTION_KEY)) {
             return $execution;
         } else {
-            throw InvalidArgumentValueException::forArgument('execution', $execution, Constants::EXECUTION_KEY);
+            throw InvalidArgumentValueException::forArgument('execution', $execution, ExecutionMode::EXECUTION_KEY);
         }
     }
 

@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks;
 
+use Wtyd\GitHooks\LoadTools\ExecutionMode;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class ConfigurationFileValidator
@@ -71,7 +72,7 @@ class ConfigurationFileValidator
 
             $validItems = $this->extractValidItems($configurationFile[Constants::OPTIONS]);
 
-            $errors = $this->checkValues($validItems, Constants::EXECUTION_KEY);
+            $errors = $this->checkValues($validItems, ExecutionMode::EXECUTION_KEY);
         }
 
         return [$errors, $warnings];
