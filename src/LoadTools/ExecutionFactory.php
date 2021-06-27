@@ -1,14 +1,11 @@
 <?php
 
-namespace Wtyd\GitHooks;
+namespace Wtyd\GitHooks\LoadTools;
 
-use Wtyd\GitHooks\LoadTools\FastExecution;
-use Wtyd\GitHooks\LoadTools\FullExecution;
-use Wtyd\GitHooks\LoadTools\SmartExecution;
-use Wtyd\GitHooks\LoadTools\ExecutionMode;
 use Illuminate\Container\Container;
+use Wtyd\GitHooks\Constants;
 
-class ChooseStrategy
+class ExecutionFactory
 {
 
     /**

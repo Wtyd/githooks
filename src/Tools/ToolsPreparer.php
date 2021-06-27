@@ -2,7 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
-use Wtyd\GitHooks\ChooseStrategy;
+use Wtyd\GitHooks\LoadTools\ExecutionFactory;
 use App\Commands\Exception\InvalidArgumentValueException;
 use Wtyd\GitHooks\Configuration;
 use Wtyd\GitHooks\Constants;
@@ -17,7 +17,7 @@ class ToolsPreparer
     protected $config;
 
     /**
-     * @var ChooseStrategy
+     * @var ExecutionFactory
      */
     protected $chooseStrategy;
 
@@ -26,7 +26,7 @@ class ToolsPreparer
      */
     protected $toolExecutor;
 
-    public function __construct(Configuration $config, ChooseStrategy $chooseStrategy, ToolExecutor $toolExecutor)
+    public function __construct(Configuration $config, ExecutionFactory $chooseStrategy, ToolExecutor $toolExecutor)
     {
         $this->config = $config;
         $this->chooseStrategy = $chooseStrategy;

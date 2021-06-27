@@ -2,13 +2,11 @@
 
 namespace Tests\Unit;
 
-use Illuminate\Container\Container;
-use Wtyd\GitHooks\ChooseStrategy;
+use Wtyd\GitHooks\LoadTools\ExecutionFactory;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
 use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\LoadTools\SmartExecution;
 use Tests\UnitTestCase;
-use Wtyd\GitHooks\Container\RegisterBindings;
 
 /**
  * It choose strategy for Githooks execution with the 'execution' tag inside 'Options'. The posibilities are:
@@ -16,7 +14,7 @@ use Wtyd\GitHooks\Container\RegisterBindings;
  * smart: when 'execution' tag is 'smart'.
  * fast: when 'execution' tag is 'fast'.
  */
-class ChooseStrategyTest extends UnitTestCase
+class ExecutionFactoryTest extends UnitTestCase
 {
     public function setUp(): void
     {
@@ -26,7 +24,7 @@ class ChooseStrategyTest extends UnitTestCase
     /** @test*/
     function choose_smart_strategy_in_Options_section()
     {
-        $chooseStrategy = new ChooseStrategy();
+        $chooseStrategy = new ExecutionFactory();
 
         $confFile = [
             'Options' => [
@@ -43,7 +41,7 @@ class ChooseStrategyTest extends UnitTestCase
     /** @test*/
     function choose_fast_strategy_in_Options_section()
     {
-        $chooseStrategy = new ChooseStrategy();
+        $chooseStrategy = new ExecutionFactory();
 
         $confFile = [
             'Options' => [
@@ -116,7 +114,7 @@ class ChooseStrategyTest extends UnitTestCase
      */
     function choose_full_strategy($confFile)
     {
-        $chooseStrategy = new ChooseStrategy();
+        $chooseStrategy = new ExecutionFactory();
 
         $strategy = $chooseStrategy->__invoke($confFile);
 
