@@ -3,73 +3,79 @@
 namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\LoadTools\ExecutionFactory;
-use App\Commands\Exception\InvalidArgumentValueException;
-use Wtyd\GitHooks\Configuration;
-use Wtyd\GitHooks\Constants;
-use Wtyd\GitHooks\LoadTools\ExecutionMode;
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
+use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Tools\ToolExecutor;
 
 class ToolsPreparer
 {
     /**
-     * @var Configuration
+     * @var FileReader
      */
-    protected $config;
+    protected $fileReader;
 
     /**
      * @var ExecutionFactory
      */
-    protected $chooseStrategy;
+    protected $executionFactory;
 
     /**
      * @var ToolExecutor
      */
     protected $toolExecutor;
 
-    public function __construct(Configuration $config, ExecutionFactory $chooseStrategy, ToolExecutor $toolExecutor)
+    /**
+     * @var ConfigurationFile
+     */
+    protected $configurationFile;
+
+    public function __construct(FileReader $fileReader, ExecutionFactory $executionFactory, ToolExecutor $toolExecutor)
     {
-        $this->config = $config;
-        $this->chooseStrategy = $chooseStrategy;
+        $this->fileReader = $fileReader;
+        $this->executionFactory = $executionFactory;
         $this->toolExecutor = $toolExecutor;
     }
 
     /**
-     * Executes the tool with the githooks.yml arguments.
+     * Executes the tool(s) with the githooks.yml arguments.
      * The Option 'execution' can be overriden with the $execution variable.
      *
      * @param string $tool Name of the tool to be executed. 'all' for execute all tools setted in githooks.yml
-     * @param string $execution Strategy of execution. Can be 'smart', 'fast' or 'full'. Default from githooks.yml.
+     * @param string $execution Mode execution. Can be 'smart', 'fast' or 'full'. Default from githooks.yml.
      *
-     * @return array Tools created and prepared for run.
+     * @return array Tools (ToolAbstract) created and prepared for run.
      */
-    public function execute(string $tool = 'all', string $execution = ''): array
+    public function __invoke(string $tool = ConfigurationFile::ALL_TOOLS, string $execution = ''): array
     {
-        $file = $this->config->readfile();
+        $file = $this->fileReader->readfile();
 
-        $file[Constants::OPTIONS][Constants::EXECUTION] = $this->setExecution($file[Constants::OPTIONS][Constants::EXECUTION], $execution);
+        $this->configurationFile = new ConfigurationFile($file);
 
-        $file[Constants::TOOLS] = $this->setTools($file[Constants::TOOLS], $tool);
+        $this->setExecution($execution);
 
-        $strategy = $this->chooseStrategy->__invoke($file);
+        $this->setTools($tool);
+
+        if ($this->configurationFile->hasErrors()) {
+            throw ConfigurationFileException::forFile($this->configurationFile);
+        }
+
+        $strategy = $this->executionFactory->__invoke($this->configurationFile->getExecution());
 
         return $strategy->getTools();
     }
 
-    protected function setExecution(string $defaultExecution, string $execution): string
+    protected function setExecution(string $execution): void
     {
         if (empty($execution)) {
-            return $defaultExecution;
+            return;
         }
 
-        if (in_array($execution, ExecutionMode::EXECUTION_KEY)) {
-            return $execution;
-        } else {
-            throw InvalidArgumentValueException::forArgument('execution', $execution, ExecutionMode::EXECUTION_KEY);
-        }
+        $this->configurationFile->setExecution($execution);
     }
 
-    protected function setTools(array $defaultTools, string $tool): array
+    protected function setTools(string $tool): void
     {
-        return ($tool === 'all') ? $defaultTools : [$tool];
+        $this->configurationFile->setTools($tool);
     }
 }

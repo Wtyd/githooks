@@ -36,6 +36,7 @@ class FullExecution implements ExecutionMode
      */
     public function getTools(): array
     {
+        // FIXME eliminar el fichero de configuración del constructor, se le pasará al método getTools para 
         return $this->toolsFactory->__invoke($this->configurationFile[Constants::TOOLS], $this->configurationFile);
     }
 }

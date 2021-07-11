@@ -1,18 +1,20 @@
 <?php
 
-namespace Wtyd\GitHooks\Exception;
+declare(strict_types=1);
 
-class ToolsNotFoundException extends \RuntimeException implements GitHooksExceptionInterface
+namespace Wtyd\GitHooks\ConfigurationFile\Exception;
+
+class ToolsIsEmptyException extends \RuntimeException implements ConfigurationFileInterface
 {
     /**
      * @var string Fichero de configuración.
      */
     protected $filePath;
 
-    public static function forFile(string $file): ToolsNotFoundException
+    public static function forFile(string $file): ToolsIsEmptyException
     {
         $exception = new self(
-            "There is no 'Tools' key in the '$file' file."
+            "The 'Tools' key from '$file' file has no items."
         );
 
         $exception->filePath = $file;

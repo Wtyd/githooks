@@ -17,6 +17,7 @@ class ToolsFactoy
      */
     public function __invoke(array $tools, $configurationFile): array
     {
+        // FIXME recibirá el array de tags y le pasará a cada herramienta su tag
         $loadedTools = [];
 
         $container = Container::getInstance();

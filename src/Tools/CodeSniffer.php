@@ -2,7 +2,6 @@
 
 namespace Wtyd\GitHooks\Tools;
 
-use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
 
 /**
@@ -36,6 +35,7 @@ class CodeSniffer extends ToolAbstract
     public const WARNING_SEVERITY = 'warning-severity';
 
     public const OPTIONS = [self::PATHS, self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY];
+
 
     /**
      * @var array

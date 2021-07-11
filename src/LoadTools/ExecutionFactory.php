@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\LoadTools;
 
 use Illuminate\Container\Container;
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Constants;
 
 class ExecutionFactory
@@ -17,12 +18,13 @@ class ExecutionFactory
      * @param array $file. Fichero de configuración.
      * @return ExecutionMode
      */
-    public function __invoke(array $file): ExecutionMode
+    public function __invoke(string $execution): ExecutionMode
     {
+        // FIXME Las executions no necesitarán recibir el fichero de configuración en el constructor
         $container =  Container::getInstance();
         // dd($container->getBindings());
-        if (!empty($file[Constants::OPTIONS][Constants::EXECUTION])) {
-            switch ($file[Constants::OPTIONS][Constants::EXECUTION]) {
+        if (!empty($execution)) {
+            switch ($execution) {
                 case ExecutionMode::SMART_EXECUTION:
                     $strategy = $container->makeWith(SmartExecution::class, ['configurationFile' => $file]);
                     break;
