@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks\LoadTools;
 
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
@@ -47,9 +48,8 @@ class FastExecution implements ExecutionMode
      */
     protected $toolsFactory;
 
-    public function __construct(array $configurationFile, FileUtilsInterface $fileUtils, ToolsFactoy $toolsFactory)
+    public function __construct(FileUtilsInterface $fileUtils, ToolsFactoy $toolsFactory)
     {
-        $this->configurationFile = $configurationFile;
         $this->fileUtils = $fileUtils;
         $this->toolsFactory = $toolsFactory;
     }
@@ -62,7 +62,7 @@ class FastExecution implements ExecutionMode
      *
      * @return array. Cada elemento es la instancia de un objeto Tool distinto.
      */
-    public function getTools(): array
+    public function getTools(ConfigurationFile $configurationFile): array
     {
         $tools = [];
         foreach ($this->configurationFile[Constants::TOOLS] as $tool) {

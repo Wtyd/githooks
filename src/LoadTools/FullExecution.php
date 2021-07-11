@@ -2,7 +2,7 @@
 
 namespace Wtyd\GitHooks\LoadTools;
 
-use Wtyd\GitHooks\Constants;
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 
 /**
@@ -11,21 +11,12 @@ use Wtyd\GitHooks\Tools\ToolsFactoy;
 class FullExecution implements ExecutionMode
 {
     /**
-     * Configuration file 'githooks.yml' in array format. It could be like this:
-     * ['Options' => ['execution' => 'full'], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
-     *
-     * @var array
-     */
-    protected $configurationFile;
-
-    /**
      * @var ToolsFactoy
      */
     protected $toolsFactory;
 
-    public function __construct(array $configurationFile, ToolsFactoy $toolsFactory)
+    public function __construct(ToolsFactoy $toolsFactory)
     {
-        $this->configurationFile = $configurationFile;
         $this->toolsFactory = $toolsFactory;
     }
 
@@ -34,9 +25,9 @@ class FullExecution implements ExecutionMode
      *
      * @return array Cada elemento es la instancia de un objeto Tool distinto.
      */
-    public function getTools(): array
+    public function getTools(ConfigurationFile $configurationFile): array
     {
-        // FIXME eliminar el fichero de configuración del constructor, se le pasará al método getTools para 
-        return $this->toolsFactory->__invoke($this->configurationFile[Constants::TOOLS], $this->configurationFile);
+
+        return $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
     }
 }

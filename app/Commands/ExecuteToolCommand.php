@@ -22,7 +22,7 @@ class ExecuteToolCommand extends BaseCommand
             // throw ToolDoesNotExistException::forTool($tool);
         }
 
-        $tools = $this->toolsPreparer->execute($tool, $execution);
+        $tools = $this->toolsPreparer->__invoke($tool, $execution);
 
         $errors = $this->toolExecutor->__invoke($tools, true);
 

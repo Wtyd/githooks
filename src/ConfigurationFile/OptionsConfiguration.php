@@ -31,9 +31,8 @@ class OptionsConfiguration
         } else {
             $this->warnings = $this->checkValidKeys($configurationFile[self::OPTIONS_TAG]);
 
-
             if (array_key_exists(self::EXECUTION_TAG, $configurationFile[self::OPTIONS_TAG])) {
-                $this->execution =  $this->setExecution($configurationFile[self::OPTIONS_TAG][self::EXECUTION_TAG]);
+                $this->setExecution($configurationFile[self::OPTIONS_TAG][self::EXECUTION_TAG]);
             }
         }
     }
@@ -65,9 +64,10 @@ class OptionsConfiguration
     {
         if (in_array($execution, ExecutionMode::EXECUTION_KEY, true)) {
             $this->execution = $execution;
+        } else {
+            $valuesToString = implode(', ', ExecutionMode::EXECUTION_KEY);
+            $this->errors[] = "The value '$execution' is not allowed for the tag '" . self::EXECUTION_TAG . "'. Accept: $valuesToString";
         }
-        $valuesToString = implode(', ', ExecutionMode::EXECUTION_KEY);
-        $this->errors[] = "The value '$execution' is not allowed for the tag '" . self::EXECUTION_TAG . "'. Accept: $valuesToString";
     }
 
     public function getExecution(): string

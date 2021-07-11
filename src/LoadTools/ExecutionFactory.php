@@ -20,23 +20,21 @@ class ExecutionFactory
      */
     public function __invoke(string $execution): ExecutionMode
     {
-        // FIXME Las executions no necesitarán recibir el fichero de configuración en el constructor
         $container =  Container::getInstance();
-        // dd($container->getBindings());
         if (!empty($execution)) {
             switch ($execution) {
                 case ExecutionMode::SMART_EXECUTION:
-                    $strategy = $container->makeWith(SmartExecution::class, ['configurationFile' => $file]);
+                    $strategy = $container->make(SmartExecution::class);
                     break;
                 case ExecutionMode::FAST_EXECUTION:
-                    $strategy = $container->makeWith(FastExecution::class, ['configurationFile' => $file]);
+                    $strategy = $container->make(FastExecution::class);
                     break;
                 default:
-                    $strategy = $container->makeWith(FullExecution::class, ['configurationFile' => $file]);
+                    $strategy = $container->make(FullExecution::class);
                     break;
             }
         } else {
-            $strategy = $container->makeWith(FullExecution::class, ['configurationFile' => $file]);
+            $strategy = $container->make(FullExecution::class);
         }
 
         return $strategy;

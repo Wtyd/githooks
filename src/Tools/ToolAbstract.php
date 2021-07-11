@@ -7,6 +7,8 @@ use Wtyd\GitHooks\Tools\Exception\ExecutableNotFoundException;
 
 abstract class ToolAbstract
 {
+    public const TOOL_CONFIGURATION = 'toolConfiguration';
+
     public const CODE_SNIFFER = 'phpcs';
 
     public const CHECK_SECURITY = 'check-security';

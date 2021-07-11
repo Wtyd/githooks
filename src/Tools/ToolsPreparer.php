@@ -62,7 +62,7 @@ class ToolsPreparer
 
         $strategy = $this->executionFactory->__invoke($this->configurationFile->getExecution());
 
-        return $strategy->getTools();
+        return $strategy->getTools($this->configurationFile);
     }
 
     protected function setExecution(string $execution): void

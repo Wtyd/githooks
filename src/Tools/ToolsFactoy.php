@@ -15,22 +15,22 @@ class ToolsFactoy
      * @param array $configurationFile. Fichero de configuración.
      * @return array asociativo cuya clave es el nombre de la herramienta y el valor su instancia.
      */
-    public function __invoke(array $tools, $configurationFile): array
+    public function __invoke(array $tools): array
     {
-        // FIXME recibirá el array de tags y le pasará a cada herramienta su tag
         $loadedTools = [];
 
         $container = Container::getInstance();
         foreach ($tools as $tool) {
-            if (!array_key_exists($tool, ToolAbstract::SUPPORTED_TOOLS)) {
+            if (!array_key_exists($tool->getTool(), ToolAbstract::SUPPORTED_TOOLS)) {
+                //TODO esto en principio ya está validado
                 throw ToolDoesNotExistException::forTool($tool);
             }
 
             //No necesita recibir parametros del fichero de configuracion
-            if (ToolAbstract::CHECK_SECURITY === $tool) {
-                $loadedTools[$tool] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool]);
+            if (ToolAbstract::CHECK_SECURITY === $tool->getTool()) {
+                $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()]);
             } else {
-                $loadedTools[$tool] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool], [Constants::CONFIGURATION_FILE => $configurationFile]);
+                $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()], [ToolAbstract::TOOL_CONFIGURATION => $tool]);
             }
         }
 

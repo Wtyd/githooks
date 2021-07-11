@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
+use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
 
 /**
@@ -42,13 +43,13 @@ class CodeSniffer extends ToolAbstract
      */
     protected $args;
 
-    public function __construct(array $configurationFile)
+    public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->installer = 'squizlabs/php_codesniffer';
 
         $this->executable = 'phpcbf';
 
-        $this->setArguments($configurationFile);
+        $this->setArguments($toolConfiguration->getToolConfiguration());
 
         parent::__construct();
     }
@@ -108,18 +109,12 @@ class CodeSniffer extends ToolAbstract
 
     /**
      * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
+     * //TODO este metodo creo que se puede eliminar entero ya que no hace falta validar nada
      *
      * @return void
      */
-    public function setArguments(array $configurationFile): void
+    public function setArguments(array $arguments): void
     {
-
-        if (!isset($configurationFile[self::CODE_SNIFFER]) || empty($configurationFile[self::CODE_SNIFFER])) {
-            return;
-        }
-
-        $arguments = $configurationFile[self::CODE_SNIFFER];
-
         if (!empty($arguments[self::PATHS])) {
             $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
         }

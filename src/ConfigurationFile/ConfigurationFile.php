@@ -68,8 +68,9 @@ class ConfigurationFile
             } else {
                 $atLeastOneValidTool = true;
 
-                $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[self::TOOLS][$tool]);
+                $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
                 $this->toolsConfiguration[$tool] = $toolConfiguration;
+
 
                 if (!$toolConfiguration->isEmptyWarnings()) {
                     $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
@@ -109,22 +110,20 @@ class ConfigurationFile
 
     public function hasErrors(): bool
     {
-        $errors = array_merge($this->options->getErrors(), $this->toolsErrors);
+        $errors = array_merge($this->getOptionErrors(), $this->toolsErrors);
 
         return !empty($errors);
     }
 
     public function getExecution(): string
     {
-        $this->options->getExecution();
+        return $this->options->getExecution();
     }
 
     public function setExecution(string $execution)
     {
         $this->options->setExecution($execution);
     }
-
-
 
     public function setTools(string $tool): void
     {
@@ -138,6 +137,11 @@ class ConfigurationFile
         if (!array_key_exists($tool, $this->toolsConfiguration)) {
             $this->toolsErrors = "The tool $tool is not configured in githooks.yml.";
         }
-        $this->toolsConfiguration = $this->toolsConfiguration[$tool];
+        $this->toolsConfiguration[$tool] = $this->toolsConfiguration[$tool];
+    }
+
+    public function getToolsConfiguration(): array
+    {
+        return $this->toolsConfiguration;
     }
 }

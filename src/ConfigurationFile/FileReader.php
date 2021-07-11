@@ -33,11 +33,11 @@ class FileReader
             throw ParseConfigurationFileException::forMessage($exception->getMessage());
         }
 
-        if (!is_array($configurationFile) || !array_key_exists(ToolAbstract::SUPPORTED_TOOLS, $configurationFile)) {
+        if (!is_array($configurationFile) || !array_key_exists(ConfigurationFile::TOOLS, $configurationFile)) {
             throw ToolsNotFoundException::forFile($configurationFilePath);
         }
 
-        if (empty($configurationFile[ToolAbstract::SUPPORTED_TOOLS])) {
+        if (empty($configurationFile[ConfigurationFile::TOOLS])) {
             throw ToolsIsEmptyException::forFile($configurationFilePath);
         }
 

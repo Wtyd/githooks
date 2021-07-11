@@ -2,6 +2,8 @@
 
 namespace Wtyd\GitHooks\LoadTools;
 
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
+
 interface ExecutionMode
 {
     public const ROOT_PATH = './';
@@ -14,5 +16,5 @@ interface ExecutionMode
 
     public const EXECUTION_KEY = [self::FULL_EXECUTION, self::SMART_EXECUTION, self::FAST_EXECUTION];
 
-    public function getTools(): array;
+    public function getTools(ConfigurationFile $configurationFile): array;
 }
