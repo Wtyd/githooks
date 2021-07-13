@@ -3,7 +3,8 @@
 namespace App\Commands;
 
 use App\Commands\ToolCommand as BaseCommand;
-use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
+use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class ExecuteToolCommand extends BaseCommand
@@ -13,6 +14,7 @@ class ExecuteToolCommand extends BaseCommand
 
     public function handle()
     {
+        $errors = new Errors();
         $tool = strval($this->argument('tool'));
         $execution = strval($this->argument('execution'));
 
@@ -22,9 +24,25 @@ class ExecuteToolCommand extends BaseCommand
             // throw ToolDoesNotExistException::forTool($tool);
         }
 
-        $tools = $this->toolsPreparer->__invoke($tool, $execution);
+        try {
+            $tools = $this->toolsPreparer->__invoke($tool, $execution);
 
-        $errors = $this->toolExecutor->__invoke($tools, true);
+            $errors = $this->toolExecutor->__invoke($tools, true);
+        } catch (ConfigurationFileInterface $exception) {
+            $this->error($exception->getMessage());
+            // TODO mejorar esto
+            foreach ($exception->getConfigurationFile()->getToolsErrors() as $error) {
+                $this->error($error);
+            }
+            foreach ($exception->getConfigurationFile()->getToolsErrors() as $error) {
+                $this->error($error);
+            }
+        } catch (\Throwable $th) {
+            //throw $th;
+        }
+
+
+
 
         return $this->exit($errors);
     }

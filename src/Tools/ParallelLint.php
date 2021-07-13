@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
+use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\Exception\ExecutableNotFoundException;
 
@@ -27,13 +28,13 @@ class ParallelLint extends ToolAbstract
      */
     protected $args;
 
-    public function __construct(array $configurationFile)
+    public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->installer = 'php-parallel-lint/php-parallel-lint';
 
         $this->executable = self::PARALLEL_LINT;
 
-        $this->setArguments($configurationFile);
+        $this->setArguments($toolConfiguration->getToolConfiguration());
 
         parent::__construct();
     }
@@ -84,13 +85,8 @@ class ParallelLint extends ToolAbstract
      * @param array $configurationFile
      * @return void
      */
-    public function setArguments($configurationFile)
+    public function setArguments(array $arguments)
     {
-        if (!isset($configurationFile[self::PARALLEL_LINT]) || empty($configurationFile[self::PARALLEL_LINT])) {
-            return;
-        }
-        $arguments = $configurationFile[self::PARALLEL_LINT];
-
         if (!empty($arguments[self::EXCLUDE])) {
             $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);
         }

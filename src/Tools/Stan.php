@@ -2,9 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
-use Wtyd\GitHooks\Constants;
-use Wtyd\GitHooks\Tools\Exception\ExitErrorException;
-use Exception;
+use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
  * Ejecuta la libreria phpstan/phpstan
@@ -38,13 +36,13 @@ class Stan extends ToolAbstract
      */
     protected $args;
 
-    public function __construct(array $configurationFile)
+    public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->installer = 'phpstan/phpstan';
 
         $this->executable = self::PHPSTAN;
 
-        $this->setArguments($configurationFile);
+        $this->setArguments($toolConfiguration->getToolConfiguration());
 
         parent::__construct();
     }
@@ -90,13 +88,8 @@ class Stan extends ToolAbstract
      * @param array $configurationFile
      * @return void
      */
-    public function setArguments($configurationFile)
+    public function setArguments(array $arguments)
     {
-        if (!isset($configurationFile[self::PHPSTAN]) || empty($configurationFile[self::PHPSTAN])) {
-            return;
-        }
-        $arguments = $configurationFile[self::PHPSTAN];
-
         if (!empty($arguments[self::PHPSTAN_CONFIGURATION_FILE])) {
             $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $arguments[self::PHPSTAN_CONFIGURATION_FILE];
         }

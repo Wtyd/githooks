@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
+use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Constants;
 
 /**
@@ -27,13 +28,13 @@ class CopyPasteDetector extends ToolAbstract
     protected $args;
 
     //TODO add --names-exclude option. Is like --exclude but for files. Check 6.* interfaces because bring changes.
-    public function __construct(array $configurationFile)
+    public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->installer = 'sebastian/phpcpd';
 
         $this->executable = self::COPYPASTE_DETECTOR;
 
-        $this->setArguments($configurationFile);
+        $this->setArguments($toolConfiguration->getToolConfiguration());
 
         parent::__construct();
     }
@@ -62,13 +63,8 @@ class CopyPasteDetector extends ToolAbstract
      * @param array $configurationFile
      * @return void
      */
-    public function setArguments($configurationFile)
+    public function setArguments(array $arguments)
     {
-        if (!isset($configurationFile[self::COPYPASTE_DETECTOR]) || empty($configurationFile[self::COPYPASTE_DETECTOR])) {
-            return;
-        }
-        $arguments = $configurationFile[self::COPYPASTE_DETECTOR];
-
         if (!empty($arguments[self::EXCLUDE])) {
             $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);
         }

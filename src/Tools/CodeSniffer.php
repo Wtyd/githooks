@@ -109,7 +109,6 @@ class CodeSniffer extends ToolAbstract
 
     /**
      * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
-     * //TODO este metodo creo que se puede eliminar entero ya que no hace falta validar nada
      *
      * @return void
      */

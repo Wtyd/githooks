@@ -120,11 +120,22 @@ class ConfigurationFile
         return $this->options->getExecution();
     }
 
-    public function setExecution(string $execution)
+    public function setExecution(string $execution): void
     {
         $this->options->setExecution($execution);
     }
 
+    /**
+     * Set the tools to be run:
+     * 1. If $tool is 'all', do nothing (it will run all tools setted in githooks.yml)
+     * 2. Check is $tool is supported by GitHooks
+     * 3. Check if $tool is setted in githooks.yml
+     * 4. Set only the $tool
+     *
+     * @param string $tool The name of the tool.
+     *
+     * @return void
+     */
     public function setTools(string $tool): void
     {
         if ($tool === self::ALL_TOOLS) {
@@ -134,10 +145,15 @@ class ConfigurationFile
         if (!$this->checkSupportedTool($tool)) {
             return;
         }
+
         if (!array_key_exists($tool, $this->toolsConfiguration)) {
-            $this->toolsErrors = "The tool $tool is not configured in githooks.yml.";
+            $this->toolsErrors[] = "The tool $tool is not configured in githooks.yml.";
+            return;
         }
-        $this->toolsConfiguration[$tool] = $this->toolsConfiguration[$tool];
+
+        $toolConfiguration = $this->toolsConfiguration[$tool];
+        unset($this->toolsConfiguration);
+        $this->toolsConfiguration[$tool] = $toolConfiguration;
     }
 
     public function getToolsConfiguration(): array

@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
+use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Constants;
 
 /**
@@ -31,13 +32,13 @@ class MessDetector extends ToolAbstract
      */
     protected $args;
 
-    public function __construct(array $configurationFile)
+    public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->installer = 'phpmd/phpmd';
 
         $this->executable = self::MESS_DETECTOR;
 
-        $this->setArguments($configurationFile);
+        $this->setArguments($toolConfiguration->getToolConfiguration());
 
         parent::__construct();
     }
@@ -71,14 +72,8 @@ class MessDetector extends ToolAbstract
      * @param array $configurationFile
      * @return void
      */
-    public function setArguments($configurationFile)
+    public function setArguments(array $arguments)
     {
-        if (!isset($configurationFile[ToolAbstract::MESS_DETECTOR]) || empty($configurationFile[ToolAbstract::MESS_DETECTOR])) {
-            return;
-        }
-
-        $arguments = $configurationFile[ToolAbstract::MESS_DETECTOR];
-
         if (!empty($arguments[self::RULES])) {
             $this->args[self::RULES] = $arguments[self::RULES];
         }

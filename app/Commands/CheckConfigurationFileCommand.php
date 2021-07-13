@@ -28,10 +28,10 @@ class CheckConfigurationFileCommand extends Command
      */
     protected $printer;
 
-    public function __construct(Configuration $configuration, ConfigurationFileValidator $configurationFileValidator, Printer $printer)
+    public function __construct(Printer $printer)
     {
-        $this->configuration = $configuration;
-        $this->configurationFileValidator = $configurationFileValidator;
+        // $this->configuration = $configuration;
+        // $this->configurationFileValidator = $configurationFileValidator;
         $this->printer = $printer;
         parent::__construct();
     }

@@ -14,6 +14,9 @@ class OptionsConfiguration
 
     public const TAGS_OPTIONS_TAG = [self::EXECUTION_TAG];
 
+    /**
+     * @var string
+     */
     protected $execution = '';
 
     protected $errors = [];

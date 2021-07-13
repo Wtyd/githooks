@@ -14,7 +14,7 @@ class ExecuteAllToolsCommand extends ToolCommand
         try {
             $startTotalTime = microtime(true);
 
-            $tools = $this->toolsPreparer->execute('all', '');
+            $tools = $this->toolsPreparer->__invoke('all', '');
             $errors = $this->toolExecutor->__invoke($tools, false);
 
             $endTotalTime = microtime(true);
