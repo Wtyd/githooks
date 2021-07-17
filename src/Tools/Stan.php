@@ -82,25 +82,19 @@ class Stan extends ToolAbstract
         return $this->executable . $arguments;
     }
 
-    /**
-     * Lee los argumentos y los setea.
-     *
-     * @param array $configurationFile
-     * @return void
-     */
-    public function setArguments(array $arguments)
+    public function setArguments(array $configurationFile): void
     {
-        if (!empty($arguments[self::PHPSTAN_CONFIGURATION_FILE])) {
-            $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $arguments[self::PHPSTAN_CONFIGURATION_FILE];
+        if (!empty($configurationFile[self::PHPSTAN_CONFIGURATION_FILE])) {
+            $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $configurationFile[self::PHPSTAN_CONFIGURATION_FILE];
         }
-        if (!empty($arguments[self::LEVEL])) {
-            $this->args[self::LEVEL] = $arguments[self::LEVEL];
+        if (!empty($configurationFile[self::LEVEL])) {
+            $this->args[self::LEVEL] = $configurationFile[self::LEVEL];
         }
-        if (!empty($arguments[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
+        if (!empty($configurationFile[self::PATHS])) {
+            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
         }
-        if (!empty($arguments[self::MEMORY_LIMIT])) {
-            $this->args[self::MEMORY_LIMIT] = $arguments[self::MEMORY_LIMIT];
+        if (!empty($configurationFile[self::MEMORY_LIMIT])) {
+            $this->args[self::MEMORY_LIMIT] = $configurationFile[self::MEMORY_LIMIT];
         }
     }
 }

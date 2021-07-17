@@ -2,31 +2,30 @@
 
 namespace Wtyd\GitHooks\Tools;
 
-use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Illuminate\Container\Container;
 
 class ToolsFactoy
 {
     /**
-     * Recibe un array de herramientas y el fichero de configuración y devuelve un array con las herramientas instanciadas.
+     * Transform the array with the configuration of the tools into an array of tools.
      *
-     * @param array $tools. Array asociativo donde la clave es el nombre de la herramienta y el valor la clase que la instancia.
-     * @param array $configurationFile. Fichero de configuración.
-     * @return array asociativo cuya clave es el nombre de la herramienta y el valor su instancia.
+     * @param array $toolsConfiguration The key is the name of the tool and the value is Wtyd\GitHooks\ConfigurationFile\ToolConfiguration.
+     *
+     * @return array The key is the name of the tool and the value is the corresponding ToolAbstract instance.
      */
-    public function __invoke(array $tools): array
+    public function __invoke(array $toolsConfiguration): array
     {
         $loadedTools = [];
 
         $container = Container::getInstance();
-        foreach ($tools as $tool) {
+        foreach ($toolsConfiguration as $tool) {
             if (!array_key_exists($tool->getTool(), ToolAbstract::SUPPORTED_TOOLS)) {
                 //TODO esto en principio ya está validado
                 throw ToolDoesNotExistException::forTool($tool);
             }
 
-            //No necesita recibir parametros del fichero de configuracion
+            // CHECK_SECURITY don't need configuration
             if (ToolAbstract::CHECK_SECURITY === $tool->getTool()) {
                 $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()]);
             } else {

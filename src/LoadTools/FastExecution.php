@@ -3,7 +3,6 @@
 namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
@@ -65,7 +64,7 @@ class FastExecution implements ExecutionMode
     public function getTools(ConfigurationFile $configurationFile): array
     {
         $tools = [];
-        foreach ($this->configurationFile[Constants::TOOLS] as $tool) {
+        foreach ($this->configurationFile[ConfigurationFile::TOOLS] as $tool) {
             if (!in_array($tool, self::ACCELERABLE_TOOLS)) {
                 $tools[] = $tool;
                 continue;
@@ -82,7 +81,7 @@ class FastExecution implements ExecutionMode
             }
         }
 
-        return $this->toolsFactory->__invoke($tools, $this->configurationFile);
+        return $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
     }
 
     /**

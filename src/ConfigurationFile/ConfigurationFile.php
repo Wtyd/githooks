@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile;
 
+use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class ConfigurationFile
@@ -39,48 +40,57 @@ class ConfigurationFile
      */
     protected $toolsWarnings = [];
 
-    public function __construct(array $configurationFile)
+    public function __construct(array $configurationFile, string $tool)
     {
         $this->configurationFile = $configurationFile;
 
         $this->options = new OptionsConfiguration($this->configurationFile);
 
-        $this->setToolsConfiguration();
+        if ($this->checkToolArgument($tool)) {
+            $this->setToolsConfiguration($tool);
+        } else {
+            throw ToolIsNotSupportedException::forTool($tool);
+        }
     }
 
 
-    protected function setToolsConfiguration(): void
+    protected function setToolsConfiguration(string $tool): void
     {
-        $atLeastOneValidTool = false;
+        if ($tool === self::ALL_TOOLS) {
+            $atLeastOneValidTool = false;
 
-        foreach ($this->configurationFile[self::TOOLS] as $tool) {
-            if (ToolAbstract::CHECK_SECURITY === $tool) {
-                $atLeastOneValidTool = true;
-                continue;
-            }
-
-            if (!$this->checkSupportedTool($tool)) {
-                continue;
-            }
-
-            if (!array_key_exists($tool, $this->configurationFile)) {
-                $this->toolsErrors[] = "The tool $tool is not setted.";
-            } else {
-                $atLeastOneValidTool = true;
-
-                $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
-                $this->toolsConfiguration[$tool] = $toolConfiguration;
-
-
-                if (!$toolConfiguration->isEmptyWarnings()) {
-                    $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
+            foreach ($this->configurationFile[self::TOOLS] as $tool) {
+                if (ToolAbstract::CHECK_SECURITY === $tool) {
+                    $atLeastOneValidTool = true;
+                    continue;
                 }
-            }
-        }
 
-        if (!$atLeastOneValidTool) {
-            //FIXME comprobar si esto se valida tb en el FileReader
-            $this->toolsErrors[] = 'There must be at least one tool configured.';
+                if (!$this->checkSupportedTool($tool)) {
+                    continue;
+                }
+                $this->addToolConfiguration($tool);
+                $atLeastOneValidTool = true;
+            }
+            if (!$atLeastOneValidTool) {
+                //FIXME comprobar si esto se valida tb en el FileReader
+                $this->toolsErrors[] = 'There must be at least one tool configured.';
+            }
+        } else {
+            $this->addToolConfiguration($tool);
+        }
+    }
+
+    protected function addToolConfiguration(string $tool): void
+    {
+        if (!array_key_exists($tool, $this->configurationFile)) {
+            $this->toolsErrors[] = "The tag '$tool' is missing.";
+        } else {
+            $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
+            $this->toolsConfiguration[$tool] = $toolConfiguration;
+
+            if (!$toolConfiguration->isEmptyWarnings()) {
+                $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
+            }
         }
     }
 
@@ -89,6 +99,7 @@ class ConfigurationFile
         if (array_key_exists($tool, ToolAbstract::SUPPORTED_TOOLS)) {
             return true;
         }
+
         $this->toolsWarnings[] = "The tool $tool is not supported by GitHooks.";
         return false;
     }
@@ -136,24 +147,13 @@ class ConfigurationFile
      *
      * @return void
      */
-    public function setTools(string $tool): void
+    protected function checkToolArgument(string $tool): bool
     {
         if ($tool === self::ALL_TOOLS) {
-            return;
+            return true;
         }
 
-        if (!$this->checkSupportedTool($tool)) {
-            return;
-        }
-
-        if (!array_key_exists($tool, $this->toolsConfiguration)) {
-            $this->toolsErrors[] = "The tool $tool is not configured in githooks.yml.";
-            return;
-        }
-
-        $toolConfiguration = $this->toolsConfiguration[$tool];
-        unset($this->toolsConfiguration);
-        $this->toolsConfiguration[$tool] = $toolConfiguration;
+        return $this->checkSupportedTool($tool);
     }
 
     public function getToolsConfiguration(): array

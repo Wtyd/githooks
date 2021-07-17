@@ -107,31 +107,26 @@ class CodeSniffer extends ToolAbstract
         return $this->executable . ' ' . $arguments;
     }
 
-    /**
-     * Lee los argumentos y los setea. Si vienen vacios se establecen unos por defecto.
-     *
-     * @return void
-     */
-    public function setArguments(array $arguments): void
+    public function setArguments(array $configurationFile): void
     {
-        if (!empty($arguments[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
+        if (!empty($configurationFile[self::PATHS])) {
+            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
         }
 
-        if (!empty($arguments[self::STANDARD])) {
-            $this->args[self::STANDARD] = $arguments[self::STANDARD];
+        if (!empty($configurationFile[self::STANDARD])) {
+            $this->args[self::STANDARD] = $configurationFile[self::STANDARD];
         }
 
-        if (!empty($arguments[self::IGNORE])) {
-            $this->args[self::IGNORE] = $this->routeCorrector($arguments[self::IGNORE]);
+        if (!empty($configurationFile[self::IGNORE])) {
+            $this->args[self::IGNORE] = $this->routeCorrector($configurationFile[self::IGNORE]);
         }
 
-        if (!empty($arguments[self::ERROR_SEVERITY])) {
-            $this->args[self::ERROR_SEVERITY] = $arguments[self::ERROR_SEVERITY];
+        if (!empty($configurationFile[self::ERROR_SEVERITY])) {
+            $this->args[self::ERROR_SEVERITY] = $configurationFile[self::ERROR_SEVERITY];
         }
 
-        if (!empty($arguments[self::WARNING_SEVERITY])) {
-            $this->args[self::WARNING_SEVERITY] = $arguments[self::WARNING_SEVERITY];
+        if (!empty($configurationFile[self::WARNING_SEVERITY])) {
+            $this->args[self::WARNING_SEVERITY] = $configurationFile[self::WARNING_SEVERITY];
         }
     }
 }

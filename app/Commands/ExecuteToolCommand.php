@@ -4,8 +4,8 @@ namespace App\Commands;
 
 use App\Commands\ToolCommand as BaseCommand;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\Tools\Errors;
-use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class ExecuteToolCommand extends BaseCommand
 {
@@ -18,16 +18,12 @@ class ExecuteToolCommand extends BaseCommand
         $tool = strval($this->argument('tool'));
         $execution = strval($this->argument('execution'));
 
-        if (!ToolAbstract::checkTool($tool)) {
-            $this->error("The $tool tool is not supported by GiHooks.");
-            return 1;
-            // throw ToolDoesNotExistException::forTool($tool);
-        }
-
         try {
             $tools = $this->toolsPreparer->__invoke($tool, $execution);
 
             $errors = $this->toolExecutor->__invoke($tools, true);
+        } catch (ToolIsNotSupportedException $th) {
+            $this->error($th->getMessage());
         } catch (ConfigurationFileInterface $exception) {
             $this->error($exception->getMessage());
             // TODO mejorar esto
@@ -38,7 +34,7 @@ class ExecuteToolCommand extends BaseCommand
                 $this->error($error);
             }
         } catch (\Throwable $th) {
-            //throw $th;
+            throw $th;
         }
 
 

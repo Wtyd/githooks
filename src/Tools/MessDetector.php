@@ -66,24 +66,18 @@ class MessDetector extends ToolAbstract
         return $this->executable . $arguments;
     }
 
-    /**
-     * Lee los argumentos y los setea.
-     *
-     * @param array $configurationFile
-     * @return void
-     */
-    public function setArguments(array $arguments)
+    public function setArguments(array $configurationFile): void
     {
-        if (!empty($arguments[self::RULES])) {
-            $this->args[self::RULES] = $arguments[self::RULES];
+        if (!empty($configurationFile[self::RULES])) {
+            $this->args[self::RULES] = $configurationFile[self::RULES];
         }
 
-        if (!empty($arguments[self::EXCLUDE])) {
-            $this->args[self::EXCLUDE] = $this->routeCorrector($arguments[self::EXCLUDE]);
+        if (!empty($configurationFile[self::EXCLUDE])) {
+            $this->args[self::EXCLUDE] = $this->routeCorrector($configurationFile[self::EXCLUDE]);
         }
 
-        if (!empty($arguments[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($arguments[self::PATHS]);
+        if (!empty($configurationFile[self::PATHS])) {
+            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
         }
     }
 

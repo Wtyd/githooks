@@ -46,15 +46,13 @@ class ToolsPreparer
      *
      * @return array Tools (ToolAbstract) created and prepared for run.
      */
-    public function __invoke(string $tool = ConfigurationFile::ALL_TOOLS, string $execution = ''): array
+    public function __invoke(string $tool, string $execution = ''): array
     {
         $file = $this->fileReader->readfile();
 
-        $this->configurationFile = new ConfigurationFile($file);
+        $this->configurationFile = new ConfigurationFile($file, $tool);
 
         $this->setExecution($execution);
-
-        $this->setTools($tool);
 
         if ($this->configurationFile->hasErrors()) {
             throw ConfigurationFileException::forFile($this->configurationFile);
@@ -72,10 +70,5 @@ class ToolsPreparer
         }
 
         $this->configurationFile->setExecution($execution);
-    }
-
-    protected function setTools(string $tool): void
-    {
-        $this->configurationFile->setTools($tool);
     }
 }

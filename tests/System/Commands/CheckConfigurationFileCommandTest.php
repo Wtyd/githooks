@@ -9,6 +9,7 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     /** @test */
     function it_pass_all_file_configuration_checks()
     {
+        $this->markTestSkipped('CheckConfiguration');
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         try {
@@ -23,6 +24,7 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     /** @test */
     function it_not_pass_file_configuration_checks()
     {
+        $this->markTestSkipped('CheckConfiguration');
         $this->configurationFileBuilder->setOptions(['execution' => 'invalid value']);
 
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
@@ -37,6 +39,7 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     /** @test */
     function it_pass_all_checks_with_warnings()
     {
+        $this->markTestSkipped('CheckConfiguration');
         $this->configurationFileBuilder->setPhpCSConfiguration([
             'execution' => 'invalid value'
         ]);
