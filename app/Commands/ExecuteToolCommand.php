@@ -9,8 +9,8 @@ use Wtyd\GitHooks\Tools\Errors;
 
 class ExecuteToolCommand extends BaseCommand
 {
-    protected $signature = 'tool {tool : Tool will be run} {execution? : Override the execution mode of githooks.yml}';
-    protected $description = 'Run the tool passed as argument. The must be a supporte tool by GitHooks. Values: "fast", "full" and "smart"';
+    protected $signature = 'tool {tool : Tool will be run} {execution? : Override the execution mode of githooks.yml. Values: "fast" and "full"}';
+    protected $description = 'Run the tool passed as argument. It must be a supported tool by GitHooks. ';
 
     public function handle()
     {
@@ -26,19 +26,17 @@ class ExecuteToolCommand extends BaseCommand
             $this->error($th->getMessage());
         } catch (ConfigurationFileInterface $exception) {
             $this->error($exception->getMessage());
-            // TODO mejorar esto
-            foreach ($exception->getConfigurationFile()->getToolsErrors() as $error) {
+
+            foreach ($exception->getConfigurationFile()->getErrors() as $error) {
                 $this->error($error);
             }
-            foreach ($exception->getConfigurationFile()->getToolsErrors() as $error) {
-                $this->error($error);
+
+            foreach ($exception->getConfigurationFile()->getWarnings() as $warning) {
+                $this->warning($warning);
             }
         } catch (\Throwable $th) {
             throw $th;
         }
-
-
-
 
         return $this->exit($errors);
     }

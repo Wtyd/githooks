@@ -54,10 +54,6 @@ class ToolsPreparer
 
         $this->setExecution($execution);
 
-        if ($this->configurationFile->hasErrors()) {
-            throw ConfigurationFileException::forFile($this->configurationFile);
-        }
-
         $strategy = $this->executionFactory->__invoke($this->configurationFile->getExecution());
 
         return $strategy->getTools($this->configurationFile);

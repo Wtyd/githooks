@@ -2,11 +2,11 @@
 
 namespace Tests\Utils;
 
-use Wtyd\GitHooks\Configuration;
-use Wtyd\GitHooks\Exception\ConfigurationFileNotFoundException;
 use Tests\SystemTestCase;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\ConfigurationFile\FileReader;
 
-class ConfigurationFake extends Configuration
+class FileReaderFake extends FileReader
 {
     /**
      * It Changes the original path on searchs for githooks.yml

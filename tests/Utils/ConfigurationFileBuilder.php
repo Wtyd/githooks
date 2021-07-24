@@ -12,6 +12,8 @@ use Wtyd\GitHooks\Tools\{
     ToolAbstract
 };
 use Symfony\Component\Yaml\Yaml;
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
+use Wtyd\GitHooks\ConfigurationFile\OptionsConfiguration;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
 /**
@@ -36,7 +38,7 @@ class ConfigurationFileBuilder
      */
     public function __construct(string $rootPath)
     {
-        $this->options = [Constants::EXECUTION => ExecutionMode::FULL_EXECUTION];
+        $this->options = [OptionsConfiguration::EXECUTION_TAG => ExecutionMode::FULL_EXECUTION];
 
         $this->tools = [
             ToolAbstract::CODE_SNIFFER,
@@ -84,8 +86,8 @@ class ConfigurationFileBuilder
     public function buildArray(): array
     {
         $file = [
-            Constants::OPTIONS => $this->options,
-            Constants::TOOLS => $this->tools,
+            OptionsConfiguration::OPTIONS_TAG => $this->options,
+            ConfigurationFile::TOOLS => $this->tools,
         ];
 
         foreach ($this->configurationTools as $key => $tool) {

@@ -81,7 +81,7 @@ class FastExecution implements ExecutionMode
             }
         }
 
-        return $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
+        return $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
     }
 
     /**

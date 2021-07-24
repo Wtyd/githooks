@@ -35,7 +35,7 @@ class ToolConfiguration
     /**
      * Check that each key of $toolConfiguration exists in the tool OPTIONS array.
      *
-     * @return array The warnings after check the configuration.
+     * @return void
      */
     protected function checkConfiguration(): void
     {

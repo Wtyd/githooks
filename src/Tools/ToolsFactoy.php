@@ -2,7 +2,6 @@
 
 namespace Wtyd\GitHooks\Tools;
 
-use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Illuminate\Container\Container;
 
 class ToolsFactoy
@@ -20,17 +19,7 @@ class ToolsFactoy
 
         $container = Container::getInstance();
         foreach ($toolsConfiguration as $tool) {
-            if (!array_key_exists($tool->getTool(), ToolAbstract::SUPPORTED_TOOLS)) {
-                //TODO esto en principio ya está validado
-                throw ToolDoesNotExistException::forTool($tool);
-            }
-
-            // CHECK_SECURITY don't need configuration
-            if (ToolAbstract::CHECK_SECURITY === $tool->getTool()) {
-                $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()]);
-            } else {
-                $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()], [ToolAbstract::TOOL_CONFIGURATION => $tool]);
-            }
+            $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()], [ToolAbstract::TOOL_CONFIGURATION => $tool]);
         }
 
         return $loadedTools;

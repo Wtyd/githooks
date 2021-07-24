@@ -8,9 +8,6 @@ use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ToolsIsEmptyException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ToolsNotFoundException;
-use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class FileReader
 {
@@ -31,14 +28,6 @@ class FileReader
             $configurationFile = Yaml::parseFile($configurationFilePath);
         } catch (ParseException $exception) {
             throw ParseConfigurationFileException::forMessage($exception->getMessage());
-        }
-
-        if (!is_array($configurationFile) || !array_key_exists(ConfigurationFile::TOOLS, $configurationFile)) {
-            throw ToolsNotFoundException::forFile($configurationFilePath);
-        }
-
-        if (empty($configurationFile[ConfigurationFile::TOOLS])) {
-            throw ToolsIsEmptyException::forFile($configurationFilePath);
         }
 
         return $configurationFile;

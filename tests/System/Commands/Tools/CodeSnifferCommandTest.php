@@ -2,7 +2,6 @@
 
 namespace Tests\System\Commands\Tools;
 
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Tests\ConsoleTestCase;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
@@ -17,6 +16,14 @@ class CodeSnifferCommandTest extends ConsoleTestCase
 
         $this->fileBuilder = new PhpFileBuilder('File');
     }
+
+    //1 Ejecuta la herramienta pasada por parametro (cualquier herramienta de las soportadas)
+    //4 printa el comando que ejecuta
+    //2 Excepcion por ejecutar una tool no soportada
+    // 3 Excepcion porque la herramienta a ejecutar no está configurada
+    //3 ExitCode 1 cuando falla cualquier herramienta (de una en una o varias juntas)
+
+    // 5 se puede sobreescribir el modo de ejecución fast a full y full a fast
 
     /** @test */
     function it_run_phpcs_command_without_errors()

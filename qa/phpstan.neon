@@ -8,6 +8,8 @@
         checkMissingIterableValueType: false
         ignoreErrors: [
             '#Call to static method [a-zA-Z0-9\\_]+\(\) on an unknown class Storage#',
+            '#Constructor of class Wtyd\\GitHooks\\Tools\\CheckSecurity has an unused parameter \$toolConfiguration.#',
+            '#Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\WrongExecutionValueException::[a-zA-Z0-9\\_]+\(\) has parameter \$executionValue with no typehint specified.#',
             # '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
             # '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
         ]

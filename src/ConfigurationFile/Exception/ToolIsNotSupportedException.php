@@ -8,6 +8,9 @@ use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class ToolIsNotSupportedException extends \UnexpectedValueException implements ConfigurationFileInterface
 {
+    /**
+     * @var string
+     */
     private $tool;
 
     public static function forTool(string $tool): ToolIsNotSupportedException

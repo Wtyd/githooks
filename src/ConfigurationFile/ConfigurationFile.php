@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile;
 
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class ConfigurationFile
@@ -31,7 +33,7 @@ class ConfigurationFile
     protected $toolsConfiguration = [];
 
     /**
-     * @var array
+     * @var array of ToolConfiguration
      */
     protected $toolsErrors = [];
 
@@ -42,17 +44,38 @@ class ConfigurationFile
 
     public function __construct(array $configurationFile, string $tool)
     {
+        if (!$this->checkToolArgument($tool)) {
+            throw ToolIsNotSupportedException::forTool($tool);
+        }
+
         $this->configurationFile = $configurationFile;
 
         $this->options = new OptionsConfiguration($this->configurationFile);
 
-        if ($this->checkToolArgument($tool)) {
+
+        if ($this->checkToolTag()) {
             $this->setToolsConfiguration($tool);
-        } else {
-            throw ToolIsNotSupportedException::forTool($tool);
+        }
+
+        if ($this->hasErrors()) {
+            throw ConfigurationFileException::forFile($this);
         }
     }
 
+    protected function checkToolTag(): bool
+    {
+        if (!array_key_exists(self::TOOLS, $this->configurationFile)) {
+            $this->toolsErrors[] = "There is no 'Tools' tag in the configuration file.";
+            return false;
+        }
+
+        if (empty($this->configurationFile[self::TOOLS])) {
+            $this->toolsErrors[] = "The 'Tools' tag from configuration file is empty.";
+            return false;
+        }
+
+        return true;
+    }
 
     protected function setToolsConfiguration(string $tool): void
     {
@@ -60,38 +83,53 @@ class ConfigurationFile
             $atLeastOneValidTool = false;
 
             foreach ($this->configurationFile[self::TOOLS] as $tool) {
-                if (ToolAbstract::CHECK_SECURITY === $tool) {
-                    $atLeastOneValidTool = true;
-                    continue;
-                }
-
                 if (!$this->checkSupportedTool($tool)) {
                     continue;
                 }
-                $this->addToolConfiguration($tool);
-                $atLeastOneValidTool = true;
+                if (!$atLeastOneValidTool) {
+                    $atLeastOneValidTool = $this->addTool($tool);
+                } else {
+                    $this->addTool($tool);
+                }
             }
             if (!$atLeastOneValidTool) {
-                //FIXME comprobar si esto se valida tb en el FileReader
                 $this->toolsErrors[] = 'There must be at least one tool configured.';
             }
         } else {
-            $this->addToolConfiguration($tool);
+            $this->addTool($tool);
         }
     }
 
-    protected function addToolConfiguration(string $tool): void
+    protected function addTool(string $tool): bool
     {
-        if (!array_key_exists($tool, $this->configurationFile)) {
-            $this->toolsErrors[] = "The tag '$tool' is missing.";
-        } else {
-            $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
+        if ($this->toolShouldBeAdded($tool)) {
+            if (ToolAbstract::CHECK_SECURITY === $tool) {
+                $toolConfiguration = new ToolConfiguration($tool, []);
+            } else {
+                $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
+            }
+
             $this->toolsConfiguration[$tool] = $toolConfiguration;
 
             if (!$toolConfiguration->isEmptyWarnings()) {
                 $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
             }
+            return true;
         }
+        return false;
+    }
+
+    protected function toolShouldBeAdded(string $tool): bool
+    {
+        if (ToolAbstract::CHECK_SECURITY === $tool) {
+            return true;
+        }
+
+        if (!array_key_exists($tool, $this->configurationFile)) {
+            $this->toolsErrors[] = "The tag '$tool' is missing.";
+            return false;
+        }
+        return true;
     }
 
     protected function checkSupportedTool(string $tool): bool
@@ -104,19 +142,24 @@ class ConfigurationFile
         return false;
     }
 
-    public function getToolsErrors(): array
-    {
-        return $this->toolsErrors;
-    }
-
-    public function getToolsWarnings(): array
-    {
-        return $this->toolsWarnings;
-    }
-
-    public function getOptionErrors(): array
+    protected function getOptionErrors(): array
     {
         return $this->options->getErrors();
+    }
+
+    protected function getOptionWarnings(): array
+    {
+        return $this->options->getWarnings();
+    }
+
+    public function getErrors(): array
+    {
+        return array_merge($this->getOptionErrors(), $this->toolsErrors);
+    }
+
+    public function getWarnings(): array
+    {
+        return array_merge($this->getOptionWarnings(), $this->toolsWarnings);
     }
 
     public function hasErrors(): bool
@@ -136,17 +179,6 @@ class ConfigurationFile
         $this->options->setExecution($execution);
     }
 
-    /**
-     * Set the tools to be run:
-     * 1. If $tool is 'all', do nothing (it will run all tools setted in githooks.yml)
-     * 2. Check is $tool is supported by GitHooks
-     * 3. Check if $tool is setted in githooks.yml
-     * 4. Set only the $tool
-     *
-     * @param string $tool The name of the tool.
-     *
-     * @return void
-     */
     protected function checkToolArgument(string $tool): bool
     {
         if ($tool === self::ALL_TOOLS) {

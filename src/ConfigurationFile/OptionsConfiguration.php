@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile;
 
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
 class OptionsConfiguration
@@ -19,8 +20,14 @@ class OptionsConfiguration
      */
     protected $execution = '';
 
+    /**
+     * @var array
+     */
     protected $errors = [];
 
+    /**
+     * @var array
+     */
     protected $warnings = [];
 
     public function __construct(array $configurationFile)
@@ -31,11 +38,19 @@ class OptionsConfiguration
 
         if (empty($configurationFile[self::OPTIONS_TAG])) {
             $this->warnings[] = 'The tag \'' . self::OPTIONS_TAG . '\' is empty';
-        } else {
-            $this->warnings = $this->checkValidKeys($configurationFile[self::OPTIONS_TAG]);
+            return;
+        }
 
-            if (array_key_exists(self::EXECUTION_TAG, $configurationFile[self::OPTIONS_TAG])) {
-                $this->setExecution($configurationFile[self::OPTIONS_TAG][self::EXECUTION_TAG]);
+        $this->warnings = $this->checkValidKeys($configurationFile[self::OPTIONS_TAG]);
+
+        if (array_key_exists(self::EXECUTION_TAG, $configurationFile[self::OPTIONS_TAG])) {
+            try {
+                $execution = $configurationFile[self::OPTIONS_TAG][self::EXECUTION_TAG];
+                $this->setExecution($execution);
+            } catch (WrongExecutionValueException $ex) {
+                $this->errors[] = $ex->getMessage();
+            } catch (\Throwable $throwable) {
+                $this->errors[] = WrongExecutionValueException::getExceptionMessage($execution);
             }
         }
     }
@@ -62,15 +77,14 @@ class OptionsConfiguration
         return $warnings;
     }
 
-
     public function setExecution(string $execution): void
     {
-        if (in_array($execution, ExecutionMode::EXECUTION_KEY, true)) {
+        if (is_string($execution) && in_array($execution, ExecutionMode::EXECUTION_KEY, true)) {
             $this->execution = $execution;
-        } else {
-            $valuesToString = implode(', ', ExecutionMode::EXECUTION_KEY);
-            $this->errors[] = "The value '$execution' is not allowed for the tag '" . self::EXECUTION_TAG . "'. Accept: $valuesToString";
+            return;
         }
+
+        throw WrongExecutionValueException::forExecution($execution);
     }
 
     public function getExecution(): string
