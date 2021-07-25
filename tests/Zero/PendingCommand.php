@@ -162,7 +162,7 @@ class PendingCommand
     }
 
     /**
-     * Specify output that should be printed when the command runs.
+     * Specify output that not should be printed when the command runs.
      *
      * @param  string  $string
      * @return $this
@@ -170,6 +170,71 @@ class PendingCommand
     public function notContainsStringInOutput($string)
     {
         $this->test->notContainsStringInOutput[] = $string;
+
+        return $this;
+    }
+
+    /**
+     * Specify output that should be printed when the command runs.
+     *
+     * @param  string  $stringInOutput
+     * @return $this
+     */
+    public function matchesRegularExpression($matchesRegularExpression)
+    {
+        $this->test->matchesRegularExpression[] = $matchesRegularExpression;
+
+        return $this;
+    }
+
+    /**
+     * Specify output that not should be printed when the command runs.
+     *
+     * @param  string  $stringInOutput
+     * @return $this
+     */
+    public function notMatchesRegularExpression($notMatchesRegularExpression)
+    {
+        $this->test->notMatchesRegularExpression[] = $notMatchesRegularExpression;
+
+        return $this;
+    }
+
+    /**
+     * Checks if tool has been executed successfully
+     *
+     * @param  string  $tool
+     * @return $this
+     */
+    public function toolHasBeenExecutedSuccessfully($tool)
+    {
+        $this->test->toolHasBeenExecutedSuccessfully[] = $tool;
+
+        return $this;
+    }
+
+    /**
+     * Checks if tool has failed
+     *
+     * @param  string  $tool
+     * @return $this
+     */
+    public function toolHasFailed($tool)
+    {
+        $this->test->toolHasFailed[] = $tool;
+
+        return $this;
+    }
+
+    /**
+     * Checks if tool didn't run
+     *
+     * @param  string  $tool
+     * @return $this
+     */
+    public function toolDidNotRun($tool)
+    {
+        $this->test->toolDidNotRun[] = $tool;
 
         return $this;
     }
@@ -338,6 +403,61 @@ class PendingCommand
                 unset($this->test->containsStringInOutput[$key]);
             }
         }
+
+        if (count($this->test->matchesRegularExpression)) {
+            foreach ($this->test->matchesRegularExpression as $key => $pattern) {
+                $this->test->assertMatchesRegularExpression(
+                    $pattern,
+                    $this->test->getActualOutput(),
+                    'Output "' . $this->test->getActualOutput() . '" does not match with regular expression given:' . $pattern
+                );
+                unset($this->test->matchesRegularExpression[$key]);
+            }
+        }
+
+        if (count($this->test->matchesRegularExpression)) {
+            foreach ($this->test->matchesRegularExpression as $key => $pattern) {
+                $this->test->assertMatchesRegularExpression(
+                    $pattern,
+                    $this->test->getActualOutput(),
+                    'Output "' . $this->test->getActualOutput() . '" match with regular expression given:' . $pattern
+                );
+                unset($this->test->matchesRegularExpression[$key]);
+            }
+        }
+
+        if (count($this->test->toolHasBeenExecutedSuccessfully)) {
+            foreach ($this->test->toolHasBeenExecutedSuccessfully as $key => $tool) {
+                $this->test->assertMatchesRegularExpression(
+                    "%$tool(\.phar)? - OK\. Time: \d+\.\d{2}%",
+                    $this->test->getActualOutput(),
+                    "The tool $tool has not been executed successfully"
+                );
+                unset($this->test->toolHasBeenExecutedSuccessfully[$key]);
+            }
+        }
+
+        if (count($this->test->toolHasFailed)) {
+            foreach ($this->test->toolHasFailed as $key => $tool) {
+                $this->test->assertMatchesRegularExpression(
+                    "%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%",
+                    $this->test->getActualOutput(),
+                    "The tool $tool has not failed"
+                );
+                unset($this->test->toolHasBeenExecutedSuccessfully[$key]);
+            }
+        }
+
+        if (count($this->test->toolDidNotRun)) {
+            foreach ($this->test->toolDidNotRun as $key => $tool) {
+                $this->test->assertStringNotContainsString(
+                    $tool,
+                    $this->test->getActualOutput(),
+                    "The tool $tool has been run"
+                );
+                unset($this->test->containsStringInOutput[$key]);
+            }
+        }
     }
 
     /**
@@ -455,6 +575,13 @@ class PendingCommand
         $this->test->expectedTables = [];
         $this->test->expectedQuestions = [];
         $this->test->expectedChoices = [];
+        $this->test->containsStringInOutput = [];
+        $this->test->notContainsStringInOutput = [];
+        $this->test->matchesRegularExpression = [];
+        $this->test->notMatchesRegularExpression = [];
+        $this->test->toolHasBeenExecutedSuccessfully = [];
+        $this->test->toolHasFailed = [];
+        $this->test->toolDidNotRun = [];
     }
 
     /**
@@ -470,4 +597,17 @@ class PendingCommand
 
         $this->run();
     }
+
+
+
+    // protected function assertToolHasFailed(string $tool): void
+    // {
+    //     //phpcbf[.phar] - KO. Time: 0.18
+    //     $this->assertMatchesRegularExpression("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
+    // }
+
+    // protected function assertToolDidNotRun(string $tool): void
+    // {
+    //     $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has been run");
+    // }
 }

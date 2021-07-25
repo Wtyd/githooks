@@ -30,6 +30,16 @@ abstract class ConsoleTestCase extends ZeroTestCase
      */
     public $notContainsStringInOutput = [];
 
+    public $matchesRegularExpression = [];
+
+    public $notMatchesRegularExpression = [];
+
+    public $toolHasBeenExecutedSuccessfully = [];
+
+    public $toolHasFailed = [];
+
+    public $toolDidNotRun = [];
+
     public $expectedTables = [];
 
     /**

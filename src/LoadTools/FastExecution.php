@@ -30,14 +30,6 @@ class FastExecution implements ExecutionMode
     ];
 
     /**
-     * Todo el fichero de configuración pasado a array. Su formato podria ser algo como lo siguiente:
-     * ['Options' => ['execution' => 'fast], 'Tools' => ['parallel-lint', 'phpcs'], 'phpcs' => ['excludes' => ['vendor', 'qa'], 'rules' => 'rules_path.xml']];
-     *
-     * @var array
-     */
-    protected $configurationFile;
-
-    /**
      * @var FileUtilsInterface
      */
     protected $fileUtils;
@@ -64,24 +56,24 @@ class FastExecution implements ExecutionMode
     public function getTools(ConfigurationFile $configurationFile): array
     {
         $tools = [];
-        foreach ($this->configurationFile[ConfigurationFile::TOOLS] as $tool) {
-            if (!in_array($tool, self::ACCELERABLE_TOOLS)) {
+        foreach ($configurationFile->getToolsConfiguration() as $tool) {
+            if (!in_array($tool->getTool(), self::ACCELERABLE_TOOLS)) {
                 $tools[] = $tool;
                 continue;
             }
 
-            $originalPaths = $this->configurationFile[$tool][ToolAbstract::SUPPORTED_TOOLS[$tool]::PATHS];
+            $originalPaths = $tool->getPaths();
             $modifiedFiles = $this->fileUtils->getModifiedFiles();
 
             $paths = $this->addFilesToToolPaths($modifiedFiles, $originalPaths);
 
             if (!empty($paths)) {
-                $this->configurationFile[$tool][ToolAbstract::SUPPORTED_TOOLS[$tool]::PATHS] = $paths;
+                $tool->setPaths($paths);
                 $tools[] = $tool;
             }
         }
 
-        return $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+        return $this->toolsFactory->__invoke($tools);
     }
 
     /**

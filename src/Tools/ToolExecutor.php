@@ -21,17 +21,17 @@ class ToolExecutor
      * It executes the tools. If all tools run successfully it returns an empty array. Else returns an array with the errors.
      *
      * @param array $tools
-     * @param boolean $isLiveOutput Si es true ejecutará la herramienta mostrando la salida en tiempo real como si la ejecutaramos manualmente por consola.
+     * @param boolean $withLiveOutput Si es true ejecutará la herramienta mostrando la salida en tiempo real como si la ejecutaramos manualmente por consola.
      *                  Si es false la ejecución de la herramienta no muestra ninguna.
      * @return Errors $exitCode El codigo de salida (por defecto 0) cambia a 1 cuando una herrmienta falla por cualquier motivo
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
-    public function __invoke(array $tools, bool $isLiveOutput = false): Errors
+    public function __invoke(array $tools, bool $withLiveOutput = false): Errors
     {
         //TODO en un primer intento de refactor he cambiado el exitCode por Errors. El problema es que executeWithLiveOutput sigue haciendo un exit
         //en la clase invocadora ToolCommandExecutor lo que hace que no se puedan hacer tests de los commands.
         // La idea es que sea el Command en cuestion quien, en funcion de Errors haga un exit(0) o exit(1) embebido dentro de un método que pueda doblar ya que
-        // que si no no hay forma de hacer pruebas. Crear 2 estrategías una para cuando se $isLiveOutput es false y otra true. Una pintará por pantalla los errroes y la otroa no
+        // que si no no hay forma de hacer pruebas. Crear 2 estrategías una para cuando se $withLiveOutput es false y otra true. Una pintará por pantalla los errroes y la otroa no
         $errors = new Errors();
         foreach ($tools as $tool) {
             $startToolExecution = microtime(true);
@@ -41,7 +41,7 @@ class ToolExecutor
                     $errors->setError($tool->getExecutable(), $tool->getErrors());
                 }
 
-                if ($isLiveOutput) {
+                if ($withLiveOutput) {
                     $tool->executeWithLiveOutput();
                 } else {
                     $tool->execute();

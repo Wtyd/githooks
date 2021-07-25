@@ -28,12 +28,12 @@ class ConfigurationFile
     protected $options;
 
     /**
-     * @var array
+     * @var array of ToolConfiguration
      */
     protected $toolsConfiguration = [];
 
     /**
-     * @var array of ToolConfiguration
+     * @var array
      */
     protected $toolsErrors = [];
 

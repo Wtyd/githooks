@@ -231,11 +231,10 @@ abstract class ToolAbstract
 
     /**
      * This method is run by 'vendor/bin/githooks tool:...' commands. The output of the tool/s will be displayed in real time.
-     * This method has the key word 'final' because is equal for any tool.
      *
      * @return void
      */
-    final public function executeWithLiveOutput()
+    public function executeWithLiveOutput()
     {
         $command = $this->prepareCommand();
         echo  $command . "\n";

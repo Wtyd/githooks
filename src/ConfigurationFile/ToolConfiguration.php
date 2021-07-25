@@ -69,4 +69,14 @@ class ToolConfiguration
     {
         return empty($this->warnings);
     }
+
+    public function getPaths(): array
+    {
+        return array_key_exists('paths', $this->toolConfiguration) ? $this->toolConfiguration['paths'] : [];
+    }
+
+    public function setPaths(array $paths): void
+    {
+        $this->toolConfiguration['paths'] = $paths;
+    }
 }

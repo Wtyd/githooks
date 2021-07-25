@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Tests\Utils\ConfigurationFake;
-use Wtyd\GitHooks\Configuration;
+use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\FileReaderFake;
+use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
+use Wtyd\GitHooks\Tools\CheckSecurity;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,7 +47,8 @@ class AppServiceProvider extends ServiceProvider
     protected function testsRegister()
     {
         if (defined('APP_ENV') && APP_ENV === 'testing') {
-            $this->app->bind(Configuration::class, ConfigurationFake::class);
+            $this->app->bind(FileReader::class, FileReaderFake::class);
+            $this->app->bind(CheckSecurity::class, CheckSecurityFake::class);
         }
     }
 }

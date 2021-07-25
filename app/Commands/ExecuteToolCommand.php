@@ -5,6 +5,7 @@ namespace App\Commands;
 use App\Commands\ToolCommand as BaseCommand;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
 use Wtyd\GitHooks\Tools\Errors;
 
 class ExecuteToolCommand extends BaseCommand
@@ -21,11 +22,18 @@ class ExecuteToolCommand extends BaseCommand
         try {
             $tools = $this->toolsPreparer->__invoke($tool, $execution);
 
-            $errors = $this->toolExecutor->__invoke($tools, true);
-        } catch (ToolIsNotSupportedException $th) {
-            $this->error($th->getMessage());
+            $withLiveOutput = $tool === 'all' ? false : true;
+
+            $errors = $this->toolExecutor->__invoke($tools, $withLiveOutput);
+        } catch (ToolIsNotSupportedException $exception) {
+            $this->error($exception->getMessage());
+            $errors->setError($tool, $exception->getMessage());
+        } catch (WrongExecutionValueException $exception) {
+            $this->error($exception->getMessage());
+            $errors->setError($tool, $exception->getMessage());
         } catch (ConfigurationFileInterface $exception) {
             $this->error($exception->getMessage());
+            $errors->setError('set error', 'to return 1');
 
             foreach ($exception->getConfigurationFile()->getErrors() as $error) {
                 $this->error($error);

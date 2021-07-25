@@ -60,12 +60,12 @@ class Stan extends ToolAbstract
     {
         $config = '';
         if (!empty($this->args[self::PHPSTAN_CONFIGURATION_FILE])) {
-            $config = '-c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
+            $config = ' -c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
         }
 
         $level = '';
         if (!empty($this->args[self::LEVEL])) {
-            $level = '-l ' . $this->args[self::LEVEL];
+            $level = ' -l ' . $this->args[self::LEVEL];
         }
         $paths = ''; // If path is empty phpStand will not work
         if (!empty($this->args[self::PATHS])) {
@@ -74,10 +74,10 @@ class Stan extends ToolAbstract
 
         $memoryLimit = '';
         if (!empty($this->args[self::MEMORY_LIMIT])) {
-            $memoryLimit = '--memory-limit=' . $this->args[self::MEMORY_LIMIT];
+            $memoryLimit = ' --memory-limit=' . $this->args[self::MEMORY_LIMIT];
         }
 
-        $arguments = " analyse $config --no-progress --ansi $level $memoryLimit $paths";
+        $arguments = " analyse$config --no-progress --ansi$level$memoryLimit $paths";
 
         return $this->executable . $arguments;
     }

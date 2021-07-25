@@ -56,6 +56,7 @@ class ToolsPreparer
 
         $strategy = $this->executionFactory->__invoke($this->configurationFile->getExecution());
 
+
         return $strategy->getTools($this->configurationFile);
     }
 

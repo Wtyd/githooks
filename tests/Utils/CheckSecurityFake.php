@@ -2,19 +2,36 @@
 
 namespace Tests\Utils;
 
+use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\CheckSecurity;
+use Wtyd\GitHooks\Tools\ToolAbstract;
 
 /**
  * This tool cannot be runned in testing environment
  */
 class CheckSecurityFake extends CheckSecurity
 {
+    public function __construct()
+    {
+        parent::__construct(new ToolConfiguration(ToolAbstract::CHECK_SECURITY, []));
+        $this->setOKExit();
+    }
     /**
      * Override this metod
      *
      * @return void
      */
     public function execute()
+    {
+        //Do nothing
+    }
+
+    /**
+     * Override this metod
+     *
+     * @return void
+     */
+    public function executeWithLiveOutput()
     {
         //Do nothing
     }
