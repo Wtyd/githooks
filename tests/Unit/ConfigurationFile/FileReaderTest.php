@@ -24,8 +24,6 @@ class FileReaderTest extends UnitTestCase
     use MockeryPHPUnitIntegration;
     use VirtualFileSystemTrait;
 
-    protected $yamlReaderMock;
-
     protected function setUp(): void
     {
         $this->fileReader = new FileReader();

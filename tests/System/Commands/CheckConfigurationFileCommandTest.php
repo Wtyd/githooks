@@ -9,46 +9,38 @@ class CheckConfigurationFileCommandTest extends ConsoleTestCase
     /** @test */
     function it_pass_all_file_configuration_checks()
     {
-        $this->markTestSkipped('CheckConfiguration');
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
-        try {
-            $this->artisan('conf:check')
-                ->containsStringInOutput("Checking the configuration file:\n")
-                ->containsStringInOutput('The file githooks.yml has the correct format.');
-        } catch (\Throwable $th) {
-            throw $th;
-        }
+        $this->artisan('conf:check')
+            ->assertExitCode(0)
+            ->expectsOutput('The file githooks.yml has the correct format.');
     }
 
     /** @test */
-    function it_not_pass_file_configuration_checks()
+    function it_pass_all_file_configuration_checks_with_some_warnings()
     {
-        $this->markTestSkipped('CheckConfiguration');
-        $this->configurationFileBuilder->setOptions(['execution' => 'invalid value']);
+        $this->configurationFileBuilder
+            ->setOptions([])
+            ->setTools(['phpcs', 'phpstan', 'invent']);
 
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         $this->artisan('conf:check')
-            ->containsStringInOutput("Checking the configuration file:\n")
-            ->containsStringInOutput("The file contains the following errors:")
-            ->containsStringInOutput("- The value 'invalid value' is not allowed for the tag 'execution'. Accept: full, smart, fast")
-            ->notContainsStringInOutput('The file githooks.yml has the correct format.');
+            ->assertExitCode(0)
+            ->containsStringInOutput("The tag 'Options' is empty")
+            ->containsStringInOutput('The tool invent is not supported by GitHooks.');
     }
 
     /** @test */
-    function it_pass_all_checks_with_warnings()
+    function it_fails_the_file_configuration_checks_and_print_errors_and_warnings()
     {
-        $this->markTestSkipped('CheckConfiguration');
-        $this->configurationFileBuilder->setPhpCSConfiguration([
-            'execution' => 'invalid value'
-        ]);
+        $this->configurationFileBuilder->setTools([])->setOptions(['invent option' => 1]);
         file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
-
         $this->artisan('conf:check')
-            ->containsStringInOutput("Checking the configuration file:\n")
-            ->containsStringInOutput('The file githooks.yml has the correct format.')
-            ->containsStringInOutput('execution argument is invalid for tool phpcs');
+            ->assertExitCode(1)
+            ->expectsOutput('The configuration file has some errors')
+            ->containsStringInOutput("The 'Tools' tag from configuration file is empty") //error
+            ->containsStringInOutput("The key 'invent option' is not a valid option"); //warning
     }
 }

@@ -6,7 +6,6 @@ namespace Wtyd\GitHooks\ConfigurationFile;
 
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 
 class ConfigurationFile

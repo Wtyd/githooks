@@ -15,6 +15,7 @@ class ExecuteToolCommand extends BaseCommand
 
     public function handle()
     {
+        //TODO mostrar warnings del fichero de configuración aunque la ejecución sea correcta
         $errors = new Errors();
         $tool = strval($this->argument('tool'));
         $execution = strval($this->argument('execution'));
@@ -42,8 +43,6 @@ class ExecuteToolCommand extends BaseCommand
             foreach ($exception->getConfigurationFile()->getWarnings() as $warning) {
                 $this->warning($warning);
             }
-        } catch (\Throwable $th) {
-            throw $th;
         }
 
         return $this->exit($errors);

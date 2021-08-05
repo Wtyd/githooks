@@ -423,4 +423,46 @@ class ConfigurationFileTest extends UnitTestCase
 
         $this->configurationFile->setExecution('no valid string');
     }
+
+    // Warnings: Warnings[] = "The tool $tool is not supported by GitHooks.";
+    // Warnings: $warnings[] = "$key argument is invalid for tool $this->tool. It will be ignored.";
+
+    function tagToolsWithNotValidToolsDataProvider()
+    {
+        return [
+            'Only one warning' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['check-security', 'no-supported-tool']
+                ],
+                'Expected Warnings' => ['The tool no-supported-tool is not supported by GitHooks.'],
+            ],
+            'Multiple warnings' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['check-security', 'no-supported-tool1', 'no-supported-tool2']
+                ],
+                'Expected Warnings' => [
+                    'The tool no-supported-tool1 is not supported by GitHooks.',
+                    'The tool no-supported-tool2 is not supported by GitHooks.',
+                ],
+            ],
+
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider tagToolsWithNotValidToolsDataProvider
+     */
+    function it_sets_warning_when_Tools_have_at_least_a_valid_key_and_invalid_keys($configurationFile, $expectedWarnings)
+    {
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+
+        $this->assertEquals($expectedWarnings, $this->configurationFile->getWarnings());
+    }
 }

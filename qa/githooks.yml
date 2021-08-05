@@ -29,10 +29,10 @@ phpcs:
     error-severity: 1
     warning-severity: 6
   
-# phpmd:
-#   paths: ['./src/']
-#   rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
-#   exclude: [vendor]  # Se podría configurar en las rules directamente
+phpmd:
+  paths: ['./src/']
+  rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
+  exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:
   paths: ['./']

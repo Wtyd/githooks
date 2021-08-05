@@ -2,67 +2,62 @@
 
 namespace App\Commands;
 
-use Wtyd\GitHooks\Configuration;
-use Wtyd\GitHooks\ConfigurationFileValidator;
-use Wtyd\GitHooks\Exception\ParseConfigurationFileException;
-use Wtyd\GitHooks\Utils\Printer;
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
+use Wtyd\GitHooks\ConfigurationFile\FileReader;
+use Wtyd\GitHooks\Tools\Errors;
+use Wtyd\GitHooks\Utils\Printer;
 
 class CheckConfigurationFileCommand extends Command
 {
     protected $signature = 'conf:check';
     protected $description = 'Check that the githooks.yml configuration file exists and that it is in the proper format.';
 
-    /**
-     * @var Configuration
-     */
-    protected $configuration;
-
-    /**
-     * @var ConfigurationFileValidator
-     */
-    protected $configurationFileValidator;
-
-    /**
-     * @var Printer
-     */
-    protected $printer;
-
-    public function __construct(Printer $printer)
+    public function __construct(FileReader $fileReader, Printer $printer)
     {
-        // $this->configuration = $configuration;
-        // $this->configurationFileValidator = $configurationFileValidator;
+        $this->fileReader = $fileReader;
         $this->printer = $printer;
         parent::__construct();
     }
 
     public function handle()
     {
-        $this->printer->line('Checking the configuration file:');
-
+        $errors = new Errors();
         try {
-            $configurationFile = $this->configuration->readFile();
+            $file = $this->fileReader->readfile();
 
-            $errors = $this->configurationFileValidator->__invoke($configurationFile);
+            $configurationFile = new ConfigurationFile($file, ConfigurationFile::ALL_TOOLS);
 
-            if (!$errors->hasErrors()) {
-                $message = 'The file githooks.yml has the correct format.';
-                $this->printer->resultSuccess($message);
-            } else {
-                $message = 'The file contains the following errors:';
-                $this->printer->resultError($message);
-                foreach ($errors->getAllErrors() as $error) {
-                    $this->printer->line("    - $error");
-                }
+            $this->info('The file githooks.yml has the correct format.');
+        } catch (ConfigurationFileInterface $exception) {
+            $this->error($exception->getMessage());
+            $errors->setError('set error', 'to return 1');
+
+            // var_dump($exception->getMessage());
+            foreach ($exception->getConfigurationFile()->getErrors() as $error) {
+                // dd($error);
+                $this->printer->resultError($error);
             }
+            $this->printWarnings($exception->getConfigurationFile()->getWarnings());
+        }
 
-            if ($errors->hasWarnings()) {
-                foreach ($errors->getAllWarnings() as $warning) {
-                    $this->printer->resultWarning($warning);
-                }
-            }
-        } catch (ParseConfigurationFileException $ex) {
-            $this->printer->resultError($ex->getMessage());
+        $exitCode = 0;
+        if ($errors->isEmpty()) {
+            $this->printWarnings($configurationFile->getWarnings());
+        } else {
+            $exitCode = 1;
+        }
+
+
+
+        return $exitCode;
+    }
+
+    protected function printWarnings(array $warnings): void
+    {
+        foreach ($warnings as $warning) {
+            $this->printer->resultWarning($warning);
         }
     }
 }
