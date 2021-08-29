@@ -6,6 +6,9 @@ use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
 use Tests\ConsoleTestCase;
 
+/**
+ * Testing App\Commands\CreateHookCommand;
+ */
 class CreateHookCommandTest extends ConsoleTestCase
 {
     protected $mock;
@@ -69,7 +72,7 @@ class CreateHookCommandTest extends ConsoleTestCase
         $this->artisan('hook')
             ->containsStringInOutput('Hook pre-commit created');
 
-        $this->assertFileExists($this->path . '/.git/hooks/pre-commit', file_get_contents('hooks/pre-commit.php'));
+        $this->assertFileExists($this->path . '/.git/hooks/pre-commit', file_get_contents('hooks/default.php'));
     }
 
     public function hooksProvider()
@@ -115,7 +118,7 @@ class CreateHookCommandTest extends ConsoleTestCase
         $this->artisan("hook $hook")
             ->containsStringInOutput("Hook $hook created");
 
-        $this->assertFileExists($this->path . "/.git/hooks/$hook", file_get_contents('hooks/pre-commit.php'));
+        $this->assertFileExists($this->path . "/.git/hooks/$hook", file_get_contents('hooks/default.php'));
     }
 
     /**

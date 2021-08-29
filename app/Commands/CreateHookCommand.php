@@ -105,16 +105,16 @@ Even the default script and after, other tools which GitHooks not support or vic
     public function defaultPrecommit(): string
     {
         $origin = '';
-        if (file_exists($this->root . '/vendor/wtyd/githooks/hooks/pre-commit.php')) {
-            $origin = $this->root . '/vendor/wtyd/githooks/hooks/pre-commit.php';
+        if (file_exists($this->root . '/vendor/wtyd/githooks/hooks/default.php')) {
+            $origin = $this->root . '/vendor/wtyd/githooks/hooks/default.php';
         }
 
-        if (file_exists($this->root . '/hooks/pre-commit.php')) {
-            $origin = $this->root . '/hooks/pre-commit.php';
+        if (file_exists($this->root . '/hooks/default.php')) {
+            $origin = $this->root . '/hooks/default.php';
         }
 
         if (empty($origin)) {
-            throw new Exception("Error: the file pre-commit.php not found");
+            throw new Exception("Error: the file default.php not found");
         }
 
         return $origin;
