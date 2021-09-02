@@ -21,7 +21,7 @@ class RegisterBindings
             $container->bind($key, $value);
         }
 
-        foreach ($this->binds() as $key => $value) {
+        foreach ($this->singletons() as $key => $value) {
             $container->singleton($key, $value);
         }
     }
