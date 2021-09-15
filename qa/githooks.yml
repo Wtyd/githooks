@@ -23,6 +23,7 @@ parallel-lint:
     exclude: [vendor]
 
 phpcs:
+    executablePath: tools/php71/phpcbf
     paths: ['./']
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
     ignore: [vendor] # Se podría configurar en el standard directamente

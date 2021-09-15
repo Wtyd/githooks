@@ -66,7 +66,7 @@ class ToolExecutor
                 $errors->setError($tool->getExecutable(), $th->getMessage());
                 $this->printErrors($tool);
                 $this->printer->line($th->getMessage());
-                $this->printer->resultError("Error en la ejecución de $tool->getExecutable().");
+                $this->printer->resultError("Error when running $tool->getExecutable().");
             }
         }
         return $errors;

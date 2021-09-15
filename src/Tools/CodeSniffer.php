@@ -50,8 +50,6 @@ class CodeSniffer extends ToolAbstract
         $this->executable = 'phpcbf';
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
-
-        parent::__construct();
     }
 
     /**
@@ -104,13 +102,16 @@ class CodeSniffer extends ToolAbstract
         }
 
         //phpcbf src --standard=./qa/psr12-ruleset.xml --ignore=vendor,otrodir --error-severity=1 --warning-severity=6
-        return $this->executable . ' ' . $arguments;
+        return $this->executablePath . ' ' . $arguments;
     }
 
     public function setArguments(array $configurationFile): void
     {
+        $this->executablePath = $configurationFile[self::EXECUTABLE_PATH_OPTION] ?
+            $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION]) : 'phpcbf';
+
         if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
+            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
         }
 
         if (!empty($configurationFile[self::STANDARD])) {
@@ -118,7 +119,7 @@ class CodeSniffer extends ToolAbstract
         }
 
         if (!empty($configurationFile[self::IGNORE])) {
-            $this->args[self::IGNORE] = $this->routeCorrector($configurationFile[self::IGNORE]);
+            $this->args[self::IGNORE] = $this->multipleRoutesCorrector($configurationFile[self::IGNORE]);
         }
 
         if (!empty($configurationFile[self::ERROR_SEVERITY])) {

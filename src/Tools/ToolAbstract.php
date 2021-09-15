@@ -39,10 +39,17 @@ abstract class ToolAbstract
         self::PHPSTAN => '',
     ];
 
+    public const EXECUTABLE_PATH_OPTION = 'executablePath';
+
     /**
      * @var string
      */
     protected $executable;
+
+    /**
+     * @var string
+     */
+    protected $executablePath;
 
     /**
      * @var string
@@ -66,12 +73,11 @@ abstract class ToolAbstract
 
     public function __construct()
     {
-        // $a = 10;
-        try {
-            $this->executable = $this->executableFinder();
-        } catch (ExecutableNotFoundException $th) {
-            $this->errors = 'No se encuentra el comando ' . $this->executable . '. Instalalo mediante composer global require ' .  $this->installer;
-        }
+        // try {
+        //     $this->executable = $this->executableFinder();
+        // } catch (ExecutableNotFoundException $th) {
+        //     $this->errors = 'No se encuentra el comando ' . $this->executable . '. Instalalo mediante composer global require ' .  $this->installer;
+        // }
     }
 
     /**
@@ -186,17 +192,31 @@ abstract class ToolAbstract
     }
 
     /**
-     * Sustituye la / por \ cuando se invoca la app desde Windows
+     * Replaces / by \ when the app run in Windows
+     *
+     * @param string $path
+     * @return string path
+     */
+    protected function routeCorrector(string $path): string
+    {
+        if (!$this->isWindows()) {
+            return $path;
+        }
+
+        return str_replace('/', '\\', $path);
+    }
+
+    /**
+     * Replaces / by \ when the app run in Windows
      *
      * @param array $paths
-     * @return array path
+     * @return array paths
      */
-    protected function routeCorrector(array $paths)
+    protected function multipleRoutesCorrector(array $paths): array
     {
         if (!$this->isWindows()) {
             return $paths;
         }
-
         $rightPaths = [];
         foreach ($paths as $path) {
             $rightPaths[] = str_replace('/', '\\', $path);
@@ -206,17 +226,13 @@ abstract class ToolAbstract
     }
 
     /**
-     * Comprueba si el sistema operativo desde el que se invoca la app es Windows.
+     * Checks if it is running in Windows
      *
      * @return boolean
      */
     protected function isWindows()
     {
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            return true;
-        }
-
-        return false;
+        return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
     }
 
     /**
