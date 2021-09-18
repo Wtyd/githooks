@@ -12,6 +12,7 @@ Tools:
 
 # Configuración de cada una de las herramientas
 phpstan:
+    executablePath: tools/php71/phpstan
     config: './qa/phpstan.neon'
     #memory-limit: '1G' # Examples: 1M 2000M 1G 5G
     paths: ['src']
@@ -19,6 +20,7 @@ phpstan:
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
+    executablePath: vendor/bin/parallel-lint
     paths: ['./']
     exclude: [vendor]
 
@@ -31,11 +33,13 @@ phpcs:
     warning-severity: 6
   
 phpmd:
+  executablePath: tools/php71/phpmd
   paths: ['./src/']
   rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:
+  executablePath: tools/php71/phpcpd
   paths: ['./']
   exclude: ['vendor', 'tests']
  

@@ -30,13 +30,9 @@ class CopyPasteDetector extends ToolAbstract
     //TODO add --names-exclude option. Is like --exclude but for files. Check 6.* interfaces because bring changes.
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->installer = 'sebastian/phpcpd';
-
         $this->executable = self::COPYPASTE_DETECTOR;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
-
-        parent::__construct();
     }
 
     protected function prepareCommand(): string
@@ -54,17 +50,19 @@ class CopyPasteDetector extends ToolAbstract
 
         $arguments = "$exclude $paths";
 
-        return $this->executable . ' ' . $arguments;
+        return $this->executablePath . ' ' . $arguments;
     }
 
     public function setArguments(array $configurationFile): void
     {
+        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::COPYPASTE_DETECTOR);
+
         if (!empty($configurationFile[self::EXCLUDE])) {
-            $this->args[self::EXCLUDE] = $this->routeCorrector($configurationFile[self::EXCLUDE]);
+            $this->args[self::EXCLUDE] = $this->multipleRoutesCorrector($configurationFile[self::EXCLUDE]);
         }
 
         if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
+            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
         }
     }
 }

@@ -44,8 +44,8 @@ class OptionsConfiguration
         $this->warnings = $this->checkValidKeys($configurationFile[self::OPTIONS_TAG]);
 
         if (array_key_exists(self::EXECUTION_TAG, $configurationFile[self::OPTIONS_TAG])) {
+            $execution = $configurationFile[self::OPTIONS_TAG][self::EXECUTION_TAG];
             try {
-                $execution = $configurationFile[self::OPTIONS_TAG][self::EXECUTION_TAG];
                 $this->setExecution($execution);
             } catch (WrongExecutionValueException $ex) {
                 $this->errors[] = $ex->getMessage();

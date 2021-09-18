@@ -38,13 +38,9 @@ class Stan extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->installer = 'phpstan/phpstan';
-
         $this->executable = self::PHPSTAN;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
-
-        parent::__construct();
     }
 
     /**
@@ -79,11 +75,12 @@ class Stan extends ToolAbstract
 
         $arguments = " analyse$config --no-progress --ansi$level$memoryLimit $paths";
 
-        return $this->executable . $arguments;
+        return $this->executablePath . $arguments;
     }
 
     public function setArguments(array $configurationFile): void
     {
+        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::PHPSTAN);
         if (!empty($configurationFile[self::PHPSTAN_CONFIGURATION_FILE])) {
             $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $configurationFile[self::PHPSTAN_CONFIGURATION_FILE];
         }
@@ -91,7 +88,7 @@ class Stan extends ToolAbstract
             $this->args[self::LEVEL] = $configurationFile[self::LEVEL];
         }
         if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
+            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
         }
         if (!empty($configurationFile[self::MEMORY_LIMIT])) {
             $this->args[self::MEMORY_LIMIT] = $configurationFile[self::MEMORY_LIMIT];

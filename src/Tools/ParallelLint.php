@@ -30,13 +30,9 @@ class ParallelLint extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->installer = 'php-parallel-lint/php-parallel-lint';
-
         $this->executable = self::PARALLEL_LINT;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
-
-        parent::__construct();
     }
 
     protected function prepareCommand(): string
@@ -55,37 +51,18 @@ class ParallelLint extends ToolAbstract
         $arguments = ' ' . $paths . ' ' . $exclude;
 
         //parallel-lint ./ --exclude qa --exclude tests --exclude vendor
-        return $this->executable . $arguments;
+        return $this->executablePath . $arguments;
     }
 
-    /**
-     * Devuelve la primera versión del ejecutable que encuentra. La prioridad de búsqueda es local > .phar > global . Si no encuentra ninguna versión lanza excepción.
-     *
-     * @return string Ruta completa al ejecutable. Si no lo encuentra lanza una ExecutableNotFoundException
-     */
-    protected function executableFinder(): string
-    {
-        try {
-            return parent::executableFinder();
-        } catch (\Throwable $th) {
-            if ('php-parallel-lint/php-parallel-lint' === $this->installer) {
-                $global = 'composer global show jakub-onderka/php-parallel-lint';
-
-                if ($this->libraryCheck($global)) {
-                    return $this->executable;
-                }
-            }
-            throw ExecutableNotFoundException::forExec($this->executable);
-        }
-    }
 
     public function setArguments(array $configurationFile): void
     {
+        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::PARALLEL_LINT);
         if (!empty($configurationFile[self::EXCLUDE])) {
-            $this->args[self::EXCLUDE] = $this->routeCorrector($configurationFile[self::EXCLUDE]);
+            $this->args[self::EXCLUDE] = $this->multipleRoutesCorrector($configurationFile[self::EXCLUDE]);
         }
         if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
+            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
         }
     }
 }

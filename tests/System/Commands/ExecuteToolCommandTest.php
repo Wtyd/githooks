@@ -33,7 +33,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpcpd' => [
                 'tool' => 'phpcpd',
-                'command' => "php phpcpd.phar --exclude $this->path/vendor $this->path/src",
+                'command' => "phpcpd --exclude $this->path/vendor $this->path/src",
                 'Alias of the tool when is executed' => 'phpcpd'
             ],
             'phpmd' => [
@@ -85,8 +85,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpcpd' => [
                 'tool' => 'phpcpd',
-                'command' => "php phpcpd.phar --exclude $this->path/vendor $this->path/src",
-                'Alias of the tool when is executed' => 'phpcpd.phar'
+                'command' => "phpcpd --exclude $this->path/vendor $this->path/src",
+                'Alias of the tool when is executed' => 'phpcpd'
             ],
             'phpmd' => [
                 'tool' => 'phpmd',
@@ -142,7 +142,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                 'Command' =>  [
                     'check-security' => 'composer check-security',
                     'phpcs' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
-                    'phpcpd' => "php phpcpd.phar --exclude $this->path/vendor $this->path/src",
+                    'phpcpd' => "phpcpd --exclude $this->path/vendor $this->path/src",
                     'phpmd' => "phpmd $this->path/src ansi unusedcode --exclude \"$this->path/vendor\"",
                     'parallel-lint' => "parallel-lint $this->path/src --exclude $this->path/vendor",
                     'phpstan' => "phpstan analyse --no-progress --ansi $this->path/src",

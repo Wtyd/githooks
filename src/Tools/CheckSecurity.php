@@ -10,13 +10,14 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class CheckSecurity extends ToolAbstract
 {
+    /**
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     *
+     * @param ToolConfiguration $toolConfiguration
+     */
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->installer = 'funkjedi/composer-plugin-security-check';
-
         $this->executable = 'composer check-security';
-
-        parent::__construct();
     }
 
     protected function prepareCommand(): string

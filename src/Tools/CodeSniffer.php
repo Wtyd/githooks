@@ -45,8 +45,6 @@ class CodeSniffer extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->installer = 'squizlabs/php_codesniffer';
-
         $this->executable = 'phpcbf';
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
@@ -107,8 +105,7 @@ class CodeSniffer extends ToolAbstract
 
     public function setArguments(array $configurationFile): void
     {
-        $this->executablePath = $configurationFile[self::EXECUTABLE_PATH_OPTION] ?
-            $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION]) : 'phpcbf';
+        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? 'phpcbf');
 
         if (!empty($configurationFile[self::PATHS])) {
             $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);

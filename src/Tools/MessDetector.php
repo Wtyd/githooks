@@ -34,13 +34,9 @@ class MessDetector extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->installer = 'phpmd/phpmd';
-
         $this->executable = self::MESS_DETECTOR;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
-
-        parent::__construct();
     }
 
     protected function prepareCommand(): string
@@ -63,21 +59,23 @@ class MessDetector extends ToolAbstract
         $arguments = " $path ansi $rules $exclude";
 
         // ./src/ ansi ./qa/phpmd-src-ruleset.xml --exclude "vendor"
-        return $this->executable . $arguments;
+        return $this->executablePath . $arguments;
     }
 
     public function setArguments(array $configurationFile): void
     {
+        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::MESS_DETECTOR);
+
         if (!empty($configurationFile[self::RULES])) {
             $this->args[self::RULES] = $configurationFile[self::RULES];
         }
 
         if (!empty($configurationFile[self::EXCLUDE])) {
-            $this->args[self::EXCLUDE] = $this->routeCorrector($configurationFile[self::EXCLUDE]);
+            $this->args[self::EXCLUDE] = $this->multipleRoutesCorrector($configurationFile[self::EXCLUDE]);
         }
 
         if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->routeCorrector($configurationFile[self::PATHS]);
+            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
         }
     }
 
