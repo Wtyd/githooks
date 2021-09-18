@@ -41,8 +41,11 @@ class ToolConfiguration
     {
         $warnings = [];
 
+        $validOptions = ToolAbstract::SUPPORTED_TOOLS[$this->tool]::OPTIONS;
+        $validOptions[] = ToolAbstract::EXECUTABLE_PATH_OPTION;
+
         foreach (array_keys($this->toolConfiguration) as $key) {
-            if (!in_array($key, ToolAbstract::SUPPORTED_TOOLS[$this->tool]::OPTIONS)) {
+            if (!in_array($key, $validOptions)) {
                 $warnings[] = "$key argument is invalid for tool $this->tool. It will be ignored.";
             }
         }

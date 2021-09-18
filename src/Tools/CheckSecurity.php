@@ -10,6 +10,7 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class CheckSecurity extends ToolAbstract
 {
+    public const OPTIONS = [];
     /**
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      *
