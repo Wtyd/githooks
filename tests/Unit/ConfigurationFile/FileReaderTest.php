@@ -2,16 +2,12 @@
 
 namespace Tests\Unit\ConfigurationFile;
 
-use Symfony\Component\Yaml\Yaml;
-use Tests\Mock;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\VirtualFileSystemTrait;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
 use Tests\UnitTestCase;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ToolsIsEmptyException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ToolsNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 
 /**
@@ -87,8 +83,6 @@ class FileReaderTest extends UnitTestCase
 
     /**
      * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState
      * @dataProvider validConfigurationFilesDataProvider
      */
     function it_can_read_file_configuration_githooksDotYml($fileSystemStructure)
@@ -100,8 +94,6 @@ class FileReaderTest extends UnitTestCase
 
     /**
      * @test
-     * @runInSeparateProcess
-     * @preserveGlobalState
      * When there are two valid configuration files it always returns the one in the root directory
      */
     function it_searchs_configuration_file_first_in_the_root_directory()

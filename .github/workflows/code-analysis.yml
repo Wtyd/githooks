@@ -2,7 +2,7 @@ name: Code Analysis
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master ]
+    branches-ignore: [ master, pipeline ]
   pull_request:
     branches-ignore: [ master ]
 
@@ -10,8 +10,8 @@ env:
   extensions: mbstring #intl, pcov
 jobs:
   phpstan:
-    runs-on: ubuntu-latest
     name: PhpStan
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -36,11 +36,11 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Execute PhpStan
-      run: php githooks tool:phpstan
+      run: php githooks tool phpstan
 
-  phpcs:    
-    runs-on: ubuntu-latest
+  phpcs:
     name: Php Code Sniffer
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -65,11 +65,11 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Execute Php Code Sniffer
-      run: php githooks tool:phpcs
+      run: php githooks tool phpcs
 
-  phpmd:    
-    runs-on: ubuntu-latest
+  phpmd:
     name: Php Mess Detector
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -94,4 +94,4 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Execute Php Mess Detector
-      run: php githooks tool:phpmd
+      run: php githooks tool phpmd

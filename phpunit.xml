@@ -10,7 +10,6 @@
         </testsuite>
         <testsuite name="System">
             <directory>./tests/System</directory>
-            <exclude>./tests/System/ExecutableFinderTest.php</exclude>
             <exclude>./tests/System/ExecuteFastStrategySystemTest.php</exclude>
             <exclude>./tests/System/ExecuteSmartStrategySystemTest.php</exclude>
             <exclude>./tests/System/ExecuteFullStrategySystemTest.php</exclude>

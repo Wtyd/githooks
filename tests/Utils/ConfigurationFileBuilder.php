@@ -25,20 +25,32 @@ use Wtyd\GitHooks\LoadTools\ExecutionMode;
  */
 class ConfigurationFileBuilder
 {
+    public const PHAR_TOOLS_PATH = 'phar';
+    public const GLOBAL_TOOLS_PATH = 'global';
+    public const LOCAL_TOOLS_PATH = 'local';
+
     protected $options;
 
     protected $tools;
 
     protected $configurationTools;
 
+    protected $executablesPath;
+
     /**
      * Set the attributes with default values.
      *
      * @param string $rootPath Customize what path you would as project root
+     * @param string $toolsPath The way to find the executables of the tools
+     *                      phar: the full path to the executables (example: tools/php71/phpcs)
+     *                      global: the tool has global acces (example: phpcs)
+     *                      local: the tool was installed with composer in local (example: vendor/bin/phpcs)
      */
-    public function __construct(string $rootPath)
+    public function __construct(string $rootPath, string $toolsPath = '')
     {
         $this->options = [OptionsConfiguration::EXECUTION_TAG => ExecutionMode::FULL_EXECUTION];
+
+        $this->mainToolExecutablePaths  = $this->resolveToolsPath($toolsPath);
 
         $this->tools = [
             ToolAbstract::CODE_SNIFFER,
@@ -51,6 +63,7 @@ class ConfigurationFileBuilder
 
         $this->configurationTools = [
             ToolAbstract::CODE_SNIFFER => [
+                CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
                 CodeSniffer::PATHS => [$rootPath . '/src'],
                 CodeSniffer::STANDARD => 'PSR12',
                 CodeSniffer::IGNORE => [$rootPath . '/vendor'],
@@ -59,23 +72,102 @@ class ConfigurationFileBuilder
             ],
 
             ToolAbstract::PARALLEL_LINT => [
+                ParallelLint::EXECUTABLE_PATH_OPTION => $this->parallelLintPath($toolsPath) . 'parallel-lint',
                 ParallelLint::PATHS => [$rootPath . '/src'],
                 ParallelLint::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::MESS_DETECTOR => [
+                MessDetector::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpmd',
                 MessDetector::PATHS => [$rootPath . '/src'],
                 MessDetector::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
                 MessDetector::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::COPYPASTE_DETECTOR => [
+                CopyPasteDetector::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
                 CopyPasteDetector::PATHS => [$rootPath . '/src'],
                 CopyPasteDetector::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::PHPSTAN => [
+                Stan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
                 Stan::LEVEL => 0,
                 Stan::PATHS => [$rootPath . '/src']
             ],
         ];
+    }
+
+    protected function resolveToolsPath(string $path): string
+    {
+        switch ($path) {
+            case self::LOCAL_TOOLS_PATH:
+                return getcwd() . '/vendor/bin/';
+                break;
+
+            case self::GLOBAL_TOOLS_PATH:
+                return '';
+                break;
+
+            case self::PHAR_TOOLS_PATH:
+                return $this->pharExecutables();
+                break;
+            default:
+                return $this->pharExecutables();
+                break;
+        }
+    }
+
+    protected function pharExecutables(): string
+    {
+        $path = getcwd();
+        if (version_compare(phpversion(), '7.2.0', '<')) {
+            $path .= '/tools/php71/';
+        } else {
+            $path .= '/tools/php80/';
+        }
+        return $path;
+    }
+
+    /**
+     * Parallel-lint doesn't have phar.
+     *
+     * @param string $path
+     * @return string
+     */
+    protected function parallelLintPath(string $path): string
+    {
+        switch ($path) {
+            case self::GLOBAL_TOOLS_PATH:
+                return '';
+                break;
+
+            case self::LOCAL_TOOLS_PATH:
+                return getcwd() . '/vendor/bin/';
+                break;
+            default:
+                return getcwd() . '/vendor/bin/';
+                break;
+        }
+    }
+
+    /**
+     * Phpcpd can't be installed in local (venodr/bin)
+     *
+     * @param string $path
+     * @return string
+     */
+    protected function phpcpdPath(string $path): string
+    {
+        switch ($path) {
+            case self::GLOBAL_TOOLS_PATH:
+                return '';
+                break;
+
+            case self::PHAR_TOOLS_PATH:
+                return $this->pharExecutables();
+                break;
+            default:
+                return $this->pharExecutables();
+                break;
+        }
     }
 
     /**
