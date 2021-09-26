@@ -1,8 +1,6 @@
 name: Schedule CI
 # https://github.com/shivammathur/setup-php
 on:
-  push:
-    branches: [ 1.x, pipeline ]
   schedule:
     - cron:  '0 4 * * sun' # Sundays at 04 am
 

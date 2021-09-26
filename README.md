@@ -8,9 +8,8 @@
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
 <p align="center">
-  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Master%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Master/badge.svg"></a>
   <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Code Analysis%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Code Analysis/badge.svg"></a>
-  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Executable Finder%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Executable Finder/badge.svg"></a>
+  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Main Tests%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Main Tests/badge.svg"></a>
   <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Schedule CI%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Schedule CI/badge.svg"></a>
 </p>
 

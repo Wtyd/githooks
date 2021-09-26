@@ -2,7 +2,6 @@ name: Main Tests
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ master, pipeline ]
 
   pull_request:
     branches-ignore: [ master ]
