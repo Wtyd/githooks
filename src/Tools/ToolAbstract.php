@@ -3,7 +3,6 @@
 namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
-use Wtyd\GitHooks\Tools\Exception\ExecutableNotFoundException;
 
 abstract class ToolAbstract
 {
@@ -65,6 +64,10 @@ abstract class ToolAbstract
      * @var string
      */
     protected $errors = '';
+
+    abstract protected function prepareCommand(): string;
+
+    abstract public function setArguments(array $configurationFile): void;
 
     /**
      * Devuelve un array añadiendo el prefijo a cada uno de los elementos
@@ -145,8 +148,6 @@ abstract class ToolAbstract
         echo  $command . "\n";
         passthru($command, $this->exitCode);
     }
-
-    abstract protected function prepareCommand(): string;
 
     public function getExecutable(): string
     {

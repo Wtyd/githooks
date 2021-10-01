@@ -42,4 +42,8 @@ phpcpd:
   executablePath: tools/php71/phpcpd
   paths: ['./']
   exclude: ['vendor', 'tests']
+
+check-security:
+  executablePath: tools/php71/local-php-security-checker
+
  

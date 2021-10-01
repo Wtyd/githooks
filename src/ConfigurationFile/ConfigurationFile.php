@@ -102,11 +102,7 @@ class ConfigurationFile
     protected function addTool(string $tool): bool
     {
         if ($this->toolShouldBeAdded($tool)) {
-            if (ToolAbstract::CHECK_SECURITY === $tool) {
-                $toolConfiguration = new ToolConfiguration($tool, []);
-            } else {
-                $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
-            }
+            $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
 
             $this->toolsConfiguration[$tool] = $toolConfiguration;
 
@@ -120,10 +116,6 @@ class ConfigurationFile
 
     protected function toolShouldBeAdded(string $tool): bool
     {
-        if (ToolAbstract::CHECK_SECURITY === $tool) {
-            return true;
-        }
-
         if (!array_key_exists($tool, $this->configurationFile)) {
             $this->toolsErrors[] = "The tag '$tool' is missing.";
             return false;

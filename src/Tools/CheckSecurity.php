@@ -5,24 +5,27 @@ namespace Wtyd\GitHooks\Tools;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * Ejecuta la libreria funkjedi/composer-plugin-security-check
- * Encuentra vulnerabilidades en dependencias de composer.
+ * https://github.com/fabpot/local-php-security-checker
  */
 class CheckSecurity extends ToolAbstract
 {
     public const OPTIONS = [];
     /**
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     *
      * @param ToolConfiguration $toolConfiguration
      */
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = 'composer check-security';
+        $this->executable = 'local-php-security-checker';
+        $this->setArguments($toolConfiguration->getToolConfiguration());
     }
 
     protected function prepareCommand(): string
     {
-        return $this->executable;
+        return $this->executablePath;
+    }
+
+    public function setArguments(array $configurationFile): void
+    {
+        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? 'local-php-security-checker');
     }
 }
