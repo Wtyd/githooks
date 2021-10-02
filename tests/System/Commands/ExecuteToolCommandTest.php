@@ -23,8 +23,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         return [
             'check-security' => [
                 'tool' => 'check-security',
-                'command' => "check-security",
-                'Alias of the tool when is executed' => 'check-security'
+                'command' => 'local-php-security-checker',
+                'Alias of the tool when is executed' => 'local-php-security-checker'
             ],
             'phpcs' => [
                 'tool' => 'phpcs',
@@ -75,8 +75,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         return [
             'check-security' => [
                 'tool' => 'check-security',
-                'command' => 'composer check-security',
-                'Alias of the tool when is executed' => 'check-security'
+                'command' => 'local-php-security-checker',
+                'Alias of the tool when is executed' => 'local-php-security-checker'
             ],
             'phpcs' => [
                 'tool' => 'phpcs',
@@ -140,7 +140,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                     'phpstan'
                 ],
                 'Command' =>  [
-                    'check-security' => 'composer check-security',
+                    'check-security' => 'local-php-security-checker',
                     'phpcs' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
                     'phpcpd' => "phpcpd --exclude $this->path/vendor $this->path/src",
                     'phpmd' => "phpmd $this->path/src ansi unusedcode --exclude \"$this->path/vendor\"",
@@ -163,7 +163,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
 
         $this->artisan('tool all')
             ->assertExitCode(0)
-            ->toolHasBeenExecutedSuccessfully('check-security')
+            ->toolHasBeenExecutedSuccessfully('local-php-security-checker')
             ->toolHasBeenExecutedSuccessfully('phpcbf')
             ->toolHasBeenExecutedSuccessfully('phpcpd')
             ->toolHasBeenExecutedSuccessfully('phpmd')
@@ -186,7 +186,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                     'phpcpd',
                 ],
                 'Runned Tools' => [
-                    'check-security',
+                    'local-php-security-checker',
                     'phpcbf',
                     'phpcpd',
                 ],
@@ -208,7 +208,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                     'phpstan'
                 ],
                 'Not runned tools' =>  [
-                    'check-security',
+                    'local-php-security-checker',
                     'phpcs',
                     'phpcpd',
                 ],
@@ -241,7 +241,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         return [
             'Fail phpcpd' => [
                 'Tools executed successfully' => [
-                    'check-security',
+                    'local-php-security-checker',
                     'phpcbf',
                     'phpmd',
                     'parallel-lint',
@@ -251,7 +251,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'Fail phpmd' => [
                 'Tools executed successfully' => [
-                    'check-security',
+                    'local-php-security-checker',
                     'phpcbf',
                     'phpcpd',
                     'parallel-lint',
@@ -261,7 +261,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'Fail phpstan' => [
                 'Tools executed successfully' => [
-                    'check-security',
+                    'local-php-security-checker',
                     'phpcbf',
                     'phpcpd',
                     'phpmd',

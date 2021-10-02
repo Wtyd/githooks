@@ -61,9 +61,22 @@ class FastExecutionTest extends TestCase
     function noAcelerableToolsProvider()
     {
         return [
-            'Set of files' => [
-                'Git modified files' => ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php', 'database/my_migration.php', 'otherPath/file3.php'],
-                'Files that should be found in directories' => ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php']
+            'check-security' => [
+                'tool' => 'check-security',
+                'Configuration File' => [
+                    'Tools' => ['check-security'],
+                    'check-security' => ['executablePath' => 'local-php-security-checker']
+                ],
+            ],
+            'phpcpd' => [
+                'tool' => 'phpcpd',
+                'Configuration File' => [
+                    'Tools' => ['phpcpd'],
+                    'phpcpd' => [
+                        'executablePath' => 'phpcpd',
+                        'paths' => ['src', 'app', 'tests']
+                    ]
+                ],
             ],
         ];
     }
@@ -72,46 +85,19 @@ class FastExecutionTest extends TestCase
      * @test
      * @dataProvider noAcelerableToolsProvider
      */
-    function it_dont_replaces_the_Paths_array_of_the_configuration_file_with_phpcpd($gitModifiedFiles, $filesThatShouldBeFoundInDirectories)
+    function it_dont_replaces_the_Paths_array_of_the_configuration_file_with_non_acelerable_tools($tool, $configurationFile)
     {
+        $gitModifiedFiles = ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php', 'database/my_migration.php', 'otherPath/file3.php'];
+        $filesThatShouldBeFoundInDirectories = ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php'];
+
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles($gitModifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories($filesThatShouldBeFoundInDirectories);
 
         $toolsFactorySpy = Mockery::spy(ToolsFactoy::class);
 
-        $tool = 'phpcpd';
-        $configurationFile = [
-            'Tools' => [$tool],
-            $tool => [
-                'paths' => ['src', 'app', 'tests']
-            ]
-        ];
+
         $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
-
-        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
-
-        $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
-    }
-
-    /**
-     * @test
-     * @dataProvider noAcelerableToolsProvider
-     */
-    function it_dont_replaces_the_Paths_array_of_the_configuration_file_with_checkSecurity($gitModifiedFiles, $filesThatShouldBeFoundInDirectories)
-    {
-        $gitFiles = new FileUtilsFake();
-        $gitFiles->setModifiedfiles($gitModifiedFiles);
-        $gitFiles->setFilesThatShouldBeFoundInDirectories($filesThatShouldBeFoundInDirectories);
-
-        $toolsFactorySpy = Mockery::spy(ToolsFactoy::class);
-
-        $tool = 'check-security';
-        $configurationFile = [
-            'Tools' => [$tool],
-        ];
-        $expectedToolConfigurationArray = [new ToolConfiguration($tool, [])];
         $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
 
         $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));

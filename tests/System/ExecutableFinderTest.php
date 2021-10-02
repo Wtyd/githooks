@@ -48,7 +48,7 @@ class ExecutableFinderTest extends ConsoleTestCase
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
         $this->artisan('tool all')
-            ->toolHasBeenExecutedSuccessfully('check-security')
+            ->toolHasBeenExecutedSuccessfully('local-php-security-checker')
             ->toolHasBeenExecutedSuccessfully('phpcbf')
             ->toolHasBeenExecutedSuccessfully('phpcpd')
             ->toolHasBeenExecutedSuccessfully('phpmd')

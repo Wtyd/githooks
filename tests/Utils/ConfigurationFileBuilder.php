@@ -92,6 +92,10 @@ class ConfigurationFileBuilder
                 Stan::LEVEL => 0,
                 Stan::PATHS => [$rootPath . '/src']
             ],
+
+            ToolAbstract::CHECK_SECURITY => [
+                CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
+            ],
         ];
     }
 
