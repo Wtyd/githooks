@@ -32,7 +32,7 @@ class ConfigurationFileTest extends UnitTestCase
         $this->assertEquals($configurationFileArray['phpcpd'], $this->configurationFile->getToolsConfiguration()['phpcpd']->getToolConfiguration());
         $this->assertEquals($configurationFileArray['parallel-lint'], $this->configurationFile->getToolsConfiguration()['parallel-lint']->getToolConfiguration());
         $this->assertEquals($configurationFileArray['phpstan'], $this->configurationFile->getToolsConfiguration()['phpstan']->getToolConfiguration());
-        $this->assertArrayHasKey('check-security', $this->configurationFile->getToolsConfiguration());
+        $this->assertArrayHasKey('security-checker', $this->configurationFile->getToolsConfiguration());
     }
 
     public function suportedToolsDataProvider()
@@ -43,7 +43,7 @@ class ConfigurationFileTest extends UnitTestCase
             'phpcpd' => ['phpcpd'],
             'parallel-lint' => ['parallel-lint'],
             'phpstan' => ['phpstan'],
-            'check-security' => ['check-security'],
+            'security-checker' => ['security-checker'],
         ];
     }
 
@@ -67,7 +67,7 @@ class ConfigurationFileTest extends UnitTestCase
     {
         $this->expectException(ToolIsNotSupportedException::class);
         $this->expectExceptionMessage(
-            'The tool tool-not-supported is not supported by GiHooks. Tools: phpcs, check-security, parallel-lint, phpmd, phpcpd, phpstan'
+            'The tool tool-not-supported is not supported by GiHooks. Tools: phpcs, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
         );
         $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'tool-not-supported');
     }
@@ -203,15 +203,15 @@ class ConfigurationFileTest extends UnitTestCase
             "If 'Options' exist, can't be empty" => [
                 'Configuration File' => [
                     'Options' => '',
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
             ],
             "If 'Options' exist, can't be null" => [
                 'Configuration File' => [
                     'Options' => null,
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
             ],
         ];
@@ -237,8 +237,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 'no valid string'
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected Error' => ["The value 'no valid string' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
@@ -247,8 +247,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 0
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected Error' => ["The value '0' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
@@ -257,8 +257,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => true
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected Error' => ["The value 'true' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
@@ -267,8 +267,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => false
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected Error' => ["The value 'false' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
@@ -299,8 +299,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'invalid-key' => 'ooops',
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected warnings' => [
                     "The key 'invalid-key' is not a valid option"
@@ -312,8 +312,8 @@ class ConfigurationFileTest extends UnitTestCase
                         'invalid-key' => 'ooops',
                         'invalid-key2' => 'ooops',
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected warnings' => [
                     "The key 'invalid-key' is not a valid option",
@@ -326,8 +326,8 @@ class ConfigurationFileTest extends UnitTestCase
                         'execution' => 'full',
                         'invalid-key' => 10,
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected warnings' => [
                     "The key 'invalid-key' is not a valid option",
@@ -340,8 +340,8 @@ class ConfigurationFileTest extends UnitTestCase
                         'invalid-key' => 'ooops',
                         'invalid-key2' => 3.5555,
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected warnings' => [
                     "The key 'invalid-key' is not a valid option",
@@ -370,8 +370,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 'full',
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'New execution' => 'fast',
             ],
@@ -380,8 +380,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 'fast',
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'New execution' => 'full',
             ],
@@ -390,8 +390,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 'full',
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'New execution' => 'full',
             ],
@@ -400,8 +400,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 'fast',
                     ],
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'New execution' => 'fast',
             ],
@@ -428,8 +428,8 @@ class ConfigurationFileTest extends UnitTestCase
             'Options' => [
                 'execution' => 'fast',
             ],
-            'Tools' => ['check-security'],
-            'check-security' => ['executablePath' => 'mipath']
+            'Tools' => ['security-checker'],
+            'security-checker' => ['executablePath' => 'mipath']
         ];
         $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
 
@@ -450,8 +450,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 'full',
                     ],
-                    'Tools' => ['check-security', 'no-supported-tool'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker', 'no-supported-tool'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected Warnings' => ['The tool no-supported-tool is not supported by GitHooks.'],
             ],
@@ -460,8 +460,8 @@ class ConfigurationFileTest extends UnitTestCase
                     'Options' => [
                         'execution' => 'full',
                     ],
-                    'Tools' => ['check-security', 'no-supported-tool1', 'no-supported-tool2'],
-                    'check-security' => ['executablePath' => 'mipath']
+                    'Tools' => ['security-checker', 'no-supported-tool1', 'no-supported-tool2'],
+                    'security-checker' => ['executablePath' => 'mipath']
                 ],
                 'Expected Warnings' => [
                     'The tool no-supported-tool1 is not supported by GitHooks.',

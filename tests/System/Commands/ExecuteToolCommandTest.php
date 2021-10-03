@@ -21,8 +21,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
     public function allToolsOKDataProvider()
     {
         return [
-            'check-security' => [
-                'tool' => 'check-security',
+            'security-checker' => [
+                'tool' => 'security-checker',
                 'command' => 'local-php-security-checker',
                 'Alias of the tool when is executed' => 'local-php-security-checker'
             ],
@@ -73,8 +73,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
     public function allToolsKODataProvider()
     {
         return [
-            'check-security' => [
-                'tool' => 'check-security',
+            'security-checker' => [
+                'tool' => 'security-checker',
                 'command' => 'local-php-security-checker',
                 'Alias of the tool when is executed' => 'local-php-security-checker'
             ],
@@ -132,7 +132,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         return [
             'All tools' => [
                 'Tools' => [
-                    'check-security',
+                    'security-checker',
                     'phpcs',
                     'phpcpd',
                     'phpmd',
@@ -140,7 +140,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                     'phpstan'
                 ],
                 'Command' =>  [
-                    'check-security' => 'local-php-security-checker',
+                    'security-checker' => 'local-php-security-checker',
                     'phpcs' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
                     'phpcpd' => "phpcpd --exclude $this->path/vendor $this->path/src",
                     'phpmd' => "phpmd $this->path/src ansi unusedcode --exclude \"$this->path/vendor\"",
@@ -181,7 +181,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         return [
             'First set of tools' => [
                 'Tools' => [
-                    'check-security',
+                    'security-checker',
                     'phpcs',
                     'phpcpd',
                 ],
@@ -300,7 +300,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         $this->artisan('tool notSupportedTool')
             ->assertExitCode(1)
             ->expectsOutput(
-                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, check-security, parallel-lint, phpmd, phpcpd, phpstan'
+                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
             );
     }
 

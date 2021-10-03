@@ -61,11 +61,11 @@ class FastExecutionTest extends TestCase
     function noAcelerableToolsProvider()
     {
         return [
-            'check-security' => [
-                'tool' => 'check-security',
+            'security-checker' => [
+                'tool' => 'security-checker',
                 'Configuration File' => [
-                    'Tools' => ['check-security'],
-                    'check-security' => ['executablePath' => 'local-php-security-checker']
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'local-php-security-checker']
                 ],
             ],
             'phpcpd' => [
@@ -136,7 +136,7 @@ class FastExecutionTest extends TestCase
                 'Tool Class' => CopyPasteDetector::class
             ],
             'Check-Security' => [
-                'Tool Name' => 'check-security',
+                'Tool Name' => 'security-checker',
                 'Tool Class' => SecurityChecker::class
             ],
         ];

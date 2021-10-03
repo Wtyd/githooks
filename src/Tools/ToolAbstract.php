@@ -10,7 +10,7 @@ abstract class ToolAbstract
 
     public const CODE_SNIFFER = 'phpcs';
 
-    public const CHECK_SECURITY = 'check-security';
+    public const SECURITY_CHECKER = 'security-checker';
 
     public const PARALLEL_LINT = 'parallel-lint';
 
@@ -22,7 +22,7 @@ abstract class ToolAbstract
 
     public const SUPPORTED_TOOLS = [
         self::CODE_SNIFFER => CodeSniffer::class,
-        self::CHECK_SECURITY => SecurityChecker::class,
+        self::SECURITY_CHECKER => SecurityChecker::class,
         self::PARALLEL_LINT => ParallelLint::class,
         self::MESS_DETECTOR => MessDetector::class,
         self::COPYPASTE_DETECTOR => CopyPasteDetector::class,
@@ -31,7 +31,7 @@ abstract class ToolAbstract
 
     public const EXCLUDE_ARGUMENT = [
         self::CODE_SNIFFER => CodeSniffer::IGNORE,
-        self::CHECK_SECURITY => '',
+        self::SECURITY_CHECKER => '',
         self::PARALLEL_LINT => ParallelLint::EXCLUDE,
         self::MESS_DETECTOR => MessDetector::EXCLUDE,
         self::COPYPASTE_DETECTOR => CopyPasteDetector::EXCLUDE,

@@ -43,7 +43,7 @@ phpcpd:
   paths: ['./']
   exclude: ['vendor', 'tests']
 
-check-security:
+security-checker:
   executablePath: tools/php71/local-php-security-checker
 
  

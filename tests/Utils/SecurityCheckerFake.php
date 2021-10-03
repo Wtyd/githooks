@@ -13,7 +13,7 @@ class SecurityCheckerFake extends SecurityChecker
 {
     public function __construct()
     {
-        parent::__construct(new ToolConfiguration(ToolAbstract::CHECK_SECURITY, []));
+        parent::__construct(new ToolConfiguration(ToolAbstract::SECURITY_CHECKER, []));
         $this->setOKExit();
     }
     /**

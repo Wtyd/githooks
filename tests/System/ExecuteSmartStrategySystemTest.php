@@ -13,7 +13,7 @@ use Tests\Utils\SecurityCheckerFake;
     1. La herramienta termina sin detectar errores.
     2. La herramienta termina detectando algún error.
     3. La herramienta no llega a ejecutarse ya que cumple con las condiciones para ser saltada (este escenario no se cumple ni para
-    check-security ni para phpstan que se ejecutarán siempre que hayan sido configuradas).
+    security-checker ni para phpstan que se ejecutarán siempre que hayan sido configuradas).
 
     Además, cuando se produce un fallo de sintaxis (Parallel-lint KO) las herramientas PhpStan y Mess Detector también son KO.
 
@@ -78,7 +78,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
         $this->assertStringContainsString('Your changes have been committed.', $this->getActualOutput());
     }
@@ -108,7 +108,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolHasFailed('phpmd');
         $this->assertToolHasFailed('phpcpd');
@@ -143,7 +143,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolDidNotRun('phpcbf');
         $this->assertToolDidNotRun('phpmd');
@@ -179,7 +179,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         }
 
         $this->assertToolHasFailed('phpstan');
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
@@ -216,7 +216,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('phpcbf');
@@ -254,7 +254,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         }
 
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasFailed('phpstan');
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolHasFailed('phpmd');
@@ -294,7 +294,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolDidNotRun('phpcbf');
     }

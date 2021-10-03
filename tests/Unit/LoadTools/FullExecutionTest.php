@@ -44,7 +44,7 @@ class FullExecutionTest extends TestCase
             ],
             'Composer Check-security' => [
                 SecurityChecker::class,
-                'check-security'
+                'security-checker'
             ],
         ];
     }

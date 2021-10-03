@@ -48,7 +48,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolHasFailed('phpmd');
         $this->assertToolHasFailed('phpcpd');
@@ -86,7 +86,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
 
         $githooks();
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolDidNotRun('phpcbf');
         $this->assertToolDidNotRun('phpmd');
@@ -136,7 +136,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -180,7 +180,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolDidNotRun('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -219,7 +219,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -277,7 +277,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -314,7 +314,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasFailed('phpmd');
@@ -356,7 +356,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolDidNotRun('phpmd');
@@ -394,7 +394,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasFailed('phpmd');
@@ -437,7 +437,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasFailed('phpcbf');
         //TODO phpmd no funciona correctamente. Esperando la respuesta del issue: https://github.com/phpmd/phpmd/issues/888
@@ -490,7 +490,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolDidNotRun('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -532,7 +532,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -567,7 +567,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -607,7 +607,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolDidNotRun('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -647,7 +647,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasFailed('phpmd');
@@ -682,7 +682,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolDidNotRun('phpmd');
@@ -734,7 +734,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasFailed('check-security');
+        $this->assertToolHasFailed('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -786,7 +786,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolDidNotRun('phpmd');
@@ -827,7 +827,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -868,7 +868,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -901,7 +901,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasFailed('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -936,7 +936,7 @@ class ExecuteFastStrategySystemTest extends SystemTestCase
             $this->assertSomeToolHasFailed($th, 'Your changes have not been committed. Please fix the errors and try again.');
         }
 
-        $this->assertToolHasBeenExecutedSuccessfully('check-security');
+        $this->assertToolHasBeenExecutedSuccessfully('security-checker');
         $this->assertToolHasFailed('phpcpd');
         $this->assertToolDidNotRun('phpcbf');
         $this->assertToolHasFailed('phpmd');

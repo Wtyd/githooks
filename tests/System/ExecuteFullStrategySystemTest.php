@@ -8,7 +8,7 @@ use Tests\Utils\SecurityCheckerFake;
 use Tests\Utils\PhpFileBuilder;
 
 /**
- * No se tiene encuenta check-security ya que depende de la configuración de composer.json y de que no se hayan encontrado
+ * No se tiene encuenta security-checker ya que depende de la configuración de composer.json y de que no se hayan encontrado
  * vulnerabilidades en las librerías configuradas.
  */
 class ExecuteFullStrategySystemTest extends SystemTestCase

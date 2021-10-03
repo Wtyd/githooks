@@ -58,7 +58,7 @@ class ConfigurationFileBuilder
             ToolAbstract::MESS_DETECTOR,
             ToolAbstract::COPYPASTE_DETECTOR,
             ToolAbstract::PHPSTAN,
-            ToolAbstract::CHECK_SECURITY,
+            ToolAbstract::SECURITY_CHECKER,
         ];
 
         $this->configurationTools = [
@@ -93,7 +93,7 @@ class ConfigurationFileBuilder
                 Stan::PATHS => [$rootPath . '/src']
             ],
 
-            ToolAbstract::CHECK_SECURITY => [
+            ToolAbstract::SECURITY_CHECKER => [
                 CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
             ],
         ];
