@@ -4,7 +4,7 @@ namespace Tests\System;
 
 use Wtyd\GitHooks\GitHooks;
 use Tests\SystemTestCase;
-use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\SecurityCheckerFake;
 use Tests\Utils\PhpFileBuilder;
 
 /**
@@ -29,8 +29,8 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setOKExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setOKExit();
         });
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
@@ -56,8 +56,8 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
             PhpFileBuilder::PHPMD, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPSTAN, PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPCPD
         ]));
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setOKExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setOKExit();
         });
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
 
@@ -85,8 +85,8 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
             PhpFileBuilder::PARALLEL_LINT, PhpFileBuilder::PHPMD, PhpFileBuilder::PHPSTAN,
         ]));
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setKOExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setKOExit();
         });
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);
@@ -116,8 +116,8 @@ class ExecuteFullStrategySystemTest extends SystemTestCase
             PhpFileBuilder::PHPCS_NO_FIXABLE, PhpFileBuilder::PHPCS, PhpFileBuilder::PHPCPD
         ]));
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setKOExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setKOExit();
         });
 
         $githooks = $this->container->makeWith(GitHooks::class, ['configFile' => $this->getPath() . '/githooks.yml']);

@@ -6,7 +6,7 @@ use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\{
     CodeSniffer,
     CopyPasteDetector,
-    CheckSecurity,
+    SecurityChecker,
     MessDetector,
     ParallelLint,
     Stan,
@@ -43,7 +43,7 @@ class FullExecutionTest extends TestCase
                 'parallel-lint'
             ],
             'Composer Check-security' => [
-                CheckSecurity::class,
+                SecurityChecker::class,
                 'check-security'
             ],
         ];

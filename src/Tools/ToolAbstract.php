@@ -22,7 +22,7 @@ abstract class ToolAbstract
 
     public const SUPPORTED_TOOLS = [
         self::CODE_SNIFFER => CodeSniffer::class,
-        self::CHECK_SECURITY => CheckSecurity::class,
+        self::CHECK_SECURITY => SecurityChecker::class,
         self::PARALLEL_LINT => ParallelLint::class,
         self::MESS_DETECTOR => MessDetector::class,
         self::COPYPASTE_DETECTOR => CopyPasteDetector::class,

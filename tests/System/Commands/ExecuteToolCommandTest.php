@@ -3,7 +3,7 @@
 namespace Tests\System\Commands;
 
 use Tests\ConsoleTestCase;
-use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\SecurityCheckerFake;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
 
@@ -116,8 +116,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
 
-        $this->app->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setKOExit();
+        $this->app->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setKOExit();
         });
 
         $this->artisan("tool $tool")

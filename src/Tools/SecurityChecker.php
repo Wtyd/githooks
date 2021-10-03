@@ -7,7 +7,7 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 /**
  * https://github.com/fabpot/local-php-security-checker
  */
-class CheckSecurity extends ToolAbstract
+class SecurityChecker extends ToolAbstract
 {
     public const OPTIONS = [];
     /**

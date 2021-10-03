@@ -5,11 +5,11 @@ namespace Tests;
 use Wtyd\GitHooks\Commands\Console\RegisterBindings;
 use Wtyd\GitHooks\Configuration;
 use Wtyd\GitHooks\Exception\ExitException;
-use Wtyd\GitHooks\Tools\CheckSecurity;
+use Wtyd\GitHooks\Tools\SecurityChecker;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
-use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\SecurityCheckerFake;
 use Tests\Utils\ConfigurationFake;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\FileUtilsFake;
@@ -52,7 +52,7 @@ class SystemTestCase extends TestCase
         $this->container =  Container::getInstance();
         $this->container->bind(FileUtilsInterface::class, FileUtilsFake::class);
         $this->container->bind(Configuration::class, ConfigurationFake::class);
-        $this->container->bind(CheckSecurity::class, CheckSecurityFake::class);
+        $this->container->bind(SecurityChecker::class, SecurityCheckerFake::class);
     }
 
     protected function tearDown(): void

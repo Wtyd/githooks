@@ -3,13 +3,13 @@
 namespace Tests\Utils;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\CheckSecurity;
+use Wtyd\GitHooks\Tools\SecurityChecker;
 use Wtyd\GitHooks\Tools\ToolAbstract;
 
 /**
  * This tool cannot be runned in testing environment
  */
-class CheckSecurityFake extends CheckSecurity
+class SecurityCheckerFake extends SecurityChecker
 {
     public function __construct()
     {

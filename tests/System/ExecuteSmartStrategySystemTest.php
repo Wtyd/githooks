@@ -6,7 +6,7 @@ use Wtyd\GitHooks\GitHooks;
 use Tests\SystemTestCase;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\FileUtilsFake;
-use Tests\Utils\CheckSecurityFake;
+use Tests\Utils\SecurityCheckerFake;
 
 /*
     En todos los casos consideramos que están configuradas TODAS las herramientas. Consideramos 3 escenarios para cada herramienta:
@@ -61,8 +61,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setOKExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setOKExit();
         });
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
@@ -84,7 +84,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function checkSecurity_finish_OK_and_the_other_tools_finish_KO()
+    function SecurityChecker_finish_OK_and_the_other_tools_finish_KO()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -93,8 +93,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcs', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']));
 
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setOKExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setOKExit();
         });
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
@@ -119,7 +119,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function checkSecurity_and_phpStan_finish_OK_and_other_tools_are_skipped()
+    function SecurityChecker_and_phpStan_finish_OK_and_other_tools_are_skipped()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -127,8 +127,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->build());
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setOKExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setOKExit();
         });
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
@@ -162,8 +162,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan']));
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setOKExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setOKExit();
         });
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
@@ -187,7 +187,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function CPDetector_and_ParallelLint_finish_OK_CheckSecurity_CodeSniffer_and_PhpStan_KO_and_MessDetector_is_skipped()
+    function CPDetector_and_ParallelLint_finish_OK_SecurityChecker_CodeSniffer_and_PhpStan_KO_and_MessDetector_is_skipped()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -200,8 +200,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpcpd']));
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setOKExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setOKExit();
         });
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
@@ -225,7 +225,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function CPDetector_OK_CheckSecurity_MessDetector_CodeSniffer_and_PhpStan_KO_and_ParallelLint_is_skipped()
+    function CPDetector_OK_SecurityChecker_MessDetector_CodeSniffer_and_PhpStan_KO_and_ParallelLint_is_skipped()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -237,8 +237,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
 
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpstan', 'phpcs', 'phpmd']));
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setKOExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setKOExit();
         });
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
@@ -262,7 +262,7 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
     }
 
     /** @test */
-    function CPDetector_and_CheckSecurity_KO_MessDetector_ParallelLint_and_PhpStan_OK_and_CodeSniffer_is_skipped()
+    function CPDetector_and_SecurityChecker_KO_MessDetector_ParallelLint_and_PhpStan_OK_and_CodeSniffer_is_skipped()
     {
         $fileBuilder = new PhpFileBuilder('File');
 
@@ -275,8 +275,8 @@ class ExecuteSmartStrategySystemTest extends SystemTestCase
         file_put_contents($this->getPath() . '/src/File.php', $fileBuilder->buildWithErrors(['phpcpd']));
 
 
-        $this->container->resolving(CheckSecurityFake::class, function (CheckSecurityFake $checkSecurity) {
-            return $checkSecurity->setKOExit();
+        $this->container->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
+            return $SecurityChecker->setKOExit();
         });
 
         $this->container->resolving(FileUtilsFake::class, function ($gitFiles) {
