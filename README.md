@@ -32,14 +32,21 @@ GitHooks centralizes the configuration of the code validation tools and makes it
     ```bash
     composer require --dev wtyd/githooks
     ```
+**Note:** for php 7.1 or 7.2 you must add the next `post-update-cmd` event to the `scripts` section in your `composer.json`:
 
-2. Install all needed [supported tools](#supported-tools). The installation method for the tools can be:
-    - Like global dependency with composer: `composer global require squizlabs/php_codesniffer`
-    - Like dev requirement in the project: `composer require --dev sebastian/phpcpd`
-    - Like .phar on the root of the project or with global access.
+```bash
+"scripts": {
+    "post-update-cmd": [
+      "Wtyd\\GitHooks\\Utils\\ComposerUpdater::php72orMinorUpdate"
+    ]
+}
+```
+Then run `composer update wtyd/githooks`.
 
-3. Initialize GitHooks with `vendor/bin/githooks conf:init`. This command creates the configuration file in the root paths (`githooks.yml`).
-4. Run `vendor/bin/githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `vendor/bin/githooks hook otherHook MyScriptFile.php` for set any hook with a custom script.
+2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
+
+3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.yml`).
+4. Run `githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands) for more information.
 
 5. [Set the configuration file](#Set-the-configuration-file).
 
@@ -65,7 +72,7 @@ At this moment, the supported tools are:
 * [Php Mess Detector](https://phpmd.org/)
 * [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint)
 * [Php Stan](https://github.com/phpstan/phpstan)
-* [Composer - Security Check Plugin](https://github.com/funkjedi/composer-plugin-security-check)
+* [Local PHP Security Checker](https://github.com/fabpot/local-php-security-checker)
 
 But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#Hook) on any git hook.
 
@@ -76,11 +83,7 @@ The `githooks.yml` file is splitted on three parts:
 Actually the only option is `execution`. This flag marks how GitHooks will run:
 * `full` (the default option): executes always all tools setted against all path setted for each tool.
     For example, you setted phpcs for run in `src` and `app` directories. The commit only contains modified files from `database` directory. Phpcs will check `src` and `app` directories even if no files in these directories have been modified.
-* `smart`: This option tries to save execution time when running the application. For this, it may not execute any of the configured tools if all the commit files do not belong to any of the directories against which the tool is launched or are files that are in excluded or ignored directories.
-For example: in the above case of phpcs, phpcs will not be executed. Another case, if you modify a test and phpmd has the `tests` folder excluded,  phpmd won't run either.
-    * The tools this option affects are: phpcs, phpmd, phpcpd, and parallel-lint. That is, they may not be executed even if they are configured.
-    * The tools that are NOT affected by this strategy are: phpstan (you can only mark exclusions in its configuration file) and security-check. These tools will run as long as they are configured even if the `smart` option is active.
-* `fast`: this option runs the tools only files modified by commit.
+* `fast`: this option runs the tools only against files modified by commit.
     * This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint. The rest of the tools will run as the full option.
     * **WARNING!!!** You must set the excludes of the tools either in githooks.yml or in the configuration file of eath tool since this
 option overwrites the key `paths` of the tools so that they are executed only against the modified files.
@@ -90,7 +93,7 @@ It is an array with the name of the tools that GitHooks will run. The name of th
 ```yml
 Tools:
     - phpstan
-    - check-security
+    - security-checker
     - parallel-lint
     - phpcs
     - phpmd
@@ -102,6 +105,7 @@ The order in which the tools are is the order in which they will be executed.
 In next step you must configure the tools with the same name as in the *Tools* key. For example, for set phpcs:
 ```yml
 phpcs:
+    executablePath: vendor/bin/phpcs
     paths: [src, tests]
     ignore: [vendor]
     standard: 'PSR12'
@@ -109,32 +113,39 @@ phpcs:
 
 All the available options are:
 
-| Option           | Description                                               | Examples                                            |
-|------------------|-----------------------------------------------------------|-----------------------------------------------------|
-| **phpstan**          |||
-| config           | String. Path to configuration file                        | 'phpstan.neon', 'path/to/phpstan.neon'              |
-| memory-limit     | String. Set the php memory limit while phpstan is running | '1M', '2000M', '1G'                                 |
-| paths            | Array. Paths or files against the tool will be executed   | ['./src'], ['./src', './app/MiFile.php']            |
-| level            | Integer. Default 0, max 8.                                | 0, 1, 5, 8                                          |
-| **parallel-lint**    |||
-| paths            | Array. Paths or files against the tool will be executed   | [src], [src, './app/MiFile.php']                    |
-| exclude          | Array. Paths or files to exclude.                         | [vendor], [vendor, './app/MiFile.php']              |
-| **phpcs**            |||
-| paths            | Array. Paths or files against the tool will be executed   | [src], [src, './app/MiFile.php']                    |
-| standard         | String. Rules or configuration file with the rules.       | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml' |
-| ignore           | Array. Paths or files to exclude.                         | [vendor], [vendor, './app/MiFile.php']              |
-| error-severity   | Integer. Level of error to detect.                        | 1, 5                                                |
-| warning-severity | Integer. Level of warning to detect.                      | 5, 7, 9                                             |
-| **phpmd**            |||
-| paths            | Array. Paths or files against the tool will be executed   | ['./src'], ['./src', './app/MiFile.php']            |
-| rules            | String. Rules or configuration file with the rules.       | 'controversial,codesize', 'naming', 'myrules.xml'   |
-| exclude          | Array. Paths or files to exclude.                         | ['./vendor'], ['./vendor', './app/MiFile.php']      |
-| **phpcpd**           |||
-| paths            | Array. Paths or files against the tool will be executed   | [src], [src, './app/MiFile.php']                    |
-| exclude          | Array. Paths or files to exclude.                         | [vendor], [vendor, './app/MiFile.php']              |
+| Option               | Description                                                      | Examples                                                           |
+| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **phpstan**          |                                                                  |                                                                    |
+| executablePath       | String. Path to executable. Default 'phpstan'                    | phpstan, 'vendor/bin/phpstan', 'path/to/phpstan'                   |
+| config               | String. Path to configuration file                               | 'phpstan.neon', 'path/to/phpstan.neon'                             |
+| memory-limit         | String. Set the php memory limit while phpstan is running        | '1M', '2000M', '1G'                                                |
+| paths                | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
+| level                | Integer. Default 0, max 8.                                       | 0, 1, 5, 8                                                         |
+| **parallel-lint**    |                                                                  |                                                                    |
+| executablePath       | String. Path to executable. Default 'parallel-lint'              | parallel-lint, 'vendor/bin/parallel-lint', 'path/to/parallel-lint' |
+| paths                | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
+| exclude              | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
+| **phpcs**            |                                                                  |                                                                    |
+| executablePath       | String. Path to executable. Default 'phpcs'                      | phpcs, 'vendor/bin/phpcs', 'path/to/phpcs'                         |
+| paths                | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
+| standard             | String. Rules or configuration file with the rules.              | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml'                |
+| ignore               | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
+| error-severity       | Integer. Level of error to detect.                               | 1, 5                                                               |
+| warning-severity     | Integer. Level of warning to detect.                             | 5, 7, 9                                                            |
+| **phpmd**            |                                                                  |                                                                    |
+| executablePath       | String. Path to executable. Default 'phpmd'                      | phpmd, 'vendor/bin/phpmd', 'path/to/phpmd'                         |
+| paths                | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
+| rules                | String. Rules or configuration file with the rules.              | 'controversial,codesize', 'naming', 'myrules.xml'                  |
+| exclude              | Array. Paths or files to exclude.                                | ['./vendor'], ['./vendor', './app/MiFile.php']                     |
+| **phpcpd**           |                                                                  |                                                                    |
+| executablePath       | String. Path to executable. Default 'phpcpd'                     | phpcpd, 'vendor/bin/phpcpd', 'path/to/phpcpd'                      |
+| paths                | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
+| exclude              | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
+| **security-checker** |                                                                  |                                                                    |
+| executablePath       | String. Path to executable. Default 'local-php-security-checker' | local-php-security-checker, 'path/to/local-php-security-checker'   |
 
 
-These are the options supported by GitHooks. Obviously, each tool has many other options. More precise configuration is possible with each tool configuration file. The *check-security* tool has no configuration.
+These are the options supported by GitHooks. Obviously, each tool has many other options. More precise configuration is possible with each tool configuration file.
 
 Many of the options are *optional* as long as the tool has a properly established configuration file. The `conf:init` command copies a githooks.yml file template to the root of the project with all the options commented of each the tool. To make sure that when you finish configuring it, all the options are valid, you can launch the command `conf:check`:
 <p>
