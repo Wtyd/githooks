@@ -16,6 +16,8 @@ abstract class ConsoleTestCase extends ZeroTestCase
     use FileSystemTrait;
     use RetroCompatibilityAssertsTrait;
 
+    public const TESTS_PATH = 'testsDir';
+
     /**
      * The string is contained in the output.
      *
@@ -90,19 +92,5 @@ abstract class ConsoleTestCase extends ZeroTestCase
         }
 
         return new PendingCommand($this, $this->app, $command, $parameters);
-    }
-
-    /**
-     * For system and console tests, the executable for phpcpd changes depending of phpversion
-     *
-     * @return string
-     */
-    public function phpcpdPath(): string
-    {
-        if (version_compare(phpversion(), '7.2.0', '<')) {
-            return 'php phpcpd.phar';
-        } else {
-            return 'phpcpd';
-        }
     }
 }

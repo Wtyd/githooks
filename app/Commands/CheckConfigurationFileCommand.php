@@ -34,9 +34,7 @@ class CheckConfigurationFileCommand extends Command
             $this->error($exception->getMessage());
             $errors->setError('set error', 'to return 1');
 
-            // var_dump($exception->getMessage());
             foreach ($exception->getConfigurationFile()->getErrors() as $error) {
-                // dd($error);
                 $this->printer->resultError($error);
             }
             $this->printWarnings($exception->getConfigurationFile()->getWarnings());

@@ -61,7 +61,7 @@ Even the default script and after, other tools which GitHooks not support or vic
         if (!Hooks::validate($this->hook)) {
             $this->printer->error("'{$this->hook}' is not a valid git hook. Avaliable hooks are:");
             $this->printer->error(implode(', ', Hooks::HOOKS));
-            return;
+            return 1;
         }
 
         $origin = $this->path2OriginFile();
@@ -73,6 +73,7 @@ Even the default script and after, other tools which GitHooks not support or vic
             $this->printer->success("Hook {$this->hook} created");
         } catch (\Throwable $th) {
             $this->printer->error("Error copying $origin in {$this->hook}");
+            return 1;
         }
     }
 

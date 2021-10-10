@@ -70,7 +70,8 @@ class CreateHookCommandTest extends ConsoleTestCase
     function it_creates_default_script_for_precommit_when_is_called_without_arguments()
     {
         $this->artisan('hook')
-            ->containsStringInOutput('Hook pre-commit created');
+            ->containsStringInOutput('Hook pre-commit created')
+            ->assertExitCode(0);
 
         $this->assertFileExists($this->path . '/.git/hooks/pre-commit', file_get_contents('hooks/default.php'));
     }
@@ -116,7 +117,8 @@ class CreateHookCommandTest extends ConsoleTestCase
     function it_creates_default_script_in_the_hook_passed_as_argument($hook)
     {
         $this->artisan("hook $hook")
-            ->containsStringInOutput("Hook $hook created");
+            ->containsStringInOutput("Hook $hook created")
+            ->assertExitCode(0);
 
         $this->assertFileExists($this->path . "/.git/hooks/$hook", file_get_contents('hooks/default.php'));
     }
@@ -132,7 +134,8 @@ class CreateHookCommandTest extends ConsoleTestCase
         file_put_contents($scriptFilePath, $hookContent);
 
         $this->artisan("hook pre-push $scriptFilePath")
-            ->containsStringInOutput("Hook pre-push created");
+            ->containsStringInOutput("Hook pre-push created")
+            ->assertExitCode(0);
 
         $this->assertFileExists($this->path . "/.git/hooks/pre-push", $scriptFilePath);
     }
@@ -178,7 +181,8 @@ class CreateHookCommandTest extends ConsoleTestCase
         $supportedHooks2String = implode(', ', $supportedHooks);
         $this->artisan("hook $scriptFilePath")
             ->containsStringInOutput("'$scriptFilePath' is not a valid git hook. Avaliable hooks are:")
-            ->containsStringInOutput($supportedHooks2String);
+            ->containsStringInOutput($supportedHooks2String)
+            ->assertExitCode(1);
 
         $this->assertFileDoesNotExist($this->path . "/.git/hooks/pre-commit", $scriptFilePath);
     }
@@ -222,7 +226,8 @@ class CreateHookCommandTest extends ConsoleTestCase
         $supportedHooks2String = implode(', ', $supportedHooks);
         $this->artisan("hook $noSupportedHook")
             ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Avaliable hooks are:")
-            ->containsStringInOutput($supportedHooks2String);
+            ->containsStringInOutput($supportedHooks2String)
+            ->assertExitCode(1);
 
         $supportedHooksInOutput = explode(',', $this->getActualOutput());
 

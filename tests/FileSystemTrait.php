@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -10,7 +11,7 @@ trait FileSystemTrait
     /**
      * @var string Path to directory for tests that require filesystem
      */
-    protected $path = SystemTestCase::TESTS_PATH;
+    protected $path = ConsoleTestCase::TESTS_PATH;
 
     public function getPath(): string
     {
@@ -37,7 +38,7 @@ trait FileSystemTrait
     public function deleteDirStructure(): void
     {
         if (is_dir($this->path)) {
-            $this->deleteDir();
+            self::deleteDir();
         }
     }
 
@@ -46,9 +47,9 @@ trait FileSystemTrait
      *
      * @return void
      */
-    protected function deleteDir(): void
+    protected static function deleteDir(): void
     {
-        $dir = $this->path;
+        $dir = ConsoleTestCase::TESTS_PATH;
         $it = new RecursiveDirectoryIterator($dir, RecursiveDirectoryIterator::SKIP_DOTS);
         $files = new RecursiveIteratorIterator(
             $it,
@@ -62,5 +63,10 @@ trait FileSystemTrait
                 unlink($file->getRealPath());
             }
         }
+    }
+    public static function cleanTestsFilesystem()
+    {
+
+        self::deleteDir();
     }
 }

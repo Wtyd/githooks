@@ -10,9 +10,7 @@
         </testsuite>
         <testsuite name="System">
             <directory>./tests/System</directory>
-            <exclude>./tests/System/ExecuteFastStrategySystemTest.php</exclude>
-            <exclude>./tests/System/ExecuteSmartStrategySystemTest.php</exclude>
-            <exclude>./tests/System/ExecuteFullStrategySystemTest.php</exclude>
+            <exclude>./tests/System/ReleaseTest.php</exclude>
         </testsuite>
     </testsuites>
     <coverage processUncoveredFiles="true">

@@ -36,19 +36,21 @@ class CleanHookCommand extends Command
         if (!Hooks::validate($hook)) {
             $this->printer->error("'$hook' is not a valid git hook. Avaliable hooks are:");
             $this->printer->error(implode(', ', Hooks::HOOKS));
-            return;
+            return 1;
         }
 
         $file = $this->getHooksPath() . "/$hook";
         if (!file_exists($file)) {
             $this->printer->warning("The hook $hook cannot be deleted because it cannot be found");
-            return;
+            return 1;
         }
 
         if (unlink($file)) {
             $this->printer->success("Hook $hook has been deleted");
+            return 0;
         } else {
             $this->printer->error("Could not delete $hook hook");
+            return 1;
         }
     }
 

@@ -52,7 +52,8 @@ class CleanHookCommandTest extends ConsoleTestCase
         file_put_contents($this->getPath() . '/.git/hooks/pre-commit', '');
 
         $this->artisan('hook:clean')
-            ->containsStringInOutput('Hook pre-commit has been deleted');
+            ->containsStringInOutput('Hook pre-commit has been deleted')
+            ->assertExitCode(0);
     }
 
     public function hooksProvider()
@@ -98,14 +99,16 @@ class CleanHookCommandTest extends ConsoleTestCase
         file_put_contents($this->getPath() . '/.git/hooks/' . $hook, '');
 
         $this->artisan("hook:clean $hook")
-            ->containsStringInOutput("Hook $hook has been deleted");
+            ->containsStringInOutput("Hook $hook has been deleted")
+            ->assertExitCode(0);
     }
 
     /** @test */
     function it_does_not_delete_a_hook_that_cannot_be_found()
     {
         $this->artisan('hook:clean pre-commit')
-            ->containsStringInOutput('The hook pre-commit cannot be deleted because it cannot be found');
+            ->containsStringInOutput('The hook pre-commit cannot be deleted because it cannot be found')
+            ->assertExitCode(1);
     }
 
     /** @test */
@@ -147,7 +150,8 @@ class CleanHookCommandTest extends ConsoleTestCase
         $supportedHooks2String = implode(', ', $supportedHooks);
         $this->artisan("hook:clean $noSupportedHook")
             ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Avaliable hooks are:")
-            ->containsStringInOutput($supportedHooks2String);
+            ->containsStringInOutput($supportedHooks2String)
+            ->assertExitCode(1);
 
         $supportedHooksInOutput = explode(',', $this->getActualOutput());
 

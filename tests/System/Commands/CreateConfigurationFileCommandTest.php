@@ -36,7 +36,8 @@ class CreateConfigurationFileCommandTest extends ConsoleTestCase
         $mock->enable();
 
         $this->artisan('conf:init')
-            ->containsStringInOutput('Configuration file githooks.yml has been created in root path');
+            ->containsStringInOutput('Configuration file githooks.yml has been created in root path')
+            ->assertExitCode(0);
 
         $this->assertFileEquals($templatePath . 'githooks.dist.yml', $this->path . '/githooks.yml');
 
@@ -50,7 +51,8 @@ class CreateConfigurationFileCommandTest extends ConsoleTestCase
         $mock->enable();
 
         $this->artisan('conf:init')
-            ->containsStringInOutput('Failed to copy ' . $this->path . '/vendor/wtyd/githooks/qa/githooks.dist.yml' . ' to ' . $this->path . '/githooks.yml');
+            ->containsStringInOutput('Failed to copy ' . $this->path . '/vendor/wtyd/githooks/qa/githooks.dist.yml' . ' to ' . $this->path . '/githooks.yml')
+            ->assertExitCode(1);
 
         $this->assertFileDoesNotExist($this->path . '/githooks.yml');
 
