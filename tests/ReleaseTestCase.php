@@ -61,14 +61,17 @@ class ReleaseTestCase extends TestCase
 
 
     /**
-     * Copies de releases candidate to the tests directory. Only copies the version that works in the current php version
+     * Copies de releases candidate to the tests directory. Only copies the version that works in the current php version.
+     * Permissions must be setted. Otherwise, the Github Action flow will fail.
      *
      * @return boolean
      */
     protected static function copyReleaseBinary(): bool
     {
         $origin = version_compare(phpversion(), '7.2.0', '<=') ? 'builds/php7.1/githooks' : 'builds/githooks';
-        return copy($origin, ConsoleTestCase::TESTS_PATH . '/githooks');
+        $destiny = ConsoleTestCase::TESTS_PATH . '/githooks';
+        copy($origin, $destiny);
+        return chmod($destiny, 0777);
     }
 
     /**
