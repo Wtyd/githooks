@@ -12,6 +12,12 @@ class ReleaseTestCase extends TestCase
     use FileSystemTrait;
     use RetroCompatibilityAssertsTrait;
 
+    /**
+     * Executable binary
+     *
+     * @var string
+     */
+    protected $githooks = ConsoleTestCase::TESTS_PATH . '/githooks';
 
     /**
      * @var ConfigurationFileBuilder
@@ -42,6 +48,9 @@ class ReleaseTestCase extends TestCase
     protected function tearDown(): void
     {
         $this->deleteDirStructure();
+        if (file_exists('githooks.yml')) {
+            unlink('githooks.yml');
+        }
     }
 
     protected function hiddenConsoleOutput(): void

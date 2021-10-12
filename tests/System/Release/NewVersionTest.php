@@ -10,7 +10,7 @@ use Tests\ReleaseTestCase;
  */
 class NewVersionTest extends ReleaseTestCase
 {
-    protected $githooks = ConsoleTestCase::TESTS_PATH . '/githooks';
+
 
 
     protected function setUp(): void

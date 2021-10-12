@@ -62,16 +62,6 @@ class ReleaseTest extends ConsoleTestCase
     }
 
 
-    function it_prints_the_new_version()
-    {
-        passthru("$this->githooksExecutable --version", $exitCode);
-
-        $newVersion = '2.0.0';
-        $this->assertStringContainsString("GitHooks $newVersion", $this->getActualOutput());
-        $this->assertEquals(0, $exitCode);
-    }
-
-
     function it_checks_the_configuration_file()
     {
         passthru("$this->githooksExecutable conf:check", $exitCode);

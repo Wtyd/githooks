@@ -29,6 +29,7 @@ testsDir/src
 testsDir/app
 testsDir/vendor
 testsDir/githooks.yml
+githooks.yml
 
 
 *.md
