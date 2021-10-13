@@ -2,7 +2,6 @@
 
 namespace Tests\System\Release;
 
-use Tests\ConsoleTestCase;
 use Tests\ReleaseTestCase;
 
 /**
@@ -10,8 +9,6 @@ use Tests\ReleaseTestCase;
  */
 class CheckConfigurationFileTest extends ReleaseTestCase
 {
-    protected $githooks = ConsoleTestCase::TESTS_PATH . '/githooks';
-
     /** @test */
     function it_checks_the_configuration_file_and_return_exit_0()
     {

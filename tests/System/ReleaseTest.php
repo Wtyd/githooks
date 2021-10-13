@@ -62,27 +62,6 @@ class ReleaseTest extends ConsoleTestCase
     }
 
 
-    function it_checks_the_configuration_file()
-    {
-        passthru("$this->githooksExecutable conf:check", $exitCode);
-
-        $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString("The key 'invalidOptionTest' is not a valid option", $this->getActualOutput());
-    }
-
-    function it_cleans_a_githook()
-    {
-        $scriptFile = ConsoleTestCase::TESTS_PATH . '/src/File.php';
-        copy($scriptFile, '.git/hooks/pre-push');
-
-        passthru("$this->githooksExecutable hook:clean pre-push", $exitCode);
-
-        $this->assertStringContainsString('Hook pre-push has been deleted', $this->getActualOutput());
-        $this->assertEquals(0, $exitCode);
-        $this->assertFileDoesNotExist('.git/hooks/pre-push');
-    }
-
-
     function it_creates_the_configuration_file()
     {
         mkdir('vendor/wtyd/githooks/qa/', 0777, true);
@@ -168,6 +147,7 @@ class ReleaseTest extends ConsoleTestCase
         $this->assertToolHasFailed('phpcpd'); // No acelerable tool
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
     }
+    //TODO ejecutar phpcs y ver que devuelve 1 cuando se corrige el fichero de forma automática
 
     /**
      * Checks if the $tool has been executed Successfully by regular expression assert. This assert was renamed and is deprecated

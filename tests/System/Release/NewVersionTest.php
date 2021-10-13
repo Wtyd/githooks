@@ -2,7 +2,6 @@
 
 namespace Tests\System\Release;
 
-use Tests\ConsoleTestCase;
 use Tests\ReleaseTestCase;
 
 /**
@@ -10,9 +9,6 @@ use Tests\ReleaseTestCase;
  */
 class NewVersionTest extends ReleaseTestCase
 {
-
-
-
     protected function setUp(): void
     {
         $this->deleteDirStructure();

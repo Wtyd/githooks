@@ -12,6 +12,7 @@ class ReleaseTestCase extends TestCase
     use FileSystemTrait;
     use RetroCompatibilityAssertsTrait;
 
+    public const TESTS_PATH = ConsoleTestCase::TESTS_PATH;
     /**
      * Executable binary
      *
