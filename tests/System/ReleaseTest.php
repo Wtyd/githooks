@@ -80,74 +80,7 @@ class ReleaseTest extends ConsoleTestCase
         $this->deleteDirStructure('vendor/wtyd');
     }
 
-    function it_sets_a_custom_githook()
-    {
-        $scriptFile = ConsoleTestCase::TESTS_PATH . '/src/File.php';
-        passthru("$this->githooksExecutable hook pre-push $scriptFile", $exitCode);
 
-        $this->assertStringContainsString('Hook pre-push created', $this->getActualOutput());
-        $this->assertEquals(0, $exitCode);
-        $this->assertFileEquals($scriptFile, '.git/hooks/pre-push');
-    }
-
-    public function executionModeProvider()
-    {
-        return [['full'], ['']];
-    }
-
-    /**
-     * @test
-     * @dataProvider executionModeProvider
-     */
-    function it_executes_all_tools($executionMode)
-    {
-        $configurationFileBuilder = new ConfigurationFileBuilder(ConsoleTestCase::TESTS_PATH);
-        file_put_contents(
-            'githooks.yml',
-            $configurationFileBuilder->setTools(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])->buildYalm()
-        );
-        passthru("$this->githooksExecutable tool all $executionMode", $exitCode);
-
-        $this->assertEquals(0, $exitCode);
-        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
-    }
-
-    /** @test */
-    function it_executes_all_tools_with_fast_execution_mode()
-    {
-        $configurationFileBuilder = new ConfigurationFileBuilder(ConsoleTestCase::TESTS_PATH);
-        file_put_contents(
-            'githooks.yml',
-            $configurationFileBuilder->setTools(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])->buildYalm()
-        );
-
-        $fileBuilder = new PhpFileBuilder('FileWithErrors');
-
-        file_put_contents(
-            ConsoleTestCase::TESTS_PATH . '/src/FileWithErrors.php',
-            $fileBuilder->buildWithErrors(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
-        );
-
-        unlink('.gitignore');
-        $fileWithoutErrorsPath = ConsoleTestCase::TESTS_PATH . '/src/File.php';
-        shell_exec("git add $fileWithoutErrorsPath");
-        passthru("$this->githooksExecutable tool all fast", $exitCode);
-
-        shell_exec("git checkout -- .gitignore");
-        shell_exec("git reset -- $fileWithoutErrorsPath");
-
-        $this->assertEquals(1, $exitCode);
-        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
-        $this->assertToolHasFailed('phpcpd'); // No acelerable tool
-        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
-    }
-    //TODO ejecutar phpcs y ver que devuelve 1 cuando se corrige el fichero de forma automática
 
     /**
      * Checks if the $tool has been executed Successfully by regular expression assert. This assert was renamed and is deprecated
