@@ -2,7 +2,6 @@
 
 namespace Tests\System\Release;
 
-use Tests\ConsoleTestCase;
 use Tests\ReleaseTestCase;
 
 /**
