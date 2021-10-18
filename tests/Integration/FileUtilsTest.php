@@ -4,6 +4,7 @@ namespace Tests\Integration;
 
 use Wtyd\GitHooks\Utils\FileUtils;
 use Illuminate\Container\Container;
+use Tests\ConsoleTestCase;
 use Tests\Utils\PhpFileBuilder;
 use Tests\SystemTestCase;
 
@@ -11,15 +12,13 @@ use Tests\SystemTestCase;
  * Before executing this test suite after any changes, you must commit these changes
  * @group git
  */
-class FileUtilsTest extends SystemTestCase
+class FileUtilsTest extends ConsoleTestCase
 {
     protected static $gitFilesPathTest = __DIR__ . '/../../testsDir/gitTests';
 
     protected function setUp(): void
     {
         $this->deleteDirStructure();
-
-        $this->hiddenConsoleOutput();
 
         $this->createDirStructure();
         mkdir(self::$gitFilesPathTest);
@@ -55,28 +54,28 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /** @test */
-    // function it_retrieve_an_empty_array_when_there_are_no_modified_files()
-    // {
-    //     $gitFiles = $this->container->make(FileUtils::class);
+    function it_retrieve_an_empty_array_when_there_are_no_modified_files()
+    {
+        $gitFiles = $this->container->make(FileUtils::class);
 
-    //     $modifiedFiles = $gitFiles->getModifiedFiles();
+        $modifiedFiles = $gitFiles->getModifiedFiles();
 
-    //     $this->assertEquals([], $modifiedFiles);
-    // }
+        $this->assertEquals([], $modifiedFiles);
+    }
 
-    // /** @test */
-    // function it_retrieve_an_empty_array_when_the_modified_files_there_are_no_added_to_the_git_stage()
-    // {
-    //     $fileBuilder = new PhpFileBuilder('NewFile');
+    /** @test */
+    function it_retrieve_an_empty_array_when_the_modified_files_there_are_no_added_to_the_git_stage()
+    {
+        $fileBuilder = new PhpFileBuilder('NewFile');
 
-    //     file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
+        file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
 
-    //     $gitFiles = $this->container->make(FileUtils::class);
+        $gitFiles = $this->container->make(FileUtils::class);
 
-    //     $modifiedFiles = $gitFiles->getModifiedFiles();
+        $modifiedFiles = $gitFiles->getModifiedFiles();
 
-    //     $this->assertEquals([], $modifiedFiles);
-    // }
+        $this->assertEquals([], $modifiedFiles);
+    }
 
     /**
      * @param string $path Absolute path. For example: /var/www/html/githooks/tests/NewFile.php

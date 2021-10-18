@@ -6,16 +6,15 @@
         </testsuite>
         <testsuite name="Integration">
             <directory>./tests/Integration</directory>
-            <exclude>./tests/Integration/FileUtilsTest.php</exclude>
         </testsuite>
         <testsuite name="System">
             <directory>./tests/System</directory>
-            <exclude>./tests/System/ReleaseTest.php</exclude>
         </testsuite>
     </testsuites>
     <groups>
         <exclude>
             <group>release</group>
+            <group>git</group>
         </exclude>
     </groups>
     <coverage processUncoveredFiles="true">
