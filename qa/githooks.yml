@@ -6,9 +6,9 @@ Options:
 Tools:
   - phpstan
   - parallel-lint
-  - phpcs
   - phpmd
   - phpcpd
+  - phpcbf
 
 # Configuración de cada una de las herramientas
 phpstan:
@@ -25,13 +25,21 @@ parallel-lint:
     exclude: [vendor]
 
 phpcs:
+    executablePath: tools/php71/phpcs
+    paths: ['./']
+    standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
+    ignore: [vendor] # Se podría configurar en el standard directamente
+    error-severity: 1
+    warning-severity: 6
+
+phpcbf:
     executablePath: tools/php71/phpcbf
     paths: ['./']
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
     ignore: [vendor] # Se podría configurar en el standard directamente
     error-severity: 1
     warning-severity: 6
-  
+
 phpmd:
   executablePath: tools/php71/phpmd
   paths: ['./src/']

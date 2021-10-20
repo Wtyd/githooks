@@ -3,12 +3,15 @@
 namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
+use Wtyd\GitHooks\Tools\Tools\Phpcbf;
 
 abstract class ToolAbstract
 {
     public const TOOL_CONFIGURATION = 'toolConfiguration';
 
     public const CODE_SNIFFER = 'phpcs';
+
+    public const PHPCBF = 'phpcbf';
 
     public const SECURITY_CHECKER = 'security-checker';
 
@@ -22,6 +25,7 @@ abstract class ToolAbstract
 
     public const SUPPORTED_TOOLS = [
         self::CODE_SNIFFER => CodeSniffer::class,
+        self::PHPCBF => Phpcbf::class,
         self::SECURITY_CHECKER => SecurityChecker::class,
         self::PARALLEL_LINT => ParallelLint::class,
         self::MESS_DETECTOR => MessDetector::class,
@@ -31,6 +35,7 @@ abstract class ToolAbstract
 
     public const EXCLUDE_ARGUMENT = [
         self::CODE_SNIFFER => CodeSniffer::IGNORE,
+        self::PHPCBF => Phpcbf::IGNORE,
         self::SECURITY_CHECKER => '',
         self::PARALLEL_LINT => ParallelLint::EXCLUDE,
         self::MESS_DETECTOR => MessDetector::EXCLUDE,
