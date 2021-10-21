@@ -5,6 +5,7 @@ namespace Tests\Unit\LoadTools;
 use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\{
     CodeSniffer,
+    Tools\Phpcbf,
     CopyPasteDetector,
     SecurityChecker,
     MessDetector,
@@ -22,9 +23,13 @@ class FullExecutionTest extends TestCase
     function allToolsProvider()
     {
         return [
-            'Php Code Sniffer' => [
+            'Code Sniffer Phpcs' => [
                 CodeSniffer::class,
                 'phpcs'
+            ],
+            'Code Sniffer Phpcbf' => [
+                Phpcbf::class,
+                'phpcbf'
             ],
             'Php Stan' => [
                 Stan::class,
@@ -79,6 +84,6 @@ class FullExecutionTest extends TestCase
         $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFileBuilder->buildArray(), 'all'));
 
 
-        $this->assertCount(6, $loadedTools);
+        $this->assertCount(7, $loadedTools);
     }
 }

@@ -32,6 +32,11 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpcs' => [
                 'tool' => 'phpcs',
+                'command' => "phpcs $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
+                'Alias of the tool when is executed' => 'phpcs'
+            ],
+            'phpcbf' => [
+                'tool' => 'phpcbf',
                 'command' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
                 'Alias of the tool when is executed' => 'phpcbf'
             ],
@@ -84,6 +89,11 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpcs' => [
                 'tool' => 'phpcs',
+                'command' => "phpcs $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
+                'Alias of the tool when is executed' => 'phpcs'
+            ],
+            'phpcbf' => [
+                'tool' => 'phpcbf',
                 'command' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
                 'Alias of the tool when is executed' => 'phpcbf'
             ],
@@ -138,6 +148,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                 'Tools' => [
                     'security-checker',
                     'phpcs',
+                    'phpcbf',
                     'phpcpd',
                     'phpmd',
                     'parallel-lint',
@@ -145,7 +156,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                 ],
                 'Command' =>  [
                     'security-checker' => 'local-php-security-checker',
-                    'phpcs' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
+                    'phpcs' => "phpcs $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
+                    'phpcbf' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
                     'phpcpd' => "phpcpd --exclude $this->path/vendor $this->path/src",
                     'phpmd' => "phpmd $this->path/src ansi unusedcode --exclude \"$this->path/vendor\"",
                     'parallel-lint' => "parallel-lint $this->path/src --exclude $this->path/vendor",
@@ -168,12 +180,14 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         $this->artisan('tool all')
             ->assertExitCode(0)
             ->toolHasBeenExecutedSuccessfully('local-php-security-checker')
+            ->toolHasBeenExecutedSuccessfully('phpcs')
             ->toolHasBeenExecutedSuccessfully('phpcbf')
             ->toolHasBeenExecutedSuccessfully('phpcpd')
             ->toolHasBeenExecutedSuccessfully('phpmd')
             ->toolHasBeenExecutedSuccessfully('parallel-lint')
             ->toolHasBeenExecutedSuccessfully('phpstan')
             ->notContainsStringInOutput($commandUnderTheHood['phpcs'])
+            ->notContainsStringInOutput($commandUnderTheHood['phpcbf'])
             ->notContainsStringInOutput($commandUnderTheHood['phpcpd'])
             ->notContainsStringInOutput($commandUnderTheHood['phpmd'])
             ->notContainsStringInOutput($commandUnderTheHood['parallel-lint'])
@@ -191,20 +205,22 @@ class ExecuteToolCommandTest extends ConsoleTestCase
                 ],
                 'Runned Tools' => [
                     'local-php-security-checker',
-                    'phpcbf',
+                    'phpcs',
                     'phpcpd',
                 ],
                 'Not runned tools' =>  [
                     'phpmd',
                     'parallel-lint',
-                    'phpstan'
+                    'phpstan',
+                    'phpcbf'
                 ],
             ],
             'Second set of tools' => [
                 'Tools' => [
                     'phpmd',
                     'parallel-lint',
-                    'phpstan'
+                    'phpstan',
+                    'phpcbf'
                 ],
                 'Runned Tools' => [
                     'phpmd',
@@ -246,7 +262,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             'Fail phpcpd' => [
                 'Tools executed successfully' => [
                     'local-php-security-checker',
-                    'phpcbf',
+                    'phpcs',
                     'phpmd',
                     'parallel-lint',
                     'phpstan'
@@ -304,7 +320,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         $this->artisan('tool notSupportedTool')
             ->assertExitCode(1)
             ->expectsOutput(
-                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
+                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
             );
     }
 
@@ -344,10 +360,10 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             $gitFiles->setFilesThatShouldBeFoundInDirectories([$pathForFileWithoutErrors]);
         });
 
-        $commandUnderTheHood = "phpcbf $pathForFileWithoutErrors";
+        $commandUnderTheHood = "phpcs $pathForFileWithoutErrors";
         $this->artisan('tool phpcs fast')
             ->containsStringInOutput($commandUnderTheHood)
-            ->toolHasBeenExecutedSuccessfully('phpcbf');
+            ->toolHasBeenExecutedSuccessfully('phpcs');
     }
 
     /**

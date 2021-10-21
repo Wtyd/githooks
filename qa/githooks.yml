@@ -8,6 +8,7 @@ Tools:
   - parallel-lint
   - phpmd
   - phpcpd
+  - phpcs
   - phpcbf
 
 # Configuración de cada una de las herramientas

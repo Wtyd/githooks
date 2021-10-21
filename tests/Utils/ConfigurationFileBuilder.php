@@ -54,6 +54,7 @@ class ConfigurationFileBuilder
 
         $this->tools = [
             ToolAbstract::CODE_SNIFFER,
+            ToolAbstract::PHPCBF,
             ToolAbstract::PARALLEL_LINT,
             ToolAbstract::MESS_DETECTOR,
             ToolAbstract::COPYPASTE_DETECTOR,
@@ -63,6 +64,15 @@ class ConfigurationFileBuilder
 
         $this->configurationTools = [
             ToolAbstract::CODE_SNIFFER => [
+                CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcs',
+                CodeSniffer::PATHS => [$rootPath . '/src'],
+                CodeSniffer::STANDARD => 'PSR12',
+                CodeSniffer::IGNORE => [$rootPath . '/vendor'],
+                CodeSniffer::ERROR_SEVERITY => 1,
+                CodeSniffer::WARNING_SEVERITY => 6
+            ],
+
+            ToolAbstract::PHPCBF => [
                 CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
                 CodeSniffer::PATHS => [$rootPath . '/src'],
                 CodeSniffer::STANDARD => 'PSR12',

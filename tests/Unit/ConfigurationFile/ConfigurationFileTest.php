@@ -67,7 +67,7 @@ class ConfigurationFileTest extends UnitTestCase
     {
         $this->expectException(ToolIsNotSupportedException::class);
         $this->expectExceptionMessage(
-            'The tool tool-not-supported is not supported by GiHooks. Tools: phpcs, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
+            'The tool tool-not-supported is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
         );
         $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'tool-not-supported');
     }

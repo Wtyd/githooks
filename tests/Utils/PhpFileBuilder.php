@@ -8,6 +8,8 @@ class PhpFileBuilder
 
     public const PHPCS = 'phpcs';
 
+    public const PHPCBF = 'phpcbf';
+
     public const PHPCS_NO_FIXABLE = 'phpcs-no-fixable';
 
     public const PHPSTAN = 'phpstan';
@@ -56,6 +58,9 @@ class PhpFileBuilder
                     $file .= $this->addMessDetectorError();
                     break;
                 case self::PHPCS:
+                    $file .= $this->addCodeSnifferError();
+                    break;
+                case self::PHPCBF:
                     $file .= $this->addCodeSnifferError();
                     break;
                 case self::PHPCS_NO_FIXABLE:
