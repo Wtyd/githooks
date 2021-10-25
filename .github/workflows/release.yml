@@ -1,24 +1,26 @@
-name: Release Tests
+name: Release
 # https://github.com/shivammathur/setup-php
+# https://github.com/marketplace/actions/add-commit
 on:
   push:
-    branches: [ release** ]
+    branches: [ rc** ]
 
   pull_request:
     branches-ignore: [ master ]
 
 env:
+  version: '2.0.1'
   extensions: :opcache #intl, pcov #fileinfo is needed for Windows
 
 jobs:
-  tests:    
-    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
+  build_rc:    
+    name: Build php ${{ matrix.php-versions }} version
     runs-on: ${{ matrix.operating-system }}
     strategy:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.0', '7.1']
+        php-versions: ['7.1', '7.3']
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -28,7 +30,50 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan
+        ini-values: "post_max_size=256M" #optional
+        coverage: none
+
+    - name: Install dependencies
+      run: composer update --prefer-dist --no-progress
+
+    - name: Install Humbug/Box
+      if: ${{ '7.1' == matrix.php-versions }}
+      run: composer global require humbug/box
+
+    - name: Build the Aplication
+      run: php githooks app:build --build-version=${{ env.version }}
+
+    - uses: actions/upload-artifact@master
+      if: ${{ '7.1' == matrix.php-versions }}
+      with:
+        name: githooks-71
+        path: builds/php7.1/githooks
+
+    - uses: actions/upload-artifact@master
+      if: ${{ '7.3' == matrix.php-versions }}
+      with:
+        name: githooks-73
+        path: builds/githooks
+
+  test_rc:    
+    name: Test the Build in php ${{ matrix.php-versions }}
+    runs-on: ${{ matrix.operating-system }}
+    needs: build_rc
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ['7.2', '8.0']
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2 
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: phpcs, phpcbf, phpmd, phpstan, parallel-Lint, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: none
   
@@ -48,19 +93,81 @@ jobs:
         composer install --prefer-dist --no-progress
         chmod -R +x tools/*
 
-    - name: Install Global Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
+    - name: Delete Old Builds
+      run: rm builds/githooks builds/php7.1/githooks
 
-    - name: Install Global Phpcpd for Php7.1
-      if: ${{ '7.1' == matrix.php-versions }}
-      run: cp tools/php71/phpcpd /usr/local/bin/phpcpd
+    - uses: actions/download-artifact@master
+      if: ${{ '7.2' == matrix.php-versions }}
+      with:
+        name: githooks-71
+        path: 'builds/php7.1'
 
-    - name: Install Global Phpcpd for Php8.0
+    - uses: actions/download-artifact@master
       if: ${{ '8.0' == matrix.php-versions }}
-      run: cp tools/php80/phpcpd /usr/local/bin/phpcpd
-
+      with:
+        name: githooks-73
+        path: builds
+  
     - name: Testing the Aplication
       run: |
+        ls -lah builds builds/php7.1
         echo -e "\e[42m\e[30m**** Release Test Suite ****\033[0m"
         vendor/bin/phpunit --group release
       shell: bash
+
+  # commit_rc:    
+  #   name: Commit the Build
+  #   needs: test_rc
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
+  #       token: ''
+
+  #     - name: Delete Old Builds
+  #       run: rm builds/githooks builds/php7.1/githooks
+
+  #     - uses: actions/download-artifact@master
+  #       with:
+  #         name: githooks-71
+  #         path: 'builds/php7.1'
+
+  #     - uses: actions/download-artifact@master
+  #       with:
+  #         name: githooks-73
+  #         path: builds
+
+  #     - name: Make Changes
+  #       uses: DamianReeves/write-file-action
+  #       with:
+  #         path: README.md
+  #         contents: |
+  #           echo "Hello World!"
+  #         write-mode: append
+
+  #     - name: Make Changes
+  #       run: ls && echo 'Nueva fila' >> README.md
+
+  #     - name: Check Changes
+  #       run: git status
+
+  #     - name: Get Time
+  #       id: time
+  #       uses: nanzm/get-time-action@v1.1
+  #       with:
+  #         # timeZone: 8
+  #         format: 'DD-MM-YYYY HH-mm-ss'
+
+  #     - name: Commit the new RC
+  #       uses: EndBug/add-and-commit@v7
+  #       env:
+  #         TIME: "${{ steps.time.outputs.time }}"
+  #       with:
+  #         # add: 'builds/*'
+  #         add: '*'
+  #         default_author: github_actions # github_actor -> UserName <UserName@users.noreply.github.com> || user_info -> Your Display Name <your-actual@email.com>
+  #         message: 'RC ${{ env.version }} - ${{ env.TIME }}'
+  #         push: false
+
+  #     - name: Git Log
+  #       run: git log

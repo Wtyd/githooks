@@ -122,7 +122,7 @@ class ConfigurationFileBuilder
     protected function pharExecutables(): string
     {
         $path = getcwd();
-        if (version_compare(phpversion(), '7.2.0', '<')) {
+        if (version_compare(phpversion(), '7.3.0', '<')) {
             $path .= '/tools/php71/';
         } else {
             $path .= '/tools/php80/';

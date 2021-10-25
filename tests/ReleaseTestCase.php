@@ -69,8 +69,9 @@ class ReleaseTestCase extends TestCase
      */
     protected static function copyReleaseBinary(): bool
     {
-        $origin = version_compare(phpversion(), '7.2.0', '<=') ? 'builds/php7.1/githooks' : 'builds/githooks';
+        $origin = version_compare(phpversion(), '7.3.0', '<') ? 'builds/php7.1/githooks' : 'builds/githooks';
         $destiny = ConsoleTestCase::TESTS_PATH . '/githooks';
+
         copy($origin, $destiny);
         return chmod($destiny, 0777);
     }
