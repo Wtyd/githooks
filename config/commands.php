@@ -61,8 +61,8 @@ return [
         Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
         Illuminate\Foundation\Console\VendorPublishCommand::class,
         // LaravelZero\Framework\Commands\BuildCommand::class,
-        App\Commands\Zero\BuildCommand::class,
-        App\Commands\Zero\InstallCommand::class,
+        Wtyd\GitHooks\App\Commands\Zero\BuildCommand::class,
+        Wtyd\GitHooks\App\Commands\Zero\InstallCommand::class,
     ],
 
     /*

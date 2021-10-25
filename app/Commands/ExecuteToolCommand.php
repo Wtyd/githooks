@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Commands;
+namespace Wtyd\GitHooks\App\Commands;
 
-use App\Commands\ToolCommand as BaseCommand;
+use Wtyd\GitHooks\App\Commands\ToolCommand as BaseCommand;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;

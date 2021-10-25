@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Commands;
+namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Utils\Printer;

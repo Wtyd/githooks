@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Commands;
+namespace Wtyd\GitHooks\App\Commands;
 
 use Wtyd\GitHooks\Hooks;
 use Wtyd\GitHooks\Utils\Printer;

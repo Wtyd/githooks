@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Commands\Zero;
+namespace Wtyd\GitHooks\App\Commands\Zero;
 
 use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\File;

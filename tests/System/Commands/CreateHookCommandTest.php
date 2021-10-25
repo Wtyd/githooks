@@ -7,7 +7,7 @@ use phpmock\Mock as PhpmockMock;
 use Tests\ConsoleTestCase;
 
 /**
- * Testing App\Commands\CreateHookCommand;
+ * Testing Wtyd\GitHooks\App\Commands\CreateHookCommand;
  */
 class CreateHookCommandTest extends ConsoleTestCase
 {
@@ -55,7 +55,7 @@ class CreateHookCommandTest extends ConsoleTestCase
     public function getMockRootDirectory(): PhpmockMock
     {
         $builder = new MockBuilder();
-        $builder->setNamespace('App\Commands')
+        $builder->setNamespace('Wtyd\GitHooks\App\Commands')
             ->setName('getcwd')
             ->setFunction(
                 function () {

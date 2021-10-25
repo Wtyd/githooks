@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Updater;
+namespace Wtyd\GitHooks\App\Updater;
 
 use Humbug\SelfUpdate\Strategy\GithubStrategy;
 use LaravelZero\Framework\Components\Updater\Strategy\StrategyInterface;

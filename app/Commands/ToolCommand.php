@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Commands;
+namespace Wtyd\GitHooks\App\Commands;
 
 use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\ToolExecutor;

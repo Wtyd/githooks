@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Commands;
+namespace Wtyd\GitHooks\App\Commands;
 
 use Exception;
 use Wtyd\GitHooks\Hooks;

@@ -48,7 +48,7 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "app/",
+            "Wtyd\\GitHooks\\App\\": "app/",
             "Wtyd\\GitHooks\\": "src/"
         }
     },

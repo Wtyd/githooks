@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Providers;
+namespace Wtyd\GitHooks\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Tests\Utils\SecurityCheckerFake;

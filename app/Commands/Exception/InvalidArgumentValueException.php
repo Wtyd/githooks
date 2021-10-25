@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Commands\Exception;
+namespace Wtyd\GitHooks\App\Commands\Exception;
 
 class InvalidArgumentValueException extends \InvalidArgumentException implements CommandsExceptionInterface
 {

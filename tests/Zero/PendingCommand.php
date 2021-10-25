@@ -597,17 +597,4 @@ class PendingCommand
 
         $this->run();
     }
-
-
-
-    // protected function assertToolHasFailed(string $tool): void
-    // {
-    //     //phpcbf[.phar] - KO. Time: 0.18
-    //     $this->assertMatchesRegularExpression("%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
-    // }
-
-    // protected function assertToolDidNotRun(string $tool): void
-    // {
-    //     $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has been run");
-    // }
 }

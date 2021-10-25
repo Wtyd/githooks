@@ -14,7 +14,7 @@ class CreateConfigurationFileCommandTest extends ConsoleTestCase
     public function getMockRootDirectory(): PhpmockMock
     {
         $builder = new MockBuilder();
-        $builder->setNamespace('App\Commands')
+        $builder->setNamespace('Wtyd\GitHooks\App\Commands')
             ->setName('getcwd')
             ->setFunction(
                 function () {
