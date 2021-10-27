@@ -49,16 +49,6 @@ abstract class ConsoleTestCase extends ZeroTestCase
      */
     protected $configurationFileBuilder;
 
-    /**
-     * @param int|string $dataName
-     *
-     * @internal This method is not covered by the backward compatibility promise for PHPUnit
-     */
-    public function __construct(?string $name = null, array $data = [], $dataName = '')
-    {
-        parent::__construct($name, $data, $dataName);
-    }
-
     protected function setUp(): void
     {
         parent::setUp();

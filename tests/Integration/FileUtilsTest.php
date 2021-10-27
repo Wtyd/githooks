@@ -77,6 +77,23 @@ class FileUtilsTest extends ConsoleTestCase
         $this->assertEquals([], $modifiedFiles);
     }
 
+    /** @test */
+    function it_retrieve_an_empty_array_when_change_is_file_deletion()
+    {
+        $this->markTestIncomplete('Maybe this must be unitary');
+        $file = 'src/Hooks.php';
+        $gitFiles = $this->container->make(FileUtils::class);
+
+        unlink($file);
+        shell_exec("git add $file");
+
+        $modifiedFiles = $gitFiles->getModifiedFiles();
+
+        $this->assertEquals([], $modifiedFiles);
+
+        shell_exec("git checkout -- $file");
+    }
+
     /**
      * @param string $path Absolute path. For example: /var/www/html/githooks/tests/NewFile.php
      *

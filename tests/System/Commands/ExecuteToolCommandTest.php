@@ -2,10 +2,14 @@
 
 namespace Tests\System\Commands;
 
+use Illuminate\Support\Facades\Storage;
+use Mockery\MockInterface;
 use Tests\ConsoleTestCase;
 use Tests\Utils\SecurityCheckerFake;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
+use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class ExecuteToolCommandTest extends ConsoleTestCase
 {
@@ -363,5 +367,39 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         $this->artisan("tool phpcs $wrongExecutionMode")
             ->assertExitCode(1)
             ->expectsOutput("The value '$wrongExecutionMode' is not allowed for the tag 'execution'. Accept: full, fast");
+    }
+
+    /**
+     * @test
+     * Fix bug for 2.0.1 release
+     */
+    function it_skip_the_tool_when_the_tool_runs_against_root_directory_in_fast_mode_and_the_file_was_deleted()
+    {
+        file_put_contents(
+            $this->path . '/githooks.yml',
+            $this->configurationFileBuilder
+                ->setPhpCSConfiguration([
+                    'paths' => ['./'], //root path
+                    'standard' => 'PSR12',
+                    'ignore' =>  ['vendor'],
+                ])
+                ->buildYalm()
+        );
+
+        $file = $this->path . '/src/File.php';
+        Storage::shouldReceive('exists')
+            ->once()
+            ->with($file)
+            ->andReturn(false);
+
+        $this->app->bind(FileUtilsInterface::class, FileUtils::class);
+
+        $this->partialMock(FileUtils::class, function (MockInterface $mock) use ($file) {
+            $mock->shouldReceive('getModifiedFiles')->once()->andReturn([$file]);
+        });
+
+        $this->artisan('tool phpcs fast')
+            ->notContainsStringInOutput("phpcbf $file --standard=PSR12 --ignore=vendor")
+            ->toolDidNotRun('phpcbf');
     }
 }

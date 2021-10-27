@@ -4,6 +4,7 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use Wtyd\GitHooks\App\Commands\ToolCommand as BaseCommand;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
 use Wtyd\GitHooks\Tools\Errors;
@@ -29,6 +30,9 @@ class ExecuteToolCommand extends BaseCommand
             $this->error($exception->getMessage());
             $errors->setError($tool, $exception->getMessage());
         } catch (WrongExecutionValueException $exception) {
+            $this->error($exception->getMessage());
+            $errors->setError($tool, $exception->getMessage());
+        } catch (ConfigurationFileNotFoundException $exception) {
             $this->error($exception->getMessage());
             $errors->setError($tool, $exception->getMessage());
         } catch (ConfigurationFileInterface $exception) {

@@ -28,7 +28,7 @@ src/dummy/
 testsDir/src
 testsDir/app
 testsDir/vendor
-testsDir/githooks.yml
+testsDir/*.yml
 githooks.yml
 
 
