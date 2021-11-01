@@ -1,13 +1,11 @@
 <?php
 
-namespace Wtyd\GitHooks\Tools\Tools;
+namespace Wtyd\GitHooks\Tools\Tool\CodeSniffer;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
-use Wtyd\GitHooks\Tools\CodeSniffer;
 
 /**
- * Ejecuta la libreria squizlabs/php_codesniffer
+ * Library squizlabs/php_codesniffer
  */
 class Phpcbf extends CodeSniffer
 {

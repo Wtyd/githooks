@@ -4,8 +4,8 @@ namespace Tests\Unit\LoadTools;
 
 use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\{
-    CodeSniffer,
-    Tools\Phpcbf,
+    Tool\CodeSniffer\Phpcs,
+    Tool\CodeSniffer\Phpcbf,
     CopyPasteDetector,
     SecurityChecker,
     MessDetector,
@@ -24,7 +24,7 @@ class FullExecutionTest extends TestCase
     {
         return [
             'Code Sniffer Phpcs' => [
-                CodeSniffer::class,
+                Phpcs::class,
                 'phpcs'
             ],
             'Code Sniffer Phpcbf' => [

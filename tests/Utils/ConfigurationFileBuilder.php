@@ -2,12 +2,13 @@
 
 namespace Tests\Utils;
 
-use Wtyd\GitHooks\Constants;
 use Wtyd\GitHooks\Tools\{
-    CodeSniffer,
+    Tool\CodeSniffer\Phpcs,
+    Tool\CodeSniffer\Phpcbf,
     CopyPasteDetector,
     MessDetector,
     ParallelLint,
+    SecurityChecker,
     Stan,
     ToolAbstract
 };
@@ -42,9 +43,9 @@ class ConfigurationFileBuilder
      *
      * @param string $rootPath Customize what path you would as project root
      * @param string $toolsPath The way to find the executables of the tools
-     *                      phar: the full path to the executables (example: tools/php71/phpcs)
-     *                      global: the tool has global acces (example: phpcs)
-     *                      local: the tool was installed with composer in local (example: vendor/bin/phpcs)
+     *                      phar: the full path to the executables (example: tools/php71/Phpcbf)
+     *                      global: the tool has global acces (example: Phpcbf)
+     *                      local: the tool was installed with composer in local (example: vendor/bin/Phpcbf)
      */
     public function __construct(string $rootPath, string $toolsPath = '')
     {
@@ -64,21 +65,21 @@ class ConfigurationFileBuilder
 
         $this->configurationTools = [
             ToolAbstract::CODE_SNIFFER => [
-                CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcs',
-                CodeSniffer::PATHS => [$rootPath . '/src'],
-                CodeSniffer::STANDARD => 'PSR12',
-                CodeSniffer::IGNORE => [$rootPath . '/vendor'],
-                CodeSniffer::ERROR_SEVERITY => 1,
-                CodeSniffer::WARNING_SEVERITY => 6
+                Phpcs::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcs',
+                Phpcs::PATHS => [$rootPath . '/src'],
+                Phpcs::STANDARD => 'PSR12',
+                Phpcs::IGNORE => [$rootPath . '/vendor'],
+                Phpcs::ERROR_SEVERITY => 1,
+                Phpcs::WARNING_SEVERITY => 6
             ],
 
             ToolAbstract::PHPCBF => [
-                CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
-                CodeSniffer::PATHS => [$rootPath . '/src'],
-                CodeSniffer::STANDARD => 'PSR12',
-                CodeSniffer::IGNORE => [$rootPath . '/vendor'],
-                CodeSniffer::ERROR_SEVERITY => 1,
-                CodeSniffer::WARNING_SEVERITY => 6
+                Phpcbf::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
+                Phpcbf::PATHS => [$rootPath . '/src'],
+                Phpcbf::STANDARD => 'PSR12',
+                Phpcbf::IGNORE => [$rootPath . '/vendor'],
+                Phpcbf::ERROR_SEVERITY => 1,
+                Phpcbf::WARNING_SEVERITY => 6
             ],
 
             ToolAbstract::PARALLEL_LINT => [
@@ -104,7 +105,7 @@ class ConfigurationFileBuilder
             ],
 
             ToolAbstract::SECURITY_CHECKER => [
-                CodeSniffer::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
+                SecurityChecker::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
             ],
         ];
     }

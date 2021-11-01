@@ -1,14 +1,13 @@
 <?php
 
-namespace Wtyd\GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools\Tool\CodeSniffer;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
 
 /**
- * Ejecuta la libreria squizlabs/php_codesniffer
+ * Library squizlabs/php_codesniffer
  */
-class CodeSniffer extends ToolAbstract
+class Phpcs extends CodeSniffer
 {
     /**
      * @var string PATHS Tag que indica sobre qué carpetas se debe ejecutar el análisis de phpstan en el fichero de configuracion .yml
