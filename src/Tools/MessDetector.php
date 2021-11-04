@@ -84,9 +84,9 @@ class MessDetector extends ToolAbstract
      *
      * @return void
      */
-    public function execute()
+    protected function run(string $command): void
     {
-        parent::execute();
+        parent::run($command);
         if ($this->exitCode == 0 && $this->isThereHiddenError()) {
             $this->exitCode = 1;
         }

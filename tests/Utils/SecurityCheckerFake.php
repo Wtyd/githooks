@@ -21,17 +21,7 @@ class SecurityCheckerFake extends SecurityChecker
      *
      * @return void
      */
-    public function execute()
-    {
-        //Do nothing
-    }
-
-    /**
-     * Override this metod
-     *
-     * @return void
-     */
-    public function executeWithLiveOutput()
+    public function execute(bool $withLiveOutput): void
     {
         //Do nothing
     }

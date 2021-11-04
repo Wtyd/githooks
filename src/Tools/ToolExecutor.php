@@ -32,11 +32,7 @@ class ToolExecutor
         foreach ($tools as $tool) {
             $startToolExecution = microtime(true);
             try {
-                if ($withLiveOutput) {
-                    $tool->executeWithLiveOutput();
-                } else {
-                    $tool->execute();
-                }
+                $tool->execute($withLiveOutput);
 
                 $endToolExecution = microtime(true);
                 $executionTime = $this->executionTime($endToolExecution, $startToolExecution);

@@ -135,25 +135,43 @@ abstract class ToolAbstract
     }
 
     /**
-     * Método donde se ejecuta la herramienta mediante exec. La herramienta no producirá ninguna salida.
+     * Executes the tool.
+     * 1. WithLiveOutput is used when the tool is executed individually.
+     * 2. Without live output means the tool is executed with the flag 'all'. Namely, when two or more tools are running together.
+     *    Only one tool may be running. It depends on githooks.yml.
      *
      * @return void
      */
-    public function execute()
+    public function execute(bool $withLiveOutput): void
     {
-        exec($this->prepareCommand(), $this->exit, $this->exitCode);
+        if ($withLiveOutput) {
+            $this->runWithLiveOutput($this->prepareCommand());
+        } else {
+            $this->run($this->prepareCommand());
+        }
     }
 
     /**
      * This method is run by 'vendor/bin/githooks tool:...' commands. The output of the tool/s will be displayed in real time.
      *
+     * @param string $command The command to be run
      * @return void
      */
-    public function executeWithLiveOutput()
+    protected function runWithLiveOutput(string $command): void
     {
-        $command = $this->prepareCommand();
         echo  $command . "\n";
         passthru($command, $this->exitCode);
+    }
+
+    /**
+     * Run the tool storing the output ($this->exit) and the exitCode
+     *
+     * @param string $command The command to be run
+     * @return void
+     */
+    protected function run(string $command): void
+    {
+        exec($command, $this->exit, $this->exitCode);
     }
 
     public function getExecutable(): string
