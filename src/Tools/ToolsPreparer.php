@@ -21,20 +21,14 @@ class ToolsPreparer
     protected $executionFactory;
 
     /**
-     * @var ToolExecutor
-     */
-    protected $toolExecutor;
-
-    /**
      * @var ConfigurationFile
      */
     protected $configurationFile;
 
-    public function __construct(FileReader $fileReader, ExecutionFactory $executionFactory, ToolExecutor $toolExecutor)
+    public function __construct(FileReader $fileReader, ExecutionFactory $executionFactory)
     {
         $this->fileReader = $fileReader;
         $this->executionFactory = $executionFactory;
-        $this->toolExecutor = $toolExecutor;
     }
 
     /**
