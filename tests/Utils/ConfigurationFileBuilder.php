@@ -3,14 +3,16 @@
 namespace Tests\Utils;
 
 use Wtyd\GitHooks\Tools\{
-    Tool\CodeSniffer\Phpcs,
-    Tool\CodeSniffer\Phpcbf,
     CopyPasteDetector,
+    SecurityChecker,
     MessDetector,
     ParallelLint,
-    SecurityChecker,
     Stan,
     ToolAbstract
+};
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
+    Phpcs,
+    Phpcbf
 };
 use Symfony\Component\Yaml\Yaml;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;

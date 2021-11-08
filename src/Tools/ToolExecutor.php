@@ -21,9 +21,8 @@ class ToolExecutor
      * It executes the tools. If all tools run successfully it returns an empty array. Else returns an array with the errors.
      *
      * @param array $tools
-     * @param boolean $withLiveOutput Si es true ejecutará la herramienta mostrando la salida en tiempo real como si la ejecutaramos manualmente por consola.
-     *                  Si es false la ejecución de la herramienta no muestra ninguna.
-     * @return Errors $exitCode El codigo de salida (por defecto 0) cambia a 1 cuando una herrmienta falla por cualquier motivo
+     * @param boolean $withLiveOutput True for run one tool in with real time response. False for run two or more tools at same time.
+     * @return Errors $exitCode 0 for success, 1 for error.
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function __invoke(array $tools, bool $withLiveOutput = false): Errors
@@ -53,7 +52,7 @@ class ToolExecutor
                 $errors->setError($tool->getExecutable(), $th->getMessage());
                 $this->printErrors($tool);
                 $this->printer->line($th->getMessage());
-                $this->printer->resultError("Error when running $tool->getExecutable().");
+                $this->printer->resultError('Error when running ' . $tool->getExecutable() . ' ');
             }
         }
         return $errors;

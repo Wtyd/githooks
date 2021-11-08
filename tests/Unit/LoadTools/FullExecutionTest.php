@@ -4,14 +4,16 @@ namespace Tests\Unit\LoadTools;
 
 use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\{
-    Tool\CodeSniffer\Phpcs,
-    Tool\CodeSniffer\Phpcbf,
     CopyPasteDetector,
     SecurityChecker,
     MessDetector,
     ParallelLint,
     Stan,
     ToolsFactoy
+};
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
+    Phpcs,
+    Phpcbf
 };
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\ConfigurationFileBuilder;

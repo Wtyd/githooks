@@ -11,6 +11,9 @@ abstract class ToolAbstract
     public const TOOL_CONFIGURATION = 'toolConfiguration';
 
     //TODO renombrar a phpcs
+    // TODO check for mandatory arguments
+    // TODO check for type and values for arguments.
+    // TODO arguments or options?
     public const CODE_SNIFFER = 'phpcs';
 
     public const PHPCBF = 'phpcbf';
@@ -71,6 +74,14 @@ abstract class ToolAbstract
      * @var string
      */
     protected $errors = '';
+
+    /**
+     * The arguments to run the tool.
+     * Is an associative array where the keys are the tool OPTIONS
+     *
+     * @var array
+     */
+    protected $args = [];
 
     abstract protected function prepareCommand(): string;
 

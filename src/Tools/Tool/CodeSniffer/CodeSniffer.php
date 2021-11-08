@@ -8,7 +8,7 @@ use Wtyd\GitHooks\Tools\ToolAbstract;
 /**
  * Library squizlabs/php_codesniffer
  */
-class CodeSniffer extends ToolAbstract
+abstract class CodeSniffer extends ToolAbstract
 {
     /**
      * @var string PATHS Tag que indica sobre qué carpetas se debe ejecutar el análisis de phpstan en el fichero de configuracion .yml
@@ -37,18 +37,6 @@ class CodeSniffer extends ToolAbstract
 
     public const OPTIONS = [self::PATHS, self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY];
 
-
-    /**
-     * @var array
-     */
-    protected $args;
-
-    public function __construct(ToolConfiguration $toolConfiguration)
-    {
-        $this->executable = 'phpcs';
-
-        $this->setArguments($toolConfiguration->getToolConfiguration());
-    }
 
     protected function prepareCommand(): string
     {
