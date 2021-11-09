@@ -7,7 +7,7 @@ use Tests\Utils\SecurityCheckerFake;
 use Tests\Utils\FileReaderFake;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
-use Wtyd\GitHooks\Tools\SecurityChecker;
+use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 
 class AppServiceProvider extends ServiceProvider
 {

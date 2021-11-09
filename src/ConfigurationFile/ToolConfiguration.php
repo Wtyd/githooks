@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile;
 
-use Wtyd\GitHooks\Tools\ToolAbstract;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ToolConfiguration
 {

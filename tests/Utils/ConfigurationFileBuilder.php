@@ -2,7 +2,7 @@
 
 namespace Tests\Utils;
 
-use Wtyd\GitHooks\Tools\{
+use Wtyd\GitHooks\Tools\Tool\{
     CopyPasteDetector,
     SecurityChecker,
     MessDetector,

@@ -1,6 +1,6 @@
 <?php
 
-namespace Wtyd\GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 

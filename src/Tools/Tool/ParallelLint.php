@@ -1,10 +1,8 @@
 <?php
 
-namespace Wtyd\GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Constants;
-use Wtyd\GitHooks\Tools\Exception\ExecutableNotFoundException;
 
 /**
  * Ejecuta la libreria jakub-onderka/php-parallel-lint

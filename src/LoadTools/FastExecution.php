@@ -3,7 +3,7 @@
 namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\Tools\ToolAbstract;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 

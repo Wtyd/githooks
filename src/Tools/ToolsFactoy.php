@@ -3,6 +3,18 @@
 namespace Wtyd\GitHooks\Tools;
 
 use Illuminate\Container\Container;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Wtyd\GitHooks\Tools\Tool\{
+    CopyPasteDetector,
+    SecurityChecker,
+    MessDetector,
+    ParallelLint,
+    Stan
+};
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
+    Phpcs,
+    Phpcbf
+};
 
 class ToolsFactoy
 {

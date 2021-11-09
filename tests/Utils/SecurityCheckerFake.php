@@ -3,8 +3,8 @@
 namespace Tests\Utils;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\SecurityChecker;
-use Wtyd\GitHooks\Tools\ToolAbstract;
+use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 /**
  * This tool cannot be runned in testing environment

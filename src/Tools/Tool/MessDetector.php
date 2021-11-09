@@ -1,9 +1,8 @@
 <?php
 
-namespace Wtyd\GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Constants;
 
 /**
  * Ejecuta la libreria phpmd/phpmd

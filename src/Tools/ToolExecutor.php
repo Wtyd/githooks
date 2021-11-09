@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 use Wtyd\GitHooks\Utils\Printer;
 
 class ToolExecutor

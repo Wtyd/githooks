@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-use Wtyd\GitHooks\Tools\ToolAbstract;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ToolIsNotSupportedException extends \UnexpectedValueException implements ConfigurationFileInterface
 {

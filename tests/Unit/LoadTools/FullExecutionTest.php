@@ -3,13 +3,13 @@
 namespace Tests\Unit\LoadTools;
 
 use Wtyd\GitHooks\LoadTools\FullExecution;
-use Wtyd\GitHooks\Tools\{
+use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Tools\Tool\{
     CopyPasteDetector,
     SecurityChecker,
     MessDetector,
     ParallelLint,
-    Stan,
-    ToolsFactoy
+    Stan
 };
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
     Phpcs,

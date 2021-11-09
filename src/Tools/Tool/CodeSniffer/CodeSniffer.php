@@ -2,8 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools\Tool\CodeSniffer;
 
-use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\ToolAbstract;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 /**
  * Library squizlabs/php_codesniffer

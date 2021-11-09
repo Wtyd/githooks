@@ -10,8 +10,10 @@ use PHPUnit\Framework\TestCase;
 use Tests\Utils\FileUtilsFake;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\SecurityChecker;
-use Wtyd\GitHooks\Tools\CopyPasteDetector;
+use Wtyd\GitHooks\Tools\Tool\{
+    SecurityChecker,
+    CopyPasteDetector
+};
 
 class FastExecutionTest extends TestCase
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Wtyd\GitHooks\Tools;
+namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
