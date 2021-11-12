@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\ConfigurationFile;
 
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ConfigurationFile
@@ -102,7 +103,17 @@ class ConfigurationFile
     protected function addTool(string $tool): bool
     {
         if ($this->toolShouldBeAdded($tool)) {
-            $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
+            $toolConfiguration = null;
+            if (ToolAbstract::PHPCBF === $tool && Phpcbf::usePhpcsConfiguration($this->configurationFile[$tool])) {
+                $phpcsConfiguration = new ToolConfiguration(ToolAbstract::CODE_SNIFFER, $this->configurationFile[ToolAbstract::CODE_SNIFFER]);
+                $phpcbfConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
+                $configuration = array_merge($phpcsConfiguration->getToolConfiguration(), $phpcbfConfiguration->getToolConfiguration());
+                // dd($configuration);
+                $phpcbfConfiguration->setToolConfiguration($configuration);
+                $toolConfiguration = $phpcbfConfiguration;
+            } else {
+                $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
+            }
 
             $this->toolsConfiguration[$tool] = $toolConfiguration;
 

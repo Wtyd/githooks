@@ -74,7 +74,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
         $this->artisan("tool $tool")
-            // ->assertExitCode(0)
+            ->assertExitCode(0)
             ->toolHasBeenExecutedSuccessfully($toolAlias)
             ->containsStringInOutput($commandUnderTheHood);
     }
@@ -417,5 +417,33 @@ class ExecuteToolCommandTest extends ConsoleTestCase
         $this->artisan('tool phpcs fast')
             ->notContainsStringInOutput("phpcbf $file --standard=PSR12 --ignore=vendor")
             ->toolDidNotRun('phpcs');
+    }
+
+    /** @test */
+    function it_overrides_Phpcbf_configuration_when_usePhpcsConfiguration_is_true()
+    {
+        $this->configurationFileBuilder->setPhpcbfConfiguration(['usePhpcsConfiguration' =>  true]);
+
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+
+        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+
+        $commandUnderTheHood = "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6";
+
+        $this->artisan('tool phpcbf')
+            ->assertExitCode(0)
+            ->toolHasBeenExecutedSuccessfully('phpcbf')
+            ->containsStringInOutput($commandUnderTheHood);
+
+        //Tag 'phpcbf' of configuration file doesn't have configuration
+        $configurationFile = $this->configurationFileBuilder->buildArray()['phpcbf'];
+        $this->assertArrayNotHasKey('paths', $configurationFile);
+        $this->assertArrayNotHasKey('standard', $configurationFile);
+        $this->assertArrayNotHasKey('ignore', $configurationFile);
+        $this->assertArrayNotHasKey('error-severity', $configurationFile);
+        $this->assertArrayNotHasKey('warning-severity', $configurationFile);
+
+        //Tag 'phpcbf' of configuration file only has 'usePhpcsConfiguration' key
+        $this->assertArrayHasKey('usePhpcsConfiguration', $configurationFile);
     }
 }

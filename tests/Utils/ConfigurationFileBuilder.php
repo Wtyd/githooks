@@ -264,6 +264,13 @@ class ConfigurationFileBuilder
         return $this;
     }
 
+    public function setPhpcbfConfiguration(array $configuration): ConfigurationFileBuilder
+    {
+        $this->configurationTools[ToolAbstract::PHPCBF] = $configuration;
+
+        return $this;
+    }
+
     public function setParallelLintConfiguration(array $configuration): ConfigurationFileBuilder
     {
         $this->configurationTools[ToolAbstract::PARALLEL_LINT] = $configuration;

@@ -27,9 +27,10 @@ class ToolConfiguration
 
     public function __construct(string $tool, array $toolConfiguration)
     {
-        $this->toolConfiguration = $toolConfiguration;
+        // $this->toolConfiguration = $toolConfiguration;
         $this->tool = $tool;
-        $this->checkConfiguration();
+        $this->setToolConfiguration($toolConfiguration);
+        // $this->checkConfiguration();
     }
 
     /**
@@ -56,6 +57,13 @@ class ToolConfiguration
     public function getToolConfiguration(): array
     {
         return $this->toolConfiguration;
+    }
+
+    public function setToolConfiguration(array $configuration): void
+    {
+        $this->toolConfiguration = $configuration;
+        $this->warnings = [];
+        $this->checkConfiguration();
     }
 
     public function getTool(): string

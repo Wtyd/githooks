@@ -4,11 +4,11 @@ Options:
 
 # Herramientas que se van a ejecutar
 Tools:
-  - phpstan
-  - parallel-lint
-  - phpmd
-  - phpcpd
-  - phpcs
+  # - phpstan
+  # - parallel-lint
+  # - phpmd
+  # - phpcpd
+  # - phpcs
   - phpcbf
 
 # Configuración de cada una de las herramientas
@@ -34,12 +34,13 @@ phpcs:
     warning-severity: 6
 
 phpcbf:
-    executablePath: tools/php71/phpcbf
-    paths: ['./']
-    standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
-    ignore: [vendor] # Se podría configurar en el standard directamente
-    error-severity: 1
-    warning-severity: 6
+    usePhpcsConfiguration: true
+    # executablePath: tools/php71/phpcbf
+    # paths: ['./']
+    # standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
+    # ignore: [vendor] # Se podría configurar en el standard directamente
+    # error-severity: 1
+    # warning-severity: 6
 
 phpmd:
   executablePath: tools/php71/phpmd

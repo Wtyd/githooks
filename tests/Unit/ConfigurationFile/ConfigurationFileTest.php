@@ -439,9 +439,6 @@ class ConfigurationFileTest extends UnitTestCase
         $this->configurationFile->setExecution('no valid string');
     }
 
-    // Warnings: Warnings[] = "The tool $tool is not supported by GitHooks.";
-    // Warnings: $warnings[] = "$key argument is invalid for tool $this->tool. It will be ignored.";
-
     function tagToolsWithNotValidToolsDataProvider()
     {
         return [
@@ -481,5 +478,205 @@ class ConfigurationFileTest extends UnitTestCase
         $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
 
         $this->assertEquals($expectedWarnings, $this->configurationFile->getWarnings());
+    }
+
+
+
+    /*
+    |-------------------------------------------------------------------------------------------------------
+    | Phpcbf can get configuration from Phpcs feature
+    |-------------------------------------------------------------------------------------------------------
+    |
+    | Phpcbf has 'usePhpcsConfiguration' key. When it is true, all arguments that are not explicitly defined
+    | in the Phpcbf tag will be taken from Phpcs.
+    | Variables defined in Phpcbf that are also in Phpcs will keep their value.
+    |
+    */
+
+    function usePhpcsConfigurationDoesNotTrueDataProvider()
+    {
+        return [
+            'It is false' => [false],
+            'It is null' => [null],
+            'It is null' => [''],
+            'It is null' => [0],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider usePhpcsConfigurationDoesNotTrueDataProvider
+     */
+    function it_keeps_Phpcbf_values_when_usePhpcsConfiguration_is_not_true($usePhpcsConfiguration)
+    {
+        $configurationFile = [
+            'Tools' => ['phpcbf', 'phpcs'],
+            'phpcs' => [
+                'paths' => ['app'],
+                'standard' => 'PSR12',
+                'ignore' => ['tests'],
+                'error-severity' => 2,
+                'warning-severity' => 5
+            ],
+            'phpcbf' => [
+                'paths' => ['src', 'tests'],
+                'standard' => 'PERL',
+                'ignore' => ['vendor'],
+                'error-severity' => 1,
+                'warning-severity' => 6
+            ]
+        ];
+        $configurationFile['phpcbf']['usePhpcsConfiguration'] = $usePhpcsConfiguration;
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+
+        $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
+        $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
+
+        $this->assertNotEquals(
+            $phpcsConfigurationFile->getToolConfiguration()['paths'],
+            $phpcbfConfigurationFile->getToolConfiguration()['paths']
+        );
+        $this->assertNotEquals(
+            $phpcsConfigurationFile->getToolConfiguration()['standard'],
+            $phpcbfConfigurationFile->getToolConfiguration()['standard']
+        );
+        $this->assertNotEquals(
+            $phpcsConfigurationFile->getToolConfiguration()['ignore'],
+            $phpcbfConfigurationFile->getToolConfiguration()['ignore']
+        );
+        $this->assertNotEquals(
+            $phpcsConfigurationFile->getToolConfiguration()['error-severity'],
+            $phpcbfConfigurationFile->getToolConfiguration()['error-severity']
+        );
+        $this->assertNotEquals(
+            $phpcsConfigurationFile->getToolConfiguration()['warning-severity'],
+            $phpcbfConfigurationFile->getToolConfiguration()['warning-severity']
+        );
+    }
+
+    /** @test */
+    function it_keeps_Phpcbf_values_when_usePhpcsConfiguration_not_exits()
+    {
+        $configurationFile = [
+            'Tools' => ['phpcbf', 'phpcs'],
+            'phpcs' => [
+                'paths' => ['app'],
+                'standard' => 'PSR12',
+                'ignore' => ['tests'],
+                'error-severity' => 2,
+                'warning-severity' => 5
+            ],
+            'phpcbf' => [
+                'paths' => ['src', 'tests'],
+                'standard' => 'PERL',
+                'ignore' => ['vendor'],
+                'error-severity' => 1,
+                'warning-severity' => 6
+            ]
+        ];
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+
+        $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
+        $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
+
+        $this->assertNotEquals(
+            $phpcsConfigurationFile->getToolConfiguration(),
+            $phpcbfConfigurationFile->getToolConfiguration()
+        );
+    }
+
+    function overrideAllArgumentsOfPhpcbfConfigurationDataProvider()
+    {
+        return [
+            'Overrides all arguments' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['phpcbf'],
+                    'phpcbf' => ['usePhpcsConfiguration' => true],
+                    'phpcs' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'ignore' => 'vendor',
+                        'error-severity' => 2,
+                        'warning-severity' => 5
+                    ]
+                ],
+                'Expected phpcbf configuration' =>  [
+                    'paths' => ['src', 'tests'],
+                    'standard' => 'PERL',
+                    'ignore' => 'vendor',
+                    'error-severity' => 2,
+                    'warning-severity' => 5,
+                    'usePhpcsConfiguration' => true
+                ]
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider overrideAllArgumentsOfPhpcbfConfigurationDataProvider
+     */
+    function it_overrides_all_Phpcbf_arguments_when_usePhpcsConfiguration_key_is_true_and_any_other_argument_is_setted($configurationFile, $expectedPhpcbfConfiguration)
+    {
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf');
+
+        $configurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
+
+        $this->assertEquals($expectedPhpcbfConfiguration, $configurationFile->getToolConfiguration());
+    }
+
+    function overridePhpcbfConfigurationDataProvider()
+    {
+        return [
+            "Overrides 'paths' argument" => ['paths'],
+            "Overrides 'standard' argument" => ['standard'],
+            "Overrides 'ignore' argument" => ['ignore'],
+            "Overrides 'error-severity' argument" => ['error-severity'],
+            "Overrides 'warning-severity' argument" => ['warning-severity'],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider overridePhpcbfConfigurationDataProvider
+     */
+    function it_overrides_just_one_argument_of_Phpcbf_configuration_when_usePhpcsConfiguration_key_is_true_and_the_argument_is_not_setted(
+        $argument
+    ) {
+        $originalConfigurationFile = $configurationFile = [
+            'Tools' => ['phpcbf', 'phpcs'],
+            'phpcbf' => [
+                'usePhpcsConfiguration' => true,
+                'paths' => ['app'],
+                'standard' => 'PERL',
+                'ignore' => ['vendor'],
+                'error-severity' => 1,
+                'warning-severity' => 6
+            ],
+            'phpcs' => [
+                'paths' => ['src', 'tests'],
+                'standard' => 'PSR12',
+                'ignore' => ['vendor', 'tests'],
+                'error-severity' => 2,
+                'warning-severity' => 5
+            ]
+        ];
+        unset($configurationFile['phpcbf'][$argument]);
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+
+        $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
+        $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
+
+        $this->assertEquals(
+            $phpcsConfigurationFile->getToolConfiguration()[$argument],
+            $phpcbfConfigurationFile->getToolConfiguration()[$argument]
+        );
+        $this->assertNotEquals(
+            $originalConfigurationFile['phpcbf'][$argument],
+            $phpcbfConfigurationFile->getToolConfiguration()[$argument]
+        );
     }
 }
