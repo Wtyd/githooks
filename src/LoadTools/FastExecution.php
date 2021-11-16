@@ -24,6 +24,7 @@ class FastExecution implements ExecutionMode
      */
     public const ACCELERABLE_TOOLS = [
         ToolAbstract::CODE_SNIFFER,
+        ToolAbstract::PHPCBF,
         ToolAbstract::PARALLEL_LINT,
         ToolAbstract::MESS_DETECTOR,
         ToolAbstract::PHPSTAN,
