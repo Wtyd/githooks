@@ -44,8 +44,11 @@ class ExecuteToolCommand extends BaseCommand
             }
 
             foreach ($exception->getConfigurationFile()->getWarnings() as $warning) {
-                $this->warning($warning);
+                $this->warn($warning);
             }
+        }
+        foreach ($this->toolsPreparer->getConfigurationFileWarnings() as $warning) {
+            $this->warn($warning);
         }
 
         return $this->exit($errors);

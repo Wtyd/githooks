@@ -70,6 +70,8 @@ class FastExecution implements ExecutionMode
             if (!empty($paths)) {
                 $tool->setPaths($paths);
                 $tools[] = $tool;
+            } else {
+                $configurationFile->addToolsWarning('The tool ' . $tool->getTool() . ' was skipped.');
             }
         }
 

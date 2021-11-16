@@ -4,9 +4,7 @@ namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\LoadTools\ExecutionFactory;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\Tools\ToolExecutor;
 
 class ToolsPreparer
 {
@@ -50,7 +48,6 @@ class ToolsPreparer
 
         $strategy = $this->executionFactory->__invoke($this->configurationFile->getExecution());
 
-
         return $strategy->getTools($this->configurationFile);
     }
 
@@ -61,5 +58,10 @@ class ToolsPreparer
         }
 
         $this->configurationFile->setExecution($execution);
+    }
+
+    public function getConfigurationFileWarnings(): array
+    {
+        return isset($this->configurationFile) ? $this->configurationFile->getWarnings() : [];
     }
 }

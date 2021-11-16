@@ -164,6 +164,11 @@ class ConfigurationFile
         return array_merge($this->getOptionWarnings(), $this->toolsWarnings);
     }
 
+    public function addToolsWarning(string $warning): void
+    {
+        $this->toolsWarnings[] = $warning;
+    }
+
     public function hasErrors(): bool
     {
         $errors = array_merge($this->getOptionErrors(), $this->toolsErrors);

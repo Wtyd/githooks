@@ -111,7 +111,7 @@ class FastExecutionTest extends TestCase
      * @test
      * @dataProvider acelerableToolsProvider
      */
-    function it_skips_the_acelerable_tool_when_substituting_Paths_and_Paths_are_left_empty($tool)
+    function it_skips_the_acelerable_tool_and_adds_warning_when_substituting_Paths_and_Paths_are_left_empty($tool)
     {
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles(['database/my_migration.php', 'otherPath/file3.php']);
@@ -125,9 +125,11 @@ class FastExecutionTest extends TestCase
         ];
         $fastExecution = new FastExecution($gitFiles, new ToolsFactoy());
 
-        $loadedTools = $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+        $configurationFile = new ConfigurationFile($configurationFile, $tool);
+        $loadedTools = $fastExecution->getTools($configurationFile);
 
         $this->assertCount(0, $loadedTools);
+        $this->assertEquals(["The tool $tool was skipped."], $configurationFile->getWarnings());
     }
 
     function noAcelerableTools2Provider()

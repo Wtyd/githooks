@@ -4,11 +4,11 @@ Options:
 
 # Herramientas que se van a ejecutar
 Tools:
-  # - phpstan
-  # - parallel-lint
-  # - phpmd
-  # - phpcpd
-  # - phpcs
+  - phpstan
+  - parallel-lint
+  - phpmd
+  - phpcpd
+  - phpcs
   - phpcbf
 
 # Configuración de cada una de las herramientas
