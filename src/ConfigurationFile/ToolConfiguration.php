@@ -27,14 +27,13 @@ class ToolConfiguration
 
     public function __construct(string $tool, array $toolConfiguration)
     {
-        // $this->toolConfiguration = $toolConfiguration;
         $this->tool = $tool;
         $this->setToolConfiguration($toolConfiguration);
-        // $this->checkConfiguration();
     }
 
     /**
      * Check that each key of $toolConfiguration exists in the tool OPTIONS array.
+     * If not exists adds a warning and delete de key from the $toolConfiguration array.
      *
      * @return void
      */
@@ -48,6 +47,7 @@ class ToolConfiguration
         foreach (array_keys($this->toolConfiguration) as $key) {
             if (!in_array($key, $validOptions)) {
                 $warnings[] = "$key argument is invalid for tool $this->tool. It will be ignored.";
+                unset($this->toolConfiguration[$key]);
             }
         }
 
