@@ -32,7 +32,6 @@ class PhpcsTest extends TestCase
 
         $this->assertEquals($configuration['executablePath'], $phpcs->getExecutablePath());
 
-        unset($configuration['executablePath']);
         $this->assertEquals($configuration, $phpcs->getArguments());
     }
 
@@ -54,7 +53,6 @@ class PhpcsTest extends TestCase
 
         $this->assertEquals($configuration['executablePath'], $phpcs->getExecutablePath());
 
-        unset($configuration['executablePath']);
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $phpcs->getArguments());
     }

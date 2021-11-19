@@ -50,6 +50,8 @@ abstract class ToolAbstract
 
     public const EXECUTABLE_PATH_OPTION = 'executablePath';
 
+    public const OTHER_ARGS_OPTION = 'otherArguments';
+
     /**
      * @var string Name of tool printend when it is runned
      */

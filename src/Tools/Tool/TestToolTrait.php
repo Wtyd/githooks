@@ -20,6 +20,6 @@ trait TestToolTrait
 
     public function getExecutablePath(): string
     {
-        return $this->executablePath;
+        return $this->args[ToolAbstract::EXECUTABLE_PATH_OPTION];
     }
 }

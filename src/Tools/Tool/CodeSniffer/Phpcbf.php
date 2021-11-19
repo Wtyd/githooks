@@ -13,7 +13,15 @@ class Phpcbf extends CodeSniffer
 {
     public const USE_PHPCS_CONFIGURATION = 'usePhpcsConfiguration';
 
-    public const OPTIONS = [self::PATHS, self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY, self::USE_PHPCS_CONFIGURATION];
+    public const OPTIONS = [
+        self::PATHS,
+        self::STANDARD,
+        self::IGNORE,
+        self::ERROR_SEVERITY,
+        self::WARNING_SEVERITY,
+        self::OTHER_ARGS_OPTION,
+        self::USE_PHPCS_CONFIGURATION,
+    ];
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {

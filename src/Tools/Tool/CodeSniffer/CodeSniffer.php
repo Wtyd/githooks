@@ -34,51 +34,87 @@ abstract class CodeSniffer extends ToolAbstract
      */
     public const WARNING_SEVERITY = 'warning-severity';
 
-    public const OPTIONS = [self::PATHS, self::STANDARD, self::IGNORE, self::ERROR_SEVERITY, self::WARNING_SEVERITY];
+    public const OPTIONS = [
+        self::EXECUTABLE_PATH_OPTION,
+        self::PATHS,
+        self::STANDARD,
+        self::IGNORE,
+        self::ERROR_SEVERITY,
+        self::WARNING_SEVERITY,
+        self::OTHER_ARGS_OPTION,
+    ];
 
 
     protected function prepareCommand(): string
     {
-        $arguments = '';
+        $command = '';
         foreach (self::OPTIONS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }
-            if (self::PATHS === $option) {
-                $arguments .= implode(' ', $this->args[$option]) . ' ';
-            } elseif (self::IGNORE === $option) {
-                $arguments .= "--$option=" . implode(',', $this->args[$option]) . ' ';
-            } else {
-                $arguments .= "--$option=" . $this->args[$option] . ' ';
+
+            switch ($option) {
+                case self::EXECUTABLE_PATH_OPTION:
+                    $command = $this->args[self::EXECUTABLE_PATH_OPTION];
+                    break;
+                case self::PATHS:
+                    $command .= ' ' . implode(' ', $this->args[$option]);
+                    break;
+                case self::STANDARD:
+                case self::ERROR_SEVERITY:
+                case self::WARNING_SEVERITY:
+                    $command .= " --$option=" . $this->args[$option];
+                    break;
+                case self::IGNORE:
+                    $command .= " --$option=" . implode(',', $this->args[$option]);
+                    break;
+                default:
+                    $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];
+                    break;
             }
         }
 
-        //phpcs src --standard=./qa/psr12-ruleset.xml --ignore=vendor,otrodir --error-severity=1 --warning-severity=6
-        return $this->executablePath . ' ' . $arguments;
+        //args = '--report=full'
+        //phpcs src --standard=./qa/psr12-ruleset.xml --ignore=vendor,otrodir --error-severity=1 --warning-severity=6 --report=full
+        // dd($command);
+        return $command;
     }
 
     public function setArguments(array $configurationFile): void
     {
-        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? 'phpcs');
+        // $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? 'phpcs');
 
-        if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
-        }
+        // unset($configurationFile[self::EXECUTABLE_PATH_OPTION]);
 
-        if (!empty($configurationFile[self::STANDARD])) {
-            $this->args[self::STANDARD] = $configurationFile[self::STANDARD];
+        foreach ($configurationFile as $key => $value) {
+            if (!empty($value)) {
+                // $this->args[$key] = $this->multipleRoutesCorrector($value);
+                $this->args[$key] = $value;
+            }
         }
+        // if (!empty($configurationFile[self::PATHS])) {
+        //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
+        // }
 
-        if (!empty($configurationFile[self::IGNORE])) {
-            $this->args[self::IGNORE] = $this->multipleRoutesCorrector($configurationFile[self::IGNORE]);
-        }
+        // if (!empty($configurationFile[self::STANDARD])) {
+        //     $this->args[self::STANDARD] = $configurationFile[self::STANDARD];
+        // }
 
-        if (!empty($configurationFile[self::ERROR_SEVERITY])) {
-            $this->args[self::ERROR_SEVERITY] = $configurationFile[self::ERROR_SEVERITY];
-        }
+        // if (!empty($configurationFile[self::IGNORE])) {
+        //     $this->args[self::IGNORE] = $this->multipleRoutesCorrector($configurationFile[self::IGNORE]);
+        // }
 
-        if (!empty($configurationFile[self::WARNING_SEVERITY])) {
-            $this->args[self::WARNING_SEVERITY] = $configurationFile[self::WARNING_SEVERITY];
-        }
+        // if (!empty($configurationFile[self::ERROR_SEVERITY])) {
+        //     $this->args[self::ERROR_SEVERITY] = $configurationFile[self::ERROR_SEVERITY];
+        // }
+
+        // if (!empty($configurationFile[self::WARNING_SEVERITY])) {
+        //     $this->args[self::WARNING_SEVERITY] = $configurationFile[self::WARNING_SEVERITY];
+        // }
+
+        // if (!empty($configurationFile[self::OTHER_ARGS_OPTION])) {
+        //     $this->args[self::OTHER_ARGS_OPTION] = $configurationFile[self::OTHER_ARGS_OPTION];
+        // }
+        // dd($configurationFile, "\n============", $this->args);
     }
 }
