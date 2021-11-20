@@ -4,8 +4,8 @@ namespace Tests\Unit\Tools\Tool\CodeSniffer;
 
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\PhpcbfFake;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\PhpcsFake;
 
 class PhpcbfTest extends TestCase
 {
@@ -19,24 +19,47 @@ class PhpcbfTest extends TestCase
     function set_all_arguments_from_configuration_file()
     {
         $configuration = [
-            'executablePath' => 'path/tools/phpcs',
+            'executablePath' => 'path/tools/phpcbf',
             'standard' => 'PSR12',
             'ignore' => ['vendor'],
             'error-severity' => 1,
-            'warning-severity' => 6
+            'warning-severity' => 6,
+            'otherArguments' => '--report=summary --parallel=2'
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
 
-        $phpcs = new PhpcsFake($toolConfiguration);
+        $phpcbf = new PhpcbfFake($toolConfiguration);
 
-        $this->assertEquals($configuration['executablePath'], $phpcs->getExecutablePath());
+        $this->assertEquals($configuration['executablePath'], $phpcbf->getExecutablePath());
 
-        $this->assertEquals($configuration, $phpcs->getArguments());
+        $this->assertEquals($configuration, $phpcbf->getArguments());
     }
 
     /** @test */
     function it_ignores_unexpected_arguments()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/phpcbf',
+            'standard' => 'PSR12',
+            'ignore' => ['vendor'],
+            'error-severity' => 1,
+            'warning-severity' => 6,
+            'otherArguments' => '--report=summary --parallel=2',
+            'unexpected or supported argument' => 'my value'
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+
+        $phpcbf = new PhpcbfFake($toolConfiguration);
+
+        $this->assertEquals($configuration['executablePath'], $phpcbf->getExecutablePath());
+
+        unset($configuration['unexpected or supported argument']);
+        $this->assertEquals($configuration, $phpcbf->getArguments());
+    }
+    /** @test */
+    function it_replaces_phpcs_for_phpcbf_in_executablePath()
     {
         $configuration = [
             'executablePath' => 'path/tools/phpcs',
@@ -44,16 +67,15 @@ class PhpcbfTest extends TestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'unexpected or supported argument' => 'my value'
+            'otherArguments' => '--report=summary --parallel=2',
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
 
-        $phpcs = new PhpcsFake($toolConfiguration);
+        $phpcbf = new PhpcbfFake($toolConfiguration);
 
-        $this->assertEquals($configuration['executablePath'], $phpcs->getExecutablePath());
-
-        unset($configuration['unexpected or supported argument']);
-        $this->assertEquals($configuration, $phpcs->getArguments());
+        $this->assertEquals('path/tools/phpcbf', $phpcbf->getArguments()['executablePath']);
+        $configuration['executablePath'] = 'path/tools/phpcbf';
+        $this->assertEquals($configuration, $phpcbf->getArguments());
     }
 }

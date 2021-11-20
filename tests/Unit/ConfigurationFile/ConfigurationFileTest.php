@@ -631,6 +631,7 @@ class ConfigurationFileTest extends UnitTestCase
     function overridePhpcbfConfigurationDataProvider()
     {
         return [
+            "Overrides 'executablePath' argument" => ['executablePath'],
             "Overrides 'paths' argument" => ['paths'],
             "Overrides 'standard' argument" => ['standard'],
             "Overrides 'ignore' argument" => ['ignore'],
@@ -650,6 +651,7 @@ class ConfigurationFileTest extends UnitTestCase
             'Tools' => ['phpcbf', 'phpcs'],
             'phpcbf' => [
                 'usePhpcsConfiguration' => true,
+                'executablePath' => 'phpcbf',
                 'paths' => ['app'],
                 'standard' => 'PERL',
                 'ignore' => ['vendor'],
@@ -657,6 +659,7 @@ class ConfigurationFileTest extends UnitTestCase
                 'warning-severity' => 6
             ],
             'phpcs' => [
+                'executablePath' => 'phpcs',
                 'paths' => ['src', 'tests'],
                 'standard' => 'PSR12',
                 'ignore' => ['vendor', 'tests'],
@@ -669,7 +672,7 @@ class ConfigurationFileTest extends UnitTestCase
 
         $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
         $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
-
+        // dd($phpcsConfigurationFile->getToolConfiguration()[$argument], $phpcbfConfigurationFile->getToolConfiguration()[$argument]);
         $this->assertEquals(
             $phpcsConfigurationFile->getToolConfiguration()[$argument],
             $phpcbfConfigurationFile->getToolConfiguration()[$argument]

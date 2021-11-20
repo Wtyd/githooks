@@ -45,6 +45,6 @@ class Phpcbf extends CodeSniffer
     {
         parent::setArguments($configurationFile);
 
-        $this->executablePath = str_replace(self::CODE_SNIFFER, self::PHPCBF, $this->executablePath);
+        $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace(self::CODE_SNIFFER, self::PHPCBF, $this->args[self::EXECUTABLE_PATH_OPTION]);
     }
 }
