@@ -5,9 +5,9 @@ namespace Wtyd\GitHooks\Tools\Tool;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * Ejecuta la libreria phpmd/phpmd
+ * Library phpmd/phpmd
  */
-class MessDetector extends ToolAbstract
+class Phpmd extends ToolAbstract
 {
     /**
      * @var string RULES Tag que indica la ruta del fichero de reglas que phpmd validará en el fichero de configuracion .yml

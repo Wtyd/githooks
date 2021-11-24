@@ -33,7 +33,7 @@ abstract class ToolAbstract
         self::PHPCBF => Phpcbf::class,
         self::SECURITY_CHECKER => SecurityChecker::class,
         self::PARALLEL_LINT => ParallelLint::class,
-        self::MESS_DETECTOR => MessDetector::class,
+        self::MESS_DETECTOR => Phpmd::class,
         self::COPYPASTE_DETECTOR => CopyPasteDetector::class,
         self::PHPSTAN => Stan::class,
     ];
@@ -43,7 +43,7 @@ abstract class ToolAbstract
         self::PHPCBF => Phpcbf::IGNORE,
         self::SECURITY_CHECKER => '',
         self::PARALLEL_LINT => ParallelLint::EXCLUDE,
-        self::MESS_DETECTOR => MessDetector::EXCLUDE,
+        self::MESS_DETECTOR => Phpmd::EXCLUDE,
         self::COPYPASTE_DETECTOR => CopyPasteDetector::EXCLUDE,
         self::PHPSTAN => '',
     ];

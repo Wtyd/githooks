@@ -45,9 +45,10 @@ phpcbf:
 
 phpmd:
   executablePath: tools/php71/phpmd
-  paths: ['src']
+  paths: ['./src/']
   rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
+  # otherArguments: --strict
 
 phpcpd:
   executablePath: tools/php71/phpcpd

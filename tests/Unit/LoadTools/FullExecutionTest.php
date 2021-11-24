@@ -7,7 +7,7 @@ use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Tools\Tool\{
     CopyPasteDetector,
     SecurityChecker,
-    MessDetector,
+    Phpmd,
     ParallelLint,
     Stan
 };
@@ -38,7 +38,7 @@ class FullExecutionTest extends TestCase
                 'phpstan'
             ],
             'Php Mess Detector' => [
-                MessDetector::class,
+                Phpmd::class,
                 'phpmd'
             ],
             'Php Copy Paste Detector' => [

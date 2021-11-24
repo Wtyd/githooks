@@ -5,8 +5,8 @@ namespace Tests\Utils;
 use Wtyd\GitHooks\Tools\Tool\{
     CopyPasteDetector,
     SecurityChecker,
-    MessDetector,
     ParallelLint,
+    Phpmd,
     Stan,
     ToolAbstract
 };
@@ -90,10 +90,10 @@ class ConfigurationFileBuilder
                 ParallelLint::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::MESS_DETECTOR => [
-                MessDetector::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpmd',
-                MessDetector::PATHS => [$rootPath . '/src'],
-                MessDetector::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
-                MessDetector::EXCLUDE => [$rootPath . '/vendor']
+                Phpmd::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpmd',
+                Phpmd::PATHS => [$rootPath . '/src'],
+                Phpmd::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
+                Phpmd::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::COPYPASTE_DETECTOR => [
                 CopyPasteDetector::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
