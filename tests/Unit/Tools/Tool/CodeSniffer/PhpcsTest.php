@@ -36,6 +36,24 @@ class PhpcsTest extends TestCase
     }
 
     /** @test */
+    function it_sets_phpcs_in_executablePath_when_is_empty()
+    {
+        $configuration = [
+            'standard' => 'PSR12',
+            'ignore' => ['vendor'],
+            'error-severity' => 1,
+            'warning-severity' => 6,
+            'otherArguments' => '--report=summary --parallel=2'
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+
+        $phpcs = new PhpcsFake($toolConfiguration);
+
+        $this->assertEquals('phpcs', $phpcs->getExecutablePath());
+    }
+
+    /** @test */
     function it_ignores_unexpected_arguments()
     {
         $configuration = [

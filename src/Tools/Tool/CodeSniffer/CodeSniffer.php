@@ -86,12 +86,17 @@ abstract class CodeSniffer extends ToolAbstract
 
         // unset($configurationFile[self::EXECUTABLE_PATH_OPTION]);
 
+        //TODO prueba cuando no vie informado executablePath, valor por defecto
         foreach ($configurationFile as $key => $value) {
             if (!empty($value)) {
                 // $this->args[$key] = $this->multipleRoutesCorrector($value);
                 $this->args[$key] = $value;
             }
         }
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = 'phpcs';
+        }
+
         // if (!empty($configurationFile[self::PATHS])) {
         //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
         // }

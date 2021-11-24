@@ -37,6 +37,24 @@ class PhpcbfTest extends TestCase
     }
 
     /** @test */
+    function it_sets_phpcbf_in_executablePath_when_is_empty()
+    {
+        $configuration = [
+            'standard' => 'PSR12',
+            'ignore' => ['vendor'],
+            'error-severity' => 1,
+            'warning-severity' => 6,
+            'otherArguments' => '--report=summary --parallel=2'
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+
+        $phpcbf = new PhpcbfFake($toolConfiguration);
+
+        $this->assertEquals('phpcbf', $phpcbf->getExecutablePath());
+    }
+
+    /** @test */
     function it_ignores_unexpected_arguments()
     {
         $configuration = [

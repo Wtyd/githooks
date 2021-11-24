@@ -23,7 +23,7 @@ phpstan:
 parallel-lint:
     executablePath: vendor/bin/parallel-lint
     paths: ['./']
-    exclude: [vendor]
+    exclude: [vendor, qa]
 
 phpcs:
     executablePath: tools/php71/phpcs
@@ -32,7 +32,8 @@ phpcs:
     ignore: [vendor] # Se podría configurar en el standard directamente
     error-severity: 1
     warning-severity: 6
-
+    otherArguments: '--report=summary --parallel=2'
+    
 phpcbf:
     usePhpcsConfiguration: true
     # executablePath: tools/php71/phpcbf
@@ -44,14 +45,14 @@ phpcbf:
 
 phpmd:
   executablePath: tools/php71/phpmd
-  paths: ['./src/']
+  paths: ['src']
   rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
 
 phpcpd:
   executablePath: tools/php71/phpcpd
   paths: ['./']
-  exclude: ['vendor', 'tests']
+  exclude: [vendor, tests]
 
 security-checker:
   executablePath: tools/php71/local-php-security-checker
