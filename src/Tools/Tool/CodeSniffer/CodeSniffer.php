@@ -82,11 +82,6 @@ abstract class CodeSniffer extends ToolAbstract
 
     public function setArguments(array $configurationFile): void
     {
-        // $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? 'phpcs');
-
-        // unset($configurationFile[self::EXECUTABLE_PATH_OPTION]);
-
-        //TODO prueba cuando no vie informado executablePath, valor por defecto
         foreach ($configurationFile as $key => $value) {
             if (!empty($value)) {
                 // $this->args[$key] = $this->multipleRoutesCorrector($value);

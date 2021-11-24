@@ -24,7 +24,13 @@ class MessDetector extends ToolAbstract
      */
     public const PATHS = 'paths';
 
-    public const OPTIONS = [self::RULES, self::EXCLUDE, self::PATHS];
+    public const OPTIONS = [
+        self::EXECUTABLE_PATH_OPTION,
+        self::PATHS,
+        self::RULES,
+        self::EXCLUDE,
+        self::OTHER_ARGS_OPTION,
+    ];
 
     /**
      * @var array
@@ -40,42 +46,60 @@ class MessDetector extends ToolAbstract
 
     protected function prepareCommand(): string
     {
-        $rules = '';
-        if (!empty($this->args[self::RULES])) {
-            $rules = $this->args[self::RULES];
+        $command = '';
+        foreach (self::OPTIONS as $option) {
+            if (empty($this->args[$option])) {
+                continue;
+            }
+
+            switch ($option) {
+                case self::EXECUTABLE_PATH_OPTION:
+                    $command = $this->args[self::EXECUTABLE_PATH_OPTION];
+                    break;
+                case self::PATHS:
+                    $command .= ' ' . implode(',', $this->args[$option]);
+                    break;
+                case self::RULES:
+                    $command .= ' ansi ' . $this->args[$option];
+                    break;
+                case self::EXCLUDE:
+                    $command .= ' --exclude "' . implode(',', $this->args[$option]) . '"';
+                    break;
+                default:
+                    $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];
+                    break;
+            }
         }
 
-        $exclude = '';
-        if (!empty($this->args[self::EXCLUDE])) {
-            $exclude = '--exclude "' . implode(',', $this->args[self::EXCLUDE]) . '"';
-        }
-
-        $path = ''; // If path is empty phpmd will not work
-        if (!empty($this->args[self::PATHS])) {
-            $path = implode(',', $this->args[self::PATHS]);
-        }
-
-        $arguments = " $path ansi $rules $exclude";
-
-        // ./src/ ansi ./qa/phpmd-src-ruleset.xml --exclude "vendor"
-        return $this->executablePath . $arguments;
+        //tools/php71/phpmd src ansi ./qa/phpmd-ruleset.xml --exclude "vendor"
+        return $command;
     }
 
     public function setArguments(array $configurationFile): void
     {
-        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::MESS_DETECTOR);
-
-        if (!empty($configurationFile[self::RULES])) {
-            $this->args[self::RULES] = $configurationFile[self::RULES];
+        foreach ($configurationFile as $key => $value) {
+            if (!empty($value)) {
+                // $this->args[$key] = $this->multipleRoutesCorrector($value);
+                $this->args[$key] = $value;
+            }
+        }
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::MESS_DETECTOR;
         }
 
-        if (!empty($configurationFile[self::EXCLUDE])) {
-            $this->args[self::EXCLUDE] = $this->multipleRoutesCorrector($configurationFile[self::EXCLUDE]);
-        }
+        // $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::MESS_DETECTOR);
 
-        if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
-        }
+        // if (!empty($configurationFile[self::RULES])) {
+        //     $this->args[self::RULES] = $configurationFile[self::RULES];
+        // }
+
+        // if (!empty($configurationFile[self::EXCLUDE])) {
+        //     $this->args[self::EXCLUDE] = $this->multipleRoutesCorrector($configurationFile[self::EXCLUDE]);
+        // }
+
+        // if (!empty($configurationFile[self::PATHS])) {
+        //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
+        // }
     }
 
     /**
