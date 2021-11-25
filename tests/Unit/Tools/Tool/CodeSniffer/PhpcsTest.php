@@ -16,14 +16,16 @@ class PhpcsTest extends TestCase
     }
 
     /** @test */
-    function set_all_arguments_from_configuration_file()
+    function set_all_arguments_of_phpcs_from_configuration_file()
     {
         $configuration = [
             'executablePath' => 'path/tools/phpcs',
+            'paths' => ['src'],
             'standard' => 'PSR12',
             'ignore' => ['vendor'],
             'error-severity' => 1,
-            'warning-severity' => 6
+            'warning-severity' => 6,
+            'otherArguments' => '--report=summary --parallel=2'
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
@@ -33,6 +35,8 @@ class PhpcsTest extends TestCase
         $this->assertEquals($configuration['executablePath'], $phpcs->getExecutablePath());
 
         $this->assertEquals($configuration, $phpcs->getArguments());
+
+        $this->assertCount(count(PhpcsFake::OPTIONS), $phpcs->getArguments());
     }
 
     /** @test */

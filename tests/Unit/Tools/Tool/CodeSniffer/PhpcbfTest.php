@@ -16,10 +16,11 @@ class PhpcbfTest extends TestCase
     }
 
     /** @test */
-    function set_all_arguments_from_configuration_file()
+    function set_all_arguments_of_phpcbf_from_configuration_file()
     {
         $configuration = [
             'executablePath' => 'path/tools/phpcbf',
+            'paths' => ['src'],
             'standard' => 'PSR12',
             'ignore' => ['vendor'],
             'error-severity' => 1,
@@ -34,6 +35,8 @@ class PhpcbfTest extends TestCase
         $this->assertEquals($configuration['executablePath'], $phpcbf->getExecutablePath());
 
         $this->assertEquals($configuration, $phpcbf->getArguments());
+
+        $this->assertCount(count(PhpcbfFake::OPTIONS), $phpcbf->getArguments());
     }
 
     /** @test */
