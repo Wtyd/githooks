@@ -9,7 +9,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     SecurityChecker,
     Phpmd,
     ParallelLint,
-    Stan
+    Phpstan
 };
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
     Phpcs,
@@ -34,7 +34,7 @@ class FullExecutionTest extends TestCase
                 'phpcbf'
             ],
             'Php Stan' => [
-                Stan::class,
+                Phpstan::class,
                 'phpstan'
             ],
             'Php Mess Detector' => [

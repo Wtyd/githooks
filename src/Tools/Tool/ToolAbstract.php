@@ -35,7 +35,7 @@ abstract class ToolAbstract
         self::PARALLEL_LINT => ParallelLint::class,
         self::MESS_DETECTOR => Phpmd::class,
         self::COPYPASTE_DETECTOR => CopyPasteDetector::class,
-        self::PHPSTAN => Stan::class,
+        self::PHPSTAN => Phpstan::class,
     ];
 
     public const EXCLUDE_ARGUMENT = [

@@ -7,7 +7,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     SecurityChecker,
     ParallelLint,
     Phpmd,
-    Stan,
+    Phpstan,
     ToolAbstract
 };
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
@@ -101,9 +101,9 @@ class ConfigurationFileBuilder
                 CopyPasteDetector::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::PHPSTAN => [
-                Stan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
-                Stan::LEVEL => 0,
-                Stan::PATHS => [$rootPath . '/src']
+                Phpstan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
+                Phpstan::LEVEL => 0,
+                Phpstan::PATHS => [$rootPath . '/src']
             ],
 
             ToolAbstract::SECURITY_CHECKER => [

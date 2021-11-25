@@ -7,7 +7,7 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 /**
  * Ejecuta la libreria phpstan/phpstan
  */
-class Stan extends ToolAbstract
+class Phpstan extends ToolAbstract
 {
     /**
      * @var string PHPSTAN_CONFIGURATION_FILE Tag que indica la ruta del fichero de configuración de phpstan-phpqa.neon en el fichero de configuracion .yml
@@ -75,6 +75,7 @@ class Stan extends ToolAbstract
 
         $arguments = " analyse$config --no-progress --ansi$level$memoryLimit $paths";
 
+        // tools/php71/phpstan analyse -c ./qa/phpstan.neon --no-progress --ansi src
         return $this->executablePath . $arguments;
     }
 
