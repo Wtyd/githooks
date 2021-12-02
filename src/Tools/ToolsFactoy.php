@@ -9,7 +9,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     SecurityChecker,
     MessDetector,
     ParallelLint,
-    Stan
+    Phpstan
 };
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
     Phpcs,

@@ -103,7 +103,8 @@ class ConfigurationFileBuilder
             ToolAbstract::PHPSTAN => [
                 Phpstan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
                 Phpstan::LEVEL => 0,
-                Phpstan::PATHS => [$rootPath . '/src']
+                Phpstan::PATHS => [$rootPath . '/src'],
+                Phpstan::OTHER_ARGS_OPTION => '--no-progress',
             ],
 
             ToolAbstract::SECURITY_CHECKER => [

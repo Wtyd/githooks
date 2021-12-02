@@ -57,7 +57,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpstan' => [
                 'tool' => 'phpstan',
-                'command' => "phpstan analyse --no-progress --ansi $this->path/src",
+                'command' => "phpstan analyse --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'phpstan'
             ],
         ];
@@ -114,7 +114,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpstan' => [
                 'tool' => 'phpstan',
-                'command' => "phpstan analyse --no-progress --ansi $this->path/src",
+                'command' => "phpstan analyse --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'phpstan'
             ],
         ];

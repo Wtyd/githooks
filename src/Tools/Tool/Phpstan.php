@@ -29,7 +29,14 @@ class Phpstan extends ToolAbstract
      */
     public const MEMORY_LIMIT = 'memory-limit';
 
-    public const OPTIONS = [self::PHPSTAN_CONFIGURATION_FILE, self::LEVEL, self::PATHS, self::MEMORY_LIMIT];
+    public const OPTIONS = [
+        self::EXECUTABLE_PATH_OPTION,
+        self::PHPSTAN_CONFIGURATION_FILE,
+        self::LEVEL,
+        self::MEMORY_LIMIT,
+        self::OTHER_ARGS_OPTION,
+        self::PATHS,
+    ];
 
     /**
      * @var array
@@ -54,45 +61,60 @@ class Phpstan extends ToolAbstract
      */
     protected function prepareCommand(): string
     {
-        $config = '';
-        if (!empty($this->args[self::PHPSTAN_CONFIGURATION_FILE])) {
-            $config = ' -c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
+        $command = '';
+        foreach (self::OPTIONS as $option) {
+            if (empty($this->args[$option])) {
+                continue;
+            }
+
+            switch ($option) {
+                case self::EXECUTABLE_PATH_OPTION:
+                    $command .= $this->args[self::EXECUTABLE_PATH_OPTION] . ' analyse';
+                    break;
+                case self::PATHS:
+                    $command .= ' ' . implode(',', $this->args[$option]);
+                    break;
+                case self::PHPSTAN_CONFIGURATION_FILE:
+                    $command .= ' -c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];
+                    break;
+                case self::LEVEL:
+                    $command .= ' -l ' . $this->args[self::LEVEL];
+                    break;
+                case self::MEMORY_LIMIT:
+                    $command .= ' --memory-limit=' . $this->args[self::MEMORY_LIMIT];
+                    break;
+                default:
+                    $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];
+                    break;
+            }
         }
 
-        $level = '';
-        if (!empty($this->args[self::LEVEL])) {
-            $level = ' -l ' . $this->args[self::LEVEL];
-        }
-        $paths = ''; // If path is empty phpStand will not work
-        if (!empty($this->args[self::PATHS])) {
-            $paths = implode(' ', $this->args[self::PATHS]);
-        }
-
-        $memoryLimit = '';
-        if (!empty($this->args[self::MEMORY_LIMIT])) {
-            $memoryLimit = ' --memory-limit=' . $this->args[self::MEMORY_LIMIT];
-        }
-
-        $arguments = " analyse$config --no-progress --ansi$level$memoryLimit $paths";
-
-        // tools/php71/phpstan analyse -c ./qa/phpstan.neon --no-progress --ansi src
-        return $this->executablePath . $arguments;
+        return $command;
     }
 
     public function setArguments(array $configurationFile): void
     {
-        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::PHPSTAN);
-        if (!empty($configurationFile[self::PHPSTAN_CONFIGURATION_FILE])) {
-            $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $configurationFile[self::PHPSTAN_CONFIGURATION_FILE];
+        foreach ($configurationFile as $key => $value) {
+            if (!empty($value)) {
+                // $this->args[$key] = $this->multipleRoutesCorrector($value);
+                $this->args[$key] = $value;
+            }
         }
-        if (!empty($configurationFile[self::LEVEL])) {
-            $this->args[self::LEVEL] = $configurationFile[self::LEVEL];
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::PHPSTAN;
         }
-        if (!empty($configurationFile[self::PATHS])) {
-            $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
-        }
-        if (!empty($configurationFile[self::MEMORY_LIMIT])) {
-            $this->args[self::MEMORY_LIMIT] = $configurationFile[self::MEMORY_LIMIT];
-        }
+        // $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::PHPSTAN);
+        // if (!empty($configurationFile[self::PHPSTAN_CONFIGURATION_FILE])) {
+        //     $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $configurationFile[self::PHPSTAN_CONFIGURATION_FILE];
+        // }
+        // if (!empty($configurationFile[self::LEVEL])) {
+        //     $this->args[self::LEVEL] = $configurationFile[self::LEVEL];
+        // }
+        // if (!empty($configurationFile[self::PATHS])) {
+        //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
+        // }
+        // if (!empty($configurationFile[self::MEMORY_LIMIT])) {
+        //     $this->args[self::MEMORY_LIMIT] = $configurationFile[self::MEMORY_LIMIT];
+        // }
     }
 }
