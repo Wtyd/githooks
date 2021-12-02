@@ -15,9 +15,10 @@ Tools:
 phpstan:
     executablePath: tools/php71/phpstan
     config: './qa/phpstan.neon'
-    #memory-limit: '1G' # Examples: 1M 2000M 1G 5G
+    # memory-limit: '1G' # Examples: 1M 2000M 1G 5G
     paths: ['src']
     # level: 8 #level 0-8 (0 default, 8 max)
+    otherArguments: '--no-progress --ansi'
 
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:

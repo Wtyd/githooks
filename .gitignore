@@ -31,5 +31,6 @@ testsDir/vendor
 testsDir/*.yml
 githooks.yml
 
+tools/tmp/
 
 *.md

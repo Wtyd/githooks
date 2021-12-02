@@ -1,5 +1,6 @@
 {
     parameters: {
+        tmpDir: %currentWorkingDirectory%/tools/tmp,
         level: 8
         # paths: [
             # %currentWorkingDirectory%/src,
