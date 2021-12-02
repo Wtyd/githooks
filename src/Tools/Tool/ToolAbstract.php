@@ -34,7 +34,7 @@ abstract class ToolAbstract
         self::SECURITY_CHECKER => SecurityChecker::class,
         self::PARALLEL_LINT => ParallelLint::class,
         self::MESS_DETECTOR => Phpmd::class,
-        self::COPYPASTE_DETECTOR => CopyPasteDetector::class,
+        self::COPYPASTE_DETECTOR => Phpcpd::class,
         self::PHPSTAN => Phpstan::class,
     ];
 
@@ -44,7 +44,7 @@ abstract class ToolAbstract
         self::SECURITY_CHECKER => '',
         self::PARALLEL_LINT => ParallelLint::EXCLUDE,
         self::MESS_DETECTOR => Phpmd::EXCLUDE,
-        self::COPYPASTE_DETECTOR => CopyPasteDetector::EXCLUDE,
+        self::COPYPASTE_DETECTOR => Phpcpd::EXCLUDE,
         self::PHPSTAN => '',
     ];
 

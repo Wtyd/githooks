@@ -3,7 +3,7 @@
 namespace Tests\Utils;
 
 use Wtyd\GitHooks\Tools\Tool\{
-    CopyPasteDetector,
+    Phpcpd,
     SecurityChecker,
     ParallelLint,
     Phpmd,
@@ -96,9 +96,9 @@ class ConfigurationFileBuilder
                 Phpmd::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::COPYPASTE_DETECTOR => [
-                CopyPasteDetector::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
-                CopyPasteDetector::PATHS => [$rootPath . '/src'],
-                CopyPasteDetector::EXCLUDE => [$rootPath . '/vendor']
+                Phpcpd::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
+                Phpcpd::PATHS => [$rootPath . '/src'],
+                Phpcpd::EXCLUDE => [$rootPath . '/vendor']
             ],
             ToolAbstract::PHPSTAN => [
                 Phpstan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
@@ -286,7 +286,7 @@ class ConfigurationFileBuilder
         return $this;
     }
 
-    public function setCopyPasteDetectorConfiguration(array $configuration): ConfigurationFileBuilder
+    public function setPhpcpdConfiguration(array $configuration): ConfigurationFileBuilder
     {
         $this->configurationTools[ToolAbstract::COPYPASTE_DETECTOR] = $configuration;
 

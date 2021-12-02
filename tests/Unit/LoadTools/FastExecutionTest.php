@@ -12,7 +12,7 @@ use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\{
     SecurityChecker,
-    CopyPasteDetector
+    Phpcpd
 };
 
 class FastExecutionTest extends TestCase
@@ -137,7 +137,7 @@ class FastExecutionTest extends TestCase
         return [
             'Copy Paste Detector' => [
                 'Tool Name' => 'phpcpd',
-                'Tool Class' => CopyPasteDetector::class
+                'Tool Class' => Phpcpd::class
             ],
             'Check-Security' => [
                 'Tool Name' => 'security-checker',

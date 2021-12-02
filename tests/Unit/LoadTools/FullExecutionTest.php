@@ -5,7 +5,7 @@ namespace Tests\Unit\LoadTools;
 use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Tools\Tool\{
-    CopyPasteDetector,
+    Phpcpd,
     SecurityChecker,
     Phpmd,
     ParallelLint,
@@ -42,7 +42,7 @@ class FullExecutionTest extends TestCase
                 'phpmd'
             ],
             'Php Copy Paste Detector' => [
-                CopyPasteDetector::class,
+                Phpcpd::class,
                 'phpcpd'
             ],
             'Parallel-Lint' => [

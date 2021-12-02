@@ -5,9 +5,9 @@ namespace Wtyd\GitHooks\Tools\Tool;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * Ejecuta la libreria sebastian/phpcpd
+ * Library la libreria sebastian/phpcpd
  */
-class CopyPasteDetector extends ToolAbstract
+class Phpcpd extends ToolAbstract
 {
     /**
      * @var string EXCLUDE Tag que indica los ficheros excluidos para phpcs en el fichero de configuracion .yml. Su valor es un array de strings.
@@ -49,6 +49,7 @@ class CopyPasteDetector extends ToolAbstract
 
         $arguments = "$exclude $paths";
 
+        // tools/php71/phpcpd --exclude vendor --exclude tests ./
         return $this->executablePath . ' ' . $arguments;
     }
 

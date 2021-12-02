@@ -5,7 +5,7 @@ namespace Wtyd\GitHooks\Tools;
 use Illuminate\Container\Container;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 use Wtyd\GitHooks\Tools\Tool\{
-    CopyPasteDetector,
+    Phpcpd,
     SecurityChecker,
     MessDetector,
     ParallelLint,
