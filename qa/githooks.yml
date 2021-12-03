@@ -54,7 +54,7 @@ phpmd:
 phpcpd:
   executablePath: tools/php71/phpcpd
   paths: ['./']
-  exclude: [vendor, tests]
+  exclude: [vendor, tests, 'tools/tmp']
 
 security-checker:
   executablePath: tools/php71/local-php-security-checker
