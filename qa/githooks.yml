@@ -55,8 +55,10 @@ phpcpd:
   executablePath: tools/php71/phpcpd
   paths: ['./']
   exclude: [vendor, tests, 'tools/tmp']
+  # otherArguments: '--min-lines=5'
 
 security-checker:
   executablePath: tools/php71/local-php-security-checker
+  # otherArguments: '-format json'
 
  

@@ -9,7 +9,10 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class SecurityChecker extends ToolAbstract
 {
-    public const OPTIONS = [];
+    public const OPTIONS = [
+        self::EXECUTABLE_PATH_OPTION,
+        self::OTHER_ARGS_OPTION,
+    ];
     /**
      * @param ToolConfiguration $toolConfiguration
      */
@@ -21,11 +24,34 @@ class SecurityChecker extends ToolAbstract
 
     protected function prepareCommand(): string
     {
-        return $this->executablePath;
+        $command = '';
+        foreach (self::OPTIONS as $option) {
+            if (empty($this->args[$option])) {
+                continue;
+            }
+
+            switch ($option) {
+                case self::EXECUTABLE_PATH_OPTION:
+                    $command .= $this->args[self::EXECUTABLE_PATH_OPTION];
+                    break;
+                default:
+                    $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];
+                    break;
+            }
+        }
+
+        return $command;
     }
 
     public function setArguments(array $configurationFile): void
     {
-        $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? 'local-php-security-checker');
+        foreach ($configurationFile as $key => $value) {
+            if (!empty($value)) {
+                $this->args[$key] = $value;
+            }
+        }
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = 'local-php-security-checker';
+        }
     }
 }
