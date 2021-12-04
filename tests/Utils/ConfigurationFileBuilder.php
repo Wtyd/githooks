@@ -98,7 +98,8 @@ class ConfigurationFileBuilder
             ToolAbstract::COPYPASTE_DETECTOR => [
                 Phpcpd::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
                 Phpcpd::PATHS => [$rootPath . '/src'],
-                Phpcpd::EXCLUDE => [$rootPath . '/vendor']
+                Phpcpd::EXCLUDE => [$rootPath . '/vendor'],
+                Phpcpd::OTHER_ARGS_OPTION => '--min-lines=5',
             ],
             ToolAbstract::PHPSTAN => [
                 Phpstan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',

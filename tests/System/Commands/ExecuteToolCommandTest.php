@@ -42,7 +42,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpcpd' => [
                 'tool' => 'phpcpd',
-                'command' => "phpcpd --exclude $this->path/vendor $this->path/src",
+                'command' => "phpcpd --exclude $this->path/vendor --min-lines=5 $this->path/src",
                 'Alias of the tool when is executed' => 'phpcpd'
             ],
             'phpmd' => [
@@ -99,7 +99,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'phpcpd' => [
                 'tool' => 'phpcpd',
-                'command' => "phpcpd --exclude $this->path/vendor $this->path/src",
+                'command' => "phpcpd --exclude $this->path/vendor --min-lines=5 $this->path/src",
                 'Alias of the tool when is executed' => 'phpcpd'
             ],
             'phpmd' => [
