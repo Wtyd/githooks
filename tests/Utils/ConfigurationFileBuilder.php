@@ -87,7 +87,8 @@ class ConfigurationFileBuilder
             ToolAbstract::PARALLEL_LINT => [
                 ParallelLint::EXECUTABLE_PATH_OPTION => $this->parallelLintPath($toolsPath) . 'parallel-lint',
                 ParallelLint::PATHS => [$rootPath . '/src'],
-                ParallelLint::EXCLUDE => [$rootPath . '/vendor']
+                ParallelLint::EXCLUDE => [$rootPath . '/vendor'],
+                ParallelLint::OTHER_ARGS_OPTION => '--colors',
             ],
             ToolAbstract::MESS_DETECTOR => [
                 Phpmd::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpmd',

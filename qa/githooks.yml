@@ -25,6 +25,7 @@ parallel-lint:
     executablePath: vendor/bin/parallel-lint
     paths: ['./']
     exclude: [vendor, qa]
+    otherArguments: '--colors'
 
 phpcs:
     executablePath: tools/php71/phpcs

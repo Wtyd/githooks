@@ -52,7 +52,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'parallel-lint' => [
                 'tool' => 'parallel-lint',
-                'command' => "parallel-lint $this->path/src --exclude $this->path/vendor",
+                'command' => "parallel-lint --exclude $this->path/vendor --colors $this->path/src",
                 'Alias of the tool when is executed' => 'parallel-lint'
             ],
             'phpstan' => [
@@ -109,7 +109,7 @@ class ExecuteToolCommandTest extends ConsoleTestCase
             ],
             'parallel-lint' => [
                 'tool' => 'parallel-lint',
-                'command' => "parallel-lint $this->path/src --exclude $this->path/vendor",
+                'command' => "parallel-lint --exclude $this->path/vendor --colors $this->path/src",
                 'Alias of the tool when is executed' => 'parallel-lint'
             ],
             'phpstan' => [
