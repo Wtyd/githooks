@@ -52,6 +52,7 @@ class PhpcbfTest extends TestCase
 
         $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
 
+        // dd($configuration);
         $phpcbf = new PhpcbfFake($toolConfiguration);
 
         $this->assertEquals('phpcbf', $phpcbf->getExecutablePath());

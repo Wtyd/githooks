@@ -9,6 +9,8 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class ParallelLint extends ToolAbstract
 {
+
+    public const NAME = self::PARALLEL_LINT;
     /**
      * @var string EXCLUDES Tag de configuracion de directorios excluidos en el fichero de configuracion .yml. Su valor es un array de strings.
      */
@@ -36,6 +38,10 @@ class ParallelLint extends ToolAbstract
         $this->executable = self::PARALLEL_LINT;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
+
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
+        }
     }
 
     protected function prepareCommand(): string
@@ -67,17 +73,8 @@ class ParallelLint extends ToolAbstract
         return $command;
     }
 
-
-    public function setArguments(array $configurationFile): void
+    protected function getName()
     {
-        foreach ($configurationFile as $key => $value) {
-            if (!empty($value)) {
-                // $this->args[$key] = $this->multipleRoutesCorrector($value);
-                $this->args[$key] = $value;
-            }
-        }
-        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            $this->args[self::EXECUTABLE_PATH_OPTION] = self::PARALLEL_LINT;
-        }
+        return self::NAME;
     }
 }

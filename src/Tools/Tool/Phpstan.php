@@ -9,6 +9,7 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpstan extends ToolAbstract
 {
+    public const NAME = self::PHPSTAN;
     /**
      * @var string PHPSTAN_CONFIGURATION_FILE Tag que indica la ruta del fichero de configuración de phpstan-phpqa.neon en el fichero de configuracion .yml
      */
@@ -48,6 +49,9 @@ class Phpstan extends ToolAbstract
         $this->executable = self::PHPSTAN;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
+        }
     }
 
     /**
@@ -92,29 +96,8 @@ class Phpstan extends ToolAbstract
         return $command;
     }
 
-    public function setArguments(array $configurationFile): void
+    protected function getName()
     {
-        foreach ($configurationFile as $key => $value) {
-            if (!empty($value)) {
-                // $this->args[$key] = $this->multipleRoutesCorrector($value);
-                $this->args[$key] = $value;
-            }
-        }
-        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            $this->args[self::EXECUTABLE_PATH_OPTION] = self::PHPSTAN;
-        }
-        // $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::PHPSTAN);
-        // if (!empty($configurationFile[self::PHPSTAN_CONFIGURATION_FILE])) {
-        //     $this->args[self::PHPSTAN_CONFIGURATION_FILE] = $configurationFile[self::PHPSTAN_CONFIGURATION_FILE];
-        // }
-        // if (!empty($configurationFile[self::LEVEL])) {
-        //     $this->args[self::LEVEL] = $configurationFile[self::LEVEL];
-        // }
-        // if (!empty($configurationFile[self::PATHS])) {
-        //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
-        // }
-        // if (!empty($configurationFile[self::MEMORY_LIMIT])) {
-        //     $this->args[self::MEMORY_LIMIT] = $configurationFile[self::MEMORY_LIMIT];
-        // }
+        return self::NAME;
     }
 }

@@ -9,6 +9,7 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpcpd extends ToolAbstract
 {
+    public const NAME = self::COPYPASTE_DETECTOR;
     /**
      * @var string EXCLUDE Tag que indica los ficheros excluidos para phpcs en el fichero de configuracion .yml. Su valor es un array de strings.
      */
@@ -37,6 +38,9 @@ class Phpcpd extends ToolAbstract
         $this->executable = self::COPYPASTE_DETECTOR;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
+        }
     }
 
     protected function prepareCommand(): string
@@ -83,26 +87,8 @@ class Phpcpd extends ToolAbstract
         // return $this->executablePath . ' ' . $arguments;
     }
 
-    public function setArguments(array $configurationFile): void
+    protected function getName()
     {
-        foreach ($configurationFile as $key => $value) {
-            if (!empty($value)) {
-                // $this->args[$key] = $this->multipleRoutesCorrector($value);
-                $this->args[$key] = $value;
-            }
-        }
-        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            $this->args[self::EXECUTABLE_PATH_OPTION] = self::COPYPASTE_DETECTOR;
-        }
-
-        // $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::COPYPASTE_DETECTOR);
-
-        // if (!empty($configurationFile[self::EXCLUDE])) {
-        //     $this->args[self::EXCLUDE] = $this->multipleRoutesCorrector($configurationFile[self::EXCLUDE]);
-        // }
-
-        // if (!empty($configurationFile[self::PATHS])) {
-        //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
-        // }
+        return self::NAME;
     }
 }

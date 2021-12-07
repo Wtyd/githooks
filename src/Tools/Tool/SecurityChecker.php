@@ -9,6 +9,8 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class SecurityChecker extends ToolAbstract
 {
+    public const NAME = 'local-php-security-checker';
+
     public const OPTIONS = [
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,
@@ -20,6 +22,9 @@ class SecurityChecker extends ToolAbstract
     {
         $this->executable = 'local-php-security-checker';
         $this->setArguments($toolConfiguration->getToolConfiguration());
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
+        }
     }
 
     protected function prepareCommand(): string
@@ -43,15 +48,8 @@ class SecurityChecker extends ToolAbstract
         return $command;
     }
 
-    public function setArguments(array $configurationFile): void
+    protected function getName()
     {
-        foreach ($configurationFile as $key => $value) {
-            if (!empty($value)) {
-                $this->args[$key] = $value;
-            }
-        }
-        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            $this->args[self::EXECUTABLE_PATH_OPTION] = 'local-php-security-checker';
-        }
+        return self::NAME;
     }
 }

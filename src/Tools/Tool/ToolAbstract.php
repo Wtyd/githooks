@@ -8,6 +8,8 @@ use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
 abstract class ToolAbstract
 {
+    public const NAME = 'the name of the tool';
+
     public const TOOL_CONFIGURATION = 'toolConfiguration';
 
     //TODO renombrar a phpcs
@@ -87,7 +89,16 @@ abstract class ToolAbstract
 
     abstract protected function prepareCommand(): string;
 
-    abstract public function setArguments(array $configurationFile): void;
+    // abstract public function setArguments(array $configurationFile): void;
+    public function setArguments(array $configurationFile): void
+    {
+        foreach ($configurationFile as $key => $value) {
+            if (!empty($value)) {
+                // $this->args[$key] = $this->multipleRoutesCorrector($value);
+                $this->args[$key] = $value;
+            }
+        }
+    }
 
     /**
      * Devuelve un array añadiendo el prefijo a cada uno de los elementos
@@ -189,7 +200,7 @@ abstract class ToolAbstract
 
     public function getExecutable(): string
     {
-        return $this->executable;
+        return $this->getName();
     }
 
     public function getExitCode(): int

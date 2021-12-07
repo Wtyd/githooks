@@ -11,6 +11,8 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpcbf extends CodeSniffer
 {
+    public const NAME = self::PHPCBF;
+
     public const USE_PHPCS_CONFIGURATION = 'usePhpcsConfiguration';
 
     public const OPTIONS = [
@@ -28,6 +30,10 @@ class Phpcbf extends CodeSniffer
         $this->executable = 'phpcbf';
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
+        }
+        $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace(self::CODE_SNIFFER, self::PHPCBF, $this->args[self::EXECUTABLE_PATH_OPTION]);
     }
 
     public static function usePhpcsConfiguration(array $phpcbfConfiguration): bool
@@ -35,16 +41,8 @@ class Phpcbf extends CodeSniffer
         return isset($phpcbfConfiguration[self::USE_PHPCS_CONFIGURATION]) && $phpcbfConfiguration[self::USE_PHPCS_CONFIGURATION];
     }
 
-    /**
-     * Assures that $executablePath is 'phpcbf'. It could be 'phpcs' if usePhpcsConfiguration is true.
-     *
-     * @param array $configurationFile
-     * @return void
-     */
-    public function setArguments(array $configurationFile): void
+    protected function getName()
     {
-        parent::setArguments($configurationFile);
-
-        $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace(self::CODE_SNIFFER, self::PHPCBF, $this->args[self::EXECUTABLE_PATH_OPTION]);
+        return self::NAME;
     }
 }

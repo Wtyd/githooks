@@ -9,6 +9,7 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpmd extends ToolAbstract
 {
+    public const NAME = self::MESS_DETECTOR;
     /**
      * @var string RULES Tag que indica la ruta del fichero de reglas que phpmd validará en el fichero de configuracion .yml
      */
@@ -42,6 +43,9 @@ class Phpmd extends ToolAbstract
         $this->executable = self::MESS_DETECTOR;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
+        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
+            $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
+        }
     }
 
     protected function prepareCommand(): string
@@ -75,31 +79,9 @@ class Phpmd extends ToolAbstract
         return $command;
     }
 
-    public function setArguments(array $configurationFile): void
+    protected function getName()
     {
-        foreach ($configurationFile as $key => $value) {
-            if (!empty($value)) {
-                // $this->args[$key] = $this->multipleRoutesCorrector($value);
-                $this->args[$key] = $value;
-            }
-        }
-        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            $this->args[self::EXECUTABLE_PATH_OPTION] = self::MESS_DETECTOR;
-        }
-
-        // $this->executablePath = $this->routeCorrector($configurationFile[self::EXECUTABLE_PATH_OPTION] ?? self::MESS_DETECTOR);
-
-        // if (!empty($configurationFile[self::RULES])) {
-        //     $this->args[self::RULES] = $configurationFile[self::RULES];
-        // }
-
-        // if (!empty($configurationFile[self::EXCLUDE])) {
-        //     $this->args[self::EXCLUDE] = $this->multipleRoutesCorrector($configurationFile[self::EXCLUDE]);
-        // }
-
-        // if (!empty($configurationFile[self::PATHS])) {
-        //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
-        // }
+        return self::NAME;
     }
 
     /**

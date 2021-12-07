@@ -80,41 +80,8 @@ abstract class CodeSniffer extends ToolAbstract
         return $command;
     }
 
-    public function setArguments(array $configurationFile): void
+    protected function getName()
     {
-        foreach ($configurationFile as $key => $value) {
-            if (!empty($value)) {
-                // $this->args[$key] = $this->multipleRoutesCorrector($value);
-                $this->args[$key] = $value;
-            }
-        }
-        if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            $this->args[self::EXECUTABLE_PATH_OPTION] = 'phpcs';
-        }
-
-        // if (!empty($configurationFile[self::PATHS])) {
-        //     $this->args[self::PATHS] = $this->multipleRoutesCorrector($configurationFile[self::PATHS]);
-        // }
-
-        // if (!empty($configurationFile[self::STANDARD])) {
-        //     $this->args[self::STANDARD] = $configurationFile[self::STANDARD];
-        // }
-
-        // if (!empty($configurationFile[self::IGNORE])) {
-        //     $this->args[self::IGNORE] = $this->multipleRoutesCorrector($configurationFile[self::IGNORE]);
-        // }
-
-        // if (!empty($configurationFile[self::ERROR_SEVERITY])) {
-        //     $this->args[self::ERROR_SEVERITY] = $configurationFile[self::ERROR_SEVERITY];
-        // }
-
-        // if (!empty($configurationFile[self::WARNING_SEVERITY])) {
-        //     $this->args[self::WARNING_SEVERITY] = $configurationFile[self::WARNING_SEVERITY];
-        // }
-
-        // if (!empty($configurationFile[self::OTHER_ARGS_OPTION])) {
-        //     $this->args[self::OTHER_ARGS_OPTION] = $configurationFile[self::OTHER_ARGS_OPTION];
-        // }
-        // dd($configurationFile, "\n============", $this->args);
+        return self::NAME;
     }
 }
