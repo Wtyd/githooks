@@ -40,9 +40,4 @@ class Phpcbf extends CodeSniffer
     {
         return isset($phpcbfConfiguration[self::USE_PHPCS_CONFIGURATION]) && $phpcbfConfiguration[self::USE_PHPCS_CONFIGURATION];
     }
-
-    protected function getName()
-    {
-        return self::NAME;
-    }
 }

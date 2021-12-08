@@ -79,9 +79,4 @@ abstract class CodeSniffer extends ToolAbstract
         // dd($command);
         return $command;
     }
-
-    protected function getName()
-    {
-        return self::NAME;
-    }
 }

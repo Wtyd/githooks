@@ -37,23 +37,23 @@ class ToolExecutor
                 $endToolExecution = microtime(true);
                 $executionTime = $this->executionTime($endToolExecution, $startToolExecution);
                 if ($tool->getExitCode() === 0) {
-                    $this->printer->resultSuccess($this->getSuccessString($tool->getExecutable(), $executionTime));
+                    $this->printer->resultSuccess($this->getSuccessString($tool::NAME, $executionTime));
                 } else {
-                    $errors->setError($tool->getExecutable(), $tool->getErrors());
+                    $errors->setError($tool::NAME, $tool->getErrors());
                     $this->printErrors($tool);
-                    $this->printer->resultError($this->getErrorString($tool->getExecutable(), $executionTime));
+                    $this->printer->resultError($this->getErrorString($tool::NAME, $executionTime));
                 }
             } catch (ModifiedButUnstagedFilesException $ex) {
                 $endToolExecution = microtime(true);
                 $this->printErrors($tool);
-                $message = $this->getErrorString($tool->getExecutable(), $this->executionTime($endToolExecution, $startToolExecution)) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
+                $message = $this->getErrorString($tool::NAME, $this->executionTime($endToolExecution, $startToolExecution)) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
                 $this->printer->resultWarning($message);
-                $errors->setError($tool->getExecutable(), $message);
+                $errors->setError($tool::NAME, $message);
             } catch (\Throwable $th) {
-                $errors->setError($tool->getExecutable(), $th->getMessage());
+                $errors->setError($tool::NAME, $th->getMessage());
                 $this->printErrors($tool);
                 $this->printer->line($th->getMessage());
-                $this->printer->resultError('Error when running ' . $tool->getExecutable() . ' ');
+                $this->printer->resultError('Error when running ' . $tool::NAME . ' ');
             }
         }
         return $errors;

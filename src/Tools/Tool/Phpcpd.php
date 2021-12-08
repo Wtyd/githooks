@@ -86,9 +86,4 @@ class Phpcpd extends ToolAbstract
         // // tools/php71/phpcpd --exclude vendor --exclude tests ./
         // return $this->executablePath . ' ' . $arguments;
     }
-
-    protected function getName()
-    {
-        return self::NAME;
-    }
 }

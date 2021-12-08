@@ -198,11 +198,6 @@ abstract class ToolAbstract
         exec($command, $this->exit, $this->exitCode);
     }
 
-    public function getExecutable(): string
-    {
-        return $this->getName();
-    }
-
     public function getExitCode(): int
     {
         return $this->exitCode;

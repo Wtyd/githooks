@@ -95,9 +95,4 @@ class Phpstan extends ToolAbstract
 
         return $command;
     }
-
-    protected function getName()
-    {
-        return self::NAME;
-    }
 }

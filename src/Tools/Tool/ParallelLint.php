@@ -72,9 +72,4 @@ class ParallelLint extends ToolAbstract
         //parallel-lint ./ --exclude qa --exclude tests --exclude vendor
         return $command;
     }
-
-    protected function getName()
-    {
-        return self::NAME;
-    }
 }

@@ -25,9 +25,4 @@ class Phpcs extends CodeSniffer
             $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
         }
     }
-
-    protected function getName()
-    {
-        return self::NAME;
-    }
 }

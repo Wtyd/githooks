@@ -79,11 +79,6 @@ class Phpmd extends ToolAbstract
         return $command;
     }
 
-    protected function getName()
-    {
-        return self::NAME;
-    }
-
     /**
      * Método donde se ejecuta la herramienta mediante exec. La herramienta no producirá ninguna salida.
      *
