@@ -1,11 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
+// TODO check for mandatory arguments
+// TODO check for type and values for arguments.
+// TODO arguments or options?
 abstract class ToolAbstract
 {
     public const NAME = 'the name of the tool';
@@ -13,9 +18,6 @@ abstract class ToolAbstract
     public const TOOL_CONFIGURATION = 'toolConfiguration';
 
     //TODO renombrar a phpcs
-    // TODO check for mandatory arguments
-    // TODO check for type and values for arguments.
-    // TODO arguments or options?
     public const CODE_SNIFFER = 'phpcs';
 
     public const PHPCBF = 'phpcbf';
@@ -89,12 +91,25 @@ abstract class ToolAbstract
 
     abstract protected function prepareCommand(): string;
 
-    // abstract public function setArguments(array $configurationFile): void;
-    public function setArguments(array $configurationFile): void
+    final protected function setArguments(array $configurationFile): void
     {
         foreach ($configurationFile as $key => $value) {
-            if (!empty($value)) {
-                // $this->args[$key] = $this->multipleRoutesCorrector($value);
+            if (empty($value)) {
+                continue;
+            }
+
+            if (is_string($value)) {
+                if (!$this->isWindows()) {
+                    $this->args[$key] = $this->unixRouteCorrector($value);
+                } else {
+                    var_dump($value);
+                    $this->args[$key] = $this->windowsRouteCorrector($value);
+                }
+                continue;
+            } elseif (is_array($value)) {
+                $this->args[$key] = $this->routesCorrector($value);
+            } else {
+                // other type
                 $this->args[$key] = $value;
             }
         }
@@ -115,37 +130,35 @@ abstract class ToolAbstract
     }
 
     /**
-     * Replaces / by \ when the app run in Windows
-     *
-     * @param string $path
-     * @return string path
-     */
-    protected function routeCorrector(string $path): string
-    {
-        if (!$this->isWindows()) {
-            return $path;
-        }
-
-        return str_replace('/', '\\', $path);
-    }
-
-    /**
-     * Replaces / by \ when the app run in Windows
+     * Replaces the directory separator if necessary.
      *
      * @param array $paths
-     * @return array paths
+     * @return array $rightPaths $paths fixed with de correct directory separator.
      */
-    protected function multipleRoutesCorrector(array $paths): array
+    protected function routesCorrector(array $paths): array
     {
-        if (!$this->isWindows()) {
-            return $paths;
-        }
         $rightPaths = [];
-        foreach ($paths as $path) {
-            $rightPaths[] = str_replace('/', '\\', $path);
+        if (!$this->isWindows()) {
+            foreach ($paths as $path) {
+                $rightPaths[] = is_string($path) ? $this->unixRouteCorrector($path) : $path;
+            }
+        } else {
+            foreach ($paths as $path) {
+                $rightPaths[] = is_string($path) ? $this->windowsRouteCorrector($path) : $path;
+            }
         }
 
         return $rightPaths;
+    }
+
+    protected function windowsRouteCorrector(string $path): string
+    {
+        return str_replace('/', DIRECTORY_SEPARATOR, $path);
+    }
+
+    protected function unixRouteCorrector(string $path): string
+    {
+        return str_replace('\\', DIRECTORY_SEPARATOR, $path);
     }
 
     /**
