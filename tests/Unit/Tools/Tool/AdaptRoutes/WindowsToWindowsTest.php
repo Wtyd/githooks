@@ -131,7 +131,7 @@ class WindowsToWindowsTest extends TestCase
     }
 
     /** @test */
-    function set_all_arguments_of_securityChecker_from_configuration_file()
+    function it_adapts_routes_of_securityChecker()
     {
         $configuration = [
             'executablePath' => 'path\tools\security-checker',
@@ -142,7 +142,7 @@ class WindowsToWindowsTest extends TestCase
 
         $securityChecker = new SecurityCheckerFake($toolConfiguration);
 
-        $configuration['executablePath'] = 'pat\/tools\security-checker';
+        $configuration['executablePath'] = 'path\tools\security-checker';
         $this->assertEquals($configuration, $securityChecker->getArguments());
     }
 

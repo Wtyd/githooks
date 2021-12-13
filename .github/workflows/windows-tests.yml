@@ -7,7 +7,7 @@ on:
     branches-ignore: [ master ]
 
 env:
-  extensions: :opcache #intl, pcov #fileinfo is needed for Windows
+  extensions: :opcache, fileinfo #intl, pcov #fileinfo is needed for Windows
 
 jobs:
   tests:    
