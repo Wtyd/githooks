@@ -13,8 +13,9 @@
     </testsuites>
     <groups>
         <exclude>
-            <group>release</group>
-            <group>git</group>
+            <group>release</group> <!-- Test the new features -->
+            <group>git</group> <!-- Test that Fast Mode catches the diff files of git -->
+            <group>windows</group> <!-- Test that routes from githooks.yml are adapt for Windows -->
         </exclude>
     </groups>
     <coverage processUncoveredFiles="true">
