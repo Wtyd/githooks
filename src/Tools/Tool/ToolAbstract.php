@@ -62,11 +62,6 @@ abstract class ToolAbstract
     protected $executable;
 
     /**
-     * @var string
-     */
-    protected $executablePath;
-
-    /**
      * @var int
      */
     protected $exitCode = -1;

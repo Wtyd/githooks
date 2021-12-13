@@ -70,20 +70,5 @@ class Phpcpd extends ToolAbstract
 
         // tools/php71/phpcpd --exclude vendor --exclude tests ./
         return $command;
-        // $exclude = '';
-        // if (!empty($this->args[self::EXCLUDE])) {
-        //     $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE], '--exclude ');
-        //     $exclude = implode(' ', $prefix);
-        // }
-
-        // $paths = ''; // If path is empty phpmd will not work
-        // if (!empty($this->args[self::PATHS])) {
-        //     $paths = implode(' ', $this->args[self::PATHS]);
-        // }
-
-        // $arguments = "$exclude $paths";
-
-        // // tools/php71/phpcpd --exclude vendor --exclude tests ./
-        // return $this->executablePath . ' ' . $arguments;
     }
 }
