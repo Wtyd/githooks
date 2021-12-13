@@ -21,7 +21,7 @@ class PhpcpdTest extends TestCase
         $configuration = [
             'executablePath' => 'path/tools/phpcpd',
             'paths' => ['src'],
-            'exclude' => 'vendor',
+            'exclude' => ['vendor'],
             'otherArguments' => '--min-lines=5',
         ];
 
@@ -41,7 +41,7 @@ class PhpcpdTest extends TestCase
     {
         $configuration = [
             'paths' => ['src'],
-            'exclude' => 'vendor',
+            'exclude' => ['vendor'],
             'otherArguments' => '--min-lines=5',
         ];
 
@@ -58,7 +58,7 @@ class PhpcpdTest extends TestCase
         $configuration = [
             'executablePath' => 'path/tools/phpcpd',
             'paths' => ['src'],
-            'exclude' => 'vendor',
+            'exclude' => ['vendor'],
             'otherArguments' => '--min-lines=5',
             'unexpected or supported argument' => 'my value'
         ];

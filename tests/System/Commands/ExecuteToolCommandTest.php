@@ -5,7 +5,7 @@ namespace Tests\System\Commands;
 use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
 use Tests\ConsoleTestCase;
-use Tests\Utils\SecurityCheckerFake;
+use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
 use Wtyd\GitHooks\Utils\FileUtils;

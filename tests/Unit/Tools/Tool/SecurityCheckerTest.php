@@ -30,7 +30,6 @@ class SecurityCheckerTest extends TestCase
         $this->assertEquals($configuration['executablePath'], $securityChecker->getExecutablePath());
 
         $this->assertEquals($configuration, $securityChecker->getArguments());
-        // dd($securityChecker->getArguments(), SecurityCheckerFake::OPTIONS);
 
         $this->assertCount(count(SecurityCheckerFake::OPTIONS), $securityChecker->getArguments());
     }
