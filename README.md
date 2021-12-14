@@ -67,7 +67,7 @@ We can also launch all the tools one by one by command line in the way they are 
 
 # Supported Tools
 At this moment, the supported tools are:
-* [Php CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer)
+* [Php CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) (phpcs and phpcbf)
 * [Php Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd)
 * [Php Mess Detector](https://phpmd.org/)
 * [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint)
@@ -96,6 +96,7 @@ Tools:
     - security-checker
     - parallel-lint
     - phpcs
+    - phpcbf
     - phpmd
     - phpcpd
 ```
@@ -113,36 +114,51 @@ phpcs:
 
 All the available options are:
 
-| Option               | Description                                                      | Examples                                                           |
-| -------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
-| **phpstan**          |                                                                  |                                                                    |
-| executablePath       | String. Path to executable. Default 'phpstan'                    | phpstan, 'vendor/bin/phpstan', 'path/to/phpstan'                   |
-| config               | String. Path to configuration file                               | 'phpstan.neon', 'path/to/phpstan.neon'                             |
-| memory-limit         | String. Set the php memory limit while phpstan is running        | '1M', '2000M', '1G'                                                |
-| paths                | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
-| level                | Integer. Default 0, max 8.                                       | 0, 1, 5, 8                                                         |
-| **parallel-lint**    |                                                                  |                                                                    |
-| executablePath       | String. Path to executable. Default 'parallel-lint'              | parallel-lint, 'vendor/bin/parallel-lint', 'path/to/parallel-lint' |
-| paths                | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
-| exclude              | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
-| **phpcs**            |                                                                  |                                                                    |
-| executablePath       | String. Path to executable. Default 'phpcs'                      | phpcs, 'vendor/bin/phpcs', 'path/to/phpcs'                         |
-| paths                | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
-| standard             | String. Rules or configuration file with the rules.              | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml'                |
-| ignore               | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
-| error-severity       | Integer. Level of error to detect.                               | 1, 5                                                               |
-| warning-severity     | Integer. Level of warning to detect.                             | 5, 7, 9                                                            |
-| **phpmd**            |                                                                  |                                                                    |
-| executablePath       | String. Path to executable. Default 'phpmd'                      | phpmd, 'vendor/bin/phpmd', 'path/to/phpmd'                         |
-| paths                | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
-| rules                | String. Rules or configuration file with the rules.              | 'controversial,codesize', 'naming', 'myrules.xml'                  |
-| exclude              | Array. Paths or files to exclude.                                | ['./vendor'], ['./vendor', './app/MiFile.php']                     |
-| **phpcpd**           |                                                                  |                                                                    |
-| executablePath       | String. Path to executable. Default 'phpcpd'                     | phpcpd, 'vendor/bin/phpcpd', 'path/to/phpcpd'                      |
-| paths                | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
-| exclude              | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
-| **security-checker** |                                                                  |                                                                    |
-| executablePath       | String. Path to executable. Default 'local-php-security-checker' | local-php-security-checker, 'path/to/local-php-security-checker'   |
+| Option                | Description                                                      | Examples                                                           |
+| --------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **phpstan**           |                                                                  |                                                                    |
+| executablePath        | String. Path to executable. Default 'phpstan'                    | phpstan, 'vendor/bin/phpstan', 'path/to/phpstan'                   |
+| paths                 | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
+| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--no-progress', '--no-progress --ansi'                            |
+| config                | String. Path to configuration file                               | 'phpstan.neon', 'path/to/phpstan.neon'                             |
+| memory-limit          | String. Set the php memory limit while phpstan is running        | '1M', '2000M', '1G'                                                |
+| level                 | Integer. Default 0, max 8.                                       | 0, 1, 5, 8                                                         |
+| **parallel-lint**     |                                                                  |                                                                    |
+| executablePath        | String. Path to executable. Default 'parallel-lint'              | parallel-lint, 'vendor/bin/parallel-lint', 'path/to/parallel-lint' |
+| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
+| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--colors'                                                         |
+| exclude               | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
+| **phpcs**             |                                                                  |                                                                    |
+| executablePath        | String. Path to executable. Default 'phpcs'                      | phpcs, 'vendor/bin/phpcs', 'path/to/phpcs'                         |
+| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
+| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--report=summary', '--report=summary --parallel=2'                |
+| standard              | String. Rules or configuration file with the rules.              | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml'                |
+| ignore                | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
+| error-severity        | Integer. Level of error to detect.                               | 1, 5                                                               |
+| warning-severity      | Integer. Level of warning to detect.                             | 5, 7, 9                                                            |
+| **phpcbf**            |                                                                  |                                                                    |
+| executablePath        | String. Path to executable. Default 'phpcs'                      | phpcbf, 'vendor/bin/phpcbf', 'path/to/phpcbf'                      |
+| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
+| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--report=summary', '--report=summary --parallel=2'                |
+| usePhpcsConfiguration | Boolean. Grab the *phpcs* setting. Default `false`               | true, false                                                        |
+| standard              | String. Rules or configuration file with the rules.              | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml'                |
+| ignore                | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
+| error-severity        | Integer. Level of error to detect.                               | 1, 5                                                               |
+| warning-severity      | Integer. Level of warning to detect.                             | 5, 7, 9                                                            |
+| **phpmd**             |                                                                  |                                                                    |
+| executablePath        | String. Path to executable. Default 'phpmd'                      | phpmd, 'vendor/bin/phpmd', 'path/to/phpmd'                         |
+| paths                 | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
+| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--strict'                                                         |
+| rules                 | String. Rules or configuration file with the rules.              | 'controversial,codesize', 'naming', 'myrules.xml'                  |
+| exclude               | Array. Paths or files to exclude.                                | ['./vendor'], ['./vendor', './app/MiFile.php']                     |
+| **phpcpd**            |                                                                  |                                                                    |
+| executablePath        | String. Path to executable. Default 'phpcpd'                     | phpcpd, 'vendor/bin/phpcpd', 'path/to/phpcpd'                      |
+| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
+| exclude               | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
+| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--min-lines=5'                                                    |
+| **security-checker**  |                                                                  |                                                                    |
+| executablePath        | String. Path to executable. Default 'local-php-security-checker' | local-php-security-checker, 'path/to/local-php-security-checker'   |
+| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '-format json'                                                     |
 
 
 These are the options supported by GitHooks. Obviously, each tool has many other options. More precise configuration is possible with each tool configuration file.
