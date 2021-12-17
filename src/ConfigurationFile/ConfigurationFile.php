@@ -57,6 +57,7 @@ class ConfigurationFile
             $this->setToolsConfiguration($tool);
         }
 
+        $this->checksSettingForToolsThatNoAreInToolsKey();
         if ($this->hasErrors()) {
             throw ConfigurationFileException::forFile($this);
         }
@@ -108,7 +109,7 @@ class ConfigurationFile
                 $phpcsConfiguration = new ToolConfiguration(ToolAbstract::CODE_SNIFFER, $this->configurationFile[ToolAbstract::CODE_SNIFFER]);
                 $phpcbfConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
                 $configuration = array_merge($phpcsConfiguration->getToolConfiguration(), $phpcbfConfiguration->getToolConfiguration());
-                // dd($configuration);
+
                 $phpcbfConfiguration->setToolConfiguration($configuration);
                 $toolConfiguration = $phpcbfConfiguration;
             } else {
@@ -142,6 +143,26 @@ class ConfigurationFile
 
         $this->toolsWarnings[] = "The tool $tool is not supported by GitHooks.";
         return false;
+    }
+
+    protected function checksSettingForToolsThatNoAreInToolsKey(): bool
+    {
+        $toolSetted = $this->configurationFile[self::TOOLS];
+        OptionsConfiguration::OPTIONS_TAG;
+        $arrayDeKeysUsadas = array_merge($toolSetted, [OptionsConfiguration::OPTIONS_TAG, self::TOOLS]);
+
+        $control = array_fill_keys($arrayDeKeysUsadas, 1);
+        $faltan = array_diff_key($this->configurationFile, $control);
+        // dd($faltan);
+        foreach ($faltan as $tool => $setings) {
+            $toolConfiguration = new ToolConfiguration($tool, $setings);
+
+            if (!$toolConfiguration->isEmptyWarnings()) {
+                $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
+            }
+        }
+
+        return true;
     }
 
     protected function getOptionErrors(): array
