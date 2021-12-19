@@ -145,15 +145,18 @@ class ConfigurationFile
         return false;
     }
 
-    protected function checksSettingForToolsThatNoAreInToolsKey(): bool
+    protected function checksSettingForToolsThatNoAreInToolsKey(): void
     {
+        if (!isset($this->configurationFile[self::TOOLS])) {
+            return;
+        }
         $toolSetted = $this->configurationFile[self::TOOLS];
-        OptionsConfiguration::OPTIONS_TAG;
+
         $arrayDeKeysUsadas = array_merge($toolSetted, [OptionsConfiguration::OPTIONS_TAG, self::TOOLS]);
 
         $control = array_fill_keys($arrayDeKeysUsadas, 1);
         $faltan = array_diff_key($this->configurationFile, $control);
-        // dd($faltan);
+
         foreach ($faltan as $tool => $setings) {
             $toolConfiguration = new ToolConfiguration($tool, $setings);
 
@@ -161,8 +164,6 @@ class ConfigurationFile
                 $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
             }
         }
-
-        return true;
     }
 
     protected function getOptionErrors(): array
