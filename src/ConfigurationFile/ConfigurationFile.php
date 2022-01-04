@@ -7,7 +7,6 @@ namespace Wtyd\GitHooks\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolConfigurationDataIsNullException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ConfigurationFile

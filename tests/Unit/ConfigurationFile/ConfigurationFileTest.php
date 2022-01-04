@@ -251,6 +251,39 @@ class ConfigurationFileTest extends UnitTestCase
         $this->assertEquals("The tag 'Options' is empty", $this->configurationFile->getWarnings()[0]);
     }
 
+    public function OptionsDataProvider()
+    {
+        return [
+            'Options is an associtive array' => [
+                'Configuration File' => [
+                    'Options' => ['execution' => 'fast'],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+            ],
+            'Options non associative array' => [
+                'Configuration File' => [
+                    'Options' => [0 => ['execution' => 'fast']],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider OptionsDataProvider
+     */
+    function it_extract_Options_values($configurationFile)
+    {
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+
+        $this->assertEquals('fast', $this->configurationFile->getExecution());
+        $this->assertCount(0, $this->configurationFile->getWarnings());
+        $this->assertCount(0, $this->configurationFile->getErrors());
+    }
+
     function tagExecutionWithNoValidValuesDataProvider()
     {
         return [
