@@ -33,7 +33,7 @@ class ParallelLintTest extends TestCase
 
         $this->assertEquals($configuration, $parallelLint->getArguments());
 
-        $this->assertCount(count(ParallelLintFake::OPTIONS), $parallelLint->getArguments());
+        $this->assertCount(count(ParallelLintFake::ARGUMENTS), $parallelLint->getArguments());
     }
 
     /** @test */

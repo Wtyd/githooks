@@ -9,14 +9,16 @@ use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
 // TODO check for type and values for arguments.
-// TODO arguments or options?
 abstract class ToolAbstract
 {
     /**
-     * @const array Options for the tool. Must be override for each child.
+     * @var array Arguments for the tool. Must be override for each child.
      */
-    public const OPTIONS = [];
+    public const ARGUMENTS = [];
 
+    /**
+     * @var string Name of the tool. Must be override for each child.
+     */
     public const NAME = 'the name of the tool';
 
     public const TOOL_CONFIGURATION = 'toolConfiguration';
@@ -81,7 +83,7 @@ abstract class ToolAbstract
 
     /**
      * The arguments to run the tool.
-     * Is an associative array where the keys are the tool OPTIONS
+     * Is an associative array where the keys are the tool ARGUMENTS
      *
      * @var array
      */

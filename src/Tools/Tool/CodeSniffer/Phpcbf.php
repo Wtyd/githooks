@@ -15,7 +15,7 @@ class Phpcbf extends CodeSniffer
 
     public const USE_PHPCS_CONFIGURATION = 'usePhpcsConfiguration';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::PATHS,
         self::STANDARD,
         self::IGNORE,

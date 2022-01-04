@@ -36,7 +36,7 @@ class PhpcbfTest extends TestCase
 
         $this->assertEquals($configuration, $phpcbf->getArguments());
 
-        $this->assertCount(count(PhpcbfFake::OPTIONS), $phpcbf->getArguments());
+        $this->assertCount(count(PhpcbfFake::ARGUMENTS), $phpcbf->getArguments());
     }
 
     /** @test */

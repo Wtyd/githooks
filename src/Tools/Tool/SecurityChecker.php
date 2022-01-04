@@ -11,7 +11,7 @@ class SecurityChecker extends ToolAbstract
 {
     public const NAME = 'local-php-security-checker';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,
     ];
@@ -30,7 +30,7 @@ class SecurityChecker extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }

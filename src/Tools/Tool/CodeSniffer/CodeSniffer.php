@@ -34,7 +34,7 @@ abstract class CodeSniffer extends ToolAbstract
      */
     public const WARNING_SEVERITY = 'warning-severity';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::PATHS,
         self::STANDARD,
@@ -48,7 +48,7 @@ abstract class CodeSniffer extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }

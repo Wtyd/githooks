@@ -20,7 +20,7 @@ class Phpcpd extends ToolAbstract
      */
     public const PATHS = 'paths';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::EXCLUDE,
         self::OTHER_ARGS_OPTION,
@@ -46,7 +46,7 @@ class Phpcpd extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }

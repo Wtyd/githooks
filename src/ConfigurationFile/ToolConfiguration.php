@@ -9,7 +9,7 @@ use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 class ToolConfiguration
 {
     /**
-     * The tool arguments. The keys of the array must be the tool::OPTIONS
+     * The tool arguments. The keys of the array must be the tool::ARGUMENTS
      *
      * @var array
      */
@@ -32,7 +32,7 @@ class ToolConfiguration
     }
 
     /**
-     * Check that each key of $toolConfiguration exists in the tool OPTIONS array.
+     * Check that each key of $toolConfiguration exists in the tool ARGUMENTS array.
      * If not exists adds a warning and delete de key from the $toolConfiguration array.
      *
      * @return void
@@ -41,7 +41,7 @@ class ToolConfiguration
     {
         $warnings = [];
 
-        $validOptions = ToolAbstract::SUPPORTED_TOOLS[$this->tool]::OPTIONS;
+        $validOptions = ToolAbstract::SUPPORTED_TOOLS[$this->tool]::ARGUMENTS;
 
         $validOptions[] = ToolAbstract::EXECUTABLE_PATH_OPTION;
 

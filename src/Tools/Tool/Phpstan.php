@@ -30,7 +30,7 @@ class Phpstan extends ToolAbstract
      */
     public const MEMORY_LIMIT = 'memory-limit';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::PHPSTAN_CONFIGURATION_FILE,
         self::LEVEL,
@@ -66,7 +66,7 @@ class Phpstan extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }

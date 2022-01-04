@@ -31,7 +31,7 @@ class SecurityCheckerTest extends TestCase
 
         $this->assertEquals($configuration, $securityChecker->getArguments());
 
-        $this->assertCount(count(SecurityCheckerFake::OPTIONS), $securityChecker->getArguments());
+        $this->assertCount(count(SecurityCheckerFake::ARGUMENTS), $securityChecker->getArguments());
     }
 
     /** @test */
