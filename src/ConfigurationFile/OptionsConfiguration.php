@@ -68,7 +68,7 @@ class OptionsConfiguration
                 $this->setExecution($execution);
             } catch (WrongExecutionValueException $ex) {
                 $this->errors[] = $ex->getMessage();
-            } catch (\Throwable $throwable) {
+            } catch (\TypeError $throwable) {
                 $this->errors[] = WrongExecutionValueException::getExceptionMessage($execution);
             }
         }
@@ -98,6 +98,13 @@ class OptionsConfiguration
         return $warnings;
     }
 
+    /**
+     * Undocumented function
+     *
+     * @param string $execution
+     * @return void
+     * @throws WrongExecutionValueException
+     */
     public function setExecution(string $execution): void
     {
         if (is_string($execution) && in_array($execution, ExecutionMode::EXECUTION_KEY, true)) {

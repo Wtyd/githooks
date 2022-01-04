@@ -21,6 +21,15 @@ class ToolConfigurationFactory
         $this->configurationFile = $configurationFile;
     }
 
+    /**
+     * Builds a ToolConfiguration for the tool $toolName
+     *
+     * @param string $toolName The tool.
+     * @param mixed $toolData The tool data must be an array but it is verified in ToolConfiguration.
+     * @return ToolConfiguration
+     *
+     * @throws ToolConfigurationDataIsNullException
+     */
     public function create(string $toolName, $toolData): ToolConfiguration
     {
         if (!ToolAbstract::checkTool($toolName)) {

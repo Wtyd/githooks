@@ -47,6 +47,15 @@ class ConfigurationFile
      */
     protected $toolsWarnings = [];
 
+    /**
+     * Checks data from configuration file
+     *
+     * @param array $configurationFile
+     * @param string $tool The name of the tool or 'all'.
+     *
+     * @throws ToolIsNotSupportedException
+     * @throws ConfigurationFileException
+     */
     public function __construct(array $configurationFile, string $tool)
     {
         if (!$this->checkToolArgument($tool)) {

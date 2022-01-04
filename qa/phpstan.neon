@@ -10,7 +10,7 @@
         ignoreErrors: [
             '#Call to an undefined static method Illuminate\\Support\\Facades\\Storage::[a-zA-Z\\_]+\(\)#',
             '#Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\WrongExecutionValueException::[a-zA-Z0-9\\_]+\(\) has parameter \$executionValue with no typehint specified.#',
-            '#Method [a-zA-Z0-9\\_]+ToolConfigurationFactory::create\(\) has parameter \$toolData with no typehint specified.#'
+            # '#Method [a-zA-Z0-9\\_]+ToolConfigurationFactory::create\(\) has parameter \$toolData with no typehint specified.#'
             # '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
             # '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
         ]
