@@ -56,7 +56,7 @@ class ConfigurationFileBuilder
         $this->mainToolExecutablePaths  = $this->resolveToolsPath($toolsPath);
 
         $this->tools = [
-            ToolAbstract::CODE_SNIFFER,
+            ToolAbstract::PHPCS,
             ToolAbstract::PHPCBF,
             ToolAbstract::PARALLEL_LINT,
             ToolAbstract::MESS_DETECTOR,
@@ -66,7 +66,7 @@ class ConfigurationFileBuilder
         ];
 
         $this->configurationTools = [
-            ToolAbstract::CODE_SNIFFER => [
+            ToolAbstract::PHPCS => [
                 Phpcs::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcs',
                 Phpcs::PATHS => [$rootPath . '/src'],
                 Phpcs::STANDARD => 'PSR12',
@@ -262,7 +262,7 @@ class ConfigurationFileBuilder
 
     public function setPhpCSConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[ToolAbstract::CODE_SNIFFER] = $configuration;
+        $this->configurationTools[ToolAbstract::PHPCS] = $configuration;
 
         return $this;
     }

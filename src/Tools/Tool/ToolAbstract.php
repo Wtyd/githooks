@@ -8,17 +8,20 @@ use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
-// TODO check for mandatory arguments
 // TODO check for type and values for arguments.
 // TODO arguments or options?
 abstract class ToolAbstract
 {
+    /**
+     * @const array Options for the tool. Must be override for each child.
+     */
+    public const OPTIONS = [];
+
     public const NAME = 'the name of the tool';
 
     public const TOOL_CONFIGURATION = 'toolConfiguration';
 
-    //TODO renombrar a phpcs
-    public const CODE_SNIFFER = 'phpcs';
+    public const PHPCS = 'phpcs';
 
     public const PHPCBF = 'phpcbf';
 
@@ -33,7 +36,7 @@ abstract class ToolAbstract
     public const PHPSTAN = 'phpstan';
 
     public const SUPPORTED_TOOLS = [
-        self::CODE_SNIFFER => Phpcs::class,
+        self::PHPCS => Phpcs::class,
         self::PHPCBF => Phpcbf::class,
         self::SECURITY_CHECKER => SecurityChecker::class,
         self::PARALLEL_LINT => ParallelLint::class,
@@ -43,7 +46,7 @@ abstract class ToolAbstract
     ];
 
     public const EXCLUDE_ARGUMENT = [
-        self::CODE_SNIFFER => Phpcs::IGNORE,
+        self::PHPCS => Phpcs::IGNORE,
         self::PHPCBF => Phpcbf::IGNORE,
         self::SECURITY_CHECKER => '',
         self::PARALLEL_LINT => ParallelLint::EXCLUDE,

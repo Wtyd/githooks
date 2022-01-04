@@ -29,7 +29,7 @@ class ToolConfigurationFactory
         try {
             $toolConfiguration = null;
             if (ToolAbstract::PHPCBF === $toolName && Phpcbf::usePhpcsConfiguration($toolData)) {
-                $phpcsConfiguration = new ToolConfiguration(ToolAbstract::CODE_SNIFFER, $this->configurationFile[ToolAbstract::CODE_SNIFFER]);
+                $phpcsConfiguration = new ToolConfiguration(ToolAbstract::PHPCS, $this->configurationFile[ToolAbstract::PHPCS]);
                 $phpcbfConfiguration = new ToolConfiguration($toolName, $toolData);
 
                 $toolData = array_merge($phpcsConfiguration->getToolConfiguration(), $phpcbfConfiguration->getToolConfiguration());
