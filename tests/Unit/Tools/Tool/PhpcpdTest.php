@@ -33,7 +33,7 @@ class PhpcpdTest extends TestCase
 
         $this->assertEquals($configuration, $phpcpd->getArguments());
 
-        $this->assertCount(count(PhpcpdFake::OPTIONS), $phpcpd->getArguments());
+        $this->assertCount(count(PhpcpdFake::ARGUMENTS), $phpcpd->getArguments());
     }
 
     /** @test */

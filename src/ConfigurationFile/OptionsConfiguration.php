@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile;
 
+use Illuminate\Support\Arr;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
@@ -41,15 +42,33 @@ class OptionsConfiguration
             return;
         }
 
-        $this->warnings = $this->checkValidKeys($configurationFile[self::OPTIONS_TAG]);
+        // Assoc Array: Options => [execution => full]
+        if (Arr::isAssoc($configurationFile[self::OPTIONS_TAG])) {
+            $this->extractOptions($configurationFile[self::OPTIONS_TAG]);
+        } else { // No Assoc Array: Options => [0 =>[execution => full]]
+            foreach ($configurationFile[self::OPTIONS_TAG] as $option) {
+                $this->extractOptions($option);
+            }
+        }
+    }
 
-        if (array_key_exists(self::EXECUTION_TAG, $configurationFile[self::OPTIONS_TAG])) {
-            $execution = $configurationFile[self::OPTIONS_TAG][self::EXECUTION_TAG];
+    /**
+     * Check for valid options and set them.
+     *
+     * @param array $options
+     * @return void
+     */
+    protected function extractOptions(array $options): void
+    {
+        $this->warnings = $this->findWarnings($options);
+
+        if (array_key_exists(self::EXECUTION_TAG, $options)) {
+            $execution = $options[self::EXECUTION_TAG];
             try {
                 $this->setExecution($execution);
             } catch (WrongExecutionValueException $ex) {
                 $this->errors[] = $ex->getMessage();
-            } catch (\Throwable $throwable) {
+            } catch (\TypeError $throwable) {
                 $this->errors[] = WrongExecutionValueException::getExceptionMessage($execution);
             }
         }
@@ -58,14 +77,16 @@ class OptionsConfiguration
     /**
      * Verify unsupported keys.
      *
-     * @param array $options Array of OPTIONS key.
+     * @param array $options Array of OPTIONS key. Now, only 'execution' is valid.
      *
-     * @return array This type of errors are warnings.
+     * @return array Found warnings.
      */
-    protected function checkValidKeys(array $options): array
+    protected function findWarnings(array $options): array
     {
         $warnings = [];
+
         $keys = array_keys($options);
+
         $invalidKeys = array_diff($keys, self::TAGS_OPTIONS_TAG);
 
         if (!empty($invalidKeys)) {
@@ -77,6 +98,13 @@ class OptionsConfiguration
         return $warnings;
     }
 
+    /**
+     * Undocumented function
+     *
+     * @param string $execution
+     * @return void
+     * @throws WrongExecutionValueException
+     */
     public function setExecution(string $execution): void
     {
         if (is_string($execution) && in_array($execution, ExecutionMode::EXECUTION_KEY, true)) {

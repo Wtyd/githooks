@@ -5,33 +5,22 @@ namespace Wtyd\GitHooks\Tools\Tool;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * Ejecuta la libreria jakub-onderka/php-parallel-lint
+ * Library php-parallel-lint/php-parallel-lint
  */
 class ParallelLint extends ToolAbstract
 {
-
     public const NAME = self::PARALLEL_LINT;
-    /**
-     * @var string EXCLUDES Tag de configuracion de directorios excluidos en el fichero de configuracion .yml. Su valor es un array de strings.
-     */
+
     public const EXCLUDE = 'exclude';
 
-    /**
-     * @var string PATHS Tag que indica la ruta sobre la que se ejecutará parallel-lint en el fichero de configuracion .yml
-     */
     public const PATHS = 'paths';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::EXCLUDE,
         self::OTHER_ARGS_OPTION,
         self::PATHS
     ];
-
-    /**
-     * @var array
-     */
-    protected $args;
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
@@ -47,7 +36,7 @@ class ParallelLint extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }

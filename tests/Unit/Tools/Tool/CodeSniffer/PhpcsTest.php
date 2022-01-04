@@ -36,7 +36,7 @@ class PhpcsTest extends TestCase
 
         $this->assertEquals($configuration, $phpcs->getArguments());
 
-        $this->assertCount(count(PhpcsFake::OPTIONS), $phpcs->getArguments());
+        $this->assertCount(count(PhpcsFake::ARGUMENTS), $phpcs->getArguments());
     }
 
     /** @test */

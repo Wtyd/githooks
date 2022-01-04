@@ -15,7 +15,7 @@ class Phpcbf extends CodeSniffer
 
     public const USE_PHPCS_CONFIGURATION = 'usePhpcsConfiguration';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::PATHS,
         self::STANDARD,
         self::IGNORE,
@@ -33,7 +33,7 @@ class Phpcbf extends CodeSniffer
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
             $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
         }
-        $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace(self::CODE_SNIFFER, self::PHPCBF, $this->args[self::EXECUTABLE_PATH_OPTION]);
+        $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace(self::PHPCS, self::PHPCBF, $this->args[self::EXECUTABLE_PATH_OPTION]);
     }
 
     public static function usePhpcsConfiguration(array $phpcbfConfiguration): bool

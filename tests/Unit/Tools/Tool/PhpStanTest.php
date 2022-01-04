@@ -35,7 +35,7 @@ class PhpStanTest extends TestCase
 
         $this->assertEquals($configuration, $phpstan->getArguments());
 
-        $this->assertCount(count(PhpstanFake::OPTIONS), $phpstan->getArguments());
+        $this->assertCount(count(PhpstanFake::ARGUMENTS), $phpstan->getArguments());
     }
 
     /** @test */

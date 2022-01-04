@@ -5,16 +5,17 @@ namespace Wtyd\GitHooks\Tools\Tool;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * https://github.com/fabpot/local-php-security-checker
+ * Library fabpot/local-php-security-checker
  */
 class SecurityChecker extends ToolAbstract
 {
     public const NAME = 'local-php-security-checker';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,
     ];
+
     /**
      * @param ToolConfiguration $toolConfiguration
      */
@@ -30,7 +31,7 @@ class SecurityChecker extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }

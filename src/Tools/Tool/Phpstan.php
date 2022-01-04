@@ -10,27 +10,16 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 class Phpstan extends ToolAbstract
 {
     public const NAME = self::PHPSTAN;
-    /**
-     * @var string PHPSTAN_CONFIGURATION_FILE Tag que indica la ruta del fichero de configuración de phpstan-phpqa.neon en el fichero de configuracion .yml
-     */
+
     public const PHPSTAN_CONFIGURATION_FILE = 'config';
 
-    /**
-     * @var string LEVEL Tag que indica el nivel de analisis de phpstan en el fichero de configuracion .yml. Su valor es un entero del 1 al 9.
-     */
     public const LEVEL = 'level';
 
-    /**
-     * @var string PATHS Tag que indica sobre qué carpetas se debe ejecutar el análisis de phpstan en el fichero de configuracion .yml
-     */
     public const PATHS = 'paths';
 
-    /**
-     * @var string MEMORY_LIMIT Tag que indica de cuánta memoria puede disponer la herramienta en el fichero de configuracion .yml
-     */
     public const MEMORY_LIMIT = 'memory-limit';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::PHPSTAN_CONFIGURATION_FILE,
         self::LEVEL,
@@ -38,11 +27,6 @@ class Phpstan extends ToolAbstract
         self::OTHER_ARGS_OPTION,
         self::PATHS,
     ];
-
-    /**
-     * @var array
-     */
-    protected $args;
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
@@ -66,7 +50,7 @@ class Phpstan extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }

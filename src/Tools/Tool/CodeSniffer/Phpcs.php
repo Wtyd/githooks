@@ -9,12 +9,7 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpcs extends CodeSniffer
 {
-    public const NAME = self::CODE_SNIFFER;
-
-    /**
-     * @var array
-     */
-    protected $args;
+    public const NAME = self::PHPCS;
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {

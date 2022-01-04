@@ -80,6 +80,7 @@ class ConfigurationFileTest extends UnitTestCase
             'phpcpd' => ['phpcpd'],
             'parallel-lint' => ['parallel-lint'],
             'phpstan' => ['phpstan'],
+            'security-checker' => ['security-checker'],
         ];
     }
 
@@ -96,6 +97,27 @@ class ConfigurationFileTest extends UnitTestCase
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
             $this->assertCount(1, $exception->getConfigurationFile()->getErrors());
             $this->assertEquals("The tag '$tool' is missing.", $exception->getConfigurationFile()->getErrors()[0]);
+        }
+    }
+
+    /**
+     * @test
+     * @dataProvider toolsThatNeedConfigurationDataProvider
+     *
+     * In the configuration file, when a tag or label not contains any value is parsed with null.
+     */
+    function it_raises_exception_when_the_tool_is_supported_but_tool_configuration_is_empty($tool)
+    {
+        try {
+            $this->configurationFile = new ConfigurationFile(
+                $this->configurationFileBuilder->setConfigurationTools([$tool =>  null])->buildArray(),
+                $tool
+            );
+            $this->fail('ConfigurationFileException was not thrown');
+        } catch (ConfigurationFileException $exception) {
+            $this->assertTrue($exception->getConfigurationFile()->hasErrors());
+            $this->assertCount(1, $exception->getConfigurationFile()->getErrors());
+            $this->assertEquals("The tag '$tool' is empty.", $exception->getConfigurationFile()->getErrors()[0]);
         }
     }
 
@@ -193,7 +215,7 @@ class ConfigurationFileTest extends UnitTestCase
         } catch (ConfigurationFileException $exception) {
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
             $this->assertCount(1, $exception->getConfigurationFile()->getErrors());
-            $this->assertEquals("There must be at least one tool configured.", $exception->getConfigurationFile()->getErrors()[0]);
+            $this->assertEquals('There must be at least one tool configured.', $exception->getConfigurationFile()->getErrors()[0]);
         }
     }
 
@@ -227,6 +249,39 @@ class ConfigurationFileTest extends UnitTestCase
 
         $this->assertCount(1, $this->configurationFile->getWarnings());
         $this->assertEquals("The tag 'Options' is empty", $this->configurationFile->getWarnings()[0]);
+    }
+
+    public function OptionsDataProvider()
+    {
+        return [
+            'Options is an associtive array' => [
+                'Configuration File' => [
+                    'Options' => ['execution' => 'fast'],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+            ],
+            'Options non associative array' => [
+                'Configuration File' => [
+                    'Options' => [0 => ['execution' => 'fast']],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider OptionsDataProvider
+     */
+    function it_extract_Options_values($configurationFile)
+    {
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+
+        $this->assertEquals('fast', $this->configurationFile->getExecution());
+        $this->assertCount(0, $this->configurationFile->getWarnings());
+        $this->assertCount(0, $this->configurationFile->getErrors());
     }
 
     function tagExecutionWithNoValidValuesDataProvider()
@@ -465,7 +520,6 @@ class ConfigurationFileTest extends UnitTestCase
                     'The tool no-supported-tool2 is not supported by GitHooks.',
                 ],
             ],
-
         ];
     }
 
@@ -672,7 +726,7 @@ class ConfigurationFileTest extends UnitTestCase
 
         $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
         $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
-        // dd($phpcsConfigurationFile->getToolConfiguration()[$argument], $phpcbfConfigurationFile->getToolConfiguration()[$argument]);
+
         $this->assertEquals(
             $phpcsConfigurationFile->getToolConfiguration()[$argument],
             $phpcbfConfigurationFile->getToolConfiguration()[$argument]
@@ -681,5 +735,177 @@ class ConfigurationFileTest extends UnitTestCase
             $originalConfigurationFile['phpcbf'][$argument],
             $phpcbfConfigurationFile->getToolConfiguration()[$argument]
         );
+    }
+
+    public function toolsThatArentInToolsKeyDataProvider()
+    {
+        return [
+            'Tier 1' => [
+                'Configuration File' => [
+                    'Tools' => ['phpcbf', 'phpcs', 'phpmd'],
+                    'phpcs' => [
+                        'paths' => ['app'],
+                        'standard' => 'PSR12',
+                        'fake' => 'warning',
+                    ],
+                    'phpcbf' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'fake' => 'warning',
+                    ],
+                    'phpmd' => [
+                        'paths' => ['src', 'tests'],
+                        'rules' => 'controversial',
+                        'fake' => 'warning',
+                    ],
+                    'parallel-lint' => [
+                        'paths' => ['src', 'tests'],
+                        'fake' => 'warning',
+                    ],
+                    'phpcpd' => [
+                        'paths' => ['src', 'tests'],
+                        'fake' => 'warning',
+                    ],
+                    'security-checker' => [
+                        'executablePath' => 'local-php-security-checker',
+                        'fake' => 'warning',
+                    ],
+                    'phpstan' => [
+                        'paths' => ['src', 'tests'],
+                        'config' => 'phpstan.neon',
+                        'fake' => 'warning',
+                    ],
+                ],
+            ],
+            'Tier 2' => [
+                'Configuration File' => [
+                    'Tools' => ['parallel-lint', 'phpcpd', 'security-checker', 'phpstan'],
+                    'phpcs' => [
+                        'paths' => ['app'],
+                        'standard' => 'PSR12',
+                        'fake' => 'warning',
+                    ],
+                    'phpcbf' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'fake' => 'warning',
+                    ],
+                    'phpmd' => [
+                        'paths' => ['src', 'tests'],
+                        'rules' => 'controversial',
+                        'fake' => 'warning',
+                    ],
+                    'parallel-lint' => [
+                        'paths' => ['src', 'tests'],
+                        'fake' => 'warning',
+                    ],
+                    'phpcpd' => [
+                        'paths' => ['src', 'tests'],
+                        'fake' => 'warning',
+                    ],
+                    'security-checker' => [
+                        'executablePath' => 'local-php-security-checker',
+                        'fake' => 'warning',
+                    ],
+                    'phpstan' => [
+                        'paths' => ['src', 'tests'],
+                        'config' => 'phpstan.neon',
+                        'fake' => 'warning',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider toolsThatArentInToolsKeyDataProvider
+     */
+    function it_checks_all_tools_even_if_they_are_not_in_the_Tools_key($configurationFile)
+    {
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+
+        $this->assertCount(7, $this->configurationFile->getWarnings());
+    }
+
+
+    function overridePhpcbfConfigurationToolsKeyDataProvider()
+    {
+        return [
+            'Phpcbf is in Tools key and Phpcs not' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['phpcbf'],
+                    'phpcbf' => ['usePhpcsConfiguration' => true],
+                    'phpcs' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'ignore' => 'vendor',
+                        'error-severity' => 2,
+                        'warning-severity' => 5
+                    ]
+                ],
+            ],
+            'Phpcs is in Tools key and Phpcbf not' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['phpcs'],
+                    'phpcbf' => ['usePhpcsConfiguration' => true],
+                    'phpcs' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'ignore' => 'vendor',
+                        'error-severity' => 2,
+                        'warning-severity' => 5
+                    ]
+                ],
+            ],
+            'Any tool is in Tools key' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['phpmd'],
+                    'phpcbf' => ['usePhpcsConfiguration' => true],
+                    'phpcs' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'ignore' => 'vendor',
+                        'error-severity' => 2,
+                        'warning-severity' => 5
+                    ],
+                    'phpmd' => [
+                        'paths' => ['src', 'tests'],
+                        'rules' => 'controversial',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider overridePhpcbfConfigurationToolsKeyDataProvider
+     */
+    function it_overrides_Phpcbf_configuration_when_usePhpcsConfiguration_key_is_true_regardless_of_whether_if_Phpcbf_or_Phpcs_are_or_not_in_Tools_key(
+        $configurationFile
+    ) {
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf');
+
+        $configurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
+
+        $expectedPhpcbfConfiguration =  [
+            'paths' => ['src', 'tests'],
+            'standard' => 'PERL',
+            'ignore' => 'vendor',
+            'error-severity' => 2,
+            'warning-severity' => 5,
+            'usePhpcsConfiguration' => true
+        ];
+        $this->assertEquals($expectedPhpcbfConfiguration, $configurationFile->getToolConfiguration());
     }
 }

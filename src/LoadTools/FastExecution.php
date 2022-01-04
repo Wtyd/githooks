@@ -23,7 +23,7 @@ class FastExecution implements ExecutionMode
      * 2. Copy Paste Detector needs all files to be able to compare
      */
     public const ACCELERABLE_TOOLS = [
-        ToolAbstract::CODE_SNIFFER,
+        ToolAbstract::PHPCS,
         ToolAbstract::PHPCBF,
         ToolAbstract::PARALLEL_LINT,
         ToolAbstract::MESS_DETECTOR,

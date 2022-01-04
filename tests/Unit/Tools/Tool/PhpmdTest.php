@@ -34,7 +34,7 @@ class PhpmdTest extends TestCase
 
         $this->assertEquals($configuration, $phpmd->getArguments());
 
-        $this->assertCount(count(PhpmdFake::OPTIONS), $phpmd->getArguments());
+        $this->assertCount(count(PhpmdFake::ARGUMENTS), $phpmd->getArguments());
     }
 
     /** @test */

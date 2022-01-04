@@ -5,32 +5,22 @@ namespace Wtyd\GitHooks\Tools\Tool;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * Library la libreria sebastian/phpcpd
+ * Library sebastian/phpcpd
  */
 class Phpcpd extends ToolAbstract
 {
     public const NAME = self::COPYPASTE_DETECTOR;
-    /**
-     * @var string EXCLUDE Tag que indica los ficheros excluidos para phpcs en el fichero de configuracion .yml. Su valor es un array de strings.
-     */
+
     public const EXCLUDE = 'exclude';
 
-    /**
-     * @var string PATH Tag que indica los ficheros sobre los que se ejecutará phpcpd en el fichero de configuracion .yml
-     */
     public const PATHS = 'paths';
 
-    public const OPTIONS = [
+    public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::EXCLUDE,
         self::OTHER_ARGS_OPTION,
         self::PATHS
     ];
-
-    /**
-     * @var array
-     */
-    protected $args;
 
     //TODO add --names-exclude option. Is like --exclude but for files. Check 6.* interfaces because bring changes.
     public function __construct(ToolConfiguration $toolConfiguration)
@@ -46,7 +36,7 @@ class Phpcpd extends ToolAbstract
     protected function prepareCommand(): string
     {
         $command = '';
-        foreach (self::OPTIONS as $option) {
+        foreach (self::ARGUMENTS as $option) {
             if (empty($this->args[$option])) {
                 continue;
             }
