@@ -80,6 +80,7 @@ class ConfigurationFileTest extends UnitTestCase
             'phpcpd' => ['phpcpd'],
             'parallel-lint' => ['parallel-lint'],
             'phpstan' => ['phpstan'],
+            'security-checker' => ['security-checker'],
         ];
     }
 
@@ -96,6 +97,27 @@ class ConfigurationFileTest extends UnitTestCase
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
             $this->assertCount(1, $exception->getConfigurationFile()->getErrors());
             $this->assertEquals("The tag '$tool' is missing.", $exception->getConfigurationFile()->getErrors()[0]);
+        }
+    }
+
+    /**
+     * @test
+     * @dataProvider toolsThatNeedConfigurationDataProvider
+     *
+     * In the configuration file, when a tag or label not contains any value is parsed with null.
+     */
+    function it_raises_exception_when_the_tool_is_supported_but_tool_configuration_is_empty($tool)
+    {
+        try {
+            $this->configurationFile = new ConfigurationFile(
+                $this->configurationFileBuilder->setConfigurationTools([$tool =>  null])->buildArray(),
+                $tool
+            );
+            $this->fail('ConfigurationFileException was not thrown');
+        } catch (ConfigurationFileException $exception) {
+            $this->assertTrue($exception->getConfigurationFile()->hasErrors());
+            $this->assertCount(1, $exception->getConfigurationFile()->getErrors());
+            $this->assertEquals("The tag '$tool' is empty.", $exception->getConfigurationFile()->getErrors()[0]);
         }
     }
 
@@ -193,7 +215,7 @@ class ConfigurationFileTest extends UnitTestCase
         } catch (ConfigurationFileException $exception) {
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
             $this->assertCount(1, $exception->getConfigurationFile()->getErrors());
-            $this->assertEquals("There must be at least one tool configured.", $exception->getConfigurationFile()->getErrors()[0]);
+            $this->assertEquals('There must be at least one tool configured.', $exception->getConfigurationFile()->getErrors()[0]);
         }
     }
 
@@ -465,7 +487,6 @@ class ConfigurationFileTest extends UnitTestCase
                     'The tool no-supported-tool2 is not supported by GitHooks.',
                 ],
             ],
-
         ];
     }
 

@@ -59,7 +59,7 @@ class ToolConfiguration
         return $this->toolConfiguration;
     }
 
-    public function setToolConfiguration(array $configuration): void
+    protected function setToolConfiguration(array $configuration): void
     {
         $this->toolConfiguration = $configuration;
         $this->warnings = [];

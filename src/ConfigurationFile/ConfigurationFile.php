@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\ConfigurationFile;
 
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ToolConfigurationDataIsNullException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
@@ -33,6 +34,11 @@ class ConfigurationFile
     protected $toolsConfiguration = [];
 
     /**
+     * @var ToolConfigurationFactory
+     */
+    protected $toolConfigurationFactory;
+
+    /**
      * @var array
      */
     protected $toolsErrors = [];
@@ -50,19 +56,68 @@ class ConfigurationFile
 
         $this->configurationFile = $configurationFile;
 
+        $this->toolConfigurationFactory = new ToolConfigurationFactory($this->configurationFile);
+
         $this->options = new OptionsConfiguration($this->configurationFile);
 
+        $allToolsConfiguration = $this->extractConfigurationFromTools();
+
+        $allTools = $this->createToolsConfiguration($allToolsConfiguration);
 
         if ($this->checkToolTag()) {
-            $this->setToolsConfiguration($tool);
+            $this->addTools($tool, $allTools);
         }
 
-        $this->checksSettingForToolsThatNoAreInToolsKey();
         if ($this->hasErrors()) {
             throw ConfigurationFileException::forFile($this);
         }
     }
 
+    protected function checkToolArgument(string $tool): bool
+    {
+        if ($tool === self::ALL_TOOLS) {
+            return true;
+        }
+
+        return $this->isSupportedTool($tool);
+    }
+
+    /**
+     * @return array Only tools configuration from configuration file
+     */
+    protected function extractConfigurationFromTools(): array
+    {
+        $allToolsConfiguration = $this->configurationFile;
+        unset($allToolsConfiguration[OptionsConfiguration::OPTIONS_TAG], $allToolsConfiguration[self::TOOLS]);
+        return $allToolsConfiguration;
+    }
+
+    protected function createToolsConfiguration(array $allToolsInFile): array
+    {
+        $tools = [];
+        foreach ($allToolsInFile as $toolName => $toolData) {
+            try {
+                $toolConfiguration  = $this->toolConfigurationFactory->create($toolName, $toolData);
+
+                $tools[$toolName] =  $toolConfiguration;
+
+                if (!$toolConfiguration->isEmptyWarnings()) {
+                    $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
+                }
+            } catch (ToolIsNotSupportedException $ex) {
+                $this->toolsWarnings[] = "The tool $toolName is not supported by GitHooks.";
+            } catch (ToolConfigurationDataIsNullException $ex) {
+                $this->toolsErrors[] = "The tag '$toolName' is empty.";
+            }
+        }
+        return $tools;
+    }
+
+    /**
+     * 'Tools' tag must exist and not be empty
+     *
+     * @return boolean
+     */
     protected function checkToolTag(): bool
     {
         if (!array_key_exists(self::TOOLS, $this->configurationFile)) {
@@ -78,66 +133,48 @@ class ConfigurationFile
         return true;
     }
 
-    protected function setToolsConfiguration(string $tool): void
+    /**
+     * Only add the tools to run:
+     * 1. When $toolName = 'all'-> all tools from 'Tools' tag
+     * 2. When $toolName is a tool, this tool.
+     *
+     * @param string $toolName Tools to run.
+     * @param array $allTools Array of ToolConfiguration with all tools of configuration file.
+     * @return void
+     */
+    protected function addTools(string $toolName, array $allTools): void
     {
-        if ($tool === self::ALL_TOOLS) {
+        if (self::ALL_TOOLS === $toolName) {
             $atLeastOneValidTool = false;
-
             foreach ($this->configurationFile[self::TOOLS] as $tool) {
-                if (!$this->checkSupportedTool($tool)) {
-                    continue;
-                }
-                if (!$atLeastOneValidTool) {
-                    $atLeastOneValidTool = $this->addTool($tool);
-                } else {
-                    $this->addTool($tool);
+                if ($this->isSupportedTool($tool) && array_key_exists($tool, $allTools)) {
+                    $this->toolsConfiguration[$tool] = $allTools[$tool];
+                    $atLeastOneValidTool = true;
                 }
             }
             if (!$atLeastOneValidTool) {
                 $this->toolsErrors[] = 'There must be at least one tool configured.';
             }
-        } else {
-            $this->addTool($tool);
+            return;
+        }
+
+        if (!$this->isToolTagMissing($toolName) && array_key_exists($toolName, $allTools)) {
+            $this->toolsConfiguration[$toolName] = $allTools[$toolName];
         }
     }
 
-    protected function addTool(string $tool): bool
+    protected function isToolTagMissing(string $tool): bool
     {
-        if ($this->toolShouldBeAdded($tool)) {
-            $toolConfiguration = null;
-            if (ToolAbstract::PHPCBF === $tool && Phpcbf::usePhpcsConfiguration($this->configurationFile[$tool])) {
-                $phpcsConfiguration = new ToolConfiguration(ToolAbstract::CODE_SNIFFER, $this->configurationFile[ToolAbstract::CODE_SNIFFER]);
-                $phpcbfConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
-                $configuration = array_merge($phpcsConfiguration->getToolConfiguration(), $phpcbfConfiguration->getToolConfiguration());
-
-                $phpcbfConfiguration->setToolConfiguration($configuration);
-                $toolConfiguration = $phpcbfConfiguration;
-            } else {
-                $toolConfiguration = new ToolConfiguration($tool, $this->configurationFile[$tool]);
-            }
-
-            $this->toolsConfiguration[$tool] = $toolConfiguration;
-
-            if (!$toolConfiguration->isEmptyWarnings()) {
-                $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
-            }
+        if (!array_key_exists($tool, $this->configurationFile)) {
+            $this->toolsErrors[] = "The tag '$tool' is missing.";
             return true;
         }
         return false;
     }
 
-    protected function toolShouldBeAdded(string $tool): bool
+    protected function isSupportedTool(string $tool): bool
     {
-        if (!array_key_exists($tool, $this->configurationFile)) {
-            $this->toolsErrors[] = "The tag '$tool' is missing.";
-            return false;
-        }
-        return true;
-    }
-
-    protected function checkSupportedTool(string $tool): bool
-    {
-        if (array_key_exists($tool, ToolAbstract::SUPPORTED_TOOLS)) {
+        if (ToolAbstract::checkTool($tool)) {
             return true;
         }
 
@@ -145,26 +182,6 @@ class ConfigurationFile
         return false;
     }
 
-    protected function checksSettingForToolsThatNoAreInToolsKey(): void
-    {
-        if (!isset($this->configurationFile[self::TOOLS])) {
-            return;
-        }
-        $toolSetted = $this->configurationFile[self::TOOLS];
-
-        $arrayDeKeysUsadas = array_merge($toolSetted, [OptionsConfiguration::OPTIONS_TAG, self::TOOLS]);
-
-        $control = array_fill_keys($arrayDeKeysUsadas, 1);
-        $faltan = array_diff_key($this->configurationFile, $control);
-
-        foreach ($faltan as $tool => $setings) {
-            $toolConfiguration = new ToolConfiguration($tool, $setings);
-
-            if (!$toolConfiguration->isEmptyWarnings()) {
-                $this->toolsWarnings = array_merge($this->toolsWarnings, $toolConfiguration->getWarnings());
-            }
-        }
-    }
 
     protected function getOptionErrors(): array
     {
@@ -206,15 +223,6 @@ class ConfigurationFile
     public function setExecution(string $execution): void
     {
         $this->options->setExecution($execution);
-    }
-
-    protected function checkToolArgument(string $tool): bool
-    {
-        if ($tool === self::ALL_TOOLS) {
-            return true;
-        }
-
-        return $this->checkSupportedTool($tool);
     }
 
     public function getToolsConfiguration(): array
