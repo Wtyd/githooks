@@ -5,7 +5,7 @@ namespace Wtyd\GitHooks\Tools\Tool;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * https://github.com/fabpot/local-php-security-checker
+ * Library fabpot/local-php-security-checker
  */
 class SecurityChecker extends ToolAbstract
 {
@@ -15,6 +15,7 @@ class SecurityChecker extends ToolAbstract
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,
     ];
+
     /**
      * @param ToolConfiguration $toolConfiguration
      */

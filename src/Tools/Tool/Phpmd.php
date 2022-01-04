@@ -10,19 +10,11 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 class Phpmd extends ToolAbstract
 {
     public const NAME = self::MESS_DETECTOR;
-    /**
-     * @var string RULES Tag que indica la ruta del fichero de reglas que phpmd validará en el fichero de configuracion .yml
-     */
+
     public const RULES = 'rules';
 
-    /**
-     * @var string EXCLUDE Tag que indica los directorios que phpmd excluirá del análisis en el fichero de configuracion .yml. Su valor es un array de strings.
-     */
     public const EXCLUDE = 'exclude';
 
-    /**
-     * @var string PATH Tag que indica la ruta sobre la que se ejecutará phpmd en el fichero de configuracion .yml
-     */
     public const PATHS = 'paths';
 
     public const ARGUMENTS = [
@@ -32,11 +24,6 @@ class Phpmd extends ToolAbstract
         self::EXCLUDE,
         self::OTHER_ARGS_OPTION,
     ];
-
-    /**
-     * @var array
-     */
-    protected $args;
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {

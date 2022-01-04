@@ -5,11 +5,10 @@ namespace Wtyd\GitHooks\Tools\Tool;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * php-parallel-lint/php-parallel-lint
+ * Library php-parallel-lint/php-parallel-lint
  */
 class ParallelLint extends ToolAbstract
 {
-
     public const NAME = self::PARALLEL_LINT;
 
     public const EXCLUDE = 'exclude';
@@ -22,11 +21,6 @@ class ParallelLint extends ToolAbstract
         self::OTHER_ARGS_OPTION,
         self::PATHS
     ];
-
-    /**
-     * @var array
-     */
-    protected $args;
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
