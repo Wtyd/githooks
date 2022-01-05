@@ -60,7 +60,7 @@ class Phpstan extends ToolAbstract
                     $command .= $this->args[self::EXECUTABLE_PATH_OPTION] . ' analyse';
                     break;
                 case self::PATHS:
-                    $command .= ' ' . implode(',', $this->args[$option]);
+                    $command .= ' ' . implode(' ', $this->args[$option]);
                     break;
                 case self::PHPSTAN_CONFIGURATION_FILE:
                     $command .= ' -c ' . $this->args[self::PHPSTAN_CONFIGURATION_FILE];

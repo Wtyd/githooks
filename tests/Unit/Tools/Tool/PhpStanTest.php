@@ -78,4 +78,22 @@ class PhpStanTest extends TestCase
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $phpstan->getArguments());
     }
+
+    /**
+     * @test
+     * Phpstan doesn't have exclude argument. The excludes must be setted in phpstan config file
+     */
+    function it_sets_phpstan_to_run_against_several_paths()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/phpstan',
+            'paths' => ['src', 'tests'],
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+
+        $phpstan = new PhpstanFake($toolConfiguration);
+
+        $this->assertStringEndsWith('src tests', $phpstan->prepareCommand());
+    }
 }

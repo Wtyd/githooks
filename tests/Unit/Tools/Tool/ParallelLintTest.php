@@ -72,4 +72,22 @@ class ParallelLintTest extends TestCase
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $parallelLint->getArguments());
     }
+
+    /** @test */
+    function it_sets_parallelLint_to_run_against_and_ignore_several_paths()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/parallel-lint',
+            'paths' => ['src', 'tests'],
+            'exclude' => ['vendor', 'app'],
+            'otherArguments' => '--colors',
+        ];
+
+        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
+
+        $parallelLint = new ParallelLintFake($toolConfiguration);
+
+        $this->assertStringEndsWith('src tests', $parallelLint->prepareCommand());
+        $this->assertStringContainsString('--exclude vendor --exclude app', $parallelLint->prepareCommand());
+    }
 }

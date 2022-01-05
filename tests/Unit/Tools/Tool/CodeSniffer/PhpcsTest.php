@@ -125,4 +125,22 @@ class PhpcsTest extends TestCase
         unset($configuration['executablePath']);
         $this->assertEquals($configuration, $phpcs->getArguments());
     }
+
+    /** @test */
+    function it_sets_phpcs_to_run_against_and_ignore_several_paths()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/phpcs',
+            'paths' => ['src', 'tests'],
+            'standard' => 'PSR12',
+            'ignore' => ['vendor', 'app'],
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+
+        $phpcs = new PhpcsFake($toolConfiguration);
+
+        $this->assertStringContainsString('src tests', $phpcs->prepareCommand());
+        $this->assertStringContainsString('--ignore=vendor,app', $phpcs->prepareCommand());
+    }
 }

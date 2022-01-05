@@ -75,4 +75,22 @@ class PhpmdTest extends TestCase
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $phpmd->getArguments());
     }
+
+    /** @test */
+    function it_sets_phpmd_to_run_against_and_ignore_several_paths()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/phpmd',
+            'paths' => ['src', 'tests'],
+            'rules' => 'unusedcode',
+            'exclude' => ['vendor', 'app'],
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+
+        $phpmd = new PhpmdFake($toolConfiguration);
+
+        $this->assertStringContainsString('src,tests', $phpmd->prepareCommand());
+        $this->assertStringContainsString('--exclude "vendor,app"', $phpmd->prepareCommand());
+    }
 }

@@ -46,7 +46,7 @@ class ParallelLint extends ToolAbstract
                     $command .= $this->args[self::EXECUTABLE_PATH_OPTION];
                     break;
                 case self::PATHS:
-                    $command .= ' ' . implode(',', $this->args[$option]);
+                    $command .= ' ' . implode(' ', $this->args[$option]);
                     break;
                 case self::EXCLUDE:
                     $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE], '--exclude ');

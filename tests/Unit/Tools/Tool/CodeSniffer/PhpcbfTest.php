@@ -99,4 +99,22 @@ class PhpcbfTest extends TestCase
         $configuration['executablePath'] = 'path/tools/phpcbf';
         $this->assertEquals($configuration, $phpcbf->getArguments());
     }
+
+    /** @test */
+    function it_sets_phpcbf_to_run_against_and_ignore_several_paths()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/phpcs',
+            'paths' => ['src', 'tests'],
+            'standard' => 'PSR12',
+            'ignore' => ['vendor', 'app'],
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+
+        $phpcbf = new PhpcbfFake($toolConfiguration);
+
+        $this->assertStringContainsString('src tests', $phpcbf->prepareCommand());
+        $this->assertStringContainsString('--ignore=vendor,app', $phpcbf->prepareCommand());
+    }
 }
