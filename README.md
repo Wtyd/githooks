@@ -74,7 +74,7 @@ At this moment, the supported tools are:
 * [Php Stan](https://github.com/phpstan/phpstan)
 * [Local PHP Security Checker](https://github.com/fabpot/local-php-security-checker)
 
-But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#Hook) on any git hook.
+But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#set-your-own-script) on any git hook.
 
 # Set the Configuration File
 The `githooks.yml` file is splitted on three parts:
@@ -112,61 +112,7 @@ phpcs:
     standard: 'PSR12'
 ```
 
-All the available options are:
-
-| Option                | Description                                                      | Examples                                                           |
-| --------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------ |
-| **phpstan**           |                                                                  |                                                                    |
-| executablePath        | String. Path to executable. Default 'phpstan'                    | phpstan, 'vendor/bin/phpstan', 'path/to/phpstan'                   |
-| paths                 | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
-| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--no-progress', '--no-progress --ansi'                            |
-| config                | String. Path to configuration file                               | 'phpstan.neon', 'path/to/phpstan.neon'                             |
-| memory-limit          | String. Set the php memory limit while phpstan is running        | '1M', '2000M', '1G'                                                |
-| level                 | Integer. Default 0, max 8.                                       | 0, 1, 5, 8                                                         |
-| **parallel-lint**     |                                                                  |                                                                    |
-| executablePath        | String. Path to executable. Default 'parallel-lint'              | parallel-lint, 'vendor/bin/parallel-lint', 'path/to/parallel-lint' |
-| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
-| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--colors'                                                         |
-| exclude               | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
-| **phpcs**             |                                                                  |                                                                    |
-| executablePath        | String. Path to executable. Default 'phpcs'                      | phpcs, 'vendor/bin/phpcs', 'path/to/phpcs'                         |
-| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
-| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--report=summary', '--report=summary --parallel=2'                |
-| standard              | String. Rules or configuration file with the rules.              | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml'                |
-| ignore                | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
-| error-severity        | Integer. Level of error to detect.                               | 1, 5                                                               |
-| warning-severity      | Integer. Level of warning to detect.                             | 5, 7, 9                                                            |
-| **phpcbf**            |                                                                  |                                                                    |
-| executablePath        | String. Path to executable. Default 'phpcs'                      | phpcbf, 'vendor/bin/phpcbf', 'path/to/phpcbf'                      |
-| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
-| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--report=summary', '--report=summary --parallel=2'                |
-| usePhpcsConfiguration | Boolean. Grab the *phpcs* setting. Default `false`               | true, false                                                        |
-| standard              | String. Rules or configuration file with the rules.              | 'PSR12', 'Squizs', 'Generic', 'PEAR', 'myrules.xml'                |
-| ignore                | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
-| error-severity        | Integer. Level of error to detect.                               | 1, 5                                                               |
-| warning-severity      | Integer. Level of warning to detect.                             | 5, 7, 9                                                            |
-| **phpmd**             |                                                                  |                                                                    |
-| executablePath        | String. Path to executable. Default 'phpmd'                      | phpmd, 'vendor/bin/phpmd', 'path/to/phpmd'                         |
-| paths                 | Array. Paths or files against the tool will be executed          | ['./src'], ['./src', './app/MiFile.php']                           |
-| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--strict'                                                         |
-| rules                 | String. Rules or configuration file with the rules.              | 'controversial,codesize', 'naming', 'myrules.xml'                  |
-| exclude               | Array. Paths or files to exclude.                                | ['./vendor'], ['./vendor', './app/MiFile.php']                     |
-| **phpcpd**            |                                                                  |                                                                    |
-| executablePath        | String. Path to executable. Default 'phpcpd'                     | phpcpd, 'vendor/bin/phpcpd', 'path/to/phpcpd'                      |
-| paths                 | Array. Paths or files against the tool will be executed          | [src], [src, './app/MiFile.php']                                   |
-| exclude               | Array. Paths or files to exclude.                                | [vendor], [vendor, './app/MiFile.php']                             |
-| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '--min-lines=5'                                                    |
-| **security-checker**  |                                                                  |                                                                    |
-| executablePath        | String. Path to executable. Default 'local-php-security-checker' | local-php-security-checker, 'path/to/local-php-security-checker'   |
-| otherArguments        | String. Flags or arguments that are not covered in GitHooks      | '-format json'                                                     |
-
-
-These are the options supported by GitHooks. Obviously, each tool has many other options. More precise configuration is possible with each tool configuration file.
-
-Many of the options are *optional* as long as the tool has a properly established configuration file. The `conf:init` command copies a githooks.yml file template to the root of the project with all the options commented of each the tool. To make sure that when you finish configuring it, all the options are valid, you can launch the command `conf:check`:
-<p>
-    <img src="https://i.ibb.co/Qfjf0vv/Git-Hooks-Conf.png" alt="conf:check">
-</p>
+All the available options are in the [wiki](https://github.com/Wtyd/githooks/wiki/ConfigurationFile).
 
 # Contributing
 Contributions from others would be very much appreciated! Send pull [request](https://github.com/Wtyd/githooks/pulls)/[issue](https://github.com/Wtyd/githooks/issues). Check all steps for do that at Wiki section for [Contributing](https://github.com/Wtyd/githooks/wiki/Contributing). Thanks!

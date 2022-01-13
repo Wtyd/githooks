@@ -12,6 +12,8 @@ class CreateConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_creates_the_configuration_file_and_returns_exit_code_0()
     {
+        $this->deleteDirStructure('vendor/wtyd');
+
         mkdir('vendor/wtyd/githooks/qa/', 0777, true);
         file_put_contents(
             'vendor/wtyd/githooks/qa/githooks.dist.yml',

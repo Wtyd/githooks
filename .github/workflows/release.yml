@@ -9,7 +9,7 @@ on:
     branches-ignore: [ master ]
 
 env:
-  version: '2.0.1'
+  version: '2.1.0'
   extensions: :opcache #intl, pcov #fileinfo is needed for Windows
 
 jobs:

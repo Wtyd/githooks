@@ -68,6 +68,9 @@ Even the default script and after, other tools which GitHooks not support or vic
         try {
             $destiny = "{$this->root}/.git/hooks/{$this->hook}";
 
+            if (file_exists($destiny)) {
+                unlink($destiny);
+            }
             copy($origin, $destiny);
             chmod($destiny, 0755);
             $this->printer->success("Hook {$this->hook} created");

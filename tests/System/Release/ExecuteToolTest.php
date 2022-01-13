@@ -42,13 +42,14 @@ class ExecuteToolTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->setTools(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
+            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
                 ->buildYalm()
         );
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
         $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpcs');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -78,7 +79,7 @@ class ExecuteToolTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->setTools(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
+            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
                 ->buildYalm()
         );
@@ -97,6 +98,7 @@ class ExecuteToolTest extends ReleaseTestCase
         shell_exec("git reset -- $fileWithoutErrorsPath");
 
         $this->assertEquals(1, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpcs');
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
         $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
@@ -109,7 +111,7 @@ class ExecuteToolTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->setTools(['phpcs'])
+            $this->configurationFileBuilder->setTools(['phpcbf'])
                 ->buildYalm()
         );
 

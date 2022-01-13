@@ -15,6 +15,12 @@ class ComposerUpdater
      */
     public static function php72orMinorUpdate()
     {
+        $printer = new Printer();
+        if (version_compare(phpversion(), '7.3.0', '>=')) {
+            $printer->info('For php 7.3 or higher is not needed');
+            return;
+        }
+
         $rootPaht = getcwd();
         $origin = "$rootPaht/vendor/wtyd/githooks/builds/php7.1/githooks";
         $destiny = "$rootPaht/vendor/bin/githooks";
@@ -22,9 +28,9 @@ class ComposerUpdater
             unlink($destiny);
         }
 
-        $printer = new Printer();
         try {
             copy($origin, $destiny);
+            chmod($destiny, 0755);
             $printer->info('GitHooks was correctly installed');
         } catch (\Throwable $th) {
             $printer->error('Something went wrong');

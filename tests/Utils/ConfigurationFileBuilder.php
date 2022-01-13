@@ -69,15 +69,17 @@ class ConfigurationFileBuilder
             ToolAbstract::PHPCS => [
                 Phpcs::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcs',
                 Phpcs::PATHS => [$rootPath . '/src'],
+                Phpcs::OTHER_ARGS_OPTION => '--report=summary --parallel=2',
                 Phpcs::STANDARD => 'PSR12',
                 Phpcs::IGNORE => [$rootPath . '/vendor'],
                 Phpcs::ERROR_SEVERITY => 1,
-                Phpcs::WARNING_SEVERITY => 6
+                Phpcs::WARNING_SEVERITY => 6,
             ],
 
             ToolAbstract::PHPCBF => [
                 Phpcbf::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
                 Phpcbf::PATHS => [$rootPath . '/src'],
+                Phpcs::OTHER_ARGS_OPTION => '--report=summary --parallel=2',
                 Phpcbf::STANDARD => 'PSR12',
                 Phpcbf::IGNORE => [$rootPath . '/vendor'],
                 Phpcbf::ERROR_SEVERITY => 1,
