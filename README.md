@@ -46,7 +46,7 @@ Then run `composer update wtyd/githooks`.
 2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
 
 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.yml`).
-4. Run `githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands) for more information.
+4. Run `githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands#hook) for more information.
 
 5. [Set the configuration file](#Set-the-configuration-file).
 
@@ -60,9 +60,13 @@ When you commit, all the configured code check tools are automatically launched.
     <img src="https://i.ibb.co/VWb6Ks4/Git-Hooks-KO.png" alt="Imagen con KO">
 </p>
 
-We can also launch all the tools one by one by command line in the way they are setted for the project:
+You can also run GitHooks whenever you want. All tools at same time or one by one:
+```bash
+githooks tool all # Run all tools
+githooks tool phpcs # Run only phpcs
+```
 <p>
-    <img src="https://i.ibb.co/QQYNWZj/Git-Hooks-Tool.png" alt="Imagen de una herramienta">
+    <img src="https://i.ibb.co/tXPb9Sn/phpmd.png" alt="Imagen de una herramienta" height="225">
 </p>
 
 # Supported Tools
