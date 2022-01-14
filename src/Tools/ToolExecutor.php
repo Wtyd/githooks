@@ -2,7 +2,6 @@
 
 namespace Wtyd\GitHooks\Tools;
 
-use Wtyd\GitHooks\Tools\Exception\ModifiedButUnstagedFilesException;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 use Wtyd\GitHooks\Utils\Printer;
 
@@ -43,12 +42,6 @@ class ToolExecutor
                     $this->printErrors($tool);
                     $this->printer->resultError($this->getErrorString($tool::NAME, $executionTime));
                 }
-            } catch (ModifiedButUnstagedFilesException $ex) {
-                $endToolExecution = microtime(true);
-                $this->printErrors($tool);
-                $message = $this->getErrorString($tool::NAME, $this->executionTime($endToolExecution, $startToolExecution)) . '. Se han modificado algunos ficheros. Por favor, añádelos al stage y vuelve a commitear.';
-                $this->printer->resultWarning($message);
-                $errors->setError($tool::NAME, $message);
             } catch (\Throwable $th) {
                 $errors->setError($tool::NAME, $th->getMessage());
                 $this->printErrors($tool);
