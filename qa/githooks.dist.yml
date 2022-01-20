@@ -5,6 +5,7 @@ Tools:
   - security-checker
   - phpstan
   - parallel-lint
+  - phpcbf
   - phpcs
   - phpmd
   - phpcpd
@@ -12,6 +13,7 @@ Tools:
 # Configuration of each tool
 # security-checker:
 #   executablePath: security-checker
+#   otherArguments: '-format json'
 
 # phpstan:
 #   executablePath: phpstan
@@ -19,11 +21,23 @@ Tools:
 #   memory-limit: '1G' # Examples: 1M 2000M 1G 5G
 #   paths: ['./src']
 #   level: 8 #level 0-8 (0 default, 8 max)
+#   otherArguments: '--no-progress'
 
 # parallel-lint:
 #   executablePath: parallel-lint
 #   paths: ['./']
 #   exclude: [vendor]
+#   otherArguments: '--colors'
+
+# phpcbf:
+#   usePhpcsConfiguration: true #if true no more configuration is needed. It graves the arguments of phpcs configuration
+#   executablePath: phpcbf
+#   paths: ['./']
+#   standard: './myRules.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
+#   ignore: [vendor]
+#   error-severity: 1
+#   warning-severity: 6
+#   otherArguments: '--report=summary --parallel=2'
 
 # phpcs:
 #   executablePath: phpcs
@@ -32,15 +46,18 @@ Tools:
 #   ignore: [vendor]
 #   error-severity: 1
 #   warning-severity: 6
+#   otherArguments: '--report=summary --parallel=2'
   
 # phpmd:
 #   executablePath: phpmd
 #   paths: ['./src/']
 #   rules: './myRules.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
 #   exclude: [vendor]
+#   otherArguments: --strict
 
 # phpcpd:
 #   executablePath: phpcpd
 #   paths: ['./']
 #   exclude: ['vendor']
+#   otherArguments: '--min-lines=5'
  

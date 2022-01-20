@@ -77,13 +77,14 @@ class ConfigurationFileBuilder
             ],
 
             ToolAbstract::PHPCBF => [
+                Phpcbf::USE_PHPCS_CONFIGURATION => false,
                 Phpcbf::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
                 Phpcbf::PATHS => [$rootPath . '/src'],
                 Phpcs::OTHER_ARGS_OPTION => '--report=summary --parallel=2',
                 Phpcbf::STANDARD => 'PSR12',
                 Phpcbf::IGNORE => [$rootPath . '/vendor'],
                 Phpcbf::ERROR_SEVERITY => 1,
-                Phpcbf::WARNING_SEVERITY => 6
+                Phpcbf::WARNING_SEVERITY => 6,
             ],
 
             ToolAbstract::PARALLEL_LINT => [
@@ -96,7 +97,8 @@ class ConfigurationFileBuilder
                 Phpmd::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpmd',
                 Phpmd::PATHS => [$rootPath . '/src'],
                 Phpmd::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
-                Phpmd::EXCLUDE => [$rootPath . '/vendor']
+                Phpmd::EXCLUDE => [$rootPath . '/vendor'],
+                Phpmd::OTHER_ARGS_OPTION => '--strict',
             ],
             ToolAbstract::COPYPASTE_DETECTOR => [
                 Phpcpd::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
@@ -113,6 +115,7 @@ class ConfigurationFileBuilder
 
             ToolAbstract::SECURITY_CHECKER => [
                 SecurityChecker::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
+                SecurityChecker::OTHER_ARGS_OPTION => '-format json',
             ],
         ];
     }
