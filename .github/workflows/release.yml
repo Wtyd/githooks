@@ -9,7 +9,6 @@ on:
     branches-ignore: [ master ]
 
 env:
-  version: '2.1.0'
   extensions: :opcache #intl, pcov #fileinfo is needed for Windows
 
 jobs:
@@ -41,7 +40,13 @@ jobs:
       run: composer global require humbug/box
 
     - name: Build the Aplication
-      run: php githooks app:build --build-version=${{ env.version }}
+      run: |
+        branch=${GITHUB_REF##*/}
+        echo ${branch}
+        prefix='rc-'
+        version=${branch#"$prefix"}
+        echo $version
+        php githooks app:build --build-version=${version}
 
     - uses: actions/upload-artifact@master
       if: ${{ '7.1' == matrix.php-versions }}
@@ -63,7 +68,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.2', '8.0']
+        php-versions: ['7.2', '8.1']
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -103,7 +108,7 @@ jobs:
         path: 'builds/php7.1'
 
     - uses: actions/download-artifact@master
-      if: ${{ '8.0' == matrix.php-versions }}
+      if: ${{ '8.1' == matrix.php-versions }}
       with:
         name: githooks-73
         path: builds

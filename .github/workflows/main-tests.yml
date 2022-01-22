@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.0', '7.1']
+        php-versions: ['8.1', '7.1']
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -54,8 +54,8 @@ jobs:
       if: ${{ '7.1' == matrix.php-versions }}
       run: cp tools/php71/phpcpd /usr/local/bin/phpcpd
 
-    - name: Install Global Phpcpd for Php8.0
-      if: ${{ '8.0' == matrix.php-versions }}
+    - name: Install Global Phpcpd for Php8.1
+      if: ${{ '8.1' == matrix.php-versions }}
       run: cp tools/php80/phpcpd /usr/local/bin/phpcpd
 
     - name: Testing the Aplication
