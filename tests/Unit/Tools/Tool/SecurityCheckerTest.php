@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Tools\Tool;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
 
-class SecurityCheckerTest extends TestCase
+class SecurityCheckerTest extends UnitTestCase
 {
     /** @test */
     function securityChecker_is_a_supported_tool()
@@ -21,6 +21,7 @@ class SecurityCheckerTest extends TestCase
         $configuration = [
             'executablePath' => 'path/tools/security-checker',
             'otherArguments' => '-format json',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('security-checker', $configuration);
@@ -39,6 +40,7 @@ class SecurityCheckerTest extends TestCase
     {
         $configuration = [
             'otherArguments' => '-format json',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('security-checker', $configuration);
@@ -54,6 +56,7 @@ class SecurityCheckerTest extends TestCase
         $configuration = [
             'executablePath' => 'path/tools/security-checker',
             'otherArguments' => '-format json',
+            'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
 

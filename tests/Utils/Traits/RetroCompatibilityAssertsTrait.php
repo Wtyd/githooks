@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests;
+namespace Tests\Utils\Traits;
 
 use PHPUnit\Framework\Constraint\FileExists;
 use PHPUnit\Framework\Constraint\LogicalNot;

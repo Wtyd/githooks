@@ -6,19 +6,24 @@ use Wtyd\GitHooks\Exception\ExitException;
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
+use Tests\Utils\TestCase\SystemTestCase;
+use Tests\Utils\Traits\{
+    FileSystemTrait,
+    RetroCompatibilityAssertsTrait
+};
 
 class ReleaseTestCase extends TestCase
 {
     use FileSystemTrait;
     use RetroCompatibilityAssertsTrait;
 
-    public const TESTS_PATH = ConsoleTestCase::TESTS_PATH;
+    public const TESTS_PATH = SystemTestCase::TESTS_PATH;
     /**
      * Executable binary
      *
      * @var string
      */
-    protected $githooks = ConsoleTestCase::TESTS_PATH . '/githooks';
+    protected $githooks = SystemTestCase::TESTS_PATH . '/githooks';
 
     /**
      * @var ConfigurationFileBuilder
@@ -70,7 +75,7 @@ class ReleaseTestCase extends TestCase
     protected static function copyReleaseBinary(): bool
     {
         $origin = version_compare(phpversion(), '7.3.0', '<') ? 'builds/php7.1/githooks' : 'builds/githooks';
-        $destiny = ConsoleTestCase::TESTS_PATH . '/githooks';
+        $destiny = SystemTestCase::TESTS_PATH . '/githooks';
 
         copy($origin, $destiny);
         return chmod($destiny, 0777);

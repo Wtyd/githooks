@@ -3,10 +3,10 @@
 namespace Tests\System\Release;
 
 use Illuminate\Support\Facades\Storage;
-use Tests\ConsoleTestCase;
 use Symfony\Component\Yaml\Yaml;
+use Tests\Utils\TestCase\SystemTestCase;
 
-class GitHooksDistYmlTest extends ConsoleTestCase
+class GitHooksDistYmlTest extends SystemTestCase
 {
     protected function readDistFile(): array
     {

@@ -1,16 +1,17 @@
 <?php
 
-namespace Tests;
+namespace Tests\Utils\Traits;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Tests\Utils\TestCase\SystemTestCase;
 
 trait FileSystemTrait
 {
     /**
      * @var string Path to directory for tests that require filesystem
      */
-    protected $path = ConsoleTestCase::TESTS_PATH;
+    protected $path = SystemTestCase::TESTS_PATH;
 
     public function getPath(): string
     {
@@ -21,17 +22,19 @@ trait FileSystemTrait
      * Creates de directory structure for testing.
      * A root path, determinated by $path with two subdirectories, src and vendor.
      *
+     * @param string $token
      * @return void
      */
-    public function createDirStructure(): void
+    public function createDirStructure(string $token = ''): void
     {
-        mkdir($this->path . '/src');
-        mkdir($this->path . '/vendor');
+        mkdir("$this->path/$token/src", 0777, true);
+        mkdir("$this->path/$token/vendor");
     }
 
     /**
      * Delete de directory structure for testing with all subdirectories and files.
      *
+     * @param string $baseDir
      * @return void
      */
     public function deleteDirStructure(string $baseDir = ''): void
@@ -67,6 +70,6 @@ trait FileSystemTrait
     public static function cleanTestsFilesystem()
     {
 
-        self::deleteDir(ConsoleTestCase::TESTS_PATH);
+        self::deleteDir(SystemTestCase::TESTS_PATH);
     }
 }

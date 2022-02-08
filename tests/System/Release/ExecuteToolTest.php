@@ -3,6 +3,8 @@
 namespace Tests\System\Release;
 
 use Tests\ReleaseTestCase;
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
 /**
  * @group release
@@ -124,5 +126,56 @@ class ExecuteToolTest extends ReleaseTestCase
 
         $this->assertEquals(1, $exitCode);
         $this->assertToolHasFailed('phpcbf');
+    }
+
+    public function allToolsProvider()
+    {
+        return [
+            'Code Sniffer Phpcs' => [
+                'phpcs'
+            ],
+            'Code Sniffer Phpcbf' => [
+                'phpcbf'
+            ],
+            'Php Stan' => [
+                'phpstan'
+            ],
+            'Php Mess Detector' => [
+                'phpmd'
+            ],
+            'Php Copy Paste Detector' => [
+                'phpcpd'
+            ],
+            'Parallel-Lint' => [
+                'parallel-lint'
+            ],
+            'Composer Check-security' => [
+                'security-checker'
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider allToolsProvider
+     */
+    function it_returns_exit_code_0_when_the_tool_fails_and_has_ignoreErrorsOnExit_set_to_true($tool)
+    {
+        file_put_contents(
+            'githooks.yml',
+            $this->configurationFileBuilder->setTools([$tool])
+                ->changeToolOption($tool, ['ignoreErrorsOnExit' => true])
+                ->buildYalm()
+        );
+
+        file_put_contents(
+            self::TESTS_PATH . '/src/FileWithErrors.php',
+            $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors([$tool])
+        );
+
+        passthru("$this->githooks tool $tool", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasFailed($tool);
     }
 }

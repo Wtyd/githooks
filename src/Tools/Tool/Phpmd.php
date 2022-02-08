@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
@@ -23,6 +25,7 @@ class Phpmd extends ToolAbstract
         self::RULES,
         self::EXCLUDE,
         self::OTHER_ARGS_OPTION,
+        self::IGNORE_ERRORS_ON_EXIT,
     ];
 
     public function __construct(ToolConfiguration $toolConfiguration)
@@ -55,6 +58,8 @@ class Phpmd extends ToolAbstract
                     break;
                 case self::EXCLUDE:
                     $command .= ' --exclude "' . implode(',', $this->args[$option]) . '"';
+                    break;
+                case self::IGNORE_ERRORS_ON_EXIT:
                     break;
                 default:
                     $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];

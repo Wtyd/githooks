@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools\Tool\CodeSniffer;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;

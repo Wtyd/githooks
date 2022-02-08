@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests;
+namespace Tests\Utils\Traits;
 
 use Illuminate\Contracts\Console\Kernel;
 
@@ -15,7 +15,7 @@ trait CreatesApplication
     {
         !defined('APP_ENV') &&  define('APP_ENV', 'testing');
 
-        $app = require __DIR__ . '/../bootstrap/app.php';
+        $app = require getcwd() . '/bootstrap/app.php';
 
         $app->make(Kernel::class)->bootstrap();
 

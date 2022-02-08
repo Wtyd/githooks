@@ -47,8 +47,8 @@ class AppServiceProvider extends ServiceProvider
     protected function testsRegister()
     {
         if (defined('APP_ENV') && APP_ENV === 'testing') {
-            $this->app->bind(FileReader::class, FileReaderFake::class);
-            $this->app->bind(SecurityChecker::class, SecurityCheckerFake::class);
+            $this->app->singleton(FileReader::class, FileReaderFake::class);
+            $this->app->singleton(SecurityChecker::class, SecurityCheckerFake::class);
         }
     }
 }

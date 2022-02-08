@@ -61,6 +61,8 @@ abstract class ToolAbstract
 
     public const OTHER_ARGS_OPTION = 'otherArguments';
 
+    public const IGNORE_ERRORS_ON_EXIT = 'ignoreErrorsOnExit';
+
     /**
      * @var string Name of tool printend when it is runned
      */
@@ -94,7 +96,7 @@ abstract class ToolAbstract
     final protected function setArguments(array $configurationFile): void
     {
         foreach ($configurationFile as $key => $value) {
-            if (empty($value)) {
+            if (empty($value) && !is_bool($value)) {
                 continue;
             }
 
@@ -102,7 +104,6 @@ abstract class ToolAbstract
                 if (!$this->isWindows()) {
                     $this->args[$key] = $this->unixRouteCorrector($value);
                 } else {
-                    var_dump($value);
                     $this->args[$key] = $this->windowsRouteCorrector($value);
                 }
                 continue;
@@ -224,6 +225,11 @@ abstract class ToolAbstract
     public function getErrors(): string
     {
         return $this->errors;
+    }
+
+    public function isIgnoreErrorsOnExit(): bool
+    {
+        return $this->args[self::IGNORE_ERRORS_ON_EXIT] ?? false;
     }
 
     public static function checkTool(string $tool): bool

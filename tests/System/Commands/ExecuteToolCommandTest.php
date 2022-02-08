@@ -4,14 +4,14 @@ namespace Tests\System\Commands;
 
 use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
-use Tests\ConsoleTestCase;
 use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
+use Tests\Utils\TestCase\SystemTestCase;
 use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
-class ExecuteToolCommandTest extends ConsoleTestCase
+class ExecuteToolCommandTest extends SystemTestCase
 {
     protected $phpFileBuilder;
 
@@ -130,8 +130,8 @@ class ExecuteToolCommandTest extends ConsoleTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
 
-        $this->app->resolving(SecurityCheckerFake::class, function (SecurityCheckerFake $SecurityChecker) {
-            return $SecurityChecker->setKOExit();
+        $this->app->resolving(SecurityCheckerFake::class, function ($toolMock) {
+            $toolMock->fakeExit(1, ['Some error was found']);
         });
 
         $this->artisan("tool $tool")

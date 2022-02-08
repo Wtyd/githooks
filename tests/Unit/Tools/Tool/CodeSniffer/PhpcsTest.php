@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Tools\Tool\CodeSniffer;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\PhpcsFake;
 
-class PhpcsTest extends TestCase
+class PhpcsTest extends UnitTestCase
 {
     /** @test */
     function phpcs_is_a_supported_tool()
@@ -25,7 +25,8 @@ class PhpcsTest extends TestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2'
+            'otherArguments' => '--report=summary --parallel=2',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
@@ -47,7 +48,8 @@ class PhpcsTest extends TestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2'
+            'otherArguments' => '--report=summary --parallel=2',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
@@ -66,6 +68,7 @@ class PhpcsTest extends TestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
+            'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
 

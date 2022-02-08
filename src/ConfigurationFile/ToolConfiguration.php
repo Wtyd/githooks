@@ -51,8 +51,32 @@ class ToolConfiguration
                 unset($this->toolConfiguration[$key]);
             }
         }
+        $warning = $this->setIgnoreErrorsOnExitOption();
 
+        if (!empty($warning)) {
+            $warnings[] = $warning;
+        }
         $this->warnings = $warnings;
+    }
+
+    /**
+     * Set value for ignoreErrorsOnExit. If not bool value it sets warning and set the option to 'false'.
+     *
+     * @return string Warning if not bool value. Empty if otherwise.
+     */
+    protected function setIgnoreErrorsOnExitOption(): string
+    {
+        $warning = '';
+        if (!array_key_exists(ToolAbstract::IGNORE_ERRORS_ON_EXIT, $this->toolConfiguration)) {
+            return $warning;
+        }
+
+        if (!is_bool($this->toolConfiguration[ToolAbstract::IGNORE_ERRORS_ON_EXIT])) {
+            $warning = "Value for'" . ToolAbstract::IGNORE_ERRORS_ON_EXIT . "'in tool $this->tool must be boolean. This option will be ignored.";
+            $this->toolConfiguration[ToolAbstract::IGNORE_ERRORS_ON_EXIT] = false;
+        }
+
+        return $warning;
     }
 
     public function getToolConfiguration(): array

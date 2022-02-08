@@ -23,9 +23,10 @@ phpstan:
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
     executablePath: vendor/bin/parallel-lint
-    paths: ['./']
+    paths: ['./tests'] #['./']
     exclude: [vendor, qa]
     otherArguments: '--colors'
+    #ignoreErrorsOnExit: true
 
 phpcs:
     executablePath: tools/php71/phpcs
@@ -61,5 +62,3 @@ phpcpd:
 security-checker:
   executablePath: tools/php71/local-php-security-checker
   # otherArguments: '-format json'
-
- 

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests;
+namespace Tests\Utils\Traits;
 
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\visitor\vfsStreamStructureVisitor;

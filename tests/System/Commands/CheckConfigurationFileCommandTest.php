@@ -2,9 +2,9 @@
 
 namespace Tests\System\Commands;
 
-use Tests\ConsoleTestCase;
+use Tests\Utils\TestCase\SystemTestCase;
 
-class CheckConfigurationFileCommandTest extends ConsoleTestCase
+class CheckConfigurationFileCommandTest extends SystemTestCase
 {
     /** @test */
     function it_pass_all_file_configuration_checks()

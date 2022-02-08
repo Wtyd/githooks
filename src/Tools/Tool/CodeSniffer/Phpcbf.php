@@ -22,6 +22,7 @@ class Phpcbf extends CodeSniffer
         self::ERROR_SEVERITY,
         self::WARNING_SEVERITY,
         self::OTHER_ARGS_OPTION,
+        self::IGNORE_ERRORS_ON_EXIT,
         self::USE_PHPCS_CONFIGURATION,
     ];
 

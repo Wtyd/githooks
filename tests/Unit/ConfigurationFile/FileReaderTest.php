@@ -3,11 +3,13 @@
 namespace Tests\Unit\ConfigurationFile;
 
 use Tests\Utils\ConfigurationFileBuilder;
-use Tests\VirtualFileSystemTrait;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
-use Tests\UnitTestCase;
+use Tests\Utils\{
+    TestCase\UnitTestCase,
+    Traits\VirtualFileSystemTrait
+};
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 
 /**

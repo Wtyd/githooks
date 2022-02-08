@@ -4,9 +4,9 @@ namespace Tests\System\Commands;
 
 use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
-use Tests\ConsoleTestCase;
+use Tests\Utils\TestCase\SystemTestCase;
 
-class CleanHookCommandTest extends ConsoleTestCase
+class CleanHookCommandTest extends SystemTestCase
 {
 
     protected $configurationFile;

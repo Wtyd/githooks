@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Tools\Tool\CodeSniffer;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\PhpcbfFake;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
-class PhpcbfTest extends TestCase
+class PhpcbfTest extends UnitTestCase
 {
     /** @test */
     function phpcs_is_a_supported_tool()
@@ -25,7 +25,8 @@ class PhpcbfTest extends TestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2'
+            'otherArguments' => '--report=summary --parallel=2',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
@@ -47,7 +48,8 @@ class PhpcbfTest extends TestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2'
+            'otherArguments' => '--report=summary --parallel=2',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
@@ -67,6 +69,7 @@ class PhpcbfTest extends TestCase
             'error-severity' => 1,
             'warning-severity' => 6,
             'otherArguments' => '--report=summary --parallel=2',
+            'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
 
@@ -89,6 +92,7 @@ class PhpcbfTest extends TestCase
             'error-severity' => 1,
             'warning-severity' => 6,
             'otherArguments' => '--report=summary --parallel=2',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);

@@ -101,7 +101,7 @@ class ' . $this->name . "
         return "}\n";
     }
 
-    public function setFileName(string $name)
+    public function setFileName(string $name): PhpFileBuilder
     {
         if ($name !== null) {
             $this->name = $name;
@@ -109,7 +109,7 @@ class ' . $this->name . "
         return $this;
     }
 
-    public function addMessDetectorError()
+    public function addMessDetectorError(): string
     {
         return "\n" . '    public function sub($a, $b)
     {
@@ -118,7 +118,7 @@ class ' . $this->name . "
     }' . "\n";
     }
 
-    public function addCodeSnifferError()
+    public function addCodeSnifferError(): string
     {
         return "\n" . '    public function phpcs($a, $b){ //Falta salto de línea
         
@@ -126,7 +126,7 @@ class ' . $this->name . "
     }' . "\n";
     }
 
-    public function addCodeSnifferNoFixableError()
+    public function addCodeSnifferNoFixableError(): string
     {
         return "\n" . '    public function _sub($a, $b)
     {
@@ -134,7 +134,7 @@ class ' . $this->name . "
     }' . "\n";
     }
 
-    public function addPhpStanError()
+    public function addPhpStanError(): string
     {
         return "\n" . '    public function phpstan()
     {
@@ -142,7 +142,7 @@ class ' . $this->name . "
     }' . "\n";
     }
 
-    public function addParallelLintError()
+    public function addParallelLintError(): string
     {
         return "\n" . '    public function parallelLint()
     {
@@ -150,7 +150,7 @@ class ' . $this->name . "
     }' . "\n";
     }
 
-    public function addPhpCPDError()
+    public function addPhpCPDError(): string
     {
         return "\n" . '    public function originalMethod()
     {

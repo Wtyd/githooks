@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\ConfigurationFile;
 
-use Tests\UnitTestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Utils\ConfigurationFileBuilder;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;

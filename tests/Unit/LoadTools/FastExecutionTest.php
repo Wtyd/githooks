@@ -6,8 +6,8 @@ use Wtyd\GitHooks\LoadTools\FastExecution;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use PHPUnit\Framework\TestCase;
 use Tests\Utils\FileUtilsFake;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\{
@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     Phpcpd
 };
 
-class FastExecutionTest extends TestCase
+class FastExecutionTest extends UnitTestCase
 {
     use MockeryPHPUnitIntegration;
 

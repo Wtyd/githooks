@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Tools\Tool;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Phpmd;
 use Wtyd\GitHooks\Tools\Tool\PhpmdFake;
 
-class PhpmdTest extends TestCase
+class PhpmdTest extends UnitTestCase
 {
     /** @test */
     function phpmd_is_a_supported_tool()
@@ -24,6 +24,7 @@ class PhpmdTest extends TestCase
             'rules' => 'unusedcode',
             'exclude' => ['vendor'],
             'otherArguments' => '--strict',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
@@ -45,6 +46,7 @@ class PhpmdTest extends TestCase
             'rules' => 'unusedcode',
             'exclude' => ['vendor'],
             'otherArguments' => '--strict',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
@@ -63,6 +65,7 @@ class PhpmdTest extends TestCase
             'rules' => 'unusedcode',
             'exclude' => ['vendor'],
             'otherArguments' => '--strict',
+            'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
 
