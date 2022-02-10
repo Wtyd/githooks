@@ -39,6 +39,7 @@ class ConfigurationFileTest extends UnitTestCase
     {
         return [
             'phpcs' => ['phpcs'],
+            'phpcbf' => ['phpcbf'],
             'phpmd' => ['phpmd'],
             'phpcpd' => ['phpcpd'],
             'parallel-lint' => ['parallel-lint'],
@@ -76,6 +77,7 @@ class ConfigurationFileTest extends UnitTestCase
     {
         return [
             'phpcs' => ['phpcs'],
+            'phpcbf' => ['phpcbf'],
             'phpmd' => ['phpmd'],
             'phpcpd' => ['phpcpd'],
             'parallel-lint' => ['parallel-lint'],
@@ -112,6 +114,25 @@ class ConfigurationFileTest extends UnitTestCase
             $this->configurationFile = new ConfigurationFile(
                 $this->configurationFileBuilder->setConfigurationTools([$tool =>  null])->buildArray(),
                 $tool
+            );
+            $this->fail('ConfigurationFileException was not thrown');
+        } catch (ConfigurationFileException $exception) {
+            $this->assertTrue($exception->getConfigurationFile()->hasErrors());
+            $this->assertCount(1, $exception->getConfigurationFile()->getErrors());
+            $this->assertEquals("The tag '$tool' is empty.", $exception->getConfigurationFile()->getErrors()[0]);
+        }
+    }
+
+    /**
+     * @test
+     * @dataProvider toolsThatNeedConfigurationDataProvider
+     */
+    function it_raises_exception_when_runs_all_tools_and_a_tool_has_not_configuration($tool)
+    {
+        try {
+            $this->configurationFile = new ConfigurationFile(
+                $this->configurationFileBuilder->setToolConfiguration($tool, [])->buildArray(),
+                'all'
             );
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
@@ -477,7 +498,7 @@ class ConfigurationFileTest extends UnitTestCase
     }
 
     /** @test */
-    function it_throws_exception_when_change_Execution_tag_with_wrong_values()
+    function it_raises_exception_when_change_Execution_tag_with_wrong_values()
     {
         $configurationFile =  [
             'Options' => [
@@ -737,6 +758,86 @@ class ConfigurationFileTest extends UnitTestCase
         );
     }
 
+    function overridePhpcbfConfigurationToolsKeyDataProvider()
+    {
+        return [
+            'Phpcbf is in Tools key and Phpcs not' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['phpcbf'],
+                    'phpcbf' => ['usePhpcsConfiguration' => true],
+                    'phpcs' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'ignore' => 'vendor',
+                        'error-severity' => 2,
+                        'warning-severity' => 5
+                    ]
+                ],
+            ],
+            'Phpcs is in Tools key and Phpcbf not' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['phpcs'],
+                    'phpcbf' => ['usePhpcsConfiguration' => true],
+                    'phpcs' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'ignore' => 'vendor',
+                        'error-severity' => 2,
+                        'warning-severity' => 5
+                    ]
+                ],
+            ],
+            'Any tool is in Tools key' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'execution' => 'full',
+                    ],
+                    'Tools' => ['phpmd'],
+                    'phpcbf' => ['usePhpcsConfiguration' => true],
+                    'phpcs' => [
+                        'paths' => ['src', 'tests'],
+                        'standard' => 'PERL',
+                        'ignore' => 'vendor',
+                        'error-severity' => 2,
+                        'warning-severity' => 5
+                    ],
+                    'phpmd' => [
+                        'paths' => ['src', 'tests'],
+                        'rules' => 'controversial',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider overridePhpcbfConfigurationToolsKeyDataProvider
+     */
+    function it_overrides_Phpcbf_configuration_when_usePhpcsConfiguration_key_is_true_regardless_of_whether_if_Phpcbf_or_Phpcs_are_or_not_in_Tools_key(
+        $configurationFile
+    ) {
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf');
+
+        $configurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
+
+        $expectedPhpcbfConfiguration =  [
+            'paths' => ['src', 'tests'],
+            'standard' => 'PERL',
+            'ignore' => 'vendor',
+            'error-severity' => 2,
+            'warning-severity' => 5,
+            'usePhpcsConfiguration' => true
+        ];
+        $this->assertEquals($expectedPhpcbfConfiguration, $configurationFile->getToolConfiguration());
+    }
+
     public function toolsThatArentInToolsKeyDataProvider()
     {
         return [
@@ -826,86 +927,5 @@ class ConfigurationFileTest extends UnitTestCase
         $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
 
         $this->assertCount(7, $this->configurationFile->getWarnings());
-    }
-
-
-    function overridePhpcbfConfigurationToolsKeyDataProvider()
-    {
-        return [
-            'Phpcbf is in Tools key and Phpcs not' => [
-                'Configuration File' => [
-                    'Options' => [
-                        'execution' => 'full',
-                    ],
-                    'Tools' => ['phpcbf'],
-                    'phpcbf' => ['usePhpcsConfiguration' => true],
-                    'phpcs' => [
-                        'paths' => ['src', 'tests'],
-                        'standard' => 'PERL',
-                        'ignore' => 'vendor',
-                        'error-severity' => 2,
-                        'warning-severity' => 5
-                    ]
-                ],
-            ],
-            'Phpcs is in Tools key and Phpcbf not' => [
-                'Configuration File' => [
-                    'Options' => [
-                        'execution' => 'full',
-                    ],
-                    'Tools' => ['phpcs'],
-                    'phpcbf' => ['usePhpcsConfiguration' => true],
-                    'phpcs' => [
-                        'paths' => ['src', 'tests'],
-                        'standard' => 'PERL',
-                        'ignore' => 'vendor',
-                        'error-severity' => 2,
-                        'warning-severity' => 5
-                    ]
-                ],
-            ],
-            'Any tool is in Tools key' => [
-                'Configuration File' => [
-                    'Options' => [
-                        'execution' => 'full',
-                    ],
-                    'Tools' => ['phpmd'],
-                    'phpcbf' => ['usePhpcsConfiguration' => true],
-                    'phpcs' => [
-                        'paths' => ['src', 'tests'],
-                        'standard' => 'PERL',
-                        'ignore' => 'vendor',
-                        'error-severity' => 2,
-                        'warning-severity' => 5
-                    ],
-                    'phpmd' => [
-                        'paths' => ['src', 'tests'],
-                        'rules' => 'controversial',
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /**
-     * @test
-     * @dataProvider overridePhpcbfConfigurationToolsKeyDataProvider
-     */
-    function it_overrides_Phpcbf_configuration_when_usePhpcsConfiguration_key_is_true_regardless_of_whether_if_Phpcbf_or_Phpcs_are_or_not_in_Tools_key(
-        $configurationFile
-    ) {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf');
-
-        $configurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
-
-        $expectedPhpcbfConfiguration =  [
-            'paths' => ['src', 'tests'],
-            'standard' => 'PERL',
-            'ignore' => 'vendor',
-            'error-severity' => 2,
-            'warning-severity' => 5,
-            'usePhpcsConfiguration' => true
-        ];
-        $this->assertEquals($expectedPhpcbfConfiguration, $configurationFile->getToolConfiguration());
     }
 }

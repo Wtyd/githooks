@@ -272,6 +272,25 @@ class ConfigurationFileBuilder
         return $this;
     }
 
+    /**
+     * Set the configuration for one tool.
+     *
+     * @param string $tool
+     * @param array|null $configuration If null deletes the key of the tool in the configuration file.
+     * @return ConfigurationFileBuilder
+     */
+    public function setToolConfiguration(string $tool, ?array $configuration): ConfigurationFileBuilder
+    {
+        if (null === $configuration) {
+            unset($this->configurationTools[$tool]);
+        } else {
+            $this->configurationTools[$tool] = $configuration;
+        }
+
+
+        return $this;
+    }
+
     public function setPhpCSConfiguration(array $configuration): ConfigurationFileBuilder
     {
         $this->configurationTools[ToolAbstract::PHPCS] = $configuration;
@@ -313,6 +332,14 @@ class ConfigurationFileBuilder
 
         return $this;
     }
+
+    /**
+     * Change one option of the configuration of one tool.
+     *
+     * @param string $toolName
+     * @param array $option Format key (the option) value (the new value).
+     * @return ConfigurationFileBuilder
+     */
     public function changeToolOption(string $toolName, array $option): ConfigurationFileBuilder
     {
         $key = key($option);
