@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    protected function testsRegister()
+    protected function testsRegister(): void
     {
         if (defined('APP_ENV') && APP_ENV === 'testing') {
             $this->app->singleton(FileReader::class, FileReaderFake::class);

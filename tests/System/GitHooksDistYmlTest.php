@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\System\Release;
+namespace Tests\System;
 
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\Yaml\Yaml;
