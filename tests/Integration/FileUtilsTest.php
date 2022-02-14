@@ -3,33 +3,24 @@
 namespace Tests\Integration;
 
 use Wtyd\GitHooks\Utils\FileUtils;
-use Illuminate\Container\Container;
-use Tests\ConsoleTestCase;
 use Tests\Utils\PhpFileBuilder;
-use Tests\SystemTestCase;
+use Tests\Utils\TestCase\SystemTestCase;
 
 /**
  * Before executing this test suite after any changes, you must commit these changes
  * @group git
  */
-class FileUtilsTest extends ConsoleTestCase
+class FileUtilsTest extends SystemTestCase
 {
-    protected static $gitFilesPathTest = __DIR__ . '/../../testsDir/gitTests';
+    protected static $gitFilesPathTest = __DIR__ . '/../../' . SystemTestCase::TESTS_PATH . '/gitTests';
 
     protected function setUp(): void
     {
-        $this->deleteDirStructure();
+        parent::setUp();
 
-        $this->createDirStructure();
         mkdir(self::$gitFilesPathTest);
 
-        $this->container = Container::getInstance();
-        $this->container->bind(FileUtilsInterface::class, FileUtils::class);
-    }
-
-    protected function tearDown(): void
-    {
-        $this->deleteDirStructure();
+        $this->app->bind(FileUtilsInterface::class, FileUtils::class);
     }
 
     /** @test */
@@ -42,7 +33,7 @@ class FileUtilsTest extends ConsoleTestCase
 
         shell_exec('git add ' . self::$gitFilesPathTest . '/NewFile.php');
 
-        $gitFiles = $this->container->make(FileUtils::class);
+        $gitFiles = $this->app->make(FileUtils::class);
 
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
@@ -56,7 +47,7 @@ class FileUtilsTest extends ConsoleTestCase
     /** @test */
     function it_retrieve_an_empty_array_when_there_are_no_modified_files()
     {
-        $gitFiles = $this->container->make(FileUtils::class);
+        $gitFiles = $this->app->make(FileUtils::class);
 
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
@@ -70,7 +61,7 @@ class FileUtilsTest extends ConsoleTestCase
 
         file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
 
-        $gitFiles = $this->container->make(FileUtils::class);
+        $gitFiles = $this->app->make(FileUtils::class);
 
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
@@ -82,7 +73,7 @@ class FileUtilsTest extends ConsoleTestCase
     {
         $this->markTestIncomplete('Maybe this must be unitary');
         $file = 'src/Hooks.php';
-        $gitFiles = $this->container->make(FileUtils::class);
+        $gitFiles = $this->app->make(FileUtils::class);
 
         unlink($file);
         shell_exec("git add $file");
@@ -101,8 +92,8 @@ class FileUtilsTest extends ConsoleTestCase
      */
     public function deletePathPrefix(string $path): string
     {
-        $path = explode('testsDir/', $path);
+        $path = explode(SystemTestCase::TESTS_PATH . '/', $path);
 
-        return 'testsDir/' . $path[1];
+        return SystemTestCase::TESTS_PATH . '/' . $path[1];
     }
 }

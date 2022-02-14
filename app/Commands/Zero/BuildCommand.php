@@ -64,7 +64,6 @@ final class BuildCommand extends Command
         }
 
         $this->title('Building process');
-
         $this->build($this->input->getArgument('name') ?? $this->getBinary());
     }
 

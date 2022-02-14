@@ -1,4 +1,4 @@
-# Wtyd/GitHooks
+
 
 <p align="center">
     <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
@@ -13,14 +13,15 @@
   <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Schedule CI%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Schedule CI/badge.svg"></a>
 </p>
 
-GitHooks helps you to manage the code validation tools in git hooks. For example, in precommit stage, you can:
-1. Validate that the code follows the project standards.
-2. Verify that the code has no language syntax errors.
-3. Look for errors in the code (unused variables, excessive cyclomatic complexity, etc.).
+# Wtyd/GitHooks
+Are many other tools and composer plugins for manage git hooks. But GitHooks offers:
+* Standalone app. GitHooks is a binary (.phar) so its dependencies don't interfere with your application's dependencies.
+* Is managed with composer. You don't need other tools like Phive or others.
+* Crentralizes all QA tools configuration (all of supported tools at least).
+* It abstracts developers away from how QA tools have to be executed by using only the `githooks tool name-of-the-tool` command.
+* You can also create your own scripts and configure any git hook.
 
-You can also create your own scripts and configure any git hook.
-
-GitHooks centralizes the configuration of the code validation tools and makes it easy for the team to execute them in the same way every time. Further, it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
+Further, it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
 
 # Requirements
 * PHP >= 7.1

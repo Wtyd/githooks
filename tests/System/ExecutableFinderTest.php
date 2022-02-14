@@ -2,14 +2,12 @@
 
 namespace Tests\System;
 
-use Tests\ConsoleTestCase;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
+use Tests\Utils\TestCase\SystemTestCase;
 
-class ExecutableFinderTest extends ConsoleTestCase
+class ExecutableFinderTest extends SystemTestCase
 {
-    protected $configurationFile;
-
     protected $phpFileBuilder;
 
     protected function setUp(): void

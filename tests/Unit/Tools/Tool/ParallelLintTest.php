@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Tools\Tool;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\ParallelLint;
 use Wtyd\GitHooks\Tools\Tool\ParallelLintFake;
 
-class ParallelLintTest extends TestCase
+class ParallelLintTest extends UnitTestCase
 {
     /** @test */
     function parallelLint_is_a_supported_tool()
@@ -23,6 +23,7 @@ class ParallelLintTest extends TestCase
             'paths' => ['./'],
             'exclude' => ['vendor', 'qa'],
             'otherArguments' => '--colors',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
@@ -42,7 +43,8 @@ class ParallelLintTest extends TestCase
         $configuration = [
             'paths' => ['./'],
             'exclude' => ['vendor', 'qa'],
-            'otherArguments' => '--colors'
+            'otherArguments' => '--colors',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
@@ -60,6 +62,7 @@ class ParallelLintTest extends TestCase
             'paths' => ['./'],
             'exclude' => ['vendor', 'qa'],
             'otherArguments' => '--colors',
+            'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
 
@@ -81,6 +84,7 @@ class ParallelLintTest extends TestCase
             'paths' => ['src', 'tests'],
             'exclude' => ['vendor', 'app'],
             'otherArguments' => '--colors',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);

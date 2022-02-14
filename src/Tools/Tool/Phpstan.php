@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
@@ -26,6 +28,7 @@ class Phpstan extends ToolAbstract
         self::MEMORY_LIMIT,
         self::OTHER_ARGS_OPTION,
         self::PATHS,
+        self::IGNORE_ERRORS_ON_EXIT,
     ];
 
     public function __construct(ToolConfiguration $toolConfiguration)
@@ -70,6 +73,8 @@ class Phpstan extends ToolAbstract
                     break;
                 case self::MEMORY_LIMIT:
                     $command .= ' --memory-limit=' . $this->args[self::MEMORY_LIMIT];
+                    break;
+                case self::IGNORE_ERRORS_ON_EXIT:
                     break;
                 default:
                     $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];

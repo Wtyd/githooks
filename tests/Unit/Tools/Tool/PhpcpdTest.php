@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Tools\Tool;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Phpcpd;
 use Wtyd\GitHooks\Tools\Tool\PhpcpdFake;
 
-class PhpcpdTest extends TestCase
+class PhpcpdTest extends UnitTestCase
 {
     /** @test */
     function phpcpd_is_a_supported_tool()
@@ -23,6 +23,7 @@ class PhpcpdTest extends TestCase
             'paths' => ['src'],
             'exclude' => ['vendor'],
             'otherArguments' => '--min-lines=5',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
@@ -43,6 +44,7 @@ class PhpcpdTest extends TestCase
             'paths' => ['src'],
             'exclude' => ['vendor'],
             'otherArguments' => '--min-lines=5',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
@@ -60,6 +62,7 @@ class PhpcpdTest extends TestCase
             'paths' => ['src'],
             'exclude' => ['vendor'],
             'otherArguments' => '--min-lines=5',
+            'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
 

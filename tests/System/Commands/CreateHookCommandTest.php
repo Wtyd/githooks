@@ -4,12 +4,12 @@ namespace Tests\System\Commands;
 
 use phpmock\MockBuilder;
 use phpmock\Mock as PhpmockMock;
-use Tests\ConsoleTestCase;
+use Tests\Utils\TestCase\SystemTestCase;
 
 /**
  * Testing Wtyd\GitHooks\App\Commands\CreateHookCommand;
  */
-class CreateHookCommandTest extends ConsoleTestCase
+class CreateHookCommandTest extends SystemTestCase
 {
     protected $mock;
 

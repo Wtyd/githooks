@@ -118,6 +118,7 @@ class ConfigurationFile
                 $this->toolsErrors[] = "The tag '$toolName' is empty.";
             }
         }
+
         return $tools;
     }
 
@@ -166,18 +167,21 @@ class ConfigurationFile
             return;
         }
 
-        if (!$this->isToolTagMissing($toolName) && array_key_exists($toolName, $allTools)) {
-            $this->toolsConfiguration[$toolName] = $allTools[$toolName];
+        if (!array_key_exists($toolName, $this->configurationFile)) {
+            $this->toolsErrors[] = "The tag '$toolName' is missing.";
+            return;
         }
-    }
 
-    protected function isToolTagMissing(string $tool): bool
-    {
-        if (!array_key_exists($tool, $this->configurationFile)) {
-            $this->toolsErrors[] = "The tag '$tool' is missing.";
-            return true;
+        if (empty($this->configurationFile[$toolName])) {
+            return;
         }
-        return false;
+
+        if (!array_key_exists($toolName, $allTools)) {
+            $this->toolsErrors[] = "The tag '$toolName' is empty.";
+            return;
+        }
+
+        $this->toolsConfiguration[$toolName] = $allTools[$toolName];
     }
 
     protected function isSupportedTool(string $tool): bool

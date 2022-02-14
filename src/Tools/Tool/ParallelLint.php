@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
@@ -19,7 +21,8 @@ class ParallelLint extends ToolAbstract
         self::EXECUTABLE_PATH_OPTION,
         self::EXCLUDE,
         self::OTHER_ARGS_OPTION,
-        self::PATHS
+        self::PATHS,
+        self::IGNORE_ERRORS_ON_EXIT,
     ];
 
     public function __construct(ToolConfiguration $toolConfiguration)
@@ -51,6 +54,8 @@ class ParallelLint extends ToolAbstract
                 case self::EXCLUDE:
                     $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE], '--exclude ');
                     $command .= ' ' . implode(' ', $prefix);
+                    break;
+                case self::IGNORE_ERRORS_ON_EXIT:
                     break;
                 default:
                     $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];

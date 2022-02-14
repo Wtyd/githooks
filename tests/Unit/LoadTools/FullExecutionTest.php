@@ -2,24 +2,22 @@
 
 namespace Tests\Unit\LoadTools;
 
+use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Tools\Tool\{
-    Phpcpd,
-    SecurityChecker,
-    Phpmd,
+    CodeSniffer\Phpcbf,
+    CodeSniffer\Phpcs,
     ParallelLint,
-    Phpstan
+    Phpcpd,
+    Phpmd,
+    Phpstan,
+    SecurityChecker
 };
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
-    Phpcs,
-    Phpcbf
-};
-use PHPUnit\Framework\TestCase;
 use Tests\Utils\ConfigurationFileBuilder;
-use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
+use Tests\Utils\TestCase\UnitTestCase;
 
-class FullExecutionTest extends TestCase
+class FullExecutionTest extends UnitTestCase
 {
 
     function allToolsProvider()

@@ -2,7 +2,7 @@ name: Windows Tests
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ rc**]
+    branches-ignore: [ rc** ]
   pull_request:
     branches-ignore: [ master ]
 
@@ -27,7 +27,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: prestissimo, phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
         ini-values: "post_max_size=256M" #optional
         coverage: none
 

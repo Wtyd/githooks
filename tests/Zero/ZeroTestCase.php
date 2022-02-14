@@ -7,9 +7,12 @@ namespace Tests\Zero;
 use Illuminate\Support\Facades\Facade;
 use LaravelZero\Framework\Providers\CommandRecorder\CommandRecorderRepository;
 use NunoMaduro\Collision\ArgumentFormatter;
+use Tests\Utils\Traits\CreatesApplication;
 
 abstract class ZeroTestCase extends IlluminateTestCase
 {
+    use CreatesApplication;
+
     /**
      * Setup the test environment.
      */

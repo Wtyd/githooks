@@ -70,6 +70,7 @@ class ConfigurationFileBuilder
                 Phpcs::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcs',
                 Phpcs::PATHS => [$rootPath . '/src'],
                 Phpcs::OTHER_ARGS_OPTION => '--report=summary --parallel=2',
+                Phpcs::IGNORE_ERRORS_ON_EXIT => false,
                 Phpcs::STANDARD => 'PSR12',
                 Phpcs::IGNORE => [$rootPath . '/vendor'],
                 Phpcs::ERROR_SEVERITY => 1,
@@ -80,7 +81,8 @@ class ConfigurationFileBuilder
                 Phpcbf::USE_PHPCS_CONFIGURATION => false,
                 Phpcbf::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
                 Phpcbf::PATHS => [$rootPath . '/src'],
-                Phpcs::OTHER_ARGS_OPTION => '--report=summary --parallel=2',
+                Phpcbf::OTHER_ARGS_OPTION => '--report=summary --parallel=2',
+                Phpcbf::IGNORE_ERRORS_ON_EXIT => false,
                 Phpcbf::STANDARD => 'PSR12',
                 Phpcbf::IGNORE => [$rootPath . '/vendor'],
                 Phpcbf::ERROR_SEVERITY => 1,
@@ -92,6 +94,7 @@ class ConfigurationFileBuilder
                 ParallelLint::PATHS => [$rootPath . '/src'],
                 ParallelLint::EXCLUDE => [$rootPath . '/vendor'],
                 ParallelLint::OTHER_ARGS_OPTION => '--colors',
+                ParallelLint::IGNORE_ERRORS_ON_EXIT => false,
             ],
             ToolAbstract::MESS_DETECTOR => [
                 Phpmd::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpmd',
@@ -99,23 +102,27 @@ class ConfigurationFileBuilder
                 Phpmd::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
                 Phpmd::EXCLUDE => [$rootPath . '/vendor'],
                 Phpmd::OTHER_ARGS_OPTION => '--strict',
+                Phpmd::IGNORE_ERRORS_ON_EXIT => false,
             ],
             ToolAbstract::COPYPASTE_DETECTOR => [
                 Phpcpd::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
                 Phpcpd::PATHS => [$rootPath . '/src'],
                 Phpcpd::EXCLUDE => [$rootPath . '/vendor'],
                 Phpcpd::OTHER_ARGS_OPTION => '--min-lines=5',
+                Phpcpd::IGNORE_ERRORS_ON_EXIT => false,
             ],
             ToolAbstract::PHPSTAN => [
                 Phpstan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
                 Phpstan::LEVEL => 0,
                 Phpstan::PATHS => [$rootPath . '/src'],
                 Phpstan::OTHER_ARGS_OPTION => '--no-progress',
+                Phpstan::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
             ToolAbstract::SECURITY_CHECKER => [
                 SecurityChecker::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
                 SecurityChecker::OTHER_ARGS_OPTION => '-format json',
+                SecurityChecker::IGNORE_ERRORS_ON_EXIT => false,
             ],
         ];
     }
@@ -254,13 +261,32 @@ class ConfigurationFileBuilder
     /**
      * The rest of the file with the configuration of the tools
      *
-     * @param array $configurationTools Each key is the name of the tool that in turn has another associative array where the keys
-     *  are the configuration parameters.
+     * @param array $configurationTools Each key is the name of the tool that in turn has another associative array
+     * where the keys are the configuration parameters.
      * @return ConfigurationFileBuilder
      */
     public function setConfigurationTools(array $configurationTools): ConfigurationFileBuilder
     {
         $this->configurationTools = $configurationTools;
+
+        return $this;
+    }
+
+    /**
+     * Set the configuration for one tool.
+     *
+     * @param string $tool
+     * @param array|null $configuration If null deletes the key of the tool in the configuration file.
+     * @return ConfigurationFileBuilder
+     */
+    public function setToolConfiguration(string $tool, ?array $configuration): ConfigurationFileBuilder
+    {
+        if (null === $configuration) {
+            unset($this->configurationTools[$tool]);
+        } else {
+            $this->configurationTools[$tool] = $configuration;
+        }
+
 
         return $this;
     }
@@ -303,6 +329,21 @@ class ConfigurationFileBuilder
     public function setPhpStanConfiguration(array $configuration): ConfigurationFileBuilder
     {
         $this->configurationTools[ToolAbstract::PHPSTAN] = $configuration;
+
+        return $this;
+    }
+
+    /**
+     * Change one option of the configuration of one tool.
+     *
+     * @param string $toolName
+     * @param array $option Format key (the option) value (the new value).
+     * @return ConfigurationFileBuilder
+     */
+    public function changeToolOption(string $toolName, array $option): ConfigurationFileBuilder
+    {
+        $key = key($option);
+        $this->configurationTools[$toolName][$key] = $option[$key];
 
         return $this;
     }

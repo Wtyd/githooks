@@ -2,12 +2,12 @@
 
 namespace Tests\Unit\Tools\Tool;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Phpstan;
 use Wtyd\GitHooks\Tools\Tool\PhpstanFake;
 
-class PhpStanTest extends TestCase
+class PhpStanTest extends UnitTestCase
 {
     /** @test */
     function phpstan_is_a_supported_tool()
@@ -25,6 +25,7 @@ class PhpStanTest extends TestCase
             'memory-limit' => '1G',
             'level' => 5,
             'otherArguments' => '--no-progress',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
@@ -47,6 +48,7 @@ class PhpStanTest extends TestCase
             'memory-limit' => '1G',
             'level' => 1,
             'otherArguments' => '--strict',
+            'ignoreErrorsOnExit' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
@@ -66,6 +68,7 @@ class PhpStanTest extends TestCase
             'memory-limit' => '1G',
             'level' => 1,
             'otherArguments' => '--strict',
+            'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
 

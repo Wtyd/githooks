@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
@@ -38,9 +40,14 @@ class ToolExecutor
                 if ($tool->getExitCode() === 0) {
                     $this->printer->resultSuccess($this->getSuccessString($tool::NAME, $executionTime));
                 } else {
-                    $errors->setError($tool::NAME, $tool->getErrors());
                     $this->printErrors($tool);
-                    $this->printer->resultError($this->getErrorString($tool::NAME, $executionTime));
+
+                    if (!$tool->isIgnoreErrorsOnExit()) {
+                        $errors->setError($tool::NAME, $tool->getErrors());
+                        $this->printer->resultError($this->getErrorString($tool::NAME, $executionTime));
+                    } else {
+                        $this->printer->resultWarning($this->getErrorString($tool::NAME, $executionTime));
+                    }
                 }
             } catch (\Throwable $th) {
                 $errors->setError($tool::NAME, $th->getMessage());

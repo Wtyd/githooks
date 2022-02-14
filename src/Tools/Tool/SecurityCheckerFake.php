@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
@@ -23,15 +25,6 @@ class SecurityCheckerFake extends SecurityChecker
         $this->setOKExit();
     }
 
-    /**
-     * Override this metod
-     *
-     * @return void
-     */
-    public function execute(bool $withLiveOutput): void
-    {
-        //Do nothing
-    }
 
     /**
      * Fake succefull exit

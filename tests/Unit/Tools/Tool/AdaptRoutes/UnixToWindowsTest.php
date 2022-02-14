@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Tools\Tool\AdaptRoutes;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\{
     CodeSniffer\PhpcbfFake,
@@ -18,7 +18,7 @@ use Wtyd\GitHooks\Tools\Tool\{
  * @group windows
  * This tests only works in Windows
  */
-class UnixToWindowsTest extends TestCase
+class UnixToWindowsTest extends UnitTestCase
 {
     /** @test */
     function it_adapts_routes_of_phpcbf()

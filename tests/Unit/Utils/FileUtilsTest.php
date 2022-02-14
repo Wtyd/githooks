@@ -3,13 +3,11 @@
 namespace Tests\Unit\Utils;
 
 use Illuminate\Support\Facades\Storage;
-use Tests\CreatesApplication;
 use Tests\Zero\ZeroTestCase;
 use Wtyd\GitHooks\Utils\FileUtils;
 
 class FileUtilsTest extends ZeroTestCase
 {
-    use CreatesApplication;
 
     /** @test */
     function directory_does_not_contains_a_deleted_file()
