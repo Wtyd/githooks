@@ -3,11 +3,11 @@
 namespace Tests\System\Release;
 
 use Tests\ReleaseTestCase;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
 /**
  * @group release
+ * No way to run the tool Security-Checker for your flackness. That is, there is no way to make it pass or KO
+ * in a controlled way.
  */
 class ExecuteToolTest extends ReleaseTestCase
 {
@@ -148,9 +148,6 @@ class ExecuteToolTest extends ReleaseTestCase
             ],
             'Parallel-Lint' => [
                 'parallel-lint'
-            ],
-            'Composer Check-security' => [
-                'security-checker'
             ],
         ];
     }

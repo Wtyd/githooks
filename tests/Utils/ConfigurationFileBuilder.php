@@ -261,8 +261,8 @@ class ConfigurationFileBuilder
     /**
      * The rest of the file with the configuration of the tools
      *
-     * @param array $configurationTools Each key is the name of the tool that in turn has another associative array where the keys
-     *  are the configuration parameters.
+     * @param array $configurationTools Each key is the name of the tool that in turn has another associative array
+     * where the keys are the configuration parameters.
      * @return ConfigurationFileBuilder
      */
     public function setConfigurationTools(array $configurationTools): ConfigurationFileBuilder

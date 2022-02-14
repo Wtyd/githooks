@@ -12,7 +12,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
-use Wtyd\GitHooks\Build\ManageDependencies;
 
 final class BuildCommand extends Command
 {
@@ -55,15 +54,6 @@ final class BuildCommand extends Command
      */
     private $originalOutput;
 
-    /** @var ManageDependencies */
-    private $manageDependencies;
-
-    public function __construct(ManageDependencies $manageDependencies)
-    {
-        parent::__construct();
-        $this->manageDependencies = $manageDependencies;
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -72,11 +62,6 @@ final class BuildCommand extends Command
         if ($this->supportsAsyncSignals()) {
             $this->listenForSignals();
         }
-        $this->title('Deleting dev dependencies');
-        $this->manageDependencies->deleteDevDependencies();
-
-        $this->title('Updating prod dependencies');
-        $this->manageDependencies->updateProdDependencies();
 
         $this->title('Building process');
         $this->build($this->input->getArgument('name') ?? $this->getBinary());

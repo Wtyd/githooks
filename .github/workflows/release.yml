@@ -41,6 +41,7 @@ jobs:
 
     - name: Build the Aplication
       run: |
+        php githooks app:pre-build
         branch=${GITHUB_REF##*/}
         echo ${branch}
         prefix='rc-'
