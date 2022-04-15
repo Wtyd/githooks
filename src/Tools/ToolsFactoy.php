@@ -29,7 +29,6 @@ class ToolsFactoy
     {
         $loadedTools = [];
 
-        // dd($toolsConfiguration);
         $container = Container::getInstance();
         foreach ($toolsConfiguration as $tool) {
             $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()], [ToolAbstract::TOOL_CONFIGURATION => $tool]);

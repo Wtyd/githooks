@@ -2,6 +2,7 @@
 
 namespace Wtyd\GitHooks\Tools;
 
+use Wtyd\GitHooks\ConfigurationFile\CliArguments;
 use Wtyd\GitHooks\LoadTools\ExecutionFactory;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
@@ -33,18 +34,17 @@ class ToolsPreparer
      * Executes the tool(s) with the githooks.yml arguments.
      * The Option 'execution' can be overriden with the $execution variable.
      *
-     * @param string $tool Name of the tool to be executed. 'all' for execute all tools setted in githooks.yml
-     * @param string $execution Mode execution. Can be 'smart', 'fast' or 'full'. Default from githooks.yml.
+     * @param CliArguments $cliArguments
      *
      * @return array Tools (ToolAbstract) created and prepared for run.
      */
-    public function __invoke(string $tool, string $execution = ''): array
+    public function __invoke(CliArguments $cliArguments): array
     {
         $file = $this->fileReader->readfile();
 
-        $this->configurationFile = new ConfigurationFile($file, $tool);
+        $file = $cliArguments->overrideArguments($file);
 
-        $this->setExecution($execution);
+        $this->configurationFile = new ConfigurationFile($file, $cliArguments->getTool());
 
         $strategy = $this->executionFactory->__invoke($this->configurationFile->getExecution());
 

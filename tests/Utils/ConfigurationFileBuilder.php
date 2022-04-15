@@ -45,9 +45,9 @@ class ConfigurationFileBuilder
      *
      * @param string $rootPath Customize what path you would as project root
      * @param string $toolsPath The way to find the executables of the tools
-     *                      phar: the full path to the executables (example: tools/php71/Phpcbf)
-     *                      global: the tool has global acces (example: Phpcbf)
-     *                      local: the tool was installed with composer in local (example: vendor/bin/Phpcbf)
+     *                      phar: the full path to the executables (example: tools/php71/phpcbf)
+     *                      global: the tool has global acces (example: phpcbf)
+     *                      local: the tool was installed with composer in local (example: vendor/bin/phpcbf)
      */
     public function __construct(string $rootPath, string $toolsPath = '')
     {
