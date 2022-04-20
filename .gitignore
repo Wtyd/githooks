@@ -29,7 +29,7 @@ testsDir/src
 testsDir/app
 testsDir/vendor
 testsDir/*.yml
-githooks.yml
+/githooks.yml
 
 tools/tmp/
 
