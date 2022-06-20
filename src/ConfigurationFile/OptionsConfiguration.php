@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile;
 
+use Exception;
 use Illuminate\Support\Arr;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
@@ -14,21 +15,20 @@ class OptionsConfiguration
 
     public const EXECUTION_TAG = 'execution';
 
-    public const TAGS_OPTIONS_TAG = [self::EXECUTION_TAG];
+    public const PROCESSES_TAG = 'processes';
 
-    /**
-     * @var string
-     */
+    public const TAGS_OPTIONS_TAG = [self::EXECUTION_TAG, self::PROCESSES_TAG];
+
+    /** @var string */
     protected $execution = '';
 
-    /**
-     * @var array
-     */
+    /** @var int */
+    protected $processes = 1;
+
+    /** @var array */
     protected $errors = [];
 
-    /**
-     * @var array
-     */
+    /** @var array */
     protected $warnings = [];
 
     public function __construct(array $configurationFile)
@@ -72,6 +72,17 @@ class OptionsConfiguration
                 $this->errors[] = WrongExecutionValueException::getExceptionMessage($execution);
             }
         }
+
+        if (array_key_exists(self::PROCESSES_TAG, $options)) {
+            $processes = $options[self::PROCESSES_TAG];
+            try {
+                $this->setProcesses($processes);
+            } catch (WrongExecutionValueException $ex) {
+                $this->errors[] = $ex->getMessage();
+            } catch (\TypeError $throwable) {
+                $this->errors[] = WrongExecutionValueException::getExceptionMessage($execution);
+            }
+        }
     }
 
     /**
@@ -99,8 +110,19 @@ class OptionsConfiguration
     }
 
     /**
-     * Undocumented function
-     *
+     * @param int $processes
+     * @return void
+     * @throws WrongExecutionValueException
+     */
+    public function setProcesses(int $processes): void
+    {
+        if ($processes < 1) {
+            throw new Exception('The number of parallel processes must be positive.');
+        }
+        $this->processes = $processes;
+    }
+
+    /**
      * @param string $execution
      * @return void
      * @throws WrongExecutionValueException
@@ -113,6 +135,11 @@ class OptionsConfiguration
         }
 
         throw WrongExecutionValueException::forExecution($execution);
+    }
+
+    public function getProcesses(): int
+    {
+        return $this->processes;
     }
 
     public function getExecution(): string

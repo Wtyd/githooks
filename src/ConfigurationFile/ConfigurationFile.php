@@ -237,6 +237,11 @@ class ConfigurationFile
         $this->options->setExecution($execution);
     }
 
+    public function getProcesses(): int
+    {
+        return $this->options->getProcesses();
+    }
+
     public function getToolsConfiguration(): array
     {
         return $this->toolsConfiguration;

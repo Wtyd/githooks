@@ -38,7 +38,7 @@ class Phpmd extends ToolAbstract
         }
     }
 
-    protected function prepareCommand(): string
+    public function prepareCommand(): string
     {
         $command = '';
         foreach (self::ARGUMENTS as $option) {

@@ -51,7 +51,10 @@ class ConfigurationFileBuilder
      */
     public function __construct(string $rootPath, string $toolsPath = '')
     {
-        $this->options = [OptionsConfiguration::EXECUTION_TAG => ExecutionMode::FULL_EXECUTION];
+        $this->options = [
+            OptionsConfiguration::EXECUTION_TAG => ExecutionMode::FULL_EXECUTION,
+            OptionsConfiguration::PROCESSES_TAG => 1,
+        ];
 
         $this->mainToolExecutablePaths  = $this->resolveToolsPath($toolsPath);
 

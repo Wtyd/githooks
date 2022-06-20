@@ -1,6 +1,7 @@
 # Configuración general de la herramienta
 Options:
   - execution: full #full (default), fast
+  - processes: 2
 
 # Herramientas que se van a ejecutar
 Tools:
@@ -52,6 +53,7 @@ phpmd:
   rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
   # otherArguments: --strict
+  #ignoreErrorsOnExit: true
 
 phpcpd:
   executablePath: tools/php71/phpcpd

@@ -12,13 +12,10 @@ use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
 class FileReader
 {
     /**
-     * Lee el fichero githooks.yml y lo transforma en un array asociativo. Al leer el fichero se pueden dar diversos problemas:
-     * 1. El fichero no existe o no tiene la extensión correcta o no cumple el formato .yml. En este caso se lanza una ParseConfigurationFileException.
-     * 2. Si el fichero está vacío o no existe la clave Tools se lanza una ToolsNotFoundException.
-     * 3. Existe la clave Tools pero está vacía. Se lanza una ToolsIsEmptyException.
-     * 4. Existe la clave Tools y contiene herramientas. Se devuelve el fichero transformado a array asociativo.
+     * @return array File configuration githooks.yml in associative array format.
      *
-     * @return array Los valores del fichero githooks.yml en formato de array asociativo.
+     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException
+     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
      */
     public function readFile(): array
     {
@@ -37,6 +34,8 @@ class FileReader
      * Searchs configuration file 'githooks.yml' on root path and qa/ directory
      *
      * @return string The path of configuration file
+     *
+     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
      */
     protected function findConfigurationFile(): string
     {

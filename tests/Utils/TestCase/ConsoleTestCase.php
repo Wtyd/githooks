@@ -8,6 +8,8 @@ use Tests\Zero\{
     ZeroTestCase,
     PendingCommand
 };
+use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryAbstract;
+use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryFake;
 use Wtyd\GitHooks\Tools\Tool\{
     CodeSniffer\Phpcbf,
     CodeSniffer\PhpcbfFake,
@@ -55,6 +57,7 @@ abstract class ConsoleTestCase extends ZeroTestCase
         parent::setUp();
 
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
+        $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
     }
 
     /**

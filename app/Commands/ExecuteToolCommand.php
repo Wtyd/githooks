@@ -29,20 +29,21 @@ class ExecuteToolCommand extends BaseCommand
         $execution = strval($this->argument('execution'));
 
         try {
-            $tools = $this->toolsPreparer->__invoke(
-                new CliArguments(
+            $configurationFile = $this->readConfigurationFileAction
+                ->__invoke(new CliArguments(
                     $tool,
                     $execution,
                     $this->option('ignoreErrorsOnExit'),
                     strval($this->option('otherArguments')),
                     strval($this->option('executablePath')),
                     strval($this->option('paths'))
-                )
-            );
+                ));
 
-            $withLiveOutput = $tool === 'all' ? false : true;
+            $tools = $this->toolsPreparer->__invoke($configurationFile);
 
-            $errors = $this->toolExecutor->__invoke($tools, $withLiveOutput);
+            $processesExecution = $this->processExecutionFactory->create($tool, $tools, $configurationFile->getProcesses());
+
+            $errors = $processesExecution->execute();
         } catch (ToolIsNotSupportedException $exception) {
             $this->error($exception->getMessage());
             $errors->setError($tool, $exception->getMessage());
@@ -64,6 +65,7 @@ class ExecuteToolCommand extends BaseCommand
                 $this->warn($warning);
             }
         }
+
         foreach ($this->toolsPreparer->getConfigurationFileWarnings() as $warning) {
             $this->warn($warning);
         }

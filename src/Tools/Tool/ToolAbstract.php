@@ -91,7 +91,7 @@ abstract class ToolAbstract
      */
     protected $args = [];
 
-    abstract protected function prepareCommand(): string;
+    abstract public function prepareCommand(): string;
 
     final protected function setArguments(array $configurationFile): void
     {

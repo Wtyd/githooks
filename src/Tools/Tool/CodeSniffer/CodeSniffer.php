@@ -33,7 +33,7 @@ abstract class CodeSniffer extends ToolAbstract
     ];
 
     // TODO Fix Cyc. Complexity
-    protected function prepareCommand(): string
+    public function prepareCommand(): string
     {
         $command = $this->args[self::EXECUTABLE_PATH_OPTION];
         $arguments = array_diff(self::ARGUMENTS, [self::EXECUTABLE_PATH_OPTION]);

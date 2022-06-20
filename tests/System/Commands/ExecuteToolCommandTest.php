@@ -4,10 +4,11 @@ namespace Tests\System\Commands;
 
 use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
-use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Tools\Execution\MultiProcessesExecutionFake;
+use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFake;
 use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
@@ -28,7 +29,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             'security-checker' => [
                 'tool' => 'security-checker',
                 'command' => 'local-php-security-checker',
-                'Alias of the tool when is executed' => 'local-php-security-checker'
+                'Alias of the tool when is executed' => 'security-checker'
             ],
             'phpcs' => [
                 'tool' => 'phpcs',
@@ -85,7 +86,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             'security-checker' => [
                 'tool' => 'security-checker',
                 'command' => 'local-php-security-checker',
-                'Alias of the tool when is executed' => 'local-php-security-checker'
+                'Alias of the tool when is executed' => 'security-checker'
             ],
             'phpcs' => [
                 'tool' => 'phpcs',
@@ -130,8 +131,8 @@ class ExecuteToolCommandTest extends SystemTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
 
-        $this->app->resolving(SecurityCheckerFake::class, function ($toolMock) {
-            $toolMock->fakeExit(1, ['Some error was found']);
+        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolAlias) {
+            $processExecutionFake->setToolsThatMustFail([$toolAlias]);
         });
 
         $this->artisan("tool $tool")
@@ -179,7 +180,7 @@ class ExecuteToolCommandTest extends SystemTestCase
 
         $this->artisan('tool all')
             ->assertExitCode(0)
-            ->toolHasBeenExecutedSuccessfully('local-php-security-checker')
+            ->toolHasBeenExecutedSuccessfully('security-checker')
             ->toolHasBeenExecutedSuccessfully('phpcs')
             ->toolHasBeenExecutedSuccessfully('phpcbf')
             ->toolHasBeenExecutedSuccessfully('phpcpd')
@@ -204,7 +205,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpcpd',
                 ],
                 'Runned Tools' => [
-                    'local-php-security-checker',
+                    'security-checker',
                     'phpcs',
                     'phpcpd',
                 ],
@@ -228,7 +229,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpstan'
                 ],
                 'Not runned tools' =>  [
-                    'local-php-security-checker',
+                    'security-checker',
                     'phpcs',
                     'phpcpd',
                 ],
@@ -261,7 +262,7 @@ class ExecuteToolCommandTest extends SystemTestCase
         return [
             'Fail phpcpd' => [
                 'Tools executed successfully' => [
-                    'local-php-security-checker',
+                    'security-checker',
                     'phpcs',
                     'phpmd',
                     'parallel-lint',
@@ -271,7 +272,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'Fail phpmd' => [
                 'Tools executed successfully' => [
-                    'local-php-security-checker',
+                    'security-checker',
                     'phpcbf',
                     'phpcpd',
                     'parallel-lint',
@@ -281,7 +282,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'Fail phpstan' => [
                 'Tools executed successfully' => [
-                    'local-php-security-checker',
+                    'security-checker',
                     'phpcbf',
                     'phpcpd',
                     'phpmd',
@@ -301,6 +302,10 @@ class ExecuteToolCommandTest extends SystemTestCase
         file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$failedTool]));
+
+        $this->app->resolving(MultiProcessesExecutionFake::class, function ($processExecutionFake) use ($failedTool) {
+            $processExecutionFake->setToolsThatMustFail([$failedTool]);
+        });
 
         $this->artisan('tool all')
             ->assertExitCode(1)
@@ -445,5 +450,49 @@ class ExecuteToolCommandTest extends SystemTestCase
 
         //Tag 'phpcbf' of configuration file only has 'usePhpcsConfiguration' key
         $this->assertArrayHasKey('usePhpcsConfiguration', $configurationFile);
+    }
+
+    /**
+     * @test
+     * @dataProvider allToolsKODataProvider
+     */
+    function it_prints_error_when_tool_execution_exceeds_the_timeout($tool, $commandUnderTheHood, $toolAlias)
+    {
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+
+        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
+
+        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolAlias) {
+            $processExecutionFake->setToolsWithTimeout([$toolAlias]);
+        });
+
+        $this->artisan("tool $tool")
+            ->assertExitCode(1)
+            ->toolHasFailed($toolAlias)
+            ->containsStringInOutput('exceeded the timeout');
+    }
+
+    /**
+     * @test
+     * @dataProvider exit1DataProvider
+     */
+    function it_returns_exit_1_when_some_tool_fails_by_timeout($toolsExecutedSuccessfully, $failedTool)
+    {
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+
+        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$failedTool]));
+
+        $this->app->resolving(MultiProcessesExecutionFake::class, function ($processExecutionFake) use ($failedTool) {
+            $processExecutionFake->setToolsWithTimeout([$failedTool]);
+        });
+
+        $this->artisan('tool all')
+            ->assertExitCode(1)
+            ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[0])
+            ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[1])
+            ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[2])
+            ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[3])
+            ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[4])
+            ->toolHasFailed($failedTool);
     }
 }

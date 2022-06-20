@@ -4,15 +4,8 @@ namespace Tests\Integration;
 
 use Tests\Utils\TestCase\ConsoleTestCase;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\Tools\Tool\{
-    CodeSniffer\Phpcbf,
-    CodeSniffer\Phpcs,
-    ParallelLint,
-    Phpcpd,
-    Phpmd,
-    Phpstan,
-    SecurityChecker
-};
+use Wtyd\GitHooks\Tools\Execution\MultiProcessesExecutionFake;
+use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFake;
 
 class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
 {
@@ -20,31 +13,25 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
     {
         return [
             'Code Sniffer Phpcs' => [
-                Phpcs::class,
                 'phpcs'
             ],
             'Code Sniffer Phpcbf' => [
-                Phpcbf::class,
                 'phpcbf'
             ],
             'Php Stan' => [
-                Phpstan::class,
                 'phpstan'
             ],
             'Php Mess Detector' => [
-                Phpmd::class,
+
                 'phpmd'
             ],
             'Php Copy Paste Detector' => [
-                Phpcpd::class,
                 'phpcpd'
             ],
             'Parallel-Lint' => [
-                ParallelLint::class,
                 'parallel-lint'
             ],
             'Composer Check-security' => [
-                SecurityChecker::class,
                 'security-checker'
             ],
         ];
@@ -55,7 +42,6 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
      * @dataProvider allToolsProvider
      */
     function it_returns_exit_code_0_when_the_tool_fails_and_has_ignoreErrorsOnExit_set_to_true(
-        $toolClass,
         $toolName
     ) {
         $fileReader = $this->app->make(FileReader::class);
@@ -65,10 +51,10 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
                 ->buildArray()
         );
 
-        $this->bindFakeTools();
-        $this->app->resolving($toolClass, function ($toolMock) {
-            $toolMock->fakeExit(1, ['Some error was found']);
+        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolName) {
+            $processExecutionFake->setToolsThatMustFail([$toolName]);
         });
+
 
         $this->artisan("tool $toolName")
             ->assertExitCode(0)
@@ -80,7 +66,6 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
      * @dataProvider allToolsProvider
      */
     function it_returns_exit_code_1_when_the_tool_fails_and_has_ignoreErrorsOnExit_set_to_false(
-        $toolClass,
         $toolName
     ) {
         $fileReader = $this->app->make(FileReader::class);
@@ -90,9 +75,8 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
                 ->buildArray()
         );
 
-        $this->bindFakeTools();
-        $this->app->resolving($toolClass, function ($toolMock) {
-            $toolMock->fakeExit(1, ['Some error was found']);
+        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolName) {
+            $processExecutionFake->setToolsThatMustFail([$toolName]);
         });
 
         $this->artisan("tool $toolName")
@@ -104,7 +88,7 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
      * @test
      * @dataProvider allToolsProvider
      */
-    function it_returns_exit_code_0_when_the_failing_tool_has_ignoreErrorsOnExit_set_to_true($toolClass, $toolName)
+    function it_returns_exit_code_0_when_the_failing_tool_has_ignoreErrorsOnExit_set_to_true($toolName)
     {
         $fileReader = $this->app->make(FileReader::class);
         $fileReader->mockConfigurationFile(
@@ -113,12 +97,11 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
                 ->buildArray()
         );
 
-        $this->bindFakeTools();
-        $this->app->resolving($toolClass, function ($toolMock) {
-            $toolMock->fakeExit(1, ['Some error was found']);
+        $this->app->resolving(MultiProcessesExecutionFake::class, function ($processExecutionFake) use ($toolName) {
+            $processExecutionFake->setToolsThatMustFail([$toolName]);
         });
 
-        $this->artisan("tool all")
+        $this->artisan('tool all')
             ->assertExitCode(0)
             ->toolHasFailed($toolName);
     }
@@ -127,7 +110,7 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
      * @test
      * @dataProvider allToolsProvider
      */
-    function it_returns_exit_code_1_when_the_failing_tool_has_ignoreErrorsOnExit_set_to_false($toolClass, $toolName)
+    function it_returns_exit_code_1_when_the_failing_tool_has_ignoreErrorsOnExit_set_to_false($toolName)
     {
         $fileReader = $this->app->make(FileReader::class);
         $fileReader->mockConfigurationFile(
@@ -136,9 +119,8 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
                 ->buildArray()
         );
 
-        $this->bindFakeTools();
-        $this->app->resolving($toolClass, function ($toolMock) {
-            $toolMock->fakeExit(1, ['Some error was found']);
+        $this->app->resolving(MultiProcessesExecutionFake::class, function ($processExecutionFake) use ($toolName) {
+            $processExecutionFake->setToolsThatMustFail([$toolName]);
         });
 
         $this->artisan("tool all")
