@@ -8,10 +8,18 @@ use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ProcessFake extends Process
 {
+    /** @inheritDoc */
     protected $starttime;
+
+    /** @inheritDoc */
     private $lastTime;
+
+    /** @inheritDoc */
     private $isSuccessful = true;
+
+    /** @inheritDoc */
     private $output;
+
     private $fakeTimeout = false;
 
     /**

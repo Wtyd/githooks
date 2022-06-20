@@ -79,7 +79,7 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         if ($process->isSuccessful()) {
             $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
         } else {
-                $errorMessage = $exceptionMessage ?? $process->getOutput();
+            $errorMessage = $exceptionMessage ?? $process->getOutput();
             if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
                 $this->errors->setError($toolName, $errorMessage);
             }
@@ -87,7 +87,7 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
 
             $this->printer->line($errorMessage);
         }
-            unset($this->runningProcesses[$toolName]);
+        unset($this->runningProcesses[$toolName]);
 
         return count($this->runnedProcesses);
     }

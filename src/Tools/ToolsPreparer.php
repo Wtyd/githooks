@@ -28,7 +28,7 @@ class ToolsPreparer
      *
      * @param ConfigurationFile $cliArguments
      *
-     * @return array<ToolAbstract> created and prepared for run.
+     * @return array<ToolAbstact> created and prepared for run.
      */
     public function __invoke(ConfigurationFile $configurationFile): array
     {

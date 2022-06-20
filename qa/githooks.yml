@@ -14,7 +14,7 @@ Tools:
 
 # Configuración de cada una de las herramientas
 phpstan:
-    executablePath: tools/php71/phpstan
+    executablePath: vendor/bin/phpstan
     config: './qa/phpstan.neon'
     # memory-limit: '1G' # Examples: 1M 2000M 1G 5G
     paths: ['src']
