@@ -50,9 +50,9 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, $tools, $this->configurationFile->getProcesses());
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
 
-        $errors = $multiProcessExecution->execute();
+        $errors = $multiProcessExecution->execute($tools, $this->configurationFile->getProcesses());
 
         $this->assertTrue($errors->isEmpty());
 
@@ -76,11 +76,11 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, $tools, $this->configurationFile->getProcesses());
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
         $multiProcessExecution->setToolsThatMustFail([$failedTool]);
 
 
-        $errors = $multiProcessExecution->execute();
+        $errors = $multiProcessExecution->execute($tools, $this->configurationFile->getProcesses());
 
         $this->assertFalse($errors->isEmpty());
 
@@ -134,11 +134,11 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, $tools, $this->configurationFile->getProcesses());
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
         $multiProcessExecution->setToolsThatMustFail([$failedTool, $failedToolWithIgnoreErrosOnExit]);
 
 
-        $errors = $multiProcessExecution->execute();
+        $errors = $multiProcessExecution->execute($tools, $this->configurationFile->getProcesses());
 
         $this->assertCount(1, $errors->getErrors());
         $this->assertArrayHasKey($failedTool, $errors->getErrors());

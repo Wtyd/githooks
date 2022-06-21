@@ -25,16 +25,24 @@ abstract class ProcessExecutionAbstract
     /** @var int */
     protected $threads;
 
-    public function __construct(Printer $printer, array $tools, int $threads)
+    public function __construct(Printer $printer)
     {
         $this->printer = $printer;
-        $this->tools = $tools;
-        $this->threads = $threads;
         $this->errors = new Errors();
     }
 
-    public function execute(): Errors
+    /**
+     * Run the $tools on the number of $threads in parallel.
+     *
+     * @param array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> $tools
+     * @param integer $threads
+     * @return Errors
+     */
+    public function execute(array $tools, int $threads): Errors
     {
+        $this->tools = $tools;
+        $this->threads = $threads;
+
         $this->createProcesses();
 
         try {
@@ -48,12 +56,11 @@ abstract class ProcessExecutionAbstract
     abstract protected function runProcesses(): Errors;
 
     /**
-     * Muestra los errores obtenidos por la herramienta. Es posible que una herramienta termine de forma inesperada.
-     * En estos casos no se mostrara nada.
+     * Prints the errors found by the tool. In case it ends unexpectedly it will not print anything.
      *
      * @return void
      */
-    public function printErrors(ToolAbstract $tool)
+    public function printErrors(ToolAbstract $tool): void
     {
         if (is_array($tool->getExit())) {
             foreach ($tool->getExit() as $line) {

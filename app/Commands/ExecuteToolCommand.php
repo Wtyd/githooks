@@ -41,9 +41,9 @@ class ExecuteToolCommand extends BaseCommand
 
             $tools = $this->toolsPreparer->__invoke($configurationFile);
 
-            $processesExecution = $this->processExecutionFactory->create($tool, $tools, $configurationFile->getProcesses());
+            $processesExecution = $this->processExecutionFactory->create($tool);
 
-            $errors = $processesExecution->execute();
+            $errors = $processesExecution->execute($tools, $configurationFile->getProcesses());
         } catch (ToolIsNotSupportedException $exception) {
             $this->error($exception->getMessage());
             $errors->setError($tool, $exception->getMessage());

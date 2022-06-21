@@ -52,9 +52,9 @@ class ProcessExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $processExecution = new ProcessExecutionFake($printerMock, $tools, $this->configurationFile->getProcesses());
+        $processExecution = new ProcessExecutionFake($printerMock);
 
-        $errors = $processExecution->execute();
+        $errors = $processExecution->execute($tools, $this->configurationFile->getProcesses());
 
         $this->assertTrue($errors->isEmpty());
 
@@ -75,10 +75,10 @@ class ProcessExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $processExecution = new ProcessExecutionFake($printerMock, $tools, $this->configurationFile->getProcesses());
+        $processExecution = new ProcessExecutionFake($printerMock);
         $processExecution->setToolsThatMustFail([$tool]);
 
-        $errors = $processExecution->execute();
+        $errors = $processExecution->execute($tools, $this->configurationFile->getProcesses());
 
         $this->assertFalse($errors->isEmpty());
         $printerMock->shouldHaveReceived()
@@ -104,10 +104,10 @@ class ProcessExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $processExecution = new ProcessExecutionFake($printerMock, $tools, $this->configurationFile->getProcesses());
+        $processExecution = new ProcessExecutionFake($printerMock);
         $processExecution->setToolsThatMustFail([$tool]);
 
-        $errors = $processExecution->execute();
+        $errors = $processExecution->execute($tools, $this->configurationFile->getProcesses());
 
         $this->assertTrue($errors->isEmpty());
 

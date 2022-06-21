@@ -23,9 +23,7 @@ abstract class ProcessExecutionFactoryAbstract
 
     /**
      * @param string $tool
-     * @param array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> $tools
-     * @param integer $threds
      * @return ProcessExecutionAbstract
      */
-    abstract public function create(string $tool, array $tools, int $threds): ProcessExecutionAbstract;
+    abstract public function create(string $tool): ProcessExecutionAbstract;
 }
