@@ -65,34 +65,17 @@ abstract class ToolAbstract
 
     public const IGNORE_ERRORS_ON_EXIT = 'ignoreErrorsOnExit';
 
-    /**
-     * @var string Name of tool printend when it is runned
-     */
+    /** @var string Name of tool printend when it is runned */
     protected $executable;
 
-    /**
-     * @var int
-     */
-    protected $exitCode = -1;
 
-    /**
-     * @var array
-     */
-    protected $exit = [];
-
-    /**
-     * @var string
-     */
+    /** @var string */
     protected $errors = '';
 
-    /**
-     * The arguments to run the tool.
-     * Is an associative array where the keys are the tool ARGUMENTS
-     *
-     * @var array
-     */
+    /** @var array Is an associative array where the keys are the tool ARGUMENTS */
     protected $args = [];
 
+    /** @return string The tool command line based on the tool configuration */
     abstract public function prepareCommand(): string;
 
     final protected function setArguments(array $configurationFile): void
@@ -172,56 +155,6 @@ abstract class ToolAbstract
     protected function isWindows()
     {
         return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
-    }
-
-    /**
-     * Executes the tool.
-     * 1. WithLiveOutput is used when the tool is executed individually.
-     * 2. Without live output means the tool is executed with the flag 'all'. Namely, when two or more tools are running together.
-     *    Only one tool may be running. It depends on githooks.yml.
-     *
-     * @return void
-     */
-    public function execute(bool $withLiveOutput): void
-    {
-        if ($withLiveOutput) {
-            $this->runWithLiveOutput($this->prepareCommand());
-        } else {
-            $this->run($this->prepareCommand());
-        }
-    }
-
-    /**
-     * This method is run by 'vendor/bin/githooks tool:...' commands. The output of the tool/s will be displayed in real time.
-     *
-     * @param string $command The command to be run
-     * @return void
-     */
-    protected function runWithLiveOutput(string $command): void
-    {
-        echo  $command . "\n";
-        passthru($command, $this->exitCode);
-    }
-
-    /**
-     * Run the tool storing the output ($this->exit) and the exitCode
-     *
-     * @param string $command The command to be run
-     * @return void
-     */
-    protected function run(string $command): void
-    {
-        exec($command, $this->exit, $this->exitCode);
-    }
-
-    public function getExitCode(): int
-    {
-        return $this->exitCode;
-    }
-
-    public function getExit(): array
-    {
-        return $this->exit;
     }
 
     public function getErrors(): string
