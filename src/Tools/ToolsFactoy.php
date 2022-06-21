@@ -23,7 +23,7 @@ class ToolsFactoy
      *
      * @param array<\Wtyd\GitHooks\ConfigurationFile\ToolConfiguration> $toolsConfiguration The key is the name of the tool.
      *
-     * @return array<ToolAbstract> The key is the name of the tool and the value is the corresponding ToolAbstract instance.
+     * @return array<\Wtyd\GitHooks\Tools\Tool\ToolAbstract> The key is the name of the tool and the value is the corresponding ToolAbstract instance.
      */
     public function __invoke(array $toolsConfiguration): array
     {

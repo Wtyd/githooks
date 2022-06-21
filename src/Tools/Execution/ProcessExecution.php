@@ -11,7 +11,7 @@ class ProcessExecution extends ProcessExecutionAbstract
     public function runProcesses(): Errors
     {
         $toolName = array_keys($this->tools)[0];
-        $process = reset($this->processes);
+        $process = $this->processes[$toolName];
 
         $this->printer->line($this->tools[$toolName]->prepareCommand());
 

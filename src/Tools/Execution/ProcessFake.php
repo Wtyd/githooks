@@ -62,7 +62,7 @@ class ProcessFake extends Process
      * Mocks the method. It is considered that the process has always finished (since it does not execute anything)
      * except when we want to cause a timeout error
      * @inheritDoc
-     * @return float
+     * @return bool
      */
     public function isTerminated(): bool
     {

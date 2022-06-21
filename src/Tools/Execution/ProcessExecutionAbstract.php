@@ -10,15 +10,20 @@ use Wtyd\GitHooks\Utils\Printer;
 
 abstract class ProcessExecutionAbstract
 {
-    /** @var array<Process> */
+    /** @var \Wtyd\GitHooks\Utils\Printer */
+    protected $printer;
+
+    /** @var array<\Wtyd\GitHooks\Tools\Execution\Process> */
     protected $processes = [];
 
-    /** @var array<ToolAbstract> */
+    /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstract> */
     protected $tools;
 
+    /** @var \Wtyd\GitHooks\Tools\Errors */
     protected $errors;
 
-    protected $threds;
+    /** @var int */
+    protected $threads;
 
     public function __construct(Printer $printer, array $tools, int $threads)
     {
@@ -70,11 +75,11 @@ abstract class ProcessExecutionAbstract
     /**
      * Returns the time difference formatted to two decimal places
      *
-     * @param float $endToolExecution
+     * @param ?float $endToolExecution
      * @param float $startToolExecution
      * @return string Total tool execution time
      */
-    protected function executionTime(float $endToolExecution, float $startToolExecution): string
+    protected function executionTime(?float $endToolExecution, float $startToolExecution): string
     {
         return number_format($endToolExecution - $startToolExecution, 2);
     }

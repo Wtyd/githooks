@@ -9,7 +9,10 @@ use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
 class WrongExecutionValueException extends \DomainException implements ConfigurationFileInterface
 {
-
+    /**
+     * @param mixed $executionValue
+     * @return WrongExecutionValueException
+     */
     public static function forExecution($executionValue): WrongExecutionValueException
     {
         $exception = new self(
@@ -21,13 +24,13 @@ class WrongExecutionValueException extends \DomainException implements Configura
 
     protected static function castBooleanToString(bool $value): string
     {
-        if ($value === true) {
-            return 'true';
-        } else {
-            return 'false';
-        }
+        return $value ? 'true' : 'false';
     }
 
+    /**
+     * @param mixed $executionValue
+     * @return string
+     */
     public static function getExceptionMessage($executionValue): string
     {
         $valuesToString = implode(', ', ExecutionMode::EXECUTION_KEY);

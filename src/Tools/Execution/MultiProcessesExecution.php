@@ -36,7 +36,7 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
                         $this->numberOfRunnedProcesses = $this->finishExecution($process, $toolName);
                     }
                 } catch (ProcessTimedOutException $th) {
-                    $toolName = array_search($th->getProcess(), $this->processes);
+                    $toolName = (string)array_search($th->getProcess(), $this->processes);
                     $this->numberOfRunnedProcesses = $this->finishExecution($th->getProcess(), $toolName, $th->getMessage());
                 }
             } while ($totalProcesses > $this->numberOfRunnedProcesses);
@@ -49,10 +49,10 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         return $this->errors;
     }
 
-    protected function addProcessToQueue()
+    protected function addProcessToQueue(): void
     {
         foreach ($this->processes as $toolName => $process) {
-            if (count($this->runningProcesses) === $this->threds) {
+            if (count($this->runningProcesses) === $this->threads) {
                 break;
             }
             if (!in_array($process, $this->runningProcesses) && !in_array($process, $this->runnedProcesses)) {
@@ -67,11 +67,10 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
      *
      * @param Process $process
      * @param string $toolName Name of the process.
-     * @param array $this->runnedProcesses Previously runned processes.
-     * @param array $this->runningProcesses Previously running processes.
+     * @param string $exceptionMessage
      * @return int Number of runned processes.
      */
-    protected function finishExecution(Process $process, string $toolName, $exceptionMessage = null): int
+    protected function finishExecution(Process $process, string $toolName, string $exceptionMessage = null): int
     {
         $this->runnedProcesses[$toolName] =  $process;
         $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());

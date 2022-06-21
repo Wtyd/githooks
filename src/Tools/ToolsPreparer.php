@@ -23,12 +23,11 @@ class ToolsPreparer
     }
 
     /**
-     * Executes the tool(s) with the githooks.yml arguments.
-     * The Option 'execution' can be overriden with the $execution variable.
+     * Returns the tools to run
      *
-     * @param ConfigurationFile $cliArguments
+     * @param ConfigurationFile $configurationFile
      *
-     * @return array<ToolAbstact> created and prepared for run.
+     * @return array<\Wtyd\GitHooks\Tools\Tool\ToolAbstract>
      */
     public function __invoke(ConfigurationFile $configurationFile): array
     {
@@ -50,6 +49,6 @@ class ToolsPreparer
 
     public function getConfigurationFileWarnings(): array
     {
-        return isset($this->configurationFile) ? $this->configurationFile->getWarnings() : [];
+        return $this->configurationFile !== null ? $this->configurationFile->getWarnings() : [];
     }
 }

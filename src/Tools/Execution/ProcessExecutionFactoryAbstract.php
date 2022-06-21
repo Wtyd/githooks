@@ -9,6 +9,12 @@ use Wtyd\GitHooks\Utils\Printer;
 
 abstract class ProcessExecutionFactoryAbstract
 {
+    /** @var \Illuminate\Contracts\Container\Container */
+    protected $container;
+
+    /** @var \Wtyd\GitHooks\Utils\Printer */
+    protected $printer;
+
     public function __construct(Container $container, Printer $printer)
     {
         $this->container = $container;
@@ -17,7 +23,7 @@ abstract class ProcessExecutionFactoryAbstract
 
     /**
      * @param string $tool
-     * @param array<ToolAbstract> $tools
+     * @param array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> $tools
      * @param integer $threds
      * @return ProcessExecutionAbstract
      */

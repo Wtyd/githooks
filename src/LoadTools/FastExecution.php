@@ -30,14 +30,10 @@ class FastExecution implements ExecutionMode
         ToolAbstract::PHPSTAN,
     ];
 
-    /**
-     * @var FileUtilsInterface
-     */
+    /** @var \Wtyd\GitHooks\Utils\FileUtilsInterface */
     protected $fileUtils;
 
-    /**
-     * @var ToolsFactoy
-     */
+    /** @var \Wtyd\GitHooks\Tools\ToolsFactoy */
     protected $toolsFactory;
 
     public function __construct(FileUtilsInterface $fileUtils, ToolsFactoy $toolsFactory)
@@ -46,14 +42,7 @@ class FastExecution implements ExecutionMode
         $this->toolsFactory = $toolsFactory;
     }
 
-    /**
-     * Se cargan todas las herramientas configuradas como en la FullExecution. La diferencia es que editamos en el fichero de configuración los 'paths'
-     * contra los que se ejecutan las herramientas. Ahora, en lugar de contra directorios 'pahts' se ejecuta contra los ficheros modificados que pertenezcan
-     * a esos 'paths' o a sus subdirectorios.
-     * Si un fichero estuviera excluído o perteneciera a un subdirectorio dejamos que sea la herramienta, con su configuración, la que excluya el fichero.
-     *
-     * @return array. Cada elemento es la instancia de un objeto Tool distinto.
-     */
+    /** @inheritDoc */
     public function getTools(ConfigurationFile $configurationFile): array
     {
         $tools = [];

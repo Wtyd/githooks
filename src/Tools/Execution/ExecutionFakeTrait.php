@@ -12,8 +12,10 @@ trait ExecutionFakeTrait
     /** @var array<ProcessFake> */
     protected $processes = [];
 
+    /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
     protected $toolsThatMustFail = [];
 
+    /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
     protected $toolsWithTimeout = [];
 
     protected function createProcesses(): void
