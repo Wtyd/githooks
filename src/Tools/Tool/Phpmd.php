@@ -80,7 +80,8 @@ class Phpmd extends ToolAbstract
      */
     protected function isThereHiddenError(): bool
     {
-        // TODO cuando phpmd crashea por sintaxis devuelve el mensaje.
+        // TODO when phpmd found a sintaxis error finish succefully instead of error.
+        // for different versions of the tool the error output is different
         // if (is_int(strpos($this->exit[3], 'No mess detected'))) {
         //     return false;
         // }

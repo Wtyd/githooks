@@ -18,7 +18,7 @@ class ProcessExecution extends ProcessExecutionAbstract
         try {
             $this->startProcess($process);
             $process->wait(function ($type, $buffer) {
-                $this->printer->line($buffer);
+                $this->printer->rawLine($buffer);
             });
 
             $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());
@@ -27,7 +27,7 @@ class ProcessExecution extends ProcessExecutionAbstract
                 $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
             } else {
                 if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
-                    $this->errors->setError($toolName, $this->tools[$toolName]->getErrors());
+                    $this->errors->setError($toolName, $process->getOutput());
                 }
                 $this->printer->resultError($this->getErrorString($toolName, $executionTime));
             }

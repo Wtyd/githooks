@@ -24,8 +24,8 @@ phpstan:
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
     executablePath: vendor/bin/parallel-lint
-    paths: ['./tests'] #['./']
-    exclude: [vendor, qa]
+    paths: ['./']
+    exclude: [vendor, qa, tools]
     otherArguments: '--colors'
     #ignoreErrorsOnExit: true
 
@@ -33,7 +33,7 @@ phpcs:
     executablePath: tools/php71/phpcs
     paths: ['./']
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
-    ignore: [vendor] # Se podría configurar en el standard directamente
+    ignore: [ vendor, tools]
     error-severity: 1
     warning-severity: 6
     otherArguments: '--report=summary --parallel=2'
@@ -58,7 +58,7 @@ phpmd:
 phpcpd:
   executablePath: tools/php71/phpcpd
   paths: ['./']
-  exclude: [vendor, tests, 'tools/tmp']
+  exclude: [vendor, tests, tools]
   # otherArguments: '--min-lines=5'
 
 security-checker:
