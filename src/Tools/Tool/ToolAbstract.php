@@ -37,6 +37,8 @@ abstract class ToolAbstract
 
     public const PHPSTAN = 'phpstan';
 
+    public const ALL_TOOLS = 'all';
+
     public const SUPPORTED_TOOLS = [
         self::PHPCS => Phpcs::class,
         self::PHPCBF => Phpcbf::class,

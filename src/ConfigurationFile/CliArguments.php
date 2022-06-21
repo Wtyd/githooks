@@ -45,10 +45,10 @@ class CliArguments
     public function overrideArguments(array $configurationFile): array
     {
         if (!empty($this->execution)) {
-            $configurationFile[OptionsConfiguration::OPTIONS_TAG]['execution'] = $this->execution;
+            $configurationFile[OptionsConfiguration::OPTIONS_TAG][OptionsConfiguration::EXECUTION_TAG] = $this->execution;
         }
 
-        if ('all' === $this->tool) {
+        if (ConfigurationFile::ALL_TOOLS === $this->tool) {
             if (is_bool($this->ignoreErrorsOnExit)) {
                 $allToolsConfiguration = $configurationFile;
                 unset($allToolsConfiguration[OptionsConfiguration::OPTIONS_TAG], $allToolsConfiguration[ConfigurationFile::TOOLS]);

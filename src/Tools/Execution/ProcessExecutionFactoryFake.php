@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Execution;
 
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+
 class ProcessExecutionFactoryFake extends ProcessExecutionFactoryAbstract
 {
 
@@ -12,7 +14,7 @@ class ProcessExecutionFactoryFake extends ProcessExecutionFactoryAbstract
     {
 
         $processExecution = null;
-        if ('all' === $tool) {
+        if (ToolAbstract::ALL_TOOLS === $tool) {
             $processExecution = $this->container->makeWith(MultiProcessesExecutionFake::class, [$this->printer, 'tools' => $tools, 'threads' => $threads]);
         } else {
             $processExecution = $this->container->makeWith(ProcessExecutionFake::class, [$this->printer, 'tools' => $tools, 'threads' => $threads]);
