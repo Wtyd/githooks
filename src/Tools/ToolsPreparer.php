@@ -7,14 +7,10 @@ use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 
 class ToolsPreparer
 {
-    /**
-     * @var ExecutionFactory
-     */
+    /** @var ExecutionFactory */
     protected $executionFactory;
 
-    /**
-     * @var ConfigurationFile
-     */
+    /** @var ConfigurationFile */
     protected $configurationFile;
 
     public function __construct(ExecutionFactory $executionFactory)
@@ -36,15 +32,6 @@ class ToolsPreparer
         $strategy = $this->executionFactory->__invoke($configurationFile->getExecution());
 
         return $strategy->getTools($configurationFile);
-    }
-
-    protected function setExecution(string $execution): void
-    {
-        if (empty($execution)) {
-            return;
-        }
-
-        $this->configurationFile->setExecution($execution);
     }
 
     public function getConfigurationFileWarnings(): array

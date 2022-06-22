@@ -1,21 +1,13 @@
 <?php
 
-namespace Tests\Integration;
+namespace Tests\Unit\Tools;
 
 use Tests\Utils\ConfigurationFileBuilder;
-use Tests\Utils\FileReaderFake;
 use Tests\Utils\TestCase\ConsoleTestCase;
-use Wtyd\GitHooks\ConfigurationFile\CliArguments;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
-use Wtyd\GitHooks\ConfigurationFile\ReadConfigurationFileAction;
 use Wtyd\GitHooks\LoadTools\ExecutionFactory;
-use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\ToolsPreparerFake;
 
-/**
- * All tests depends on CliArguments values
- */
 class ToolsPreparerTest extends ConsoleTestCase
 {
 
@@ -30,7 +22,6 @@ class ToolsPreparerTest extends ConsoleTestCase
         ];
     }
 
-    //TODO como toolsPreparer antes leia el fichero, lo fusionaba con cliArguments y creaba las herramientas todos los tests eran para eso.
     /**
      * @test
      * @dataProvider allToolsDataProvider
@@ -39,7 +30,7 @@ class ToolsPreparerTest extends ConsoleTestCase
      */
     function only_tool_argument_is_mandatory($tool)
     {
-        $this->markTestIncomplete('estos tests no tienen sentido');
+        $this->markTestIncomplete('Reimplementar los tests');
         $this->bindFakeTools();
 
         $configurationFileBuilder = new ConfigurationFileBuilder('');
