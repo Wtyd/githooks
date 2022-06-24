@@ -232,11 +232,6 @@ class ConfigurationFile
         return $this->options->getExecution();
     }
 
-    public function setExecution(string $execution): void
-    {
-        $this->options->setExecution($execution);
-    }
-
     public function getProcesses(): int
     {
         return $this->options->getProcesses();

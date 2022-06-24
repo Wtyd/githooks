@@ -9,21 +9,15 @@ use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ToolConfiguration
 {
-    /**
-     * The tool arguments. The keys of the array must be the tool::ARGUMENTS
-     *
-     * @var array
-     */
+    public const PATHS_TAG = 'paths';
+
+    /** @var array The tool arguments. The keys of the array must be the tool::ARGUMENTS */
     protected $toolConfiguration;
 
-    /**
-     * @var string Name of the tool. It must be some of the ToolAbstract::SUPPORTED_TOOLS
-     */
+    /** @var string Name of the tool. It must be some of the ToolAbstract::SUPPORTED_TOOLS */
     protected $tool;
 
-    /**
-     * @var array
-     */
+    /** @var array */
     protected $warnings = [];
 
     public function __construct(string $tool, array $toolConfiguration)
@@ -113,11 +107,11 @@ class ToolConfiguration
 
     public function getPaths(): array
     {
-        return array_key_exists('paths', $this->toolConfiguration) ? $this->toolConfiguration['paths'] : [];
+        return array_key_exists(self::PATHS_TAG, $this->toolConfiguration) ? $this->toolConfiguration[self::PATHS_TAG] : [];
     }
 
     public function setPaths(array $paths): void
     {
-        $this->toolConfiguration['paths'] = $paths;
+        $this->toolConfiguration[self::PATHS_TAG] = $paths;
     }
 }

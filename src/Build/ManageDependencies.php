@@ -20,6 +20,7 @@ class ManageDependencies
         'phpunit/php-code-coverage',
         'phpunit/phpunit',
         'squizlabs/php_codesniffer',
+        'fakerphp/faker',
     ];
 
     /**  @var integer */

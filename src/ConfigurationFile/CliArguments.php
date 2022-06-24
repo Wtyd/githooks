@@ -26,13 +26,17 @@ class CliArguments
     /** @var string */
     protected $paths;
 
+    /** @var int */
+    protected $processes;
+
     public function __construct(
         string $tool,
         string $execution,
         $ignoreErrorsOnExit,
         string $otherArguments,
         string $executablePath,
-        string $paths
+        string $paths,
+        int $processes
     ) {
         $this->tool = $tool;
         $this->execution = $execution;
@@ -40,12 +44,17 @@ class CliArguments
         $this->otherArguments = $otherArguments;
         $this->executablePath = $executablePath;
         $this->paths = $paths;
+        $this->processes = $processes;
     }
 
     public function overrideArguments(array $configurationFile): array
     {
         if (!empty($this->execution)) {
             $configurationFile[OptionsConfiguration::OPTIONS_TAG][OptionsConfiguration::EXECUTION_TAG] = $this->execution;
+        }
+
+        if (!empty($this->processes)) {
+            $configurationFile[OptionsConfiguration::OPTIONS_TAG][OptionsConfiguration::PROCESSES_TAG] = $this->processes;
         }
 
         if (ConfigurationFile::ALL_TOOLS === $this->tool) {
@@ -57,25 +66,32 @@ class CliArguments
                     $configurationFile[$tool][ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;
                 }
             }
-        } else {
-            if (is_bool($this->ignoreErrorsOnExit)) {
-                $configurationFile[$this->tool][ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;
-            }
-
-            if (!empty($this->otherArguments)) {
-                $configurationFile[$this->tool][ToolAbstract::OTHER_ARGS_OPTION] = $this->otherArguments;
-            }
-
-            if (!empty($this->executablePath)) {
-                $configurationFile[$this->tool][ToolAbstract::EXECUTABLE_PATH_OPTION] = $this->executablePath;
-            }
-
-            if (!empty($this->paths)) {
-                $configurationFile[$this->tool]['paths'] = explode(',', $this->paths);
-            }
+        } elseif (array_key_exists($this->tool, $configurationFile)) {
+            $configurationFile[$this->tool] = $this->overrideToolArguments($configurationFile[$this->tool]);
         }
 
         return $configurationFile;
+    }
+
+    protected function overrideToolArguments(array $toolConfiguration): array
+    {
+        if (is_bool($this->ignoreErrorsOnExit)) {
+            $toolConfiguration[ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;
+        }
+
+        if (!empty($this->otherArguments)) {
+            $toolConfiguration[ToolAbstract::OTHER_ARGS_OPTION] = $this->otherArguments;
+        }
+
+        if (!empty($this->executablePath)) {
+            $toolConfiguration[ToolAbstract::EXECUTABLE_PATH_OPTION] = $this->executablePath;
+        }
+
+        if (!empty($this->paths)) {
+            $toolConfiguration[ToolConfiguration::PATHS_TAG] = explode(',', $this->paths);
+        }
+
+        return $toolConfiguration;
     }
 
     public function getTool(): string

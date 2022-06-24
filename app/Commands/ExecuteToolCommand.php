@@ -7,7 +7,7 @@ use Wtyd\GitHooks\ConfigurationFile\CliArguments;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsValueException;
 use Wtyd\GitHooks\Tools\Errors;
 
 class ExecuteToolCommand extends BaseCommand
@@ -18,7 +18,8 @@ class ExecuteToolCommand extends BaseCommand
                             {--ignoreErrorsOnExit= : Avoids exit error even if the tool finds some trobule. When tool is \'all\' applies for all tools}
                             {--otherArguments= : Other tool options not supported by GitHooks}
                             {--executablePath= : Path to executable}
-                            {--paths= :  Paths or files against the tool will be executed}';
+                            {--paths= :  Paths or files against the tool will be executed}
+                            {--processes= : Number of parallel processes in which the tools will be executed}';
 
     protected $description = 'Run the tool passed as argument. It must be a supported tool by GitHooks. the available options depend on the tool passed as parameter';
 
@@ -36,7 +37,8 @@ class ExecuteToolCommand extends BaseCommand
                     $this->option('ignoreErrorsOnExit'),
                     strval($this->option('otherArguments')),
                     strval($this->option('executablePath')),
-                    strval($this->option('paths'))
+                    strval($this->option('paths')),
+                    intval($this->option('processes'))
                 ));
 
             $tools = $this->toolsPreparer->__invoke($configurationFile);
@@ -47,7 +49,7 @@ class ExecuteToolCommand extends BaseCommand
         } catch (ToolIsNotSupportedException $exception) {
             $this->error($exception->getMessage());
             $errors->setError($tool, $exception->getMessage());
-        } catch (WrongExecutionValueException $exception) {
+        } catch (WrongOptionsValueException $exception) {
             $this->error($exception->getMessage());
             $errors->setError($tool, $exception->getMessage());
         } catch (ConfigurationFileNotFoundException $exception) {
