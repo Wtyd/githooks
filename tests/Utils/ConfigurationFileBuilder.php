@@ -93,7 +93,7 @@ class ConfigurationFileBuilder
             ],
 
             ToolAbstract::PARALLEL_LINT => [
-                ParallelLint::EXECUTABLE_PATH_OPTION => $this->parallelLintPath($toolsPath) . 'parallel-lint',
+                ParallelLint::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'parallel-lint',
                 ParallelLint::PATHS => [$rootPath . '/src'],
                 ParallelLint::EXCLUDE => [$rootPath . '/vendor'],
                 ParallelLint::OTHER_ARGS_OPTION => '--colors',
@@ -115,7 +115,7 @@ class ConfigurationFileBuilder
                 Phpcpd::IGNORE_ERRORS_ON_EXIT => false,
             ],
             ToolAbstract::PHPSTAN => [
-                Phpstan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
+                Phpstan::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'phpstan',
                 Phpstan::LEVEL => 0,
                 Phpstan::PATHS => [$rootPath . '/src'],
                 Phpstan::OTHER_ARGS_OPTION => '--no-progress',
@@ -167,7 +167,7 @@ class ConfigurationFileBuilder
      * @param string $path
      * @return string
      */
-    protected function parallelLintPath(string $path): string
+    protected function vendorPath(string $path): string
     {
         switch ($path) {
             case self::GLOBAL_TOOLS_PATH:
