@@ -9,6 +9,7 @@ use Tests\Utils\ConfigurationFileBuilder;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsFormatException;
 
 class ConfigurationFileTest extends UnitTestCase
 {
@@ -271,19 +272,19 @@ class ConfigurationFileTest extends UnitTestCase
         $this->assertEquals("The tag 'Options' is empty", $this->configurationFile->getWarnings()[0]);
     }
 
-    public function OptionsDataProvider()
+    function optionsIsnotAssociativeArrayDataProvider()
     {
         return [
-            'Options is an associtive array' => [
+            "All values have numeric keys" => [
                 'Configuration File' => [
-                    'Options' => ['execution' => 'fast', 'processes' => 2],
+                    'Options' => [0 => ['execution' => 'full'], ['processes' => 2]],
                     'Tools' => ['security-checker'],
                     'security-checker' => ['executablePath' => 'mipath']
                 ],
             ],
-            'Options non associative array' => [
+            "Numeric and string keys" => [
                 'Configuration File' => [
-                    'Options' => [0 => ['execution' => 'fast'], ['processes' => 2]],
+                    'Options' => [0 => ['execution' => 'full'], 'processes' => 2],
                     'Tools' => ['security-checker'],
                     'security-checker' => ['executablePath' => 'mipath']
                 ],
@@ -293,10 +294,24 @@ class ConfigurationFileTest extends UnitTestCase
 
     /**
      * @test
-     * @dataProvider OptionsDataProvider
+     * @dataProvider optionsIsnotAssociativeArrayDataProvider
      */
-    function it_extract_Options_values($configurationFile)
+    function it_raises_exception_when_Options_tag_is_not_an_associative_array($configurationFile)
     {
+        $this->expectException(WrongOptionsFormatException::class);
+        $this->expectExceptionMessage('The Options label has an invalid format. It must be an associative array with pair of key: value.');
+
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+    }
+
+    /** @test */
+    function it_extract_Options_values()
+    {
+        $configurationFile = [
+            'Options' => ['execution' => 'fast', 'processes' => 2],
+            'Tools' => ['security-checker'],
+            'security-checker' => ['executablePath' => 'mipath']
+        ];
         $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
 
         $this->assertEquals('fast', $this->configurationFile->getExecution());

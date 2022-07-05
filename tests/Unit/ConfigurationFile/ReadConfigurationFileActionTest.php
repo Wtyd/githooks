@@ -12,6 +12,7 @@ use Wtyd\GitHooks\ConfigurationFile\CliArguments;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsFormatException;
 use Wtyd\GitHooks\ConfigurationFile\ReadConfigurationFileAction;
 
 /**
@@ -496,6 +497,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             ],
         ];
     }
+
     /**
      * @test
      * @dataProvider toolIsAllDataProvider
@@ -599,6 +601,80 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         );
 
         $this->expectException(ConfigurationFileException::class);
+
+        $action($cliArguments);
+    }
+
+
+    public function mixArrayDataProvider()
+    {
+        return [
+            'Case 1' => [
+                'Original ConfigurationFile' => [['execution' => 'fast'], ['processes' => 4]],
+                'Expected ConfigurationFile' => ['execution' => '', 'processes' => 2,]
+            ],
+            'Case 2' => [
+                'Original ConfigurationFile' => ['execution' => 'fast', ['processes' => 4]],
+                'Expected ConfigurationFile' => ['execution' => 'full', 'processes' => 2,]
+            ],
+            'Case 3' => [
+                'Original ConfigurationFile' => ['execution' => '', ['processes' => 4]],
+                'Expected ConfigurationFile' => ['execution' => '', 'processes' => 0,]
+            ],
+            'Case 4' => [
+                'Original ConfigurationFile' => [['execution' => 'fast'],],
+                'Expected ConfigurationFile' => ['execution' => '', 'processes' => 4,]
+            ],
+            'Case 5' => [
+                'Original ConfigurationFile' => [['execution' => 'fast'], 'processes' => 0],
+                'Expected ConfigurationFile' => ['execution' => 'full', 'processes' => 0,]
+            ],
+            'Case 6' => [
+                'Original ConfigurationFile' => [['processes' => 4]],
+                'Expected ConfigurationFile' => ['execution' => 'full', 'processes' => 0,]
+            ],
+            'Case 7' => [
+                'Original ConfigurationFile' => [['execution' => 'fast'], 'processes' => 4],
+                'Expected ConfigurationFile' => ['execution' => '', 'processes' => 0,]
+            ],
+            'Case 8' => [
+                'Original ConfigurationFile' => [['processes' => 4]],
+                'Expected ConfigurationFile' => ['execution' => '', 'processes' => 0,]
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider mixArrayDataProvider
+     */
+    function it_raise_exception_when_Options_array_is_not_associative_even_though_some_values_have_been_overwritten_correctly(
+        $originalConfigurationFile,
+        $expectedOptions
+    ) {
+        $fileReaderFake = new FileReaderFake();
+        $originalConfigurationFile = $this->configurationFileBuilder
+            ->setOptions($originalConfigurationFile)
+            ->buildArray(true);
+
+        $fileReaderFake->mockConfigurationFile(
+            $originalConfigurationFile
+        );
+
+        $action = new ReadConfigurationFileAction($fileReaderFake);
+
+        $cliArguments = new CliArguments(
+            'all',
+            $expectedOptions['execution'],
+            null,
+            '',
+            '',
+            '',
+            $expectedOptions['processes']
+        );
+
+        $this->expectException(WrongOptionsFormatException::class);
+        $this->expectExceptionMessage('The Options label has an invalid format. It must be an associative array with pair of key: value.');
 
         $action($cliArguments);
     }

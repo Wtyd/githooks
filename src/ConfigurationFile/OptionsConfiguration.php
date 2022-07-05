@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\ConfigurationFile;
 
 use Illuminate\Support\Arr;
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsFormatException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsValueException;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
@@ -41,14 +42,16 @@ class OptionsConfiguration
             return;
         }
 
-        // Assoc Array: Options => [execution => full]
-        if (Arr::isAssoc($configurationFile[self::OPTIONS_TAG])) {
+        if ($this->arrayIsAssociative($configurationFile[self::OPTIONS_TAG])) {
             $this->extractOptions($configurationFile[self::OPTIONS_TAG]);
         } else { // No Assoc Array: Options => [0 =>[execution => full]]
-            foreach ($configurationFile[self::OPTIONS_TAG] as $option) {
-                $this->extractOptions($option);
-            }
+            throw WrongOptionsFormatException::forOptions($configurationFile[self::OPTIONS_TAG]);
         }
+    }
+
+    protected function arrayIsAssociative(array $array): bool
+    {
+        return !array_key_exists(0, $array);
     }
 
     /**
@@ -98,7 +101,6 @@ class OptionsConfiguration
         $keys = array_keys($options);
 
         $invalidKeys = array_diff($keys, self::TAGS_OPTIONS_TAG);
-
         if (!empty($invalidKeys)) {
             foreach ($invalidKeys as $key) {
                 $warnings[] = 'The key \'' . $key . '\' is not a valid option';

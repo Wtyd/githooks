@@ -210,10 +210,10 @@ class ConfigurationFileBuilder
      *
      * @return array
      */
-    public function buildArray(): array
+    public function buildArray($optionsIsNotAssociative = false): array
     {
         $file = [
-            OptionsConfiguration::OPTIONS_TAG => $this->options,
+            OptionsConfiguration::OPTIONS_TAG =>  $optionsIsNotAssociative ? $this->optionsIsNotAssociative() :  $this->options,
             ConfigurationFile::TOOLS => $this->tools,
         ];
 
@@ -222,6 +222,20 @@ class ConfigurationFileBuilder
         }
 
         return $file;
+    }
+
+    /**
+     * It is an invalid format for the Options tag
+     *
+     * @return array
+     */
+    protected function optionsIsNotAssociative(): array
+    {
+        $optionsIsNotAssociative = [];
+        foreach ($this->options as $key => $value) {
+            $optionsIsNotAssociative[] = [$key => $value];
+        }
+        return $optionsIsNotAssociative;
     }
 
     /**
