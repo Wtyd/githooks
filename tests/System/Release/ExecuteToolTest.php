@@ -175,4 +175,23 @@ class ExecuteToolTest extends ReleaseTestCase
         $this->assertEquals(0, $exitCode);
         $this->assertToolHasFailed($tool);
     }
+
+    /** @test */
+    function it_runs_all_tools_in_multipe_processes()
+    {
+        file_put_contents(
+            'githooks.yml',
+            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
+                ->buildYalm()
+        );
+        passthru("$this->githooks tool all --processes=2", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpcs');
+        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
+        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
+        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
+        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+    }
 }

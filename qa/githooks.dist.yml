@@ -1,5 +1,6 @@
 Options:
   execution: full # Optional: default full. Values: full or fast
+  processes: 1 # Optional: default 1. Number of parallel processes
 
 Tools:
   - security-checker

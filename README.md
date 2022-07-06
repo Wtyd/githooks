@@ -51,7 +51,6 @@ Then run `composer update wtyd/githooks`.
 
 5. [Set the configuration file](#Set-the-configuration-file).
 
-
 # Usage
 When you commit, all the configured code check tools are automatically launched. If your code pass all checks, GitHooks allows you to commit. If not, you have to fix the code and try again:
 <p>
@@ -85,13 +84,17 @@ But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%
 The `githooks.yml` file is splitted on three parts:
 
 ## Options
-Actually the only option is `execution`. This flag marks how GitHooks will run:
+### Execution
+The `execution` flag marks how GitHooks will run:
 * `full` (the default option): executes always all tools setted against all path setted for each tool.
     For example, you setted phpcs for run in `src` and `app` directories. The commit only contains modified files from `database` directory. Phpcs will check `src` and `app` directories even if no files in these directories have been modified.
 * `fast`: this option runs the tools only against files modified by commit.
     * This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint. The rest of the tools will run as the full option.
-    * **WARNING!!!** You must set the excludes of the tools either in githooks.yml or in the configuration file of eath tool since this
+    * **WARNING!!!** You must set the excludes of the tools either in `githooks.yml` or in the configuration file of eath tool since this
 option overwrites the key `paths` of the tools so that they are executed only against the modified files.
+
+### Processes
+Run multiple tools in multiple processes at same time (`tool all` command). The default number of processes is 1.
 
 ## Tools
 It is an array with the name of the tools that GitHooks will run. The name of the tools is their executable. If you want all the tools to be executed, the `Tools` key will be as follows:

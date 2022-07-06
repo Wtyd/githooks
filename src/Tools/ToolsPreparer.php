@@ -4,64 +4,38 @@ namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\LoadTools\ExecutionFactory;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
 
 class ToolsPreparer
 {
-    /**
-     * @var FileReader
-     */
-    protected $fileReader;
-
-    /**
-     * @var ExecutionFactory
-     */
+    /** @var ExecutionFactory */
     protected $executionFactory;
 
-    /**
-     * @var ConfigurationFile
-     */
+    /** @var ConfigurationFile */
     protected $configurationFile;
 
-    public function __construct(FileReader $fileReader, ExecutionFactory $executionFactory)
+    public function __construct(ExecutionFactory $executionFactory)
     {
-        $this->fileReader = $fileReader;
         $this->executionFactory = $executionFactory;
     }
 
     /**
-     * Executes the tool(s) with the githooks.yml arguments.
-     * The Option 'execution' can be overriden with the $execution variable.
+     * Returns the tools to run
      *
-     * @param string $tool Name of the tool to be executed. 'all' for execute all tools setted in githooks.yml
-     * @param string $execution Mode execution. Can be 'smart', 'fast' or 'full'. Default from githooks.yml.
+     * @param ConfigurationFile $configurationFile
      *
-     * @return array Tools (ToolAbstract) created and prepared for run.
+     * @return array<\Wtyd\GitHooks\Tools\Tool\ToolAbstract>
      */
-    public function __invoke(string $tool, string $execution = ''): array
+    public function __invoke(ConfigurationFile $configurationFile): array
     {
-        $file = $this->fileReader->readfile();
+        $this->configurationFile = $configurationFile;
 
-        $this->configurationFile = new ConfigurationFile($file, $tool);
+        $strategy = $this->executionFactory->__invoke($configurationFile->getExecution());
 
-        $this->setExecution($execution);
-
-        $strategy = $this->executionFactory->__invoke($this->configurationFile->getExecution());
-
-        return $strategy->getTools($this->configurationFile);
-    }
-
-    protected function setExecution(string $execution): void
-    {
-        if (empty($execution)) {
-            return;
-        }
-
-        $this->configurationFile->setExecution($execution);
+        return $strategy->getTools($configurationFile);
     }
 
     public function getConfigurationFileWarnings(): array
     {
-        return isset($this->configurationFile) ? $this->configurationFile->getWarnings() : [];
+        return $this->configurationFile !== null ? $this->configurationFile->getWarnings() : [];
     }
 }

@@ -14,5 +14,11 @@ interface ExecutionMode
 
     public const EXECUTION_KEY = [self::FULL_EXECUTION, self::FAST_EXECUTION];
 
+    /**
+     * Bla bla
+     *
+     * @param ConfigurationFile $configurationFile
+     * @return array<\Wtyd\GitHooks\Tools\Tool\ToolAbstract> Returns the Tools
+     */
     public function getTools(ConfigurationFile $configurationFile): array;
 }

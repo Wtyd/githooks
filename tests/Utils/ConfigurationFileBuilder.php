@@ -45,13 +45,16 @@ class ConfigurationFileBuilder
      *
      * @param string $rootPath Customize what path you would as project root
      * @param string $toolsPath The way to find the executables of the tools
-     *                      phar: the full path to the executables (example: tools/php71/Phpcbf)
-     *                      global: the tool has global acces (example: Phpcbf)
-     *                      local: the tool was installed with composer in local (example: vendor/bin/Phpcbf)
+     *                      phar: the full path to the executables (example: tools/php71/phpcbf)
+     *                      global: the tool has global acces (example: phpcbf)
+     *                      local: the tool was installed with composer in local (example: vendor/bin/phpcbf)
      */
     public function __construct(string $rootPath, string $toolsPath = '')
     {
-        $this->options = [OptionsConfiguration::EXECUTION_TAG => ExecutionMode::FULL_EXECUTION];
+        $this->options = [
+            OptionsConfiguration::EXECUTION_TAG => ExecutionMode::FULL_EXECUTION,
+            OptionsConfiguration::PROCESSES_TAG => 1,
+        ];
 
         $this->mainToolExecutablePaths  = $this->resolveToolsPath($toolsPath);
 
@@ -90,7 +93,7 @@ class ConfigurationFileBuilder
             ],
 
             ToolAbstract::PARALLEL_LINT => [
-                ParallelLint::EXECUTABLE_PATH_OPTION => $this->parallelLintPath($toolsPath) . 'parallel-lint',
+                ParallelLint::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'parallel-lint',
                 ParallelLint::PATHS => [$rootPath . '/src'],
                 ParallelLint::EXCLUDE => [$rootPath . '/vendor'],
                 ParallelLint::OTHER_ARGS_OPTION => '--colors',
@@ -112,7 +115,7 @@ class ConfigurationFileBuilder
                 Phpcpd::IGNORE_ERRORS_ON_EXIT => false,
             ],
             ToolAbstract::PHPSTAN => [
-                Phpstan::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpstan',
+                Phpstan::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'phpstan',
                 Phpstan::LEVEL => 0,
                 Phpstan::PATHS => [$rootPath . '/src'],
                 Phpstan::OTHER_ARGS_OPTION => '--no-progress',
@@ -164,7 +167,7 @@ class ConfigurationFileBuilder
      * @param string $path
      * @return string
      */
-    protected function parallelLintPath(string $path): string
+    protected function vendorPath(string $path): string
     {
         switch ($path) {
             case self::GLOBAL_TOOLS_PATH:
@@ -207,10 +210,10 @@ class ConfigurationFileBuilder
      *
      * @return array
      */
-    public function buildArray(): array
+    public function buildArray($optionsIsNotAssociative = false): array
     {
         $file = [
-            OptionsConfiguration::OPTIONS_TAG => $this->options,
+            OptionsConfiguration::OPTIONS_TAG =>  $optionsIsNotAssociative ? $this->optionsIsNotAssociative() :  $this->options,
             ConfigurationFile::TOOLS => $this->tools,
         ];
 
@@ -219,6 +222,20 @@ class ConfigurationFileBuilder
         }
 
         return $file;
+    }
+
+    /**
+     * It is an invalid format for the Options tag
+     *
+     * @return array
+     */
+    protected function optionsIsNotAssociative(): array
+    {
+        $optionsIsNotAssociative = [];
+        foreach ($this->options as $key => $value) {
+            $optionsIsNotAssociative[] = [$key => $value];
+        }
+        return $optionsIsNotAssociative;
     }
 
     /**

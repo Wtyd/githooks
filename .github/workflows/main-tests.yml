@@ -27,7 +27,7 @@ jobs:
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan
+        tools: phpcs, phpcbf, phpmd, phpstan:1.4
         ini-values: "post_max_size=256M" #optional
         coverage: none
   

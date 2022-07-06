@@ -1,4 +1,5 @@
 {
+    includes: [ %currentWorkingDirectory%/phpstan-baseline.neon ]
     parameters: {
         tmpDir: %currentWorkingDirectory%/tools/tmp,
         level: 8
@@ -9,14 +10,18 @@
         checkMissingIterableValueType: false
         ignoreErrors: [
             '#Call to an undefined static method Illuminate\\Support\\Facades\\Storage::[a-zA-Z\\_]+\(\)#',
-            '#Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\WrongExecutionValueException::[a-zA-Z0-9\\_]+\(\) has parameter \$executionValue with no typehint specified.#',
-            '#Parameter \#1 \$version1 of function version_compare expects string, string\|false given.#' # phpversion returns string|false
+            # OLD ERRORS
+            #'#Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\WrongOptionsValueException::[a-zA-Z0-9\\_]+\(\) has parameter \$executionValue with no typehint specified.#',
+            #'#Parameter \#1 \$version1 of function version_compare expects string, string\|false given.#' # phpversion returns string|false
+            #'#Method [a-zA-Z0-9\\_]+CliArguments::__construct\(\) has parameter \$ignoreErrorsOnExit with no typehint specified.#'
             # '#Method [a-zA-Z0-9\\_]+ToolConfigurationFactory::create\(\) has parameter \$toolData with no typehint specified.#'
             # '#Method [a-zA-Z0-9\\_]+Command::handle\(\)#',
             # '#Property [a-zA-Z0-9\\_]+Command::\$root \(string\) does not accept string\|false.#'
         ]
-        # excludes_analyse: [
-        #     %currentWorkingDirectory%/vendor
-        # ]
+        excludePaths: [
+            %currentWorkingDirectory%/src/Tools/Execution/Process, # inherits from Symfony
+            %currentWorkingDirectory%/src/Tools/Execution/ProcessFake,
+            %currentWorkingDirectory%/src/Tools/Execution/ExecutionFakeTrait
+        ]
     }
 }

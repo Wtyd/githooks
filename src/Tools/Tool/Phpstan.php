@@ -50,7 +50,7 @@ class Phpstan extends ToolAbstract
      *
      * @return string Example return: analyse -c=phpstan.neon --no-progress --ansi -l=1 --memory-limit=1G ./src1 ./src2
      */
-    protected function prepareCommand(): string
+    public function prepareCommand(): string
     {
         $command = '';
         foreach (self::ARGUMENTS as $option) {

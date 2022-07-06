@@ -38,7 +38,7 @@ class Phpmd extends ToolAbstract
         }
     }
 
-    protected function prepareCommand(): string
+    public function prepareCommand(): string
     {
         $command = '';
         foreach (self::ARGUMENTS as $option) {
@@ -72,30 +72,19 @@ class Phpmd extends ToolAbstract
     }
 
     /**
-     * Método donde se ejecuta la herramienta mediante exec. La herramienta no producirá ninguna salida.
-     *
-     * @return void
-     */
-    protected function run(string $command): void
-    {
-        parent::run($command);
-        if ($this->exitCode == 0 && $this->isThereHiddenError()) {
-            $this->exitCode = 1;
-        }
-    }
-
-    /**
      * Check if the exit of Mess detector is OK.
      * If there is an error in the source file that prevents Mess detector from parsing it, Mess detector will return an exit code 0.
      * But mess detector will not be able to check that file.
      *
      * @return bool
      */
-    protected function isThereHiddenError()
+    protected function isThereHiddenError(): bool
     {
-        if (is_int(strpos($this->exit[3], 'No mess detected'))) {
-            return false;
-        }
+        // TODO when phpmd found a sintaxis error finish succefully instead of error.
+        // for different versions of the tool the error output is different
+        // if (is_int(strpos($this->exit[3], 'No mess detected'))) {
+        //     return false;
+        // }
         return true;
     }
 }

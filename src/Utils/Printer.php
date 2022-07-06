@@ -2,16 +2,8 @@
 
 namespace Wtyd\GitHooks\Utils;
 
-/**
- * Muestra mensajes por la consola
- */
 class Printer
 {
-    public function generalFail(string $exMessage): void
-    {
-        $this->resultError($exMessage);
-    }
-
     public function resultSuccess(string $message): void
     {
         echo "✔️ ";
@@ -33,6 +25,11 @@ class Printer
     public function line(string $message): void
     {
         echo "$message\n";
+    }
+
+    public function rawLine(string $message): void
+    {
+        echo $message;
     }
 
     // Green

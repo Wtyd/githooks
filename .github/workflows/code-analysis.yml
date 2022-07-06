@@ -33,9 +33,7 @@ jobs:
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Install dependencies
-      run: |
-        composer install --prefer-dist --no-progress
-        chmod -R +x tools/*
+      run: composer install --prefer-dist --no-progress
 
     - name: Execute PhpStan
       run: php githooks tool phpstan

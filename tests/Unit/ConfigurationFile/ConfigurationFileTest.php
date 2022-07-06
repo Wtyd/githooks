@@ -9,7 +9,7 @@ use Tests\Utils\ConfigurationFileBuilder;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\WrongExecutionValueException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsFormatException;
 
 class ConfigurationFileTest extends UnitTestCase
 {
@@ -272,19 +272,19 @@ class ConfigurationFileTest extends UnitTestCase
         $this->assertEquals("The tag 'Options' is empty", $this->configurationFile->getWarnings()[0]);
     }
 
-    public function OptionsDataProvider()
+    function optionsIsnotAssociativeArrayDataProvider()
     {
         return [
-            'Options is an associtive array' => [
+            "All values have numeric keys" => [
                 'Configuration File' => [
-                    'Options' => ['execution' => 'fast'],
+                    'Options' => [0 => ['execution' => 'full'], ['processes' => 2]],
                     'Tools' => ['security-checker'],
                     'security-checker' => ['executablePath' => 'mipath']
                 ],
             ],
-            'Options non associative array' => [
+            "Numeric and string keys" => [
                 'Configuration File' => [
-                    'Options' => [0 => ['execution' => 'fast']],
+                    'Options' => [0 => ['execution' => 'full'], 'processes' => 2],
                     'Tools' => ['security-checker'],
                     'security-checker' => ['executablePath' => 'mipath']
                 ],
@@ -294,21 +294,36 @@ class ConfigurationFileTest extends UnitTestCase
 
     /**
      * @test
-     * @dataProvider OptionsDataProvider
+     * @dataProvider optionsIsnotAssociativeArrayDataProvider
      */
-    function it_extract_Options_values($configurationFile)
+    function it_raises_exception_when_Options_tag_is_not_an_associative_array($configurationFile)
     {
+        $this->expectException(WrongOptionsFormatException::class);
+        $this->expectExceptionMessage('The Options label has an invalid format. It must be an associative array with pair of key: value.');
+
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+    }
+
+    /** @test */
+    function it_extract_Options_values()
+    {
+        $configurationFile = [
+            'Options' => ['execution' => 'fast', 'processes' => 2],
+            'Tools' => ['security-checker'],
+            'security-checker' => ['executablePath' => 'mipath']
+        ];
         $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
 
         $this->assertEquals('fast', $this->configurationFile->getExecution());
+        $this->assertEquals(2, $this->configurationFile->getProcesses());
         $this->assertCount(0, $this->configurationFile->getWarnings());
         $this->assertCount(0, $this->configurationFile->getErrors());
     }
 
-    function tagExecutionWithNoValidValuesDataProvider()
+    function tagsInOptionsWithNoValidValuesDataProvider()
     {
         return [
-            'No valid string' => [
+            'Execution No valid string' => [
                 'Configuration File' => [
                     'Options' => [
                         'execution' => 'no valid string'
@@ -318,7 +333,7 @@ class ConfigurationFileTest extends UnitTestCase
                 ],
                 'Expected Error' => ["The value 'no valid string' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
-            'Integer' => [
+            'Execution Integer' => [
                 'Configuration File' => [
                     'Options' => [
                         'execution' => 0
@@ -328,7 +343,7 @@ class ConfigurationFileTest extends UnitTestCase
                 ],
                 'Expected Error' => ["The value '0' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
-            'Boolean True' => [
+            'Execution Boolean True' => [
                 'Configuration File' => [
                     'Options' => [
                         'execution' => true
@@ -338,7 +353,7 @@ class ConfigurationFileTest extends UnitTestCase
                 ],
                 'Expected Error' => ["The value 'true' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
-            'Boolean False' => [
+            'Execution Boolean False' => [
                 'Configuration File' => [
                     'Options' => [
                         'execution' => false
@@ -348,12 +363,52 @@ class ConfigurationFileTest extends UnitTestCase
                 ],
                 'Expected Error' => ["The value 'false' is not allowed for the tag 'execution'. Accept: full, fast"],
             ],
+            'Processes Boolean False' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'processes' => false
+                    ],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+                'Expected Error' => ["The value 'false' is not allowed for the tag 'processes'. Accepts numbers greater than 0"],
+            ],
+            'Processes Boolean True' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'processes' => true
+                    ],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+                'Expected Error' => ["The value 'true' is not allowed for the tag 'processes'. Accepts numbers greater than 0"],
+            ],
+            'Processes Number lesser than 1' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'processes' => 0
+                    ],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+                'Expected Error' => ["The value '0' is not allowed for the tag 'processes'. Accepts numbers greater than 0"],
+            ],
+            'Processes Null' => [
+                'Configuration File' => [
+                    'Options' => [
+                        'processes' => null
+                    ],
+                    'Tools' => ['security-checker'],
+                    'security-checker' => ['executablePath' => 'mipath']
+                ],
+                'Expected Error' => ["The value 'null' is not allowed for the tag 'processes'. Accepts numbers greater than 0"],
+            ],
         ];
     }
 
     /**
      * @test
-     * @dataProvider tagExecutionWithNoValidValuesDataProvider
+     * @dataProvider tagsInOptionsWithNoValidValuesDataProvider
      */
     function it_throws_exception_when_Options_have_valid_keys_with_invalid_values($configurationFile, $expectedError)
     {
@@ -436,83 +491,6 @@ class ConfigurationFileTest extends UnitTestCase
         $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
 
         $this->assertEquals($expectedWarnings, $this->configurationFile->getWarnings());
-    }
-
-    function tagExecutionHasWrongValues()
-    {
-        return [
-            'Full to fast' => [
-                'Configuration File' => [
-                    'Options' => [
-                        'execution' => 'full',
-                    ],
-                    'Tools' => ['security-checker'],
-                    'security-checker' => ['executablePath' => 'mipath']
-                ],
-                'New execution' => 'fast',
-            ],
-            'Fast to full' => [
-                'Configuration File' => [
-                    'Options' => [
-                        'execution' => 'fast',
-                    ],
-                    'Tools' => ['security-checker'],
-                    'security-checker' => ['executablePath' => 'mipath']
-                ],
-                'New execution' => 'full',
-            ],
-            'Full to full' => [
-                'Configuration File' => [
-                    'Options' => [
-                        'execution' => 'full',
-                    ],
-                    'Tools' => ['security-checker'],
-                    'security-checker' => ['executablePath' => 'mipath']
-                ],
-                'New execution' => 'full',
-            ],
-            'Fast to fast' => [
-                'Configuration File' =>  [
-                    'Options' => [
-                        'execution' => 'fast',
-                    ],
-                    'Tools' => ['security-checker'],
-                    'security-checker' => ['executablePath' => 'mipath']
-                ],
-                'New execution' => 'fast',
-            ],
-        ];
-    }
-
-    /**
-     * @test
-     * @dataProvider tagExecutionHasWrongValues
-     */
-    function it_can_change_Execution_tag($configurationFile, $newExecutionValue)
-    {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
-
-        $this->configurationFile->setExecution($newExecutionValue);
-
-        $this->assertEquals($newExecutionValue, $this->configurationFile->getExecution());
-    }
-
-    /** @test */
-    function it_raises_exception_when_change_Execution_tag_with_wrong_values()
-    {
-        $configurationFile =  [
-            'Options' => [
-                'execution' => 'fast',
-            ],
-            'Tools' => ['security-checker'],
-            'security-checker' => ['executablePath' => 'mipath']
-        ];
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
-
-        $this->expectException(WrongExecutionValueException::class);
-        $this->expectExceptionMessage("The value 'no valid string' is not allowed for the tag 'execution'. Accept: full, fast");
-
-        $this->configurationFile->setExecution('no valid string');
     }
 
     function tagToolsWithNotValidToolsDataProvider()

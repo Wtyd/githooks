@@ -21,39 +21,5 @@ class SecurityCheckerFake extends SecurityChecker
         } else {
             parent::__construct($toolConfiguration);
         }
-
-        $this->setOKExit();
-    }
-
-
-    /**
-     * Fake succefull exit
-     *
-     * @return SecurityCheckerFake
-     */
-    public function setOKExit(): SecurityCheckerFake
-    {
-        $this->exit = [
-            'Symfony Security Check Report',
-            '=============================',
-            "",
-            'No packages have known vulnerabilities.'
-        ];
-        $this->exitCode = 0;
-
-        return $this;
-    }
-
-    /**
-     * Fake wrong exit
-     *
-     * @return SecurityCheckerFake
-     */
-    public function setKOExit(): SecurityCheckerFake
-    {
-        $this->exit = ['Some error for testing'];
-        $this->exitCode = 1;
-
-        return $this;
     }
 }

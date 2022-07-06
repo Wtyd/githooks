@@ -6,13 +6,11 @@ use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 
 /**
- * Prepara todas las herramientas que estén configuradas con la etiqueta Tools en el fichero de configuración.
+ * Prepares all the tools that are configured with the Tools tag in the configuration file.
  */
 class FullExecution implements ExecutionMode
 {
-    /**
-     * @var ToolsFactoy
-     */
+    /** @var \Wtyd\GitHooks\Tools\ToolsFactoy */
     protected $toolsFactory;
 
     public function __construct(ToolsFactoy $toolsFactory)
@@ -20,11 +18,7 @@ class FullExecution implements ExecutionMode
         $this->toolsFactory = $toolsFactory;
     }
 
-    /**
-     * Se cargan todas las herramientas configuradas
-     *
-     * @return array Cada elemento es la instancia de un objeto Tool distinto.
-     */
+    /** @inheritDoc */
     public function getTools(ConfigurationFile $configurationFile): array
     {
         return $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());

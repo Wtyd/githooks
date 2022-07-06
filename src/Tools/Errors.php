@@ -12,7 +12,7 @@ class Errors
     public function setError(string $tool, string $error): void
     {
         if (!empty($tool)) {
-            $this->errors[$tool] = $error ?? 'register error in live output execution';
+            $this->errors[$tool] = !empty($error) ? $error :  'register error in live output execution';
         }
     }
 

@@ -232,9 +232,9 @@ class ConfigurationFile
         return $this->options->getExecution();
     }
 
-    public function setExecution(string $execution): void
+    public function getProcesses(): int
     {
-        $this->options->setExecution($execution);
+        return $this->options->getProcesses();
     }
 
     public function getToolsConfiguration(): array

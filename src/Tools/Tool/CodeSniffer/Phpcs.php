@@ -13,6 +13,8 @@ class Phpcs extends CodeSniffer
 {
     public const NAME = self::PHPCS;
 
+    public $args = [];
+
     public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->executable = 'phpcs';

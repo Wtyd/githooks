@@ -3,7 +3,7 @@
 namespace Tests;
 
 /**
- * Simplifica el uso de la sobrecarga de clases
+ * Simplifies the overload clases signarture
  */
 class Mock extends \Mockery
 {

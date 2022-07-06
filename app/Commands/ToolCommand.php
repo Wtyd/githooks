@@ -3,26 +3,31 @@
 namespace Wtyd\GitHooks\App\Commands;
 
 use Wtyd\GitHooks\Tools\Errors;
-use Wtyd\GitHooks\Tools\ToolExecutor;
 use Wtyd\GitHooks\Tools\ToolsPreparer;
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\ConfigurationFile\ReadConfigurationFileAction;
+use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactory;
+use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryAbstract;
 
 abstract class ToolCommand extends Command
 {
-    /**
-     * @var  ToolsPreparer
-     */
+    /**  @var  ReadConfigurationFileAction */
+    protected $readConfigurationFileAction;
+
+    /** @var  ToolsPreparer */
     protected $toolsPreparer;
 
-    /**
-     * @var ToolExecutor
-     */
-    protected $toolExecutor;
+    /** @var ProcessExecutionFactoryAbstract */
+    protected $processExecutionFactory;
 
-    public function __construct(ToolsPreparer $toolsPreparer, ToolExecutor $toolExecutor)
-    {
+    public function __construct(
+        ReadConfigurationFileAction $readConfigurationFileAction,
+        ToolsPreparer $toolsPreparer,
+        ProcessExecutionFactoryAbstract $processExecutionFactory
+    ) {
+        $this->readConfigurationFileAction = $readConfigurationFileAction;
         $this->toolsPreparer = $toolsPreparer;
-        $this->toolExecutor = $toolExecutor;
+        $this->processExecutionFactory = $processExecutionFactory;
         parent::__construct();
     }
 
