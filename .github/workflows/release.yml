@@ -49,17 +49,25 @@ jobs:
         echo $version
         php githooks app:build --build-version=${version}
 
-    - uses: actions/upload-artifact@master
+    - name: 'Tar files to keep permissions'
+      run: |
+        tar -cvf githooks-71.tar builds/php7.1/githooks
+        tar -cvf githooks-73.tar builds/githooks
+        ls -lah builds/githooks builds/php7.1/githooks
+  
+    - name: Upload php 7.1 build
+      uses: actions/upload-artifact@master
       if: ${{ '7.1' == matrix.php-versions }}
       with:
         name: githooks-71
-        path: builds/php7.1/githooks
+        path: githooks-71.tar
 
-    - uses: actions/upload-artifact@master
+    - name: Upload php 7.3 build
+      uses: actions/upload-artifact@master
       if: ${{ '7.3' == matrix.php-versions }}
       with:
         name: githooks-73
-        path: builds/githooks
+        path: githooks-73.tar
 
   test_rc:    
     name: Test the Build in php ${{ matrix.php-versions }}
@@ -100,19 +108,22 @@ jobs:
         chmod -R +x tools/*
 
     - name: Delete Old Builds
-      run: rm builds/githooks builds/php7.1/githooks
+      run: rm builds/githooks builds/php7.1/githooks && echo ${{ secrets.PAT_TOKEN_TO_COMMIT }}
 
-    - uses: actions/download-artifact@master
-      if: ${{ '7.2' == matrix.php-versions }}
+    - uses: actions/download-artifact@v3
       with:
         name: githooks-71
-        path: 'builds/php7.1'
 
     - uses: actions/download-artifact@master
-      if: ${{ '8.1' == matrix.php-versions }}
       with:
         name: githooks-73
-        path: builds
+
+    - name: Extract and check builds
+      run: |
+        tar -xf githooks-71.tar
+        tar -xf githooks-73.tar
+        ls -lah builds
+        git status
   
     - name: Testing the Aplication
       run: |
@@ -121,59 +132,58 @@ jobs:
         vendor/bin/phpunit --group release
       shell: bash
 
-  # commit_rc:    
-  #   name: Commit the Build
-  #   needs: test_rc
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v2
-  #       token: ''
+  commit_rc:    
+    name: Commit the Build
+    needs: test_rc
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
 
-  #     - name: Delete Old Builds
-  #       run: rm builds/githooks builds/php7.1/githooks
+      - name: Delete Old Builds
+        run: rm builds/githooks builds/php7.1/githooks && echo ${{ secrets.PAT_TOKEN_TO_COMMIT }}
 
-  #     - uses: actions/download-artifact@master
-  #       with:
-  #         name: githooks-71
-  #         path: 'builds/php7.1'
+      - uses: actions/download-artifact@v3
+        with:
+          name: githooks-71
 
-  #     - uses: actions/download-artifact@master
-  #       with:
-  #         name: githooks-73
-  #         path: builds
+      - uses: actions/download-artifact@master
+        with:
+          name: githooks-73
 
-  #     - name: Make Changes
-  #       uses: DamianReeves/write-file-action
-  #       with:
-  #         path: README.md
-  #         contents: |
-  #           echo "Hello World!"
-  #         write-mode: append
+      - name: Extract and check builds
+        run: |
+          tar -xf githooks-71.tar
+          tar -xf githooks-73.tar
+          ls -lah builds
+          git status
 
-  #     - name: Make Changes
-  #       run: ls && echo 'Nueva fila' >> README.md
+      - name: Get Time
+        id: time
+        uses: nanzm/get-time-action@v1.1
+        with:
+          timeZone: 1
+          format: 'DD-MM-YYYY HH:mm:ss'
 
-  #     - name: Check Changes
-  #       run: git status
+      - name: Extract version
+        id: version_id
+        run:  |
+          branch=${GITHUB_REF##*/}
+          echo ${branch}
+          prefix='rc-'
+          version=${branch#"$prefix"}
+          echo $version
+          echo "::set-output name=version::${version}"
 
-  #     - name: Get Time
-  #       id: time
-  #       uses: nanzm/get-time-action@v1.1
-  #       with:
-  #         # timeZone: 8
-  #         format: 'DD-MM-YYYY HH-mm-ss'
+      - name: Check Version
+        run: echo ${{ steps.version_id.outputs.version }} && echo ${{ steps.time.outputs.time }}
 
-  #     - name: Commit the new RC
-  #       uses: EndBug/add-and-commit@v7
-  #       env:
-  #         TIME: "${{ steps.time.outputs.time }}"
-  #       with:
-  #         # add: 'builds/*'
-  #         add: '*'
-  #         default_author: github_actions # github_actor -> UserName <UserName@users.noreply.github.com> || user_info -> Your Display Name <your-actual@email.com>
-  #         message: 'RC ${{ env.version }} - ${{ env.TIME }}'
-  #         push: false
+      - uses: GuillaumeFalourd/git-commit-push@v1.3
+        with:
+          files: builds/githooks builds/php7.1/githooks
+          commit_message: 'Release Candidate: ${{ steps.version_id.outputs.version }} - Build: ${{ steps.time.outputs.time }}'
 
-  #     - name: Git Log
-  #       run: git log
+      - name: Git Log
+        run: git log
