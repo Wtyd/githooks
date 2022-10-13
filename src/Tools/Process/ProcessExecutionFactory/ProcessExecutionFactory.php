@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Execution;
+namespace Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory;
 
+use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecution;
+use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecution;
+use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionAbstract;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ProcessExecutionFactory extends ProcessExecutionFactoryAbstract

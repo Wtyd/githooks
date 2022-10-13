@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Execution;
+namespace Wtyd\GitHooks\Tools\Process\Execution;
 
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Wtyd\GitHooks\Tools\Errors;
+use Wtyd\GitHooks\Tools\Process\Process;
 
 class MultiProcessesExecution extends ProcessExecutionAbstract
 {

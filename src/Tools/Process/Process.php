@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Execution;
+namespace Wtyd\GitHooks\Tools\Process;
 
 use Symfony\Component\Process\Exception\LogicException;
 use Symfony\Component\Process\Process as SymfonyProcess;

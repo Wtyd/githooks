@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Execution;
+namespace Wtyd\GitHooks\Tools\Process\Execution;
 
 use Wtyd\GitHooks\Tools\Errors;
+use Wtyd\GitHooks\Tools\Process\Process;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 use Wtyd\GitHooks\Utils\Printer;
 

@@ -8,7 +8,7 @@ use Tests\Mock;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\Tools\Execution\MultiProcessesExecutionFake;
+use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\Printer;
 

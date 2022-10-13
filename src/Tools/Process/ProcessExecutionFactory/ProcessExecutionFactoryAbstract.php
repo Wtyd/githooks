@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Execution;
+namespace Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory;
 
 use Illuminate\Contracts\Container\Container;
+use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionAbstract;
 use Wtyd\GitHooks\Utils\Printer;
 
 abstract class ProcessExecutionFactoryAbstract

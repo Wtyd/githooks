@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Execution;
+namespace Wtyd\GitHooks\Tools\Process;
 
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
@@ -83,7 +83,7 @@ class ProcessFake extends Process
      * Only in MultiProcessExecution when the execution fails
      * @inheritDoc
      */
-    public function getOutput()
+    public function getOutput(): string
     {
         return $this->output;
     }
@@ -92,7 +92,7 @@ class ProcessFake extends Process
      * Only in ProcessExecution
      * @inheritDoc
      */
-    public function wait(callable $callback = null)
+    public function wait(callable $callback = null): int
     {
         return $this->isSuccessful ? 0 : 1;
     }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Execution;
+namespace Wtyd\GitHooks\Tools\Process;
 
 /**
  * Trait for testing purposes. Gives public visibility for some methods and properties.

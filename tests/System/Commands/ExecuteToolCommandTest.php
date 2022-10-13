@@ -7,8 +7,8 @@ use Mockery\MockInterface;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Tools\Execution\MultiProcessesExecutionFake;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFake;
+use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
+use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
 use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
