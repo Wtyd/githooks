@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Utils;
 
+use Exception;
+
 class ComposerUpdater
 {
-    public static function phpOldVersions()
+    public static function phpOldVersions(): void
     {
         $printer = new Printer();
         if (version_compare(phpversion(), '8.0.0', '>=')) {
@@ -42,7 +44,7 @@ class ComposerUpdater
     public static function pathToBuild(): string
     {
         if (version_compare(phpversion(), '7.1.0', '<')) {
-            throw new \Exception('GitHooks only supports php 7.1 or greater.', 1);
+            throw new Exception('GitHooks only supports php 7.1 or greater.', 1);
         }
         if (version_compare(phpversion(), '7.3.0', '<')) {
             return '/php7.1/';
@@ -59,11 +61,11 @@ class ComposerUpdater
      * The phar for php versions 7.2 and 7.1 is different from 7.3 or higher. The default phar is the latter, so to automate the
      * change of phar when it is updated with a "composer update wtyd/githooks" we must invoke this method from the
      * 'post-update-cmd' event of the section 'scripts' of the composer.json.
-     * @deprecated 2.4.0
+     * @deprecated 2.3.0 Use 'ComposerUpdater::phpOldVersions' instead.
      *
      * @return void
      */
-    public static function php72orMinorUpdate()
+    public static function php72orMinorUpdate(): void
     {
         self::phpOldVersions();
     }
