@@ -6,8 +6,7 @@ use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\ToolsPreparer;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\ConfigurationFile\ReadConfigurationFileAction;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactory;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryAbstract;
+use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 
 abstract class ToolCommand extends Command
 {

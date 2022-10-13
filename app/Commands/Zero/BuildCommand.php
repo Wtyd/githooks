@@ -12,14 +12,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
+use Wtyd\GitHooks\Utils\ComposerUpdater;
 
 final class BuildCommand extends Command
 {
-    /**
-     * Path to build the phar to php 7.1 version
-     */
-    public const BUILD_PHP_71 = 'php7.1';
-
     /**
      * {@inheritdoc}
      */
@@ -70,7 +66,7 @@ final class BuildCommand extends Command
     /**
      * {@inheritdoc}
      */
-    public function run(InputInterface $input, OutputInterface $output)
+    public function run(InputInterface $input, OutputInterface $output): int
     {
         return parent::run($input, $this->originalOutput = $output);
     }
@@ -98,7 +94,7 @@ final class BuildCommand extends Command
 
     private function compile(string $name): BuildCommand
     {
-        $buildPath = $this->getBuildPath();
+        $buildPath = ComposerUpdater::pathToBuild();
         if (!File::exists($this->app->buildsPath($buildPath))) {
             File::makeDirectory($this->app->buildsPath($buildPath));
         }
@@ -140,21 +136,25 @@ final class BuildCommand extends Command
 
         $this->output->newLine();
 
+        // passthru('ls -lah');
+        if (File::exists($this->app->basePath($this->getBinary()) . '.phar')) {
+            echo "\nEl fichero de origen existe: " . $this->app->basePath($this->getBinary()) . '.phar';
+        } else {
+            echo "\nEl fichero de origen NO existe: " . $this->app->basePath($this->getBinary()) . '.phar';
+        }
+
+        if (File::exists($this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name))) {
+            echo "\nEl fichero de destino existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
+        } else {
+            echo "\nEl fichero de destino NO existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
+        }
+
         File::move(
             $this->app->basePath($this->getBinary()) . '.phar',
             $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name)
         );
 
         return $this;
-    }
-
-    protected function getBuildPath(): string
-    {
-        if (version_compare(\PHP_VERSION, '7.3', '<')) {
-            return self::BUILD_PHP_71;
-        } else {
-            return '';
-        }
     }
 
     private function prepare(): BuildCommand

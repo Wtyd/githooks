@@ -4,9 +4,7 @@ namespace Tests\System\Release;
 
 use Tests\ReleaseTestCase;
 
-/**
- * @group release
- */
+/** @group release */
 class NewVersionTest extends ReleaseTestCase
 {
     protected function setUp(): void

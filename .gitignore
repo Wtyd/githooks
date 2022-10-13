@@ -33,4 +33,10 @@ testsDir/*.yml
 
 tools/tmp/
 
+# Builds
+githooks-71
+githooks-73
+githooks-80
+
+*.zip
 *.md
