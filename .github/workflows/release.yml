@@ -1,15 +1,11 @@
 name: Release
 # https://github.com/shivammathur/setup-php
-# https://github.com/marketplace/actions/add-commit
 on:
   push:
     branches: [ rc** ]
 
   pull_request:
     branches-ignore: [ master ]
-
-# env:
-#   extensions: zip #intl, pcov #fileinfo is needed for Windows
 
 jobs:
   build_rc:    
@@ -28,7 +24,6 @@ jobs:
       uses: shivammathur/setup-php@v2 
       with:
         php-version: ${{ matrix.php-versions }}
-        # extensions: ${{ env.extensions }} #optional
         coverage: none
 
     - name: Install dependencies
@@ -92,7 +87,6 @@ jobs:
       uses: shivammathur/setup-php@v2 
       with:
         php-version: ${{ matrix.php-versions }}
-        # extensions: ${{ env.extensions }} #optional
         tools: phpcs, phpcbf, phpmd, phpstan, parallel-Lint, phpcpd
         coverage: none
   
@@ -187,5 +181,5 @@ jobs:
           files: builds/githooks builds/php7.1/githooks
           commit_message: 'Release Candidate: ${{ steps.version_id.outputs.version }} - Build: ${{ steps.time.outputs.time }}'
 
-      - name: Git Log
+      - name: Check the commit
         run: git log
