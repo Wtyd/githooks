@@ -9,6 +9,13 @@ use Tests\ReleaseTestCase;
  */
 class CreateHookTest extends ReleaseTestCase
 {
+    public function tearDown(): void
+    {
+        if (file_exists('.git/hooks/pre-push')) {
+            unlink('.git/hooks/pre-push');
+        }
+    }
+
     /** @test */
     function it_sets_a_custom_githook_and_returns_exit_code_0()
     {
