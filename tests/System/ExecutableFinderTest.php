@@ -41,7 +41,7 @@ class ExecutableFinderTest extends SystemTestCase
     function it_runs_all_configured_tools_at_same_time($toolsPath)
     {
         $this->configurationFileBuilder = new ConfigurationFileBuilder($this->path, $toolsPath);
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 

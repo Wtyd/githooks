@@ -70,7 +70,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_runs_only_one_tool($tool, $commandUnderTheHood, $toolAlias)
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
@@ -127,7 +127,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_finish_with_exit_1_when_the_tool_fails($tool, $commandUnderTheHood, $toolAlias)
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
 
@@ -299,7 +299,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_returns_exit_1_when_some_tool_fails($toolsExecutedSuccessfully, $failedTool)
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$failedTool]));
 
@@ -320,7 +320,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     /** @test */
     function it_prints_error_when_tries_to_run_an_not_supported_tool()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         $this->artisan('tool notSupportedTool')
             ->assertExitCode(1)
@@ -381,7 +381,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_prints_error_when_tries_to_override_execution_mode_from_cli_with_a_wrong_value()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         $wrongExecutionMode = 'invent';
 
@@ -429,7 +429,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         $this->configurationFileBuilder->setPhpcbfConfiguration(['usePhpcsConfiguration' =>  true]);
 
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
@@ -458,7 +458,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_prints_error_when_tool_execution_exceeds_the_timeout($tool, $commandUnderTheHood, $toolAlias)
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
 
@@ -478,7 +478,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_returns_exit_1_when_some_tool_fails_by_timeout($toolsExecutedSuccessfully, $failedTool)
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$failedTool]));
 
