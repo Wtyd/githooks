@@ -11,7 +11,7 @@ class ComposerUpdater
     public static function phpOldVersions(): void
     {
         $printer = new Printer();
-        if (version_compare(phpversion(), '8.0.0', '>=')) {
+        if (version_compare(phpversion(), '8.1.0', '>=')) {
             $printer->info('For php 8.0 or higher is not needed');
             return;
         }
@@ -50,7 +50,7 @@ class ComposerUpdater
             return '/php7.1/';
         }
 
-        if (version_compare(phpversion(), '8.0.0', '<')) {
+        if (version_compare(phpversion(), '8.1.0', '<')) {
             return '/php7.3/';
         }
 

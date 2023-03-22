@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.1', '7.3', '8.0'] 
+        php-versions: ['7.1', '7.3', '8.1'] 
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -42,12 +42,24 @@ jobs:
         echo $version
         php githooks app:build --build-version=${version}
 
-    - name: 'Tar files to keep permissions'
-      run: |
-        tar -cvf githooks-71.tar builds/php7.1/githooks
-        tar -cvf githooks-73.tar builds/php7.3/githooks
-        tar -cvf githooks-80.tar builds/githooks
-        # ls -lah builds/githooks builds/php7.1/githooks
+    # - name: Tar files to keep permissions
+    #   run: |
+    #     ls -lah builds/githooks builds/php7.1/githooks
+    #     tar -cvf githooks-71.tar builds/php7.1/githooks
+    #     tar -cvf githooks-73.tar builds/php7.3/githooks
+    #     tar -cvf githooks-81.tar builds/githooks
+    #     # ls -lah builds/githooks builds/php7.1/githooks
+    - name: Tar files to keep permissions 7.1
+      if: ${{ '7.1' == matrix.php-versions }}
+      run: tar -cvf githooks-71.tar builds/php7.1/githooks
+
+    - name: Tar files to keep permissions 7.3
+      if: ${{ '7.3' == matrix.php-versions }}
+      run: tar -cvf githooks-73.tar builds/php7.3/githooks
+
+    - name: Tar files to keep permissions 8.1
+      if: ${{ '8.1' == matrix.php-versions }}
+      run: tar -cvf githooks-81.tar builds/githooks
   
     - name: Upload php 7.1 build
       uses: actions/upload-artifact@v3
@@ -63,14 +75,14 @@ jobs:
         name: githooks-73
         path: githooks-73.tar
 
-    - name: Upload php 8.0 build
+    - name: Upload php 8.1 build
       uses: actions/upload-artifact@v3
-      if: ${{ '8.0' == matrix.php-versions }}
+      if: ${{ '8.1' == matrix.php-versions }}
       with:
-        name: githooks-80
-        path: githooks-80.tar
+        name: githooks-81
+        path: githooks-81.tar
 
-  test_rc:    
+  test_rc:
     name: Test the Build in php ${{ matrix.php-versions }}
     runs-on: ${{ matrix.operating-system }}
     needs: build_rc
@@ -78,7 +90,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.2', '7.4', '8.1']
+        php-versions: ['7.2', '8.0', '8.2']
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -110,16 +122,26 @@ jobs:
       with:
         path: ${{ github.GITHUB_WORKSPACE }}
 
-    - name: Extract and check builds
+    - name: Extract and check builds 7.2
+      if: ${{ '7.2' == matrix.php-versions }}
       run: |
-        rm builds/githooks builds/php7.1/githooks builds/php7.3/githooks
+        rm builds/php7.1/githooks
         tar -xf githooks-71/githooks-71.tar
+        builds/php7.1/githooks --version
+
+    - name: Extract and check builds 8.0
+      if: ${{ '8.0' == matrix.php-versions }}
+      run: |
+        rm builds/php7.3/githooks
         tar -xf githooks-73/githooks-73.tar
-        tar -xf githooks-80/githooks-80.tar
-        ls -lah builds
-        # builds/php7.1/githooks --version
-        # builds/php7.3/githooks --version
-        # builds/githooks --version
+        builds/php7.3/githooks --version   
+
+    - name: Extract and check builds 8.2
+      if: ${{ '8.2' == matrix.php-versions }}
+      run: |
+        rm builds/githooks
+        tar -xf githooks-81/githooks-81.tar
+        builds/githooks --version
         git status
   
     - name: Testing the Aplication
@@ -149,10 +171,15 @@ jobs:
         with:
           name: githooks-73
 
+      - uses: actions/download-artifact@master
+        with:
+          name: githooks-81
+
       - name: Extract and check builds
         run: |
           tar -xf githooks-71.tar
           tar -xf githooks-73.tar
+          tar -xf githooks-81.tar
           ls -lah builds
           git status
 
@@ -178,7 +205,7 @@ jobs:
 
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
-          files: builds/githooks builds/php7.1/githooks
+          files: builds/githooks builds/php7.1/githooks builds/php7.3/githooks
           commit_message: 'Release Candidate: ${{ steps.version_id.outputs.version }} - Build: ${{ steps.time.outputs.time }}'
 
       - name: Check the commit
