@@ -4,7 +4,7 @@
     <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
-    <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%208.1-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
+    <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%208.2-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
 <p align="center">
@@ -33,21 +33,37 @@ Further, it can be used together with javascript validation tools like [typicode
     ```bash
     composer require --dev wtyd/githooks
     ```
-**Note:** for php 7.1 or 7.2 you must add the next `post-update-cmd` event to the `scripts` section in your `composer.json`:
+**Note:** for php < 8.1 you must add the next `post-update-cmd` event to the `scripts` section in your `composer.json`:
 
-```bash
+```json
 "scripts": {
     "post-update-cmd": [
-      "Wtyd\\GitHooks\\Utils\\ComposerUpdater::php72orMinorUpdate"
+      "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"
     ]
 }
 ```
 Then run `composer update wtyd/githooks`.
 
+> Until version 2.3.0 the method used was **php72orMinorUpdate** but it has been deprecated and will be removed from version 3.0.0
+
+
 2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
 
 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.yml`).
 4. Run `githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands#hook) for more information.
+
+    To ensure that it is configured automatically, we can configure the command in the `post-update-cmd` and `post-install-cmd` events of the `composer.json` file (`scripts` section):
+
+    ```json
+    "scripts": {
+        "post-update-cmd": [
+        "vendor/bin/githooks hook pre-commit MyCustomPrecommit.php"
+        ],
+        "post-install-cmd": [
+        "vendor/bin/githooks hook pre-commit MyCustomPrecommit.php"
+        ]
+    }
+    ```
 
 5. [Set the configuration file](#Set-the-configuration-file).
 
