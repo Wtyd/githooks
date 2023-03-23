@@ -7,8 +7,8 @@ use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
 use Tests\Utils\FileReaderFake;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryAbstract;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryFake;
+use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
+use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +36,11 @@ class AppServiceProvider extends ServiceProvider
         // For php 7.1 self-update
         // $this->app->bind(Humbug\SelfUpdate\Updater::class, App\Updater\Updater::class);
 
+        // Bind my custom BuildCommand
+        $this->app->bind(
+            \LaravelZero\Framework\Commands\BuildCommand::class,
+            \Wtyd\GitHooks\App\Commands\Zero\BuildCommand::class
+        );
         $this->testsRegister();
     }
 

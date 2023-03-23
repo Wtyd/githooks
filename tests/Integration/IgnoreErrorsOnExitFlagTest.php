@@ -4,8 +4,8 @@ namespace Tests\Integration;
 
 use Tests\Utils\TestCase\ConsoleTestCase;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\Tools\Execution\MultiProcessesExecutionFake;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFake;
+use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
+use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
 
 class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
 {

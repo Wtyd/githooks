@@ -25,7 +25,7 @@ final class InstallCommand extends Command
      *
      * @var array
      */
-    private $components = [
+    protected $components = [
         'console-dusk' => Components\ConsoleDusk\Installer::class,
         'database' => Components\Database\Installer::class,
         'dotenv' => Components\Dotenv\Installer::class,

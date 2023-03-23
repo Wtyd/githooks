@@ -11,6 +11,7 @@ use Tests\Utils\Traits\{
     FileSystemTrait,
     RetroCompatibilityAssertsTrait
 };
+use Wtyd\GitHooks\Utils\ComposerUpdater;
 
 class ReleaseTestCase extends TestCase
 {
@@ -74,10 +75,11 @@ class ReleaseTestCase extends TestCase
      */
     protected static function copyReleaseBinary(): bool
     {
-        $origin = version_compare(phpversion(), '7.3.0', '<') ? 'builds/php7.1/githooks' : 'builds/githooks';
+        $origin = str_replace('//', '/', 'builds' . ComposerUpdater::pathToBuild() . '/githooks');
         $destiny = SystemTestCase::TESTS_PATH . '/githooks';
 
         copy($origin, $destiny);
+
         return chmod($destiny, 0777);
     }
 

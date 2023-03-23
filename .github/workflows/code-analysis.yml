@@ -8,94 +8,78 @@ on:
 
 env:
   extensions: mbstring #intl, pcov
+
 jobs:
-  phpstan:
-    name: PhpStan
+  githooks:
+    name: GitHooks
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: '7.1'
 
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ${{ steps.composercache.outputs.dir }}
+        path: |
+          tools/tmp/resultCache.php #Phpstan cache
+          /home/runner/.cache/composer/files
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
         restore-keys: ${{ runner.os }}-composer-
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      run: |
+        composer install --prefer-dist --no-progress
+        chmod -R +x tools/*
+
+    - name: Execute GitHooks
+      run: php githooks tool all full
+
+  Code_Analysis:
+    name: Code Analysis
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '7.1'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          tools/tmp/resultCache.php #Phpstan cache
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install dependencies
+      run: |
+        composer install --prefer-dist --no-progress
+        chmod -R +x tools/*
 
     - name: Execute PhpStan
+      id: phpstan
       run: php githooks tool phpstan
-
-  phpcs:
-    name: Php Code Sniffer
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Install PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '7.1'
-
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: ${{ steps.composercache.outputs.dir }}
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
-
-    - name: Install dependencies
-      run: |
-        composer install --prefer-dist --no-progress
-        chmod -R +x tools/*
-
-    - name: Execute Php Code Sniffer
-      run: php githooks tool phpcs
-
-  phpmd:
-    name: Php Mess Detector
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Install PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '7.1'
-
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-    - name: Cache dependencies
-      uses: actions/cache@v2
-      with:
-        path: ${{ steps.composercache.outputs.dir }}
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
-
-    - name: Install dependencies
-      run: |
-        composer install --prefer-dist --no-progress
-        chmod -R +x tools/*
+      continue-on-error: true
 
     - name: Execute Php Mess Detector
+      id: phpmd
       run: php githooks tool phpmd
+      continue-on-error: true
+
+    - name: Execute Php Code Sniffer
+      id: phpcs
+      run: php githooks tool phpcs
+      continue-on-error: true
+
+    - name: Check on failures
+      if: steps.phpstan.outcome != 'success' || steps.phpmd.outcome != 'success' || steps.phpcs.outcome != 'success'
+      run: exit 1

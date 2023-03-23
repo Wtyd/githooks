@@ -4,9 +4,7 @@ namespace Tests\System\Release;
 
 use Tests\ReleaseTestCase;
 
-/**
- * @group release
- */
+/** @group release */
 class NewVersionTest extends ReleaseTestCase
 {
     protected function setUp(): void
@@ -23,7 +21,7 @@ class NewVersionTest extends ReleaseTestCase
     {
         passthru("$this->githooks --version", $exitCode);
 
-        $newVersion = '2.3.0';
+        $newVersion = '2.4.0';
         $this->assertStringContainsString("GitHooks $newVersion", $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
     }

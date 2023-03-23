@@ -8,8 +8,8 @@ use Tests\Zero\{
     ZeroTestCase,
     PendingCommand
 };
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryAbstract;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryFake;
+use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
+use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
 use Wtyd\GitHooks\Tools\Tool\{
     CodeSniffer\Phpcbf,
     CodeSniffer\PhpcbfFake,

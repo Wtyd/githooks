@@ -3,8 +3,8 @@
 namespace Wtyd\GitHooks\Container;
 
 use Illuminate\Container\Container;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactory;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryAbstract;
+use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactory;
+use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 

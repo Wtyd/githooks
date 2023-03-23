@@ -5,8 +5,6 @@ namespace Tests\Utils\TestCase;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\FileUtilsFake;
 use Tests\Utils\Traits\FileSystemTrait;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryAbstract;
-use Wtyd\GitHooks\Tools\Execution\ProcessExecutionFactoryFake;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 abstract class SystemTestCase extends ConsoleTestCase

@@ -60,7 +60,6 @@ return [
         Illuminate\Console\Scheduling\ScheduleRunCommand::class,
         Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
         Illuminate\Foundation\Console\VendorPublishCommand::class,
-        // LaravelZero\Framework\Commands\BuildCommand::class,
         Wtyd\GitHooks\App\Commands\PreBuildCommand::class,
         Wtyd\GitHooks\App\Commands\Zero\BuildCommand::class,
         Wtyd\GitHooks\App\Commands\Zero\InstallCommand::class,
@@ -78,7 +77,7 @@ return [
     */
 
     'remove' => [
-        // ..
+        // LaravelZero\Framework\Commands\BuildCommand::class,
     ],
 
 ];

@@ -9,7 +9,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     /** @test */
     function it_pass_all_file_configuration_checks()
     {
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         $this->artisan('conf:check')
             ->assertExitCode(0)
@@ -23,7 +23,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->setOptions([])
             ->setTools(['phpcs', 'phpstan', 'invent']);
 
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         $this->artisan('conf:check')
             ->assertExitCode(0)
@@ -35,7 +35,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     function it_fails_the_file_configuration_checks_and_print_errors_and_warnings()
     {
         $this->configurationFileBuilder->setTools([])->setOptions(['invent option' => 1]);
-        file_put_contents($this->getPath() . '/githooks.yml', $this->configurationFileBuilder->buildYalm());
+        $this->configurationFileBuilder->buildInFileSystem();
 
         $this->artisan('conf:check')
             ->assertExitCode(1)

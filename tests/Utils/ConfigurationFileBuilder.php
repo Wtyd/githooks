@@ -28,9 +28,12 @@ use Wtyd\GitHooks\LoadTools\ExecutionMode;
  */
 class ConfigurationFileBuilder
 {
+    public const FILE_NAME = 'githooks.yml';
     public const PHAR_TOOLS_PATH = 'phar';
     public const GLOBAL_TOOLS_PATH = 'global';
     public const LOCAL_TOOLS_PATH = 'local';
+
+    protected $rootPath;
 
     protected $options;
 
@@ -46,11 +49,13 @@ class ConfigurationFileBuilder
      * @param string $rootPath Customize what path you would as project root
      * @param string $toolsPath The way to find the executables of the tools
      *                      phar: the full path to the executables (example: tools/php71/phpcbf)
-     *                      global: the tool has global acces (example: phpcbf)
+     *                      global: the tool has global access (example: phpcbf)
      *                      local: the tool was installed with composer in local (example: vendor/bin/phpcbf)
      */
     public function __construct(string $rootPath, string $toolsPath = '')
     {
+        $this->rootPath = $rootPath;
+
         $this->options = [
             OptionsConfiguration::EXECUTION_TAG => ExecutionMode::FULL_EXECUTION,
             OptionsConfiguration::PROCESSES_TAG => 1,
@@ -130,81 +135,6 @@ class ConfigurationFileBuilder
         ];
     }
 
-    protected function resolveToolsPath(string $path): string
-    {
-        switch ($path) {
-            case self::LOCAL_TOOLS_PATH:
-                return getcwd() . '/vendor/bin/';
-                break;
-
-            case self::GLOBAL_TOOLS_PATH:
-                return '';
-                break;
-
-            case self::PHAR_TOOLS_PATH:
-                return $this->pharExecutables();
-                break;
-            default:
-                return $this->pharExecutables();
-                break;
-        }
-    }
-
-    protected function pharExecutables(): string
-    {
-        $path = getcwd();
-        if (version_compare(phpversion(), '7.3.0', '<')) {
-            $path .= '/tools/php71/';
-        } else {
-            $path .= '/tools/php80/';
-        }
-        return $path;
-    }
-
-    /**
-     * Parallel-lint doesn't have phar.
-     *
-     * @param string $path
-     * @return string
-     */
-    protected function vendorPath(string $path): string
-    {
-        switch ($path) {
-            case self::GLOBAL_TOOLS_PATH:
-                return '';
-                break;
-
-            case self::LOCAL_TOOLS_PATH:
-                return getcwd() . '/vendor/bin/';
-                break;
-            default:
-                return getcwd() . '/vendor/bin/';
-                break;
-        }
-    }
-
-    /**
-     * Phpcpd can't be installed in local (venodr/bin)
-     *
-     * @param string $path
-     * @return string
-     */
-    protected function phpcpdPath(string $path): string
-    {
-        switch ($path) {
-            case self::GLOBAL_TOOLS_PATH:
-                return '';
-                break;
-
-            case self::PHAR_TOOLS_PATH:
-                return $this->pharExecutables();
-                break;
-            default:
-                return $this->pharExecutables();
-                break;
-        }
-    }
-
     /**
      * Builds the configuration file like an array
      *
@@ -225,20 +155,6 @@ class ConfigurationFileBuilder
     }
 
     /**
-     * It is an invalid format for the Options tag
-     *
-     * @return array
-     */
-    protected function optionsIsNotAssociative(): array
-    {
-        $optionsIsNotAssociative = [];
-        foreach ($this->options as $key => $value) {
-            $optionsIsNotAssociative[] = [$key => $value];
-        }
-        return $optionsIsNotAssociative;
-    }
-
-    /**
      * Builds the configuration file like string with yalm format
      *
      * @return string
@@ -246,6 +162,16 @@ class ConfigurationFileBuilder
     public function buildYalm(): string
     {
         return Yaml::dump($this->buildArray());
+    }
+
+    /**
+     * Creates the configuration file and saves it to the file system
+     *
+     * @return void
+     */
+    public function buildInFileSystem(): void
+    {
+        file_put_contents($this->rootPath . '/' . self::FILE_NAME, $this->buildYalm());
     }
 
     /**
@@ -363,5 +289,94 @@ class ConfigurationFileBuilder
         $this->configurationTools[$toolName][$key] = $option[$key];
 
         return $this;
+    }
+
+    protected function resolveToolsPath(string $path): string
+    {
+        switch ($path) {
+            case self::LOCAL_TOOLS_PATH:
+                return getcwd() . '/vendor/bin/';
+                break;
+
+            case self::GLOBAL_TOOLS_PATH:
+                return '';
+                break;
+
+            case self::PHAR_TOOLS_PATH:
+                return $this->pharExecutables();
+                break;
+            default:
+                return $this->pharExecutables();
+                break;
+        }
+    }
+
+    protected function pharExecutables(): string
+    {
+        $path = getcwd();
+        if (version_compare(phpversion(), '7.3.0', '<')) {
+            $path .= '/tools/php71/';
+        } else {
+            $path .= '/tools/php80/';
+        }
+        return $path;
+    }
+
+    /**
+     * Parallel-lint doesn't have phar.
+     *
+     * @param string $path
+     * @return string
+     */
+    protected function vendorPath(string $path): string
+    {
+        switch ($path) {
+            case self::GLOBAL_TOOLS_PATH:
+                return '';
+                break;
+
+            case self::LOCAL_TOOLS_PATH:
+                return getcwd() . '/vendor/bin/';
+                break;
+            default:
+                return getcwd() . '/vendor/bin/';
+                break;
+        }
+    }
+
+    /**
+     * Phpcpd can't be installed in local (venodr/bin)
+     *
+     * @param string $path
+     * @return string
+     */
+    protected function phpcpdPath(string $path): string
+    {
+        switch ($path) {
+            case self::GLOBAL_TOOLS_PATH:
+                return '';
+                break;
+
+            case self::PHAR_TOOLS_PATH:
+                return $this->pharExecutables();
+                break;
+            default:
+                return $this->pharExecutables();
+                break;
+        }
+    }
+
+    /**
+     * It is an invalid format for the Options tag
+     *
+     * @return array
+     */
+    protected function optionsIsNotAssociative(): array
+    {
+        $optionsIsNotAssociative = [];
+        foreach ($this->options as $key => $value) {
+            $optionsIsNotAssociative[] = [$key => $value];
+        }
+        return $optionsIsNotAssociative;
     }
 }

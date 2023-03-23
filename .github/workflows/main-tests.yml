@@ -2,12 +2,12 @@ name: Main Tests
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ rc** ]
+    branches-ignore: [ rc**]
   pull_request:
     branches-ignore: [ master ]
 
 env:
-  extensions: :opcache #intl, pcov #fileinfo is needed for Windows
+  extensions: :opcache, fileinfo #intl, pcov #fileinfo is needed for Windows
 
 jobs:
   tests:    
@@ -17,10 +17,10 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.1', '7.1']
+        php-versions: ['7.2', '7.4', '8.1', '8.2']
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2 
@@ -30,15 +30,11 @@ jobs:
         tools: phpcs, phpcbf, phpmd, phpstan:1.4
         ini-values: "post_max_size=256M" #optional
         coverage: none
-  
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ${{ steps.composercache.outputs.dir }}
+        path: /home/runner/.cache/composer/files
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
         restore-keys: ${{ runner.os }}-composer-
 
@@ -54,10 +50,6 @@ jobs:
       if: ${{ '7.1' == matrix.php-versions }}
       run: cp tools/php71/phpcpd /usr/local/bin/phpcpd
 
-    - name: Install Global Phpcpd for Php8.1
-      if: ${{ '8.1' == matrix.php-versions }}
-      run: cp tools/php80/phpcpd /usr/local/bin/phpcpd
-
     - name: Testing the Aplication
       run: |
         echo -e "\e[42m\e[30m**** Main Test Suite ****\033[0m"
@@ -65,3 +57,28 @@ jobs:
         echo -e "\e[42m\e[30m**** GitfilesTest ****\033[0m"
         vendor/bin/phpunit --group git
       shell: bash
+
+  tests_windows:    
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest]
+        php-versions: ['7.1', '8.1']
+    name: Windows Tests - PHP ${{ matrix.php-versions }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        coverage: none
+
+    - name: Install dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Testing the Aplication
+      run: vendor/bin/phpunit --group windows

@@ -6,7 +6,9 @@ on:
 
 env:
   extensions: mbstring #intl, pcov
-  report_path: informes
+  codecoverage_path: reports/coverage
+  infection_path: reports/infection
+  phpmetrics_path: reports/phpmetrics
 
 jobs:
   code_coverage:    
@@ -15,29 +17,25 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.0']
+        php-versions: ['8.2']
     name: Code Coverage
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, parallel-Lint 
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
-    
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ${{ steps.composercache.outputs.dir }}
+        path: /home/runner/.cache/composer/files
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
         restore-keys: ${{ runner.os }}-composer-
 
@@ -46,45 +44,43 @@ jobs:
         composer install --prefer-dist --no-progress
         chmod -R +x tools/*
 
-    - name: Install Global Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
-
     - name: Tests with code coverage
-      run: vendor/bin/phpunit --coverage-html ${{ env.report_path }}/coverage --testdox-html ${{ env.report_path }}/documentation.html --testdox-html ${{ env.report_path }}/documentation.html
+      run: >
+        vendor/bin/phpunit --coverage-html ${{ env.codecoverage_path }}/coverage-html
+        --coverage-xml ${{ env.codecoverage_path }}/coverage-xml
+        --log-junit ${{ env.codecoverage_path }}/junit.xml
+        --testdox-html ${{ env.codecoverage_path }}/documentation.html
 
     - uses: actions/upload-artifact@v2
       with:
         name: CodeCoverage
-        path: ${{ env.report_path }}
+        path: ${{ env.codecoverage_path }}
 
-  infection:    
+  infection:
+    needs: code_coverage
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.0']
+        php-versions: ['8.2']
     name: Infection
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, infection
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, infection, parallel-Lint 
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
-        
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
 
     - name: Cache dependencies
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
-        path: ${{ steps.composercache.outputs.dir }}
+        path: /home/runner/.cache/composer/files
         key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
         restore-keys: ${{ runner.os }}-composer-
 
@@ -93,34 +89,39 @@ jobs:
         composer install --prefer-dist --no-progress
         chmod -R +x tools/*
 
-    - name: Install Global Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
+    - uses: actions/download-artifact@v3
+      with:
+        name: CodeCoverage
 
     - name: Infection execute
-      run: infection --threads=10 --no-progress
+      run: >
+        infection --threads=10 --skip-initial-tests --no-progress
+        --coverage=./
+        --logger-html=${{ env.infection_path }}/mutation-report.html
 
     - uses: actions/upload-artifact@v2
       with:
         name: Infection
-        path: ${{ env.report_path }}
+        path: ${{ env.infection_path }}
 
-  phpMetrics:    
+  phpMetrics:
+    needs: code_coverage
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.0']
+        php-versions: ['8.2']
     name: PhpMetrics
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
-        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd
+        tools: phpcs, phpcbf, phpmd, phpstan, phpcpd, parallel-Lint 
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
         
@@ -129,16 +130,41 @@ jobs:
         composer install --prefer-dist --no-progress
         chmod -R +x tools/*
 
-    - name: Install Global Parallel-Lint and PhPMetrics
-      run:  composer global require phpmetrics/phpmetrics php-parallel-lint/php-parallel-lint
+    - name: Install Global PhPMetrics
+      run:  composer global require phpmetrics/phpmetrics
 
-    - name: Junit Report
-      run: vendor/bin/phpunit --log-junit ${{ env.report_path }}/junit.xml
+    - uses: actions/download-artifact@v3
+      with:
+        name: CodeCoverage
 
     - name: PhPMetrics Report
-      run: phpmetrics --report-html=${{ env.report_path }}/phpmetrics --junit=${{ env.report_path }}/junit.xml ./src
+      run: phpmetrics --report-html=${{ env.phpmetrics_path }} --junit=junit.xml ./src
 
     - uses: actions/upload-artifact@v2
       with:
         name: PhPMetrics
-        path: ${{ env.report_path }}
+        path: ${{ env.phpmetrics_path }}
+
+  reports:
+    name: Reports
+    needs: [phpMetrics, infection]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v3
+      with:
+        path: reports
+
+    - name: Check Reports
+      run: ls reports
+
+    - name: Get Time
+      id: time
+      uses: nanzm/get-time-action@v1.1
+      with:
+        timeZone: 1
+        format: 'DD-MM-YYYY'
+    
+    - uses: actions/upload-artifact@v2
+      with:
+        name: GitHooks Metrics - ${{ steps.time.outputs.time }}
+        path: reports
