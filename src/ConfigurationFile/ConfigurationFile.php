@@ -237,8 +237,23 @@ class ConfigurationFile
         return $this->options->getProcesses();
     }
 
+    public function isDefaultExecution(): bool
+    {
+        return $this->options->isDefaultExecution();
+    }
+
+    public function isDefaultProcesses(): bool
+    {
+        return $this->options->isDefaultProcesses();
+    }
+
     public function getToolsConfiguration(): array
     {
         return $this->toolsConfiguration;
+    }
+
+    public function getOptions(): OptionsConfiguration
+    {
+        return $this->options;
     }
 }

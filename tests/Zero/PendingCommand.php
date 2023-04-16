@@ -4,10 +4,12 @@ namespace Tests\Zero;
 
 use Illuminate\Console\OutputStyle;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Arr;
 use Mockery;
 use Mockery\Exception\NoMatchingExpectationException;
 use PHPUnit\Framework\TestCase as PHPUnitTestCase;
+use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
@@ -239,7 +241,7 @@ class PendingCommand
         return $this;
     }
 
-    /**
+     /**
      * Specify a table that should be printed when the command runs.
      *
      * @param  array  $headers
@@ -248,17 +250,29 @@ class PendingCommand
      * @param  array  $columnStyles
      * @return $this
      */
-    // public function expectsTable($headers, $rows, $tableStyle = 'default', array $columnStyles = [])
-    // {
-    //     $this->test->expectedTables[] = [
-    //         'headers' => (array) $headers,
-    //         'rows' => $rows instanceof Arrayable ? $rows->toArray() : $rows,
-    //         'tableStyle' => $tableStyle,
-    //         'columnStyles' => $columnStyles,
-    //     ];
+    public function expectsTable($headers, $rows, $tableStyle = 'default', array $columnStyles = [])
+    {
+        $table = (new Table($output = new BufferedOutput()))
+            ->setHeaders((array) $headers)
+            ->setRows($rows instanceof Arrayable ? $rows->toArray() : $rows)
+            ->setStyle($tableStyle);
 
-    //     return $this;
-    // }
+        foreach ($columnStyles as $columnIndex => $columnStyle) {
+            $table->setColumnStyle($columnIndex, $columnStyle);
+        }
+
+        $table->render();
+
+        $lines = array_filter(
+            explode(PHP_EOL, $output->fetch())
+        );
+
+        foreach ($lines as $line) {
+            $this->expectsOutput($line);
+        }
+
+        return $this;
+    }
 
     /**
      * Print the output. By default, unlike in Laravel, the output is hidden. In this way, when executing the test suite, messages are not printed by
@@ -373,12 +387,16 @@ class PendingCommand
             }
         }
 
+        // if (count($this->test->expectedOutput)) {
+        //     // dd($this->test->expectedOutput);
+        //     $this->test->assertEquals(
+        //         $this->test->expectedOutput,
+        //         $this->test->getActualOutput(),
+        //         'Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.'
+        //     );
+        // }
         if (count($this->test->expectedOutput)) {
-            $this->test->assertEquals(
-                $this->test->expectedOutput[0],
-                $this->test->getActualOutput(),
-                'Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.'
-            );
+            $this->test->fail('Output "' . Arr::first($this->test->expectedOutput) . '" was not printed.');
         }
 
 

@@ -188,6 +188,13 @@ class ConfigurationFileBuilder
         return $this;
     }
 
+    public function doNotSetOptions(): ConfigurationFileBuilder
+    {
+        $this->options = null;
+
+        return $this;
+    }
+
     /**
      * Set the tools Githooks will run
      *
