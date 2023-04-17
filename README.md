@@ -13,23 +13,23 @@
   <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Schedule CI%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Schedule CI/badge.svg"></a>
 </p>
 
-# Wtyd/GitHooks
+# 1. Wtyd/GitHooks
 Are many other tools and composer plugins for manage git hooks. But GitHooks offers:
-* Standalone app. GitHooks is a binary (.phar) so its dependencies don't interfere with your application's dependencies.
-* Is managed with composer. You don't need other tools like Phive or others.
+* Standalone app. GitHooks is a binary ([.phar](https://www.php.net/phar)) so its dependencies don't interfere with your application's dependencies.
+* Is managed with Composer. You don't need other tools like Phive or others.
 * Crentralizes all QA tools configuration (all of supported tools at least).
 * It abstracts developers away from how QA tools have to be executed by using only the `githooks tool name-of-the-tool` command.
 * You can also create your own scripts and configure any git hook.
 
 Further, it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
 
-# Requirements
+# 2. Requirements
 * PHP >= 7.1
 * The tools you need to check the code.
 * Or your owns scripts for the hooks.
 
-# Install
-1. GitHooks must be installed like dev requirement with composer. Currently, it does not have [.phar](https://www.php.net/phar) packaging.
+# 3. Install
+#### 1. GitHooks must be installed like dev requirement with composer:
     ```bash
     composer require --dev wtyd/githooks
     ```
@@ -47,27 +47,27 @@ Then run `composer update wtyd/githooks`.
 > Until version 2.3.0 the method used was **php72orMinorUpdate** but it has been deprecated and will be removed from version 3.0.0
 
 
-2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
+#### 2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
 
-3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.yml`).
-4. Run `githooks hook`. It Copies the script for launch GitHooks on the precommit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands#hook) for more information.
+#### 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.yml`).
+#### 4. Run `githooks hook`. It Copies the script for launch GitHooks on the pre-commit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands#hook) for more information.
 
-    To ensure that it is configured automatically, we can configure the command in the `post-update-cmd` and `post-install-cmd` events of the `composer.json` file (`scripts` section):
+To ensure that it is configured automatically, we can configure the command in the `post-update-cmd` and `post-install-cmd` events of the `composer.json` file (`scripts` section):
 
-    ```json
-    "scripts": {
-        "post-update-cmd": [
-        "vendor/bin/githooks hook pre-commit MyCustomPrecommit.php"
-        ],
-        "post-install-cmd": [
-        "vendor/bin/githooks hook pre-commit MyCustomPrecommit.php"
-        ]
-    }
-    ```
+```json
+"scripts": {
+    "post-update-cmd": [
+    "vendor/bin/githooks hook" // or "vendor/bin/githooks hook pre-commit MyScriptFile.php"
+    ],
+    "post-install-cmd": [
+    "vendor/bin/githooks hook"
+    ]
+}
+```
 
-5. [Set the configuration file](#Set-the-configuration-file).
+#### 5. [Set the configuration file](#Set-the-configuration-file).
 
-# Usage
+# 4. Usage
 When you commit, all the configured code check tools are automatically launched. If your code pass all checks, GitHooks allows you to commit. If not, you have to fix the code and try again:
 <p>
     <img src="https://i.ibb.co/F0m9ZfV/Git-Hooks-OK.png" alt="Imagen todo OK">
@@ -85,7 +85,7 @@ githooks tool phpcs # Run only phpcs
     <img src="https://i.ibb.co/tXPb9Sn/phpmd.png" alt="Imagen de una herramienta" height="225">
 </p>
 
-# Supported Tools
+# 5. Supported Tools
 At this moment, the supported tools are:
 * [Php CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) (phpcs and phpcbf)
 * [Php Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd)
@@ -96,11 +96,11 @@ At this moment, the supported tools are:
 
 But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#set-your-own-script) on any git hook.
 
-# Set the Configuration File
+# 6. Set the Configuration File
 The `githooks.yml` file is splitted on three parts:
 
-## Options
-### Execution
+## 6.1. Options
+### 6.1.1. Execution
 The `execution` flag marks how GitHooks will run:
 * `full` (the default option): executes always all tools setted against all path setted for each tool.
     For example, you setted phpcs for run in `src` and `app` directories. The commit only contains modified files from `database` directory. Phpcs will check `src` and `app` directories even if no files in these directories have been modified.
@@ -109,10 +109,10 @@ The `execution` flag marks how GitHooks will run:
     * **WARNING!!!** You must set the excludes of the tools either in `githooks.yml` or in the configuration file of eath tool since this
 option overwrites the key `paths` of the tools so that they are executed only against the modified files.
 
-### Processes
+### 6.1.2. Processes
 Run multiple tools in multiple processes at same time (`tool all` command). The default number of processes is 1.
 
-## Tools
+## 6.2. Tools
 It is an array with the name of the tools that GitHooks will run. The name of the tools is their executable. If you want all the tools to be executed, the `Tools` key will be as follows:
 ```yml
 Tools:
@@ -126,7 +126,7 @@ Tools:
 ```
 The order in which the tools are is the order in which they will be executed.
 
-## Setting Tools
+## 6.3. Setting Tools
 In next step you must configure the tools with the same name as in the *Tools* key. For example, for set phpcs:
 ```yml
 phpcs:
@@ -138,8 +138,8 @@ phpcs:
 
 All the available options are in the [wiki](https://github.com/Wtyd/githooks/wiki/ConfigurationFile).
 
-# Contributing
+# 7. Contributing
 Contributions from others would be very much appreciated! Send [pull request](https://github.com/Wtyd/githooks/pulls)/[issue](https://github.com/Wtyd/githooks/issues). Check all steps for do that at Wiki section for [Contributing](https://github.com/Wtyd/githooks/wiki/Contributing). Thanks!
 
-# License
+# 8. License
 The MIT License (MIT). Please see [License File](/LICENSE) for more information.
