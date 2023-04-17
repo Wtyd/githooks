@@ -160,7 +160,7 @@ class OptionsConfiguration
 
     public function isDefaultProcesses(): bool
     {
-        return $this->defaultExecution;
+        return $this->defaultProcesses;
     }
 
     public function getExecution(): string

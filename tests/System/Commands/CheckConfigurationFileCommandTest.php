@@ -3,7 +3,6 @@
 namespace Tests\System\Commands;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
 
 class CheckConfigurationFileCommandTest extends SystemTestCase
 {
@@ -27,20 +26,40 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->expectsOutput('The file githooks.yml has the correct format.');
     }
 
-    /** @test */
-    function it_shows_default_options_when_not_set()
+    public function optionsDataProvider()
     {
-        $this->configurationFileBuilder->doNotSetOptions();
+        return [
+            'Optins is empty' => [
+                'Options' => [],
+                'Table Values' => [['execution', 'full (default)'], ['processes', '1 (default)']]
+            ],
+            'Only execution is setted' => [
+                'Options' => ['execution' => 'fast'],
+                'Table Values' => [['execution', 'fast'], ['processes', '1 (default)']]
+            ],
+            'Only processes is setted' => [
+                'Options' => ['processes' => 3],
+                'Table Values' => [['execution', 'full (default)'], ['processes', '3']]
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider optionsDataProvider
+     */
+    function it_shows_default_options_when_not_are_setted($options, $tableValues)
+    {
+        $this->configurationFileBuilder->setOptions($options);
 
         $this->configurationFileBuilder->buildInFileSystem();
 
         $this->artisan('conf:check')
             ->assertExitCode(0)
-            ->expectsTable(['Options', 'Values'], [['execution', 'full (default)'], ['processes', '1 (default)']])
+            ->expectsTable(['Options', 'Values'], $tableValues)
             // ->expectsTable(['Tools', 'Commands'], [
             //     ['phpcs', 'tools/php71/phpcs ./ --standard=./qa/psr12-ruleset.xml --ignore=vendor,tools --error-severity=1 --warning-severity=6 --report=summary --parallel=2'],
             //     ['phpstan', 'vendor/bin/phpstan analyse -c ./qa/phpstan.neon --no-progress --ansi src'],
-            // ->containsStringInOutput("The tag 'Options' is empty")
             ->expectsOutput('The file githooks.yml has the correct format.');
     }
 
