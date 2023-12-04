@@ -33,8 +33,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        composer install --prefer-dist --no-progress
         chmod -R +x tools/*
+        tools/composer install --prefer-dist --no-progress
 
     - name: Execute GitHooks
       run: php githooks tool all full
@@ -62,8 +62,8 @@ jobs:
 
     - name: Install dependencies
       run: |
-        composer install --prefer-dist --no-progress
         chmod -R +x tools/*
+        tools/composer install --prefer-dist --no-progress
 
     - name: Execute PhpStan
       id: phpstan

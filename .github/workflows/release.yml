@@ -27,10 +27,12 @@ jobs:
         coverage: none
 
     - name: Install dependencies
-      run: composer update --prefer-dist --no-progress
+      run: |
+        chmod -R +x tools/*
+        tools/composer install --prefer-dist --no-progress
 
     - name: Install Humbug/Box
-      run: composer global require humbug/box
+      run: tools/composer global require humbug/box
 
     - name: Build the Aplication
       run: |

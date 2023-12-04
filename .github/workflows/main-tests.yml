@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.2', '7.4', '8.1', '8.2']
+        php-versions: ['7.2', '7.4', '8.1', '8.3']
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -40,11 +40,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        composer install --prefer-dist --no-progress
         chmod -R +x tools/*
+        tools/composer install --prefer-dist --no-progress
 
     - name: Install Global Parallel-Lint
-      run: composer global require php-parallel-lint/php-parallel-lint
+      run: tools/composer global require php-parallel-lint/php-parallel-lint
 
     - name: Install Global Phpcpd for Php7.1
       if: ${{ '7.1' == matrix.php-versions }}
@@ -78,7 +78,7 @@ jobs:
         coverage: none
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress --no-suggest
+      run: tools/composer install --prefer-dist --no-progress --no-suggest
 
     - name: Testing the Aplication
       run: vendor/bin/phpunit --group windows
