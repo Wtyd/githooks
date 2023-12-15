@@ -77,8 +77,16 @@ jobs:
         extensions: ${{ env.extensions }} #optional
         coverage: none
 
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
+
     - name: Install dependencies
-      run: tools/composer install --prefer-dist --no-progress --no-suggest
+      run: composer install --prefer-dist --no-progress
 
     - name: Testing the Aplication
-      run: vendor/bin/phpunit --group windows
+      run: php vendor\bin\phpunit --group windows
+

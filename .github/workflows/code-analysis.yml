@@ -2,7 +2,7 @@ name: Code Analysis
 # https://github.com/shivammathur/setup-php
 on:
   push:
-   branches-ignore: [ rc** ]
+   branches-ignore: [ rc**, main-tests ]
   pull_request:
     branches-ignore: [ master ]
 
