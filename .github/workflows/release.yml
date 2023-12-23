@@ -64,21 +64,21 @@ jobs:
       run: tar -cvf githooks-81.tar builds/githooks
   
     - name: Upload php 7.1 build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ '7.1' == matrix.php-versions }}
       with:
         name: githooks-71
         path: githooks-71.tar
 
     - name: Upload php 7.3 build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ '7.3' == matrix.php-versions }}
       with:
         name: githooks-73
         path: githooks-73.tar
 
     - name: Upload php 8.1 build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: ${{ '8.1' == matrix.php-versions }}
       with:
         name: githooks-81
@@ -92,7 +92,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.2', '8.0', '8.2']
+        php-versions: ['7.2', '8.0', '8.3']
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -120,7 +120,7 @@ jobs:
         composer install --prefer-dist --no-progress
         chmod -R +x tools/*
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         path: ${{ github.GITHUB_WORKSPACE }}
 
@@ -138,8 +138,8 @@ jobs:
         tar -xf githooks-73/githooks-73.tar
         builds/php7.3/githooks --version   
 
-    - name: Extract and check builds 8.2
-      if: ${{ '8.2' == matrix.php-versions }}
+    - name: Extract and check builds 8.3
+      if: ${{ '8.3' == matrix.php-versions }}
       run: |
         rm builds/githooks
         tar -xf githooks-81/githooks-81.tar
@@ -165,15 +165,15 @@ jobs:
       - name: Delete Old Builds
         run: rm builds/githooks builds/php7.1/githooks && echo ${{ secrets.PAT_TOKEN_TO_COMMIT }}
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: githooks-71
 
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4
         with:
           name: githooks-73
 
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v4
         with:
           name: githooks-81
 
