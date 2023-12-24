@@ -31,12 +31,24 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: none
 
-    - name: Cache dependencies
-      uses: actions/cache@v3
+    - name: Get Composer Cache Directory
+      id: composer-cache
+      run: |
+        echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+    - uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.operating-system }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-${{ hashFiles('composer.json') }}
+        restore-keys: |
+          ${{ runner.operating-system }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-
+      
+    #  - name: Cache library packages
+    #     id: composer-cache
+    #     uses: actions/cache@v3
+    #     with:
+    #       path: vendor
+    #       key: ${{ runner.operating-system }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-${{ hashFiles('composer.json') }}
+    #       restore-keys: ${{ runner.operating-system }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-
 
     - name: Install dependencies
       run: |
@@ -81,8 +93,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        key: ${{ runner.operating-system }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.operating-system }}-composer-
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
