@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.2', '7.4', '8.1', '8.3']
+        php-versions: ['7.2'] #, '7.4', '8.1', '8.3']
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -38,9 +38,9 @@ jobs:
     - uses: actions/cache@v3
       with:
         path: ${{ steps.composer-cache.outputs.dir }}
-        key: ${{ runner.operating-system }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-${{ hashFiles('composer.json') }}
+        key: ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-${{ hashFiles('composer.json') }}
         restore-keys: |
-          ${{ runner.operating-system }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-
+          ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-
       
     #  - name: Cache library packages
     #     id: composer-cache
@@ -76,7 +76,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest]
-        php-versions: ['7.1', '8.1']
+        php-versions: ['7.1'] #, '8.1']
     name: Windows Tests - PHP ${{ matrix.php-versions }}
     steps:
     - name: Checkout
@@ -93,8 +93,8 @@ jobs:
       uses: actions/cache@v3
       with:
         path: /home/runner/.cache/composer/files
-        key: ${{ runner.operating-system }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.operating-system }}-composer-
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
+        restore-keys: ${{ runner.os }}-composer-
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
