@@ -28,9 +28,10 @@ jobs:
         path: |
           tools/tmp/resultCache.php #Phpstan cache
           /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
+        key: ${{ runner.os }}-${{ php-version }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
-          ${{ runner.os }}-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
+          ${{ runner.os }}-${{ php-version }}-${{ hashFiles('**/composer.json') }}
+          ${{ runner.os }}--${{ hashFiles('**/composer.json') }}
           
 
     - name: Install dependencies
