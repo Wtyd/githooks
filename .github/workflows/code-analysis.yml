@@ -13,6 +13,10 @@ jobs:
   githooks:
     name: GitHooks
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-versions: ['7.1']
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -28,9 +32,9 @@ jobs:
         path: |
           tools/tmp/resultCache.php #Phpstan cache
           /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-php7.1-${{ hashFiles('**/composer.json') }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
-          ${{ runner.os }}-php7.1-${{ hashFiles('**/composer.json') }}
+          ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
           ${{ runner.os }}--${{ hashFiles('**/composer.json') }}
           
 
