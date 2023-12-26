@@ -30,7 +30,7 @@ jobs:
           /home/runner/.cache/composer/files
         key: ${{ runner.os }}-php7.1-${{ hashFiles('**/composer.json') }}
         restore-keys: |
-          ${{ runner.os }}-${{ php-version }}-${{ hashFiles('**/composer.json') }}
+          ${{ runner.os }}-php7.1-${{ hashFiles('**/composer.json') }}
           ${{ runner.os }}--${{ hashFiles('**/composer.json') }}
           
 
