@@ -28,7 +28,7 @@ jobs:
         path: |
           tools/tmp/resultCache.php #Phpstan cache
           /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-${{ php-version }}-${{ hashFiles('**/composer.json') }}
+        key: ${{ runner.os }}-php7.1-${{ hashFiles('**/composer.json') }}
         restore-keys: |
           ${{ runner.os }}-${{ php-version }}-${{ hashFiles('**/composer.json') }}
           ${{ runner.os }}--${{ hashFiles('**/composer.json') }}
