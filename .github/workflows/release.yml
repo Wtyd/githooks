@@ -29,7 +29,8 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: C:/Users/runneradmin/AppData/Local/Composer/files #${{ steps.composer-cache.outputs.dir }}
+        path: |
+          /home/runner/.cache/composer/files
         key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
           ${{ runner.os }}-
@@ -111,18 +112,17 @@ jobs:
         php-version: ${{ matrix.php-versions }}
         tools: phpcs, phpcbf, phpmd, phpstan, parallel-Lint, phpcpd
         coverage: none
-  
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
 
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: ${{ steps.composercache.outputs.dir }}
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: |
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
+    # Install dependencies for run phpunit
     - name: Install dependencies
       run: |
         composer install --prefer-dist --no-progress
