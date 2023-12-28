@@ -26,6 +26,14 @@ jobs:
         php-version: ${{ matrix.php-versions }}
         coverage: none
 
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: C:/Users/runneradmin/AppData/Local/Composer/files #${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
+  
     - name: Install dependencies
       run: |
         chmod -R +x tools/*
