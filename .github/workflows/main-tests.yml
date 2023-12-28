@@ -79,13 +79,13 @@ jobs:
         extensions: ${{ env.extensions }} #optional
         coverage: none
 
-    - name: Get composer cache directory
-      id: composer-cache
-      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+    # - name: Get composer cache directory
+    #   id: composer-cache
+    #   run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: ${{ steps.composer-cache.outputs.dir }}
+        path: C:\Users\runner\AppData\Local\Composer #${{ steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
           ${{ runner.os }}-
