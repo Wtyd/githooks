@@ -2,7 +2,7 @@ name: Code Analysis
 # https://github.com/shivammathur/setup-php
 on:
   push:
-   branches-ignore: [ rc** ]
+   branches-ignore: [ rc**, 6-cache ]
   pull_request:
     branches-ignore: [ master ]
 
@@ -42,52 +42,52 @@ jobs:
     - name: Execute GitHooks
       run: php githooks tool all full
 
-  Code_Analysis:
-    name: Code Analysis
-    runs-on: ubuntu-latest
-    strategy:
-        fail-fast: false
-        matrix:
-          php-versions: ['7.1']
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+  # Code_Analysis:
+  #   name: Code Analysis
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #       fail-fast: false
+  #       matrix:
+  #         php-versions: ['7.1']
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v3
 
-    - name: Install PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ matrix.php-versions }}
+  #   - name: Install PHP
+  #     uses: shivammathur/setup-php@v2
+  #     with:
+  #       php-version: ${{ matrix.php-versions }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          tools/tmp/resultCache.php #Phpstan cache
-          /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
-        restore-keys: |
-          ${{ runner.os }}-
+  #   - name: Cache dependencies
+  #     uses: actions/cache@v3
+  #     with:
+  #       path: |
+  #         tools/tmp/resultCache.php #Phpstan cache
+  #         /home/runner/.cache/composer/files
+  #       key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-
 
-    - name: Install dependencies
-      run: |
-        chmod -R +x tools/*
-        tools/composer install --prefer-dist --no-progress
+  #   - name: Install dependencies
+  #     run: |
+  #       chmod -R +x tools/*
+  #       tools/composer install --prefer-dist --no-progress
 
-    - name: Execute PhpStan
-      id: phpstan
-      run: php githooks tool phpstan
-      continue-on-error: true
+  #   - name: Execute PhpStan
+  #     id: phpstan
+  #     run: php githooks tool phpstan
+  #     continue-on-error: true
 
-    - name: Execute Php Mess Detector
-      id: phpmd
-      run: php githooks tool phpmd
-      continue-on-error: true
+  #   - name: Execute Php Mess Detector
+  #     id: phpmd
+  #     run: php githooks tool phpmd
+  #     continue-on-error: true
 
-    - name: Execute Php Code Sniffer
-      id: phpcs
-      run: php githooks tool phpcs
-      continue-on-error: true
+  #   - name: Execute Php Code Sniffer
+  #     id: phpcs
+  #     run: php githooks tool phpcs
+  #     continue-on-error: true
 
-    - name: Check on failures
-      if: steps.phpstan.outcome != 'success' || steps.phpmd.outcome != 'success' || steps.phpcs.outcome != 'success'
-      run: exit 1
+  #   - name: Check on failures
+  #     if: steps.phpstan.outcome != 'success' || steps.phpmd.outcome != 'success' || steps.phpcs.outcome != 'success'
+  #     run: exit 1

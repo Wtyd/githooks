@@ -2,7 +2,7 @@ name: Main Tests
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ rc**, 6-cache]
+    branches-ignore: [ rc**]
   pull_request:
     branches-ignore: [ master ]
 
@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['7.2'] #, '7.4', '8.1', '8.3']
+        php-versions: ['7.2', '7.4', '8.1', '8.3']
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -31,16 +31,14 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: none
 
-    - name: Get Composer Cache Directory
-      id: composer-cache
-      run: |
-        echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-    - uses: actions/cache@v3
+    - name: Cache dependencies
+      uses: actions/cache@v3
       with:
-        path: ${{ steps.composer-cache.outputs.dir }}
-        key: ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-${{ hashFiles('composer.json') }}
+        path: |
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
-          ${{ runner.os }}-php-${{ matrix.php-versions }}-${{ matrix.setup }}-
+          ${{ runner.os }}-
       
     #  - name: Cache library packages
     #     id: composer-cache
@@ -76,7 +74,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest]
-        php-versions: ['7.1'] #, '8.1']
+        php-versions: ['7.1', '8.1']
     name: Windows Tests - PHP ${{ matrix.php-versions }}
     steps:
     - name: Checkout
@@ -92,9 +90,12 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: |
+          tools/tmp/resultCache.php #Phpstan cache
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
