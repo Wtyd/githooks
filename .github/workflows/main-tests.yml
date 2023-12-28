@@ -79,9 +79,10 @@ jobs:
         extensions: ${{ env.extensions }} #optional
         coverage: none
 
-    # - name: Get composer cache directory
+    - name: Get composer cache directory
     #   id: composer-cache
-    #   run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      run: echo "$(composer config cache-files-dir)"
+      # echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
