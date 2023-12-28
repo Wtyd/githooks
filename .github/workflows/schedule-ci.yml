@@ -1,8 +1,9 @@
 name: Schedule CI
 # https://github.com/shivammathur/setup-php
 on:
-  schedule:
-    - cron:  '0 4 * * sun' # Sundays at 04 am
+  push
+  # schedule:
+  #   - cron:  '0 4 * * sun' # Sundays at 04 am
 
 env:
   extensions: mbstring #intl, pcov
@@ -35,9 +36,11 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: |
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: |
@@ -80,9 +83,11 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: |
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: |
@@ -125,6 +130,15 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
         
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
+  
     - name: Install dependencies
       run: |
         composer install --prefer-dist --no-progress

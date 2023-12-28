@@ -10,55 +10,55 @@ env:
   extensions: :opcache, fileinfo #intl, pcov #fileinfo is needed for Windows
 
 jobs:
-  # tests:    
-  #   name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
-  #   runs-on: ${{ matrix.operating-system }}
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       operating-system: [ubuntu-latest]
-  #       php-versions: ['7.2', '7.4', '8.1', '8.3']
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@v3
+  tests:
+    name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      fail-fast: false
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ['7.2', '7.4', '8.1', '8.3']
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
 
-  #   - name: Install PHP
-  #     uses: shivammathur/setup-php@v2 
-  #     with:
-  #       php-version: ${{ matrix.php-versions }}
-  #       extensions: ${{ env.extensions }} #optional
-  #       tools: phpcs, phpcbf, phpmd, phpstan:1.4
-  #       ini-values: "post_max_size=256M" #optional
-  #       coverage: none
+    - name: Install PHP
+      uses: shivammathur/setup-php@v2 
+      with:
+        php-version: ${{ matrix.php-versions }}
+        extensions: ${{ env.extensions }} #optional
+        tools: phpcs, phpcbf, phpmd, phpstan:1.4
+        ini-values: "post_max_size=256M" #optional
+        coverage: none
 
-  #   - name: Cache dependencies
-  #     uses: actions/cache@v3
-  #     with:
-  #       path: |
-  #         /home/runner/.cache/composer/files
-  #       key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
-  #       restore-keys: |
-  #         ${{ runner.os }}-
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
-  #   - name: Install dependencies
-  #     run: |
-  #       chmod -R +x tools/*
-  #       tools/composer install --prefer-dist --no-progress
+    - name: Install dependencies
+      run: |
+        chmod -R +x tools/*
+        tools/composer install --prefer-dist --no-progress
 
-  #   - name: Install Global Parallel-Lint
-  #     run: tools/composer global require php-parallel-lint/php-parallel-lint
+    - name: Install Global Parallel-Lint
+      run: tools/composer global require php-parallel-lint/php-parallel-lint
 
-  #   - name: Install Global Phpcpd for Php7.1
-  #     if: ${{ '7.1' == matrix.php-versions }}
-  #     run: cp tools/php71/phpcpd /usr/local/bin/phpcpd
+    - name: Install Global Phpcpd for Php7.1
+      if: ${{ '7.1' == matrix.php-versions }}
+      run: cp tools/php71/phpcpd /usr/local/bin/phpcpd
 
-  #   - name: Testing the Aplication
-  #     run: |
-  #       echo -e "\e[42m\e[30m**** Main Test Suite ****\033[0m"
-  #       vendor/bin/phpunit --order-by random
-  #       echo -e "\e[42m\e[30m**** GitfilesTest ****\033[0m"
-  #       vendor/bin/phpunit --group git
-  #     shell: bash
+    - name: Testing the Aplication
+      run: |
+        echo -e "\e[42m\e[30m**** Main Test Suite ****\033[0m"
+        vendor/bin/phpunit --order-by random
+        echo -e "\e[42m\e[30m**** GitfilesTest ****\033[0m"
+        vendor/bin/phpunit --group git
+      shell: bash
 
   tests_windows:    
     runs-on: ${{ matrix.os }}
