@@ -18,7 +18,7 @@ jobs:
         php-versions: ['7.1', '7.3', '8.1'] 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2 
@@ -95,7 +95,7 @@ jobs:
         php-versions: ['7.2', '8.0', '8.3']
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2 
@@ -160,7 +160,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Delete Old Builds
         run: rm builds/githooks builds/php7.1/githooks && echo ${{ secrets.PAT_TOKEN_TO_COMMIT }}
