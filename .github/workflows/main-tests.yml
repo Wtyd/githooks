@@ -102,4 +102,3 @@ jobs:
 
     - name: Testing the Aplication
       run: php vendor\bin\phpunit --group windows
-
