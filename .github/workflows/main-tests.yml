@@ -86,7 +86,7 @@ jobs:
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: C:\Users\runner\AppData\Local\Composer #${{ steps.composer-cache.outputs.dir }}
+        path: C:/Users/runneradmin/AppData/Local/Composer/files #${{ steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
           ${{ runner.os }}-
