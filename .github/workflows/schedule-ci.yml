@@ -4,6 +4,7 @@ on:
   schedule:
     - cron:  '0 4 * * sun' # Sundays at 04 am
 
+
 env:
   extensions: mbstring #intl, pcov
   codecoverage_path: reports/coverage
@@ -21,7 +22,7 @@ jobs:
     name: Code Coverage
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
@@ -32,12 +33,17 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
 
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+  
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: |
@@ -51,7 +57,7 @@ jobs:
         --log-junit ${{ env.codecoverage_path }}/junit.xml
         --testdox-html ${{ env.codecoverage_path }}/documentation.html
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: CodeCoverage
         path: ${{ env.codecoverage_path }}
@@ -66,7 +72,7 @@ jobs:
     name: Infection
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
@@ -77,19 +83,24 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
 
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+  
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: |
         composer install --prefer-dist --no-progress
         chmod -R +x tools/*
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: CodeCoverage
 
@@ -99,7 +110,7 @@ jobs:
         --coverage=./
         --logger-html=${{ env.infection_path }}/mutation-report.html
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: Infection
         path: ${{ env.infection_path }}
@@ -114,7 +125,7 @@ jobs:
     name: PhpMetrics
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
@@ -125,6 +136,18 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: xdebug
         
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
+  
     - name: Install dependencies
       run: |
         composer install --prefer-dist --no-progress
@@ -133,14 +156,14 @@ jobs:
     - name: Install Global PhPMetrics
       run:  composer global require phpmetrics/phpmetrics
 
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: CodeCoverage
 
     - name: PhPMetrics Report
       run: phpmetrics --report-html=${{ env.phpmetrics_path }} --junit=junit.xml ./src
 
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: PhPMetrics
         path: ${{ env.phpmetrics_path }}
@@ -150,7 +173,7 @@ jobs:
     needs: [phpMetrics, infection]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         path: reports
 
@@ -159,12 +182,12 @@ jobs:
 
     - name: Get Time
       id: time
-      uses: nanzm/get-time-action@v1.1
+      uses: nanzm/get-time-action@master
       with:
         timeZone: 1
         format: 'DD-MM-YYYY'
     
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: GitHooks Metrics - ${{ steps.time.outputs.time }}
         path: reports

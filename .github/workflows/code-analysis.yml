@@ -2,34 +2,41 @@ name: Code Analysis
 # https://github.com/shivammathur/setup-php
 on:
   push:
-   branches-ignore: [ rc**, main-tests ]
+   branches-ignore: [ rc** ]
   pull_request:
     branches-ignore: [ master ]
-
-env:
-  extensions: mbstring #intl, pcov
 
 jobs:
   githooks:
     name: GitHooks
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-versions: ['7.1']
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '7.1'
+        php-version: ${{ matrix.php-versions }}
 
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+  
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
         path: |
           tools/tmp/resultCache.php #Phpstan cache
-          /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+          ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
+          
 
     - name: Install dependencies
       run: |
@@ -39,47 +46,52 @@ jobs:
     - name: Execute GitHooks
       run: php githooks tool all full
 
-  Code_Analysis:
-    name: Code Analysis
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+  # Code_Analysis:
+  #   name: Code Analysis
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #       fail-fast: false
+  #       matrix:
+  #         php-versions: ['7.1']
+  #   steps:
+  #   - name: Checkout
+  #     uses: actions/checkout@v4
 
-    - name: Install PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '7.1'
+  #   - name: Install PHP
+  #     uses: shivammathur/setup-php@v2
+  #     with:
+  #       php-version: ${{ matrix.php-versions }}
 
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          tools/tmp/resultCache.php #Phpstan cache
-          /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+  #   - name: Cache dependencies
+  #     uses: actions/cache@v3
+  #     with:
+  #       path: |
+  #         tools/tmp/resultCache.php #Phpstan cache
+  #         /home/runner/.cache/composer/files
+  #       key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+  #       restore-keys: |
+  #         ${{ runner.os }}-
 
-    - name: Install dependencies
-      run: |
-        chmod -R +x tools/*
-        tools/composer install --prefer-dist --no-progress
+  #   - name: Install dependencies
+  #     run: |
+  #       chmod -R +x tools/*
+  #       tools/composer install --prefer-dist --no-progress
 
-    - name: Execute PhpStan
-      id: phpstan
-      run: php githooks tool phpstan
-      continue-on-error: true
+  #   - name: Execute PhpStan
+  #     id: phpstan
+  #     run: php githooks tool phpstan
+  #     continue-on-error: true
 
-    - name: Execute Php Mess Detector
-      id: phpmd
-      run: php githooks tool phpmd
-      continue-on-error: true
+  #   - name: Execute Php Mess Detector
+  #     id: phpmd
+  #     run: php githooks tool phpmd
+  #     continue-on-error: true
 
-    - name: Execute Php Code Sniffer
-      id: phpcs
-      run: php githooks tool phpcs
-      continue-on-error: true
+  #   - name: Execute Php Code Sniffer
+  #     id: phpcs
+  #     run: php githooks tool phpcs
+  #     continue-on-error: true
 
-    - name: Check on failures
-      if: steps.phpstan.outcome != 'success' || steps.phpmd.outcome != 'success' || steps.phpcs.outcome != 'success'
-      run: exit 1
+  #   - name: Check on failures
+  #     if: steps.phpstan.outcome != 'success' || steps.phpmd.outcome != 'success' || steps.phpcs.outcome != 'success'
+  #     run: exit 1

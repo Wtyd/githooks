@@ -18,7 +18,7 @@ jobs:
         php-versions: ['7.1', '7.3', '8.1'] 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2 
@@ -26,6 +26,18 @@ jobs:
         php-version: ${{ matrix.php-versions }}
         coverage: none
 
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-rc-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
+  
     - name: Install dependencies
       run: |
         chmod -R +x tools/*
@@ -95,7 +107,7 @@ jobs:
         php-versions: ['7.2', '8.0', '8.3']
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2 
@@ -103,18 +115,17 @@ jobs:
         php-version: ${{ matrix.php-versions }}
         tools: phpcs, phpcbf, phpmd, phpstan, parallel-Lint, phpcpd
         coverage: none
-  
-    - name: Get composer cache directory
-      id: composercache
-      run: echo "::set-output name=dir::$(composer config cache-files-dir)"
 
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: ${{ steps.composercache.outputs.dir }}
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: |
+          /home/runner/.cache/composer/files
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
+    # Install dependencies for run phpunit
     - name: Install dependencies
       run: |
         composer install --prefer-dist --no-progress
@@ -160,7 +171,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Delete Old Builds
         run: rm builds/githooks builds/php7.1/githooks && echo ${{ secrets.PAT_TOKEN_TO_COMMIT }}

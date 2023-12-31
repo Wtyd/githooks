@@ -2,7 +2,7 @@ name: Main Tests
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches-ignore: [ rc**]
+    branches-ignore: [ rc** ]
   pull_request:
     branches-ignore: [ master ]
 
@@ -10,7 +10,7 @@ env:
   extensions: :opcache, fileinfo #intl, pcov #fileinfo is needed for Windows
 
 jobs:
-  tests:    
+  tests:
     name: PHP ${{ matrix.php-versions }} Test on ${{ matrix.operating-system }}
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -20,7 +20,7 @@ jobs:
         php-versions: ['7.2', '7.4', '8.1', '8.3']
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2 
@@ -31,12 +31,19 @@ jobs:
         ini-values: "post_max_size=256M" #optional
         coverage: none
 
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+  
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: |
+          tools/tmp/resultCache.php #Phpstan cache
+          ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: |
@@ -68,7 +75,7 @@ jobs:
     name: Windows Tests - PHP ${{ matrix.php-versions }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install PHP
       uses: shivammathur/setup-php@v2
@@ -76,17 +83,22 @@ jobs:
         php-version: ${{ matrix.php-versions }}
         extensions: ${{ env.extensions }} #optional
         coverage: none
-
+  
+    - name: Get composer cache directory
+      id: composer-cache
+      run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      shell: bash
+  
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
-        path: /home/runner/.cache/composer/files
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.json') }}
-        restore-keys: ${{ runner.os }}-composer-
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: ${{ runner.os }}-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+        restore-keys: |
+          ${{ runner.os }}-
 
     - name: Install dependencies
       run: composer install --prefer-dist --no-progress
 
     - name: Testing the Aplication
       run: php vendor\bin\phpunit --group windows
-
