@@ -264,15 +264,13 @@ final class BuildCommand extends Command
     private function extractVersionFromBranchName(): string
     {
         $branch = getenv('GITHUB_REF');
-        dd($branch);
-        if ($this->validateBranchName($branch)) {
-            echo "El nombre de la rama es válido.";
-        } else {
+        if (! $this->validateBranchName($branch)) {
             echo "El nombre de la rama no cumple con el formato requerido.";
-            exit(111);
+            exit(1);
         }
         $prefix = 'rc-';
         $version = substr($branch, strlen($prefix));
+        dd($version);
         return $version;
     }
 
