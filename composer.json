@@ -68,5 +68,14 @@
     "prefer-stable": true,
     "bin": [
         "builds/githooks"
-    ]
+    ],
+    "scripts": {
+        "app:prod": [
+            "./php-executable composer.phar install --classmap-authoritative --no-dev --ansi",
+            "@artisan optimize:clear",
+            "@artisan optimize",
+            "@artisan queue:restart"
+        ]
+    }
+
 }

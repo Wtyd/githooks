@@ -165,8 +165,8 @@ final class BuildCommand extends Command
         $config = include $configFile;
 
         $config['env'] = 'production';
-        $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
-        $config['version'] = $version;
+        // $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
+        $config['version'] = $this->extractVersionFromBranchName();
 
         $boxFile = $this->app->basePath('box.json');
         static::$box = File::get($boxFile);
@@ -260,6 +260,31 @@ final class BuildCommand extends Command
 
         return $extraBoxOptions;
     }
+
+    private function extractVersionFromBranchName(): string
+    {
+        $branch = getenv('GITHUB_REF');
+        dd($branch);
+        if ($this->validateBranchName($branch)) {
+            echo "El nombre de la rama es válido.";
+        } else {
+            echo "El nombre de la rama no cumple con el formato requerido.";
+            exit(111);
+        }
+        $prefix = 'rc-';
+        $version = substr($branch, strlen($prefix));
+        return $version;
+    }
+
+    private function validateBranchName(string $branch): bool
+    {
+        // Define la expresión regular para validar el nombre de la rama
+        $pattern = '/^rc-\d+\.\d+\.\d+$/';
+
+        // Utiliza preg_match para verificar si el nombre de la rama coincide con el patrón
+        return preg_match($pattern, $branch) === 1;
+    }
+
 
     /**
      * Makes sure that the `clear` is performed even
