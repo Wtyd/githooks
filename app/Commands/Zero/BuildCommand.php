@@ -271,7 +271,7 @@ final class BuildCommand extends Command
         }
         $prefix = 'rc-';
         $version = substr($branch, strlen($prefix));
-        dd($version);
+
         return $version;
     }
 
