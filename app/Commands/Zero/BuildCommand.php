@@ -263,9 +263,8 @@ final class BuildCommand extends Command
 
     private function extractVersionFromBranchName(): string
     {
-        $branch = getenv('GITHUB_REF');
+        $branch = shell_exec('git rev-parse --abbrev-ref HEAD');
 
-        dd(getenv('GITHUB_REF'), getenv('GITHUB_REF##*/'), shell_exec('git rev-parse --abbrev-ref HEAD'));
         if (! $this->validateBranchName($branch)) {
             $this->error("El nombre de la rama no cumple con el formato requerido.");
             exit(1);
