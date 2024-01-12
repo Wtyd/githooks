@@ -165,8 +165,7 @@ final class BuildCommand extends Command
         $config = include $configFile;
 
         $config['env'] = 'production';
-        $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
-        var_dump("\n Version: $version, " . $this->extractVersionFromBranchName());
+        // $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
         $config['version'] = $this->extractVersionFromBranchName();
 
         $boxFile = $this->app->basePath('box.json');
@@ -266,9 +265,9 @@ final class BuildCommand extends Command
     {
         $branch = shell_exec('git rev-parse --abbrev-ref HEAD');
 
-        if (! $this->validateBranchName($branch)) {
-            $this->error("El nombre de la rama no cumple con el formato requerido.");
-            exit(1);
+        if (! $this->validatesBranchName($branch)) {
+            $this->error('The branch name does not meet the required format.');
+            exit(1); // TODO: throw exception
         }
         $prefix = 'rc-';
         $version = substr($branch, strlen($prefix));
@@ -276,13 +275,11 @@ final class BuildCommand extends Command
         return $version;
     }
 
-    private function validateBranchName(string $branch): bool
+    private function validatesBranchName(string $branchName): bool
     {
-        // Define la expresión regular para validar el nombre de la rama
         $pattern = '/^rc-\d+\.\d+\.\d+$/';
 
-        // Utiliza preg_match para verificar si el nombre de la rama coincide con el patrón
-        return preg_match($pattern, $branch) === 1;
+        return preg_match($pattern, $branchName) === 1;
     }
 
 
