@@ -165,7 +165,8 @@ final class BuildCommand extends Command
         $config = include $configFile;
 
         $config['env'] = 'production';
-        // $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
+        $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
+        var_dump("\n Version:" . $config['version']);
         $config['version'] = $this->extractVersionFromBranchName();
 
         $boxFile = $this->app->basePath('box.json');
