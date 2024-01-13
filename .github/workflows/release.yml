@@ -49,12 +49,6 @@ jobs:
     - name: Build the Aplication
       run: |
         php githooks app:pre-build
-        # branch=${GITHUB_REF##*/}
-        # echo ${branch}
-        # prefix='rc-'
-        # version=${branch#"$prefix"}
-        # echo $version
-        # --build-version=${version}
         php githooks app:build 
 
     # - name: Tar files to keep permissions
