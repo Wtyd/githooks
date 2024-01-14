@@ -301,7 +301,7 @@ final class BuildCommand extends Command
 
     private function validatesBranchName(string $branchName): bool
     {
-        $pattern = ' / ^ rc - \d + \ . \d + \ . \d + $ / ';
+        $pattern = '/^rc-\d+\.\d+\.\d+$/';
 
         return preg_match($pattern, $branchName) === 1;
     }
