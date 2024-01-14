@@ -83,6 +83,7 @@ final class BuildCommand extends Command
          */
         $this->prepare()
         ->compile($name)
+        ->tarBuild()
         ->clear();
 
         $this->output->writeln(
