@@ -82,8 +82,8 @@ final class BuildCommand extends Command
          * to the builds folder with the correct permissions.
          */
         $this->prepare()
-            ->compile($name)
-            ->clear();
+        ->compile($name)
+        ->clear();
 
         $this->output->writeln(
             sprintf('    Compiled successfully: <fg=green>%s</>', $this->app->buildsPath($name))
@@ -137,17 +137,17 @@ final class BuildCommand extends Command
         $this->output->newLine();
 
         // passthru('ls -lah');
-        if (File::exists($this->app->basePath($this->getBinary()) . '.phar')) {
-            echo "\nEl fichero de origen existe: " . $this->app->basePath($this->getBinary()) . '.phar';
-        } else {
-            echo "\nEl fichero de origen NO existe: " . $this->app->basePath($this->getBinary()) . '.phar';
-        }
+        // if (File::exists($this->app->basePath($this->getBinary()) . '.phar')) {
+        //     echo "\nEl fichero de origen existe: " . $this->app->basePath($this->getBinary()) . '.phar';
+        // } else {
+        //     echo "\nEl fichero de origen NO existe: " . $this->app->basePath($this->getBinary()) . '.phar';
+        // }
 
-        if (File::exists($this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name))) {
-            echo "\nEl fichero de destino existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
-        } else {
-            echo "\nEl fichero de destino NO existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
-        }
+        // if (File::exists($this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name))) {
+        //     echo "\nEl fichero de destino existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
+        // } else {
+        //     echo "\nEl fichero de destino NO existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
+        // }
 
         File::move(
             $this->app->basePath($this->getBinary()) . '.phar',
@@ -200,6 +200,30 @@ final class BuildCommand extends Command
         return $this;
     }
 
+    private function tarBuild(): BuildCommand
+    {
+        $this->task(
+            '   3. Tar build to keep permissions',
+            function () {
+                $buildPath = ComposerUpdater::pathToBuild();
+                $buildPath = 'builds' . ComposerUpdater::pathToBuild() . 'githooks';
+                $nombreArchivo = 'githooks - 73.tar';
+                $comando = "tar -cvf $nombreArchivo $buildPath";
+                exec($comando, $output, $exitCode);
+
+                if ($exitCode === 0) {
+                    $this->info("Tar successfully: $nombreArchivo");
+                } else {
+                    $this->error("Error al comprimir el directorio: $nombreArchivo\n");
+                    echo "Código de salida: $exitCode\n";
+                    echo "Resultado: " . implode("\n", $output) . "\n";
+                }
+            }
+        );
+
+        return $this;
+    }
+
     /**
      * Returns the artisan binary.
      */
@@ -218,7 +242,7 @@ final class BuildCommand extends Command
     private function getTimeout(): ?float
     {
         if (!is_numeric($this->option('timeout'))) {
-            throw new \InvalidArgumentException('The timeout value must be a number.');
+            throw new \InvalidArgumentException('The timeout value must be a number . ');
         }
 
         $timeout = (float) $this->option('timeout');
@@ -263,13 +287,13 @@ final class BuildCommand extends Command
 
     private function extractVersionFromBranchName(): string
     {
-        $branch = shell_exec('git rev-parse --abbrev-ref HEAD');
+        $branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD'));
 
         if (! $this->validatesBranchName($branch)) {
-            $this->error('The branch name does not meet the required format.');
+            $this->error('The branch name does not meet the required format . ');
             exit(1); // TODO: throw exception
         }
-        $prefix = 'rc-';
+        $prefix = 'rc - ';
         $version = substr($branch, strlen($prefix));
 
         return $version;
@@ -277,7 +301,7 @@ final class BuildCommand extends Command
 
     private function validatesBranchName(string $branchName): bool
     {
-        $pattern = '/^rc-\d+\.\d+\.\d+$/';
+        $pattern = ' / ^ rc - \d + \ . \d + \ . \d + $ / ';
 
         return preg_match($pattern, $branchName) === 1;
     }
