@@ -211,7 +211,7 @@ final class BuildCommand extends Command
             '   3. Tar build to keep permissions',
             function () {
                 $buildPath = ComposerUpdater::pathToBuild();
-                $buildPath = 'builds' . ComposerUpdater::pathToBuild() . 'githooks';
+                $buildPath = 'builds/' . ComposerUpdater::pathToBuild() . '/githooks';
                 $nombreArchivo = 'githooks-71.tar';
                 $comando = "tar -cvf $nombreArchivo $buildPath";
                 var_dump("\n $comando \n");
