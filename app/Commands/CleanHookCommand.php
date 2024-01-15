@@ -2,13 +2,13 @@
 
 namespace Wtyd\GitHooks\App\Commands;
 
+use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Hooks;
 use Wtyd\GitHooks\Utils\Printer;
-use LaravelZero\Framework\Commands\Command;
 
 class CleanHookCommand extends Command
 {
-    protected $signature = 'hook:clean  {hook=pre-commit}';
+    protected $signature = 'hook:clean {hook=pre-commit}';
     protected $description = 'Deletes the hook passed as argument (default pre-commit)';
 
     /**

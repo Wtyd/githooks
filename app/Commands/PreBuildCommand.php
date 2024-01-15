@@ -2,13 +2,27 @@
 
 namespace Wtyd\GitHooks\App\Commands;
 
-use Wtyd\GitHooks\Utils\Printer;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Build\ManageDependencies;
+use Wtyd\GitHooks\Utils\Printer;
 
 class PreBuildCommand extends Command
 {
-    protected $signature = 'app:pre-build';
+    public const DEV_DEPENDENCIES = [
+        // 'intonate/tinker-zero', // No way to use build command without tinker
+        'mikey179/vfsstream',
+        'mockery/mockery',
+        'php-mock/php-mock',
+        'php-parallel-lint/php-parallel-lint',
+        'phpmd/phpmd',
+        'phpstan/phpstan',
+        'phpunit/php-code-coverage',
+        'phpunit/phpunit',
+        'squizlabs/php_codesniffer',
+        'fakerphp/faker',
+    ];
+
+    protected $signature = 'app:pre-build {phpVersion? : Version of php to use. Default is the current version.}';
     protected $description = 'Prepares the app dependencies for the build processs';
 
     /**
@@ -18,25 +32,49 @@ class PreBuildCommand extends Command
      */
     protected $help = 'Without arguments deletes the pre-commit hook. A optional argument can be the name of another hook. Example: hook:clean pre-push.';
 
-    /**
-     * @var Printer
-     */
-    protected $printer;
+    /**  @var string */
+    private $phpVersion;
 
-    /** @var ManageDependencies */
-    private $manageDependencies;
+    /**  @var integer */
+    private $deleteDevDependenciesExitCode = 0;
 
-    public function __construct(ManageDependencies $manageDependencies)
-    {
-        parent::__construct();
-        $this->manageDependencies = $manageDependencies;
-    }
+    /**  @var integer */
+    private $updateProdDependenciesExitCode = 0;
+
+    private $composer = 'tools/composer';
+
     public function handle()
     {
-        $this->title('Deleting dev dependencies');
-        $this->manageDependencies->deleteDevDependencies();
+        $this->phpVersion = $this->argument('phpVersion') ?? 'php7.1';
 
-        $this->title('Updating prod dependencies');
-        $this->manageDependencies->updateProdDependencies();
+        $this->task(
+            '   <fg=yellow>1. <fg=yellow>Deleting dev dependencies</>',
+            $this->deleteDevDependencies()
+        );
+
+        $this->task(
+            '   <fg=yellow>2. Updating prod dependencies</>',
+            $this->updateProdDependencies()
+        );
+    }
+
+    private function deleteDevDependencies(): void
+    {
+        $command = $this->phpVersion . ' ' . $this->composer . ' remove --ansi --dev ' . implode(' ', self::DEV_DEPENDENCIES);
+        passthru($command, $this->deleteDevDependenciesExitCode);
+
+        if ($this->deleteDevDependenciesExitCode != 0) {
+            exit($this->deleteDevDependenciesExitCode);
+        }
+    }
+
+    private function updateProdDependencies(): void
+    {
+        $command = $this->phpVersion . ' ' . $this->composer . ' update --ansi';
+        passthru($command, $this->updateProdDependenciesExitCode);
+
+        if ($this->updateProdDependenciesExitCode != 0) {
+            exit($this->updateProdDependenciesExitCode);
+        }
     }
 }
