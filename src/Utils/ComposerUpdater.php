@@ -47,11 +47,11 @@ class ComposerUpdater
             throw new Exception('GitHooks only supports php 7.1 or greater.', 1);
         }
         if (version_compare(phpversion(), '7.3.0', '<')) {
-            return '/php7.1/';
+            return 'php7.1';
         }
 
         if (version_compare(phpversion(), '8.1.0', '<')) {
-            return '/php7.3/';
+            return 'php7.3';
         }
 
         return '';

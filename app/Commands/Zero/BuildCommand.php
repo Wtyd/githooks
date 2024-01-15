@@ -149,11 +149,15 @@ final class BuildCommand extends Command
         // } else {
         //     echo "\nEl fichero de destino NO existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
         // }
+        try {
+            File::move(
+                $this->app->basePath($this->getBinary()) . '.phar',
+                $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name)
+            );
+        } catch (\Throwable $th) {
+            dd($buildPath, $th->getMessage());
+        }
 
-        File::move(
-            $this->app->basePath($this->getBinary()) . '.phar',
-            $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name)
-        );
 
         return $this;
     }
@@ -208,8 +212,9 @@ final class BuildCommand extends Command
             function () {
                 $buildPath = ComposerUpdater::pathToBuild();
                 $buildPath = 'builds' . ComposerUpdater::pathToBuild() . 'githooks';
-                $nombreArchivo = 'githooks - 73.tar';
+                $nombreArchivo = 'githooks-71.tar';
                 $comando = "tar -cvf $nombreArchivo $buildPath";
+                var_dump("\n $comando \n");
                 exec($comando, $output, $exitCode);
 
                 if ($exitCode === 0) {
@@ -218,6 +223,7 @@ final class BuildCommand extends Command
                     $this->error("Error al comprimir el directorio: $nombreArchivo\n");
                     echo "Código de salida: $exitCode\n";
                     echo "Resultado: " . implode("\n", $output) . "\n";
+                    exit($exitCode);
                 }
             }
         );
