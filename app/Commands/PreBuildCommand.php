@@ -48,7 +48,7 @@ class PreBuildCommand extends Command
         $this->phpVersion = $this->argument('phpVersion') ?? 'php7.1';
 
         $this->task(
-            '   1. <fg=yellow>Deleting dev dependencies</>',
+            '   <fg=yellow>1. <fg=yellow>Deleting dev dependencies</>',
             $this->deleteDevDependencies()
         );
 
