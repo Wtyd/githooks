@@ -36,10 +36,10 @@ class PreBuildCommand extends Command
     private $phpVersion;
 
     /**  @var integer */
-    private $deleteDevDependenciesExitCode = -1;
+    private $deleteDevDependenciesExitCode = 0;
 
     /**  @var integer */
-    private $updateProdDependenciesExitCode = -1;
+    private $updateProdDependenciesExitCode = 0;
 
     private $composer = 'tools/composer';
 
@@ -58,15 +58,23 @@ class PreBuildCommand extends Command
         );
     }
 
-    public function deleteDevDependencies(): void
+    private function deleteDevDependencies(): void
     {
         $command = $this->phpVersion . ' ' . $this->composer . ' remove --ansi --dev ' . implode(' ', self::DEV_DEPENDENCIES);
         passthru($command, $this->deleteDevDependenciesExitCode);
+
+        if ($this->deleteDevDependenciesExitCode != 0) {
+            exit($this->deleteDevDependenciesExitCode);
+        }
     }
 
-    public function updateProdDependencies(): void
+    private function updateProdDependencies(): void
     {
         $command = $this->phpVersion . ' ' . $this->composer . ' update --ansi';
         passthru($command, $this->updateProdDependenciesExitCode);
+
+        if ($this->updateProdDependenciesExitCode != 0) {
+            exit($this->updateProdDependenciesExitCode);
+        }
     }
 }
