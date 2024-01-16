@@ -50,30 +50,6 @@ jobs:
       run: |
         php githooks app:pre-build
         php githooks app:build
-        # ls -lah
-        # echo "\n====================\n"
-        # ls -lah builds/
-        # echo "\n====================\n"
-        git status
-
-    # - name: Tar files to keep permissions
-    #   run: |
-    #     ls -lah builds/githooks builds/php7.1/githooks
-    #     tar -cvf githooks-71.tar builds/php7.1/githooks
-    #     tar -cvf githooks-73.tar builds/php7.3/githooks
-    #     tar -cvf githooks-81.tar builds/githooks
-    #     # ls -lah builds/githooks builds/php7.1/githooks
-    # - name: Tar files to keep permissions 7.1
-    #   if: ${{ '7.1' == matrix.php-versions }}
-    #   run: tar -cvf githooks-71.tar builds/php7.1/githooks
-
-    # - name: Tar files to keep permissions 7.3
-    #   if: ${{ '7.3' == matrix.php-versions }}
-    #   run: tar -cvf githooks-73.tar builds/php7.3/githooks
-
-    # - name: Tar files to keep permissions 8.1
-    #   if: ${{ '8.1' == matrix.php-versions }}
-    #   run: tar -cvf githooks-81.tar builds/githooks
   
     # TODO Simplificar con un wildcard
     - name: Upload php 7.1 build

@@ -2,12 +2,12 @@
 
 namespace Tests;
 
-use Wtyd\GitHooks\Exception\ExitException;
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Tests\Utils\Traits\{
+use Wtyd\GitHooks\Exception\ExitException;
     FileSystemTrait,
     RetroCompatibilityAssertsTrait
 };
@@ -75,7 +75,7 @@ class ReleaseTestCase extends TestCase
      */
     protected static function copyReleaseBinary(): bool
     {
-        $origin = str_replace('//', '/', 'builds' . ComposerUpdater::pathToBuild() . '/githooks');
+        $origin = str_replace('//', '/', 'builds/' . ComposerUpdater::pathToBuild() . '/githooks');
         $destiny = SystemTestCase::TESTS_PATH . '/githooks';
 
         copy($origin, $destiny);
