@@ -50,10 +50,10 @@ jobs:
       run: |
         php githooks app:pre-build
         php githooks app:build
-        ls -lah
-        echo "\n====================\n"
-        ls -lah builds/
-        echo "\n====================\n"
+        # ls -lah
+        # echo "\n====================\n"
+        # ls -lah builds/
+        # echo "\n====================\n"
         git status
 
     # - name: Tar files to keep permissions

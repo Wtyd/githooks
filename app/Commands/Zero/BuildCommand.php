@@ -214,6 +214,11 @@ final class BuildCommand extends Command
                 $buildPath = 'builds/' . ComposerUpdater::pathToBuild() . '/githooks';
                 $nombreArchivo = 'githooks-71.tar';
                 $comando = "tar -cvf $nombreArchivo $buildPath";
+
+                passthru('ls -lah');
+                echo "\n====================\n";
+                passthru('ls -lah builds/php7.1/');
+                echo "\n====================\n";
                 var_dump("\n $comando \n");
                 exec($comando, $output, $exitCode);
 
