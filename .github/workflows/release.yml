@@ -53,6 +53,8 @@ jobs:
         ls -lah
         echo "\n====================\n"
         ls -lah builds/
+        echo "\n====================\n"
+        git status
 
     # - name: Tar files to keep permissions
     #   run: |
