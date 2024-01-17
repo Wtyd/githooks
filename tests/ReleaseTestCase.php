@@ -7,10 +7,10 @@ use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Tests\Utils\Traits\{
-use Wtyd\GitHooks\Exception\ExitException;
     FileSystemTrait,
     RetroCompatibilityAssertsTrait
 };
+use Wtyd\GitHooks\Exception\ExitException;
 use Wtyd\GitHooks\Utils\ComposerUpdater;
 
 class ReleaseTestCase extends TestCase
