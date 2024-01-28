@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
+use Wtyd\GitHooks\Build\Build;
 use Wtyd\GitHooks\Utils\ComposerUpdater;
 
 final class BuildCommand extends Command
@@ -51,6 +52,19 @@ final class BuildCommand extends Command
     private $originalOutput;
 
     /**
+     * Provides the build path.
+     *
+     * @var \Wtyd\GitHooks\Build\Build
+     */
+    private $build;
+
+    public function __construct(Build $build)
+    {
+        parent::__construct();
+        $this->build = $build;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function handle()
@@ -83,11 +97,11 @@ final class BuildCommand extends Command
          */
         $this->prepare()
         ->compile($name)
-        ->tarBuild()
+        ->tarBuild($name)
         ->clear();
 
         $this->output->writeln(
-            sprintf('    Compiled successfully: <fg=green>%s</>', $this->app->buildsPath($name))
+            sprintf('    Compiled successfully: <fg=green>%s</>', $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name)
         );
 
         return $this;
@@ -95,9 +109,8 @@ final class BuildCommand extends Command
 
     private function compile(string $name): BuildCommand
     {
-        $buildPath = ComposerUpdater::pathToBuild();
-        if (!File::exists($this->app->buildsPath($buildPath))) {
-            File::makeDirectory($this->app->buildsPath($buildPath));
+        if (!File::exists($this->build->getBuildPath())) {
+            File::makeDirectory($this->build->getBuildPath());
         }
 
         // $boxBinary = windows_os() ? '.\box.bat' : './box';
@@ -137,25 +150,13 @@ final class BuildCommand extends Command
 
         $this->output->newLine();
 
-        // passthru('ls -lah');
-        // if (File::exists($this->app->basePath($this->getBinary()) . '.phar')) {
-        //     echo "\nEl fichero de origen existe: " . $this->app->basePath($this->getBinary()) . '.phar';
-        // } else {
-        //     echo "\nEl fichero de origen NO existe: " . $this->app->basePath($this->getBinary()) . '.phar';
-        // }
-
-        // if (File::exists($this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name))) {
-        //     echo "\nEl fichero de destino existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
-        // } else {
-        //     echo "\nEl fichero de destino NO existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
-        // }
         try {
             File::move(
                 $this->app->basePath($this->getBinary()) . '.phar',
-                $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name)
+                $this->app->buildsPath($this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name)
             );
         } catch (\Throwable $th) {
-            dd($buildPath, $th->getMessage());
+            dd($this->build->getBuildPath(), $th->getMessage());
         }
 
 
@@ -205,29 +206,28 @@ final class BuildCommand extends Command
         return $this;
     }
 
-    private function tarBuild(): BuildCommand
+    private function tarBuild($name): BuildCommand
     {
         $this->task(
             '   3. Tar build to keep permissions',
-            function () {
-                $buildPath = ComposerUpdater::pathToBuild();
-                $buildPath = 'builds/' . ComposerUpdater::pathToBuild() . '/githooks';
-                $nombreArchivo = 'githooks-71.tar';
-                $comando = "tar -cvf $nombreArchivo $buildPath";
+            function () use ($name){
+       
+                $tarFile = 'githooks-71.tar';
+                $tarCommand = "tar -cvf $tarFile" . $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name;
 
                 passthru('ls -lah');
                 echo "\n====================\n";
                 passthru('ls -lah builds/php7.1/');
                 echo "\n====================\n";
-                var_dump("\n $comando \n");
-                exec($comando, $output, $exitCode);
+                var_dump("\n $tarCommand \n");
+                exec($tarCommand, $output, $exitCode);
 
                 if ($exitCode === 0) {
-                    $this->info("Tar successfully: $nombreArchivo");
+                    $this->info("Tar successfully: $tarFile");
                 } else {
-                    $this->error("Error al comprimir el directorio: $nombreArchivo\n");
-                    echo "Código de salida: $exitCode\n";
-                    echo "Resultado: " . implode("\n", $output) . "\n";
+                    $this->error("Error when compressing file: $tarFile\n");
+                    echo "Exit code: $exitCode\n";
+                    echo "Result: " . implode("\n", $output) . "\n";
                     exit($exitCode);
                 }
             }

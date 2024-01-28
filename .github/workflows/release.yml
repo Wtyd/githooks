@@ -118,21 +118,21 @@ jobs:
         rm builds/php7.1/githooks
         git status
         ls -lah
-        tar -xf githooks-71/githooks-71.tar
+        tar -xvf githooks-71/githooks-71.tar
         builds/php7.1/githooks --version
 
     - name: Extract and check builds 8.0
       if: ${{ '8.0' == matrix.php-versions }}
       run: |
         rm builds/php7.3/githooks
-        tar -xf githooks-73/githooks-73.tar
+        tar -xvf githooks-73/githooks-73.tar
         builds/php7.3/githooks --version   
 
     - name: Extract and check builds 8.3
       if: ${{ '8.3' == matrix.php-versions }}
       run: |
         rm builds/githooks
-        tar -xf githooks-81/githooks-81.tar
+        tar -xvf githooks-81/githooks-81.tar
         builds/githooks --version
         git status
   
@@ -169,9 +169,9 @@ jobs:
 
       - name: Extract and check builds
         run: |
-          tar -xf githooks-71.tar
-          tar -xf githooks-73.tar
-          tar -xf githooks-81.tar
+          tar -xvf githooks-71.tar
+          tar -xvf githooks-73.tar
+          tar -xvf githooks-81.tar
           ls -lah builds
           git status
 

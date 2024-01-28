@@ -10,6 +10,7 @@ use Tests\Utils\Traits\{
     FileSystemTrait,
     RetroCompatibilityAssertsTrait
 };
+use Wtyd\GitHooks\Build\Build;
 use Wtyd\GitHooks\Exception\ExitException;
 use Wtyd\GitHooks\Utils\ComposerUpdater;
 
@@ -75,8 +76,10 @@ class ReleaseTestCase extends TestCase
      */
     protected static function copyReleaseBinary(): bool
     {
-        $origin = str_replace('//', '/', 'builds/' . ComposerUpdater::pathToBuild() . '/githooks');
-        $destiny = SystemTestCase::TESTS_PATH . '/githooks';
+        $build = new Build();
+        $origin = $build->getBuildPath() . DIRECTORY_SEPARATOR . 'githooks';
+        // $origin = str_replace('//', '/', 'builds/' . ComposerUpdater::pathToBuild() . '/githooks');
+        $destiny = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'githooks';
 
         copy($origin, $destiny);
 

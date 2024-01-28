@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Utils;
 
 use Exception;
+use Wtyd\GitHooks\Build\Build;
 
 class ComposerUpdater
 {
+    
     public static function phpOldVersions(): void
     {
+        // ComposerUpdater *
+        // BuildCommand *
+        // ReleaseTest *
+        // CustomStrategy *
         $printer = new Printer();
         if (version_compare(phpversion(), '8.1.0', '>=')) {
             $printer->info('For php 8.0 or higher is not needed');
@@ -17,8 +23,9 @@ class ComposerUpdater
         }
 
         $rootPaht = getcwd();
-        $origin = "$rootPaht/vendor/wtyd/githooks/builds/" . self::pathToBuild() . 'githooks';
-        $destiny = "$rootPaht/vendor/bin/githooks";
+        $build = new Build();
+        $origin = str_replace('/', DIRECTORY_SEPARATOR, "$rootPaht/vendor/wtyd/githooks") . $build->getBuildPath() . DIRECTORY_SEPARATOR . 'githooks';
+        $destiny = str_replace('/', DIRECTORY_SEPARATOR, "$rootPaht/vendor/bin/githooks");
         if (file_exists($destiny)) {
             unlink($destiny);
         }
