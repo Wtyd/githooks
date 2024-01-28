@@ -153,7 +153,7 @@ final class BuildCommand extends Command
         try {
             File::move(
                 $this->app->basePath($this->getBinary()) . '.phar',
-                $this->app->buildsPath($this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name)
+                $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name
             );
         } catch (\Throwable $th) {
             dd($this->build->getBuildPath(), $th->getMessage());
