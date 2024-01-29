@@ -33,9 +33,9 @@ class Build
             throw new Exception('GitHooks only supports php 7.1 or greater.', 1);
         }
         if (version_compare($this->phpVersion, '7.3.0', '<')) {
-            $this->buildPath =  $path . DIRECTORY_SEPARATOR . 'php7.1';
+            $this->buildPath =  $path . DIRECTORY_SEPARATOR . 'php7.1' . DIRECTORY_SEPARATOR;
         } elseif (version_compare($this->phpVersion, '8.1.0', '<')) {
-            $this->buildPath =  $path . DIRECTORY_SEPARATOR . 'php7.3';
+            $this->buildPath =  $path . DIRECTORY_SEPARATOR . 'php7.3' . DIRECTORY_SEPARATOR;
         } else {
             $this->buildPath =  $path;
         }

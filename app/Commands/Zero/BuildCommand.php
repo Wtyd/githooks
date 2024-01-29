@@ -213,7 +213,7 @@ final class BuildCommand extends Command
             function () use ($name){
        
                 $tarFile = 'githooks-71.tar';
-                $tarCommand = "tar -cvf $tarFile" . $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name;
+                $tarCommand = "tar -cvf $tarFile " . $this->build->getBuildPath() . $name;
 
                 passthru('ls -lah');
                 echo "\n====================\n";
