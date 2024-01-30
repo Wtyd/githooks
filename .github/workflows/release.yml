@@ -48,6 +48,7 @@ jobs:
 
     - name: Build the Aplication
       run: |
+        echo {{ matrix.php-versions }}
         php githooks app:pre-build {{ matrix.php-versions }}
         php githooks app:build
   
