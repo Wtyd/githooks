@@ -48,8 +48,8 @@ jobs:
 
     - name: Build the Aplication
       run: |
-        echo ${{ matrix.php-versions }}
-        php githooks app:pre-build ${{ matrix.php-versions }}
+        php --version
+        php githooks app:pre-build php
         php githooks app:build
   
     # TODO Simplificar con un wildcard
