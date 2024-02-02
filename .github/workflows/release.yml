@@ -52,7 +52,6 @@ jobs:
         php githooks app:pre-build php
         php githooks app:build
   
-    # TODO Simplificar con un wildcard
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
@@ -104,21 +103,21 @@ jobs:
         rm builds/php7.1/githooks
         git status
         ls -lah
-        tar -xvf githooks-71/githooks-71.tar
+        tar -xvf githooks-7.1/githooks-7.1.tar
         builds/php7.1/githooks --version
 
     - name: Extract and check builds 8.0
       if: ${{ '8.0' == matrix.php-versions }}
       run: |
         rm builds/php7.3/githooks
-        tar -xvf githooks-73/githooks-73.tar
+        tar -xvf githooks-7.3/githooks-7.3.tar
         builds/php7.3/githooks --version   
 
     - name: Extract and check builds 8.3
       if: ${{ '8.3' == matrix.php-versions }}
       run: |
         rm builds/githooks
-        tar -xvf githooks-81/githooks-81.tar
+        tar -xvf githooks-8.1/githooks-8.1.tar
         builds/githooks --version
         git status
   
