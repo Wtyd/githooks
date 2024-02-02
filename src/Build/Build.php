@@ -13,9 +13,17 @@ class Build
 
     public function __construct()
     {
-        $this->phpVersion = phpversion();
-
+        $this->setPhpVersion();
         $this->setBuildPath();
+    }
+
+    /**
+     * Set the php version (only Major and Minor) used in the build process.
+     * @return void
+     */
+    private function setPhpVersion(): void
+    {
+        $this->phpVersion = implode('.', array_slice(explode('.', phpversion()), 0, 2));
     }
 
     /**
@@ -23,19 +31,20 @@ class Build
      * 1. Base Build: 'builds/'. Actually for php greater than 8.1.0.
      * 2. Php 7.3, 7.4 and 8.0: 'builds/php73/'
      * 3. Php 7.1 and 7.2: 'builds/php71/'
-     * See [release flow](.github/workflows/release.yml) 
+     * See [release flow](.github/workflows/release.yml)
      * @return void
      */
     private function setBuildPath(): void
     {
         $path = 'builds' . DIRECTORY_SEPARATOR;
-        if (version_compare($this->phpVersion, '7.1.0', '<')) {
+
+        if (version_compare($this->phpVersion, '7.1', '<')) {
             throw new Exception('GitHooks only supports php 7.1 or greater.', 1);
         }
         if (version_compare($this->phpVersion, '7.3.0', '<')) {
-            $this->buildPath =  $path . DIRECTORY_SEPARATOR . 'php7.1' . DIRECTORY_SEPARATOR;
+            $this->buildPath =  $path . 'php7.1' . DIRECTORY_SEPARATOR;
         } elseif (version_compare($this->phpVersion, '8.1.0', '<')) {
-            $this->buildPath =  $path . DIRECTORY_SEPARATOR . 'php7.3' . DIRECTORY_SEPARATOR;
+            $this->buildPath =  $path . 'php7.3' . DIRECTORY_SEPARATOR;
         } else {
             $this->buildPath =  $path;
         }
