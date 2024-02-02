@@ -62,6 +62,25 @@ class Build
 
     public function getTarName(): string
     {
-        return 'githooks-' . $this->phpVersion . '.tar';
+        $tarName = '';
+        switch ($this->phpVersion) {
+            case '7.1':
+            case '7.2':
+                $tarName = 'githooks-7.1.tar';
+                break;
+            case '7.3':
+            case '7.4':
+            case '8.0':
+                $tarName = 'githooks-7.3.tar';
+                break;
+            case '8.1':
+            case '8.2':
+            case '8.3':
+                $tarName = 'githooks-8.1.tar';
+                break;
+            default:
+                throw new Exception('GitHooks only supports php 7.1 or greater.', 1);
+        }
+        return $tarName;
     }
 }
