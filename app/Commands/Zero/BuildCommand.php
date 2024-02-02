@@ -212,24 +212,33 @@ final class BuildCommand extends Command
             '   3. Tar build to keep permissions',
             function () use ($name){
        
-                $tarFile = 'githooks-71.tar';
-                $tarCommand = "tar -cvf $tarFile " . $this->build->getBuildPath() . $name;
+                try {
+                    $tarFile = $this->build->getTarName();
+                // $tarCommand = "tar -cvf $tarFile " . $this->build->getBuildPath() . $name;
+                $phar = new \PharData($tarFile);
+                $phar->addFile($this->build->getBuildPath() . $name);
 
                 passthru('ls -lah');
                 echo "\n====================\n";
                 passthru('ls -lah builds/php7.1/');
                 echo "\n====================\n";
-                var_dump("\n $tarCommand \n");
-                exec($tarCommand, $output, $exitCode);
-
-                if ($exitCode === 0) {
-                    $this->info("Tar successfully: $tarFile");
-                } else {
-                    $this->error("Error when compressing file: $tarFile\n");
-                    echo "Exit code: $exitCode\n";
-                    echo "Result: " . implode("\n", $output) . "\n";
-                    exit($exitCode);
+                } catch (\Throwable $th) {
+                    echo "\n====TRY CACTH================\n";
+                    echo $th->getMessage();
+                    exit(1);
                 }
+                
+                // var_dump("\n $tarCommand \n");
+                // exec($tarCommand, $output, $exitCode);
+
+                // if ($exitCode === 0) {
+                //     $this->info("Tar successfully: $tarFile");
+                // } else {
+                //     $this->error("Error when compressing file: $tarFile\n");
+                //     echo "Exit code: $exitCode\n";
+                //     echo "Result: " . implode("\n", $output) . "\n";
+                //     exit($exitCode);
+                // }
             }
         );
 

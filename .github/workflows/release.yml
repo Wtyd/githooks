@@ -31,7 +31,7 @@ jobs:
       run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
     
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-rc-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
@@ -53,26 +53,11 @@ jobs:
         php githooks app:build
   
     # TODO Simplificar con un wildcard
-    - name: Upload php 7.1 build
+    - name: Upload build artifact
       uses: actions/upload-artifact@v4
-      if: ${{ '7.1' == matrix.php-versions }}
       with:
-        name: githooks-71
-        path: githooks-71.tar
-
-    - name: Upload php 7.3 build
-      uses: actions/upload-artifact@v4
-      if: ${{ '7.3' == matrix.php-versions }}
-      with:
-        name: githooks-73
-        path: githooks-73.tar
-
-    - name: Upload php 8.1 build
-      uses: actions/upload-artifact@v4
-      if: ${{ '8.1' == matrix.php-versions }}
-      with:
-        name: githooks-81
-        path: githooks-81.tar
+        name: githooks-${{ matrix.php-versions }}
+        path: githooks-${{ matrix.php-versions }}.tar
 
   test_rc:
     name: Test the Build in php ${{ matrix.php-versions }}
@@ -95,7 +80,7 @@ jobs:
         coverage: none
 
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           /home/runner/.cache/composer/files

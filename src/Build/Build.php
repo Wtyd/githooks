@@ -50,4 +50,9 @@ class Build
     {
         return $this->phpVersion;
     }
+
+    public function getTarName(): string
+    {
+        return 'githooks-' . $this->phpVersion . '.tar';
+    }
 }
