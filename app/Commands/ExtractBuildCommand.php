@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\App\Commands;
 
 use Illuminate\Console\Application as Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 use PharData;
@@ -61,7 +62,8 @@ class ExtractBuildCommand extends Command
     private function extractBuild(): void
     {
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
-        $phar = new PharData($this->build->getTarName());
+        $tarFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
+        $phar = new PharData($tarFile);
         $phar->extractTo($newBuildOfActualPhpVersion);
     }
 
