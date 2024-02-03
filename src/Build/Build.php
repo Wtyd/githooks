@@ -60,6 +60,11 @@ class Build
         return $this->phpVersion;
     }
 
+    /**
+     * Get the tar name for the build.
+     *
+     * @return string
+     */
     public function getTarName(): string
     {
         $tarName = '';

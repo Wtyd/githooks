@@ -7,6 +7,7 @@ namespace Wtyd\GitHooks\App\Commands\Zero;
 use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\File;
 use LaravelZero\Framework\Commands\Command;
+use PharData;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
@@ -211,37 +212,10 @@ final class BuildCommand extends Command
         $this->task(
             '   3. Tar build to keep permissions',
             function () use ($name){
-       
-                try {
-                    $tarFile = $this->build->getTarName();
-                // $tarCommand = "tar -cvf $tarFile " . $this->build->getBuildPath() . $name;
-                $phar = new \PharData($tarFile);
+                $phar = new PharData($this->build->getTarName());
                 $phar->addFile($this->build->getBuildPath() . $name);
-
-                passthru('ls -lah');
-                echo "\n====================\n";
-                passthru('ls -lah builds/php7.1/');
-                echo "\n====================\n";
-                } catch (\Throwable $th) {
-                    echo "\n====TRY CACTH================\n";
-                    echo $th->getMessage();
-                    exit(1);
-                }
-                
-                // var_dump("\n $tarCommand \n");
-                // exec($tarCommand, $output, $exitCode);
-
-                // if ($exitCode === 0) {
-                //     $this->info("Tar successfully: $tarFile");
-                // } else {
-                //     $this->error("Error when compressing file: $tarFile\n");
-                //     echo "Exit code: $exitCode\n";
-                //     echo "Result: " . implode("\n", $output) . "\n";
-                //     exit($exitCode);
-                // }
             }
         );
-
         return $this;
     }
 

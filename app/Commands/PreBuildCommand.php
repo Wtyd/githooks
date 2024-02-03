@@ -50,7 +50,7 @@ class PreBuildCommand extends Command
         $this->title('Delete Dev Dependencies and Update Prod Dependencies');
 
         $this->task(
-            '   <fg=yellow>1. <fg=yellow>Deleting dev dependencies</>',
+            '   <fg=yellow>1. Deleting dev dependencies</>',
             $this->deleteDevDependencies()
         );
 
