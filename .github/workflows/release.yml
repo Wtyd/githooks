@@ -96,7 +96,9 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         path: ${{ github.GITHUB_WORKSPACE }}
-        run: ls -R
+  
+    - name: Display structure of downloaded files
+      run: ls -R path/to/artifacts
 
     - name: Extract and check build
       run: php githooks app:extract-build
