@@ -6,10 +6,8 @@ use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
-use PharData;
 use Wtyd\GitHooks\Build\Build;
-use Wtyd\GitHooks\Build\ManageDependencies;
-use Wtyd\GitHooks\Utils\Printer;
+use ZipArchive;
 
 class ExtractBuildCommand extends Command
 {
@@ -62,16 +60,24 @@ class ExtractBuildCommand extends Command
     private function extractBuild(): void
     {
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
-        $tarFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
-        $phar = new PharData($tarFile);
-        $phar->extractTo($newBuildOfActualPhpVersion);
+        $zipFile = File::name($this->build->getTarName()) . '.zip' ;
+        // dd($zipFile,$this->build->getTarName());
+        $zip = new ZipArchive();
+        if ($zip->open($zipFile) !== true) {
+            throw new \Exception("The build $zipFile could not be extracted.");
+        }
+        $zip->extractTo($newBuildOfActualPhpVersion);
+        $zip->close();
     }
 
     private function checkBuild(): void
     {
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
-        $exit = shell_exec("$newBuildOfActualPhpVersion --version");
-        $this->info($exit);
+        exec("$newBuildOfActualPhpVersion --version", $output, $exitCode);
+        $this->info($output);
+        if ($exitCode !== 0) {
+            exit($exitCode);
+        }
     }
 
     /**

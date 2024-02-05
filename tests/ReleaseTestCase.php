@@ -25,7 +25,7 @@ class ReleaseTestCase extends TestCase
      *
      * @var string
      */
-    protected $githooks = SystemTestCase::TESTS_PATH . '/githooks';
+    protected $githooks = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'githooks';
 
     /**
      * @var ConfigurationFileBuilder
@@ -77,12 +77,9 @@ class ReleaseTestCase extends TestCase
     protected static function copyReleaseBinary(): bool
     {
         $build = new Build();
-        $origin = $build->getBuildPath() . DIRECTORY_SEPARATOR . 'githooks';
-        // $origin = str_replace('//', '/', 'builds/' . ComposerUpdater::pathToBuild() . '/githooks');
+        $origin = $build->getBuildPath() . 'githooks';
         $destiny = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'githooks';
-
         copy($origin, $destiny);
-
         return chmod($destiny, 0777);
     }
 
