@@ -98,7 +98,7 @@ jobs:
         path: ${{ github.GITHUB_WORKSPACE }}
   
     - name: Display structure of downloaded files
-      run: ls -R ${{ github.GITHUB_WORKSPACE }}/githooks-7.1
+      run: ls -R githooks-7.1
 
     - name: Extract and check build
       run: php githooks app:extract-build
