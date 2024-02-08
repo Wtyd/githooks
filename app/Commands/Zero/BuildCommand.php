@@ -117,7 +117,7 @@ final class BuildCommand extends Command
 
         // $boxBinary = windows_os() ? '.\box.bat' : './box';
         $boxBinary = windows_os() ? 'box.bat' : 'box'; // box global install
-        
+
         $process = new Process(
             [$boxBinary, 'compile', '--working-dir=' . base_path(), '--config=' . base_path('box.json')] + $this->getExtraBoxOptions(),
             // dirname(__DIR__, 2) . '/bin',
@@ -213,15 +213,16 @@ final class BuildCommand extends Command
         $this->task(
             '   3. Tar build to keep permissions',
             function () use ($name) {
-                $this->info("\nEl tar se va a llamar: " . $this->build->getTarName() . "\n");
-                $this->info("\nEl fichero a comprimir: " . $this->build->getBuildPath() . $name . "\n");
+                $this->info("\nEl tar se va a llamar: " . $this->build->getTarName());
+                $this->info("\nEl fichero a comprimir: " . $this->build->getBuildPath());
                 $phar = new PharData($this->build->getTarName());
                 $phar->addFile($this->build->getBuildPath() . $name);
+                passthru("ls -lah " . $this->build->getBuildPath());
                 if (file_exists($this->build->getTarName())) {
-                    $this->info("\nEl tar se creado con éxito\n");
+                    $this->info("\nEl tar se creado con éxito");
                 }
                 if (file_exists($this->build->getTarName())) {
-                    $this->info("\nEl fichero a comprimir existe\n");
+                    $this->info("\nEl fichero a comprimir existe");
                 }
                 foreach ($phar as $file) {
                     $this->info("\nNombre del archivo: " . $file->getFilename() . "\n");

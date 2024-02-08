@@ -76,6 +76,7 @@ class ExtractBuildCommand extends Command
     private function checkBuild(): void
     {
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
+        exec("chmod + $newBuildOfActualPhpVersion", $output, $exitCode);
         exec("$newBuildOfActualPhpVersion --version", $output, $exitCode);
         $this->info(implode("\n", $output));
         if ($exitCode !== 0) {
