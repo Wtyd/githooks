@@ -214,11 +214,11 @@ final class BuildCommand extends Command
             function () use ($name) {
                 $phar = new PharData($this->build->getTarName());
                 $phar->addFile($this->build->getBuildPath() . $name);
-                $metadata = $phar->getMetaData();
-                foreach ($metadata['files'] as $file => $data) {
-                    $this->info("Nombre del archivo: $file\n");
-                    $this->info("Permisos: " . decoct($data['mode'] & 0777) . "\n"); // Convertir los permisos a octal
-                    $permisos = $data['mode'] & 0111;
+
+                foreach ($phar as $file) {
+                    $this->info("Nombre del archivo: " . $file->getFilename() . "\n");
+                    $this->info("Permisos: " . decoct($file->getPerms() & 0777) . "\n"); // Convertir los permisos a octal
+                    $permisos = $file->getPerms() & 0111;
                     if ($permisos) {
                         $this->info("El archivo tiene permiso de ejecución.\n");
                     } else {
