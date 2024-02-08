@@ -68,6 +68,7 @@ class ExtractBuildCommand extends Command
         $resultado = $zip->extractTo($newBuildOfActualPhpVersion, null, true);
         if (true === $resultado) {
             $this->info("Fichero extraído correctamente");
+            passthru("git status");
         } else {
             $this->warn("Fichero no extraído correctamente");
         }
@@ -79,9 +80,9 @@ class ExtractBuildCommand extends Command
     {
 
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
-        passthru("ls -lah " . $newBuildOfActualPhpVersion);
+        passthru("ls -lah " . $this->build->getBuildPath());
         exec("chmod +x $newBuildOfActualPhpVersion", $output, $exitCode);
-        passthru("ls -lah " . $newBuildOfActualPhpVersion);
+        passthru("ls -lah " . $this->build->getBuildPath());
         exec("$newBuildOfActualPhpVersion --version", $output, $exitCode);
         $this->info(implode("\n", $output));
         if ($exitCode !== 0) {
