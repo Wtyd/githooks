@@ -63,6 +63,7 @@ class ExtractBuildCommand extends Command
         $zipFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
         // dd($zipFile,$this->build->getTarName());
         $zip = new ZipArchive();
+        var_dump($zipFile);
         if ($zip->open($zipFile) !== true) {
             throw new \Exception("The build $zipFile could not be extracted.");
         }
