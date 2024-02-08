@@ -6,8 +6,8 @@ use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
+use PharData;
 use Wtyd\GitHooks\Build\Build;
-use ZipArchive;
 
 class ExtractBuildCommand extends Command
 {
@@ -62,15 +62,15 @@ class ExtractBuildCommand extends Command
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
         $zipFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
         // dd($zipFile,$this->build->getTarName());
-        $zip = new ZipArchive();
-        var_dump($zipFile);
-        if (file_exists($zipFile) && $zip->open($zipFile) !== true) {
-            $codigoError = $zip->open($zipFile);
-            var_dump($codigoError);
-            throw new \Exception("The build $zipFile could not be extracted.");
-        }
+        $zip = new PharData($zipFile);
+        // var_dump($zipFile);
+        // if (file_exists($zipFile) && $zip->open($zipFile) !== true) {
+        //     $codigoError = $zip->open($zipFile);
+        //     var_dump($codigoError);
+        //     throw new \Exception("The build $zipFile could not be extracted.");
+        // }
         $zip->extractTo($newBuildOfActualPhpVersion);
-        $zip->close();
+        // $zip->close();
     }
 
     private function checkBuild(): void
