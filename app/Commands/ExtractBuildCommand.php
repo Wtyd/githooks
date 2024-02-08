@@ -57,7 +57,7 @@ class ExtractBuildCommand extends Command
 
     private function extractBuild(): void
     {
-        $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
+        $newBuildOfActualPhpVersion = $this->build->getBuildPath();
         $zipFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
         // dd($zipFile, $newBuildOfActualPhpVersion);
         $zip = new PharData($zipFile);
