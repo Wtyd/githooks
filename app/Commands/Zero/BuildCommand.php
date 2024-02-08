@@ -101,7 +101,7 @@ final class BuildCommand extends Command
         ->tarBuild($name)
         ->clear();
         // $this->tarBuild($name);
-
+        // TODO la compilación bien pero falta mencionar el tar
         $this->output->writeln(
             sprintf('    Compiled successfully: <fg=green>%s</>', $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name)
         );
