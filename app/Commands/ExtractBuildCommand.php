@@ -64,7 +64,9 @@ class ExtractBuildCommand extends Command
         // dd($zipFile,$this->build->getTarName());
         $zip = new ZipArchive();
         var_dump($zipFile);
-        if ($zip->open($zipFile) !== true) {
+        if (file_exists($zipFile) && $zip->open($zipFile) !== true) {
+            $codigoError = $zip->open($zipFile);
+            var_dump($codigoError);
             throw new \Exception("The build $zipFile could not be extracted.");
         }
         $zip->extractTo($newBuildOfActualPhpVersion);
