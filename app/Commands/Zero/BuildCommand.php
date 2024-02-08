@@ -211,9 +211,20 @@ final class BuildCommand extends Command
     {
         $this->task(
             '   3. Tar build to keep permissions',
-            function () use ($name){
+            function () use ($name) {
                 $phar = new PharData($this->build->getTarName());
                 $phar->addFile($this->build->getBuildPath() . $name);
+                $metadata = $phar->getMetaData();
+                foreach ($metadata['files'] as $file => $data) {
+                    $this->info("Nombre del archivo: $file\n");
+                    $this->info("Permisos: " . decoct($data['mode'] & 0777) . "\n"); // Convertir los permisos a octal
+                    $permisos = $data['mode'] & 0111;
+                    if ($permisos) {
+                        $this->info("El archivo tiene permiso de ejecución.\n");
+                    } else {
+                        $this->info("El archivo no tiene permiso de ejecución.\n");
+                    }
+                }
             }
         );
         return $this;
