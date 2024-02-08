@@ -96,11 +96,11 @@ final class BuildCommand extends Command
          * after compile all the code to a single file, we move the built file
          * to the builds folder with the correct permissions.
          */
-        // $this->prepare()
-        // ->compile($name)
-        // ->tarBuild($name)
-        // ->clear();
-        $this->tarBuild($name);
+        $this->prepare()
+        ->compile($name)
+        ->tarBuild($name)
+        ->clear();
+        // $this->tarBuild($name);
 
         $this->output->writeln(
             sprintf('    Compiled successfully: <fg=green>%s</>', $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name)
