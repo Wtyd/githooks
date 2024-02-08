@@ -77,7 +77,7 @@ class ExtractBuildCommand extends Command
     {
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
         exec("$newBuildOfActualPhpVersion --version", $output, $exitCode);
-        $this->info($output);
+        $this->info(implode("\n", $output));
         if ($exitCode !== 0) {
             exit($exitCode);
         }
