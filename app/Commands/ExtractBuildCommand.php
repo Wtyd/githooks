@@ -69,7 +69,7 @@ class ExtractBuildCommand extends Command
         //     var_dump($codigoError);
         //     throw new \Exception("The build $zipFile could not be extracted.");
         // }
-        $zip->extractTo($newBuildOfActualPhpVersion);
+        $zip->extractTo($newBuildOfActualPhpVersion, null, true);
         // $zip->close();
     }
 

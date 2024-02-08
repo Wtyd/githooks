@@ -96,10 +96,11 @@ final class BuildCommand extends Command
          * after compile all the code to a single file, we move the built file
          * to the builds folder with the correct permissions.
          */
-        $this->prepare()
-        ->compile($name)
-        ->tarBuild($name)
-        ->clear();
+        // $this->prepare()
+        // ->compile($name)
+        // ->tarBuild($name)
+        // ->clear();
+        $this->tarBuild($name);
 
         $this->output->writeln(
             sprintf('    Compiled successfully: <fg=green>%s</>', $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name)
@@ -154,7 +155,7 @@ final class BuildCommand extends Command
         try {
             File::move(
                 $this->app->basePath($this->getBinary()) . '.phar',
-                $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name
+                $this->build->getBuildPath() . $name
             );
         } catch (\Throwable $th) {
             dd($this->build->getBuildPath(), $th->getMessage());
@@ -216,7 +217,7 @@ final class BuildCommand extends Command
                 $phar->addFile($this->build->getBuildPath() . $name);
 
                 foreach ($phar as $file) {
-                    $this->info("Nombre del archivo: " . $file->getFilename() . "\n");
+                    $this->info("\nNombre del archivo: " . $file->getFilename() . "\n");
                     $this->info("Permisos: " . decoct($file->getPerms() & 0777) . "\n"); // Convertir los permisos a octal
                     $permisos = $file->getPerms() & 0111;
                     if ($permisos) {
