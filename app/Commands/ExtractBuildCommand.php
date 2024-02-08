@@ -11,8 +11,6 @@ use Wtyd\GitHooks\Build\Build;
 
 class ExtractBuildCommand extends Command
 {
-
-
     protected $signature = 'app:extract-build';
     protected $description = 'Extracts the build from the tar file after the build process.';
 
@@ -30,10 +28,10 @@ class ExtractBuildCommand extends Command
     {
         $this->title('Extract build');
 
-        $this->task(
-            '   <fg=yellow>1. Deleting old build</>',
-            $this->deletingOldBuild()
-        );
+        // $this->task(
+        //     '   <fg=yellow>1. Deleting old build</>',
+        //     $this->deletingOldBuild()
+        // );
 
         $this->task(
             '   <fg=yellow>2. Extracting build</>',
@@ -61,7 +59,7 @@ class ExtractBuildCommand extends Command
     {
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
         $zipFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
-        // dd($zipFile,$this->build->getTarName());
+        // dd($zipFile, $newBuildOfActualPhpVersion);
         $zip = new PharData($zipFile);
         // var_dump($zipFile);
         // if (file_exists($zipFile) && $zip->open($zipFile) !== true) {
@@ -69,7 +67,8 @@ class ExtractBuildCommand extends Command
         //     var_dump($codigoError);
         //     throw new \Exception("The build $zipFile could not be extracted.");
         // }
-        $zip->extractTo($newBuildOfActualPhpVersion, null, true);
+        $resultado = $zip->extractTo($newBuildOfActualPhpVersion, null, true);
+        $this->info("El resultado es:" . stringValue($resultado));
         // $zip->close();
     }
 
@@ -79,6 +78,7 @@ class ExtractBuildCommand extends Command
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
         passthru("ls -lah " . $newBuildOfActualPhpVersion);
         exec("chmod +x $newBuildOfActualPhpVersion", $output, $exitCode);
+        passthru("ls -lah " . $newBuildOfActualPhpVersion);
         exec("$newBuildOfActualPhpVersion --version", $output, $exitCode);
         $this->info(implode("\n", $output));
         if ($exitCode !== 0) {
