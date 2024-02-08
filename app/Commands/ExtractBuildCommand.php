@@ -17,8 +17,6 @@ class ExtractBuildCommand extends Command
     /**  @var \Wtyd\GitHooks\Build\Build */
     private $build;
 
-    private $composer = 'tools/composer';
-
     public function __construct(Build $build)
     {
         $this->build = $build;
@@ -28,10 +26,10 @@ class ExtractBuildCommand extends Command
     {
         $this->title('Extract build');
 
-        // $this->task(
-        //     '   <fg=yellow>1. Deleting old build</>',
-        //     $this->deletingOldBuild()
-        // );
+        $this->task(
+            '   <fg=yellow>1. Deleting old build</>',
+            $this->deletingOldBuild()
+        );
 
         $this->task(
             '   <fg=yellow>2. Extracting build</>',
