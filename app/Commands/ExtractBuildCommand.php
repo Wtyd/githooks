@@ -65,7 +65,8 @@ class ExtractBuildCommand extends Command
         //     var_dump($codigoError);
         //     throw new \Exception("The build $zipFile could not be extracted.");
         // }
-        $resultado = $zip->extractTo($newBuildOfActualPhpVersion, null, true);
+        // $resultado = $zip->extractTo($newBuildOfActualPhpVersion, null, true);
+        $resultado = $zip->extractTo('./', null, true);
         if (true === $resultado) {
             $this->info("Fichero extraído correctamente");
             passthru("git status");
