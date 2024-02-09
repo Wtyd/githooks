@@ -55,35 +55,21 @@ class ExtractBuildCommand extends Command
 
     private function extractBuild(): void
     {
-        $newBuildOfActualPhpVersion = $this->build->getBuildPath();
         $zipFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
-        // dd($zipFile, $newBuildOfActualPhpVersion);
         $zip = new PharData($zipFile);
-        // var_dump($zipFile);
-        // if (file_exists($zipFile) && $zip->open($zipFile) !== true) {
-        //     $codigoError = $zip->open($zipFile);
-        //     var_dump($codigoError);
-        //     throw new \Exception("The build $zipFile could not be extracted.");
-        // }
-        // $resultado = $zip->extractTo($newBuildOfActualPhpVersion, null, true);
-        $resultado = $zip->extractTo('./', null, true);
+        $resultado = $zip->extractTo('./', null, true); // extract to $this->build->getBuildPath();
         if (true === $resultado) {
             $this->info("Fichero extraído correctamente");
             passthru("git status");
         } else {
             $this->warn("Fichero no extraído correctamente");
         }
-
-        // $zip->close();
     }
 
     private function checkBuild(): void
     {
-
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
-        passthru("ls -lah " . $this->build->getBuildPath());
-        exec("chmod +x $newBuildOfActualPhpVersion", $output, $exitCode);
-        passthru("ls -lah " . $this->build->getBuildPath());
+        // exec("chmod +x $newBuildOfActualPhpVersion", $output, $exitCode);
         exec("$newBuildOfActualPhpVersion --version", $output, $exitCode);
         $this->info(implode("\n", $output));
         if ($exitCode !== 0) {

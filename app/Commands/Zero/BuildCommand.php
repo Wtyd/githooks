@@ -308,7 +308,7 @@ final class BuildCommand extends Command
             $this->error('The branch name does not meet the required format . ');
             exit(1); // TODO: throw exception
         }
-        $prefix = 'rc - ';
+        $prefix = 'rc-';
         $version = substr($branch, strlen($prefix));
 
         return $version;
