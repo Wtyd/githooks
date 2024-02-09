@@ -26,10 +26,10 @@ class ExtractBuildCommand extends Command
     {
         $this->title('Extract build');
 
-        $this->task(
-            '   <fg=yellow>1. Deleting old build</>',
-            $this->deletingOldBuild()
-        );
+        // $this->task(
+        //     '   <fg=yellow>1. Deleting old build</>',
+        //     $this->deletingOldBuild()
+        // );
 
         $this->task(
             '   <fg=yellow>2. Extracting build</>',
