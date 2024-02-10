@@ -4,7 +4,7 @@
     <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
-    <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%208.2-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
+    <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%208.3-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
 <p align="center">
@@ -30,9 +30,9 @@ Further, it can be used together with javascript validation tools like [typicode
 
 # 3. Install
 #### 1. GitHooks must be installed like dev requirement with composer:
-    ```bash
-    composer require --dev wtyd/githooks
-    ```
+```bash
+composer require --dev wtyd/githooks
+```
 **Note:** for php < 8.1 you must add the next `post-update-cmd` event to the `scripts` section in your `composer.json`:
 
 ```json
@@ -46,7 +46,13 @@ Then run `composer update wtyd/githooks`.
 
 > Until version 2.3.0 the method used was **php72orMinorUpdate** but it has been deprecated and will be removed from version 3.0.0
 
-
+It is also convenient to add it to the `post-install-cm` event so that the rest of the project developers do not have problems with the build
+```json
+"scripts": {
+    "post-update-cmd": "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions",
+    "post-install-cmd": "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"
+}
+```
 #### 2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
 
 #### 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.yml`).
