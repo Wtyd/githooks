@@ -3,8 +3,6 @@
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\Build\ManageDependencies;
-use Wtyd\GitHooks\Utils\Printer;
 
 class PreBuildCommand extends Command
 {
@@ -47,8 +45,10 @@ class PreBuildCommand extends Command
     {
         $this->phpVersion = $this->argument('phpVersion') ?? 'php7.1';
 
+        $this->title('Delete Dev Dependencies and Update Prod Dependencies');
+
         $this->task(
-            '   <fg=yellow>1. <fg=yellow>Deleting dev dependencies</>',
+            '   <fg=yellow>1. Deleting dev dependencies</>',
             $this->deleteDevDependencies()
         );
 
