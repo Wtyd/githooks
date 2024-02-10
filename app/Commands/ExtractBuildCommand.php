@@ -4,7 +4,6 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
 use PharData;
 use Wtyd\GitHooks\Build\Build;
@@ -26,31 +25,15 @@ class ExtractBuildCommand extends Command
     {
         $this->title('Extract build');
 
-        // $this->task(
-        //     '   <fg=yellow>1. Deleting old build</>',
-        //     $this->deletingOldBuild()
-        // );
-
         $this->task(
-            '   <fg=yellow>2. Extracting build</>',
+            '   <fg=yellow>1. Extracting build</>',
             $this->extractBuild()
         );
 
         $this->task(
-            '   <fg=yellow>3. Check build</>',
+            '   <fg=yellow>2. Check build</>',
             $this->checkBuild()
         );
-    }
-
-    private function deletingOldBuild(): void
-    {
-        $oldBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
-        if (! Storage::exists($oldBuildOfActualPhpVersion)) {
-            throw new \Exception("The build $oldBuildOfActualPhpVersion does not exist.");
-        }
-        if (! Storage::delete($oldBuildOfActualPhpVersion)) {
-            throw new \Exception("The build $oldBuildOfActualPhpVersion could not be deleted.");
-        }
     }
 
     private function extractBuild(): void
@@ -59,17 +42,15 @@ class ExtractBuildCommand extends Command
         $zip = new PharData($zipFile);
         $resultado = $zip->extractTo('./', null, true); // extract to $this->build->getBuildPath();
         if (true === $resultado) {
-            $this->info("Fichero extraído correctamente");
-            passthru("git status");
+            $this->info("File extracted successfully");
         } else {
-            $this->warn("Fichero no extraído correctamente");
+            $this->warn("File not extracted successfully");
         }
     }
 
     private function checkBuild(): void
     {
         $newBuildOfActualPhpVersion = $this->build->getBuildPath() . $this->getBinary();
-        // exec("chmod +x $newBuildOfActualPhpVersion", $output, $exitCode);
         exec("$newBuildOfActualPhpVersion --version", $output, $exitCode);
         $this->info(implode("\n", $output));
         if ($exitCode !== 0) {

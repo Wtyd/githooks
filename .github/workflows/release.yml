@@ -102,30 +102,6 @@ jobs:
 
     - name: Extract and check build
       run: php githooks app:extract-build
-      
-    # - name: Extract and check builds 7.2
-    #   if: ${{ '7.2' == matrix.php-versions }}
-    #   run: |
-    #     rm builds/php7.1/githooks
-    #     git status
-    #     ls -lah
-    #     tar -xvf githooks-7.1/githooks-7.1.tar
-    #     builds/php7.1/githooks --version
-
-    # - name: Extract and check builds 8.0
-    #   if: ${{ '8.0' == matrix.php-versions }}
-    #   run: |
-    #     rm builds/php7.3/githooks
-    #     tar -xvf githooks-7.3/githooks-7.3.tar
-    #     builds/php7.3/githooks --version   
-
-    # - name: Extract and check builds 8.3
-    #   if: ${{ '8.3' == matrix.php-versions }}
-    #   run: |
-    #     rm builds/githooks
-    #     tar -xvf githooks-8.1/githooks-8.1.tar
-    #     builds/githooks --version
-    #     git status
   
     - name: Testing the Aplication
       run: |
