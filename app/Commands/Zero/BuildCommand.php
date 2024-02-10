@@ -7,11 +7,13 @@ namespace Wtyd\GitHooks\App\Commands\Zero;
 use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\File;
 use LaravelZero\Framework\Commands\Command;
+use PharData;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Process\Process;
+use Wtyd\GitHooks\Build\Build;
 use Wtyd\GitHooks\Utils\ComposerUpdater;
 
 final class BuildCommand extends Command
@@ -51,6 +53,19 @@ final class BuildCommand extends Command
     private $originalOutput;
 
     /**
+     * Provides the build path.
+     *
+     * @var \Wtyd\GitHooks\Build\Build
+     */
+    private $build;
+
+    public function __construct(Build $build)
+    {
+        parent::__construct();
+        $this->build = $build;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function handle()
@@ -82,11 +97,13 @@ final class BuildCommand extends Command
          * to the builds folder with the correct permissions.
          */
         $this->prepare()
-            ->compile($name)
-            ->clear();
-
+        ->compile($name)
+        ->tarBuild($name)
+        ->clear();
+        // $this->tarBuild($name);
+        // TODO la compilación bien pero falta mencionar el tar
         $this->output->writeln(
-            sprintf('    Compiled successfully: <fg=green>%s</>', $this->app->buildsPath($name))
+            sprintf('    Compiled successfully: <fg=green>%s</>', $this->build->getBuildPath() . DIRECTORY_SEPARATOR . $name)
         );
 
         return $this;
@@ -94,9 +111,8 @@ final class BuildCommand extends Command
 
     private function compile(string $name): BuildCommand
     {
-        $buildPath = ComposerUpdater::pathToBuild();
-        if (!File::exists($this->app->buildsPath($buildPath))) {
-            File::makeDirectory($this->app->buildsPath($buildPath));
+        if (!File::exists($this->build->getBuildPath())) {
+            File::makeDirectory($this->build->getBuildPath());
         }
 
         // $boxBinary = windows_os() ? '.\box.bat' : './box';
@@ -136,23 +152,15 @@ final class BuildCommand extends Command
 
         $this->output->newLine();
 
-        // passthru('ls -lah');
-        if (File::exists($this->app->basePath($this->getBinary()) . '.phar')) {
-            echo "\nEl fichero de origen existe: " . $this->app->basePath($this->getBinary()) . '.phar';
-        } else {
-            echo "\nEl fichero de origen NO existe: " . $this->app->basePath($this->getBinary()) . '.phar';
+        try {
+            File::move(
+                $this->app->basePath($this->getBinary()) . '.phar',
+                $this->build->getBuildPath() . $name
+            );
+        } catch (\Throwable $th) {
+            dd($this->build->getBuildPath(), $th->getMessage());
         }
 
-        if (File::exists($this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name))) {
-            echo "\nEl fichero de destino existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
-        } else {
-            echo "\nEl fichero de destino NO existe: " . $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name);
-        }
-
-        File::move(
-            $this->app->basePath($this->getBinary()) . '.phar',
-            $this->app->buildsPath($buildPath ? $buildPath . DIRECTORY_SEPARATOR . $name : $name)
-        );
 
         return $this;
     }
@@ -165,8 +173,8 @@ final class BuildCommand extends Command
         $config = include $configFile;
 
         $config['env'] = 'production';
-        $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
-        $config['version'] = $version;
+        // $version = $this->option('build-version') ?: $this->ask('Build version?', $config['version']);
+        $config['version'] = $this->extractVersionFromBranchName();
 
         $boxFile = $this->app->basePath('box.json');
         static::$box = File::get($boxFile);
@@ -200,6 +208,37 @@ final class BuildCommand extends Command
         return $this;
     }
 
+    private function tarBuild($name): BuildCommand
+    {
+        $this->task(
+            '   3. Tar build to keep permissions',
+            function () use ($name) {
+                $this->info("\nEl tar se va a llamar: " . $this->build->getTarName());
+                $this->info("\nEl fichero a comprimir: " . $this->build->getBuildPath());
+                $phar = new PharData($this->build->getTarName());
+                $phar->addFile($this->build->getBuildPath() . $name);
+                passthru("ls -lah " . $this->build->getBuildPath());
+                if (file_exists($this->build->getTarName())) {
+                    $this->info("\nEl tar se creado con éxito");
+                }
+                if (file_exists($this->build->getTarName())) {
+                    $this->info("\nEl fichero a comprimir existe");
+                }
+                foreach ($phar as $file) {
+                    $this->info("\nNombre del archivo: " . $file->getFilename() . "\n");
+                    $this->info("Permisos: " . decoct($file->getPerms() & 0777) . "\n"); // Convertir los permisos a octal
+                    $permisos = $file->getPerms() & 0111;
+                    if ($permisos) {
+                        $this->info("El archivo tiene permiso de ejecución.\n");
+                    } else {
+                        $this->info("El archivo no tiene permiso de ejecución.\n");
+                    }
+                }
+            }
+        );
+        return $this;
+    }
+
     /**
      * Returns the artisan binary.
      */
@@ -218,7 +257,7 @@ final class BuildCommand extends Command
     private function getTimeout(): ?float
     {
         if (!is_numeric($this->option('timeout'))) {
-            throw new \InvalidArgumentException('The timeout value must be a number.');
+            throw new \InvalidArgumentException('The timeout value must be a number . ');
         }
 
         $timeout = (float) $this->option('timeout');
@@ -260,6 +299,28 @@ final class BuildCommand extends Command
 
         return $extraBoxOptions;
     }
+
+    private function extractVersionFromBranchName(): string
+    {
+        $branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD'));
+
+        if (! $this->validatesBranchName($branch)) {
+            $this->error('The branch name does not meet the required format . ');
+            exit(1); // TODO: throw exception
+        }
+        $prefix = 'rc-';
+        $version = substr($branch, strlen($prefix));
+
+        return $version;
+    }
+
+    private function validatesBranchName(string $branchName): bool
+    {
+        $pattern = '/^rc-\d+\.\d+\.\d+$/';
+
+        return preg_match($pattern, $branchName) === 1;
+    }
+
 
     /**
      * Makes sure that the `clear` is performed even

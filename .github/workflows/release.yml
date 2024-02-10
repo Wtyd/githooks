@@ -31,7 +31,7 @@ jobs:
       run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
     
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ${{ steps.composer-cache.outputs.dir }}
         key: ${{ runner.os }}-rc-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
@@ -48,53 +48,15 @@ jobs:
 
     - name: Build the Aplication
       run: |
-        php githooks app:pre-build
-        branch=${GITHUB_REF##*/}
-        echo ${branch}
-        prefix='rc-'
-        version=${branch#"$prefix"}
-        echo $version
-        php githooks app:build --build-version=${version}
-
-    # - name: Tar files to keep permissions
-    #   run: |
-    #     ls -lah builds/githooks builds/php7.1/githooks
-    #     tar -cvf githooks-71.tar builds/php7.1/githooks
-    #     tar -cvf githooks-73.tar builds/php7.3/githooks
-    #     tar -cvf githooks-81.tar builds/githooks
-    #     # ls -lah builds/githooks builds/php7.1/githooks
-    - name: Tar files to keep permissions 7.1
-      if: ${{ '7.1' == matrix.php-versions }}
-      run: tar -cvf githooks-71.tar builds/php7.1/githooks
-
-    - name: Tar files to keep permissions 7.3
-      if: ${{ '7.3' == matrix.php-versions }}
-      run: tar -cvf githooks-73.tar builds/php7.3/githooks
-
-    - name: Tar files to keep permissions 8.1
-      if: ${{ '8.1' == matrix.php-versions }}
-      run: tar -cvf githooks-81.tar builds/githooks
+        php --version
+        php githooks app:pre-build php
+        php githooks app:build
   
-    - name: Upload php 7.1 build
+    - name: Upload build artifact
       uses: actions/upload-artifact@v4
-      if: ${{ '7.1' == matrix.php-versions }}
       with:
-        name: githooks-71
-        path: githooks-71.tar
-
-    - name: Upload php 7.3 build
-      uses: actions/upload-artifact@v4
-      if: ${{ '7.3' == matrix.php-versions }}
-      with:
-        name: githooks-73
-        path: githooks-73.tar
-
-    - name: Upload php 8.1 build
-      uses: actions/upload-artifact@v4
-      if: ${{ '8.1' == matrix.php-versions }}
-      with:
-        name: githooks-81
-        path: githooks-81.tar
+        name: githooks-${{ matrix.php-versions }}
+        path: githooks-${{ matrix.php-versions }}.tar
 
   test_rc:
     name: Test the Build in php ${{ matrix.php-versions }}
@@ -117,7 +79,7 @@ jobs:
         coverage: none
 
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           /home/runner/.cache/composer/files
@@ -134,28 +96,12 @@ jobs:
     - uses: actions/download-artifact@v4
       with:
         path: ${{ github.GITHUB_WORKSPACE }}
+  
+    - name: Display structure of downloaded files
+      run: ls -R | grep githooks
 
-    - name: Extract and check builds 7.2
-      if: ${{ '7.2' == matrix.php-versions }}
-      run: |
-        rm builds/php7.1/githooks
-        tar -xf githooks-71/githooks-71.tar
-        builds/php7.1/githooks --version
-
-    - name: Extract and check builds 8.0
-      if: ${{ '8.0' == matrix.php-versions }}
-      run: |
-        rm builds/php7.3/githooks
-        tar -xf githooks-73/githooks-73.tar
-        builds/php7.3/githooks --version   
-
-    - name: Extract and check builds 8.3
-      if: ${{ '8.3' == matrix.php-versions }}
-      run: |
-        rm builds/githooks
-        tar -xf githooks-81/githooks-81.tar
-        builds/githooks --version
-        git status
+    - name: Extract and check build
+      run: php githooks app:extract-build
   
     - name: Testing the Aplication
       run: |
@@ -174,7 +120,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Delete Old Builds
-        run: rm builds/githooks builds/php7.1/githooks && echo ${{ secrets.PAT_TOKEN_TO_COMMIT }}
+        run: rm builds/githooks builds/php7.1/githooks builds/php7.3/githooks
 
       - uses: actions/download-artifact@v4
         with:
@@ -190,9 +136,9 @@ jobs:
 
       - name: Extract and check builds
         run: |
-          tar -xf githooks-71.tar
-          tar -xf githooks-73.tar
-          tar -xf githooks-81.tar
+          tar -xvf githooks-71.tar
+          tar -xvf githooks-73.tar
+          tar -xvf githooks-81.tar
           ls -lah builds
           git status
 

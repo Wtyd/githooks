@@ -2,7 +2,6 @@
 
 namespace Tests;
 
-use Wtyd\GitHooks\Exception\ExitException;
 use PHPUnit\Framework\TestCase;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
@@ -11,7 +10,8 @@ use Tests\Utils\Traits\{
     FileSystemTrait,
     RetroCompatibilityAssertsTrait
 };
-use Wtyd\GitHooks\Utils\ComposerUpdater;
+use Wtyd\GitHooks\Build\Build;
+use Wtyd\GitHooks\Exception\ExitException;
 
 class ReleaseTestCase extends TestCase
 {
@@ -24,7 +24,7 @@ class ReleaseTestCase extends TestCase
      *
      * @var string
      */
-    protected $githooks = SystemTestCase::TESTS_PATH . '/githooks';
+    protected $githooks = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'githooks';
 
     /**
      * @var ConfigurationFileBuilder
@@ -70,16 +70,13 @@ class ReleaseTestCase extends TestCase
     /**
      * Copies de releases candidate to the tests directory. Only copies the version that works in the current php version.
      * Permissions must be setted. Otherwise, the Github Action flow will fail.
-     *
-     * @return boolean
      */
     protected static function copyReleaseBinary(): bool
     {
-        $origin = str_replace('//', '/', 'builds' . ComposerUpdater::pathToBuild() . '/githooks');
-        $destiny = SystemTestCase::TESTS_PATH . '/githooks';
-
+        $build = new Build();
+        $origin = $build->getBuildPath() . 'githooks';
+        $destiny = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'githooks';
         copy($origin, $destiny);
-
         return chmod($destiny, 0777);
     }
 
