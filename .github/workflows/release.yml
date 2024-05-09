@@ -125,15 +125,10 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: githooks-71
+          path: ${{ github.GITHUB_WORKSPACE }}
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: githooks-73
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: githooks-81
+      - name: Display structure of downloaded files
+        run: ls -R | grep githooks
 
       - name: Extract and check builds
         run: |
