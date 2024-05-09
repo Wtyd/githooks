@@ -128,7 +128,9 @@ jobs:
           path: ${{ github.GITHUB_WORKSPACE }}
 
       - name: Display structure of downloaded files
-        run: ls -R | grep githooks
+        run: |
+          ls -R | grep githooks
+          ls
 
       - name: Extract and check builds
         run: |
