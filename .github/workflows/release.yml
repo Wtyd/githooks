@@ -51,6 +51,7 @@ jobs:
         php --version
         php githooks app:pre-build php
         php githooks app:build
+        git status --short
   
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
