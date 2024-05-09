@@ -131,6 +131,9 @@ jobs:
         run: |
           ls -R | grep githooks
           ls
+          ls githooks-71
+          ls githooks-73
+          ls githooks-81
 
       - name: Extract and check builds
         run: |
