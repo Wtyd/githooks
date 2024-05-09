@@ -14,7 +14,7 @@ abstract class ProcessExecutionAbstract
     /** @var \Wtyd\GitHooks\Utils\Printer */
     protected $printer;
 
-    /** @var array<\Wtyd\GitHooks\Tools\Execution\Process> */
+    /** @var array<\Wtyd\GitHooks\Tools\Process\Process> */
     protected $processes = [];
 
     /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstract> */
@@ -96,7 +96,8 @@ abstract class ProcessExecutionAbstract
     {
         foreach ($this->tools as $key => $tool) {
             $this->processes[$key] = new Process(explode(' ', $tool->prepareCommand()));
-            $this->processes[$key]->setTimeout(300); // 5 minutes
+            $this->processes[$key]->setTimeout(null); // without timeout
+            // TODO customize timeout
         }
     }
 
