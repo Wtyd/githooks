@@ -31,7 +31,7 @@ class ExtractBuildCommand extends Command
             $this->task(
                 '   <fg=yellow>1. Extracting all builds</>',
                 function () {
-                    $builds = ['githooks-7.1.tar', 'githooks-7.3.tar', 'githooks-8.1tar'];
+                    $builds = ['githooks-7.1.tar', 'githooks-7.3.tar', 'githooks-8.1.tar'];
                     foreach ($builds as $tarFile) {
                         $this->extractBuild($tarFile);
                     }
@@ -52,7 +52,7 @@ class ExtractBuildCommand extends Command
 
     private function extractBuild($tarName = null): void
     {
-        $tarName = $tarName ? $tarName : $this->build->getTarName();
+        $tarName = $tarName ?? $this->build->getTarName();
         $zipFile = File::name($tarName) . DIRECTORY_SEPARATOR . $tarName;
         $zip = new PharData($zipFile);
         $resultado = $zip->extractTo('./', null, true); // extract to $this->build->getBuildPath();
