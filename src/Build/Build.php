@@ -58,6 +58,11 @@ class Build
         return $this->buildPath;
     }
 
+    public function getBinary(): string
+    {
+        return $this->buildPath . 'githooks';
+    }
+
     public function getPhpVersion(): string
     {
         return $this->phpVersion;
