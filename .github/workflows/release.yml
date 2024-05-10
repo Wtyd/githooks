@@ -114,6 +114,10 @@ jobs:
     name: Commit the Build
     needs: test_rc
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ['7.1'] 
     permissions:
       contents: write
     steps:
@@ -123,8 +127,25 @@ jobs:
       - name: Install PHP
         uses: shivammathur/setup-php@v2 
         with:
-          php-version: '7.1'
+          php-version: ${{ matrix.php-versions }}
           coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-rc-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-
+    
+      - name: Install dependencies
+        run: |
+          chmod -R +x tools/*
+          tools/composer install --prefer-dist --no-progress
 
       - name: Delete Old Builds
         run: rm builds/githooks builds/php7.1/githooks builds/php7.3/githooks

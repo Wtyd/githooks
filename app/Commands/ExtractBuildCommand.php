@@ -50,6 +50,11 @@ class ExtractBuildCommand extends Command
         }
     }
 
+    /**
+     * Files are in directory with him name. For example ./githooks-7.1/githooks-7.1.tar
+     *
+     * @param string $tarName For example: 'githooks-7.1.tar'
+     */
     private function extractBuild($tarName = null): void
     {
         $tarName = $tarName ?? $this->build->getTarName();
