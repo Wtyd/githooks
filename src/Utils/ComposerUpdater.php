@@ -17,10 +17,10 @@ class ComposerUpdater
             return;
         }
 
-        $rootPaht = getcwd();
+        $rootPath = getcwd();
         $build = new Build();
-        $origin = str_replace('/', DIRECTORY_SEPARATOR, "$rootPaht/vendor/wtyd/githooks") . $build->getBuildPath() . DIRECTORY_SEPARATOR . 'githooks';
-        $destiny = str_replace('/', DIRECTORY_SEPARATOR, "$rootPaht/vendor/bin/githooks");
+        $origin = str_replace('/', DIRECTORY_SEPARATOR, "$rootPath/vendor/wtyd/githooks/") . $build->getBinary();
+        $destiny = str_replace('/', DIRECTORY_SEPARATOR, "$rootPath/vendor/bin/githooks");
         if (file_exists($destiny)) {
             unlink($destiny);
         }

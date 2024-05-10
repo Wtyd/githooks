@@ -51,6 +51,7 @@ jobs:
         php --version
         php githooks app:pre-build php
         php githooks app:build
+        git status --short
   
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
@@ -113,32 +114,57 @@ jobs:
     name: Commit the Build
     needs: test_rc
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest]
+        php-versions: ['7.1'] 
     permissions:
       contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2 
+        with:
+          php-version: ${{ matrix.php-versions }}
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-rc-${{ matrix.php-versions }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-
+    
+      - name: Install dependencies
+        run: |
+          chmod -R +x tools/*
+          tools/composer install --prefer-dist --no-progress
+
       - name: Delete Old Builds
         run: rm builds/githooks builds/php7.1/githooks builds/php7.3/githooks
 
       - uses: actions/download-artifact@v4
         with:
-          name: githooks-71
+          path: ${{ github.GITHUB_WORKSPACE }}
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: githooks-73
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: githooks-81
+      - name: Display structure of downloaded files
+        run: |
+          ls -R | grep githooks
+          ls
 
       - name: Extract and check builds
         run: |
-          tar -xvf githooks-71.tar
-          tar -xvf githooks-73.tar
-          tar -xvf githooks-81.tar
+          php githooks app:extract-build --all
+          # tar -xvf githooks-7.1/githooks-7.1.tar
+          # tar -xvf githooks-7.3/githooks-7.3.tar
+          # tar -xvf githooks-8.1/githooks-8.1.tar
           ls -lah builds
           git status
 

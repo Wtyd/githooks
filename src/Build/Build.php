@@ -8,6 +8,8 @@ use Exception;
 
 class Build
 {
+    const ALL_BUILDS = ['githooks-7.1.tar', 'githooks-7.3.tar', 'githooks-8.1.tar'];
+
     /** @var string */
     private $phpVersion;
 
@@ -25,7 +27,7 @@ class Build
      */
     private function setPhpVersion(): void
     {
-        $this->phpVersion = implode('.', array_slice(explode('.', phpversion()), 0, 2));
+        $this->phpVersion = phpversion();
     }
 
     /**
@@ -38,7 +40,7 @@ class Build
     private function setBuildPath(): void
     {
         $path = 'builds' . DIRECTORY_SEPARATOR;
-
+        // TODO: Refactor this to use a switch statement like getTarName()
         if (version_compare($this->phpVersion, '7.1', '<')) {
             throw new Exception('GitHooks only supports php 7.1 or greater.', 1);
         }
@@ -56,6 +58,11 @@ class Build
         return $this->buildPath;
     }
 
+    public function getBinary(): string
+    {
+        return $this->buildPath . 'githooks';
+    }
+
     public function getPhpVersion(): string
     {
         return $this->phpVersion;
@@ -67,7 +74,7 @@ class Build
     public function getTarName(): string
     {
         $tarName = '';
-        switch ($this->phpVersion) {
+        switch (implode('.', array_slice(explode('.', $this->phpVersion), 0, 2))) {
             case '7.1':
             case '7.2':
                 $tarName = 'githooks-7.1.tar';
