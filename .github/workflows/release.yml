@@ -120,6 +120,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2 
+        with:
+          php-version: '7.1'
+          coverage: none
+
       - name: Delete Old Builds
         run: rm builds/githooks builds/php7.1/githooks builds/php7.3/githooks
 
