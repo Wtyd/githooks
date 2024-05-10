@@ -10,7 +10,7 @@ use Wtyd\GitHooks\Build\Build;
 
 class ExtractBuildCommand extends Command
 {
-    protected $signature = 'app:extract-build';
+    protected $signature = 'app:extract-build {--all}';
     protected $description = 'Extracts the build from the tar file after the build process.';
 
     /**  @var \Wtyd\GitHooks\Build\Build */
@@ -25,20 +25,35 @@ class ExtractBuildCommand extends Command
     {
         $this->title('Extract build');
 
-        $this->task(
-            '   <fg=yellow>1. Extracting build</>',
-            $this->extractBuild()
-        );
+        $allBuilds = boolval($this->option('all'));
 
-        $this->task(
-            '   <fg=yellow>2. Check build</>',
-            $this->checkBuild()
-        );
+        if ($allBuilds) {
+            $this->task(
+                '   <fg=yellow>1. Extracting all builds</>',
+                function () {
+                    $builds = ['githooks-7.1.tar', 'githooks-7.3.tar', 'githooks-8.1tar'];
+                    foreach ($builds as $tarFile) {
+                        $this->extractBuild($tarFile);
+                    }
+                }
+            );
+        } else {
+            $this->task(
+                '   <fg=yellow>1. Extracting build</>',
+                $this->extractBuild()
+            );
+
+            $this->task(
+                '   <fg=yellow>2. Check build</>',
+                $this->checkBuild()
+            );
+        }
     }
 
-    private function extractBuild(): void
+    private function extractBuild($tarName = null): void
     {
-        $zipFile = File::name($this->build->getTarName()) . DIRECTORY_SEPARATOR . $this->build->getTarName();
+        $tarName = $tarName ?? $this->build->getTarName();
+        $zipFile = File::name($tarName) . DIRECTORY_SEPARATOR . $tarName;
         $zip = new PharData($zipFile);
         $resultado = $zip->extractTo('./', null, true); // extract to $this->build->getBuildPath();
         if (true === $resultado) {

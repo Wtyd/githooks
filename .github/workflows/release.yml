@@ -137,9 +137,10 @@ jobs:
 
       - name: Extract and check builds
         run: |
-          tar -xvf githooks-71/githooks-71.tar
-          tar -xvf githooks-73/githooks-73.tar
-          tar -xvf githooks-81/githooks-81.tar
+          php githooks app:extract-build --all
+          # tar -xvf githooks-71/githooks-71.tar
+          # tar -xvf githooks-73/githooks-73.tar
+          # tar -xvf githooks-81/githooks-81.tar
           ls -lah builds
           git status
 
