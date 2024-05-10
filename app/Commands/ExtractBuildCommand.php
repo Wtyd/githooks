@@ -52,7 +52,7 @@ class ExtractBuildCommand extends Command
 
     private function extractBuild($tarName = null): void
     {
-        $tarName = $tarName ?? $this->build->getTarName();
+        $tarName = $tarName ? $tarName : $this->build->getTarName();
         $zipFile = File::name($tarName) . DIRECTORY_SEPARATOR . $tarName;
         $zip = new PharData($zipFile);
         $resultado = $zip->extractTo('./', null, true); // extract to $this->build->getBuildPath();
