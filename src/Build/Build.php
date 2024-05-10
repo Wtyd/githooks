@@ -67,7 +67,6 @@ class Build
     public function getTarName(): string
     {
         $tarName = '';
-
         switch (implode('.', array_slice(explode('.', $this->phpVersion), 0, 2))) {
             case '7.1':
             case '7.2':
