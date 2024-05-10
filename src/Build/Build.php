@@ -8,6 +8,8 @@ use Exception;
 
 class Build
 {
+    const ALL_BUILDS = ['githooks-7.1.tar', 'githooks-7.3.tar', 'githooks-8.1.tar'];
+
     /** @var string */
     private $phpVersion;
 

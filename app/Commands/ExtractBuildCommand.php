@@ -31,7 +31,7 @@ class ExtractBuildCommand extends Command
             $this->task(
                 '   <fg=yellow>1. Extracting all builds</>',
                 function () {
-                    $builds = ['githooks-7.1.tar', 'githooks-7.3.tar', 'githooks-8.1.tar'];
+                    $builds = Build::ALL_BUILDS;
                     foreach ($builds as $tarFile) {
                         $this->extractBuild($tarFile);
                     }
