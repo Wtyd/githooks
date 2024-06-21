@@ -38,7 +38,7 @@ class CreateConfigurationFileCommand extends Command
     protected function checkIfConfigurationFileExists(): bool
     {
         if (Storage::exists('githooks.yml') || Storage::exists('qa/githooks.yml')) {
-            $this->printer->error('Configuration file githooks.yml already exists in root path');
+            $this->printer->error('githooks.yml configuration file already exists');
             return false;
         }
         return true;

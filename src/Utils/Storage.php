@@ -32,4 +32,18 @@ class Storage
     {
         return FacadesStorage::disk(self::$disk)->copy($path, $target);
     }
+
+    /**
+     * Write the contents of a file.
+     *
+     * @param  string  $path
+     * @param  string  $contents
+     * @param  bool  $lock
+     * @return int|bool
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     */
+    public static function put($path, $contents, $lock = false)
+    {
+        return FacadesStorage::disk(self::$disk)->put($path, $contents, $lock = false);
+    }
 }

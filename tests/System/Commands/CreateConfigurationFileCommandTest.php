@@ -47,6 +47,27 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
         // $mock->disable();
     }
 
+    public function configurationFileDataProvider()
+    {
+        return [
+            'The configuration file is in the root directory' => ['githooks.yml'],
+            'The configuration file is in the qa directory' => ['qa/githooks.yml'],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider configurationFileDataProvider
+     */
+    function it_prints_an_error_message_when_the_configuration_file_already_exists($path)
+    {
+        Storage::put($path, 'Configuration file contents');
+
+        $this->artisan('conf:init')
+            ->containsStringInOutput('githooks.yml configuration file already exists')
+            ->assertExitCode(1);
+    }
+
     /** @test */
     function it_prints_an_error_message_when_something_wrong_happens()
     {
