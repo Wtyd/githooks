@@ -3,13 +3,14 @@
 namespace Wtyd\GitHooks\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
 use Tests\Utils\FileReaderFake;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
+use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
+use Wtyd\GitHooks\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -57,6 +58,7 @@ class AppServiceProvider extends ServiceProvider
             $this->app->singleton(FileReader::class, FileReaderFake::class);
             $this->app->singleton(SecurityChecker::class, SecurityCheckerFake::class);
             $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
+            Storage::$disk = 'testing';
         }
     }
 }

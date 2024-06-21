@@ -2,9 +2,11 @@
 
 namespace Tests\System\Commands;
 
-use phpmock\MockBuilder;
+// use Illuminate\Support\Facades\Storage;
 use phpmock\Mock as PhpmockMock;
+use phpmock\MockBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Utils\Storage;
 
 class CreateConfigurationFileCommandTest extends SystemTestCase
 {
@@ -14,7 +16,8 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     public function getMockRootDirectory(): PhpmockMock
     {
         $builder = new MockBuilder();
-        $builder->setNamespace('Wtyd\GitHooks\App\Commands')
+        // $builder->setNamespace('Wtyd\GitHooks\App\Commands')
+        $builder->setNamespace('Illuminate\Filesystem')
             ->setName('getcwd')
             ->setFunction(
                 function () {
@@ -32,8 +35,8 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
         mkdir($templatePath, 0777, true);
         file_put_contents($templatePath . 'githooks.dist.yml', '');
 
-        $mock = $this->getMockRootDirectory();
-        $mock->enable();
+        // $mock = $this->getMockRootDirectory();
+        // $mock->enable();
 
         $this->artisan('conf:init')
             ->containsStringInOutput('Configuration file githooks.yml has been created in root path')
@@ -41,21 +44,16 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
 
         $this->assertFileEquals($templatePath . 'githooks.dist.yml', $this->path . '/githooks.yml');
 
-        $mock->disable();
+        // $mock->disable();
     }
 
     /** @test */
     function it_prints_an_error_message_when_something_wrong_happens()
     {
-        $mock = $this->getMockRootDirectory();
-        $mock->enable();
-
         $this->artisan('conf:init')
-            ->containsStringInOutput('Failed to copy ' . $this->path . '/vendor/wtyd/githooks/qa/githooks.dist.yml' . ' to ' . $this->path . '/githooks.yml')
+            ->containsStringInOutput('Failed to copy vendor/wtyd/githooks/qa/githooks.dist.yml to githooks.yml')
             ->assertExitCode(1);
 
         $this->assertFileDoesNotExist($this->path . '/githooks.yml');
-
-        $mock->disable();
     }
 }
