@@ -5,10 +5,10 @@ namespace Tests\Unit\ConfigurationFile;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\{
-    FileReaderFake,
     TestCase\UnitTestCase,
     Traits\VirtualFileSystemTrait
 };
+use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
 
 /**
  * @group Configuration
