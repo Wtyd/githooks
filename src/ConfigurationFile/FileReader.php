@@ -11,6 +11,14 @@ use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
 
 class FileReader
 {
+    /** @var string */
+    protected $rootPath;
+
+    public function __construct()
+    {
+        $this->rootPath = getcwd() ? getcwd() : '';
+    }
+
     /**
      * @return array File configuration githooks.yml in associative array format.
      *
@@ -37,14 +45,13 @@ class FileReader
      *
      * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
      */
-    protected function findConfigurationFile(): string
+    public function findConfigurationFile(): string
     {
-        $root = getcwd();
-
-        if (file_exists("$root/githooks.yml")) {
-            $configFile = "$root/githooks.yml";
-        } elseif (file_exists("$root/qa/githooks.yml")) {
-            $configFile = "$root/qa/githooks.yml";
+        // dd(file_exists("$this->rootPath/githooks.yml"), file_exists("$this->rootPath/qa/githooks.yml"));
+        if (file_exists("$this->rootPath/githooks.yml")) {
+            $configFile = "$this->rootPath/githooks.yml";
+        } elseif (file_exists("$this->rootPath/qa/githooks.yml")) {
+            $configFile = "$this->rootPath/qa/githooks.yml";
         } else {
             throw new ConfigurationFileNotFoundException();
         }

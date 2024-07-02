@@ -3,12 +3,16 @@
 namespace Tests\Utils;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 
 class FileReaderFake extends FileReader
 {
     protected $mockConfigurationFile = [];
+
+    public function __construct(string $rootPath = null)
+    {
+        $this->rootPath = $rootPath ? $rootPath : SystemTestCase::TESTS_PATH;
+    }
 
     /**
      * For system tests it will read file from testing filesystem.
@@ -23,24 +27,6 @@ class FileReaderFake extends FileReader
         } else {
             return $this->mockConfigurationFile;
         }
-    }
-
-    /**
-     * It Changes the original path on searchs for githooks.yml
-     *
-     * @return string The path of configuration file
-     */
-    protected function findConfigurationFile(): string
-    {
-        $configFile = SystemTestCase::TESTS_PATH . '/githooks.yml';
-
-        if (file_exists($configFile)) {
-            return $configFile;
-        } else {
-            throw new ConfigurationFileNotFoundException();
-        }
-
-        return $configFile;
     }
 
     public function mockConfigurationFile(array $configurationFile)

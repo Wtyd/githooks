@@ -2,15 +2,13 @@
 
 namespace Tests\Unit\ConfigurationFile;
 
-use Tests\Utils\ConfigurationFileBuilder;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use phpmock\MockBuilder;
-use phpmock\Mock as PhpmockMock;
+use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\{
+    FileReaderFake,
     TestCase\UnitTestCase,
     Traits\VirtualFileSystemTrait
 };
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
 
 /**
  * @group Configuration
@@ -22,21 +20,19 @@ class FileReaderTest extends UnitTestCase
     use MockeryPHPUnitIntegration;
     use VirtualFileSystemTrait;
 
+    /** \Wtyd\GitHooks\ConfigurationFile\FileReader */
+    private $fileReader;
+
+    /** \Tests\Utils\ConfigurationFileBuilder */
+    private $configurationFileBuilder;
+
+    /** \phpmock\PhpmockMock */
+    private $mockRootDirectory;
+
     protected function setUp(): void
     {
-        $this->fileReader = new FileReader();
-        // Mock::mock(FileReader::class)->shouldAllowMockingProtectedMethods()->makePartial();
-
+        $this->fileReader = new FileReaderFake($this->getUrl(''));
         $this->configurationFileBuilder = new ConfigurationFileBuilder($this->getUrl(''));
-
-        $this->mockRootDirectory = $this->getMockRootDirectory();
-
-        $this->mockRootDirectory->enable();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->mockRootDirectory->disable();
     }
 
     /**
@@ -47,28 +43,7 @@ class FileReaderTest extends UnitTestCase
     public function setConfigurationFileBuilder(): ConfigurationFileBuilder
     {
         $builder = new ConfigurationFileBuilder($this->getUrl(''));
-
         return $builder;
-    }
-
-    /**
-     * Mock 'getcwd' method used in FileReader.php for return the root path of the file system structure created in memory with vfsStream
-     *
-     * @return PhpmockMock
-     */
-    public function getMockRootDirectory(): PhpmockMock
-    {
-        $builder = new MockBuilder();
-        $reflection = new \ReflectionClass(FileReader::class);
-        $builder->setNamespace($reflection->getNamespaceName())
-            ->setName('getcwd')
-            ->setFunction(
-                function () {
-                    return $this->getUrl('');
-                }
-            );
-
-        return $builder->build();
     }
 
     public function validConfigurationFilesDataProvider()
@@ -90,7 +65,6 @@ class FileReaderTest extends UnitTestCase
     function it_can_read_file_configuration_githooksDotYml($fileSystemStructure)
     {
         $this->createFileSystem($fileSystemStructure);
-
         $this->assertEquals($this->configurationFileBuilder->buildArray(), $this->fileReader->readFile());
     }
 
