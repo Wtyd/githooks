@@ -6,7 +6,7 @@ use Wtyd\GitHooks\LoadTools\FastExecution;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use Tests\Utils\FileUtilsFake;
+use Wtyd\GitHooks\Utils\FileUtilsFake;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;

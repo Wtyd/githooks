@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\ConfigurationFile;
 
 use Faker\Factory;
-use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Utils\ConfigurationFileBuilder;
-use Tests\Utils\FileReaderFake;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\CliArguments;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsFormatException;
+use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
 use Wtyd\GitHooks\ConfigurationFile\ReadConfigurationFileAction;
 
 /**
@@ -20,6 +20,12 @@ use Wtyd\GitHooks\ConfigurationFile\ReadConfigurationFileAction;
  */
 class ReadConfigurationFileActionTest extends UnitTestCase
 {
+    /** @var \Tests\Utils\ConfigurationFileBuilder */
+    private $configurationFileBuilder;
+
+    /** @var \Faker\Generator */
+    private $faker;
+
     protected function setUp(): void
     {
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');

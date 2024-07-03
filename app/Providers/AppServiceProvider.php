@@ -3,8 +3,8 @@
 namespace Wtyd\GitHooks\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Tests\Utils\FileReaderFake;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
+use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
