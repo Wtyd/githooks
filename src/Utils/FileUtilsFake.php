@@ -1,13 +1,15 @@
 <?php
 
-namespace Tests\Utils;
+namespace Wtyd\GitHooks\Utils;
 
 use Wtyd\GitHooks\Utils\FileUtils;
 
 class FileUtilsFake extends FileUtils
 {
+    /** @var array */
     protected $modifiedFiles = [];
 
+    /** @var array */
     protected $filesThatShouldBeFoundInDirectories = [];
 
     public function getModifiedFiles(): array

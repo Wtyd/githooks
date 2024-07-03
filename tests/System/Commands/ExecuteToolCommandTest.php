@@ -4,7 +4,7 @@ namespace Tests\System\Commands;
 
 use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
-use Tests\Utils\FileUtilsFake;
+use Wtyd\GitHooks\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;

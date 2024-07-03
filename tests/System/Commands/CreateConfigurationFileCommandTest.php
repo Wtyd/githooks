@@ -2,32 +2,11 @@
 
 namespace Tests\System\Commands;
 
-// use Illuminate\Support\Facades\Storage;
-use phpmock\Mock as PhpmockMock;
-use phpmock\MockBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Wtyd\GitHooks\Utils\Storage;
 
 class CreateConfigurationFileCommandTest extends SystemTestCase
 {
-    /**
-     * @return PhpmockMock
-     */
-    public function getMockRootDirectory(): PhpmockMock
-    {
-        $builder = new MockBuilder();
-        // $builder->setNamespace('Wtyd\GitHooks\App\Commands')
-        $builder->setNamespace('Illuminate\Filesystem')
-            ->setName('getcwd')
-            ->setFunction(
-                function () {
-                    return $this->getPath();
-                }
-            );
-
-        return $builder->build();
-    }
-
     /** @test */
     function it_creates_the_configuration_file_in_the_root_of_the_project_using_the_template()
     {

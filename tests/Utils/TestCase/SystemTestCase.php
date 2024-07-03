@@ -3,7 +3,7 @@
 namespace Tests\Utils\TestCase;
 
 use Tests\Utils\ConfigurationFileBuilder;
-use Tests\Utils\FileUtilsFake;
+use Wtyd\GitHooks\Utils\FileUtilsFake;
 use Tests\Utils\Traits\FileSystemTrait;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
