@@ -30,6 +30,9 @@ class FileReaderFake extends FileReader
         }
     }
 
+    /**
+     * @param array $configurationFile Configuration file in associative array format for testing
+     */
     public function mockConfigurationFile(array $configurationFile): void
     {
         $this->mockConfigurationFile = $configurationFile;

@@ -3,9 +3,10 @@
 namespace Wtyd\GitHooks\App\Commands;
 
 use Exception;
+use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Hooks;
 use Wtyd\GitHooks\Utils\Printer;
-use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\Utils\Storage;
 
 class CreateHookCommand extends Command
 {
@@ -24,13 +25,6 @@ Even the default script and after, other tools which GitHooks not support or vic
      * @var Printer
      */
     protected $printer;
-
-    /**
-     * Path to the root project (getcwd())
-     *
-     * @var string|false
-     */
-    protected $root;
 
     /**
      * First argument. The hook that will be setted.
@@ -54,7 +48,6 @@ Even the default script and after, other tools which GitHooks not support or vic
 
     public function handle()
     {
-        $this->root = getcwd();
         $this->hook = strval($this->argument('hook'));
         $this->scriptFile = strval($this->argument('scriptFile')) ?? '';
 
@@ -66,13 +59,15 @@ Even the default script and after, other tools which GitHooks not support or vic
 
         $origin = $this->path2OriginFile();
         try {
-            $destiny = "{$this->root}/.git/hooks/{$this->hook}";
+            $destiny = ".git/hooks/{$this->hook}";
 
-            if (file_exists($destiny)) {
-                unlink($destiny);
+            if (Storage::exists($destiny)) {
+                Storage::delete($destiny);
             }
-            copy($origin, $destiny);
-            chmod($destiny, 0755);
+
+            Storage::copy($origin, $destiny);
+            Storage::chmod($destiny, 0755);
+
             $this->printer->success("Hook {$this->hook} created");
         } catch (\Throwable $th) {
             $this->printer->error("Error copying $origin in {$this->hook}");
@@ -91,7 +86,7 @@ Even the default script and after, other tools which GitHooks not support or vic
         if (empty($this->scriptFile)) {
             $origin = $this->defaultPrecommit();
         } else {
-            if (!file_exists($this->scriptFile)) {
+            if (!Storage::exists($this->scriptFile)) {
                 throw new Exception("{$this->scriptFile} file not found");
             }
             $origin = $this->scriptFile;
@@ -109,16 +104,16 @@ Even the default script and after, other tools which GitHooks not support or vic
     public function defaultPrecommit(): string
     {
         $origin = '';
-        if (file_exists($this->root . '/vendor/wtyd/githooks/hooks/default.php')) {
-            $origin = $this->root . '/vendor/wtyd/githooks/hooks/default.php';
+        if (Storage::exists('vendor/wtyd/githooks/hooks/default.php')) {
+            $origin = 'vendor/wtyd/githooks/hooks/default.php';
         }
 
-        if (file_exists($this->root . '/hooks/default.php')) {
-            $origin = $this->root . '/hooks/default.php';
+        if (Storage::exists('hooks/default.php')) {
+            $origin = 'hooks/default.php';
         }
 
         if (empty($origin)) {
-            throw new Exception("Error: the file default.php not found");
+            throw new Exception("The file default.php not found");
         }
 
         return $origin;

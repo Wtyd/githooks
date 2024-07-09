@@ -47,7 +47,6 @@ class FileReader
      */
     public function findConfigurationFile(): string
     {
-        // dd(file_exists("$this->rootPath/githooks.yml"), file_exists("$this->rootPath/qa/githooks.yml"));
         if (file_exists("$this->rootPath/githooks.yml")) {
             $configFile = "$this->rootPath/githooks.yml";
         } elseif (file_exists("$this->rootPath/qa/githooks.yml")) {

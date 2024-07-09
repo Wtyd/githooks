@@ -2,37 +2,20 @@
 
 namespace Tests\System\Commands;
 
-use phpmock\MockBuilder;
-use phpmock\Mock as PhpmockMock;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Utils\Storage;
 
 /**
  * Testing Wtyd\GitHooks\App\Commands\CreateHookCommand;
  */
 class CreateHookCommandTest extends SystemTestCase
 {
-    protected $mock;
-
-    /**
-     * Creates the temporal filesystem structure for the tests and mocks the 'getcwd' method for return this path.
-     *
-     * @return void
-     */
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->copyDefaultPrecommitToTestDirectory();
-        mkdir($this->path . '/.git/hooks', 0777, true);
-
-        $this->mock = $this->getMockRootDirectory();
-        $this->mock->enable();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->mock->disable();
-        parent::tearDown();
+        Storage::makeDirectory('.git/hooks', 0777, true);
     }
 
     /**
@@ -43,27 +26,8 @@ class CreateHookCommandTest extends SystemTestCase
      */
     protected function copyDefaultPrecommitToTestDirectory()
     {
-        mkdir($this->path . '/hooks', 0777, true);
+        Storage::makeDirectory('/hooks', 0777, true);
         shell_exec('cp -r hooks ' . $this->path);
-    }
-
-    /**
-     * Mocks the 'getcwd' method for return the root of the filesystem for this tests.
-     *
-     * @return PhpmockMock
-     */
-    public function getMockRootDirectory(): PhpmockMock
-    {
-        $builder = new MockBuilder();
-        $builder->setNamespace('Wtyd\GitHooks\App\Commands')
-            ->setName('getcwd')
-            ->setFunction(
-                function () {
-                    return $this->path;
-                }
-            );
-
-        return $builder->build();
     }
 
     /** @test */
@@ -73,7 +37,7 @@ class CreateHookCommandTest extends SystemTestCase
             ->containsStringInOutput('Hook pre-commit created')
             ->assertExitCode(0);
 
-        $this->assertFileExists($this->path . '/.git/hooks/pre-commit', file_get_contents('hooks/default.php'));
+        $this->assertFileExists($this->path . '/.git/hooks/pre-commit', Storage::get('hooks/default.php'));
     }
 
     public function hooksProvider()
@@ -130,14 +94,14 @@ class CreateHookCommandTest extends SystemTestCase
     function it_sets_a_custom_script_as_some_hook()
     {
         $hookContent = 'my custom script';
-        $scriptFilePath = $this->path . '/MyScript.php';
-        file_put_contents($scriptFilePath, $hookContent);
+        $scriptFile = 'MyScript.php';
+        Storage::put($scriptFile, $hookContent);
 
-        $this->artisan("hook pre-push $scriptFilePath")
+        $this->artisan("hook pre-push $scriptFile")
             ->containsStringInOutput("Hook pre-push created")
             ->assertExitCode(0);
 
-        $this->assertFileExists($this->path . "/.git/hooks/pre-push", $scriptFilePath);
+        $this->assertFileExists($this->path . "/.git/hooks/pre-push", $scriptFile);
     }
 
     /** @test */

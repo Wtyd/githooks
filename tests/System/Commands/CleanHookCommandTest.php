@@ -2,54 +2,22 @@
 
 namespace Tests\System\Commands;
 
-use phpmock\MockBuilder;
-use phpmock\Mock as PhpmockMock;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Utils\Storage;
 
 class CleanHookCommandTest extends SystemTestCase
 {
-
-    protected $configurationFile;
-
-    protected $mock;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        mkdir($this->path . '/.git/hooks', 0777, true);
-
-        $this->mock = $this->getMockRootDirectory();
-        $this->mock->enable();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->mock->disable();
-        parent::tearDown();
-    }
-
-    /**
-     * @return PhpmockMock
-     */
-    public function getMockRootDirectory(): PhpmockMock
-    {
-        $builder = new MockBuilder();
-        $builder->setNamespace('Wtyd\GitHooks\App\Commands')
-            ->setName('getcwd')
-            ->setFunction(
-                function () {
-                    return $this->getPath();
-                }
-            );
-
-        return $builder->build();
+        Storage::makeDirectory('.git/hooks', 0777, true);
     }
 
     /** @test */
     function it_deletes_the_precommit_hook_as_default()
     {
-        file_put_contents($this->getPath() . '/.git/hooks/pre-commit', '');
+        Storage::put('/.git/hooks/pre-commit', '');
 
         $this->artisan('hook:clean')
             ->containsStringInOutput('Hook pre-commit has been deleted')
@@ -96,7 +64,7 @@ class CleanHookCommandTest extends SystemTestCase
      */
     function it_deletes_the_hook_passed_as_argument($hook)
     {
-        file_put_contents($this->getPath() . '/.git/hooks/' . $hook, '');
+        Storage::put("/.git/hooks/$hook", '');
 
         $this->artisan("hook:clean $hook")
             ->containsStringInOutput("Hook $hook has been deleted")
