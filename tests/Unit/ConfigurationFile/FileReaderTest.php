@@ -26,9 +26,6 @@ class FileReaderTest extends UnitTestCase
     /** \Tests\Utils\ConfigurationFileBuilder */
     private $configurationFileBuilder;
 
-    /** \phpmock\PhpmockMock */
-    private $mockRootDirectory;
-
     protected function setUp(): void
     {
         $this->fileReader = new FileReaderFake($this->getUrl(''));

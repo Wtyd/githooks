@@ -5,6 +5,7 @@ namespace Wtyd\GitHooks\App\Commands;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Hooks;
 use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\GitHooks\Utils\Storage;
 
 class CleanHookCommand extends Command
 {
@@ -39,23 +40,18 @@ class CleanHookCommand extends Command
             return 1;
         }
 
-        $file = $this->getHooksPath() . "/$hook";
-        if (!file_exists($file)) {
+        $file = ".git/hooks/$hook";
+        if (!Storage::exists($file)) {
             $this->printer->warning("The hook $hook cannot be deleted because it cannot be found");
             return 1;
         }
 
-        if (unlink($file)) {
+        if (Storage::delete($file)) {
             $this->printer->success("Hook $hook has been deleted");
             return 0;
         } else {
             $this->printer->error("Could not delete $hook hook");
             return 1;
         }
-    }
-
-    public function getHooksPath(): string
-    {
-        return getcwd() . "/.git/hooks";
     }
 }
