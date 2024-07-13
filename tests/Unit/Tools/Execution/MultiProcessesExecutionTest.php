@@ -45,14 +45,14 @@ class MultiProcessesExecutionTest extends UnitTestCase
     /** @test */
     function it_returns_empty_errors_when_all_tools_find_NO_errors()
     {
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
-        $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
 
         $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
 
-        $errors = $multiProcessExecution->execute($tools, $this->configurationFile->getProcesses());
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
 
         $this->assertTrue($errors->isEmpty());
 
@@ -71,8 +71,8 @@ class MultiProcessesExecutionTest extends UnitTestCase
      */
     function it_returns_errors_when_a_tool_finds_errors($failedTool, $successTools)
     {
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
-        $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
 
@@ -80,7 +80,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $multiProcessExecution->setToolsThatMustFail([$failedTool]);
 
 
-        $errors = $multiProcessExecution->execute($tools, $this->configurationFile->getProcesses());
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
 
         $this->assertFalse($errors->isEmpty());
 
@@ -127,10 +127,10 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $failedTool,
         $failedToolWithIgnoreErrosOnExit
     ) {
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder
             ->changeToolOption($failedToolWithIgnoreErrosOnExit, ['ignoreErrorsOnExit' => true])
             ->buildArray(), self::ALL_TOOLS);
-        $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
 
@@ -138,7 +138,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $multiProcessExecution->setToolsThatMustFail([$failedTool, $failedToolWithIgnoreErrosOnExit]);
 
 
-        $errors = $multiProcessExecution->execute($tools, $this->configurationFile->getProcesses());
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
 
         $this->assertCount(1, $errors->getErrors());
         $this->assertArrayHasKey($failedTool, $errors->getErrors());

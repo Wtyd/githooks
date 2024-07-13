@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Process\Execution;
 
+use Symfony\Component\Console\Exception\LogicException;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Throwable;
 use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\Process\Process;
 
@@ -42,6 +44,7 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
                 }
             } while ($totalProcesses > $this->numberOfRunnedProcesses);
         } catch (\Throwable $th) {
+            // dd($th->getMessage());
             $this->errors->setError('General', $th->getMessage());
         }
         $endCommandExecution = microtime(true);
@@ -79,7 +82,15 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         if ($process->isSuccessful()) {
             $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
         } else {
-            $errorMessage = $exceptionMessage ?? $process->getOutput();
+            $errorMessage = '';
+            try {
+                if ($process->isTerminated()) {
+                    $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
+                    $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage;
+                }
+            } catch (\Throwable $ex) {
+                $errorMessage = $ex->getMessage();
+            }
             if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
                 $this->errors->setError($toolName, $errorMessage);
             }

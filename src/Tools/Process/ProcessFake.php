@@ -18,9 +18,10 @@ class ProcessFake extends Process
     private $isSuccessful = true;
 
     /** @inheritDoc */
-    private $output;
+    protected $status;
 
     private $fakeTimeout = false;
+    private $errorOutputFake;
 
     /**
      * Do nothing or invokes original method when we want to cause an error by timeout
@@ -34,6 +35,7 @@ class ProcessFake extends Process
             // Do nothing
             $this->starttime = microtime(true);
         }
+        $this->status = self::STATUS_STARTED;
     }
 
     /**
@@ -79,13 +81,16 @@ class ProcessFake extends Process
         return $this->isSuccessful;
     }
 
+
     /**
-     * Only in MultiProcessExecution when the execution fails
      * @inheritDoc
      */
-    public function getOutput(): string
+    public function getErrorOutput()
     {
-        return $this->output;
+        if (! $this->isSuccessful) {
+            return $this->errorOutputFake;
+        }
+        return '';
     }
 
     /**
@@ -107,7 +112,6 @@ class ProcessFake extends Process
         $this->isSuccessful = false;
         $ex = explode(' ', $this->getCommandLine());
 
-
         $tools = array_keys(ToolAbstract::SUPPORTED_TOOLS);
         $nameTool = '';
         foreach ($tools as $tool) {
@@ -117,7 +121,7 @@ class ProcessFake extends Process
             }
         }
 
-        $this->output = "\nThe tool $nameTool mocks an error\n";
+        $this->errorOutputFake = "\nThe tool $nameTool mocks an error\n";
 
         return $this;
     }
