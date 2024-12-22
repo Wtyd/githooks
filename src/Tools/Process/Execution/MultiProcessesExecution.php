@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Process\Execution;
 
-use Symfony\Component\Console\Exception\LogicException;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Throwable;
 use Wtyd\GitHooks\Tools\Errors;

@@ -16,6 +16,15 @@ trait ExecutionFakeTrait
     protected $toolsThatMustFail = [];
 
     /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
+    protected $failedToolsByException = [];
+
+    /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
+    protected $failedToolsByFoundedErrors = [];
+
+    /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
+    protected $failedToolsByFoundedErrorsWithExitCode0 = [];
+
+    /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
     protected $toolsWithTimeout = [];
 
     protected function createProcesses(): void
@@ -26,6 +35,18 @@ trait ExecutionFakeTrait
         foreach ($this->toolsThatMustFail as $tool) {
             $this->processes[$tool]->setFail();
         }
+
+        foreach ($this->failedToolsByException as $tool) {
+            $this->processes[$tool]->setFailByException();
+        }
+
+        foreach ($this->failedToolsByFoundedErrors as $tool) {
+            $this->processes[$tool]->setFailByFoundedErrors();
+        }
+
+        foreach ($this->failedToolsByFoundedErrorsWithExitCode0 as $tool) {
+            $this->processes[$tool]->setFailByErrorsWithExitCode0();
+        }
         foreach ($this->toolsWithTimeout as $tool) {
             $this->processes[$tool]->triggerTimeout();
         }
@@ -34,6 +55,21 @@ trait ExecutionFakeTrait
     public function setToolsThatMustFail(array $toolsThatMustFail): void
     {
         $this->toolsThatMustFail = $toolsThatMustFail;
+    }
+
+    public function failedToolsByException(array $failedToolsByException): void
+    {
+        $this->failedToolsByException = $failedToolsByException;
+    }
+
+    public function failedToolsByFoundedErrors(array $failedToolsByFoundedErrors): void
+    {
+        $this->failedToolsByFoundedErrors = $failedToolsByFoundedErrors;
+    }
+
+    public function failedToolsByFoundedErrorsWithExitCode0(array $failedToolsByFoundedErrorsWithExitCode0): void
+    {
+        $this->failedToolsByFoundedErrorsWithExitCode0 = $failedToolsByFoundedErrorsWithExitCode0;
     }
 
     public function setToolsWithTimeout(array $toolsWithTimeout): void

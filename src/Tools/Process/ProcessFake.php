@@ -21,6 +21,7 @@ class ProcessFake extends Process
     protected $status;
 
     private $fakeTimeout = false;
+    private $outputFake;
     private $errorOutputFake;
 
     /**
@@ -85,6 +86,18 @@ class ProcessFake extends Process
     /**
      * @inheritDoc
      */
+    public function getOutput()
+    {
+        if (! $this->isSuccessful) {
+            return $this->outputFake;
+        }
+        return '';
+    }
+
+
+    /**
+     * @inheritDoc
+     */
     public function getErrorOutput()
     {
         if (! $this->isSuccessful) {
@@ -102,14 +115,8 @@ class ProcessFake extends Process
         return $this->isSuccessful ? 0 : 1;
     }
 
-    /**
-     * Mocks that the process fails.
-     *
-     * @return ProcessFake
-     */
-    public function setFail(): ProcessFake
+    private function extractToolName(): string
     {
-        $this->isSuccessful = false;
         $ex = explode(' ', $this->getCommandLine());
 
         $tools = array_keys(ToolAbstract::SUPPORTED_TOOLS);
@@ -120,9 +127,49 @@ class ProcessFake extends Process
                 break;
             }
         }
+        return $nameTool;
+    }
 
+    /**
+     * Mocks that the process fails.
+     *
+     * @return ProcessFake
+     */
+    public function setFail(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $nameTool = $this->extractToolName();
+
+        // getErrorOutput() o getOutput() o Exeception
         $this->errorOutputFake = "\nThe tool $nameTool mocks an error\n";
 
+        return $this;
+    }
+
+    public function setFailByException(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $nameTool = $this->extractToolName();
+
+        // getErrorOutput() o getOutput() o Exeception
+        // $this->errorOutputFake = "\nThe tool $nameTool mocks an error\n";
+
+        return $this;
+    }
+
+    public function setFailByFoundedErrors(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $nameTool = $this->extractToolName();
+        $this->errorOutputFake = "\n$nameTool fakes an error\n";
+        return $this;
+    }
+
+    public function setFailByErrorsWithExitCode0(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $nameTool = $this->extractToolName();
+        $this->outputFake = "\n$nameTool fakes an error with exit code 0\n";
         return $this;
     }
 
