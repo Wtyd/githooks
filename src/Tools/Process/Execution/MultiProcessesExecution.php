@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Process\Execution;
 
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Throwable;
 use Wtyd\GitHooks\Tools\Errors;
@@ -30,20 +31,24 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
             do {
                 try {
                     $this->addProcessToQueue();
-
                     foreach ($this->runningProcesses as $toolName => $process) {
-                        if (!$process->isTerminated()) {
-                            continue;
+                        // $process->checkTimeout(); // timeout is null for now
+                        if ($process->isTerminated()) {
+                            $this->numberOfRunnedProcesses = $this->finishExecution($process, $toolName);
                         }
-                        $this->numberOfRunnedProcesses = $this->finishExecution($process, $toolName);
                     }
                 } catch (ProcessTimedOutException $th) {
+                    // dd($th->getMessage());
                     $toolName = (string)array_search($th->getProcess(), $this->processes);
                     $this->numberOfRunnedProcesses = $this->finishExecution($th->getProcess(), $toolName, $th->getMessage());
+                } catch (ProcessFailedException $th) {
+                    // dd($th->getMessage());
+                    $toolName = (string)array_search($th->getProcess(), $this->processes);
+                    $this->numberOfRunnedProcesses = $this->finishExecution($th->getProcess(), $toolName);
                 }
             } while ($totalProcesses > $this->numberOfRunnedProcesses);
         } catch (\Throwable $th) {
-            // dd($th->getMessage());
+            // dd($th->getMessage(), get_class($th), $th->getFile(), $th->getLine());
             $this->errors->setError('General', $th->getMessage());
         }
         $endCommandExecution = microtime(true);
@@ -52,6 +57,9 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         return $this->errors;
     }
 
+    /**
+     * Add process to queue of running processes
+     */
     protected function addProcessToQueue(): void
     {
         foreach ($this->processes as $toolName => $process) {
@@ -67,7 +75,8 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
 
     /**
      * Finish process execution
-     *
+     * ¡¡¡Warning with egde case!!! Sometimes the process finishes with an error message in the normal output
+     * (sintaxys errors in Phpmd 2.9 or minus, for example) but the error output is empty.
      * @param Process $process
      * @param string $toolName Name of the process.
      * @param string $exceptionMessage
@@ -77,24 +86,19 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
     {
         $this->runnedProcesses[$toolName] =  $process;
         $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());
-
         if ($process->isSuccessful()) {
             $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
         } else {
             $errorMessage = '';
-            try {
-                if ($process->isTerminated()) {
-                    $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
-                    $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage;
-                }
-            } catch (\Throwable $ex) {
-                $errorMessage = $ex->getMessage();
-            }
+            // if ($process->isTerminated()) { // TODO: comprobar a fondo estas lineas
+                $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
+                $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage; // Edge case
+            // }
             if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
                 $this->errors->setError($toolName, $errorMessage);
             }
-            $this->printer->resultError($this->getErrorString($toolName, $executionTime));
 
+            $this->printer->resultError($this->getErrorString($toolName, $executionTime));
             $this->printer->line($errorMessage);
         }
         unset($this->runningProcesses[$toolName]);

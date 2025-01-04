@@ -12,6 +12,9 @@ use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
 use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Utils\Printer;
 
+/**
+ * Applied pairwise testing strategy. See tests cases in the link https://pairwise.teremokgames.com/5fujg/
+ */
 class MultiProcessesExecutionTest extends UnitTestCase
 {
     use \Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
@@ -42,7 +45,10 @@ class MultiProcessesExecutionTest extends UnitTestCase
         ];
     }
 
-    /** @test */
+    /**
+     * Test added to pairwise testing strategy
+     * @test
+     */
     function it_returns_empty_errors_when_all_tools_find_NO_errors()
     {
         $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
@@ -68,51 +74,8 @@ class MultiProcessesExecutionTest extends UnitTestCase
     /**
      * @test
      * @dataProvider oneToolFailsEachTimeDataProvider
-     * TODO: Este test tiene 3 variantes. La herramienta lanza excepción, el proceso termina y muestra una salida en getErrorOutput y la herramienta termina y muestra la salida normal getOutput
      */
-    function it_returns_errors_when_a_tool_finds_errors_base($failedTool, $successTools)
-    {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
-        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
-
-        $printerMock = Mock::spy(Printer::class);
-
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
-        $multiProcessExecution->setToolsThatMustFail([$failedTool]);
-
-
-        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
-
-        $this->assertFalse($errors->isEmpty());
-
-        $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
-        $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%The tool $failedTool mocks an error%"))->once();
-
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[0])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%The tool $successTools[0] mocks an error%"));
-
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[1])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%The tool $successTools[1] mocks an error%"));
-
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[2])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%The tool $successTools[2] mocks an error%"));
-
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[3])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%The tool $successTools[3] mocks an error%"));
-
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[4])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%The tool $successTools[4] mocks an error%"));
-
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[5])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%The tool $successTools[5] mocks an error%"));
-    }
-
-    /**
-     * @test
-     * @dataProvider oneToolFailsEachTimeDataProvider
-     * TODO: Este test tiene 3 variantes. La herramienta lanza excepción, el proceso termina y muestra una salida en getErrorOutput y la herramienta termina y muestra la salida normal getOutput
-     */
-    function it_returns_errors_when_a_tool_finds_errorsasdasa($failedTool, $successTools)
+    function it_returns_errors_when_a_tool_finds_errors($failedTool, $successTools)
     {
         $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
@@ -130,34 +93,87 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%$failedTool fakes an error%"))->once();
 
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[0])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%$successTools[0] fakes an error%"));
-
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[1])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%$successTools[1] fakes an error%"));
-
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[2])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%$successTools[2] fakes an error%"));
-
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[3])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%$successTools[3] fakes an error%"));
-
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[4])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%$successTools[4] fakes an error%"));
-
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[5])))->once();
-        $printerMock->shouldNotHaveReceived()->line(\Mockery::pattern("%$successTools[5] fakes an error%"));
+    }
+
+    /**
+     * @test
+     * @dataProvider oneToolFailsEachTimeDataProvider
+     */
+    function it_returns_errors_when_a_tool_raise_an_exception($failedTool, $successTools)
+    {
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution->failedToolsByException([$failedTool]);
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertFalse($errors->isEmpty());
+
+        $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
+        $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%$failedTool fakes an exception%"))->once();
+
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[0])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[1])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[2])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[3])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[4])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[5])))->once();
+    }
+
+     /**
+     * @test
+     * @dataProvider oneToolFailsEachTimeDataProvider
+     * Edge case explained in the finishExecution method in MultiProcessesExecution.php
+     */
+    function it_returns_errors_when_a_tool_is_not_succesfully_and_has_errors_in_normal_output_instead_of_errorOutput($failedTool, $successTools)
+    {
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution->setFailByFoundedErrorsInNormalOutput([$failedTool]);
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertFalse($errors->isEmpty());
+
+        $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
+        $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%$failedTool fakes an error in normal output%"))->once();
+
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[0])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[1])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[2])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[3])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[4])))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[5])))->once();
     }
 
     public function twoToolsFailsDataProvider()
     {
         return [
-            'Fails phpcs' => ['phpcs', 'phpcbf'],
-            'Fails phpcbf' => ['phpcbf', 'phpmd'],
-            'Fails phpmd' => ['phpmd', 'phpcpd'],
-            'Fails phpcpd' => ['phpcpd', 'parallel-lint'],
-            'Fails parallel-lint' => ['parallel-lint', 'phpstan'],
-            'Fails phpstan' => ['phpstan', 'security-checker'],
-            'Fails security-checker' => ['security-checker', 'phpcs'],
+            'Fails phpcs' => [
+                'Failed tool' => 'phpcs',
+                'Failed tool with ignore erros on exit' => 'phpcbf',
+                'Way to fail' => 'failedToolsByFoundedErrors',
+                'Expected error message (depends on method to fake fail)' => 'fakes an error\n',
+            ],
+            'Fails phpcbf' => ['phpcbf', 'phpmd', 'failedToolsByFoundedErrors', 'fakes an error\n'],
+            'Fails phpmd' => ['phpmd', 'phpcpd', 'failedToolsByFoundedErrors', 'fakes an error\n'],
+            'Fails phpcpd' => ['phpcpd', 'parallel-lint', 'failedToolsByFoundedErrors', 'fakes an error\n'],
+            'Fails parallel-lint' => ['parallel-lint', 'phpstan', 'failedToolsByFoundedErrors', 'fakes an error\n'],
+            'Fails phpstan' => ['phpstan', 'security-checker', 'failedToolsByFoundedErrors', 'fakes an error\n'],
+            'Fails security-checker' => ['security-checker', 'phpcs', 'failedToolsByFoundedErrors', 'fakes an error\n'],
         ];
     }
 
@@ -167,34 +183,42 @@ class MultiProcessesExecutionTest extends UnitTestCase
      */
     function it_doesnt_set_errors_when_the_tool_finds_errors_but_ignoreErrorsOnExit_flag_is_setted_to_true(
         $failedTool,
-        $failedToolWithIgnoreErrosOnExit
+        $failedToolWithIgnoreErrosOnExit,
+        $methodToFakeFail,
+        $expectedErrorMessage
     ) {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder
-            ->changeToolOption($failedToolWithIgnoreErrosOnExit, ['ignoreErrorsOnExit' => true])
-            ->buildArray(), self::ALL_TOOLS);
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->changeToolOption($failedToolWithIgnoreErrosOnExit, ['ignoreErrorsOnExit' => true])
+                ->buildArray(),
+            self::ALL_TOOLS
+        );
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
 
         $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution->$methodToFakeFail([$failedTool, $failedToolWithIgnoreErrosOnExit]);
         $multiProcessExecution->setToolsThatMustFail([$failedTool, $failedToolWithIgnoreErrosOnExit]);
 
 
         $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
 
+        $regExpOfExpectedErrorMessage = "%$failedTool $expectedErrorMessage%";
         $this->assertCount(1, $errors->getErrors());
         $this->assertArrayHasKey($failedTool, $errors->getErrors());
-        $this->assertMatchesRegularExpression("%The tool $failedTool mocks an error%", $errors->getErrors()[$failedTool]);
+        $this->assertMatchesRegularExpression($regExpOfExpectedErrorMessage, $errors->getErrors()[$failedTool]);
 
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
-        $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%The tool $failedTool mocks an error%"))->once();
+        $printerMock->shouldHaveReceived()->line(\Mockery::pattern($regExpOfExpectedErrorMessage))->once();
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern(
             $this->messageRegExp($failedToolWithIgnoreErrosOnExit, false)
         ))->once();
+        $regExpOfExpectedErrorMessage = "%$failedToolWithIgnoreErrosOnExit $expectedErrorMessage%";
         $printerMock->shouldHaveReceived()->line(
-            \Mockery::pattern("%The tool $failedToolWithIgnoreErrosOnExit mocks an error%")
+            \Mockery::pattern($regExpOfExpectedErrorMessage)
         )->once();
     }
 }

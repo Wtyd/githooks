@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Process;
 
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ProcessFake extends Process
@@ -20,9 +21,13 @@ class ProcessFake extends Process
     /** @inheritDoc */
     protected $status;
 
+    /** @inheritDoc */
+    private $exitcode;
+
     private $fakeTimeout = false;
     private $outputFake;
     private $errorOutputFake;
+    private $mustRaiseException = false;
 
     /**
      * Do nothing or invokes original method when we want to cause an error by timeout
@@ -37,6 +42,9 @@ class ProcessFake extends Process
             $this->starttime = microtime(true);
         }
         $this->status = self::STATUS_STARTED;
+        if ($this->mustRaiseException) {
+            throw new ProcessFailedException($this);
+        }
     }
 
     /**
@@ -82,23 +90,22 @@ class ProcessFake extends Process
         return $this->isSuccessful;
     }
 
-
     /**
      * @inheritDoc
      */
-    public function getOutput()
+    public function getOutput(): string
     {
+        // dd(! $this->isSuccessful, $this->outputFake);
         if (! $this->isSuccessful) {
             return $this->outputFake;
         }
         return '';
     }
 
-
     /**
      * @inheritDoc
      */
-    public function getErrorOutput()
+    public function getErrorOutput(): string
     {
         if (! $this->isSuccessful) {
             return $this->errorOutputFake;
@@ -149,11 +156,10 @@ class ProcessFake extends Process
     public function setFailByException(): ProcessFake
     {
         $this->isSuccessful = false;
+        $this->mustRaiseException = true;
         $nameTool = $this->extractToolName();
-
-        // getErrorOutput() o getOutput() o Exeception
-        // $this->errorOutputFake = "\nThe tool $nameTool mocks an error\n";
-
+        $this->outputFake = $this->errorOutputFake = "$nameTool fakes an exception";
+        $this->exitcode = 1;
         return $this;
     }
 
@@ -165,11 +171,12 @@ class ProcessFake extends Process
         return $this;
     }
 
-    public function setFailByErrorsWithExitCode0(): ProcessFake
+    public function setFailByFoundedErrorsInNormalOutput(): ProcessFake
     {
         $this->isSuccessful = false;
         $nameTool = $this->extractToolName();
-        $this->outputFake = "\n$nameTool fakes an error with exit code 0\n";
+        $this->outputFake = "\n$nameTool fakes an error in normal output\n";
+        $this->errorOutputFake = '';
         return $this;
     }
 

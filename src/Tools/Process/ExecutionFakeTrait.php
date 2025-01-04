@@ -22,7 +22,7 @@ trait ExecutionFakeTrait
     protected $failedToolsByFoundedErrors = [];
 
     /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
-    protected $failedToolsByFoundedErrorsWithExitCode0 = [];
+    protected $setFailByFoundedErrorsInNormalOutput = [];
 
     /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
     protected $toolsWithTimeout = [];
@@ -44,14 +44,15 @@ trait ExecutionFakeTrait
             $this->processes[$tool]->setFailByFoundedErrors();
         }
 
-        foreach ($this->failedToolsByFoundedErrorsWithExitCode0 as $tool) {
-            $this->processes[$tool]->setFailByErrorsWithExitCode0();
+        foreach ($this->setFailByFoundedErrorsInNormalOutput as $tool) {
+            $this->processes[$tool]->setFailByFoundedErrorsInNormalOutput();
         }
         foreach ($this->toolsWithTimeout as $tool) {
             $this->processes[$tool]->triggerTimeout();
         }
     }
 
+    // // TODO deprecated?
     public function setToolsThatMustFail(array $toolsThatMustFail): void
     {
         $this->toolsThatMustFail = $toolsThatMustFail;
@@ -67,13 +68,27 @@ trait ExecutionFakeTrait
         $this->failedToolsByFoundedErrors = $failedToolsByFoundedErrors;
     }
 
-    public function failedToolsByFoundedErrorsWithExitCode0(array $failedToolsByFoundedErrorsWithExitCode0): void
+    public function setFailByFoundedErrorsInNormalOutput(array $setFailByFoundedErrorsInNormalOutput): void
     {
-        $this->failedToolsByFoundedErrorsWithExitCode0 = $failedToolsByFoundedErrorsWithExitCode0;
+        $this->setFailByFoundedErrorsInNormalOutput = $setFailByFoundedErrorsInNormalOutput;
     }
 
     public function setToolsWithTimeout(array $toolsWithTimeout): void
     {
         $this->toolsWithTimeout = $toolsWithTimeout;
+    }
+
+    protected function addProcessToQueue(): void
+    {
+        foreach ($this->processes as $toolName => $process) {
+            if (count($this->runningProcesses) === $this->threads) {
+                break;
+            }
+            if (!in_array($process, $this->runningProcesses) && !in_array($process, $this->runnedProcesses)) {
+                $this->startProcess($process);
+                $this->runningProcesses[$toolName] = $process;
+            }
+        }
+        parent::addProcessToQueue();
     }
 }
