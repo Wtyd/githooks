@@ -43,15 +43,8 @@ abstract class ProcessExecutionAbstract
     {
         $this->tools = $tools;
         $this->threads = $threads;
-
         $this->createProcesses();
-
-        try {
-            return $this->runProcesses();
-        } catch (\Throwable $th) {
-            $this->errors->setError('General', $th->getMessage());
-            return $this->errors;
-        }
+        return $this->runProcesses();
     }
 
     abstract protected function runProcesses(): Errors;

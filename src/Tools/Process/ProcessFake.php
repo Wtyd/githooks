@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Process;
 
+use Symfony\Component\Process\Exception\ProcessFailedException;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ProcessFake extends Process
@@ -18,9 +19,15 @@ class ProcessFake extends Process
     private $isSuccessful = true;
 
     /** @inheritDoc */
-    private $output;
+    protected $status;
+
+    /** @inheritDoc */
+    private $exitcode;
 
     private $fakeTimeout = false;
+    private $outputFake;
+    private $errorOutputFake;
+    private $mustRaiseException = false;
 
     /**
      * Do nothing or invokes original method when we want to cause an error by timeout
@@ -33,6 +40,10 @@ class ProcessFake extends Process
         } else {
             // Do nothing
             $this->starttime = microtime(true);
+        }
+        $this->status = self::STATUS_STARTED;
+        if ($this->mustRaiseException) {
+            throw new ProcessFailedException($this);
         }
     }
 
@@ -80,12 +91,26 @@ class ProcessFake extends Process
     }
 
     /**
-     * Only in MultiProcessExecution when the execution fails
      * @inheritDoc
      */
     public function getOutput(): string
     {
-        return $this->output;
+        // dd(! $this->isSuccessful, $this->outputFake);
+        if (! $this->isSuccessful) {
+            return $this->outputFake;
+        }
+        return '';
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getErrorOutput(): string
+    {
+        if (! $this->isSuccessful) {
+            return $this->errorOutputFake;
+        }
+        return '';
     }
 
     /**
@@ -97,16 +122,9 @@ class ProcessFake extends Process
         return $this->isSuccessful ? 0 : 1;
     }
 
-    /**
-     * Mocks that the process fails.
-     *
-     * @return ProcessFake
-     */
-    public function setFail(): ProcessFake
+    private function extractToolName(): string
     {
-        $this->isSuccessful = false;
         $ex = explode(' ', $this->getCommandLine());
-
 
         $tools = array_keys(ToolAbstract::SUPPORTED_TOOLS);
         $nameTool = '';
@@ -116,9 +134,49 @@ class ProcessFake extends Process
                 break;
             }
         }
+        return $nameTool;
+    }
 
-        $this->output = "\nThe tool $nameTool mocks an error\n";
+    /**
+     * Mocks that the process fails.
+     *
+     * @return ProcessFake
+     */
+    public function setFail(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $nameTool = $this->extractToolName();
 
+        // getErrorOutput() o getOutput() o Exeception
+        $this->errorOutputFake = "\nThe tool $nameTool mocks an error\n";
+
+        return $this;
+    }
+
+    public function setFailByException(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $this->mustRaiseException = true;
+        $nameTool = $this->extractToolName();
+        $this->outputFake = $this->errorOutputFake = "$nameTool fakes an exception";
+        $this->exitcode = 1;
+        return $this;
+    }
+
+    public function setFailByFoundedErrors(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $nameTool = $this->extractToolName();
+        $this->errorOutputFake = "\n$nameTool fakes an error\n";
+        return $this;
+    }
+
+    public function setFailByFoundedErrorsInNormalOutput(): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $nameTool = $this->extractToolName();
+        $this->outputFake = "\n$nameTool fakes an error in normal output\n";
+        $this->errorOutputFake = '';
         return $this;
     }
 

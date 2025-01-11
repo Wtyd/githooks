@@ -10,6 +10,9 @@ class ProcessExecution extends ProcessExecutionAbstract
 {
     public function runProcesses(): Errors
     {
+        if (empty($this->tools)) {
+            return $this->errors;
+        }
         $toolName = array_keys($this->tools)[0];
         $process = $this->processes[$toolName];
 
