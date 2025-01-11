@@ -33,18 +33,20 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
                     $this->addProcessToQueue();
                     foreach ($this->runningProcesses as $toolName => $process) {
                         // $process->checkTimeout(); // timeout is null for now
+                        // throw new \Exception('asdfasdf');
                         if ($process->isTerminated()) {
                             $this->numberOfRunnedProcesses = $this->finishExecution($process, $toolName);
                         }
                     }
                 } catch (ProcessTimedOutException $th) {
-                    // dd($th->getMessage());
                     $toolName = (string)array_search($th->getProcess(), $this->processes);
                     $this->numberOfRunnedProcesses = $this->finishExecution($th->getProcess(), $toolName, $th->getMessage());
                 } catch (ProcessFailedException $th) {
-                    // dd($th->getMessage());
+                    // dd($this->numberOfRunnedProcesses);
                     $toolName = (string)array_search($th->getProcess(), $this->processes);
                     $this->numberOfRunnedProcesses = $this->finishExecution($th->getProcess(), $toolName);
+                } catch (Throwable $th) {
+                    $this->errors->setError('Tool crash', $th->getMessage());
                 }
             } while ($totalProcesses > $this->numberOfRunnedProcesses);
         } catch (\Throwable $th) {
