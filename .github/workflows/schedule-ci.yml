@@ -4,7 +4,6 @@ on:
   schedule:
     - cron:  '0 4 * * sun' # Sundays at 04 am
 
-
 env:
   extensions: mbstring #intl, pcov
   codecoverage_path: reports/coverage
@@ -18,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.3']
+        php-versions: ['8.4']
     name: Code Coverage
     steps:
     - name: Checkout
@@ -68,7 +67,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.3']
+        php-versions: ['8.4']
     name: Infection
     steps:
     - name: Checkout
@@ -121,7 +120,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.3']
+        php-versions: ['8.4']
     name: PhpMetrics
     steps:
     - name: Checkout
