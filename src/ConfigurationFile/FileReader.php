@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile;
 
+use InvalidArgumentException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
@@ -20,17 +21,29 @@ class FileReader
     }
 
     /**
-     * @return array File configuration githooks.yml in associative array format.
+     * @return array File configuration in associative array format.
      *
      * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException
      * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
+     * @throws \InvalidArgumentException
      */
     public function readFile(): array
     {
         $configurationFilePath = $this->findConfigurationFile();
 
         try {
-            $configurationFile = Yaml::parseFile($configurationFilePath);
+            $fileExtension = pathinfo($configurationFilePath, PATHINFO_EXTENSION);
+
+            if ($fileExtension === 'yml' || $fileExtension === 'yaml') {
+                $configurationFile = Yaml::parseFile($configurationFilePath);
+            } elseif ($fileExtension === 'php') {
+                $configurationFile = require $configurationFilePath;
+                if (!is_array($configurationFile)) {
+                    throw new ParseConfigurationFileException('PHP configuration file does not return an array.');
+                }
+            } else {
+                throw new InvalidArgumentException('Unsupported file type.');
+            }
         } catch (ParseException $exception) {
             throw ParseConfigurationFileException::forMessage($exception->getMessage());
         }
@@ -39,7 +52,7 @@ class FileReader
     }
 
     /**
-     * Searchs configuration file 'githooks.yml' on root path and qa/ directory
+     * Searchs configuration file on root path and qa/ directory
      *
      * @return string The path of configuration file
      *
@@ -47,11 +60,21 @@ class FileReader
      */
     public function findConfigurationFile(): string
     {
-        if (file_exists("$this->rootPath/githooks.yml")) {
-            $configFile = "$this->rootPath/githooks.yml";
-        } elseif (file_exists("$this->rootPath/qa/githooks.yml")) {
-            $configFile = "$this->rootPath/qa/githooks.yml";
-        } else {
+        $possiblePaths = [
+            "$this->rootPath/githooks.php",
+            "$this->rootPath/qa/githooks.php",
+            "$this->rootPath/githooks.yml",
+            "$this->rootPath/qa/githooks.yml"
+        ];
+
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path)) {
+                $configFile = $path;
+                break;
+            }
+        }
+
+        if (!isset($configFile)) {
             throw new ConfigurationFileNotFoundException();
         }
 
