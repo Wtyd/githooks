@@ -3,11 +3,13 @@
 namespace Tests\Unit\ConfigurationFile;
 
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\{
+    ConfigurationFileBuilder,
     TestCase\UnitTestCase,
     Traits\VirtualFileSystemTrait
 };
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
 
 /**
@@ -89,5 +91,43 @@ class FileReaderTest extends UnitTestCase
         $this->assertEquals($rootFileArray, $fileReaded);
 
         $this->assertNotEquals($qaFileArray, $fileReaded);
+    }
+
+    /**
+    * @test
+    * @expectedException \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
+    */
+    function it_throws_exception_when_configuration_file_not_found()
+    {
+        $this->createFileSystem([]);
+        $this->expectException(ConfigurationFileNotFoundException::class);
+        $this->fileReader->readFile();
+    }
+
+    /**
+     * @test
+     * @expectedException \Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException
+     */
+    function it_throws_exception_when_yaml_file_is_invalid()
+    {
+        $invalidYaml = "invalid: yaml: content";
+        $fileSystemStructure = ['githooks.yml' => $invalidYaml];
+        $this->createFileSystem($fileSystemStructure);
+
+        $this->expectException(ParseConfigurationFileException::class);
+        $this->fileReader->readFile();
+    }
+
+    /**
+     * @test
+     * @expectedException \InvalidArgumentException
+     */
+    function it_throws_exception_when_file_type_is_not_supported()
+    {
+        $fileSystemStructure = ['githooks.txt' => 'unsupported content'];
+        $this->createFileSystem($fileSystemStructure);
+
+        $this->expectException(ConfigurationFileNotFoundException::class);
+        $this->fileReader->readFile();
     }
 }

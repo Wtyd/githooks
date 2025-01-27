@@ -69,6 +69,7 @@ class FileReader
 
         foreach ($possiblePaths as $path) {
             if (file_exists($path)) {
+                // dd($path);
                 $configFile = $path;
                 break;
             }
