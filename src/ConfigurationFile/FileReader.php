@@ -33,7 +33,7 @@ class FileReader
 
         try {
             $fileExtension = pathinfo($configurationFilePath, PATHINFO_EXTENSION);
-
+            // dd($configurationFilePath);
             if ($fileExtension === 'yml' || $fileExtension === 'yaml') {
                 $configurationFile = Yaml::parseFile($configurationFilePath);
             } elseif ($fileExtension === 'php') {
@@ -69,7 +69,6 @@ class FileReader
 
         foreach ($possiblePaths as $path) {
             if (file_exists($path)) {
-                // dd($path);
                 $configFile = $path;
                 break;
             }
