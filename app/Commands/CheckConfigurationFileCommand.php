@@ -15,8 +15,8 @@ use Wtyd\GitHooks\Utils\Printer;
 
 class CheckConfigurationFileCommand extends Command
 {
-    protected $signature = 'conf:check';
-    protected $description = 'Check that the githooks.yml configuration file exists and that it is in the proper format.';
+    protected $signature = 'conf:check  {-c|--config= : Path to configuration file}';
+    protected $description = 'Check that the configuration file exists and that it is in the proper format.';
 
     /** @var  FileReader */
     protected $fileReader;
@@ -39,7 +39,7 @@ class CheckConfigurationFileCommand extends Command
     {
         $errors = new Errors();
         try {
-            $file = $this->fileReader->readfile();
+            $file = $this->fileReader->readfile(strval($this->option('config')));
 
             $configurationFile = new ConfigurationFile($file, ConfigurationFile::ALL_TOOLS);
 

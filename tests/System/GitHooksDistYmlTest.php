@@ -12,6 +12,7 @@ class GitHooksDistYmlTest extends SystemTestCase
     {
         $distFile = Storage::get('qa/githooks.dist.yml');
         $distFile = preg_replace('/^\# /m', '', $distFile);
+        $distFile = str_replace("Old Configuration File. Now in php", "# Old Configuration File. Now in php", $distFile);
         $distFile = str_replace("Configuration of each tool", "# Configuration of each tool", $distFile);
         return Yaml::parse($distFile);
     }
