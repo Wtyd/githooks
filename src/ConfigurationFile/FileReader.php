@@ -27,13 +27,23 @@ class FileReader
      * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
      * @throws \InvalidArgumentException
      */
-    public function readFile(): array
+    public function readFile(string $configFile = ''): array
     {
-        $configurationFilePath = $this->findConfigurationFile();
+        $configurationFilePath = '';
+        if (!empty($configFile)) {
+            // dd(strpos($configFile, DIRECTORY_SEPARATOR) === 0, $configFile);
+            if (strpos($configFile, DIRECTORY_SEPARATOR) === 0) {
+                $configurationFilePath = $configFile;
+            } else {
+                $configurationFilePath = $this->rootPath . DIRECTORY_SEPARATOR . $configFile;
+            }
+        } else {
+            $configurationFilePath = $this->findConfigurationFile();
+        }
 
         try {
             $fileExtension = pathinfo($configurationFilePath, PATHINFO_EXTENSION);
-            // dd($configurationFilePath);
+            // dd($fileExtension);
             if ($fileExtension === 'yml' || $fileExtension === 'yaml') {
                 $configurationFile = Yaml::parseFile($configurationFilePath);
             } elseif ($fileExtension === 'php') {

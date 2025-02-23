@@ -16,7 +16,7 @@ class ReadConfigurationFileAction
 
     public function __invoke(CliArguments $cliArguments): ConfigurationFile
     {
-        $file = $this->fileReader->readfile();
+        $file = $this->fileReader->readfile($cliArguments->getConfigFile());
 
         $file = $cliArguments->overrideArguments($file);
 

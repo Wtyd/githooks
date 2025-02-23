@@ -3,6 +3,7 @@
 namespace Tests\Unit\ConfigurationFile;
 
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
+use org\bovigo\vfs\vfsStream;
 use Tests\Utils\{
     ConfigurationFileBuilder,
     TestCase\UnitTestCase,
@@ -183,6 +184,49 @@ class FileReaderTest extends UnitTestCase
         $this->createFileSystem($fileSystemStructure);
 
         $fileReaded = $this->fileReader->readFile();
+
+        $this->assertEquals($expectedConfig, $fileReaded);
+    }
+
+    /** @test */
+    function it_reads_configuration_file_from_relative_path()
+    {
+        $yamlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
+        $relativePath = 'custom/path/githooks.yml';
+
+        $fileSystemStructure = [
+            'custom' => [
+                'path' => [
+                    'githooks.yml' => $yamlConfig
+                ]
+            ]
+        ];
+        $this->createFileSystem($fileSystemStructure);
+        $expectedConfig = $this->configurationFileBuilder->buildArray();
+        $fileReaded = $this->fileReader->readFile($relativePath);
+
+        $this->assertEquals($expectedConfig, $fileReaded);
+    }
+
+    /** @test */
+    function it_prioritizes_configFile_parameter_over_default_search()
+    {
+        $yamlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
+        $phpConfig = "<?php return ['tools' => ['phpunit']];";
+        $relativePath = 'custom/path/githooks.yml';
+        $fileSystemStructure = [
+            'githooks.php' => $phpConfig,
+            'custom' => [
+                'path' => [
+                    'githooks.yml' => $yamlConfig
+                ]
+            ]
+        ];
+
+        $this->createFileSystem($fileSystemStructure);
+
+        $expectedConfig = $this->configurationFileBuilder->buildArray();
+        $fileReaded = $this->fileReader->readFile($relativePath);
 
         $this->assertEquals($expectedConfig, $fileReaded);
     }
