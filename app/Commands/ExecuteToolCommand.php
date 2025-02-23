@@ -15,11 +15,13 @@ class ExecuteToolCommand extends BaseCommand
     protected $signature = 'tool 
                             {tool : Tool will be run}
                             {execution? : Override the execution mode of githooks.yml. Values: "fast" and "full"}
-                            {--ignoreErrorsOnExit= : Avoids exit error even if the tool finds some trobule. When tool is \'all\' applies for all tools}
+                            {--ignoreErrorsOnExit= : Avoids exit error even if the tool finds some trouble. When tool is \'all\' applies for all tools}
                             {--otherArguments= : Other tool options not supported by GitHooks}
                             {--executablePath= : Path to executable}
                             {--paths= :  Paths or files against the tool will be executed}
-                            {--processes= : Number of parallel processes in which the tools will be executed}';
+                            {--processes= : Number of parallel processes in which the tools will be executed}
+                            {-c|--config= : Path to configuration file}'
+                            ;
 
     protected $description = 'Run the tool passed as argument. It must be a supported tool by GitHooks. the available options depend on the tool passed as parameter';
 
@@ -38,7 +40,8 @@ class ExecuteToolCommand extends BaseCommand
                     strval($this->option('otherArguments')),
                     strval($this->option('executablePath')),
                     strval($this->option('paths')),
-                    intval($this->option('processes'))
+                    intval($this->option('processes')),
+                    strval($this->option('config'))
                 ));
 
             $tools = $this->toolsPreparer->__invoke($configurationFile);

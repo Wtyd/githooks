@@ -261,6 +261,8 @@ class ReadConfigurationFileActionTest extends UnitTestCase
 
         $action = new ReadConfigurationFileAction($fileReaderFake);
 
+        // merge $cliArgumentsParameters with 'config' = ''
+        $cliArgumentsParameters = array_merge($cliArgumentsParameters, ['config' => '']);
         $cliArguments = new CliArguments(
             $cliArgumentsParameters['tool'],
             $cliArgumentsParameters['execution'],
@@ -268,7 +270,8 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             $cliArgumentsParameters['otherArguments'],
             $cliArgumentsParameters['executablePath'],
             $cliArgumentsParameters['paths'],
-            $cliArgumentsParameters['processes']
+            $cliArgumentsParameters['processes'],
+            $cliArgumentsParameters['config']
         );
 
         $configurationFile = $action($cliArguments);

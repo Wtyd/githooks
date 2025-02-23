@@ -29,6 +29,9 @@ class CliArguments
     /** @var int */
     protected $processes;
 
+    /** @var string */
+    protected $configFile;
+
     public function __construct(
         string $tool,
         string $execution,
@@ -36,7 +39,8 @@ class CliArguments
         string $otherArguments,
         string $executablePath,
         string $paths,
-        int $processes
+        int $processes,
+        string $configFile = ''
     ) {
         $this->tool = $tool;
         $this->execution = $execution;
@@ -45,6 +49,7 @@ class CliArguments
         $this->executablePath = $executablePath;
         $this->paths = $paths;
         $this->processes = $processes;
+        $this->configFile = $configFile;
     }
 
     public function overrideArguments(array $configurationFile): array
@@ -92,6 +97,11 @@ class CliArguments
         }
 
         return $toolConfiguration;
+    }
+
+    public function getConfigFile(): string
+    {
+        return $this->configFile;
     }
 
     public function getTool(): string

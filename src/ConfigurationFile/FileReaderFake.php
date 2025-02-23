@@ -21,10 +21,10 @@ class FileReaderFake extends FileReader
      *
      * @return array
      */
-    public function readFile(): array
+    public function readFile(string $configFile = ''): array
     {
         if (empty($this->mockConfigurationFile)) {
-            return parent::readFile();
+            return parent::readFile($configFile);
         } else {
             return $this->mockConfigurationFile;
         }
