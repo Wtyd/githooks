@@ -50,10 +50,10 @@ class FileReaderTest extends UnitTestCase
     {
         return [
             'From root directory' => [
-                ['githooks.yml' => $this->setConfigurationFileBuilder()->buildYalm()]
+                ['githooks.yml' => $this->setConfigurationFileBuilder()->buildYaml()]
             ],
             'From qa/ directory' => [
-                'qa' => ['githooks.yml' => $this->setConfigurationFileBuilder()->buildYalm()]
+                'qa' => ['githooks.yml' => $this->setConfigurationFileBuilder()->buildYaml()]
             ]
         ];
     }
@@ -74,10 +74,10 @@ class FileReaderTest extends UnitTestCase
      */
     function it_searchs_configuration_file_first_in_the_root_directory()
     {
-        $rootFileYalm = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
+        $rootFileYalm = $this->configurationFileBuilder->setTools(['phpcs'])->buildYaml();
         $rootFileArray = $this->configurationFileBuilder->buildArray();
 
-        $qaFileYalm = $this->configurationFileBuilder->setTools(['parrallel-lint'])->buildYalm();
+        $qaFileYalm = $this->configurationFileBuilder->setTools(['parrallel-lint'])->buildYaml();
         $qaFileArray = $this->configurationFileBuilder->buildArray();
 
         $fileSystemStructure = [
@@ -136,7 +136,7 @@ class FileReaderTest extends UnitTestCase
     function it_prioritizes_php_files_over_yml()
     {
         $phpConfig = "<?php return ['tools' => ['phpunit']];";
-        $ymlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
+        $ymlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYaml();
 
         $fileSystemStructure = [
             'githooks.php' => $phpConfig,
@@ -161,8 +161,8 @@ class FileReaderTest extends UnitTestCase
                 'php'
             ],
             'YAML files' => [
-                $this->setConfigurationFileBuilder()->setTools(['phpunit'])->buildYalm(),
-                $this->setConfigurationFileBuilder()->setTools(['phpcs'])->buildYalm(),
+                $this->setConfigurationFileBuilder()->setTools(['phpunit'])->buildYaml(),
+                $this->setConfigurationFileBuilder()->setTools(['phpcs'])->buildYaml(),
                 $this->setConfigurationFileBuilder()->setTools(['phpunit'])->buildArray(),
                 'yml'
             ]
@@ -191,7 +191,7 @@ class FileReaderTest extends UnitTestCase
     /** @test */
     function it_reads_configuration_file_from_relative_path()
     {
-        $yamlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
+        $yamlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYaml();
         $relativePath = 'custom/path/githooks.yml';
 
         $fileSystemStructure = [
@@ -211,7 +211,7 @@ class FileReaderTest extends UnitTestCase
     /** @test */
     function it_prioritizes_configFile_parameter_over_default_search()
     {
-        $yamlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYalm();
+        $yamlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYaml();
         $phpConfig = "<?php return ['tools' => ['phpunit']];";
         $relativePath = 'custom/path/githooks.yml';
         $fileSystemStructure = [
