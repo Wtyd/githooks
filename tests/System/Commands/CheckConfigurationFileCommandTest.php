@@ -103,4 +103,25 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(1)
             ->containsStringInOutput("Configuration file must be 'githooks.yml' in root directory or in qa/ directory");
     }
+
+    /** @test */
+    function it_check_the_config_file_pass_as_argument()
+    {
+        // valid file in custom path
+        $configFilePath = 'custom/path';
+        $this->configurationFileBuilder->buildInFileSystem($configFilePath);
+
+        // file with erros in root path
+        $this->configurationFileBuilder
+            ->setTools([])
+            ->setOptions(['invent option' => 1])
+            ->buildInFileSystem();
+
+        $this->artisan("conf:check --config custom/path/githooks.yml")
+            ->assertExitCode(0)
+            ->expectsTable(['Options', 'Values'], [['execution', 'full'], ['processes', 1]])
+            ->expectsOutput('The file githooks.yml has the correct format.')
+            ->notContainsStringInOutput("The 'Tools' tag from configuration file is empty")
+            ->notcontainsStringInOutput("The key 'invent option' is not a valid option");
+    }
 }

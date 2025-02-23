@@ -174,7 +174,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_runs_all_configured_tools_at_same_time($tools, $commandUnderTheHood)
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setTools($tools)->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setTools($tools)->buildYaml());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
@@ -243,7 +243,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_runs_only_configured_tools_in_Tools_tag_at_same_time($tools, $runnedTools, $notRunnedTools)
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setTools($tools)->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setTools($tools)->buildYaml());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
@@ -332,7 +332,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     /** @test */
     function it_prints_error_when_the_tool_has_not_configuration_and_it_is_required()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setConfigurationTools([])->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setConfigurationTools([])->buildYaml());
 
         file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
 
@@ -352,7 +352,7 @@ class ExecuteToolCommandTest extends SystemTestCase
      */
     function it_can_be_override_full_execution_from_githooksyml_for_fast_execution_from_cli()
     {
-        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setOptions(['execution' =>  'full'])->buildYalm());
+        file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setOptions(['execution' =>  'full'])->buildYaml());
 
         $pathForFileWithoutErrors = $this->path . '/src/File.php';
         file_put_contents($pathForFileWithoutErrors, $this->fileBuilder->build());
@@ -404,7 +404,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'standard' => 'PSR12',
                     'ignore' =>  ['vendor'],
                 ])
-                ->buildYalm()
+                ->buildYaml()
         );
 
         $file = $this->path . '/src/File.php';

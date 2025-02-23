@@ -17,7 +17,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         mkdir('vendor/wtyd/githooks/qa/', 0777, true);
         file_put_contents(
             'vendor/wtyd/githooks/qa/githooks.dist.yml',
-            $this->configurationFileBuilder->buildYalm()
+            $this->configurationFileBuilder->buildYaml()
         );
 
         passthru("$this->githooks conf:init", $exitCode);

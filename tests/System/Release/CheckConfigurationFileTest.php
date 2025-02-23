@@ -14,7 +14,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->buildYalm()
+            $this->configurationFileBuilder->buildYaml()
         );
 
         passthru("$this->githooks conf:check", $exitCode);
@@ -28,7 +28,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->setOptions(['invalidOptionTest' => 1])->buildYalm()
+            $this->configurationFileBuilder->setOptions(['invalidOptionTest' => 1])->buildYaml()
         );
 
         passthru("$this->githooks conf:check", $exitCode);
@@ -43,7 +43,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->setTools([])->buildYalm()
+            $this->configurationFileBuilder->setTools([])->buildYaml()
         );
 
         passthru("$this->githooks conf:check", $exitCode);

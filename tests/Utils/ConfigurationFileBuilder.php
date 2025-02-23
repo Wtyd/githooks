@@ -2,29 +2,25 @@
 
 namespace Tests\Utils;
 
-use Wtyd\GitHooks\Tools\Tool\{
-    Phpcpd,
-    SecurityChecker,
-    ParallelLint,
-    Phpmd,
-    Phpstan,
-    ToolAbstract
-};
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
-    Phpcs,
-    Phpcbf
-};
 use Symfony\Component\Yaml\Yaml;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\OptionsConfiguration;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
+use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
+use Wtyd\GitHooks\Tools\Tool\ParallelLint;
+use Wtyd\GitHooks\Tools\Tool\Phpcpd;
+use Wtyd\GitHooks\Tools\Tool\Phpmd;
+use Wtyd\GitHooks\Tools\Tool\Phpstan;
+use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 /**
  * Facilitates the creation of custom 'githooks.yml' configuration files for testing.
  * By default prepares a full configuration file. After, you can change each part of the file with the 'set' methods.
  * Finally you must 'build' the file:
  *      1. build method: build the file on array associative format.
- *      2. buildYalm: build the file on yalm format.
+ *      2. buildYaml: build the file on yalm format.
  */
 class ConfigurationFileBuilder
 {
@@ -159,7 +155,7 @@ class ConfigurationFileBuilder
      *
      * @return string
      */
-    public function buildYalm(): string
+    public function buildYaml(): string
     {
         return Yaml::dump($this->buildArray());
     }
@@ -169,9 +165,21 @@ class ConfigurationFileBuilder
      *
      * @return void
      */
-    public function buildInFileSystem(): void
+    public function buildInFileSystem($path = ''): void
     {
-        file_put_contents($this->rootPath . '/' . self::FILE_NAME, $this->buildYalm());
+        $finalPath = '';
+        if (!empty($path)) {
+            $finalPath = "$this->rootPath/$path";
+            $finalPath = rtrim($finalPath, '/');
+        } else {
+            $finalPath = $this->rootPath;
+        }
+
+        if (!is_dir($finalPath)) {
+            mkdir($finalPath, 0777, true);
+        }
+
+        file_put_contents($finalPath . '/' . self::FILE_NAME, $this->buildYaml());
     }
 
     /**

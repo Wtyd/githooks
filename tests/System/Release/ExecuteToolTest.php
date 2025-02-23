@@ -46,7 +46,7 @@ class ExecuteToolTest extends ReleaseTestCase
             'githooks.yml',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
-                ->buildYalm()
+                ->buildYaml()
         );
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
@@ -83,7 +83,7 @@ class ExecuteToolTest extends ReleaseTestCase
             'githooks.yml',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
-                ->buildYalm()
+                ->buildYaml()
         );
 
         file_put_contents(
@@ -114,7 +114,7 @@ class ExecuteToolTest extends ReleaseTestCase
         file_put_contents(
             'githooks.yml',
             $this->configurationFileBuilder->setTools(['phpcbf'])
-                ->buildYalm()
+                ->buildYaml()
         );
 
         file_put_contents(
@@ -162,7 +162,7 @@ class ExecuteToolTest extends ReleaseTestCase
             'githooks.yml',
             $this->configurationFileBuilder->setTools([$tool])
                 ->changeToolOption($tool, ['ignoreErrorsOnExit' => true])
-                ->buildYalm()
+                ->buildYaml()
         );
 
         file_put_contents(
@@ -182,7 +182,7 @@ class ExecuteToolTest extends ReleaseTestCase
         file_put_contents(
             'githooks.yml',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
-                ->buildYalm()
+                ->buildYaml()
         );
         passthru("$this->githooks tool all --processes=2", $exitCode);
 
