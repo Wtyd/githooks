@@ -16,16 +16,18 @@ class CreateConfigurationFileTest extends ReleaseTestCase
 
         mkdir('vendor/wtyd/githooks/qa/', 0777, true);
         file_put_contents(
-            'vendor/wtyd/githooks/qa/githooks.dist.yml',
+            'vendor/wtyd/githooks/qa/githooks.dist.php',
             $this->configurationFileBuilder->buildYaml()
         );
 
         passthru("$this->githooks conf:init", $exitCode);
 
-        $this->assertStringContainsString('Configuration file githooks.yml has been created in root path', $this->getActualOutput());
+        $this->assertStringContainsString('Configuration file githooks.php has been created in root path', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
         $this->assertFileExists('githooks.yml');
 
         $this->deleteDirStructure('vendor/wtyd');
     }
+
+    // TODO: Add test to check if the file already exists
 }
