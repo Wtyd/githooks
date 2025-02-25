@@ -12,20 +12,20 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     {
         $templatePath = $this->path . '/vendor/wtyd/githooks/qa/';
         mkdir($templatePath, 0777, true);
-        file_put_contents($templatePath . 'githooks.dist.yml', '');
+        file_put_contents($templatePath . 'githooks.dist.php', '');
 
         $this->artisan('conf:init')
-            ->containsStringInOutput('Configuration file githooks.yml has been created in root path')
+            ->containsStringInOutput('Configuration file githooks.php has been created in root path')
             ->assertExitCode(0);
 
-        $this->assertFileEquals($templatePath . 'githooks.dist.yml', $this->path . '/githooks.yml');
+        $this->assertFileEquals($templatePath . 'githooks.dist.php', $this->path . '/githooks.php');
     }
 
     public function configurationFileDataProvider()
     {
         return [
-            'The configuration file is in the root directory' => ['githooks.yml'],
-            'The configuration file is in the qa directory' => ['qa/githooks.yml'],
+            'The configuration file is in the root directory' => ['githooks.php'],
+            'The configuration file is in the qa directory' => ['qa/githooks.php'],
         ];
     }
 
@@ -38,18 +38,17 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
         Storage::put($path, 'Configuration file contents');
 
         $this->artisan('conf:init')
-            ->containsStringInOutput('githooks.yml configuration file already exists')
+            ->containsStringInOutput('githooks configuration file already exists')
             ->assertExitCode(1);
     }
 
     /** @test */
     function it_prints_an_error_message_when_something_wrong_happens()
     {
-        $this->markTestSkipped("I can't mock the wrong way");
         $this->artisan('conf:init')
-            ->containsStringInOutput('Failed to copy vendor/wtyd/githooks/qa/githooks.dist.yml to githooks.yml')
+            ->containsStringInOutput('Failed to copy vendor/wtyd/githooks/qa/githooks.dist.php to githooks.php')
             ->assertExitCode(1);
 
-        $this->assertFileDoesNotExist($this->path . '/githooks.yml');
+        $this->assertFileDoesNotExist($this->path . '/githooks.php');
     }
 }

@@ -29,39 +29,29 @@ class CreateConfigurationFileCommand extends Command
 
     public function handle()
     {
-        $origin = "vendor/wtyd/githooks/qa/githooks.dist.yml";
-        $destiny = "githooks.yml";
+        $origin = 'vendor/wtyd/githooks/qa/githooks.dist.php';
+        $destiny = 'githooks.php';
 
         try {
             $this->fileReader->findConfigurationFile();
         } catch (ConfigurationFileNotFoundException $ex) {
-            $this->copyFile($origin, $destiny);
-            return 0;
+            return $this->copyFile($origin, $destiny);
         }
 
-        $this->printer->error('githooks.yml configuration file already exists');
+        $this->printer->error('githooks configuration file already exists');
         return 1;
-    }
-
-    protected function checkIfConfigurationFileExists(): bool
-    {
-        if (Storage::exists('githooks.yml') || Storage::exists('qa/githooks.yml')) {
-            $this->printer->error('githooks.yml configuration file already exists');
-            return false;
-        }
-        return true;
     }
 
     protected function copyFile(string $origin, string $destiny): int
     {
         try {
-            if (!Storage::copy($origin, $destiny)) {
-                $this->printer->error("Failed to copy $origin to $destiny");
-                return 1;
-            } else {
-                $this->printer->success('Configuration file githooks.yml has been created in root path');
+            // For php <8.0 when copy fails raise FileNotFoundException. False when >=8.0
+            if (Storage::copy($origin, $destiny)) {
+                $this->printer->success('Configuration file githooks.php has been created in root path');
                 return 0;
             }
+            $this->printer->error("Failed to copy $origin to $destiny");
+            return 1;
         } catch (\Throwable $th) {
             $this->printer->error("Failed to copy $origin to $destiny");
             return 1;
