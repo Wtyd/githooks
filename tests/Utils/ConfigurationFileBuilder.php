@@ -160,6 +160,11 @@ class ConfigurationFileBuilder
         return Yaml::dump($this->buildArray());
     }
 
+    public function buildPhp(): string
+    {
+        return '<?php' . PHP_EOL . 'return ' . var_export($this->buildArray(), true) . ';';
+    }
+
     /**
      * Creates the configuration file and saves it to the file system
      *

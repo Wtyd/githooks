@@ -14,7 +14,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->buildYaml()
+            $this->configurationFileBuilder->buildPhp()
         );
 
         passthru("$this->githooks conf:check", $exitCode);
@@ -27,8 +27,8 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     function it_checks_the_configuration_file_and_show_warning_and_return_exit_0()
     {
         file_put_contents(
-            'githooks.yml',
-            $this->configurationFileBuilder->setOptions(['invalidOptionTest' => 1])->buildYaml()
+            'githooks.php',
+            $this->configurationFileBuilder->setOptions(['invalidOptionTest' => 1])->buildPhp()
         );
 
         passthru("$this->githooks conf:check", $exitCode);
@@ -43,7 +43,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.yml',
-            $this->configurationFileBuilder->setTools([])->buildYaml()
+            $this->configurationFileBuilder->setTools([])->buildPhp()
         );
 
         passthru("$this->githooks conf:check", $exitCode);
@@ -60,7 +60,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
             'githooks.yml',
             $this->configurationFileBuilder
                 ->setTools(['invalid-tool'])
-                ->buildYaml()
+                ->buildPhp()
         );
 
         // Create valid config in custom folder
@@ -69,7 +69,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
             'custom/githooks.yml',
             $this->configurationFileBuilder
                 ->setTools(['phpunit', 'phpcs'])
-                ->buildYaml()
+                ->buildPhp()
         );
 
         // Check root config with errors
