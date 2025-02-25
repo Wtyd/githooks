@@ -98,7 +98,7 @@ At this moment, the supported tools are:
 * [Php Mess Detector](https://phpmd.org/)
 * [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint)
 * [Php Stan](https://github.com/phpstan/phpstan)
-* [Local PHP Security Checker](https://github.com/fabpot/local-php-security-checker)
+* ~~[Local PHP Security Checker](https://github.com/fabpot/local-php-security-checker)~~ Since Composer 2.4 local php security checker is replaced by `composer audit` 
 
 But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#set-your-own-script) on any git hook.
 

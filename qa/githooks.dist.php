@@ -15,7 +15,7 @@ return [
     ],
     // Configuration of each tool
     // 'security-checker' => [
-    //     'executablePath' => 'security-checker',
+    //     'executablePath' => 'composer audit',
     //     'otherArguments' => '-format json',
     //     'ignoreErrorsOnExit' => false // Optional: default false
     // ],
