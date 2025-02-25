@@ -14,11 +14,12 @@ class CreateConfigurationFileTest extends ReleaseTestCase
     {
         $this->deleteDirStructure('vendor/wtyd');
 
-        mkdir('vendor/wtyd/githooks/qa/', 0777, true);
-        file_put_contents(
-            'vendor/wtyd/githooks/qa/githooks.dist.php',
-            $this->configurationFileBuilder->buildYaml()
-        );
+        // mkdir('vendor/wtyd/githooks/qa/', 0777, true);
+        // file_put_contents(
+        //     'vendor/wtyd/githooks/qa/githooks.dist.php',
+        //     $this->configurationFileBuilder->buildYaml()
+        // );
+        $this->configurationFileBuilder->buildInFileSystem('vendor/wtyd/githooks/qa/');
 
         passthru("$this->githooks conf:init", $exitCode);
 

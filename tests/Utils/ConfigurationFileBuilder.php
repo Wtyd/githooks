@@ -184,7 +184,7 @@ class ConfigurationFileBuilder
             mkdir($finalPath, 0777, true);
         }
 
-        file_put_contents($finalPath . '/' . self::FILE_NAME, $this->buildYaml());
+        file_put_contents($finalPath . '/' . self::FILE_NAME, $this->buildPhp());
     }
 
     /**
