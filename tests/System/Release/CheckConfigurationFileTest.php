@@ -58,17 +58,18 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         // $this->configurationFileBuilder
         //         ->setTools(['invalid-tool'])
         //         ->buildInFileSystem();
-        mkdir('custom',)
+
         // Create valid config in custom folder
-        // file_put_contents(
-        //     'custom/githooks.php',
-        //     $this->configurationFileBuilder
-        //         ->setTools(['phpunit', 'phpcs'])
-        //         ->buildPhp()
-        // );
-        $this->configurationFileBuilder
-            ->setTools(['phpunit', 'phpcs'])
-                ->buildInFileSystem('custom');
+        mkdir('custom', 0777, true);
+        file_put_contents(
+            'custom/githooks.php',
+            $this->configurationFileBuilder
+                ->setTools(['phpunit', 'phpcs'])
+                ->buildPhp()
+        );
+        // $this->configurationFileBuilder
+        //     ->setTools(['phpunit', 'phpcs'])
+        //         ->buildInFileSystem('custom');
 
         // Check root config with errors
         passthru("$this->githooks conf:check", $exitCode);
