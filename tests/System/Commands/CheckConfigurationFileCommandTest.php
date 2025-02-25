@@ -23,7 +23,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             //     ['phpcbf', 'tools/php71/phpcbf ./ --standard=./qa/psr12-ruleset.xml --ignore=vendor,tools --error-severity=1 --warning-severity=6 --report=summary --parallel=2'],
             //     ['phpcs', 'tools/php71/phpcs ./ --standard=./qa/psr12-ruleset.xml --ignore=vendor,tools --error-severity=1 --warning-severity=6 --report=summary --parallel=2'],
             // ])
-            ->expectsOutput('The file githooks.yml has the correct format.');
+            ->expectsOutput('The configuration file has the correct format.');
     }
 
     public function optionsDataProvider()
@@ -60,7 +60,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             // ->expectsTable(['Tools', 'Commands'], [
             //     ['phpcs', 'tools/php71/phpcs ./ --standard=./qa/psr12-ruleset.xml --ignore=vendor,tools --error-severity=1 --warning-severity=6 --report=summary --parallel=2'],
             //     ['phpstan', 'vendor/bin/phpstan analyse -c ./qa/phpstan.neon --no-progress --ansi src'],
-            ->expectsOutput('The file githooks.yml has the correct format.');
+            ->expectsOutput('The configuration file has the correct format.');
     }
 
     /** @test */
@@ -120,7 +120,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
         $this->artisan("conf:check --config custom/path/githooks.yml")
             ->assertExitCode(0)
             ->expectsTable(['Options', 'Values'], [['execution', 'full'], ['processes', 1]])
-            ->expectsOutput('The file githooks.yml has the correct format.')
+            ->expectsOutput('The configuration file has the correct format.')
             ->notContainsStringInOutput("The 'Tools' tag from configuration file is empty")
             ->notcontainsStringInOutput("The key 'invent option' is not a valid option");
     }

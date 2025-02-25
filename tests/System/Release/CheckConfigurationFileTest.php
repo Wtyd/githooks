@@ -20,7 +20,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString('The file githooks.yml has the correct format.', $this->getActualOutput());
+        $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
     }
 
     /** @test */
@@ -34,7 +34,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString('The file githooks.yml has the correct format.', $this->getActualOutput());
+        $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
         $this->assertStringContainsString("The key 'invalidOptionTest' is not a valid option", $this->getActualOutput());
     }
 
