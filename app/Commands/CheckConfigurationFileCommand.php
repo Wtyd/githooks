@@ -58,7 +58,7 @@ class CheckConfigurationFileCommand extends Command
                 $toolsTable->getRows()
             );
 
-            $this->info('The file githooks.yml has the correct format.');
+            $this->info('The configuration file has the correct format.');
         } catch (ConfigurationFileNotFoundException $exception) {
             $errors->setError('set error', 'to return 1');
             $this->printer->resultError($exception->getMessage());
