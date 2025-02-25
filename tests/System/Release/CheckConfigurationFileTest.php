@@ -51,4 +51,37 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->assertEquals(1, $exitCode);
         $this->assertStringContainsString("The 'Tools' tag from configuration file is empty.", $this->getActualOutput());
     }
+
+    /** @test */
+    function it_handles_multiple_config_files_with_errors_and_valid()
+    {
+        // Create root config with errors
+        file_put_contents(
+            'githooks.yml',
+            $this->configurationFileBuilder
+                ->setTools(['invalid-tool'])
+                ->buildYaml()
+        );
+
+        // Create valid config in custom folder
+        mkdir('custom');
+        file_put_contents(
+            'custom/githooks.yml',
+            $this->configurationFileBuilder
+                ->setTools(['phpunit', 'phpcs'])
+                ->buildYaml()
+        );
+
+        // Check root config with errors
+        passthru("$this->githooks conf:check", $exitCode);
+        $this->assertEquals(1, $exitCode);
+        $this->assertStringContainsString('Configuration file contains errors', $this->getActualOutput());
+
+        // Check valid config in custom folder
+        passthru("$this->githooks conf:check --config=custom/githooks.yml", $exitCode);
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
+
+        rmdir('custom');
+    }
 }
