@@ -27,17 +27,17 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         //     'vendor/wtyd/githooks/qa/githooks.dist.php',
         //     $this->configurationFileBuilder->buildPhp()
         // );
-        $this->configurationFileBuilder->buildInFileSystem('vendor/wtyd/githooks/qa/');
+        // Crea el fichero de configuración en php en el directorio
 
+        $this->configurationFileBuilder->buildInFileSystem('vendor/wtyd/githooks/qa/', true);
+        // dd('prueba');
         passthru("$this->githooks conf:init", $exitCode);
 
         $this->assertStringContainsString('Configuration file githooks.php has been created in root path', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
-        $this->assertFileExists('githooks.yml');
+        $this->assertFileExists('githooks.php');
 
         $this->deleteDirStructure('vendor/wtyd');
-
-        
     }
 
     // TODO: Add test to check if the file already exists

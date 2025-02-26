@@ -43,6 +43,7 @@ trait FileSystemTrait
     public function deleteDirStructure(string $baseDir = ''): void
     {
         $baseDir = empty($baseDir) ? $this->path : $baseDir;
+
         if (is_dir($baseDir)) {
             self::deleteDir($baseDir);
         }
@@ -68,6 +69,9 @@ trait FileSystemTrait
             } elseif ('.gitkeep' !== $file->getFileName()) {
                 unlink($file->getRealPath());
             }
+        }
+        if ($dir !== SystemTestCase::TESTS_PATH) {
+            rmdir($dir);
         }
     }
     public static function cleanTestsFilesystem()

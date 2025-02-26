@@ -24,7 +24,7 @@ use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
  */
 class ConfigurationFileBuilder
 {
-    public const FILE_NAME = 'githooks.yml';
+    public const FILE_NAME = 'githooks.php';
     public const PHAR_TOOLS_PATH = 'phar';
     public const GLOBAL_TOOLS_PATH = 'global';
     public const LOCAL_TOOLS_PATH = 'local';
@@ -170,11 +170,11 @@ class ConfigurationFileBuilder
      *
      * @return void
      */
-    public function buildInFileSystem($path = ''): void
+    public function buildInFileSystem($path = '', bool $absolutePath = false): void
     {
         $finalPath = '';
         if (!empty($path)) {
-            $finalPath = "$this->rootPath/$path";
+            $finalPath = $absolutePath ? $path : "$this->rootPath/$path";
             $finalPath = rtrim($finalPath, '/');
         } else {
             $finalPath = $this->rootPath;
