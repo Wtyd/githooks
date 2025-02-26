@@ -9,15 +9,23 @@ use Tests\ReleaseTestCase;
  */
 class CreateConfigurationFileTest extends ReleaseTestCase
 {
+    public function tearDown(): void
+    {
+        shell_exec("git checkout -- 'qa/*'");
+    }
     /** @test */
     function it_creates_the_configuration_file_and_returns_exit_code_0()
     {
         $this->deleteDirStructure('vendor/wtyd');
 
+        $githooksPhp = 'qa/githooks.php';
+        unlink($githooksPhp);
+        $githooksYml = 'qa/githooks.yml';
+        unlink($githooksYml);
         // mkdir('vendor/wtyd/githooks/qa/', 0777, true);
         // file_put_contents(
         //     'vendor/wtyd/githooks/qa/githooks.dist.php',
-        //     $this->configurationFileBuilder->buildYaml()
+        //     $this->configurationFileBuilder->buildPhp()
         // );
         $this->configurationFileBuilder->buildInFileSystem('vendor/wtyd/githooks/qa/');
 
@@ -28,6 +36,8 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         $this->assertFileExists('githooks.yml');
 
         $this->deleteDirStructure('vendor/wtyd');
+
+        
     }
 
     // TODO: Add test to check if the file already exists

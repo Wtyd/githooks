@@ -28,7 +28,7 @@ trait FileSystemTrait
     public function createDirStructure(string $token = ''): void
     {
         if (!empty($token)) {
-            dd($token);
+            // dd($token);
         }
         mkdir("$this->path/$token/src", 0777, true);
         mkdir("$this->path/$token/vendor");

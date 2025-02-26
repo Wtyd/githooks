@@ -60,7 +60,8 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         //         ->buildInFileSystem();
 
         // Create valid config in custom folder
-        mkdir('custom', 0777, true);
+        $this->createDirStructure('custom');
+        // mkdir('custom', 0777, true);
         file_put_contents(
             'custom/githooks.php',
             $this->configurationFileBuilder

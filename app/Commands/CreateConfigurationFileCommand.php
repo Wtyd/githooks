@@ -45,6 +45,7 @@ class CreateConfigurationFileCommand extends Command
     protected function copyFile(string $origin, string $destiny): int
     {
         try {
+            dd(Storage::copy($origin, $destiny));
             // For php <8.0 when copy fails raise FileNotFoundException. False when >=8.0
             if (Storage::copy($origin, $destiny)) {
                 $this->printer->success('Configuration file githooks.php has been created in root path');
@@ -53,6 +54,7 @@ class CreateConfigurationFileCommand extends Command
             $this->printer->error("Failed to copy $origin to $destiny");
             return 1;
         } catch (\Throwable $th) {
+            dd($th->getMessage());
             $this->printer->error("Failed to copy $origin to $destiny");
             return 1;
         }

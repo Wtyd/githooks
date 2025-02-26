@@ -83,7 +83,7 @@ class FileReader
                 break;
             }
         }
-        dd($configFile);
+
         if (!isset($configFile)) {
             throw new ConfigurationFileNotFoundException();
         }
