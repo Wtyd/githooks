@@ -21,6 +21,12 @@ class ExecuteToolTest extends ReleaseTestCase
         );
     }
 
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+        shell_exec('git restore -- ' . self::TESTS_PATH . "/.gitignore");
+    }
+
     public function fullExecutionModeProvider()
     {
         return [
@@ -96,7 +102,7 @@ class ExecuteToolTest extends ReleaseTestCase
 
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
-        shell_exec('git checkout -- ' . self::TESTS_PATH . "/.gitignore");
+        shell_exec('git restore -- ' . self::TESTS_PATH . "/.gitignore");
         shell_exec("git reset -- $fileWithoutErrorsPath");
 
         $this->assertEquals(1, $exitCode);
@@ -106,6 +112,8 @@ class ExecuteToolTest extends ReleaseTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasFailed('phpcpd'); // No acelerable tool
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+        // $exp = 'git checkout -- ' . self::TESTS_PATH . "/.gitignore";
+        // dd($exp);
     }
 
     /** @test */
