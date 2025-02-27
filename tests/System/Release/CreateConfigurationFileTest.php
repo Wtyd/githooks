@@ -32,7 +32,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         // Crea el fichero de configuración en php en el directorio
 
         // $this->configurationFileBuilder->buildInFileSystem('./vendor/wtyd/githooks/qa/', true);
-        
+
         passthru("$this->githooks conf:init", $exitCode);
         // dd($this->getActualOutput());
         $this->assertStringContainsString('Configuration file githooks.php has been created in root path', $this->getActualOutput());

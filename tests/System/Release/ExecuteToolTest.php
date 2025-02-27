@@ -11,7 +11,6 @@ use Tests\ReleaseTestCase;
  */
 class ExecuteToolTest extends ReleaseTestCase
 {
-
     protected function setUp(): void
     {
         parent::setUp();
