@@ -48,10 +48,10 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_returns_exit_0_when_executes_all_tools_and_all_pass($executionModeArgument, $executionModeFile)
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
-                ->buildYaml()
+                ->buildPhp()
         );
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
@@ -120,9 +120,9 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_returns_1_when_phpcs_finds_bugs_and_fixes_them_automatically()
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcbf'])
-                ->buildYaml()
+                ->buildPhp()
         );
 
         file_put_contents(
@@ -167,10 +167,10 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_returns_exit_code_0_when_the_tool_fails_and_has_ignoreErrorsOnExit_set_to_true($tool)
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools([$tool])
                 ->changeToolOption($tool, ['ignoreErrorsOnExit' => true])
-                ->buildYaml()
+                ->buildPhp()
         );
 
         file_put_contents(
@@ -188,9 +188,9 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_runs_all_tools_in_multipe_processes()
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
-                ->buildYaml()
+                ->buildPhp()
         );
         passthru("$this->githooks tool all --processes=2", $exitCode);
 
