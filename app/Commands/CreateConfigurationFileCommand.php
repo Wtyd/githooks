@@ -53,7 +53,7 @@ class CreateConfigurationFileCommand extends Command
             $this->printer->error("Failed to copy $origin to $destiny");
             return 1;
         } catch (\Throwable $th) {
-            dd($th->getMessage());
+            // dd($th->getMessage());
             $this->printer->error("Failed to copy $origin to $destiny");
             return 1;
         }

@@ -12,27 +12,29 @@ class CreateConfigurationFileTest extends ReleaseTestCase
     public function tearDown(): void
     {
         shell_exec("git checkout -- 'qa/*'");
+        @unlink('githooks.php');
     }
     /** @test */
     function it_creates_the_configuration_file_and_returns_exit_code_0()
     {
-        $this->deleteDirStructure('vendor/wtyd');
+        $this->deleteDirStructure('./vendor/wtyd');
+        @unlink('githooks.php');
 
         $githooksPhp = 'qa/githooks.php';
         unlink($githooksPhp);
         $githooksYml = 'qa/githooks.yml';
         unlink($githooksYml);
-        // mkdir('vendor/wtyd/githooks/qa/', 0777, true);
-        // file_put_contents(
-        //     'vendor/wtyd/githooks/qa/githooks.dist.php',
-        //     $this->configurationFileBuilder->buildPhp()
-        // );
+        mkdir('vendor/wtyd/githooks/qa/', 0777, true);
+        file_put_contents(
+            './vendor/wtyd/githooks/qa/githooks.dist.php',
+            $this->configurationFileBuilder->buildPhp()
+        );
         // Crea el fichero de configuración en php en el directorio
 
-        $this->configurationFileBuilder->buildInFileSystem('vendor/wtyd/githooks/qa/', true);
-        // dd('prueba');
+        // $this->configurationFileBuilder->buildInFileSystem('./vendor/wtyd/githooks/qa/', true);
+        
         passthru("$this->githooks conf:init", $exitCode);
-
+        // dd($this->getActualOutput());
         $this->assertStringContainsString('Configuration file githooks.php has been created in root path', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
         $this->assertFileExists('githooks.php');
