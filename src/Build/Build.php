@@ -87,6 +87,7 @@ class Build
             case '8.1':
             case '8.2':
             case '8.3':
+            case '8.4':
                 $tarName = 'githooks-8.1.tar';
                 break;
             default:
