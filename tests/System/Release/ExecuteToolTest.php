@@ -21,12 +21,6 @@ class ExecuteToolTest extends ReleaseTestCase
         );
     }
 
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-        shell_exec('git restore -- ' . self::TESTS_PATH . "/.gitignore");
-    }
-
     public function fullExecutionModeProvider()
     {
         return [
@@ -112,8 +106,6 @@ class ExecuteToolTest extends ReleaseTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasFailed('phpcpd'); // No acelerable tool
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
-        // $exp = 'git checkout -- ' . self::TESTS_PATH . "/.gitignore";
-        // dd($exp);
     }
 
     /** @test */

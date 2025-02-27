@@ -76,7 +76,6 @@ trait FileSystemTrait
     }
     public static function cleanTestsFilesystem()
     {
-
         self::deleteDir(SystemTestCase::TESTS_PATH);
     }
 }

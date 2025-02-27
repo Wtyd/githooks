@@ -55,12 +55,9 @@ class ReleaseTestCase extends TestCase
     protected function tearDown(): void
     {
         $this->deleteDirStructure();
-        if (file_exists('githooks.php')) {
-            unlink('githooks.php');
-        }
-        if (file_exists('githooks.yml')) {
-            unlink('githooks.yml');
-        }
+        @unlink('githooks.php');
+        @unlink('githooks.yml');
+        shell_exec('git restore -- ' . self::TESTS_PATH . "/.gitignore");
     }
 
     protected function hiddenConsoleOutput(): void
