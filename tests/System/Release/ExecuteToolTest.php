@@ -79,26 +79,24 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_executes_all_tools_with_fast_execution_mode($executionModeArgument, $executionModeFile)
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
-                ->buildYaml()
+                ->buildPhp()
         );
-        // dd($this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
-        // ->setOptions($executionModeFile)
-        // ->buildYaml());
+
         file_put_contents(
             self::TESTS_PATH . '/src/FileWithErrors.php',
             $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
         );
 
-        unlink('.gitignore');
+        // unlink('.gitignore');
         $fileWithoutErrorsPath = self::TESTS_PATH . '/src/File.php';
         shell_exec("git add $fileWithoutErrorsPath");
 
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
-        shell_exec("git checkout -- .gitignore");
+        shell_exec('git checkout -- ' . self::TESTS_PATH . "/.gitignore");
         shell_exec("git reset -- $fileWithoutErrorsPath");
 
         $this->assertEquals(1, $exitCode);

@@ -66,7 +66,7 @@ trait FileSystemTrait
         foreach ($files as $file) {
             if ($file->isDir()) {
                 rmdir($file->getRealPath());
-            } elseif ('.gitkeep' !== $file->getFileName()) {
+            } elseif ('.gitkeep' !== $file->getFileName() || '.gitignore' !== $file->getFileName()) {
                 unlink($file->getRealPath());
             }
         }
