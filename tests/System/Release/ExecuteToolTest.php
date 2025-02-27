@@ -84,7 +84,9 @@ class ExecuteToolTest extends ReleaseTestCase
                 ->setOptions($executionModeFile)
                 ->buildYaml()
         );
-
+        // dd($this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
+        // ->setOptions($executionModeFile)
+        // ->buildYaml());
         file_put_contents(
             self::TESTS_PATH . '/src/FileWithErrors.php',
             $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
@@ -93,6 +95,7 @@ class ExecuteToolTest extends ReleaseTestCase
         unlink('.gitignore');
         $fileWithoutErrorsPath = self::TESTS_PATH . '/src/File.php';
         shell_exec("git add $fileWithoutErrorsPath");
+
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
         shell_exec("git checkout -- .gitignore");

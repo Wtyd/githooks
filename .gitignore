@@ -25,12 +25,9 @@ Dummy.php
 src/dummy/
 
 
-# Tests directory
-testsDir/src
-testsDir/app
-testsDir/vendor
-testsDir/*.yml
 /githooks.yml
+/githooks.php
+
 
 tools/tmp/
 
