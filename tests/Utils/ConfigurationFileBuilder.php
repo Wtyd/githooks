@@ -24,10 +24,12 @@ use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
  */
 class ConfigurationFileBuilder
 {
-    public const FILE_NAME = 'githooks.yml';
+    public const FILE_NAME = 'githooks.php';
     public const PHAR_TOOLS_PATH = 'phar';
     public const GLOBAL_TOOLS_PATH = 'global';
     public const LOCAL_TOOLS_PATH = 'local';
+
+    protected $name;
 
     protected $rootPath;
 
@@ -50,6 +52,7 @@ class ConfigurationFileBuilder
      */
     public function __construct(string $rootPath, string $toolsPath = '')
     {
+        $this->name = self::FILE_NAME;
         $this->rootPath = $rootPath;
 
         $this->options = [
@@ -160,16 +163,21 @@ class ConfigurationFileBuilder
         return Yaml::dump($this->buildArray());
     }
 
+    public function buildPhp(): string
+    {
+        return '<?php' . PHP_EOL . 'return ' . var_export($this->buildArray(), true) . ';';
+    }
+
     /**
      * Creates the configuration file and saves it to the file system
      *
      * @return void
      */
-    public function buildInFileSystem($path = ''): void
+    public function buildInFileSystem($path = '', bool $absolutePath = false): void
     {
         $finalPath = '';
         if (!empty($path)) {
-            $finalPath = "$this->rootPath/$path";
+            $finalPath = $absolutePath ? $path : "$this->rootPath/$path";
             $finalPath = rtrim($finalPath, '/');
         } else {
             $finalPath = $this->rootPath;
@@ -179,7 +187,7 @@ class ConfigurationFileBuilder
             mkdir($finalPath, 0777, true);
         }
 
-        file_put_contents($finalPath . '/' . self::FILE_NAME, $this->buildYaml());
+        file_put_contents("$finalPath/{$this->name}", $this->buildPhp());
     }
 
     /**
@@ -302,6 +310,13 @@ class ConfigurationFileBuilder
     {
         $key = key($option);
         $this->configurationTools[$toolName][$key] = $option[$key];
+
+        return $this;
+    }
+
+    public function setName(string $name)
+    {
+        $this->name = $name;
 
         return $this;
     }

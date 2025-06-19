@@ -28,7 +28,7 @@ trait FileSystemTrait
     public function createDirStructure(string $token = ''): void
     {
         if (!empty($token)) {
-            dd($token);
+            // dd($token);
         }
         mkdir("$this->path/$token/src", 0777, true);
         mkdir("$this->path/$token/vendor");
@@ -43,6 +43,7 @@ trait FileSystemTrait
     public function deleteDirStructure(string $baseDir = ''): void
     {
         $baseDir = empty($baseDir) ? $this->path : $baseDir;
+
         if (is_dir($baseDir)) {
             self::deleteDir($baseDir);
         }
@@ -65,14 +66,16 @@ trait FileSystemTrait
         foreach ($files as $file) {
             if ($file->isDir()) {
                 rmdir($file->getRealPath());
-            } elseif ('.gitkeep' !== $file->getFileName()) {
+            } elseif ('.gitkeep' !== $file->getFileName() || '.gitignore' !== $file->getFileName()) {
                 unlink($file->getRealPath());
             }
+        }
+        if ($dir !== SystemTestCase::TESTS_PATH) {
+            rmdir($dir);
         }
     }
     public static function cleanTestsFilesystem()
     {
-
         self::deleteDir(SystemTestCase::TESTS_PATH);
     }
 }

@@ -11,7 +11,6 @@ use Tests\ReleaseTestCase;
  */
 class ExecuteToolTest extends ReleaseTestCase
 {
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -43,10 +42,10 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_returns_exit_0_when_executes_all_tools_and_all_pass($executionModeArgument, $executionModeFile)
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
-                ->buildYaml()
+                ->buildPhp()
         );
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
@@ -80,10 +79,10 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_executes_all_tools_with_fast_execution_mode($executionModeArgument, $executionModeFile)
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->setOptions($executionModeFile)
-                ->buildYaml()
+                ->buildPhp()
         );
 
         file_put_contents(
@@ -91,12 +90,13 @@ class ExecuteToolTest extends ReleaseTestCase
             $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
         );
 
-        unlink('.gitignore');
+        // unlink('.gitignore');
         $fileWithoutErrorsPath = self::TESTS_PATH . '/src/File.php';
         shell_exec("git add $fileWithoutErrorsPath");
+
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
-        shell_exec("git checkout -- .gitignore");
+        shell_exec('git restore -- ' . self::TESTS_PATH . "/.gitignore");
         shell_exec("git reset -- $fileWithoutErrorsPath");
 
         $this->assertEquals(1, $exitCode);
@@ -112,9 +112,9 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_returns_1_when_phpcs_finds_bugs_and_fixes_them_automatically()
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcbf'])
-                ->buildYaml()
+                ->buildPhp()
         );
 
         file_put_contents(
@@ -159,10 +159,10 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_returns_exit_code_0_when_the_tool_fails_and_has_ignoreErrorsOnExit_set_to_true($tool)
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools([$tool])
                 ->changeToolOption($tool, ['ignoreErrorsOnExit' => true])
-                ->buildYaml()
+                ->buildPhp()
         );
 
         file_put_contents(
@@ -180,9 +180,9 @@ class ExecuteToolTest extends ReleaseTestCase
     function it_runs_all_tools_in_multipe_processes()
     {
         file_put_contents(
-            'githooks.yml',
+            'githooks.php',
             $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
-                ->buildYaml()
+                ->buildPhp()
         );
         passthru("$this->githooks tool all --processes=2", $exitCode);
 
@@ -193,5 +193,31 @@ class ExecuteToolTest extends ReleaseTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+    }
+    /** @test */
+    function it_shows_detailed_output_when_a_tool_crashes()
+    {
+        // Configure only phpstan tool
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools([['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan']])
+                ->buildPhp()
+        );
+
+        // Create file with invalid PHP syntax that will make phpstan crash
+        file_put_contents(
+            self::TESTS_PATH . '/src/FileWithSyntaxError.php',
+            '<?php class BrokenFile { function broken() { $var = ; } }' // Invalid syntax
+        );
+
+        // Capture command output
+        passthru("$this->githooks tool phpstan", $exitCode);
+        $output = $this->getActualOutput();
+
+        $this->assertEquals(1, $exitCode);
+        $this->assertToolHasFailed('phpstan');
+        $this->assertStringContainsString("Syntax error, unexpected ';' on line 1 ", $output);
+        $this->assertStringContainsString('FileWithSyntaxError.php', $output);
+        $this->assertStringContainsString('Syntax error', $output);
     }
 }

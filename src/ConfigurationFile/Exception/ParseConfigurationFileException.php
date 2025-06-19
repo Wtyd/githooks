@@ -7,7 +7,7 @@ namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 /**
  * Envuelve una Symfony\Component\Yaml\Exception\ParseException
  */
-class ParseConfigurationFileException extends \RuntimeException implements ConfigurationFileInterface
+class ParseConfigurationFileException extends \RuntimeException
 {
     public static function forMessage(string $message): ParseConfigurationFileException
     {

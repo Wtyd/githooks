@@ -12,11 +12,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_checks_the_configuration_file_and_return_exit_0()
     {
-        file_put_contents(
-            'githooks.yml',
-            $this->configurationFileBuilder->buildYaml()
-        );
-
+        $this->configurationFileBuilder->buildInFileSystem('./', true);
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
@@ -26,11 +22,8 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_checks_the_configuration_file_and_show_warning_and_return_exit_0()
     {
-        file_put_contents(
-            'githooks.yml',
-            $this->configurationFileBuilder->setOptions(['invalidOptionTest' => 1])->buildYaml()
-        );
-
+        $this->configurationFileBuilder->setOptions(['invalidOptionTest' => 1])
+                                        ->buildInFileSystem('./', true);
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
@@ -41,14 +34,37 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_checks_the_configuration_file_and_show_error_and_return_exit_1()
     {
-        file_put_contents(
-            'githooks.yml',
-            $this->configurationFileBuilder->setTools([])->buildYaml()
-        );
+        $this->configurationFileBuilder->setTools([])->buildInFileSystem('./', true);
 
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(1, $exitCode);
         $this->assertStringContainsString("The 'Tools' tag from configuration file is empty.", $this->getActualOutput());
+    }
+
+    /** @test */
+    function it_checks_configuration_file_in_custom_path_with_config_flag()
+    {
+        $this->configurationFileBuilder->setTools(['invalid-tool'])
+            ->buildInFileSystem('./', true);
+
+        // Create valid config in custom folder
+        $this->createDirStructure('custom');
+
+        $this->configurationFileBuilder
+            ->setTools(['phpunit', 'phpcs'])
+                ->buildInFileSystem('custom', true);
+
+        // Check root config with errors
+        passthru("$this->githooks conf:check", $exitCode);
+        $this->assertEquals(1, $exitCode);
+        $this->assertStringContainsString("There must be at least one tool configured.", $this->getActualOutput());
+
+        // Check valid config in custom folder
+        passthru("$this->githooks conf:check --config=custom/githooks.php", $exitCode);
+
+        $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
+
+        $this->deleteDirStructure('custom/');
     }
 }

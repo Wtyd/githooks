@@ -21,7 +21,7 @@ class NewVersionTest extends ReleaseTestCase
     {
         passthru("$this->githooks --version", $exitCode);
 
-        $newVersion = '2.6.0';
+        $newVersion = '2.7.0';
         $this->assertStringContainsString("GitHooks $newVersion", $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
     }

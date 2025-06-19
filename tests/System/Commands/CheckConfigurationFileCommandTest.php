@@ -107,17 +107,18 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     /** @test */
     function it_check_the_config_file_pass_as_argument()
     {
+        $a = 10;
         // valid file in custom path
         $configFilePath = 'custom/path';
         $this->configurationFileBuilder->buildInFileSystem($configFilePath);
 
-        // file with erros in root path
+        // file with errors in root path
         $this->configurationFileBuilder
             ->setTools([])
             ->setOptions(['invent option' => 1])
             ->buildInFileSystem();
 
-        $this->artisan("conf:check --config custom/path/githooks.yml")
+        $this->artisan("conf:check --config custom/path/githooks.php")
             ->assertExitCode(0)
             ->expectsTable(['Options', 'Values'], [['execution', 'full'], ['processes', 1]])
             ->expectsOutput('The configuration file has the correct format.')
