@@ -120,26 +120,30 @@ Run multiple tools in multiple processes at same time (`tool all` command). The 
 
 ## 6.2. Tools
 It is an array with the name of the tools that GitHooks will run. The name of the tools is their executable. If you want all the tools to be executed, the `Tools` key will be as follows:
-```yml
-Tools:
-    - phpstan
-    - security-checker
-    - parallel-lint
-    - phpcs
-    - phpcbf
-    - phpmd
-    - phpcpd
+
+```php
+'Tools' => [
+        'security-checker',
+        'phpstan',
+        'parallel-lint',
+        'phpcbf',
+        'phpcs',
+        'phpmd',
+        'phpcpd',
+],
 ```
+
 The order in which the tools are is the order in which they will be executed.
 
 ## 6.3. Setting Tools
 In next step you must configure the tools with the same name as in the *Tools* key. For example, for set phpcs:
-```yml
-phpcs:
-    executablePath: vendor/bin/phpcs
-    paths: [src, tests]
-    ignore: [vendor]
-    standard: 'PSR12'
+```php
+'phpcs' => [
+        'executablePath' => 'phpcs',
+        'paths' => ['./'],
+        'standard' => './myRules.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
+        'ignore' => ['vendor'],
+],
 ```
 
 All the available options are in the [wiki](https://github.com/Wtyd/githooks/wiki/ConfigurationFile).
