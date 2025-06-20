@@ -70,6 +70,7 @@ class Build
 
     /**
      * Get the tar name for the build.
+     * @SuppressWarnings("PHPMD.CyclomaticComplexity")
      */
     public function getTarName(): string
     {
