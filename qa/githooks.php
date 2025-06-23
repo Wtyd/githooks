@@ -11,6 +11,15 @@ return [
         'phpcpd',
         'phpcbf',
         'phpcs',
+        'phpunit',
+    ],
+    'phpstan' => [
+        'executablePath' => 'vendor/bin/phpunit',
+        // 'config' => './qa/phpstan.neon',
+        // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
+        // 'paths' => ['src'],
+        // 'level' => 8, // level 0-8 (0 default, 8 max)
+        // 'otherArguments' => '--no-progress --ansi',
     ],
     'phpstan' => [
         'executablePath' => 'vendor/bin/phpstan',
@@ -62,5 +71,15 @@ return [
     'security-checker' => [
         'executablePath' => 'tools/php71/local-php-security-checker',
         // 'otherArguments' => '-format json',
+    ],
+    'phpunit' => [
+        'executablePath' => 'vendor/bin/phpunit',
+        // 'group' => 'integration',
+        // 'exclude-group' => 'slow',
+        // 'filter' => 'testSomething',
+        // 'configuration' => 'path/to/configuration.xml',
+        'log-junit' => 'junit.xml',
+        'otherArguments' => '--colors=always',
+        // 'ignoreErrorsOnExit' => true,
     ],
 ];

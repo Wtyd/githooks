@@ -37,6 +37,8 @@ abstract class ToolAbstract
 
     public const PHPSTAN = 'phpstan';
 
+    public const PHPUNIT = 'phpunit';
+
     public const ALL_TOOLS = 'all';
 
     public const SUPPORTED_TOOLS = [
@@ -47,6 +49,7 @@ abstract class ToolAbstract
         self::MESS_DETECTOR => Phpmd::class,
         self::COPYPASTE_DETECTOR => Phpcpd::class,
         self::PHPSTAN => Phpstan::class,
+        self::PHPUNIT => Phpunit::class,
     ];
 
     public const EXCLUDE_ARGUMENT = [
@@ -57,6 +60,7 @@ abstract class ToolAbstract
         self::MESS_DETECTOR => Phpmd::EXCLUDE,
         self::COPYPASTE_DETECTOR => Phpcpd::EXCLUDE,
         self::PHPSTAN => '',
+        self::PHPUNIT => '',
     ];
 
     public const EXECUTABLE_PATH_OPTION = 'executablePath';

@@ -4,12 +4,12 @@ namespace Tests\System\Commands;
 
 use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
-use Wtyd\GitHooks\Utils\FileUtilsFake;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
 use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\GitHooks\Utils\FileUtilsFake;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class ExecuteToolCommandTest extends SystemTestCase
@@ -20,7 +20,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         parent::setUp();
 
-        $this->fileBuilder = new PhpFileBuilder('File');
+        $this->phpFileBuilder = new PhpFileBuilder('File');
     }
 
     public function allToolsOKDataProvider()
@@ -72,7 +72,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         $this->configurationFileBuilder->buildInFileSystem();
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
 
         $this->artisan("tool $tool")
             ->assertExitCode(0)
@@ -129,7 +129,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         $this->configurationFileBuilder->buildInFileSystem();
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$tool]));
 
         $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolAlias) {
             $processExecutionFake->setToolsThatMustFail([$toolAlias]);
@@ -176,7 +176,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setTools($tools)->buildYaml());
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
 
         $this->artisan('tool all')
             ->assertExitCode(0)
@@ -245,7 +245,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setTools($tools)->buildYaml());
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
 
         $this->artisan('tool all')
             ->assertExitCode(0)
@@ -301,7 +301,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         $this->configurationFileBuilder->buildInFileSystem();
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$failedTool]));
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$failedTool]));
 
         $this->app->resolving(MultiProcessesExecutionFake::class, function ($processExecutionFake) use ($failedTool) {
             $processExecutionFake->setToolsThatMustFail([$failedTool]);
@@ -325,7 +325,7 @@ class ExecuteToolCommandTest extends SystemTestCase
         $this->artisan('tool notSupportedTool')
             ->assertExitCode(1)
             ->expectsOutput(
-                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
+                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit'
             );
     }
 
@@ -334,7 +334,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setConfigurationTools([])->buildYaml());
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
 
         $this->artisan('tool phpmd')
             ->assertExitCode(1)
@@ -355,10 +355,10 @@ class ExecuteToolCommandTest extends SystemTestCase
         file_put_contents($this->path . '/githooks.yml', $this->configurationFileBuilder->setOptions(['execution' =>  'full'])->buildYaml());
 
         $pathForFileWithoutErrors = $this->path . '/src/File.php';
-        file_put_contents($pathForFileWithoutErrors, $this->fileBuilder->build());
+        file_put_contents($pathForFileWithoutErrors, $this->phpFileBuilder->build());
 
         $pathForFileWithErrors = $this->path . '/src/FileWithErrors.php';
-        file_put_contents($pathForFileWithErrors, $this->fileBuilder->buildWithErrors(['phpcs']));
+        file_put_contents($pathForFileWithErrors, $this->phpFileBuilder->buildWithErrors(['phpcs']));
 
         $this->app->resolving(FileUtilsFake::class, function ($gitFiles) use ($pathForFileWithoutErrors) {
             $gitFiles->setModifiedfiles([$pathForFileWithoutErrors]);
@@ -431,7 +431,7 @@ class ExecuteToolCommandTest extends SystemTestCase
 
         $this->configurationFileBuilder->buildInFileSystem();
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->build());
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
 
         $commandUnderTheHood = "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6";
 
@@ -460,7 +460,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         $this->configurationFileBuilder->buildInFileSystem();
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$tool]));
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$tool]));
 
         $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolAlias) {
             $processExecutionFake->setToolsWithTimeout([$toolAlias]);
@@ -480,7 +480,7 @@ class ExecuteToolCommandTest extends SystemTestCase
     {
         $this->configurationFileBuilder->buildInFileSystem();
 
-        file_put_contents($this->path . '/src/File.php', $this->fileBuilder->buildWithErrors([$failedTool]));
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$failedTool]));
 
         $this->app->resolving(MultiProcessesExecutionFake::class, function ($processExecutionFake) use ($failedTool) {
             $processExecutionFake->setToolsWithTimeout([$failedTool]);
