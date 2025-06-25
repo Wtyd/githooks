@@ -2,9 +2,10 @@
 
 namespace Tests\Unit\LoadTools;
 
+use Tests\Utils\ConfigurationFileBuilder;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\LoadTools\FullExecution;
-use Wtyd\GitHooks\Tools\ToolsFactoy;
 use Wtyd\GitHooks\Tools\Tool\{
     CodeSniffer\Phpcbf,
     CodeSniffer\Phpcs,
@@ -14,8 +15,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     Phpstan,
     SecurityChecker
 };
-use Tests\Utils\ConfigurationFileBuilder;
-use Tests\Utils\TestCase\UnitTestCase;
+use Wtyd\GitHooks\Tools\ToolsFactoy;
 
 class FullExecutionTest extends UnitTestCase
 {
@@ -84,6 +84,6 @@ class FullExecutionTest extends UnitTestCase
         $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFileBuilder->buildArray(), 'all'));
 
 
-        $this->assertCount(7, $loadedTools);
+        $this->assertCount(8, $loadedTools);
     }
 }

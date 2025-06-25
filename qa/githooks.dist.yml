@@ -11,6 +11,7 @@ Tools:
   - phpcs
   - phpmd
   - phpcpd
+  - phpunit
 
 # Configuration of each tool
 # security-checker:
@@ -68,5 +69,15 @@ Tools:
 #   paths: ['./']
 #   exclude: ['vendor']
 #   otherArguments: '--min-lines=5'
+#   ignoreErrorsOnExit: false # Optional: default false
+
+# phpunit:
+#   executablePath: phpunit
+#   group: ['integration']
+#   exclude-group: ['slow']
+#   filter: 'testSomething'
+#   configuration: './qa/phpunit.xml'
+#   log-junit: junit.xml # Optional: default false
+#   otherArguments: '--colors=always --testdox'
 #   ignoreErrorsOnExit: false # Optional: default false
  

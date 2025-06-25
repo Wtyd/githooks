@@ -46,10 +46,12 @@ class Phpunit extends ToolAbstract
                     $command .= $this->args[self::EXECUTABLE_PATH_OPTION] ;
                     break;
                 case self::GROUP:
-                    $command .= ' --group' . implode(' ', $this->args[self::GROUP]);
+                    $prefix = $this->addPrefixToArray($this->args[self::GROUP], '--group ');
+                    $command .= ' ' . implode(' ', $prefix);
                     break;
                 case self::EXCLUDE_GROUP:
-                    $command .= ' --exclude-group  ' . $this->args[self::EXCLUDE_GROUP];
+                    $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE_GROUP], '--exclude-group ');
+                    $command .= ' ' . implode(' ', $prefix);
                     break;
                 case self::FILTER:
                     $command .= ' --filter ' . $this->args[self::FILTER];

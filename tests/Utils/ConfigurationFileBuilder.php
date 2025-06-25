@@ -12,6 +12,7 @@ use Wtyd\GitHooks\Tools\Tool\ParallelLint;
 use Wtyd\GitHooks\Tools\Tool\Phpcpd;
 use Wtyd\GitHooks\Tools\Tool\Phpmd;
 use Wtyd\GitHooks\Tools\Tool\Phpstan;
+use Wtyd\GitHooks\Tools\Tool\Phpunit;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
@@ -40,6 +41,8 @@ class ConfigurationFileBuilder
     protected $configurationTools;
 
     protected $executablesPath;
+
+    protected $mainToolExecutablePaths;
 
     /**
      * Set the attributes with default values.
@@ -70,6 +73,7 @@ class ConfigurationFileBuilder
             ToolAbstract::COPYPASTE_DETECTOR,
             ToolAbstract::PHPSTAN,
             ToolAbstract::SECURITY_CHECKER,
+            ToolAbstract::PHPUNIT,
         ];
 
         $this->configurationTools = [
@@ -130,6 +134,17 @@ class ConfigurationFileBuilder
                 SecurityChecker::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
                 SecurityChecker::OTHER_ARGS_OPTION => '-format json',
                 SecurityChecker::IGNORE_ERRORS_ON_EXIT => false,
+            ],
+
+            ToolAbstract::PHPUNIT => [
+                Phpunit::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpunit',
+                Phpunit::GROUP => ['integration'],
+                Phpunit::EXCLUDE_GROUP => ['slow'],
+                Phpunit::FILTER => 'testSomething',
+                Phpunit::CONFIGURATION => $rootPath . '/phpunit.xml',
+                Phpunit::LOG_JUNIT => $rootPath . '/junit.xml',
+                Phpunit::OTHER_ARGS_OPTION => '--colors',
+                Phpunit::IGNORE_ERRORS_ON_EXIT => true,
             ],
         ];
     }

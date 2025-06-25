@@ -286,7 +286,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
     public function toolIsAllDataProvider()
     {
         $faker = Factory::create();
-        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint']);
+        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit']);
         $processes = $faker->numberBetween(2, 100); // 0 is empty, 1 default
         return [
             'Case 1' => [
@@ -424,7 +424,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
                     'execution' => 'full',
                     'processes' => $processes,
                 ],
-                'Expected tool configuration' => []
+                'Expected tool configuration' => ['ignoreErrorsOnExit' => false,]
             ],
             'Case 23' => [
                 'CLI Arguments Parameters' => [
@@ -482,6 +482,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             ],
             'Case 27' => [
                 'CLI Arguments Parameters' => [
+                    'tool' => $tool,
                     'execution' => 'fast',
                     'processes' => 0,
                     'ignoreErrorsOnExit' => null,
@@ -516,6 +517,16 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         $expectedOptions,
         $expectedToolConfiguration
     ) {
+        // 'CLI Arguments Parameters' => [
+        //             'execution' => 'full',
+        //             'processes' => 0,
+        //             'ignoreErrorsOnExit' => null,
+        //             'otherArguments' => '--argument or flag',
+        //             'executablePath' => '',
+        //             'paths' => '/paths',
+        //         ],
+        //         'Expected Options' => ['execution' => 'full',],
+        //         'Expected tool configuration' => []
         $fileReaderFake = new FileReaderFake();
         $originalConfigurationFile = $this->configurationFileBuilder->setOptions([
             'execution' => $this->faker->randomElement(['full', 'fast']),
@@ -553,9 +564,12 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         array $originalConfigurationFile,
         array $expectedToolConfiguration
     ): array {
-        $tools = ['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint'];
+        $tools = ['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit'];
         foreach ($tools as $tool) {
-            $originalConfigurationFile[$tool] = array_replace($originalConfigurationFile[$tool], $expectedToolConfiguration);
+            if (!empty($expectedToolConfiguration)) {
+                $originalConfigurationFile[$tool] = array_replace($originalConfigurationFile[$tool], $expectedToolConfiguration);
+            }
+            // Si $expectedToolConfiguration está vacío, no se modifica nada (solución 1)
         }
         return $originalConfigurationFile;
     }
