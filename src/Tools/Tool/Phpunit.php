@@ -33,6 +33,9 @@ class Phpunit extends ToolAbstract
         }
     }
 
+    /**
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
     public function prepareCommand(): string
     {
         $command = '';
