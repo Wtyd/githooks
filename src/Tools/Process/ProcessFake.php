@@ -213,9 +213,8 @@ class ProcessFake extends Process
 
     /**
      * @inheritDoc
-     * @return int|null
      */
-    public function getExitCode()
+    public function getExitCode(): ?int
     {
         return $this->fakeExitCode;
     }
