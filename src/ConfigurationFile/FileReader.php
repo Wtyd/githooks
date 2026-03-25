@@ -31,7 +31,7 @@ class FileReader
     {
         $configurationFilePath = '';
         if (!empty($configFile)) {
-            if (strpos($configFile, DIRECTORY_SEPARATOR) === 0) {
+            if ($configFile[0] === '/' || preg_match('/^[a-zA-Z]:[\\\\\/]/', $configFile)) {
                 $configurationFilePath = $configFile;
             } else {
                 $configurationFilePath = $this->rootPath . DIRECTORY_SEPARATOR . $configFile;
