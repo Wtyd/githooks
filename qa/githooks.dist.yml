@@ -12,7 +12,7 @@ Tools:
   - phpmd
   - phpcpd
   - phpunit
-  - psaml
+  - psalm
 
 # Configuration of each tool
 # security-checker:
@@ -56,7 +56,7 @@ Tools:
 #   warning-severity: 6
 #   otherArguments: '--report=summary --parallel=2'
 #   ignoreErrorsOnExit: false # Optional: default false
-  
+
 # phpmd:
 #   executablePath: phpmd
 #   paths: ['./src/']
@@ -74,24 +74,24 @@ Tools:
 
 # phpunit:
 #   executablePath: phpunit
-#   group: ['integration']
-#   exclude-group: ['slow']
-#   filter: 'testSomething'
-#   configuration: './qa/phpunit.xml'
-#   log-junit: junit.xml # Optional: default false
-#   otherArguments: '--colors=always --testdox'
+#   group: 'integration' # Run only tests from the specified group(s), comma-separated
+#   exclude-group: 'slow' # Exclude tests from the specified group(s), comma-separated
+#   filter: 'testSomething' # Filter which tests to run by regex pattern
+#   configuration: 'phpunit.xml' # Path to PHPUnit XML configuration file
+#   log-junit: 'junit.xml' # Log test execution in JUnit XML format
+#   otherArguments: '--colors=always'
 #   ignoreErrorsOnExit: false # Optional: default false
- 
+
 # psalm:
-#   executablePath: vendor/bin/psalm
-#   config: qa/psalm.xml
-#   memory-limit: 1G # Examples: 1M 2000M 1G 5G
-#   threads: 4
-#   no-diff: true
-#   output-format: json
-#   plugin: psalm-plugin
-#   use-baseline: path/to/baseline.xml
-#   report: psalm-report.xml
-#   otherArguments: --no-progress
-#   ignoreErrorsOnExit: true
-#   paths: ['src', 'app']
+#   executablePath: psalm
+#   config: 'psalm.xml' # Path to Psalm XML configuration file
+#   memory-limit: '1G' # Examples: 1M 2000M 1G 5G
+#   threads: 4 # Number of threads for parallel analysis
+#   no-diff: true # Disable diff mode (analyze all files)
+#   output-format: 'console' # Output format: console, json, xml, checkstyle, junit, etc.
+#   plugin: 'path/to/plugin.php' # Path to a Psalm plugin
+#   use-baseline: 'psalm-baseline.xml' # Path to baseline file to ignore known issues
+#   report: 'psalm-report.xml' # Generate a report file (format inferred from extension)
+#   paths: ['src', 'app'] # Directories to analyze
+#   otherArguments: '--no-progress'
+#   ignoreErrorsOnExit: false # Optional: default false
