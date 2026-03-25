@@ -3,6 +3,7 @@
 namespace Tests\Integration;
 
 use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 
@@ -14,13 +15,33 @@ class FileUtilsTest extends SystemTestCase
 {
     protected static $gitFilesPathTest = __DIR__ . '/../../' . SystemTestCase::TESTS_PATH . '/gitTests';
 
+    /** @var string */
+    protected $headBeforeTest;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        // Ensure clean git state before each test
+        shell_exec('git reset --hard HEAD 2>/dev/null');
+
         mkdir(self::$gitFilesPathTest);
 
         $this->app->bind(FileUtilsInterface::class, FileUtils::class);
+
+        $this->headBeforeTest = trim(shell_exec('git rev-parse HEAD'));
+    }
+
+    protected function tearDown(): void
+    {
+        $currentHead = trim(shell_exec('git rev-parse HEAD'));
+        if ($currentHead !== $this->headBeforeTest) {
+            shell_exec('git reset --hard ' . $this->headBeforeTest);
+        } else {
+            shell_exec('git reset --hard HEAD 2>/dev/null');
+        }
+
+        parent::tearDown();
     }
 
     /** @test */
@@ -31,17 +52,13 @@ class FileUtilsTest extends SystemTestCase
         $filename = self::$gitFilesPathTest . '/NewFile.php';
         file_put_contents($filename, $fileBuilder->build());
 
-        shell_exec('git add ' . self::$gitFilesPathTest . '/NewFile.php');
+        shell_exec('git add ' . $filename);
 
         $gitFiles = $this->app->make(FileUtils::class);
 
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
         $this->assertEquals([$this->deletePathPrefix($filename)], $modifiedFiles);
-
-        $this->deleteDirStructure();
-
-        shell_exec('git add ' . self::$gitFilesPathTest . '/NewFile.php');
     }
 
     /** @test */
@@ -69,20 +86,40 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /** @test */
-    function it_retrieve_an_empty_array_when_change_is_file_deletion()
+    function it_includes_deleted_file_in_modified_files()
     {
-        $this->markTestIncomplete('Maybe this must be unitary');
-        $file = 'src/Hooks.php';
+        $fileBuilder = new PhpFileBuilder('ToDelete');
+        $filename = self::$gitFilesPathTest . '/ToDelete.php';
+        file_put_contents($filename, $fileBuilder->build());
+
+        shell_exec('git add ' . $filename);
+        shell_exec('git commit -m "temp: add file for deletion test"');
+
+        shell_exec('git rm ' . $filename);
+
         $gitFiles = $this->app->make(FileUtils::class);
-
-        unlink($file);
-        shell_exec("git add $file");
-
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
-        $this->assertEquals([], $modifiedFiles);
+        $this->assertContains($this->deletePathPrefix($filename), $modifiedFiles);
+    }
 
-        shell_exec("git checkout -- $file");
+    /** @test */
+    function it_includes_renamed_file_in_modified_files()
+    {
+        $fileBuilder = new PhpFileBuilder('Original');
+        $originalPath = self::$gitFilesPathTest . '/Original.php';
+        $renamedPath = self::$gitFilesPathTest . '/Renamed.php';
+        file_put_contents($originalPath, $fileBuilder->build());
+
+        shell_exec('git add ' . $originalPath);
+        shell_exec('git commit -m "temp: add file for rename test"');
+
+        shell_exec('git mv ' . $originalPath . ' ' . $renamedPath);
+
+        $gitFiles = $this->app->make(FileUtils::class);
+        $modifiedFiles = $gitFiles->getModifiedFiles();
+
+        $this->assertContains($this->deletePathPrefix($renamedPath), $modifiedFiles);
     }
 
     /**
