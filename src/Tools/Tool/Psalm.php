@@ -33,6 +33,26 @@ class Psalm extends ToolAbstract
         self::REPORT,
     ];
 
+    /**
+     * Arguments that map to --key=value flags.
+     */
+    private const KEY_VALUE_ARGS = [
+        self::PSALM_CONFIGURATION_FILE,
+        self::MEMORY_LIMIT,
+        self::THREADS,
+        self::OUTPUT_FORMAT,
+        self::PLUGIN,
+        self::REPORT,
+        self::USE_BASELINE,
+    ];
+
+    /**
+     * Arguments that map to boolean flags (--flag when true).
+     */
+    private const BOOLEAN_ARGS = [
+        self::NO_DIFF,
+    ];
+
     public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->executable = self::PSALM;
@@ -44,40 +64,28 @@ class Psalm extends ToolAbstract
 
     public function prepareCommand(): string
     {
-        $command = '';
-        foreach (self::ARGUMENTS as $option) {
-            if (empty($this->args[$option])) {
-                continue;
-            }
-            switch ($option) {
-                case self::EXECUTABLE_PATH_OPTION:
-                    $command .= $this->args[self::EXECUTABLE_PATH_OPTION];
-                    break;
-                case self::PATHS:
-                    // Nothing to do here, paths are added in the end of the command
-                    break;
-                case self::PSALM_CONFIGURATION_FILE:
-                case self::MEMORY_LIMIT:
-                case self::THREADS:
-                case self::OUTPUT_FORMAT:
-                case self::PLUGIN:
-                case self::REPORT:
-                case self::USE_BASELINE:
-                    $command .= " --$option=" . $this->args[$option];
-                    break;
-                case self::NO_DIFF:
-                    $command .= $this->args[self::NO_DIFF] ? ' --no-diff' : '';
-                    break;
-                case self::IGNORE_ERRORS_ON_EXIT:
-                    break;
-                default:
-                    $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];
-                    break;
+        $command = $this->args[self::EXECUTABLE_PATH_OPTION];
+
+        foreach (self::KEY_VALUE_ARGS as $option) {
+            if (!empty($this->args[$option])) {
+                $command .= " --$option=" . $this->args[$option];
             }
         }
-        if (isset($this->args[self::PATHS]) && !empty($this->args[self::PATHS])) {
+
+        foreach (self::BOOLEAN_ARGS as $option) {
+            if (!empty($this->args[$option])) {
+                $command .= " --$option";
+            }
+        }
+
+        if (!empty($this->args[self::OTHER_ARGS_OPTION])) {
+            $command .= ' ' . $this->args[self::OTHER_ARGS_OPTION];
+        }
+
+        if (!empty($this->args[self::PATHS])) {
             $command .= ' ' . implode(' ', $this->args[self::PATHS]);
         }
+
         return $command;
     }
 
