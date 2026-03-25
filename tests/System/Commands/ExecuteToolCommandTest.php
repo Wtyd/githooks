@@ -548,4 +548,60 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[4])
             ->toolHasFailed($failedTool);
     }
+
+    /** @test */
+    function it_returns_exit_0_when_phpcbf_applies_fix_in_single_tool_mode()
+    {
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors(['phpcbf']));
+
+        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) {
+            $processExecutionFake->setToolsWithFixApplied(['phpcbf']);
+        });
+
+        $this->artisan('tool phpcbf')
+            ->assertExitCode(0)
+            ->toolHasBeenExecutedSuccessfully('phpcbf');
+    }
+
+    /** @test */
+    function it_skips_phpcbf_in_fast_mode_when_staged_file_was_deleted()
+    {
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        $deletedFile = $this->path . '/src/Deleted.php';
+
+        $this->app->resolving(FileUtilsFake::class, function ($gitFiles) use ($deletedFile) {
+            $gitFiles->setModifiedfiles([$deletedFile]);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([]);
+        });
+
+        $this->artisan('tool phpcbf fast')
+            ->assertExitCode(0)
+            ->toolDidNotRun('phpcbf');
+    }
+
+    /** @test */
+    function it_runs_phpcbf_in_fast_mode_only_against_renamed_file_ignoring_deleted_original()
+    {
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        $deletedOriginal = $this->path . '/src/Original.php';
+        $renamedFile = $this->path . '/src/Renamed.php';
+
+        file_put_contents($renamedFile, $this->phpFileBuilder->build());
+
+        $this->app->resolving(FileUtilsFake::class, function ($gitFiles) use ($deletedOriginal, $renamedFile) {
+            $gitFiles->setModifiedfiles([$deletedOriginal, $renamedFile]);
+            $gitFiles->setFilesThatShouldBeFoundInDirectories([$renamedFile]);
+        });
+
+        $commandUnderTheHood = "phpcbf $renamedFile";
+        $this->artisan('tool phpcbf fast')
+            ->assertExitCode(0)
+            ->toolHasBeenExecutedSuccessfully('phpcbf')
+            ->containsStringInOutput($commandUnderTheHood)
+            ->notContainsStringInOutput($deletedOriginal);
+    }
 }
