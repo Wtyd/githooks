@@ -146,7 +146,7 @@ class ConfigurationFileBuilder
                 Phpunit::CONFIGURATION => $rootPath . '/phpunit.xml',
                 Phpunit::LOG_JUNIT => $rootPath . '/junit.xml',
                 Phpunit::OTHER_ARGS_OPTION => '--colors',
-                Phpunit::IGNORE_ERRORS_ON_EXIT => true,
+                Phpunit::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
             ToolAbstract::PSALM => [

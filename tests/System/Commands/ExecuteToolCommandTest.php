@@ -61,6 +61,16 @@ class ExecuteToolCommandTest extends SystemTestCase
                 'command' => "phpstan analyse --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'phpstan'
             ],
+            'phpunit' => [
+                'tool' => 'phpunit',
+                'command' => "phpunit --group integration --exclude-group slow --filter testSomething --colors -c $this->path/phpunit.xml --log-junit $this->path/junit.xml",
+                'Alias of the tool when is executed' => 'phpunit'
+            ],
+            'psalm' => [
+                'tool' => 'psalm',
+                'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
+                'Alias of the tool when is executed' => 'psalm'
+            ],
         ];
     }
 
@@ -118,6 +128,16 @@ class ExecuteToolCommandTest extends SystemTestCase
                 'command' => "phpstan analyse --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'phpstan'
             ],
+            'phpunit' => [
+                'tool' => 'phpunit',
+                'command' => "phpunit --group integration --exclude-group slow --filter testSomething --colors -c $this->path/phpunit.xml --log-junit $this->path/junit.xml",
+                'Alias of the tool when is executed' => 'phpunit'
+            ],
+            'psalm' => [
+                'tool' => 'psalm',
+                'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
+                'Alias of the tool when is executed' => 'psalm'
+            ],
         ];
     }
 
@@ -153,7 +173,9 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpcpd',
                     'phpmd',
                     'parallel-lint',
-                    'phpstan'
+                    'phpstan',
+                    'phpunit',
+                    'psalm',
                 ],
                 'Command' =>  [
                     'security-checker' => 'local-php-security-checker',
@@ -163,6 +185,8 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpmd' => "phpmd $this->path/src ansi unusedcode --exclude \"$this->path/vendor\"",
                     'parallel-lint' => "parallel-lint $this->path/src --exclude $this->path/vendor",
                     'phpstan' => "phpstan analyse --no-progress --ansi $this->path/src",
+                    'phpunit' => "phpunit --group integration --exclude-group slow --filter testSomething --colors -c $this->path/phpunit.xml --log-junit $this->path/junit.xml",
+                    'psalm' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
                 ],
             ],
         ];
@@ -187,12 +211,16 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->toolHasBeenExecutedSuccessfully('phpmd')
             ->toolHasBeenExecutedSuccessfully('parallel-lint')
             ->toolHasBeenExecutedSuccessfully('phpstan')
+            ->toolHasBeenExecutedSuccessfully('phpunit')
+            ->toolHasBeenExecutedSuccessfully('psalm')
             ->notContainsStringInOutput($commandUnderTheHood['phpcs'])
             ->notContainsStringInOutput($commandUnderTheHood['phpcbf'])
             ->notContainsStringInOutput($commandUnderTheHood['phpcpd'])
             ->notContainsStringInOutput($commandUnderTheHood['phpmd'])
             ->notContainsStringInOutput($commandUnderTheHood['parallel-lint'])
-            ->notContainsStringInOutput($commandUnderTheHood['phpstan']);
+            ->notContainsStringInOutput($commandUnderTheHood['phpstan'])
+            ->notContainsStringInOutput($commandUnderTheHood['phpunit'])
+            ->notContainsStringInOutput($commandUnderTheHood['psalm']);
     }
 
     public function onlyConfiguredToolsAtSameTimeDataProvider()
@@ -213,7 +241,9 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpmd',
                     'parallel-lint',
                     'phpstan',
-                    'phpcbf'
+                    'phpcbf',
+                    'phpunit',
+                    'psalm',
                 ],
             ],
             'Second set of tools' => [
@@ -232,6 +262,8 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'security-checker',
                     'phpcs',
                     'phpcpd',
+                    'phpunit',
+                    'psalm',
                 ],
             ],
         ];
@@ -247,14 +279,15 @@ class ExecuteToolCommandTest extends SystemTestCase
 
         file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
 
-        $this->artisan('tool all')
-            ->assertExitCode(0)
-            ->toolHasBeenExecutedSuccessfully($runnedTools[0])
-            ->toolHasBeenExecutedSuccessfully($runnedTools[1])
-            ->toolHasBeenExecutedSuccessfully($runnedTools[2])
-            ->toolDidNotRun($notRunnedTools[0])
-            ->toolDidNotRun($notRunnedTools[1])
-            ->toolDidNotRun($notRunnedTools[2]);
+        $pendingCommand = $this->artisan('tool all')
+            ->assertExitCode(0);
+
+        foreach ($runnedTools as $tool) {
+            $pendingCommand->toolHasBeenExecutedSuccessfully($tool);
+        }
+        foreach ($notRunnedTools as $tool) {
+            $pendingCommand->toolDidNotRun($tool);
+        }
     }
 
     public function exit1DataProvider()
@@ -289,6 +322,26 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'parallel-lint'
                 ],
                 'Failed Tool' => 'phpstan',
+            ],
+            'Fail phpunit' => [
+                'Tools executed successfully' => [
+                    'security-checker',
+                    'phpcs',
+                    'phpcpd',
+                    'phpmd',
+                    'parallel-lint'
+                ],
+                'Failed Tool' => 'phpunit',
+            ],
+            'Fail psalm' => [
+                'Tools executed successfully' => [
+                    'security-checker',
+                    'phpcs',
+                    'phpcpd',
+                    'phpmd',
+                    'parallel-lint'
+                ],
+                'Failed Tool' => 'psalm',
             ],
         ];
     }

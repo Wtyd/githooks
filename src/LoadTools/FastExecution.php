@@ -28,6 +28,7 @@ class FastExecution implements ExecutionMode
         ToolAbstract::PARALLEL_LINT,
         ToolAbstract::MESS_DETECTOR,
         ToolAbstract::PHPSTAN,
+        ToolAbstract::PSALM,
     ];
 
     /** @var \Wtyd\GitHooks\Utils\FileUtilsInterface */

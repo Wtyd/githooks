@@ -34,6 +34,12 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
             'Composer Check-security' => [
                 'security-checker'
             ],
+            'PHPUnit' => [
+                'phpunit'
+            ],
+            'Psalm' => [
+                'psalm'
+            ],
         ];
     }
 

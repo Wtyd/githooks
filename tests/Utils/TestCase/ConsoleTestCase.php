@@ -23,6 +23,10 @@ use Wtyd\GitHooks\Tools\Tool\{
     PhpmdFake,
     Phpstan,
     PhpstanFake,
+    Phpunit,
+    PhpunitFake,
+    Psalm,
+    PsalmFake,
     SecurityChecker,
     SecurityCheckerFake
 };
@@ -92,5 +96,7 @@ abstract class ConsoleTestCase extends ZeroTestCase
         $this->app->bind(Phpstan::class, PhpstanFake::class);
         $this->app->bind(Phpcs::class, PhpcsFake::class);
         $this->app->bind(Phpcbf::class, PhpcbfFake::class);
+        $this->app->bind(Phpunit::class, PhpunitFake::class);
+        $this->app->bind(Psalm::class, PsalmFake::class);
     }
 }
