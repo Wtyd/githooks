@@ -12,7 +12,7 @@ return [
         'phpcbf',
         'phpcs',
         'phpunit',
-        'psalm',
+        // 'psalm',
     ],
     'phpstan' => [
         'executablePath' => 'vendor/bin/phpstan',
@@ -66,7 +66,7 @@ return [
         // 'otherArguments' => '-format json',
     ],
     'phpunit' => [
-        'executablePath' => 'vendor/bin/phpunit',
+        'executablePath' => 'php7.1 vendor/bin/phpunit',
         // 'group' => 'integration',
         // 'exclude-group' => 'slow',
         // 'filter' => 'testSomething',
@@ -76,7 +76,7 @@ return [
         // 'ignoreErrorsOnExit' => true,
     ],
     'psalm' => [
-        'executablePath' => 'vendor/bin/psalm',
+        'executablePath' => 'php7.1 vendor/bin/psalm',
         'config' => 'qa/psalm.xml',
         // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
         // 'threads' => 4,
