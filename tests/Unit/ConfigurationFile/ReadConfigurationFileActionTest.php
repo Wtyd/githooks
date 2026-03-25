@@ -286,7 +286,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
     public function toolIsAllDataProvider()
     {
         $faker = Factory::create();
-        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit']);
+        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm']);
         $processes = $faker->numberBetween(2, 100); // 0 is empty, 1 default
         return [
             'Case 1' => [
@@ -527,6 +527,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         //         ],
         //         'Expected Options' => ['execution' => 'full',],
         //         'Expected tool configuration' => []
+
         $fileReaderFake = new FileReaderFake();
         $originalConfigurationFile = $this->configurationFileBuilder->setOptions([
             'execution' => $this->faker->randomElement(['full', 'fast']),
@@ -564,7 +565,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         array $originalConfigurationFile,
         array $expectedToolConfiguration
     ): array {
-        $tools = ['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit'];
+        $tools = ['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm'];
         foreach ($tools as $tool) {
             if (!empty($expectedToolConfiguration)) {
                 $originalConfigurationFile[$tool] = array_replace($originalConfigurationFile[$tool], $expectedToolConfiguration);
@@ -597,7 +598,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         );
 
         $this->expectException(ToolIsNotSupportedException::class);
-        $this->expectExceptionMessage("The tool $invalidTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan");
+        $this->expectExceptionMessage("The tool $invalidTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm");
 
         $action($cliArguments);
     }

@@ -13,6 +13,7 @@ use Wtyd\GitHooks\Tools\Tool\Phpcpd;
 use Wtyd\GitHooks\Tools\Tool\Phpmd;
 use Wtyd\GitHooks\Tools\Tool\Phpstan;
 use Wtyd\GitHooks\Tools\Tool\Phpunit;
+use Wtyd\GitHooks\Tools\Tool\Psalm;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
@@ -74,6 +75,7 @@ class ConfigurationFileBuilder
             ToolAbstract::PHPSTAN,
             ToolAbstract::SECURITY_CHECKER,
             ToolAbstract::PHPUNIT,
+            ToolAbstract::PSALM,
         ];
 
         $this->configurationTools = [
@@ -145,6 +147,21 @@ class ConfigurationFileBuilder
                 Phpunit::LOG_JUNIT => $rootPath . '/junit.xml',
                 Phpunit::OTHER_ARGS_OPTION => '--colors',
                 Phpunit::IGNORE_ERRORS_ON_EXIT => true,
+            ],
+
+            ToolAbstract::PSALM => [
+                Psalm::PATHS => [$rootPath . '/src'],
+                Psalm::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'psalm',
+                Psalm::OTHER_ARGS_OPTION => '--no-progress',
+                Psalm::IGNORE_ERRORS_ON_EXIT => false, // <--- Volver a false por defecto
+                Psalm::PSALM_CONFIGURATION_FILE => $rootPath . '/qa/psalm.xml',
+                Psalm::MEMORY_LIMIT => '512M',
+                Psalm::THREADS => 1,
+                Psalm::NO_DIFF => false,
+                Psalm::OUTPUT_FORMAT => 'ansi',
+                Psalm::PLUGIN => '',
+                Psalm::USE_BASELINE => false,
+                Psalm::REPORT => 'report.txt',
             ],
         ];
     }

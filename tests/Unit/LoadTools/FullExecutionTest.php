@@ -13,6 +13,8 @@ use Wtyd\GitHooks\Tools\Tool\{
     Phpcpd,
     Phpmd,
     Phpstan,
+    Phpunit,
+    Psalm,
     SecurityChecker
 };
 use Wtyd\GitHooks\Tools\ToolsFactoy;
@@ -51,6 +53,14 @@ class FullExecutionTest extends UnitTestCase
                 SecurityChecker::class,
                 'security-checker'
             ],
+            'PHPUnit' => [
+                Phpunit::class,
+                'phpunit'
+            ],
+            'Psalm' => [
+                Psalm::class,
+                'psalm'
+            ],
         ];
     }
 
@@ -84,6 +94,6 @@ class FullExecutionTest extends UnitTestCase
         $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFileBuilder->buildArray(), 'all'));
 
 
-        $this->assertCount(8, $loadedTools);
+        $this->assertCount(9, $loadedTools);
     }
 }

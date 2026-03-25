@@ -55,6 +55,33 @@ class PhpunitTest extends UnitTestCase
     }
 
     /** @test */
+    function it_prepares_phpunit_command_with_all_arguments()
+    {
+        $configuration = [
+            'executablePath' => 'vendor/bin/phpunit',
+            'group' => ['integration', 'unit'],
+            'exclude-group' => ['slow'],
+            'filter' => 'testSomething',
+            'configuration' => 'path/to/phpunit.xml',
+            'log-junit' => 'junit.xml',
+            'otherArguments' => '--colors=always',
+            'ignoreErrorsOnExit' => false,
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpunit', $configuration);
+        $phpunit = new PhpunitFake($toolConfiguration);
+
+        $cmd = $phpunit->prepareCommand();
+        $this->assertStringContainsString('vendor/bin/phpunit', $cmd);
+        $this->assertStringContainsString('--group integration,unit', $cmd);
+        $this->assertStringContainsString('--exclude-group slow', $cmd);
+        $this->assertStringContainsString('--filter testSomething', $cmd);
+        $this->assertStringContainsString('-c path/to/phpunit.xml', $cmd);
+        $this->assertStringContainsString('--log-junit junit.xml', $cmd);
+        $this->assertStringContainsString('--colors=always', $cmd);
+    }
+
+    /** @test */
     function it_ignores_unexpected_arguments()
     {
         $configuration = [

@@ -325,7 +325,7 @@ class ExecuteToolCommandTest extends SystemTestCase
         $this->artisan('tool notSupportedTool')
             ->assertExitCode(1)
             ->expectsOutput(
-                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit'
+                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm'
             );
     }
 

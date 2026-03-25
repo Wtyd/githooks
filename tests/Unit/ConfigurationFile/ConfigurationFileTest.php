@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\ConfigurationFile;
 
-use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Utils\ConfigurationFileBuilder;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
@@ -45,6 +45,8 @@ class ConfigurationFileTest extends UnitTestCase
             'parallel-lint' => ['parallel-lint'],
             'phpstan' => ['phpstan'],
             'security-checker' => ['security-checker'],
+            'phpunit' => ['phpunit'],
+            'psalm' => ['psalm'],
         ];
     }
 
@@ -68,7 +70,7 @@ class ConfigurationFileTest extends UnitTestCase
     {
         $this->expectException(ToolIsNotSupportedException::class);
         $this->expectExceptionMessage(
-            'The tool tool-not-supported is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan'
+            'The tool tool-not-supported is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm'
         );
         $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'tool-not-supported');
     }
@@ -83,6 +85,8 @@ class ConfigurationFileTest extends UnitTestCase
             'parallel-lint' => ['parallel-lint'],
             'phpstan' => ['phpstan'],
             'security-checker' => ['security-checker'],
+            'phpunit' => ['phpunit'],
+            'psalm' => ['psalm'],
         ];
     }
 
