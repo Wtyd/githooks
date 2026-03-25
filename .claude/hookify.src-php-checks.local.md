@@ -1,5 +1,5 @@
 ---
-name: check-strict-types-in-src
+name: warn-src-php-checks
 enabled: true
 event: file
 conditions:
@@ -15,9 +15,8 @@ action: warn
 **`declare(strict_types=1)` ausente en fichero de `src/`**
 
 Todos los ficheros PHP en `src/` deben incluir `declare(strict_types=1);` tras la etiqueta `<?php`.
-Es obligatorio en este proyecto (53/53 ficheros lo tienen). PHPStan nivel 8 depende de ello.
+Es obligatorio en este proyecto. PHPStan nivel 8 depende de ello.
 
-Añade esta línea al inicio del fichero:
 ```php
 <?php
 
