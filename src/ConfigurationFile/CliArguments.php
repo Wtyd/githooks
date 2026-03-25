@@ -14,7 +14,7 @@ class CliArguments
     /** @var string Mode execution. Can be 'fast' or 'full'. Default from githooks.yml. */
     protected $execution;
 
-    /** @var bool|string */
+    /** @var bool|null */
     protected $ignoreErrorsOnExit;
 
     /** @var string */
@@ -63,7 +63,7 @@ class CliArguments
         }
 
         if (ConfigurationFile::ALL_TOOLS === $this->tool) {
-            if (is_bool($this->ignoreErrorsOnExit)) {
+            if ($this->ignoreErrorsOnExit !== null) {
                 $allToolsConfiguration = $configurationFile;
                 unset($allToolsConfiguration[OptionsConfiguration::OPTIONS_TAG], $allToolsConfiguration[ConfigurationFile::TOOLS]);
                 $tools = array_keys($allToolsConfiguration);
@@ -80,7 +80,7 @@ class CliArguments
 
     protected function overrideToolArguments(array $toolConfiguration): array
     {
-        if (is_bool($this->ignoreErrorsOnExit)) {
+        if ($this->ignoreErrorsOnExit !== null) {
             $toolConfiguration[ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;
         }
 
@@ -110,22 +110,23 @@ class CliArguments
     }
 
     /**
-     * @param string|null $string
-     * @return bool|string
+     * @param string|bool|null $value
+     * @return bool|null
      */
-    protected function stringToBool($string)
+    protected function stringToBool($value)
     {
-        if (null === $string) {
-            return '';
+        if (is_bool($value)) {
+            return $value;
         }
-        if ('true' === $string) {
+
+        if ('true' === $value) {
             return true;
         }
 
-        if ('false' === $string) {
+        if ('false' === $value) {
             return false;
         }
 
-        return $string;
+        return null;
     }
 }
