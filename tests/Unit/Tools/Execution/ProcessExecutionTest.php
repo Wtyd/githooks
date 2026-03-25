@@ -115,4 +115,24 @@ class ProcessExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($tool, false)))->once();
     }
 
+    /** @test */
+    function it_stages_files_and_reports_success_when_phpcbf_applies_fix()
+    {
+        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'phpcbf');
+        $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+        $gitStagerFake = new GitStagerFake();
+
+        $processExecution = new ProcessExecutionFake($printerMock, $gitStagerFake);
+        $processExecution->setToolsWithFixApplied(['phpcbf']);
+
+        $errors = $processExecution->execute($tools, $this->configurationFile->getProcesses());
+
+        $this->assertTrue($errors->isEmpty());
+        $this->assertTrue($gitStagerFake->wasCalled());
+
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpcbf')))->once();
+    }
+
 }

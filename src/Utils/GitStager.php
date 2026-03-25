@@ -15,7 +15,7 @@ class GitStager implements GitStagerInterface
     public function stageTrackedFiles(): void
     {
         $stagedFiles = [];
-        exec('git diff --cached --name-only', $stagedFiles);
+        exec('git diff --cached --name-only --diff-filter=d', $stagedFiles);
 
         if (!empty($stagedFiles)) {
             $escaped = array_map('escapeshellarg', $stagedFiles);

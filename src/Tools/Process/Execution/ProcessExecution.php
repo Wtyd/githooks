@@ -28,6 +28,8 @@ class ProcessExecution extends ProcessExecutionAbstract
 
             if ($process->isSuccessful()) {
                 $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
+            } elseif ($this->handleFixApplied($this->tools[$toolName], $process)) {
+                $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
             } else {
                 if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
                     $this->errors->setError($toolName, $process->getOutput());
