@@ -28,6 +28,7 @@ class ProcessFake extends Process
     private $outputFake;
     private $errorOutputFake;
     private $mustRaiseException = false;
+    private $fakeExitCode = 0;
 
     /**
      * Do nothing or invokes original method when we want to cause an error by timeout
@@ -144,6 +145,7 @@ class ProcessFake extends Process
     public function setFail(): ProcessFake
     {
         $this->isSuccessful = false;
+        $this->fakeExitCode = 2;
         $nameTool = $this->extractToolName();
 
         // getErrorOutput() o getOutput() o Exeception
@@ -165,6 +167,7 @@ class ProcessFake extends Process
     public function setFailByFoundedErrors(): ProcessFake
     {
         $this->isSuccessful = false;
+        $this->fakeExitCode = 2;
         $nameTool = $this->extractToolName();
         $this->errorOutputFake = "\n$nameTool fakes an error\n";
         return $this;
@@ -173,6 +176,7 @@ class ProcessFake extends Process
     public function setFailByFoundedErrorsInNormalOutput(): ProcessFake
     {
         $this->isSuccessful = false;
+        $this->fakeExitCode = 2;
         $nameTool = $this->extractToolName();
         $this->outputFake = "\n$nameTool fakes an error in normal output\n";
         $this->errorOutputFake = '';
@@ -189,5 +193,30 @@ class ProcessFake extends Process
         $this->setTimeout(0.000001);
         $this->isSuccessful = false;
         $this->fakeTimeout = true;
+    }
+
+    /**
+     * Simulates a tool that applied fixes (e.g. phpcbf exit code 1).
+     * The process is not successful (exit != 0) but the tool considers
+     * the exit code as a fix applied.
+     *
+     * @param int $exitCode
+     * @return ProcessFake
+     */
+    public function setFixApplied(int $exitCode = 1): ProcessFake
+    {
+        $this->isSuccessful = false;
+        $this->fakeExitCode = $exitCode;
+
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     * @return int|null
+     */
+    public function getExitCode()
+    {
+        return $this->fakeExitCode;
     }
 }

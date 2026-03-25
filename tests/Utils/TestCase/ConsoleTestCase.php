@@ -10,6 +10,8 @@ use Tests\Zero\{
 };
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
+use Wtyd\GitHooks\Utils\GitStagerFake;
+use Wtyd\GitHooks\Utils\GitStagerInterface;
 use Wtyd\GitHooks\Tools\Tool\{
     CodeSniffer\Phpcbf,
     CodeSniffer\PhpcbfFake,
@@ -61,6 +63,7 @@ abstract class ConsoleTestCase extends ZeroTestCase
         parent::setUp();
 
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
+        $this->app->bind(GitStagerInterface::class, GitStagerFake::class);
         $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
     }
 

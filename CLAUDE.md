@@ -18,11 +18,12 @@ Responde siempre en castellano (español de España).
 ### Tareas grandes (nueva feature, nueva tool, refactor)
 
 1. **Analizar** — Leer los ficheros involucrados, identificar qué tipo de tarea es y qué skills aplican.
-2. **Planificar** — Entrar en modo plan (`/plan`). Listar ficheros a crear/modificar, explicar enfoque y trade-offs. No escribir código.
-3. **Validar** — Esperar confirmación del usuario antes de ejecutar.
-4. **Ejecutar** — Implementar paso a paso, siguiendo la skill correspondiente.
-5. **Verificar** — Ejecutar los checks automáticamente (ver sección "Verificación").
-6. **Reportar** — Resumen de ficheros creados/modificados y estado de los checks.
+2. **Resolver dudas** — Si hay cualquier ambigüedad sobre el alcance, los casos de uso o el comportamiento esperado, preguntar al usuario **antes** de entrar en modo plan. No asumir.
+3. **Planificar** — Entrar en modo plan (`/plan`). El plan debe incluir un apartado **"Qué y por qué"** que explique qué se va a hacer y la justificación de cada decisión relevante. Listar ficheros a crear/modificar, explicar enfoque y trade-offs. No escribir código.
+4. **Validar** — Esperar confirmación del usuario antes de ejecutar.
+5. **Ejecutar** — Implementar paso a paso, siguiendo la skill correspondiente.
+6. **Verificar** — Ejecutar los checks automáticamente (ver sección "Verificación").
+7. **Reportar** — Resumen de ficheros creados/modificados y estado de los checks.
 
 ### Tareas pequeñas (bug fix, cambio menor)
 

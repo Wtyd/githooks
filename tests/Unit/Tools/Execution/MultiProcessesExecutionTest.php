@@ -10,6 +10,7 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
 use Wtyd\GitHooks\Tools\ToolsFactory;
+use Wtyd\GitHooks\Utils\GitStagerFake;
 use Wtyd\GitHooks\Utils\Printer;
 
 /**
@@ -56,7 +57,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
 
         $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
 
@@ -82,7 +83,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
         $multiProcessExecution->failedToolsByFoundedErrors([$failedTool]);
 
         $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
@@ -111,7 +112,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
         $multiProcessExecution->failedToolsByException([$failedTool]);
 
         $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
@@ -141,7 +142,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
         $multiProcessExecution->setFailByFoundedErrorsInNormalOutput([$failedTool]);
 
         $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
@@ -197,7 +198,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock);
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
         $multiProcessExecution->$methodToFakeFail([$failedTool, $failedToolWithIgnoreErrosOnExit]);
         $multiProcessExecution->setToolsThatMustFail([$failedTool, $failedToolWithIgnoreErrosOnExit]);
 
@@ -220,5 +221,49 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->line(
             \Mockery::pattern($regExpOfExpectedErrorMessage)
         )->once();
+    }
+
+    /** @test */
+    function it_stages_files_and_reports_success_when_phpcbf_applies_fix()
+    {
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+        $gitStagerFake = new GitStagerFake();
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, $gitStagerFake);
+        $multiProcessExecution->setToolsWithFixApplied(['phpcbf']);
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertTrue($errors->isEmpty());
+        $this->assertTrue($gitStagerFake->wasCalled());
+
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpcbf')))->once();
+    }
+
+    /** @test */
+    function it_stages_files_when_phpcbf_applies_fix_even_if_other_tool_fails()
+    {
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+        $gitStagerFake = new GitStagerFake();
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, $gitStagerFake);
+        $multiProcessExecution->setToolsWithFixApplied(['phpcbf']);
+        $multiProcessExecution->failedToolsByFoundedErrors(['phpcs']);
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertFalse($errors->isEmpty());
+        $this->assertArrayHasKey('phpcs', $errors->getErrors());
+        $this->assertArrayNotHasKey('phpcbf', $errors->getErrors());
+        $this->assertTrue($gitStagerFake->wasCalled());
+
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpcbf')))->once();
+        $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp('phpcs', false)))->once();
     }
 }

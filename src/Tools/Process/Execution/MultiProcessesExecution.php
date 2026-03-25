@@ -9,6 +9,7 @@ use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use Throwable;
 use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\Process\Process;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class MultiProcessesExecution extends ProcessExecutionAbstract
 {
@@ -88,6 +89,8 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());
         if ($process->isSuccessful()) {
             $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
+        } elseif ($this->handleFixApplied($this->tools[$toolName], $process)) {
+            $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
         } else {
             $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
             $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage;
@@ -101,5 +104,24 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         unset($this->runningProcesses[$toolName]);
 
         return count($this->runnedProcesses);
+    }
+
+    /**
+     * Checks if a tool applied fixes (e.g. phpcbf exit code 1) and re-stages files.
+     *
+     * @param ToolAbstract $tool
+     * @param Process $process
+     * @return bool True if a fix was applied and files were re-staged.
+     */
+    protected function handleFixApplied(ToolAbstract $tool, Process $process): bool
+    {
+        $exitCode = $process->getExitCode();
+
+        if ($exitCode !== null && $tool->isFixApplied($exitCode)) {
+            $this->gitStager->stageTrackedFiles();
+            return true;
+        }
+
+        return false;
     }
 }

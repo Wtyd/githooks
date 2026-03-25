@@ -17,9 +17,9 @@ class ProcessExecutionFactory extends ProcessExecutionFactoryAbstract
     {
         $processExecution = null;
         if (ToolAbstract::ALL_TOOLS === $tool) {
-            $processExecution = new MultiProcessesExecution($this->printer);
+            $processExecution = new MultiProcessesExecution($this->printer, $this->gitStager);
         } else {
-            $processExecution = new ProcessExecution($this->printer);
+            $processExecution = new ProcessExecution($this->printer, $this->gitStager);
         }
 
         return $processExecution;

@@ -10,6 +10,7 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
 use Wtyd\GitHooks\Tools\ToolsFactory;
+use Wtyd\GitHooks\Utils\GitStagerFake;
 use Wtyd\GitHooks\Utils\Printer;
 
 class ProcessExecutionTest extends UnitTestCase
@@ -52,7 +53,7 @@ class ProcessExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $processExecution = new ProcessExecutionFake($printerMock);
+        $processExecution = new ProcessExecutionFake($printerMock, new GitStagerFake());
 
         $errors = $processExecution->execute($tools, $this->configurationFile->getProcesses());
 
@@ -75,7 +76,7 @@ class ProcessExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $processExecution = new ProcessExecutionFake($printerMock);
+        $processExecution = new ProcessExecutionFake($printerMock, new GitStagerFake());
         $processExecution->setToolsThatMustFail([$tool]);
 
         $errors = $processExecution->execute($tools, $this->configurationFile->getProcesses());
@@ -104,7 +105,7 @@ class ProcessExecutionTest extends UnitTestCase
 
         $printerMock = Mock::spy(Printer::class);
 
-        $processExecution = new ProcessExecutionFake($printerMock);
+        $processExecution = new ProcessExecutionFake($printerMock, new GitStagerFake());
         $processExecution->setToolsThatMustFail([$tool]);
 
         $errors = $processExecution->execute($tools, $this->configurationFile->getProcesses());
@@ -113,4 +114,5 @@ class ProcessExecutionTest extends UnitTestCase
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($tool, false)))->once();
     }
+
 }
