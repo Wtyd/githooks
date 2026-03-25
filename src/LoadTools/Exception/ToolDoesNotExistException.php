@@ -9,7 +9,6 @@ class ToolDoesNotExistException extends \DomainException implements LoadToolsExc
      */
     private $tool;
 
-    //TODO Cuando intent instanciar una herramienta no contemplada (pj ponemos en el yaml phpmdnovale) además del mensaje muestra el stacktrace (lo cual es inencesario)
     public static function forTool(string $tool): ToolDoesNotExistException
     {
         $exception = new self(sprintf(

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-//TODO borrar
 class ValueNotAllowedException extends \UnexpectedValueException implements ConfigurationFileInterface
 {
     /**
@@ -31,7 +30,10 @@ class ValueNotAllowedException extends \UnexpectedValueException implements Conf
      *
      * @return ValueNotAllowedException
      */
-    public static function forKey(string $key, mixed $value, array $expectedValues): ValueNotAllowedException
+    /**
+     * @param mixed $value
+     */
+    public static function forKey(string $key, $value, array $expectedValues): ValueNotAllowedException
     {
         $valuesToString = implode(', ', $expectedValues);
 
@@ -55,7 +57,10 @@ class ValueNotAllowedException extends \UnexpectedValueException implements Conf
         return $this->key;
     }
 
-    public function getValue(): mixed
+    /**
+     * @return mixed
+     */
+    public function getValue()
     {
         return $this->value;
     }

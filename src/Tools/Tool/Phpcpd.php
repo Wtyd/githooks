@@ -25,7 +25,6 @@ class Phpcpd extends ToolAbstract
         self::IGNORE_ERRORS_ON_EXIT,
     ];
 
-    //TODO add --names-exclude option. Is like --exclude but for files. Check 6.* interfaces because bring changes.
     public function __construct(ToolConfiguration $toolConfiguration)
     {
         $this->executable = self::COPYPASTE_DETECTOR;

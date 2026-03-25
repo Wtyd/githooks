@@ -8,7 +8,6 @@ use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
 
-// TODO check for type and values for arguments.
 abstract class ToolAbstract
 {
     /**

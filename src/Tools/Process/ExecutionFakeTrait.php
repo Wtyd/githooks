@@ -52,7 +52,6 @@ trait ExecutionFakeTrait
         }
     }
 
-    // // TODO deprecated?
     public function setToolsThatMustFail(array $toolsThatMustFail): void
     {
         $this->toolsThatMustFail = $toolsThatMustFail;

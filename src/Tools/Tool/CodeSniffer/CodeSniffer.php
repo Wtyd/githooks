@@ -32,7 +32,6 @@ abstract class CodeSniffer extends ToolAbstract
         self::IGNORE_ERRORS_ON_EXIT,
     ];
 
-    // TODO Fix Cyc. Complexity
     public function prepareCommand(): string
     {
         $command = $this->args[self::EXECUTABLE_PATH_OPTION];

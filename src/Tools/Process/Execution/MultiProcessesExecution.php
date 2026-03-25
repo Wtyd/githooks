@@ -42,7 +42,6 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
                     $toolName = (string)array_search($th->getProcess(), $this->processes);
                     $this->numberOfRunnedProcesses = $this->finishExecution($th->getProcess(), $toolName, $th->getMessage());
                 } catch (ProcessFailedException $th) {
-                    // dd($this->numberOfRunnedProcesses);
                     $toolName = (string)array_search($th->getProcess(), $this->processes);
                     $this->numberOfRunnedProcesses = $this->finishExecution($th->getProcess(), $toolName);
                 } catch (Throwable $th) {
@@ -50,7 +49,6 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
                 }
             } while ($totalProcesses > $this->numberOfRunnedProcesses);
         } catch (\Throwable $th) {
-            // dd($th->getMessage(), get_class($th), $th->getFile(), $th->getLine());
             $this->errors->setError('General', $th->getMessage());
         }
         $endCommandExecution = microtime(true);
@@ -91,11 +89,8 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         if ($process->isSuccessful()) {
             $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
         } else {
-            $errorMessage = '';
-            // if ($process->isTerminated()) { // TODO: comprobar a fondo estas lineas
-                $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
-                $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage; // Edge case
-            // }
+            $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
+            $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage;
             if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
                 $this->errors->setError($toolName, $errorMessage);
             }

@@ -31,7 +31,6 @@ class FileReader
     {
         $configurationFilePath = '';
         if (!empty($configFile)) {
-            // dd(strpos($configFile, DIRECTORY_SEPARATOR) === 0, $configFile);
             if (strpos($configFile, DIRECTORY_SEPARATOR) === 0) {
                 $configurationFilePath = $configFile;
             } else {
@@ -43,7 +42,6 @@ class FileReader
 
         try {
             $fileExtension = pathinfo($configurationFilePath, PATHINFO_EXTENSION);
-            // dd($fileExtension);
             if ($fileExtension === 'yml' || $fileExtension === 'yaml') {
                 $configurationFile = Yaml::parseFile($configurationFilePath);
             } elseif ($fileExtension === 'php') {

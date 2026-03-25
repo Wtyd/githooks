@@ -100,8 +100,6 @@ final class BuildCommand extends Command
         ->compile($name)
         ->tarBuild($name)
         ->clear();
-        // $this->tarBuild($name);
-        // TODO la compilación bien pero falta mencionar el tar
         $this->output->writeln(
             sprintf('    Compiled successfully: <fg=green>%s</>', $this->build->getBuildPath() . $name)
         );
@@ -158,7 +156,9 @@ final class BuildCommand extends Command
                 $this->build->getBuildPath() . $name
             );
         } catch (\Throwable $th) {
-            dd($this->build->getBuildPath(), $th->getMessage());
+            $this->error('Build failed: ' . $th->getMessage());
+            $this->error('Build path: ' . $this->build->getBuildPath());
+            return $this;
         }
 
 
@@ -305,8 +305,8 @@ final class BuildCommand extends Command
         $branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD'));
 
         if (! $this->validatesBranchName($branch)) {
-            $this->error('The branch name does not meet the required format . ');
-            exit(1); // TODO: throw exception
+            $this->error('The branch name does not meet the required format.');
+            exit(1);
         }
         $prefix = 'rc-';
         $version = substr($branch, strlen($prefix));

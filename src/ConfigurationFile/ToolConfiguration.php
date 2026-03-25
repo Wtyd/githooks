@@ -41,7 +41,6 @@ class ToolConfiguration
 
         $validOptions = ToolAbstract::SUPPORTED_TOOLS[$this->tool]::ARGUMENTS;
 
-        // TODO $validOptions just have EXECUTABLE_PATH_OPTION
         $validOptions[] = ToolAbstract::EXECUTABLE_PATH_OPTION;
 
         foreach (array_keys($this->toolConfiguration) as $key) {

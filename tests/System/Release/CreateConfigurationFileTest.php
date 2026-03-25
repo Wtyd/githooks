@@ -30,7 +30,6 @@ class CreateConfigurationFileTest extends ReleaseTestCase
                 ->buildInFileSystem('./vendor/wtyd/githooks/qa/', true);
 
         passthru("$this->githooks conf:init", $exitCode);
-        // dd($this->getActualOutput());
         $this->assertStringContainsString('Configuration file githooks.php has been created in root path', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
         $this->assertFileExists('githooks.php');

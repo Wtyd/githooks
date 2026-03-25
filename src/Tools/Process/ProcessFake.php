@@ -95,7 +95,6 @@ class ProcessFake extends Process
      */
     public function getOutput(): string
     {
-        // dd(! $this->isSuccessful, $this->outputFake);
         if (! $this->isSuccessful) {
             return $this->outputFake;
         }

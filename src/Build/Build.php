@@ -40,7 +40,6 @@ class Build
     private function setBuildPath(): void
     {
         $path = 'builds' . DIRECTORY_SEPARATOR;
-        // TODO: Refactor this to use a switch statement like getTarName()
         if (version_compare($this->phpVersion, '7.1', '<')) {
             throw new Exception('GitHooks only supports php 7.1 or greater.', 1);
         }
