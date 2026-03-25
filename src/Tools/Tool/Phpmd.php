@@ -8,6 +8,9 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
  * Library phpmd/phpmd
+ *
+ * Known limitation: phpmd returns exit 0 on syntax errors in source files,
+ * which means those files are silently skipped without reporting an error.
  */
 class Phpmd extends ToolAbstract
 {
@@ -69,22 +72,5 @@ class Phpmd extends ToolAbstract
 
         //tools/php71/phpmd src ansi ./qa/phpmd-ruleset.xml --exclude "vendor"
         return $command;
-    }
-
-    /**
-     * Check if the exit of Mess detector is OK.
-     * If there is an error in the source file that prevents Mess detector from parsing it, Mess detector will return an exit code 0.
-     * But mess detector will not be able to check that file.
-     *
-     * @return bool
-     */
-    protected function isThereHiddenError(): bool
-    {
-        // TODO when phpmd found a sintaxis error finish succefully instead of error.
-        // for different versions of the tool the error output is different
-        // if (is_int(strpos($this->exit[3], 'No mess detected'))) {
-        //     return false;
-        // }
-        return true;
     }
 }
