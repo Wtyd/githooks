@@ -39,6 +39,8 @@ abstract class ToolAbstract
 
     public const PHPUNIT = 'phpunit';
 
+    public const PSALM = 'psalm';
+
     public const ALL_TOOLS = 'all';
 
     public const SUPPORTED_TOOLS = [
@@ -50,6 +52,7 @@ abstract class ToolAbstract
         self::COPYPASTE_DETECTOR => Phpcpd::class,
         self::PHPSTAN => Phpstan::class,
         self::PHPUNIT => Phpunit::class,
+        self::PSALM => Psalm::class,
     ];
 
     public const EXCLUDE_ARGUMENT = [
@@ -61,6 +64,7 @@ abstract class ToolAbstract
         self::COPYPASTE_DETECTOR => Phpcpd::EXCLUDE,
         self::PHPSTAN => '',
         self::PHPUNIT => '',
+        self::PSALM => '',
     ];
 
     public const EXECUTABLE_PATH_OPTION = 'executablePath';

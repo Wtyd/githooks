@@ -10,7 +10,8 @@ use Wtyd\GitHooks\Tools\Tool\{
     MessDetector,
     ParallelLint,
     Phpstan,
-    Phpunit
+    Phpunit,
+    Psalm
 };
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
     Phpcs,

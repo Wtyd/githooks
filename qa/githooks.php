@@ -12,14 +12,7 @@ return [
         'phpcbf',
         'phpcs',
         'phpunit',
-    ],
-    'phpstan' => [
-        'executablePath' => 'vendor/bin/phpunit',
-        // 'config' => './qa/phpstan.neon',
-        // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
-        // 'paths' => ['src'],
-        // 'level' => 8, // level 0-8 (0 default, 8 max)
-        // 'otherArguments' => '--no-progress --ansi',
+        'psalm',
     ],
     'phpstan' => [
         'executablePath' => 'vendor/bin/phpstan',
@@ -81,5 +74,19 @@ return [
         'log-junit' => 'junit.xml',
         'otherArguments' => '--colors=always',
         // 'ignoreErrorsOnExit' => true,
+    ],
+    'psalm' => [
+        'executablePath' => 'vendor/bin/psalm',
+        'config' => 'qa/psalm.xml',
+        // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
+        // 'threads' => 4,
+        // 'no-diff' => true,
+        // 'output-format' => 'json',
+        // 'plugin' => 'psalm-plugin',
+        // 'use-baseline' => 'path/to/baseline.xml',
+        // 'report' => 'psalm-report.xml',
+        // 'otherArguments' => '--no-progress',
+        // 'ignoreErrorsOnExit' => true,
+        'paths' => ['src', 'app'],
     ],
 ];

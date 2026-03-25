@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\Tools\Tool;
 
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
@@ -49,12 +51,10 @@ class Phpunit extends ToolAbstract
                     $command .= $this->args[self::EXECUTABLE_PATH_OPTION] ;
                     break;
                 case self::GROUP:
-                    $prefix = $this->addPrefixToArray($this->args[self::GROUP], '--group ');
-                    $command .= ' ' . implode(' ', $prefix);
+                    $command .= ' --group ' . implode(',', (array) $this->args[self::GROUP]);
                     break;
                 case self::EXCLUDE_GROUP:
-                    $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE_GROUP], '--exclude-group ');
-                    $command .= ' ' . implode(' ', $prefix);
+                    $command .= ' --exclude-group ' . implode(',', (array) $this->args[self::EXCLUDE_GROUP]);
                     break;
                 case self::FILTER:
                     $command .= ' --filter ' . $this->args[self::FILTER];
