@@ -102,4 +102,23 @@ abstract class ProcessExecutionAbstract
     {
         $process->start();
     }
+
+    /**
+     * Checks if a tool applied fixes (e.g. phpcbf exit code 1) and re-stages files.
+     *
+     * @param ToolAbstract $tool
+     * @param Process $process
+     * @return bool True if a fix was applied and files were re-staged.
+     */
+    protected function handleFixApplied(ToolAbstract $tool, Process $process): bool
+    {
+        $exitCode = $process->getExitCode();
+
+        if ($exitCode !== null && $tool->isFixApplied($exitCode)) {
+            $this->gitStager->stageTrackedFiles();
+            return true;
+        }
+
+        return false;
+    }
 }
