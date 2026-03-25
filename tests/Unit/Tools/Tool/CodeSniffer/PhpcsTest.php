@@ -82,53 +82,6 @@ class PhpcsTest extends UnitTestCase
         $this->assertEquals($configuration, $phpcs->getArguments());
     }
 
-
-    /** @test */
-    function it_needs_mandatory_arguments()
-    {
-        $this->markTestIncomplete('This funcionalitity is not developed yet');
-        $configuration = [
-            'executablePath' => 'path/tools/phpcs',
-            // 'standard' => 'PSR12',
-            // 'ignore' => ['vendor'],
-            // 'error-severity' => 1,
-            // 'warning-severity' => 6,
-            // 'unexpected or supported argument' => 'my value'
-        ];
-
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
-
-        $phpcs = new PhpcsFake($toolConfiguration);
-
-        $this->assertEquals($configuration['executablePath'], $phpcs->getExecutablePath());
-
-        unset($configuration['executablePath']);
-        $this->assertEquals($configuration, $phpcs->getArguments());
-    }
-
-    /** @test */
-    function it_checks_type_and_posible_values_for_every_argument()
-    {
-        $this->markTestIncomplete('This funcionalitity is not developed yet');
-        $configuration = [
-            'executablePath' => 'path/tools/phpcs',
-            // 'standard' => 'PSR12',
-            // 'ignore' => ['vendor'],
-            // 'error-severity' => 1,
-            // 'warning-severity' => 6,
-            // 'unexpected or supported argument' => 'my value'
-        ];
-
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
-
-        $phpcs = new PhpcsFake($toolConfiguration);
-
-        $this->assertEquals($configuration['executablePath'], $phpcs->getExecutablePath());
-
-        unset($configuration['executablePath']);
-        $this->assertEquals($configuration, $phpcs->getArguments());
-    }
-
     /** @test */
     function it_sets_phpcs_to_run_against_and_ignore_several_paths()
     {
