@@ -88,9 +88,8 @@ abstract class ProcessExecutionAbstract
     protected function createProcesses(): void
     {
         foreach ($this->tools as $key => $tool) {
-            $this->processes[$key] = new Process(explode(' ', $tool->prepareCommand()));
-            $this->processes[$key]->setTimeout(null); // without timeout
-            // TODO customize timeout
+            $this->processes[$key] = Process::fromShellCommandline($tool->prepareCommand());
+            $this->processes[$key]->setTimeout(null);
         }
     }
 
