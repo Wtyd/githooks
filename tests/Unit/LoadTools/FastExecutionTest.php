@@ -60,6 +60,119 @@ class FastExecutionTest extends UnitTestCase
     }
 
 
+    /**
+     * @test
+     * @dataProvider acelerableToolsProvider
+     */
+    function it_distributes_modified_files_across_multiple_configured_paths($tool)
+    {
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['src/ClassA.php', 'app/ClassB.php', 'lib/ClassC.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/ClassA.php', 'app/ClassB.php']);
+
+        $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
+        $configurationFile = [
+            'Tools' => [$tool],
+            $tool => [
+                'paths' => ['src', 'app']
+            ]
+        ];
+
+        $expectedFiles = ['src/ClassA.php', 'app/ClassB.php'];
+        $configurationFile[$tool]['paths'] = $expectedFiles;
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
+
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+
+        $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
+    }
+
+    /**
+     * @test
+     * @dataProvider acelerableToolsProvider
+     */
+    function it_handles_paths_with_trailing_slash($tool)
+    {
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['src/File.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/File.php']);
+
+        $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
+        $configurationFile = [
+            'Tools' => [$tool],
+            $tool => [
+                'paths' => ['src/']
+            ]
+        ];
+
+        $expectedFiles = ['src/File.php'];
+        $configurationFile[$tool]['paths'] = $expectedFiles;
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
+
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+
+        $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
+    }
+
+    /**
+     * @test
+     * @dataProvider acelerableToolsProvider
+     */
+    function it_matches_individual_file_path_in_configuration($tool)
+    {
+        $targetFile = tempnam(sys_get_temp_dir(), 'githooks_test_');
+
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles([$targetFile, 'other/file.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories([]);
+
+        $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
+        $configurationFile = [
+            'Tools' => [$tool],
+            $tool => [
+                'paths' => [$targetFile]
+            ]
+        ];
+
+        $expectedFiles = [$targetFile];
+        $configurationFile[$tool]['paths'] = $expectedFiles;
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
+
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+
+        $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
+
+        unlink($targetFile);
+    }
+
+    /**
+     * @test
+     * @dataProvider acelerableToolsProvider
+     */
+    function it_skips_tool_when_no_modified_files_match_any_path($tool)
+    {
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['unrelated/path/file.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories([]);
+
+        $configurationFile = [
+            'Tools' => [$tool],
+            $tool => [
+                'paths' => ['src', 'app']
+            ]
+        ];
+        $fastExecution = new FastExecution($gitFiles, new ToolsFactory());
+
+        $configurationFile = new ConfigurationFile($configurationFile, $tool);
+        $loadedTools = $fastExecution->getTools($configurationFile);
+
+        $this->assertCount(0, $loadedTools);
+        $this->assertEquals(["The tool $tool was skipped."], $configurationFile->getWarnings());
+    }
+
     function noAcelerableToolsProvider()
     {
         return [
