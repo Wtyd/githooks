@@ -68,7 +68,7 @@ Estas convenciones aplican a TODOS los tipos de test:
 
 ## Checklist de verificación
 
-Antes de dar por terminados los tests, verifica cada punto:
+**IMPORTANTE:** No decir que los tests están listos hasta haber verificado CADA punto. Leer cada fichero mencionado y confirmar que la nueva tool/feature está cubierta.
 
 ### Estructura
 - [ ] Los tests están en el directorio correcto (`tests/Unit/`, `tests/Integration/`, `tests/System/Commands/`, `tests/System/Release/`)
@@ -81,25 +81,47 @@ Antes de dar por terminados los tests, verifica cada punto:
 - [ ] Se usan `@dataProvider` donde hay variantes paramétricas
 - [ ] No se ha añadido `test` como prefijo del nombre del método
 
-### Para Tools nuevas
-- [ ] Existe `src/Tools/Tool/MyToolFake.php` con `use TestToolTrait`
-- [ ] La tool está registrada en `SUPPORTED_TOOLS`
-- [ ] `ConfigurationFileBuilder` tiene la configuración por defecto de la tool
-- [ ] `ConsoleTestCase::bindFakeTools()` incluye el binding de la Fake
-- [ ] Los `@dataProvider` existentes en Integration y System tests incluyen la nueva tool
-- [ ] `PhpFileBuilder` tiene método para generar errores detectables por la tool (si aplica)
+### Para Tools nuevas — Infraestructura (LEER CADA FICHERO)
+- [ ] `src/Tools/Tool/MyToolFake.php` existe con `use TestToolTrait`
+- [ ] `src/Tools/Tool/ToolAbstract.php` — tool en `SUPPORTED_TOOLS`
+- [ ] `tests/Utils/ConfigurationFileBuilder.php`:
+  - [ ] Import de la clase Tool
+  - [ ] Tool en `$this->tools`
+  - [ ] Configuración en `$this->configurationTools` con `IGNORE_ERRORS_ON_EXIT => false`
+- [ ] `tests/Utils/TestCase/ConsoleTestCase.php`:
+  - [ ] Import de Tool + ToolFake
+  - [ ] `$this->app->bind(Tool::class, ToolFake::class)` en `bindFakeTools()`
+- [ ] `tests/Utils/PhpFileBuilder.php` (si analiza código):
+  - [ ] Constante `MY_TOOL`
+  - [ ] Método `addMyToolError()`
+  - [ ] Case en `buildWithErrors()`
 
-### Cobertura mínima
-- [ ] **Unit test:** `checkTool()`, todos los argumentos, executablePath por defecto, argumentos inesperados, prepareCommand con variantes
-- [ ] **Integration test:** `ignoreErrorsOnExit` true/false, tanto individual como `tool all`
+### Para Tools nuevas — DataProviders (ABRIR Y VERIFICAR CADA UNO)
+- [ ] `tests/Integration/IgnoreErrorsOnExitFlagTest.php` → `allToolsProvider()`
+- [ ] `tests/System/Commands/ExecuteToolCommandTest.php`:
+  - [ ] `allToolsOKDataProvider()` — tool + comando generado por prepareCommand
+  - [ ] `allToolsKODataProvider()` — tool + comando generado
+  - [ ] `allToolsAtSameTimeDataProvider()` — tool en Tools array + Command dict
+  - [ ] `it_runs_all_configured_tools_at_same_time()` — assertions incluyen la tool
+  - [ ] `onlyConfiguredToolsAtSameTimeDataProvider()` — tool en "Not runned tools"
+  - [ ] `exit1DataProvider()` — caso con la tool fallando
+- [ ] `tests/System/Release/ExecuteToolTest.php`:
+  - [ ] `allToolsProvider()` — entrada para la tool (si analiza código)
+  - [ ] 3 tests de `tool all` (full, fast, multi-process) — setTools + assertions
+  - [ ] Test individual happy path
+
+### Cobertura mínima por nivel
+- [ ] **Unit test:** checkTool(), todos los argumentos, executablePath por defecto, argumentos inesperados, prepareCommand con variantes
+- [ ] **Integration test:** ignoreErrorsOnExit true/false, tanto individual (`tool mytool`) como `tool all`
 - [ ] **System test:** ejecución OK y KO con config real en filesystem, comando completo verificado
-- [ ] **Release test:** al menos un happy path con el `.phar` que demuestre que la feature funciona
+- [ ] **Release test:** al menos happy path individual + incluida en tests de `tool all`
 
-### Ejecución
-- [ ] `vendor/bin/phpunit tests/Unit/...` pasa
-- [ ] `vendor/bin/phpunit tests/Integration/...` pasa (si hay integration tests)
-- [ ] `vendor/bin/phpunit tests/System/...` pasa (si hay system tests, excluyendo release)
-- [ ] No se han roto tests existentes: `vendor/bin/phpunit --order-by random`
+### Ejecución final (OBLIGATORIO)
+- [ ] `php7.1 vendor/bin/phpunit tests/Unit/...` pasa
+- [ ] `php7.1 vendor/bin/phpunit tests/Integration/...` pasa (si hay integration tests)
+- [ ] `php7.1 vendor/bin/phpunit tests/System/...` pasa (si hay system tests, excluyendo release)
+- [ ] `php7.1 vendor/bin/phpunit --order-by random` — suite completa sin fallos
+- [ ] `php7.1 githooks tool all full` — QA completo sin violaciones nuevas
 
 ## Permisos necesarios
 

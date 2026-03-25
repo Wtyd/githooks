@@ -49,6 +49,8 @@ php7.1 githooks tool all full
 
 Si algún check falla, corregir antes de reportar.
 
+**Si se usó una skill, verificar CADA punto de su checklist antes de reportar.** Leer los ficheros implicados y confirmar que los cambios están presentes — no asumir que está hecho.
+
 ### Commits
 
 Formato **Conventional Commits**: `tipo(ámbito): descripción`

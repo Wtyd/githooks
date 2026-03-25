@@ -205,29 +205,60 @@ No todas las tools son acelerables. `security-checker` no tiene paths, `phpcpd` 
 
 ## Checklist final
 
+**IMPORTANTE:** No marcar como terminado hasta haber verificado CADA punto. Leer cada fichero y confirmar que la nueva tool está presente.
+
 ### Ficheros creados
-- [ ] `src/Tools/Tool/MyTool.php`
-- [ ] `src/Tools/Tool/MyToolFake.php`
+- [ ] `src/Tools/Tool/MyTool.php` — con `declare(strict_types=1)`
+- [ ] `src/Tools/Tool/MyToolFake.php` — con `declare(strict_types=1)` y `use TestToolTrait`
 
-### Ficheros modificados
+### Ficheros modificados — Código fuente
 - [ ] `src/Tools/Tool/ToolAbstract.php` — constante + `SUPPORTED_TOOLS` + `EXCLUDE_ARGUMENT`
-- [ ] `tests/Utils/ConfigurationFileBuilder.php` — `$tools` + `$configurationTools`
-- [ ] `tests/Utils/TestCase/ConsoleTestCase.php` — `bindFakeTools()`
-- [ ] `tests/Utils/PhpFileBuilder.php` — (si analiza código)
-- [ ] `tests/Integration/IgnoreErrorsOnExitFlagTest.php` — `allToolsProvider`
-- [ ] `tests/System/Commands/ExecuteToolCommandTest.php` — todos los dataProviders
-- [ ] `tests/System/Release/ExecuteToolTest.php` — providers + tests `all tools`
-- [ ] `qa/githooks.php`
-- [ ] `qa/githooks.dist.yml`
-- [ ] `.github/workflows/main-tests.yml`
-- [ ] `.github/workflows/release.yml`
-- [ ] `src/LoadTools/FastExecution.php` — (si es acelerarable)
+- [ ] `src/Tools/ToolsFactory.php` — añadir `use` import de la nueva clase
+- [ ] `src/LoadTools/FastExecution.php` — añadir a `ACCELERABLE_TOOLS` (si acepta paths y tiene sentido ejecutarla solo sobre ficheros modificados)
 
-### Verificación
-- [ ] `vendor/bin/phpunit --order-by random` pasa
-- [ ] `php githooks tool mytool` funciona localmente
-- [ ] `php githooks tool all full` incluye la nueva tool
-- [ ] `php githooks conf:check` muestra la tool en la tabla
+### Ficheros modificados — Infraestructura de tests (LEER CADA UNO)
+- [ ] `tests/Utils/ConfigurationFileBuilder.php`:
+  - [ ] Import `use` de la clase Tool
+  - [ ] Tool añadida a `$this->tools` en constructor
+  - [ ] Configuración por defecto en `$this->configurationTools` con `IGNORE_ERRORS_ON_EXIT => false`
+- [ ] `tests/Utils/TestCase/ConsoleTestCase.php`:
+  - [ ] Import `use` de Tool y ToolFake
+  - [ ] Binding en `bindFakeTools()`: `$this->app->bind(Tool::class, ToolFake::class)`
+- [ ] `tests/Utils/PhpFileBuilder.php` (si la tool analiza código):
+  - [ ] Constante: `public const MY_TOOL = 'mytool'`
+  - [ ] Método: `addMyToolError(): string`
+  - [ ] Case en `buildWithErrors()` switch
+
+### Ficheros modificados — DataProviders (VERIFICAR CADA PROVIDER INDIVIDUALMENTE)
+- [ ] `tests/Integration/IgnoreErrorsOnExitFlagTest.php`:
+  - [ ] `allToolsProvider()` — añadir entrada
+- [ ] `tests/System/Commands/ExecuteToolCommandTest.php`:
+  - [ ] `allToolsOKDataProvider()` — tool + comando esperado
+  - [ ] `allToolsKODataProvider()` — tool + comando esperado
+  - [ ] `allToolsAtSameTimeDataProvider()` — tool en array Tools + comando en dict Command
+  - [ ] `it_runs_all_configured_tools_at_same_time()` — assertions de la nueva tool
+  - [ ] `onlyConfiguredToolsAtSameTimeDataProvider()` — tool en "Not runned tools" de cada set
+  - [ ] `exit1DataProvider()` — nuevo caso con la tool fallando
+- [ ] `tests/System/Release/ExecuteToolTest.php`:
+  - [ ] `allToolsProvider()` — añadir entrada (si la tool analiza código)
+  - [ ] `it_returns_exit_0_when_executes_all_tools_and_all_pass()` — setTools + assert
+  - [ ] `it_executes_all_tools_with_fast_execution_mode()` — setTools + assert
+  - [ ] `it_runs_all_tools_in_multipe_processes()` — setTools + assert
+  - [ ] Test individual happy path: `it_returns_exit_0_when_mytool_passes()`
+
+### Ficheros modificados — Configuración y docs
+- [ ] `qa/githooks.php` — tool en array Tools + bloque de configuración
+- [ ] `qa/githooks.dist.yml` — tool en lista + bloque comentado con todas las opciones
+- [ ] `README.md` — tool en "Supported Tools" + ejemplo de configuración
+- [ ] `.github/workflows/main-tests.yml` — tool en step "Install PHP"
+- [ ] `.github/workflows/release.yml` — tool en job `test_rc`
+
+### Verificación final (ejecutar SIEMPRE)
+- [ ] `php7.1 vendor/bin/phpunit --order-by random` — 0 fallos
+- [ ] `php7.1 githooks tool mytool` — funciona localmente
+- [ ] `php7.1 githooks tool all full` — incluye la nueva tool
+- [ ] `php7.1 githooks conf:check` — muestra la tool en la tabla
+- [ ] phpmd no reporta violaciones nuevas (cyclomatic complexity en prepareCommand)
 
 ## Permisos necesarios
 
