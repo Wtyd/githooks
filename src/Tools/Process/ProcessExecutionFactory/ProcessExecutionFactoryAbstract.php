@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory;
 
 use Illuminate\Contracts\Container\Container;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionAbstract;
+use Wtyd\GitHooks\Utils\GitStagerInterface;
 use Wtyd\GitHooks\Utils\Printer;
 
 abstract class ProcessExecutionFactoryAbstract
@@ -16,10 +17,14 @@ abstract class ProcessExecutionFactoryAbstract
     /** @var \Wtyd\GitHooks\Utils\Printer */
     protected $printer;
 
-    public function __construct(Container $container, Printer $printer)
+    /** @var \Wtyd\GitHooks\Utils\GitStagerInterface */
+    protected $gitStager;
+
+    public function __construct(Container $container, Printer $printer, GitStagerInterface $gitStager)
     {
         $this->container = $container;
         $this->printer = $printer;
+        $this->gitStager = $gitStager;
     }
 
     /**

@@ -174,6 +174,19 @@ abstract class ToolAbstract
         return $this->args[self::IGNORE_ERRORS_ON_EXIT] ?? false;
     }
 
+    /**
+     * Indicates whether the given exit code means the tool applied fixes to files.
+     * Auto-fixing tools (like phpcbf) should override this method.
+     *
+     * @param int $exitCode
+     * @return bool
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function isFixApplied(int $exitCode): bool
+    {
+        return false;
+    }
+
     public static function checkTool(string $tool): bool
     {
         return array_key_exists($tool, self::SUPPORTED_TOOLS);

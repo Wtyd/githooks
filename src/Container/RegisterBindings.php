@@ -7,6 +7,8 @@ use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactory;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\GitHooks\Utils\GitStager;
+use Wtyd\GitHooks\Utils\GitStagerInterface;
 
 class RegisterBindings
 {
@@ -35,7 +37,10 @@ class RegisterBindings
      */
     protected function binds(): array
     {
-        return [FileUtilsInterface::class => FileUtils::class];
+        return [
+            FileUtilsInterface::class => FileUtils::class,
+            GitStagerInterface::class => GitStager::class,
+        ];
     }
 
     /**

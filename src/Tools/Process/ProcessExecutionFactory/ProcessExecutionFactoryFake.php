@@ -18,9 +18,9 @@ class ProcessExecutionFactoryFake extends ProcessExecutionFactoryAbstract
 
         $processExecution = null;
         if (ToolAbstract::ALL_TOOLS === $tool) {
-            $processExecution = $this->container->makeWith(MultiProcessesExecutionFake::class, [$this->printer]);
+            $processExecution = $this->container->makeWith(MultiProcessesExecutionFake::class, [$this->printer, $this->gitStager]);
         } else {
-            $processExecution = $this->container->makeWith(ProcessExecutionFake::class, [$this->printer]);
+            $processExecution = $this->container->makeWith(ProcessExecutionFake::class, [$this->printer, $this->gitStager]);
         }
 
         return $processExecution;

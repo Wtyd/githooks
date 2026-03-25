@@ -27,6 +27,9 @@ trait ExecutionFakeTrait
     /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
     protected $toolsWithTimeout = [];
 
+    /** @var array<string> Tools that simulate having applied a fix (e.g. phpcbf exit code 1) */
+    protected $toolsWithFixApplied = [];
+
     protected function createProcesses(): void
     {
         foreach ($this->tools as $key => $tool) {
@@ -49,6 +52,9 @@ trait ExecutionFakeTrait
         }
         foreach ($this->toolsWithTimeout as $tool) {
             $this->processes[$tool]->triggerTimeout();
+        }
+        foreach ($this->toolsWithFixApplied as $tool) {
+            $this->processes[$tool]->setFixApplied();
         }
     }
 
@@ -75,6 +81,15 @@ trait ExecutionFakeTrait
     public function setToolsWithTimeout(array $toolsWithTimeout): void
     {
         $this->toolsWithTimeout = $toolsWithTimeout;
+    }
+
+    /**
+     * @param array<string> $toolsWithFixApplied
+     * @return void
+     */
+    public function setToolsWithFixApplied(array $toolsWithFixApplied): void
+    {
+        $this->toolsWithFixApplied = $toolsWithFixApplied;
     }
 
     protected function addProcessToQueue(): void

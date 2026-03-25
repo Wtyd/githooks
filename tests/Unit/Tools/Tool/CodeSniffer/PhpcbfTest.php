@@ -121,4 +121,27 @@ class PhpcbfTest extends UnitTestCase
         $this->assertStringContainsString('src tests', $phpcbf->prepareCommand());
         $this->assertStringContainsString('--ignore=vendor,app', $phpcbf->prepareCommand());
     }
+
+    public function isFixAppliedDataProvider()
+    {
+        return [
+            'exit code 0 - no errors found' => [0, false],
+            'exit code 1 - errors were fixed' => [1, true],
+            'exit code 2 - unfixable errors' => [2, false],
+            'exit code 3 - processing error' => [3, false],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider isFixAppliedDataProvider
+     */
+    function it_reports_fix_applied_only_for_exit_code_1(int $exitCode, bool $expected)
+    {
+        $toolConfiguration = new ToolConfiguration('phpcbf', ['standard' => 'PSR12']);
+
+        $phpcbf = new PhpcbfFake($toolConfiguration);
+
+        $this->assertEquals($expected, $phpcbf->isFixApplied($exitCode));
+    }
 }

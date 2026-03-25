@@ -15,6 +15,11 @@ class Phpcbf extends CodeSniffer
 
     public const USE_PHPCS_CONFIGURATION = 'usePhpcsConfiguration';
 
+    /**
+     * Exit code returned by phpcbf when it successfully fixed all errors.
+     */
+    public const EXIT_CODE_FILES_FIXED = 1;
+
     public const ARGUMENTS = [
         self::PATHS,
         self::STANDARD,
@@ -35,6 +40,17 @@ class Phpcbf extends CodeSniffer
             $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
         }
         $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace(self::PHPCS, self::PHPCBF, $this->args[self::EXECUTABLE_PATH_OPTION]);
+    }
+
+    /**
+     * phpcbf exit code 1 means files were successfully fixed.
+     *
+     * @param int $exitCode
+     * @return bool
+     */
+    public function isFixApplied(int $exitCode): bool
+    {
+        return $exitCode === self::EXIT_CODE_FILES_FIXED;
     }
 
     public static function usePhpcsConfiguration(array $phpcbfConfiguration): bool

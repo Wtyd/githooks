@@ -7,12 +7,16 @@ namespace Wtyd\GitHooks\Tools\Process\Execution;
 use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\Process\Process;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Wtyd\GitHooks\Utils\GitStagerInterface;
 use Wtyd\GitHooks\Utils\Printer;
 
 abstract class ProcessExecutionAbstract
 {
     /** @var \Wtyd\GitHooks\Utils\Printer */
     protected $printer;
+
+    /** @var \Wtyd\GitHooks\Utils\GitStagerInterface */
+    protected $gitStager;
 
     /** @var array<\Wtyd\GitHooks\Tools\Process\Process> */
     protected $processes = [];
@@ -26,9 +30,10 @@ abstract class ProcessExecutionAbstract
     /** @var int */
     protected $threads;
 
-    public function __construct(Printer $printer)
+    public function __construct(Printer $printer, GitStagerInterface $gitStager)
     {
         $this->printer = $printer;
+        $this->gitStager = $gitStager;
         $this->errors = new Errors();
     }
 
