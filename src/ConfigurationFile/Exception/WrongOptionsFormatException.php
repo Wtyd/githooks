@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-class WrongOptionsFormatException extends \DomainException implements ConfigurationFileInterface
-{
+class WrongOptionsFormatException extends \DomainException{
     /** @var array */
     private $options;
 

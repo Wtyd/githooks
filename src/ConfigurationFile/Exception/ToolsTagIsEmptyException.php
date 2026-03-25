@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-class ToolsTagIsEmptyException extends \RuntimeException implements ConfigurationFileInterface
-{
+class ToolsTagIsEmptyException extends \RuntimeException{
     /**
      * @var string Fichero de configuración.
      */

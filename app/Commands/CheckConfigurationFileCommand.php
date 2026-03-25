@@ -4,7 +4,7 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileInterface;
+use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\ConfigurationFile\Printer\OptionsTable;
@@ -62,7 +62,7 @@ class CheckConfigurationFileCommand extends Command
         } catch (ConfigurationFileNotFoundException $exception) {
             $errors->setError('set error', 'to return 1');
             $this->printer->resultError($exception->getMessage());
-        } catch (ConfigurationFileInterface $exception) {
+        } catch (ConfigurationFileException $exception) {
             $this->error($exception->getMessage());
             $errors->setError('set error', 'to return 1');
 

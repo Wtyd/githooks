@@ -6,8 +6,7 @@ namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
-class ToolIsNotSupportedException extends \UnexpectedValueException implements ConfigurationFileInterface
-{
+class ToolIsNotSupportedException extends \UnexpectedValueException{
     /**
      * @var string
      */

@@ -175,15 +175,14 @@ try {
     // Valor inválido en Options (e.g., execution='invalid')
 } catch (ConfigurationFileNotFoundException $e) {
     // No se encontró githooks.php ni githooks.yml
-} catch (ConfigurationFileInterface $e) {
+} catch (ConfigurationFileException $e) {
     // Cualquier otro error de configuración — muestra errors + warnings
     foreach ($e->getConfigurationFile()->getErrors() as $error) { ... }
     foreach ($e->getConfigurationFile()->getWarnings() as $warning) { ... }
 }
 ```
 
-`ConfigurationFileInterface` es el catch-all para errores de configuración. Todas las excepciones
-de configuración implementan esta interfaz.
+`ConfigurationFileException` es el catch-all para errores genéricos de configuración.
 
 ## Output
 

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-class ToolsTagIsNotFoundException extends \RuntimeException implements ConfigurationFileInterface
-{
+class ToolsTagIsNotFoundException extends \RuntimeException{
     /**
      * @var string Fichero de configuración.
      */
