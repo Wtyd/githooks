@@ -18,7 +18,7 @@ use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
     Phpcbf
 };
 
-class ToolsFactoy
+class ToolsFactory
 {
     /**
      * Transform the array with the configuration of the tools into an array of tools.

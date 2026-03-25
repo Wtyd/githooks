@@ -9,7 +9,7 @@ use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
-use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Tools\ToolsFactory;
 use Wtyd\GitHooks\Utils\Printer;
 
 class ProcessExecutionTest extends UnitTestCase
@@ -25,7 +25,7 @@ class ProcessExecutionTest extends UnitTestCase
     {
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
 
-        $this->toolsFactory = new ToolsFactoy();
+        $this->toolsFactory = new ToolsFactory();
     }
 
     public function allToolsDataProvider()

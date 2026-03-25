@@ -17,7 +17,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     Psalm,
     SecurityChecker
 };
-use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Tools\ToolsFactory;
 
 class FullExecutionTest extends UnitTestCase
 {
@@ -70,7 +70,7 @@ class FullExecutionTest extends UnitTestCase
      */
     function it_can_load_each_tool($toolClass, $tool)
     {
-        $fullExecution = new FullExecution(new ToolsFactoy());
+        $fullExecution = new FullExecution(new ToolsFactory());
 
         $configurationFileBuilder = new ConfigurationFileBuilder('');
         $configurationFileBuilder->setTools([$tool]);
@@ -87,7 +87,7 @@ class FullExecutionTest extends UnitTestCase
     function it_can_load_all_tools_at_same_time()
     {
 
-        $fullExecution = new FullExecution(new ToolsFactoy());
+        $fullExecution = new FullExecution(new ToolsFactory());
 
         $configurationFileBuilder = new ConfigurationFileBuilder('');
 

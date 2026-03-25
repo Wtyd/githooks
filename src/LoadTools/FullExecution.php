@@ -3,17 +3,17 @@
 namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Tools\ToolsFactory;
 
 /**
  * Prepares all the tools that are configured with the Tools tag in the configuration file.
  */
 class FullExecution implements ExecutionMode
 {
-    /** @var \Wtyd\GitHooks\Tools\ToolsFactoy */
+    /** @var \Wtyd\GitHooks\Tools\ToolsFactory */
     protected $toolsFactory;
 
-    public function __construct(ToolsFactoy $toolsFactory)
+    public function __construct(ToolsFactory $toolsFactory)
     {
         $this->toolsFactory = $toolsFactory;
     }

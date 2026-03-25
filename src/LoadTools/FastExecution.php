@@ -4,7 +4,7 @@ namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
-use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Tools\ToolsFactory;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
@@ -33,10 +33,10 @@ class FastExecution implements ExecutionMode
     /** @var \Wtyd\GitHooks\Utils\FileUtilsInterface */
     protected $fileUtils;
 
-    /** @var \Wtyd\GitHooks\Tools\ToolsFactoy */
+    /** @var \Wtyd\GitHooks\Tools\ToolsFactory */
     protected $toolsFactory;
 
-    public function __construct(FileUtilsInterface $fileUtils, ToolsFactoy $toolsFactory)
+    public function __construct(FileUtilsInterface $fileUtils, ToolsFactory $toolsFactory)
     {
         $this->fileUtils = $fileUtils;
         $this->toolsFactory = $toolsFactory;

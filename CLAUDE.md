@@ -106,7 +106,7 @@ CLI (ExecuteToolCommand) → ConfigurationFile → ToolsPreparer → ProcessExec
 
 1. El comando recibe nombre de tool y modo (full/fast)
 2. `ConfigurationFile` parsea `githooks.php` (prioridad) o `githooks.yml`
-3. `ToolsPreparer` → `ToolsFactoy` instancia las tools
+3. `ToolsPreparer` → `ToolsFactory` instancia las tools
 4. `ProcessExecutionFactory` crea ejecución single o paralela
 5. Cada tool construye su comando shell via `prepareCommand()`
 
@@ -138,7 +138,7 @@ return [
 - **Sin dependencias runtime en `require`.** Todas las dependencias están en `require-dev` por diseño — el `.phar` las embebe en compilación. Si necesitas añadir una dependencia, va en `require-dev`. Nunca en `require` salvo que se hable explícitamente con el usuario.
 - **Dirección de dependencias:** `src/` nunca importa de `app/` (hook de hookify lo bloquea).
 - **`declare(strict_types=1)`** obligatorio en `src/` (hook de hookify lo verifica).
-- **`ToolsFactoy`** (typo sin 'r') — referenciado en 3+ ficheros, no renombrar sin actualizar todo.
+- **`ToolsFactory`** — factory que instancia las tools desde la configuración.
 - **`src/Tools/Process/`** excluido de PHPStan — wraps de Symfony Process.
 - **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.1 githooks tool all full`.
 

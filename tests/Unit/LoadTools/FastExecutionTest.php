@@ -3,7 +3,7 @@
 namespace Tests\Unit\LoadTools;
 
 use Wtyd\GitHooks\LoadTools\FastExecution;
-use Wtyd\GitHooks\Tools\ToolsFactoy;
+use Wtyd\GitHooks\Tools\ToolsFactory;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Wtyd\GitHooks\Utils\FileUtilsFake;
@@ -40,7 +40,7 @@ class FastExecutionTest extends UnitTestCase
         $gitFiles->setModifiedfiles(['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php', 'database/my_migration.php', 'otherPath/file3.php']);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php']);
 
-        $toolsFactorySpy = Mockery::spy(ToolsFactoy::class);
+        $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
         $configurationFile = [
             'Tools' => [$tool],
             $tool => [
@@ -96,7 +96,7 @@ class FastExecutionTest extends UnitTestCase
         $gitFiles->setModifiedfiles($gitModifiedFiles);
         $gitFiles->setFilesThatShouldBeFoundInDirectories($filesThatShouldBeFoundInDirectories);
 
-        $toolsFactorySpy = Mockery::spy(ToolsFactoy::class);
+        $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
 
 
         $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
@@ -123,7 +123,7 @@ class FastExecutionTest extends UnitTestCase
                 'paths' => ['src',]
             ]
         ];
-        $fastExecution = new FastExecution($gitFiles, new ToolsFactoy());
+        $fastExecution = new FastExecution($gitFiles, new ToolsFactory());
 
         $configurationFile = new ConfigurationFile($configurationFile, $tool);
         $loadedTools = $fastExecution->getTools($configurationFile);
@@ -162,7 +162,7 @@ class FastExecutionTest extends UnitTestCase
                 'paths' => ['src',]
             ]
         ];
-        $fastExecution = new FastExecution($gitFiles, new ToolsFactoy());
+        $fastExecution = new FastExecution($gitFiles, new ToolsFactory());
 
         $loadedTools = $fastExecution->getTools(new ConfigurationFile($configurationFile, $toolName));
 
