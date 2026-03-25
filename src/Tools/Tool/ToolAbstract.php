@@ -180,6 +180,7 @@ abstract class ToolAbstract
      *
      * @param int $exitCode
      * @return bool
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function isFixApplied(int $exitCode): bool
     {
