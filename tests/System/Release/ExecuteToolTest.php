@@ -19,6 +19,35 @@ class ExecuteToolTest extends ReleaseTestCase
             self::TESTS_PATH . '/src/File.php',
             $this->phpFileBuilder->build()
         );
+
+        // PHPUnit needs a test file and config to run successfully
+        file_put_contents(
+            self::TESTS_PATH . '/src/PassingTest.php',
+            '<?php
+use PHPUnit\Framework\TestCase;
+class PassingTest extends TestCase
+{
+    public function testItPasses()
+    {
+        $this->assertTrue(true);
+    }
+}'
+        );
+
+        file_put_contents(
+            self::TESTS_PATH . '/phpunit.xml',
+            '<?xml version="1.0" encoding="UTF-8"?>
+<phpunit>
+    <testsuites>
+        <testsuite name="default">
+            <directory>src</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>'
+        );
+
+        $this->configurationFileBuilder
+            ->changeToolOption('phpunit', ['configuration' => self::TESTS_PATH . '/phpunit.xml']);
     }
 
     public function fullExecutionModeProvider()
@@ -43,7 +72,7 @@ class ExecuteToolTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.php',
-            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
+            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'])
                 ->setOptions($executionModeFile)
                 ->buildPhp()
         );
@@ -56,6 +85,8 @@ class ExecuteToolTest extends ReleaseTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+        $this->assertToolHasBeenExecutedSuccessfully('phpunit');
+        $this->assertToolHasBeenExecutedSuccessfully('psalm');
     }
 
     public function fastExecutionModeProvider()
@@ -80,7 +111,7 @@ class ExecuteToolTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.php',
-            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
+            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'])
                 ->setOptions($executionModeFile)
                 ->buildPhp()
         );
@@ -106,6 +137,8 @@ class ExecuteToolTest extends ReleaseTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasFailed('phpcpd'); // No acelerable tool
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+        $this->assertToolHasBeenExecutedSuccessfully('phpunit'); // No acelerable tool
+        $this->assertToolHasBeenExecutedSuccessfully('psalm');
     }
 
     /** @test */
@@ -149,6 +182,9 @@ class ExecuteToolTest extends ReleaseTestCase
             'Parallel-Lint' => [
                 'parallel-lint'
             ],
+            'Psalm' => [
+                'psalm'
+            ],
         ];
     }
 
@@ -181,7 +217,7 @@ class ExecuteToolTest extends ReleaseTestCase
     {
         file_put_contents(
             'githooks.php',
-            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
+            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'])
                 ->buildPhp()
         );
         passthru("$this->githooks tool all --processes=2", $exitCode);
@@ -193,7 +229,70 @@ class ExecuteToolTest extends ReleaseTestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpmd');
         $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
+        $this->assertToolHasBeenExecutedSuccessfully('phpunit');
+        $this->assertToolHasBeenExecutedSuccessfully('psalm');
     }
+
+    /** @test */
+    function it_returns_exit_0_when_phpunit_passes()
+    {
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools(['phpunit'])
+                ->buildPhp()
+        );
+
+        passthru("$this->githooks tool phpunit", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpunit');
+    }
+
+    /** @test */
+    function it_returns_exit_0_when_phpunit_fails_with_ignoreErrorsOnExit()
+    {
+        // Add a failing test alongside the passing one from setUp
+        file_put_contents(
+            self::TESTS_PATH . '/src/FailingTest.php',
+            '<?php
+use PHPUnit\Framework\TestCase;
+class FailingTest extends TestCase
+{
+    public function testItFails()
+    {
+        $this->assertTrue(false);
+    }
+}'
+        );
+
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools(['phpunit'])
+                ->changeToolOption('phpunit', ['ignoreErrorsOnExit' => true])
+                ->buildPhp()
+        );
+
+        passthru("$this->githooks tool phpunit", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasFailed('phpunit');
+    }
+
+    /** @test */
+    function it_returns_exit_0_when_psalm_passes()
+    {
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools(['psalm'])
+                ->buildPhp()
+        );
+
+        passthru("$this->githooks tool psalm", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('psalm');
+    }
+
     /** @test */
     function it_shows_detailed_output_when_a_tool_crashes()
     {

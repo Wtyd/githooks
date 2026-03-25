@@ -18,6 +18,8 @@ class PhpFileBuilder
 
     public const PHPCPD = 'phpcpd';
 
+    public const PSALM = 'psalm';
+
     protected $name;
 
     protected $header;
@@ -71,6 +73,9 @@ class PhpFileBuilder
                     break;
                 case self::PHPCPD:
                     $file .= $this->addPhpCPDError();
+                    break;
+                case self::PSALM:
+                    $file .= $this->addPsalmError();
                     break;
             }
         }
@@ -147,6 +152,17 @@ class ' . $this->name . "
         return "\n" . '    public function parallelLint()
     {
         echo "falta el ;"
+    }' . "\n";
+    }
+
+    public function addPsalmError(): string
+    {
+        return "\n" . '    /**
+     * @return int
+     */
+    public function psalmError()
+    {
+        return "not an int";
     }' . "\n";
     }
 
