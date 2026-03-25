@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(php7.1 vendor/bin/phpunit:*)",
+      "Bash(php7.1 githooks:*)",
+      "Bash(php7.2 githooks:*)",
+      "Bash(vendor/bin/phpunit:*)",
+      "Bash(php7.0:*)",
+      "Bash(php7.1:*)",
+      "Bash(php7.2:*)",
+      "Bash(php7.3:*)",
+      "Bash(php7.4:*)",
+      "Bash(php8.0:*)",
+      "Bash(php8.1:*)",
+      "Bash(php8.2:*)",
+      "Bash(php8.3:*)",
+      "Bash(php8.4:*)",
+      "Bash(phpstan:*)",
+      "Bash(phpmd:*)",
+      "Bash(phpcs:*)",
+      "Bash(phpcbf:*)",
+      "Bash(phpcpd:*)",
+      "Bash(parallel-lint:*)",
+      "Bash(composer:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git stash:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)"
+    ]
+  }
+}
