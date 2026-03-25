@@ -7,7 +7,8 @@ namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 use Wtyd\GitHooks\ConfigurationFile\OptionsConfiguration;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
-class WrongOptionsValueException extends \DomainException{
+class WrongOptionsValueException extends \DomainException
+{
     /**
      * @param mixed $executionValue
      * @return WrongOptionsValueException

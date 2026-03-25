@@ -6,7 +6,8 @@ namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 
-class ConfigurationFileException extends \RuntimeException{
+class ConfigurationFileException extends \RuntimeException
+{
     /**
      * @var ConfigurationFile
      */

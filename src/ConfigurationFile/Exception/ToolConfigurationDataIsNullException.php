@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-class ToolConfigurationDataIsNullException extends \InvalidArgumentException{
+class ToolConfigurationDataIsNullException extends \InvalidArgumentException
+{
     /**
      * Data for the tool
      *

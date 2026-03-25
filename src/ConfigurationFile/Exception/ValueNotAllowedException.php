@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-class ValueNotAllowedException extends \UnexpectedValueException{
+class ValueNotAllowedException extends \UnexpectedValueException
+{
     /**
      * @var string The key of the configuration file.
      */
