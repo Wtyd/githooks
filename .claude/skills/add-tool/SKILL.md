@@ -6,6 +6,7 @@ description: >
   (como phpunit, psalm, rector, phpinsights, etc.), integrar una nueva tool, o cuando mencione
   "nueva tool", "añadir herramienta", "soporte para X", "integrar X tool", "add tool".
   También se activa cuando se trabaje en los stubs vacíos de Phpunit.php o Psalm.php.
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 *), Bash(git add *), Bash(git commit *), Bash(git mv *), Bash(git status), Bash(git diff *), Bash(git log *), Agent, WebFetch, WebSearch
 ---
 
 # Añadir una nueva QA Tool a GitHooks
@@ -227,3 +228,38 @@ No todas las tools son acelerables. `security-checker` no tiene paths, `phpcpd` 
 - [ ] `php githooks tool mytool` funciona localmente
 - [ ] `php githooks tool all full` incluye la nueva tool
 - [ ] `php githooks conf:check` muestra la tool en la tabla
+
+## Permisos necesarios
+
+### Lectura de ficheros
+- `src/Tools/Tool/` — Clases de tools existentes como referencia y `ToolAbstract.php`
+- `src/Tools/ToolsFactory.php` — Factory de tools (imports)
+- `src/ConfigurationFile/` — `ToolConfiguration.php`, `ConfigurationFile.php`
+- `src/LoadTools/FastExecution.php` — Si la tool es acelerarable
+- `qa/githooks.php`, `qa/githooks.dist.yml` — Configuración del proyecto
+- `tests/Unit/Tools/Tool/` — Tests de otras tools como referencia
+- `tests/Utils/ConfigurationFileBuilder.php` — Builder de configuración para tests
+- `composer.json` — Dependencias
+
+### Escritura de ficheros
+- `src/Tools/Tool/{NuevaTool}.php` — Clase de la tool
+- `src/Tools/Tool/{NuevaTool}Fake.php` — Fake para testing
+- `src/Tools/Tool/ToolAbstract.php` — Constantes y `SUPPORTED_TOOLS`
+- `src/Tools/ToolsFactory.php` — Import de la nueva clase
+- `qa/githooks.php` — Configuración del proyecto
+- `qa/githooks.dist.yml` — Configuración de distribución
+- `tests/Unit/Tools/Tool/{NuevaTool}Test.php` — Tests unitarios
+- `tests/Utils/ConfigurationFileBuilder.php` — Configuración del builder
+- `composer.json` — Dependencia en `require-dev` (si aplica)
+- `qa/{config}.xml` — Fichero de configuración de la tool (si aplica)
+
+### Comandos Bash
+- `php7.1 vendor/bin/phpunit --order-by random` — Tests completos
+- `php7.1 githooks tool {nombre} full` — Verificar tool individual
+- `php7.1 githooks tool all full` — QA completo
+- `php7.1 -l src/Tools/Tool/{NuevaTool}.php` — Verificar sintaxis PHP 7.1
+- `git add` / `git commit` — Commits (solo si el usuario lo pide)
+
+### Agentes
+- **Explore** — Para investigar documentación de la tool externa (flags CLI, config)
+- **general-purpose** — Para fetch de documentación web de la tool (verificar flags reales)

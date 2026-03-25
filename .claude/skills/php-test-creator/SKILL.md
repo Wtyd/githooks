@@ -7,6 +7,7 @@ description: >
   También cuando se mencione: "añadir tests", "crear tests", "test unitario", "test de integración",
   "test de sistema", "test de release", "necesito tests para esto", "falta cobertura", o cualquier
   variación en castellano o inglés relacionada con testing en este proyecto.
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 vendor/bin/phpunit *), Bash(php7.1 githooks tool *), Bash(git add *), Bash(git commit *), Bash(git status), Bash(git diff *), Bash(git log *), Agent
 ---
 
 # PHP Test Creator para GitHooks
@@ -99,3 +100,31 @@ Antes de dar por terminados los tests, verifica cada punto:
 - [ ] `vendor/bin/phpunit tests/Integration/...` pasa (si hay integration tests)
 - [ ] `vendor/bin/phpunit tests/System/...` pasa (si hay system tests, excluyendo release)
 - [ ] No se han roto tests existentes: `vendor/bin/phpunit --order-by random`
+
+## Permisos necesarios
+
+### Lectura de ficheros
+- `src/` — Clases bajo test (para entender la API pública y comportamiento)
+- `tests/Unit/`, `tests/Integration/`, `tests/System/` — Tests existentes como referencia de patrones
+- `tests/Utils/` — `ConfigurationFileBuilder.php`, `TestCase/`, `Traits/` — Utilidades de test
+- `tests/Mock/` — Mocks existentes
+- `src/Utils/FileUtilsFake.php` — Fake de filesystem para tests unitarios
+- `src/Tools/Process/ProcessFake.php` — Fake de proceso para tests de ejecución
+- `src/Tools/Process/ExecutionFakeTrait.php` — Trait para fakes de ejecución
+- `phpunit.xml` — Configuración de PHPUnit (grupos, suites)
+
+### Escritura de ficheros
+- `tests/Unit/**/*Test.php` — Tests unitarios nuevos o modificados
+- `tests/Integration/**/*Test.php` — Tests de integración
+- `tests/System/**/*Test.php` — Tests de sistema
+- `tests/Utils/ConfigurationFileBuilder.php` — Añadir configuraciones de nuevas tools
+
+### Comandos Bash
+- `php7.1 vendor/bin/phpunit --order-by random` — Suite completa
+- `php7.1 vendor/bin/phpunit tests/Unit/{path}` — Tests específicos
+- `php7.1 vendor/bin/phpunit --filter {testName}` — Test individual
+- `php7.1 githooks tool all full` — QA completo (verificación final)
+- `git add` / `git commit` — Commits (solo si el usuario lo pide)
+
+### Agentes
+- **Explore** — Para investigar patrones de test existentes y cobertura actual

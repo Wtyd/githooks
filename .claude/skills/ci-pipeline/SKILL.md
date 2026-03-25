@@ -7,6 +7,7 @@ description: >
   "GitHub Actions", "workflow", "CI", "pipeline", "build", "release", "matriz de PHP",
   "phar", "deploy", "artefacto". También cuando se toquen ficheros en .github/workflows/,
   box.json, o los comandos PreBuildCommand/BuildCommand.
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 *), Bash(git add *), Bash(git commit *), Bash(git status), Bash(git diff *), Bash(git log *), Agent
 ---
 
 # CI Pipeline y Build de GitHooks
@@ -177,3 +178,31 @@ Si añades un nuevo directorio al proyecto que deba incluirse en el `.phar`, añ
 - [ ] Si se cambia el build: `box.json` incluye los directorios necesarios
 - [ ] Si se añade dependencia dev: considerado si debe ir en `PreBuildCommand::DEV_DEPENDENCIES`
 - [ ] `fail-fast: false` está en las estrategias de matriz (para no perder resultados parciales)
+
+## Permisos necesarios
+
+### Lectura de ficheros
+- `.github/workflows/` — `main-tests.yml`, `release.yml` y cualquier otro workflow
+- `box.json` — Configuración del build del .phar
+- `app/Commands/Zero/BuildCommand.php` — Comando de build
+- `app/Commands/Zero/PreBuildCommand.php` — Preparación pre-build
+- `src/Build/Build.php` — Lógica de rutas y tiers de build
+- `composer.json` — Dependencias y versiones PHP
+- `builds/` — Estructura de directorios de output
+
+### Escritura de ficheros
+- `.github/workflows/*.yml` — Workflows de GitHub Actions
+- `box.json` — Configuración del .phar
+- `app/Commands/Zero/BuildCommand.php` — Si cambia el proceso de build
+- `app/Commands/Zero/PreBuildCommand.php` — Si cambian dependencias pre-build
+- `src/Build/Build.php` — Si cambian tiers o rutas
+
+### Comandos Bash
+- `php7.1 githooks app:pre-build php` — Pre-build
+- `php7.1 githooks app:build` — Build del .phar
+- `php7.1 vendor/bin/phpunit --order-by random` — Tests completos
+- `php7.1 githooks tool all full` — QA completo
+- `git add` / `git commit` — Commits (solo si el usuario lo pide)
+
+### Agentes
+- **Explore** — Para investigar la estructura de workflows y matriz de versiones PHP

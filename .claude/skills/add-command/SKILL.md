@@ -7,6 +7,7 @@ description: >
   añadir opciones al CLI, cambiar el comportamiento de un comando, o cuando mencione "nuevo comando",
   "añadir opción", "modificar command", "crear subcomando", "flag", "argumento CLI".
   También cuando se toque CliArguments, OptionsConfiguration, o cualquier fichero en app/Commands/.
+allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 *), Bash(git add *), Bash(git commit *), Bash(git status), Bash(git diff *), Bash(git log *), Agent
 ---
 
 # Crear o modificar comandos artisan en GitHooks
@@ -218,3 +219,28 @@ $this->artisan("mycommand arg --option=value")
 - [ ] Si toca `CliArguments`: actualizado constructor + `overrideArguments()`
 - [ ] Si añade binding: registrado en `RegisterBindings` + fake en `testsRegister()`
 - [ ] Tests creados (delegar a `php-test-creator`)
+
+## Permisos necesarios
+
+### Lectura de ficheros
+- `app/Commands/` — Comandos existentes como referencia (especialmente `ExecuteToolCommand.php`, `CheckConfigurationFileCommand.php`)
+- `app/Commands/ToolCommand.php` — Clase base para comandos de tool
+- `src/ConfigurationFile/` — `CliArguments.php`, `ConfigurationFile.php`, `OptionsConfiguration.php`
+- `src/ConfigurationFile/Exception/` — Excepciones para manejo de errores
+- `app/Providers/RegisterBindings.php` — Bindings del contenedor
+- `tests/` — Tests existentes como referencia
+
+### Escritura de ficheros
+- `app/Commands/{NuevoComando}.php` — El nuevo comando
+- `src/ConfigurationFile/CliArguments.php` — Si el comando añade opciones CLI
+- `src/ConfigurationFile/OptionsConfiguration.php` — Si añade opciones de configuración
+- `app/Providers/RegisterBindings.php` — Si necesita bindings
+
+### Comandos Bash
+- `php7.1 vendor/bin/phpunit --order-by random` — Tests completos
+- `php7.1 githooks {nuevo-comando}` — Verificar que el comando funciona
+- `php7.1 githooks tool all full` — QA completo
+- `git add` / `git commit` — Commits (solo si el usuario lo pide)
+
+### Agentes
+- **Explore** — Para investigar comandos existentes y patrones de DI
