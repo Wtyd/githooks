@@ -447,7 +447,7 @@ class PendingCommand
         if (count($this->test->toolHasBeenExecutedSuccessfully)) {
             foreach ($this->test->toolHasBeenExecutedSuccessfully as $key => $tool) {
                 $this->test->assertMatchesRegularExpression(
-                    "%$tool(\.phar)? - OK\. Time: \d+\.\d{2}%",
+                    "%$tool(\.phar)? - OK\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%",
                     $this->test->getActualOutput(),
                     "The tool $tool has not been executed successfully"
                 );
@@ -458,7 +458,7 @@ class PendingCommand
         if (count($this->test->toolHasFailed)) {
             foreach ($this->test->toolHasFailed as $key => $tool) {
                 $this->test->assertMatchesRegularExpression(
-                    "%$tool(\.phar)? - KO\. Time: \d+\.\d{2}%",
+                    "%$tool(\.phar)? - KO\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%",
                     $this->test->getActualOutput(),
                     "The tool $tool has not failed"
                 );

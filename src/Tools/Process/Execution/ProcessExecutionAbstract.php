@@ -87,7 +87,20 @@ abstract class ProcessExecutionAbstract
      */
     protected function executionTime(?float $endToolExecution, float $startToolExecution): string
     {
-        return number_format($endToolExecution - $startToolExecution, 2);
+        $seconds = $endToolExecution - $startToolExecution;
+
+        if ($seconds < 1) {
+            return (int)($seconds * 1000) . 'ms';
+        }
+
+        if ($seconds < 60) {
+            return number_format($seconds, 2) . 's';
+        }
+
+        $minutes = (int)($seconds / 60);
+        $remainingSeconds = (int)($seconds % 60);
+
+        return $minutes . 'm ' . $remainingSeconds . 's';
     }
 
     protected function createProcesses(): void

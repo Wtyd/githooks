@@ -52,11 +52,7 @@ class Printer
         $headLines = 20;
         $tailLines = 3;
 
-        $header = "┌─ $toolName output ─";
-        $headerLen = mb_strlen($header);
-        $padWidth = max($frameWidth - $headerLen, 3);
-
-        echo "  " . $header . str_repeat('─', $padWidth) . "\n";
+        echo "  ┌" . str_repeat('─', $frameWidth - 1) . "\n";
 
         $lines = explode("\n", $errorMessage);
         $totalLines = count($lines);

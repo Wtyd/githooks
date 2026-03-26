@@ -89,14 +89,14 @@ class ReleaseTestCase extends TestCase
      */
     protected function assertToolHasBeenExecutedSuccessfully(string $tool): void
     {
-        //phpcbf - OK. Time: 0.18
-        $this->assertMatchesRegularExpression("%$tool - OK\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
+        //phpcbf - OK. Time: 60ms | 0.18s | 2m 5s
+        $this->assertMatchesRegularExpression("%$tool - OK\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
     }
 
     protected function assertToolHasFailed(string $tool): void
     {
-        //phpcbf - KO. Time: 0.18
-        $this->assertMatchesRegularExpression("%$tool - KO\. Time: \d+\.\d{2}%", $this->getActualOutput(), "The tool $tool has not failed");
+        //phpcbf - KO. Time: 60ms | 0.18s | 2m 5s
+        $this->assertMatchesRegularExpression("%$tool - KO\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%", $this->getActualOutput(), "The tool $tool has not failed");
     }
 
     protected function assertToolDidNotRun(string $tool): void

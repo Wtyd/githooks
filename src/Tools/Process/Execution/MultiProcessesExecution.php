@@ -56,7 +56,7 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         }
         $endCommandExecution = microtime(true);
         $executionTime = $this->executionTime($endCommandExecution, $startCommandExecution);
-        $this->printer->line("Total Runtime: $executionTime seconds");
+        $this->printer->line("Total Runtime: $executionTime");
         $this->printSummary();
         return $this->errors;
     }
@@ -111,7 +111,6 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
             $this->toolResults[$toolName] = ['displayName' => $displayName, 'success' => false];
         }
 
-        $this->printer->emptyLine();
         unset($this->runningProcesses[$toolName]);
 
         return count($this->runnedProcesses);
@@ -119,21 +118,19 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
 
     protected function printSummary(): void
     {
-        $orderedResults = [];
+        $failedResults = [];
         $passed = 0;
         foreach ($this->tools as $toolName => $tool) {
-            if (isset($this->toolResults[$toolName])) {
-                $result = $this->toolResults[$toolName];
-            } else {
-                $result = ['displayName' => $tool->getDisplayName(), 'success' => false];
-            }
-            $orderedResults[] = $result;
-            if ($result['success']) {
+            if (isset($this->toolResults[$toolName]) && $this->toolResults[$toolName]['success']) {
                 $passed++;
+            } else {
+                $displayName = isset($this->toolResults[$toolName])
+                    ? $this->toolResults[$toolName]['displayName']
+                    : $tool->getDisplayName();
+                $failedResults[] = ['displayName' => $displayName, 'success' => false];
             }
         }
         $total = count($this->tools);
-        $toolList = ($passed < $total) ? $orderedResults : [];
-        $this->printer->summary($passed, $total, $toolList);
+        $this->printer->summary($passed, $total, $failedResults);
     }
 }
