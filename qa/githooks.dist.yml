@@ -16,6 +16,9 @@ Tools:
   - script
 
 # Configuration of each tool
+# Per-tool execution: add 'execution: full' or 'execution: fast' to override the global mode.
+# CLI execution argument overrides both global and per-tool settings.
+
 # security-checker:
 #   executablePath: composer audit
 #   otherArguments: '-format json'
@@ -23,6 +26,7 @@ Tools:
 
 # phpstan:
 #   executablePath: phpstan
+#   execution: fast # Optional: override global execution mode for this tool
 #   config: './qa/phpstan.neon'
 #   memory-limit: '1G' # Examples: 1M 2000M 1G 5G
 #   paths: ['./src']
@@ -39,6 +43,7 @@ Tools:
 
 # phpcbf:
 #   usePhpcsConfiguration: true # if true no more configuration is needed. It graves the arguments of phpcs configuration
+#   execution: fast # Optional: run phpcbf only against modified files
 #   executablePath: phpcbf
 #   paths: ['./']
 #   standard: './myRules.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR

@@ -114,9 +114,30 @@ The `execution` flag marks how GitHooks will run:
 * `full` (the default option): executes always all tools setted against all path setted for each tool.
     For example, you setted phpcs for run in `src` and `app` directories. The commit only contains modified files from `database` directory. Phpcs will check `src` and `app` directories even if no files in these directories have been modified.
 * `fast`: this option runs the tools only against files modified by commit.
-    * This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint. The rest of the tools will run as the full option.
-    * **WARNING!!!** You must set the excludes of the tools either in `githooks.yml` or in the configuration file of eath tool since this
+    * This option only affects the following tools: phpcs, phpcbf, phpmd, phpstan, psalm and parallel-lint. The rest of the tools will run as the full option.
+    * **WARNING!!!** You must set the excludes of the tools either in `githooks.yml` or in the configuration file of each tool since this
 option overwrites the key `paths` of the tools so that they are executed only against the modified files.
+
+#### Per-tool execution mode
+You can override the global execution mode for individual tools by adding an `execution` key to the tool's configuration:
+
+```php
+'Options' => [
+    'execution' => 'full', // Global default
+],
+'phpcs' => [
+    'paths' => ['src'],
+    // No execution key: inherits global 'full'
+],
+'phpcbf' => [
+    'execution' => 'fast', // Override: only modified files
+    'paths' => ['src'],
+],
+```
+
+**Priority:** CLI argument > per-tool setting > global Options > default (`full`).
+
+When you pass execution from the CLI (e.g. `githooks tool all fast`), it overrides both global and per-tool settings for that run.
 
 ### 6.1.2. Processes
 Run multiple tools in multiple processes at same time (`tool all` command). The default number of processes is 1.
@@ -146,6 +167,7 @@ In next step you must configure the tools with the same name as in the *Tools* k
 ```php
 'phpcs' => [
         'executablePath' => 'phpcs',
+        'execution' => 'fast', // Optional: override global execution mode (full/fast)
         'paths' => ['./'],
         'standard' => './myRules.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
         'ignore' => ['vendor'],

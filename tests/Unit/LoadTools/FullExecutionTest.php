@@ -17,6 +17,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     Psalm,
     SecurityChecker
 };
+use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\ToolsFactory;
 
 class FullExecutionTest extends UnitTestCase
@@ -95,5 +96,24 @@ class FullExecutionTest extends UnitTestCase
 
 
         $this->assertCount(10, $loadedTools);
+    }
+
+    /** @test */
+    function processTools_loads_a_subset_of_tools()
+    {
+        $fullExecution = new FullExecution(new ToolsFactory());
+        $configurationFileBuilder = new ConfigurationFileBuilder('');
+        $configurationFile = new ConfigurationFile($configurationFileBuilder->buildArray(), 'all');
+
+        $subset = [
+            'phpcs' => $configurationFile->getToolsConfiguration()['phpcs'],
+            'phpmd' => $configurationFile->getToolsConfiguration()['phpmd'],
+        ];
+
+        $loadedTools = $fullExecution->processTools($subset, $configurationFile);
+
+        $this->assertCount(2, $loadedTools);
+        $this->assertInstanceOf(Phpcs::class, $loadedTools['phpcs']);
+        $this->assertInstanceOf(Phpmd::class, $loadedTools['phpmd']);
     }
 }

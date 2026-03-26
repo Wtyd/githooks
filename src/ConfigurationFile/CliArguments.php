@@ -56,6 +56,7 @@ class CliArguments
     {
         if (!empty($this->execution)) {
             $configurationFile[OptionsConfiguration::OPTIONS_TAG][OptionsConfiguration::EXECUTION_TAG] = $this->execution;
+            $configurationFile[ConfigurationFile::CLI_EXECUTION_OVERRIDE] = true;
         }
 
         if (!empty($this->processes)) {
@@ -65,7 +66,11 @@ class CliArguments
         if (ConfigurationFile::ALL_TOOLS === $this->tool) {
             if ($this->ignoreErrorsOnExit !== null) {
                 $allToolsConfiguration = $configurationFile;
-                unset($allToolsConfiguration[OptionsConfiguration::OPTIONS_TAG], $allToolsConfiguration[ConfigurationFile::TOOLS]);
+                unset(
+                    $allToolsConfiguration[OptionsConfiguration::OPTIONS_TAG],
+                    $allToolsConfiguration[ConfigurationFile::TOOLS],
+                    $allToolsConfiguration[ConfigurationFile::CLI_EXECUTION_OVERRIDE]
+                );
                 $tools = array_keys($allToolsConfiguration);
                 foreach ($tools as $tool) {
                     $configurationFile[$tool][ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;

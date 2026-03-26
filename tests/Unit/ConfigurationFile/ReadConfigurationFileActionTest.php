@@ -278,6 +278,9 @@ class ReadConfigurationFileActionTest extends UnitTestCase
 
         $originalConfigurationFile['Options'] = array_replace($originalConfigurationFile['Options'], $expectedOptions);
         $originalConfigurationFile[$cliArguments->getTool()] = array_replace($originalConfigurationFile[$cliArguments->getTool()], $expectedToolConfiguration);
+        if (!empty($cliArgumentsParameters['execution'])) {
+            $originalConfigurationFile[ConfigurationFile::CLI_EXECUTION_OVERRIDE] = true;
+        }
         $expectedConfigurationFile = new ConfigurationFile($originalConfigurationFile, $cliArguments->getTool());
 
         $this->assertEquals($expectedConfigurationFile, $configurationFile);
@@ -556,6 +559,9 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             $originalConfigurationFile,
             $expectedToolConfiguration
         );
+        if (!empty($cliArgumentsParameters['execution'])) {
+            $expectedConfFileArray[ConfigurationFile::CLI_EXECUTION_OVERRIDE] = true;
+        }
         $expectedConfigurationFile = new ConfigurationFile($expectedConfFileArray, 'all');
 
         $this->assertEquals($expectedConfigurationFile, $configurationFile);

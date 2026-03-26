@@ -259,6 +259,32 @@ class FastExecutionTest extends UnitTestCase
         ];
     }
 
+    /** @test */
+    function processTools_accelerates_a_subset_of_tools()
+    {
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['src/File.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/File.php']);
+
+        $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
+
+        $configurationFile = [
+            'Tools' => ['phpcs', 'phpmd'],
+            'phpcs' => ['paths' => ['src']],
+            'phpmd' => ['paths' => ['src'], 'rules' => 'unusedcode'],
+        ];
+        $configFile = new ConfigurationFile($configurationFile, 'all');
+        $subset = $configFile->getToolsConfiguration();
+
+        $expectedPhpcs = new ToolConfiguration('phpcs', ['paths' => ['src/File.php']]);
+        $expectedPhpmd = new ToolConfiguration('phpmd', ['paths' => ['src/File.php'], 'rules' => 'unusedcode']);
+
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution->processTools($subset, $configFile);
+
+        $toolsFactorySpy->shouldHaveReceived('__invoke', [[$expectedPhpcs, $expectedPhpmd]]);
+    }
+
     /**
      * @test
      * @dataProvider noAcelerableTools2Provider
