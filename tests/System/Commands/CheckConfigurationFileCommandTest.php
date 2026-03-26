@@ -13,6 +13,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
 
         $this->artisan('conf:check')
             ->assertExitCode(0)
+            ->containsStringInOutput('Configuration file: githooks.php')
             ->expectsTable(['Options', 'Values'], [['execution', 'full'], ['processes', 1]])
             // It seems that the expectsTable method only allows checking the first table that is printed.
             // ->expectsTable(['Tools', 'Commands'], [
@@ -56,6 +57,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
 
         $this->artisan('conf:check')
             ->assertExitCode(0)
+            ->containsStringInOutput('Configuration file: githooks.php')
             ->expectsTable(['Options', 'Values'], $tableValues)
             // ->expectsTable(['Tools', 'Commands'], [
             //     ['phpcs', 'tools/php71/phpcs ./ --standard=./qa/psr12-ruleset.xml --ignore=vendor,tools --error-severity=1 --warning-severity=6 --report=summary --parallel=2'],
@@ -74,6 +76,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
 
         $this->artisan('conf:check')
             ->assertExitCode(0)
+            ->containsStringInOutput('Configuration file: githooks.php')
             ->expectsTable(['Options', 'Values'], [['execution', 'full (default)'], ['processes', '1 (default)']])
             // ->expectsTable(['Tools', 'Commands'], [
             //     ['phpcs', 'tools/php71/phpcs ./ --standard=./qa/psr12-ruleset.xml --ignore=vendor,tools --error-severity=1 --warning-severity=6 --report=summary --parallel=2'],
@@ -91,6 +94,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
 
         $this->artisan('conf:check')
             ->assertExitCode(1)
+            ->containsStringInOutput('Configuration file: githooks.php')
             ->expectsOutput('The configuration file has some errors')
             ->containsStringInOutput("The 'Tools' tag from configuration file is empty") //error
             ->containsStringInOutput("The key 'invent option' is not a valid option"); //warning
@@ -101,6 +105,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     {
         $this->artisan('conf:check')
             ->assertExitCode(1)
+            ->notContainsStringInOutput('Configuration file:')
             ->containsStringInOutput("Configuration file must be 'githooks.yml' in root directory or in qa/ directory");
     }
 
@@ -120,6 +125,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
 
         $this->artisan("conf:check --config custom/path/githooks.php")
             ->assertExitCode(0)
+            ->containsStringInOutput('Configuration file: custom/path/githooks.php')
             ->expectsTable(['Options', 'Values'], [['execution', 'full'], ['processes', 1]])
             ->expectsOutput('The configuration file has the correct format.')
             ->notContainsStringInOutput("The 'Tools' tag from configuration file is empty")

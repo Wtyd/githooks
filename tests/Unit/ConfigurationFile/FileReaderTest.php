@@ -169,6 +169,39 @@ class FileReaderTest extends UnitTestCase
         ];
     }
 
+    /** @test */
+    function it_exposes_relative_path_from_root()
+    {
+        $yamlConfig = $this->configurationFileBuilder->buildYaml();
+        $this->createFileSystem(['githooks.yml' => $yamlConfig]);
+
+        $this->fileReader->readFile();
+
+        $this->assertEquals('githooks.yml', $this->fileReader->getRelativeConfigurationFilePath());
+    }
+
+    /** @test */
+    function it_exposes_relative_path_from_qa_directory()
+    {
+        $yamlConfig = $this->configurationFileBuilder->buildYaml();
+        $this->createFileSystem(['qa' => ['githooks.yml' => $yamlConfig]]);
+
+        $this->fileReader->readFile();
+
+        $this->assertEquals('qa/githooks.yml', $this->fileReader->getRelativeConfigurationFilePath());
+    }
+
+    /** @test */
+    function it_exposes_relative_path_for_custom_config_path()
+    {
+        $yamlConfig = $this->configurationFileBuilder->setTools(['phpcs'])->buildYaml();
+        $this->createFileSystem(['custom' => ['path' => ['githooks.yml' => $yamlConfig]]]);
+
+        $this->fileReader->readFile('custom/path/githooks.yml');
+
+        $this->assertEquals('custom/path/githooks.yml', $this->fileReader->getRelativeConfigurationFilePath());
+    }
+
     /**
      * @test
      * @dataProvider configurationFilesInRootAndQaDataProvider

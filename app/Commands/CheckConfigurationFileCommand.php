@@ -41,6 +41,8 @@ class CheckConfigurationFileCommand extends Command
         try {
             $file = $this->fileReader->readfile(strval($this->option('config')));
 
+            $this->printer->info('Configuration file: ' . $this->fileReader->getRelativeConfigurationFilePath());
+
             $configurationFile = new ConfigurationFile($file, ConfigurationFile::ALL_TOOLS);
 
             $optionsTable = new OptionsTable($configurationFile);

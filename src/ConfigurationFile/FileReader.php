@@ -15,6 +15,9 @@ class FileReader
     /** @var string */
     protected $rootPath;
 
+    /** @var string */
+    protected $configurationFilePath = '';
+
     public function __construct()
     {
         $this->rootPath = getcwd() ? getcwd() : '';
@@ -29,23 +32,23 @@ class FileReader
      */
     public function readFile(string $configFile = ''): array
     {
-        $configurationFilePath = '';
+        $this->configurationFilePath = '';
         if (!empty($configFile)) {
             if ($configFile[0] === '/' || preg_match('/^[a-zA-Z]:[\\\\\/]/', $configFile)) {
-                $configurationFilePath = $configFile;
+                $this->configurationFilePath = $configFile;
             } else {
-                $configurationFilePath = $this->rootPath . DIRECTORY_SEPARATOR . $configFile;
+                $this->configurationFilePath = $this->rootPath . DIRECTORY_SEPARATOR . $configFile;
             }
         } else {
-            $configurationFilePath = $this->findConfigurationFile();
+            $this->configurationFilePath = $this->findConfigurationFile();
         }
 
         try {
-            $fileExtension = pathinfo($configurationFilePath, PATHINFO_EXTENSION);
+            $fileExtension = pathinfo($this->configurationFilePath, PATHINFO_EXTENSION);
             if ($fileExtension === 'yml' || $fileExtension === 'yaml') {
-                $configurationFile = Yaml::parseFile($configurationFilePath);
+                $configurationFile = Yaml::parseFile($this->configurationFilePath);
             } elseif ($fileExtension === 'php') {
-                $configurationFile = require $configurationFilePath;
+                $configurationFile = require $this->configurationFilePath;
                 if (!is_array($configurationFile)) {
                     throw new ParseConfigurationFileException('PHP configuration file does not return an array.');
                 }
@@ -57,6 +60,21 @@ class FileReader
         }
 
         return $configurationFile;
+    }
+
+    protected function getConfigurationFilePath(): string
+    {
+        return $this->configurationFilePath;
+    }
+
+    public function getRelativeConfigurationFilePath(): string
+    {
+        $prefix = $this->rootPath . DIRECTORY_SEPARATOR;
+        if (strpos($this->configurationFilePath, $prefix) === 0) {
+            return substr($this->configurationFilePath, strlen($prefix));
+        }
+
+        return $this->configurationFilePath;
     }
 
     /**
