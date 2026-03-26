@@ -40,6 +40,10 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
             'Psalm' => [
                 'psalm'
             ],
+            'Script' => [
+                'script',
+                'my-custom-script',
+            ],
         ];
     }
 

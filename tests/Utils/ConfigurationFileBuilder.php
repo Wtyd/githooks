@@ -14,6 +14,7 @@ use Wtyd\GitHooks\Tools\Tool\Phpmd;
 use Wtyd\GitHooks\Tools\Tool\Phpstan;
 use Wtyd\GitHooks\Tools\Tool\Phpunit;
 use Wtyd\GitHooks\Tools\Tool\Psalm;
+use Wtyd\GitHooks\Tools\Tool\Script;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
@@ -76,6 +77,7 @@ class ConfigurationFileBuilder
             ToolAbstract::SECURITY_CHECKER,
             ToolAbstract::PHPUNIT,
             ToolAbstract::PSALM,
+            ToolAbstract::SCRIPT,
         ];
 
         $this->configurationTools = [
@@ -162,6 +164,12 @@ class ConfigurationFileBuilder
                 Psalm::PLUGIN => '',
                 Psalm::USE_BASELINE => false,
                 Psalm::REPORT => 'report.txt',
+            ],
+
+            ToolAbstract::SCRIPT => [
+                Script::EXECUTABLE_PATH_OPTION => 'my-custom-script',
+                Script::OTHER_ARGS_OPTION => '--verbose',
+                Script::IGNORE_ERRORS_ON_EXIT => false,
             ],
         ];
     }

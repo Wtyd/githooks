@@ -29,6 +29,8 @@ use Wtyd\GitHooks\Tools\Tool\{
     PhpunitFake,
     Psalm,
     PsalmFake,
+    Script,
+    ScriptFake,
     SecurityChecker,
     SecurityCheckerFake
 };
@@ -101,5 +103,6 @@ abstract class ConsoleTestCase extends ZeroTestCase
         $this->app->bind(Phpcbf::class, PhpcbfFake::class);
         $this->app->bind(Phpunit::class, PhpunitFake::class);
         $this->app->bind(Psalm::class, PsalmFake::class);
+        $this->app->bind(Script::class, ScriptFake::class);
     }
 }

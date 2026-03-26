@@ -85,19 +85,21 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
     protected function finishExecution(Process $process, string $toolName, string $exceptionMessage = null): int
     {
         $this->runnedProcesses[$toolName] =  $process;
+        $tool = $this->tools[$toolName];
+        $displayName = $tool->getDisplayName();
         $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());
         if ($process->isSuccessful()) {
-            $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
-        } elseif ($this->handleFixApplied($this->tools[$toolName], $process)) {
-            $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
+            $this->printer->resultSuccess($this->getSuccessString($displayName, $executionTime));
+        } elseif ($this->handleFixApplied($tool, $process)) {
+            $this->printer->resultSuccess($this->getSuccessString($displayName, $executionTime));
         } else {
             $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
             $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage;
-            if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
+            if (!$tool->isIgnoreErrorsOnExit()) {
                 $this->errors->setError($toolName, $errorMessage);
             }
 
-            $this->printer->resultError($this->getErrorString($toolName, $executionTime));
+            $this->printer->resultError($this->getErrorString($displayName, $executionTime));
             $this->printer->line($errorMessage);
         }
         unset($this->runningProcesses[$toolName]);
