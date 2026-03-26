@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Tool;
 
+use InvalidArgumentException;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
@@ -31,7 +32,7 @@ class Script extends ToolAbstract
         $this->setArguments($toolConfiguration->getToolConfiguration());
 
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "The 'executablePath' option is required for the 'script' tool. There is no default executable."
             );
         }
