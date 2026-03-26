@@ -39,7 +39,8 @@ class ToolConfiguration
         }
         $warnings = [];
 
-        $validOptions = ToolAbstract::SUPPORTED_TOOLS[$this->tool]::ARGUMENTS;
+        $resolvedTool = ToolAbstract::resolveToolName($this->tool);
+        $validOptions = ToolAbstract::SUPPORTED_TOOLS[$resolvedTool]::ARGUMENTS;
 
         $validOptions[] = ToolAbstract::EXECUTABLE_PATH_OPTION;
 

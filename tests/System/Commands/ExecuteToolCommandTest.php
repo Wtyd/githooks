@@ -9,6 +9,7 @@ use Tests\Utils\TestCase\SystemTestCase;
 use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
 use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 use Wtyd\GitHooks\Utils\FileUtilsFake;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
@@ -639,5 +640,37 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->toolHasBeenExecutedSuccessfully('phpcbf')
             ->containsStringInOutput($commandUnderTheHood)
             ->notContainsStringInOutput($deletedOriginal);
+    }
+
+    /** @test */
+    function it_runs_named_script_by_its_custom_name()
+    {
+        $this->configurationFileBuilder->setScriptName('php-cs-fixer');
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
+
+        $this->artisan('tool php-cs-fixer')
+            ->assertExitCode(0)
+            ->toolHasBeenExecutedSuccessfully('my-custom-script');
+    }
+
+    /** @test */
+    function it_runs_named_script_in_tool_all()
+    {
+        $this->configurationFileBuilder->setScriptName('php-cs-fixer');
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
+
+        $this->artisan('tool all')
+            ->assertExitCode(0)
+            ->toolHasBeenExecutedSuccessfully('my-custom-script');
+    }
+
+    protected function tearDown(): void
+    {
+        ToolAbstract::resetScriptAlias();
+        parent::tearDown();
     }
 }

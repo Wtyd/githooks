@@ -6,9 +6,16 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Script;
 use Wtyd\GitHooks\Tools\Tool\ScriptFake;
+use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ScriptTest extends UnitTestCase
 {
+    protected function tearDown(): void
+    {
+        ToolAbstract::resetScriptAlias();
+        parent::tearDown();
+    }
+
     /** @test */
     function script_is_a_supported_tool()
     {
@@ -120,5 +127,44 @@ class ScriptTest extends UnitTestCase
         // The executable property (display name) should be the executablePath value
         $this->assertEquals('vendor/bin/php-cs-fixer', $script->getExecutablePath());
         $this->assertEquals('vendor/bin/php-cs-fixer', $script->prepareCommand());
+    }
+
+    /** @test */
+    function it_accepts_custom_name_as_alias_via_registerScriptAlias()
+    {
+        ToolAbstract::registerScriptAlias('php-cs-fixer');
+
+        $this->assertTrue(ToolAbstract::checkTool('php-cs-fixer'));
+        $this->assertEquals('script', ToolAbstract::resolveToolName('php-cs-fixer'));
+        $this->assertEquals('php-cs-fixer', ToolAbstract::getScriptAlias());
+    }
+
+    /** @test */
+    function it_resolves_non_alias_names_unchanged()
+    {
+        ToolAbstract::registerScriptAlias('php-cs-fixer');
+
+        $this->assertEquals('phpstan', ToolAbstract::resolveToolName('phpstan'));
+        $this->assertEquals('script', ToolAbstract::resolveToolName('script'));
+    }
+
+    /** @test */
+    function it_throws_exception_when_alias_conflicts_with_existing_tool()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("conflicts with an existing supported tool");
+
+        ToolAbstract::registerScriptAlias('phpstan');
+    }
+
+    /** @test */
+    function it_resets_alias_correctly()
+    {
+        ToolAbstract::registerScriptAlias('php-cs-fixer');
+        $this->assertEquals('php-cs-fixer', ToolAbstract::getScriptAlias());
+
+        ToolAbstract::resetScriptAlias();
+        $this->assertNull(ToolAbstract::getScriptAlias());
+        $this->assertFalse(ToolAbstract::checkTool('php-cs-fixer'));
     }
 }

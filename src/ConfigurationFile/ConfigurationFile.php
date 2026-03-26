@@ -58,6 +58,8 @@ class ConfigurationFile
      */
     public function __construct(array $configurationFile, string $tool)
     {
+        $configurationFile = $this->resolveScriptName($configurationFile);
+
         if (!$this->checkToolArgument($tool)) {
             throw ToolIsNotSupportedException::forTool($tool);
         }
@@ -255,5 +257,36 @@ class ConfigurationFile
     public function getOptions(): OptionsConfiguration
     {
         return $this->options;
+    }
+
+    /**
+     * If the 'script' section has a 'name' attribute, renames the config key
+     * from 'script' to the custom name and registers the alias.
+     * Idempotent: if already resolved (by ReadConfigurationFileAction), this is a no-op.
+     *
+     * @param array $configurationFile
+     * @return array
+     */
+    protected function resolveScriptName(array $configurationFile): array
+    {
+        if (!isset($configurationFile[ToolAbstract::SCRIPT]['name'])) {
+            return $configurationFile;
+        }
+
+        $name = $configurationFile[ToolAbstract::SCRIPT]['name'];
+
+        if (empty($name) || !is_string($name)) {
+            return $configurationFile;
+        }
+
+        if (ToolAbstract::getScriptAlias() === null) {
+            ToolAbstract::registerScriptAlias($name);
+        }
+
+        $configurationFile[$name] = $configurationFile[ToolAbstract::SCRIPT];
+        unset($configurationFile[$name]['name']);
+        unset($configurationFile[ToolAbstract::SCRIPT]);
+
+        return $configurationFile;
     }
 }

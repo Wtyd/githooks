@@ -55,7 +55,7 @@ It is also convenient to add it to the `post-install-cm` event so that the rest 
 ```
 #### 2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
 
-#### 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.yml`).
+#### 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.php`).
 #### 4. Run `githooks hook`. It Copies the script for launch GitHooks on the pre-commit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands#hook) for more information.
 
 To ensure that it is configured automatically, we can configure the command in the `post-update-cmd` and `post-install-cmd` events of the `composer.json` file (`scripts` section):
@@ -100,9 +100,10 @@ At this moment, the supported tools are:
 * [Php Stan](https://github.com/phpstan/phpstan)
 * [PHPUnit](https://phpunit.de/)
 * [Psalm](https://psalm.dev/)
+* **Script** — Generic tool type for running any QA tool not natively supported by GitHooks (e.g. php-cs-fixer, infection, pdepend). Only requires `executablePath`.
 * ~~[Local PHP Security Checker](https://github.com/fabpot/local-php-security-checker)~~ Since Composer 2.4 local php security checker is replaced by `composer audit`
 
-But you can set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#set-your-own-script) on any git hook.
+You can also set your [own script](https://github.com/Wtyd/githooks/wiki/Console%20Commands#set-your-own-script) on any git hook.
 
 # 6. Set the Configuration File
 The `githooks.yml` file is splitted on three parts:
@@ -134,6 +135,7 @@ It is an array with the name of the tools that GitHooks will run. The name of th
         'phpcpd',
         'phpunit',
         'psalm',
+        'script',
 ],
 ```
 
@@ -149,6 +151,17 @@ In next step you must configure the tools with the same name as in the *Tools* k
         'ignore' => ['vendor'],
 ],
 ```
+
+The `script` tool type allows you to run any external tool not natively supported by GitHooks. Unlike other tools, `executablePath` is **required** (there is no default). You can set a custom `name` to use in the `Tools` array and CLI instead of `script`:
+```php
+'script' => [
+        'name' => 'php-cs-fixer', // Optional: use 'php-cs-fixer' in Tools array and CLI
+        'executablePath' => 'vendor/bin/php-cs-fixer',
+        'otherArguments' => 'fix --dry-run --config=.php-cs-fixer.php',
+        'ignoreErrorsOnExit' => false,
+],
+```
+With `name` set, use the custom name in the `Tools` array and run it with `githooks tool php-cs-fixer`.
 
 All the available options are in the [wiki](https://github.com/Wtyd/githooks/wiki/ConfigurationFile).
 

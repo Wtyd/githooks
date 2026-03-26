@@ -33,7 +33,8 @@ class ToolsFactory
 
         $container = Container::getInstance();
         foreach ($toolsConfiguration as $tool) {
-            $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$tool->getTool()], [ToolAbstract::TOOL_CONFIGURATION => $tool]);
+            $resolvedTool = ToolAbstract::resolveToolName($tool->getTool());
+            $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$resolvedTool], [ToolAbstract::TOOL_CONFIGURATION => $tool]);
         }
 
         return $loadedTools;
