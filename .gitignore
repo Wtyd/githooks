@@ -1,6 +1,7 @@
 /vendor
 /.idea
 /.vscode
+.claude/settings.local.json
 /.vagrant
 php-executable
 .env
