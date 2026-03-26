@@ -12,6 +12,7 @@ return [
         'phpcs',
         'phpmd',
         'phpcpd',
+        'script',
     ],
     // Configuration of each tool
     // 'security-checker' => [
@@ -71,5 +72,10 @@ return [
     //     'otherArguments' => '--min-lines=5',
     //     'ignoreErrorsOnExit' => false, // Optional: default false
     // ],
-    
+    // 'script' => [
+    //     'executablePath' => 'vendor/bin/php-cs-fixer', // Required: path to the executable
+    //     'otherArguments' => 'fix --dry-run --config=.php-cs-fixer.php',
+    //     'ignoreErrorsOnExit' => false, // Optional: default false
+    // ],
+
 ];

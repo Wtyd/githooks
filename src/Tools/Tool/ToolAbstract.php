@@ -40,6 +40,8 @@ abstract class ToolAbstract
 
     public const PSALM = 'psalm';
 
+    public const SCRIPT = 'script';
+
     public const ALL_TOOLS = 'all';
 
     public const SUPPORTED_TOOLS = [
@@ -52,6 +54,7 @@ abstract class ToolAbstract
         self::PHPSTAN => Phpstan::class,
         self::PHPUNIT => Phpunit::class,
         self::PSALM => Psalm::class,
+        self::SCRIPT => Script::class,
     ];
 
     public const EXCLUDE_ARGUMENT = [
@@ -64,6 +67,7 @@ abstract class ToolAbstract
         self::PHPSTAN => '',
         self::PHPUNIT => '',
         self::PSALM => '',
+        self::SCRIPT => '',
     ];
 
     public const EXECUTABLE_PATH_OPTION = 'executablePath';
@@ -162,6 +166,17 @@ abstract class ToolAbstract
     protected function isWindows()
     {
         return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
+    }
+
+    /**
+     * Returns the display name used in the output (e.g. "toolName - OK. Time: X.XX").
+     * By default returns the executable property. Script overrides this to show the executablePath value.
+     *
+     * @return string
+     */
+    public function getDisplayName(): string
+    {
+        return $this->executable;
     }
 
     public function getErrors(): string

@@ -94,6 +94,6 @@ class FullExecutionTest extends UnitTestCase
         $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFileBuilder->buildArray(), 'all'));
 
 
-        $this->assertCount(9, $loadedTools);
+        $this->assertCount(10, $loadedTools);
     }
 }

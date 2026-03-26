@@ -13,6 +13,7 @@ Tools:
   - phpcpd
   - phpunit
   - psalm
+  - script
 
 # Configuration of each tool
 # security-checker:
@@ -94,4 +95,9 @@ Tools:
 #   report: 'psalm-report.xml' # Generate a report file (format inferred from extension)
 #   paths: ['src', 'app'] # Directories to analyze
 #   otherArguments: '--no-progress'
+#   ignoreErrorsOnExit: false # Optional: default false
+
+# script:
+#   executablePath: vendor/bin/php-cs-fixer # Required: path to the executable
+#   otherArguments: 'fix --dry-run --config=.php-cs-fixer.php'
 #   ignoreErrorsOnExit: false # Optional: default false

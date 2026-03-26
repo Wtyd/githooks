@@ -71,6 +71,11 @@ class ExecuteToolCommandTest extends SystemTestCase
                 'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'psalm'
             ],
+            'script' => [
+                'tool' => 'script',
+                'command' => 'my-custom-script --verbose',
+                'Alias of the tool when is executed' => 'my-custom-script'
+            ],
         ];
     }
 
@@ -138,6 +143,12 @@ class ExecuteToolCommandTest extends SystemTestCase
                 'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'psalm'
             ],
+            'script' => [
+                'tool' => 'script',
+                'command' => 'my-custom-script --verbose',
+                'Alias of the tool when is executed' => 'my-custom-script',
+                'toolKey' => 'script',
+            ],
         ];
     }
 
@@ -145,14 +156,16 @@ class ExecuteToolCommandTest extends SystemTestCase
      * @test
      * @dataProvider allToolsKODataProvider
      */
-    function it_finish_with_exit_1_when_the_tool_fails($tool, $commandUnderTheHood, $toolAlias)
+    function it_finish_with_exit_1_when_the_tool_fails($tool, $commandUnderTheHood, $toolAlias, $toolKey = null)
     {
+        $toolKey = $toolKey ?? $toolAlias;
+
         $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$tool]));
 
-        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolAlias) {
-            $processExecutionFake->setToolsThatMustFail([$toolAlias]);
+        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolKey) {
+            $processExecutionFake->setToolsThatMustFail([$toolKey]);
         });
 
         $this->artisan("tool $tool")
@@ -176,6 +189,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpstan',
                     'phpunit',
                     'psalm',
+                    'script',
                 ],
                 'Command' =>  [
                     'security-checker' => 'local-php-security-checker',
@@ -187,6 +201,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpstan' => "phpstan analyse --no-progress --ansi $this->path/src",
                     'phpunit' => "phpunit --group integration --exclude-group slow --filter testSomething --colors -c $this->path/phpunit.xml --log-junit $this->path/junit.xml",
                     'psalm' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
+                    'script' => 'my-custom-script --verbose',
                 ],
             ],
         ];
@@ -213,6 +228,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->toolHasBeenExecutedSuccessfully('phpstan')
             ->toolHasBeenExecutedSuccessfully('phpunit')
             ->toolHasBeenExecutedSuccessfully('psalm')
+            ->toolHasBeenExecutedSuccessfully('my-custom-script')
             ->notContainsStringInOutput($commandUnderTheHood['phpcs'])
             ->notContainsStringInOutput($commandUnderTheHood['phpcbf'])
             ->notContainsStringInOutput($commandUnderTheHood['phpcpd'])
@@ -220,7 +236,8 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->notContainsStringInOutput($commandUnderTheHood['parallel-lint'])
             ->notContainsStringInOutput($commandUnderTheHood['phpstan'])
             ->notContainsStringInOutput($commandUnderTheHood['phpunit'])
-            ->notContainsStringInOutput($commandUnderTheHood['psalm']);
+            ->notContainsStringInOutput($commandUnderTheHood['psalm'])
+            ->notContainsStringInOutput($commandUnderTheHood['script']);
     }
 
     public function onlyConfiguredToolsAtSameTimeDataProvider()
@@ -244,6 +261,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpcbf',
                     'phpunit',
                     'psalm',
+                    'my-custom-script',
                 ],
             ],
             'Second set of tools' => [
@@ -264,6 +282,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpcpd',
                     'phpunit',
                     'psalm',
+                    'my-custom-script',
                 ],
             ],
         ];
@@ -343,6 +362,17 @@ class ExecuteToolCommandTest extends SystemTestCase
                 ],
                 'Failed Tool' => 'psalm',
             ],
+            'Fail script' => [
+                'Tools executed successfully' => [
+                    'security-checker',
+                    'phpcs',
+                    'phpcpd',
+                    'phpmd',
+                    'parallel-lint'
+                ],
+                'Failed Tool' => 'script',
+                'Failed Tool Display Name' => 'my-custom-script',
+            ],
         ];
     }
 
@@ -350,8 +380,10 @@ class ExecuteToolCommandTest extends SystemTestCase
      * @test
      * @dataProvider exit1DataProvider
      */
-    function it_returns_exit_1_when_some_tool_fails($toolsExecutedSuccessfully, $failedTool)
+    function it_returns_exit_1_when_some_tool_fails($toolsExecutedSuccessfully, $failedTool, $failedToolDisplayName = null)
     {
+        $failedToolDisplayName = $failedToolDisplayName ?? $failedTool;
+
         $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$failedTool]));
@@ -367,7 +399,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[2])
             ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[3])
             ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[4])
-            ->toolHasFailed($failedTool);
+            ->toolHasFailed($failedToolDisplayName);
     }
 
     /** @test */
@@ -378,7 +410,7 @@ class ExecuteToolCommandTest extends SystemTestCase
         $this->artisan('tool notSupportedTool')
             ->assertExitCode(1)
             ->expectsOutput(
-                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm'
+                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm, script'
             );
     }
 
@@ -509,14 +541,16 @@ class ExecuteToolCommandTest extends SystemTestCase
      * @test
      * @dataProvider allToolsKODataProvider
      */
-    function it_prints_error_when_tool_execution_exceeds_the_timeout($tool, $commandUnderTheHood, $toolAlias)
+    function it_prints_error_when_tool_execution_exceeds_the_timeout($tool, $commandUnderTheHood, $toolAlias, $toolKey = null)
     {
+        $toolKey = $toolKey ?? $toolAlias;
+
         $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$tool]));
 
-        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolAlias) {
-            $processExecutionFake->setToolsWithTimeout([$toolAlias]);
+        $this->app->resolving(ProcessExecutionFake::class, function ($processExecutionFake) use ($toolKey) {
+            $processExecutionFake->setToolsWithTimeout([$toolKey]);
         });
 
         $this->artisan("tool $tool")
@@ -529,8 +563,10 @@ class ExecuteToolCommandTest extends SystemTestCase
      * @test
      * @dataProvider exit1DataProvider
      */
-    function it_returns_exit_1_when_some_tool_fails_by_timeout($toolsExecutedSuccessfully, $failedTool)
+    function it_returns_exit_1_when_some_tool_fails_by_timeout($toolsExecutedSuccessfully, $failedTool, $failedToolDisplayName = null)
     {
+        $failedToolDisplayName = $failedToolDisplayName ?? $failedTool;
+
         $this->configurationFileBuilder->buildInFileSystem();
 
         file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->buildWithErrors([$failedTool]));
@@ -546,7 +582,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[2])
             ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[3])
             ->toolHasBeenExecutedSuccessfully($toolsExecutedSuccessfully[4])
-            ->toolHasFailed($failedTool);
+            ->toolHasFailed($failedToolDisplayName);
     }
 
     /** @test */

@@ -14,9 +14,11 @@ class ProcessExecution extends ProcessExecutionAbstract
             return $this->errors;
         }
         $toolName = array_keys($this->tools)[0];
+        $tool = $this->tools[$toolName];
+        $displayName = $tool->getDisplayName();
         $process = $this->processes[$toolName];
 
-        $this->printer->line($this->tools[$toolName]->prepareCommand());
+        $this->printer->line($tool->prepareCommand());
 
         try {
             $this->startProcess($process);
@@ -27,20 +29,20 @@ class ProcessExecution extends ProcessExecutionAbstract
             $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());
 
             if ($process->isSuccessful()) {
-                $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
-            } elseif ($this->handleFixApplied($this->tools[$toolName], $process)) {
-                $this->printer->resultSuccess($this->getSuccessString($toolName, $executionTime));
+                $this->printer->resultSuccess($this->getSuccessString($displayName, $executionTime));
+            } elseif ($this->handleFixApplied($tool, $process)) {
+                $this->printer->resultSuccess($this->getSuccessString($displayName, $executionTime));
             } else {
-                if (!$this->tools[$toolName]->isIgnoreErrorsOnExit()) {
+                if (!$tool->isIgnoreErrorsOnExit()) {
                     $this->errors->setError($toolName, $process->getOutput());
                 }
-                $this->printer->resultError($this->getErrorString($toolName, $executionTime));
+                $this->printer->resultError($this->getErrorString($displayName, $executionTime));
             }
         } catch (\Throwable $th) {
             $this->errors->setError('General', $th->getMessage());
             $this->printer->error($th->getMessage());
             $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());
-            $this->printer->resultError($this->getErrorString($toolName, $executionTime));
+            $this->printer->resultError($this->getErrorString($displayName, $executionTime));
         }
         return $this->errors;
     }

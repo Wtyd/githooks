@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Tool;
 
+use InvalidArgumentException;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 /**
- * Library fabpot/local-php-security-checker
+ * Generic tool type for running custom QA scripts not natively supported by GitHooks.
+ * Only supports the three common attributes: executablePath, otherArguments, ignoreErrorsOnExit.
+ * executablePath is mandatory — there is no default fallback.
  */
-class SecurityChecker extends ToolAbstract
+class Script extends ToolAbstract
 {
-    public const NAME = 'local-php-security-checker';
+    public const NAME = 'script';
 
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
@@ -21,14 +24,20 @@ class SecurityChecker extends ToolAbstract
 
     /**
      * @param ToolConfiguration $toolConfiguration
+     *
+     * @throws \InvalidArgumentException If executablePath is not provided.
      */
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::SECURITY_CHECKER;
         $this->setArguments($toolConfiguration->getToolConfiguration());
+
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
-            $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
+            throw new InvalidArgumentException(
+                "The 'executablePath' option is required for the 'script' tool. There is no default executable."
+            );
         }
+
+        $this->executable = $this->args[self::EXECUTABLE_PATH_OPTION];
     }
 
     public function prepareCommand(): string

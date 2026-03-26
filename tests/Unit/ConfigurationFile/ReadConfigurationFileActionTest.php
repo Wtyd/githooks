@@ -565,7 +565,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         array $originalConfigurationFile,
         array $expectedToolConfiguration
     ): array {
-        $tools = ['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm'];
+        $tools = ['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm', 'script'];
         foreach ($tools as $tool) {
             if (!empty($expectedToolConfiguration)) {
                 $originalConfigurationFile[$tool] = array_replace($originalConfigurationFile[$tool], $expectedToolConfiguration);
