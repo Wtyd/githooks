@@ -21,6 +21,9 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
     /** @var int */
     protected $numberOfRunnedProcesses = 0;
 
+    /** @var array<string, array{displayName: string, success: bool}> */
+    protected $toolResults = [];
+
     public function runProcesses(): Errors
     {
         $startCommandExecution = microtime(true);
@@ -54,6 +57,7 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         $endCommandExecution = microtime(true);
         $executionTime = $this->executionTime($endCommandExecution, $startCommandExecution);
         $this->printer->line("Total Runtime: $executionTime seconds");
+        $this->printSummary();
         return $this->errors;
     }
 
@@ -84,14 +88,17 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
      */
     protected function finishExecution(Process $process, string $toolName, string $exceptionMessage = null): int
     {
-        $this->runnedProcesses[$toolName] =  $process;
+        $this->runnedProcesses[$toolName] = $process;
         $tool = $this->tools[$toolName];
         $displayName = $tool->getDisplayName();
         $executionTime = $this->executionTime($process->getLastOutputTime(), $process->getStartTime());
+
         if ($process->isSuccessful()) {
             $this->printer->resultSuccess($this->getSuccessString($displayName, $executionTime));
+            $this->toolResults[$toolName] = ['displayName' => $displayName, 'success' => true];
         } elseif ($this->handleFixApplied($tool, $process)) {
             $this->printer->resultSuccess($this->getSuccessString($displayName, $executionTime));
+            $this->toolResults[$toolName] = ['displayName' => $displayName, 'success' => true];
         } else {
             $errorMessage = $exceptionMessage ?? $process->getErrorOutput();
             $errorMessage = empty($errorMessage) ? $process->getOutput() : $errorMessage;
@@ -100,10 +107,33 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
             }
 
             $this->printer->resultError($this->getErrorString($displayName, $executionTime));
-            $this->printer->line($errorMessage);
+            $this->printer->framedErrorBlock($displayName, $errorMessage);
+            $this->toolResults[$toolName] = ['displayName' => $displayName, 'success' => false];
         }
+
+        $this->printer->emptyLine();
         unset($this->runningProcesses[$toolName]);
 
         return count($this->runnedProcesses);
+    }
+
+    protected function printSummary(): void
+    {
+        $orderedResults = [];
+        $passed = 0;
+        foreach ($this->tools as $toolName => $tool) {
+            if (isset($this->toolResults[$toolName])) {
+                $result = $this->toolResults[$toolName];
+            } else {
+                $result = ['displayName' => $tool->getDisplayName(), 'success' => false];
+            }
+            $orderedResults[] = $result;
+            if ($result['success']) {
+                $passed++;
+            }
+        }
+        $total = count($this->tools);
+        $toolList = ($passed < $total) ? $orderedResults : [];
+        $this->printer->summary($passed, $total, $toolList);
     }
 }

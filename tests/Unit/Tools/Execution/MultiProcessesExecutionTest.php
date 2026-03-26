@@ -91,7 +91,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $this->assertFalse($errors->isEmpty());
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
-        $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%$failedTool fakes an error%"))->once();
+        $printerMock->shouldHaveReceived()->framedErrorBlock(\Mockery::any(), \Mockery::pattern("%$failedTool fakes an error%"))->once();
 
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[0])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[1])))->once();
@@ -120,7 +120,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $this->assertFalse($errors->isEmpty());
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
-        $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%$failedTool fakes an exception%"))->once();
+        $printerMock->shouldHaveReceived()->framedErrorBlock(\Mockery::any(), \Mockery::pattern("%$failedTool fakes an exception%"))->once();
 
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[0])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[1])))->once();
@@ -150,7 +150,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $this->assertFalse($errors->isEmpty());
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
-        $printerMock->shouldHaveReceived()->line(\Mockery::pattern("%$failedTool fakes an error in normal output%"))->once();
+        $printerMock->shouldHaveReceived()->framedErrorBlock(\Mockery::any(), \Mockery::pattern("%$failedTool fakes an error in normal output%"))->once();
 
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[0])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[1])))->once();
@@ -212,13 +212,14 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp($failedTool, false)))->once();
-        $printerMock->shouldHaveReceived()->line(\Mockery::pattern($regExpOfExpectedErrorMessage))->once();
+        $printerMock->shouldHaveReceived()->framedErrorBlock(\Mockery::any(), \Mockery::pattern($regExpOfExpectedErrorMessage))->once();
 
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern(
             $this->messageRegExp($failedToolWithIgnoreErrosOnExit, false)
         ))->once();
         $regExpOfExpectedErrorMessage = "%$failedToolWithIgnoreErrosOnExit $expectedErrorMessage%";
-        $printerMock->shouldHaveReceived()->line(
+        $printerMock->shouldHaveReceived()->framedErrorBlock(
+            \Mockery::any(),
             \Mockery::pattern($regExpOfExpectedErrorMessage)
         )->once();
     }
