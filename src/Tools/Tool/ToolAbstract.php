@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Tool;
 
+use InvalidArgumentException;
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
@@ -237,7 +238,7 @@ abstract class ToolAbstract
     public static function registerScriptAlias(string $alias): void
     {
         if (array_key_exists($alias, self::SUPPORTED_TOOLS)) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "The script name '$alias' conflicts with an existing supported tool."
             );
         }
