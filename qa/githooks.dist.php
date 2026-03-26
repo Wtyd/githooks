@@ -73,6 +73,7 @@ return [
     //     'ignoreErrorsOnExit' => false, // Optional: default false
     // ],
     // 'script' => [
+    //     'name' => 'php-cs-fixer', // Optional: custom name for Tools array and CLI (e.g. githooks tool php-cs-fixer)
     //     'executablePath' => 'vendor/bin/php-cs-fixer', // Required: path to the executable
     //     'otherArguments' => 'fix --dry-run --config=.php-cs-fixer.php',
     //     'ignoreErrorsOnExit' => false, // Optional: default false

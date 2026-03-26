@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Tool;
 
+use InvalidArgumentException;
 use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
@@ -75,6 +76,9 @@ abstract class ToolAbstract
     public const OTHER_ARGS_OPTION = 'otherArguments';
 
     public const IGNORE_ERRORS_ON_EXIT = 'ignoreErrorsOnExit';
+
+    /** @var string|null Custom name alias for the script tool (e.g. 'php-cs-fixer' instead of 'script') */
+    private static $scriptAlias = null;
 
     /** @var string Name of tool printend when it is runned */
     protected $executable;
@@ -204,14 +208,68 @@ abstract class ToolAbstract
 
     public static function checkTool(string $tool): bool
     {
-        return array_key_exists($tool, self::SUPPORTED_TOOLS);
+        return array_key_exists($tool, self::SUPPORTED_TOOLS)
+            || (self::$scriptAlias !== null && $tool === self::$scriptAlias);
+    }
+
+    /**
+     * Resolves a tool name to its canonical name. If the tool is a script alias,
+     * returns 'script'. Otherwise returns the tool name unchanged.
+     *
+     * @param string $tool
+     * @return string
+     */
+    public static function resolveToolName(string $tool): string
+    {
+        if (self::$scriptAlias !== null && $tool === self::$scriptAlias) {
+            return self::SCRIPT;
+        }
+
+        return $tool;
+    }
+
+    /**
+     * Registers a custom name alias for the script tool.
+     *
+     * @param string $alias
+     * @return void
+     * @throws \InvalidArgumentException If the alias conflicts with an existing supported tool.
+     */
+    public static function registerScriptAlias(string $alias): void
+    {
+        if (array_key_exists($alias, self::SUPPORTED_TOOLS)) {
+            throw new InvalidArgumentException(
+                "The script name '$alias' conflicts with an existing supported tool."
+            );
+        }
+
+        self::$scriptAlias = $alias;
+    }
+
+    /**
+     * @return string|null
+     */
+    public static function getScriptAlias()
+    {
+        return self::$scriptAlias;
+    }
+
+    /**
+     * Resets the script alias. For use in test tearDown.
+     *
+     * @return void
+     */
+    public static function resetScriptAlias(): void
+    {
+        self::$scriptAlias = null;
     }
 
     public static function excludeArgumentForTool(string $tool): string
     {
-        if (!self::checkTool($tool)) {
+        $resolved = self::resolveToolName($tool);
+        if (!self::checkTool($resolved)) {
             throw ToolDoesNotExistException::forTool($tool);
         }
-        return self::EXCLUDE_ARGUMENT[$tool];
+        return self::EXCLUDE_ARGUMENT[$resolved];
     }
 }

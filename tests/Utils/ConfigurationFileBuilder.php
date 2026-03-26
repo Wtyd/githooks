@@ -354,6 +354,27 @@ class ConfigurationFileBuilder
         return $this;
     }
 
+    /**
+     * Sets a custom name for the script tool. Renames the config key from 'script' to the
+     * given name and updates the Tools array accordingly.
+     *
+     * @param string $name
+     * @return ConfigurationFileBuilder
+     */
+    public function setScriptName(string $name): ConfigurationFileBuilder
+    {
+        $scriptConfig = $this->configurationTools[ToolAbstract::SCRIPT];
+        $scriptConfig['name'] = $name;
+        $this->configurationTools[ToolAbstract::SCRIPT] = $scriptConfig;
+
+        $key = array_search(ToolAbstract::SCRIPT, $this->tools);
+        if ($key !== false) {
+            $this->tools[$key] = $name;
+        }
+
+        return $this;
+    }
+
     public function setName(string $name)
     {
         $this->name = $name;
