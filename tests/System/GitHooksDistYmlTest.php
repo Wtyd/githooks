@@ -14,6 +14,8 @@ class GitHooksDistYmlTest extends SystemTestCase
         $distFile = preg_replace('/^\# /m', '', $distFile);
         $distFile = str_replace("Old Configuration File. Now in php", "# Old Configuration File. Now in php", $distFile);
         $distFile = str_replace("Configuration of each tool", "# Configuration of each tool", $distFile);
+        $distFile = str_replace("Per-tool execution:", "# Per-tool execution:", $distFile);
+        $distFile = str_replace("CLI execution argument", "# CLI execution argument", $distFile);
         return Yaml::parse($distFile);
     }
 

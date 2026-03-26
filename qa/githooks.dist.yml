@@ -16,9 +16,8 @@ Tools:
   - script
 
 # Configuration of each tool
-# Each tool supports an optional 'execution' key to override the global mode.
-# Values: full or fast. If omitted, inherits the global Options.execution value.
-# CLI execution argument (e.g. `githooks tool all fast`) overrides both global and per-tool settings.
+# Per-tool execution: add 'execution: full' or 'execution: fast' to override the global mode.
+# CLI execution argument overrides both global and per-tool settings.
 
 # security-checker:
 #   executablePath: composer audit
