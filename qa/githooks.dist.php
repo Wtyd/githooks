@@ -15,13 +15,18 @@ return [
         'script',
     ],
     // Configuration of each tool
+    // Each tool supports an optional 'execution' key to override the global mode.
+    // Values: 'full' or 'fast'. If omitted, inherits the global Options.execution value.
+    // CLI execution argument (e.g. `githooks tool all fast`) overrides both global and per-tool settings.
+
     // 'security-checker' => [
     //     'executablePath' => 'composer audit',
     //     'otherArguments' => '-format json',
-    //     'ignoreErrorsOnExit' => false // Optional: default false
+    //     'ignoreErrorsOnExit' => false, // Optional: default false
     // ],
     // 'phpstan' => [
     //     'executablePath' => 'phpstan',
+    //     'execution' => 'fast', // Optional: override global execution mode for this tool
     //     'config' => './qa/phpstan.neon',
     //     // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
     //     'paths' => ['src'],
@@ -48,6 +53,7 @@ return [
     // ],
     // 'phpcbf' => [
     //     'usePhpcsConfiguration' => true, // if true no more configuration is needed. It graves the arguments of phpcs configuration
+    //     'execution' => 'fast', // Optional: run phpcbf only against modified files
     //     'executablePath' => 'phpcbf',
     //     'paths' => ['./'],
     //     'standard' => './myRules.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR

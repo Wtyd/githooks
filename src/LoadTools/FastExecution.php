@@ -46,8 +46,14 @@ class FastExecution implements ExecutionMode
     /** @inheritDoc */
     public function getTools(ConfigurationFile $configurationFile): array
     {
+        return $this->processTools($configurationFile->getToolsConfiguration(), $configurationFile);
+    }
+
+    /** @inheritDoc */
+    public function processTools(array $toolConfigurations, ConfigurationFile $configurationFile): array
+    {
         $tools = [];
-        foreach ($configurationFile->getToolsConfiguration() as $tool) {
+        foreach ($toolConfigurations as $tool) {
             if (!in_array($tool->getTool(), self::ACCELERABLE_TOOLS)) {
                 $tools[] = $tool;
                 continue;

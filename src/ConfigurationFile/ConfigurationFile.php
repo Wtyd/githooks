@@ -17,6 +17,8 @@ class ConfigurationFile
 
     public const ALL_TOOLS = 'all';
 
+    public const CLI_EXECUTION_OVERRIDE = '_cliExecutionOverride';
+
     /**
      * @var array
      */
@@ -48,6 +50,16 @@ class ConfigurationFile
     protected $toolsWarnings = [];
 
     /**
+     * @var bool Whether execution mode was overridden from CLI.
+     */
+    protected $cliExecutionOverride = false;
+
+    /**
+     * @var string The tool argument passed to the command ('all' or a specific tool name).
+     */
+    protected $requestedTool;
+
+    /**
      * Checks data from configuration file
      *
      * @param array $configurationFile
@@ -58,6 +70,11 @@ class ConfigurationFile
      */
     public function __construct(array $configurationFile, string $tool)
     {
+        $this->cliExecutionOverride = isset($configurationFile[self::CLI_EXECUTION_OVERRIDE]);
+        unset($configurationFile[self::CLI_EXECUTION_OVERRIDE]);
+
+        $this->requestedTool = $tool;
+
         $configurationFile = $this->resolveScriptName($configurationFile);
 
         if (!$this->checkToolArgument($tool)) {
@@ -257,6 +274,22 @@ class ConfigurationFile
     public function getOptions(): OptionsConfiguration
     {
         return $this->options;
+    }
+
+    /**
+     * Whether the execution mode was set from CLI argument.
+     */
+    public function isCLIExecutionOverride(): bool
+    {
+        return $this->cliExecutionOverride;
+    }
+
+    /**
+     * Whether the command is running all tools (vs a single specific tool).
+     */
+    public function isAllToolsRun(): bool
+    {
+        return $this->requestedTool === self::ALL_TOOLS;
     }
 
     /**

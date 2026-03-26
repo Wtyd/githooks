@@ -21,6 +21,12 @@ class FullExecution implements ExecutionMode
     /** @inheritDoc */
     public function getTools(ConfigurationFile $configurationFile): array
     {
-        return $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+        return $this->processTools($configurationFile->getToolsConfiguration(), $configurationFile);
+    }
+
+    /** @inheritDoc */
+    public function processTools(array $toolConfigurations, ConfigurationFile $configurationFile): array
+    {
+        return $this->toolsFactory->__invoke($toolConfigurations);
     }
 }
