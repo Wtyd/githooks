@@ -2,7 +2,7 @@ name: Release
 # https://github.com/shivammathur/setup-php
 on:
   push:
-    branches: [ rc** ]
+    branches: [ rc**, gh-45-php8.5 ]
 
   pull_request:
     branches-ignore: [ master ]
