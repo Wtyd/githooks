@@ -26,6 +26,7 @@ class PhpcpdTest extends UnitTestCase
             'min-tokens' => 70,
             'otherArguments' => '--fuzzy',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);

@@ -32,6 +32,7 @@ class PsalmTest extends UnitTestCase
             'report' => 'psalm-report.xml',
             'otherArguments' => '--no-progress',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
             'paths' => ['src'],
         ];
 

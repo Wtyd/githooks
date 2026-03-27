@@ -23,7 +23,8 @@ class ParallelLintTest extends UnitTestCase
             'paths' => ['./'],
             'exclude' => ['vendor', 'qa'],
             'otherArguments' => '--colors',
-            'ignoreErrorsOnExit' => true,
+            'ignoreErrorsOnExit' => false,
+            'failFast' => true,
         ];
 
         $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);

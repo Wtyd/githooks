@@ -20,6 +20,7 @@ class Script extends ToolAbstract
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,
         self::IGNORE_ERRORS_ON_EXIT,
+        self::FAIL_FAST,
     ];
 
     /**

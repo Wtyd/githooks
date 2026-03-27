@@ -30,6 +30,7 @@ class PhpmdTest extends UnitTestCase
             'baseline-file' => 'phpmd-baseline.xml',
             'otherArguments' => '--strict',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpmd', $configuration);

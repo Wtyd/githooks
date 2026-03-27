@@ -94,6 +94,10 @@ trait ExecutionFakeTrait
 
     protected function addProcessToQueue(): void
     {
+        if ($this->failFastTriggered) {
+            return;
+        }
+
         foreach ($this->processes as $toolName => $process) {
             if (count($this->runningProcesses) === $this->threads) {
                 break;

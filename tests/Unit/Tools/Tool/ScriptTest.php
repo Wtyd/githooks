@@ -29,6 +29,7 @@ class ScriptTest extends UnitTestCase
             'executablePath' => 'vendor/bin/php-cs-fixer',
             'otherArguments' => 'fix --dry-run',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
         ];
 
         $toolConfiguration = new ToolConfiguration('script', $configuration);

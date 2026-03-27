@@ -29,6 +29,7 @@ class PhpStanTest extends UnitTestCase
             'level' => 5,
             'otherArguments' => '--ansi',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpstan', $configuration);

@@ -17,6 +17,9 @@ class CliArguments
     /** @var bool|null */
     protected $ignoreErrorsOnExit;
 
+    /** @var bool|null */
+    protected $failFast;
+
     /** @var string */
     protected $otherArguments;
 
@@ -40,11 +43,13 @@ class CliArguments
         string $executablePath,
         string $paths,
         int $processes,
-        string $configFile = ''
+        string $configFile = '',
+        $failFast = null
     ) {
         $this->tool = $tool;
         $this->execution = $execution;
         $this->ignoreErrorsOnExit = $this->stringToBool($ignoreErrorsOnExit);
+        $this->failFast = $this->stringToBool($failFast);
         $this->otherArguments = $otherArguments;
         $this->executablePath = $executablePath;
         $this->paths = $paths;
@@ -64,20 +69,34 @@ class CliArguments
         }
 
         if (ConfigurationFile::ALL_TOOLS === $this->tool) {
-            if ($this->ignoreErrorsOnExit !== null) {
-                $allToolsConfiguration = $configurationFile;
-                unset(
-                    $allToolsConfiguration[OptionsConfiguration::OPTIONS_TAG],
-                    $allToolsConfiguration[ConfigurationFile::TOOLS],
-                    $allToolsConfiguration[ConfigurationFile::CLI_EXECUTION_OVERRIDE]
-                );
-                $tools = array_keys($allToolsConfiguration);
-                foreach ($tools as $tool) {
-                    $configurationFile[$tool][ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;
-                }
-            }
+            $configurationFile = $this->overrideAllToolsArguments($configurationFile);
         } elseif (array_key_exists($this->tool, $configurationFile)) {
             $configurationFile[$this->tool] = $this->overrideToolArguments($configurationFile[$this->tool]);
+        }
+
+        return $configurationFile;
+    }
+
+    protected function overrideAllToolsArguments(array $configurationFile): array
+    {
+        if ($this->ignoreErrorsOnExit === null && $this->failFast === null) {
+            return $configurationFile;
+        }
+
+        $allToolsConfiguration = $configurationFile;
+        unset(
+            $allToolsConfiguration[OptionsConfiguration::OPTIONS_TAG],
+            $allToolsConfiguration[ConfigurationFile::TOOLS],
+            $allToolsConfiguration[ConfigurationFile::CLI_EXECUTION_OVERRIDE]
+        );
+
+        foreach (array_keys($allToolsConfiguration) as $tool) {
+            if ($this->ignoreErrorsOnExit !== null) {
+                $configurationFile[$tool][ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;
+            }
+            if ($this->failFast !== null) {
+                $configurationFile[$tool][ToolAbstract::FAIL_FAST] = $this->failFast;
+            }
         }
 
         return $configurationFile;
@@ -87,6 +106,10 @@ class CliArguments
     {
         if ($this->ignoreErrorsOnExit !== null) {
             $toolConfiguration[ToolAbstract::IGNORE_ERRORS_ON_EXIT] = $this->ignoreErrorsOnExit;
+        }
+
+        if ($this->failFast !== null) {
+            $toolConfiguration[ToolAbstract::FAIL_FAST] = $this->failFast;
         }
 
         if (!empty($this->otherArguments)) {

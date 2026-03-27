@@ -267,4 +267,112 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpcbf')))->once();
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp('phpcs', false)))->once();
     }
+
+    /** @test */
+    function it_skips_remaining_tools_when_a_failFast_tool_fails()
+    {
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
+                ->changeToolOption('parallel-lint', ['failFast' => true])
+                ->buildArray(),
+            self::ALL_TOOLS
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
+        $multiProcessExecution->failedToolsByFoundedErrors(['parallel-lint']);
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertFalse($errors->isEmpty());
+        $this->assertCount(1, $errors->getErrors());
+        $this->assertArrayHasKey('parallel-lint', $errors->getErrors());
+
+        $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp('parallel-lint', false)))->once();
+        $printerMock->shouldNotHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpstan')));
+        $printerMock->shouldNotHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpmd')));
+        $printerMock->shouldNotHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp('phpstan', false)));
+        $printerMock->shouldNotHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp('phpmd', false)));
+    }
+
+    /** @test */
+    function it_runs_all_tools_when_a_failFast_tool_succeeds()
+    {
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
+                ->changeToolOption('parallel-lint', ['failFast' => true])
+                ->buildArray(),
+            self::ALL_TOOLS
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertTrue($errors->isEmpty());
+
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('parallel-lint')))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpstan')))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpmd')))->once();
+    }
+
+    /** @test */
+    function it_does_not_skip_tools_when_a_non_failFast_tool_fails()
+    {
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
+                ->buildArray(),
+            self::ALL_TOOLS
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
+        $multiProcessExecution->failedToolsByFoundedErrors(['parallel-lint']);
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertFalse($errors->isEmpty());
+
+        $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp('parallel-lint', false)))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpstan')))->once();
+        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpmd')))->once();
+    }
+
+    /** @test */
+    function failFast_takes_priority_over_ignoreErrorsOnExit()
+    {
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
+                ->changeToolOption('parallel-lint', ['failFast' => true, 'ignoreErrorsOnExit' => true])
+                ->buildArray(),
+            self::ALL_TOOLS
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
+        $multiProcessExecution->failedToolsByFoundedErrors(['parallel-lint']);
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        // failFast takes priority: ignoreErrorsOnExit is set to false by ToolConfiguration
+        $this->assertFalse($errors->isEmpty());
+        $this->assertArrayHasKey('parallel-lint', $errors->getErrors());
+
+        // Remaining tools should be skipped
+        $printerMock->shouldNotHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpstan')));
+        $printerMock->shouldNotHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpmd')));
+    }
 }

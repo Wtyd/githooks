@@ -38,6 +38,7 @@ class Phpstan extends ToolAbstract
         self::OTHER_ARGS_OPTION,
         self::PATHS,
         self::IGNORE_ERRORS_ON_EXIT,
+        self::FAIL_FAST,
     ];
 
     public function __construct(ToolConfiguration $toolConfiguration)

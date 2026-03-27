@@ -21,6 +21,7 @@ class Phpunit extends ToolAbstract
         self::FILTER,
         self::OTHER_ARGS_OPTION,
         self::IGNORE_ERRORS_ON_EXIT,
+        self::FAIL_FAST,
         self::CONFIGURATION,
         self::LOG_JUNIT,
     ];

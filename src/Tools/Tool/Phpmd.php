@@ -44,6 +44,7 @@ class Phpmd extends ToolAbstract
         self::BASELINE_FILE,
         self::OTHER_ARGS_OPTION,
         self::IGNORE_ERRORS_ON_EXIT,
+        self::FAIL_FAST,
     ];
 
     public function __construct(ToolConfiguration $toolConfiguration)

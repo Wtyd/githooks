@@ -22,6 +22,7 @@ class SecurityCheckerTest extends UnitTestCase
             'executablePath' => 'path/tools/security-checker',
             'otherArguments' => '-format json',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
         ];
 
         $toolConfiguration = new ToolConfiguration('security-checker', $configuration);

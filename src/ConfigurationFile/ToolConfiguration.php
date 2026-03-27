@@ -63,6 +63,15 @@ class ToolConfiguration
         if (!empty($warning)) {
             $warnings[] = $warning;
         }
+
+        $warning = $this->setFailFastOption();
+
+        if (!empty($warning)) {
+            $warnings[] = $warning;
+        }
+
+        $this->checkFailFastConflict($warnings);
+
         $this->warnings = $warnings;
     }
 
@@ -134,6 +143,48 @@ class ToolConfiguration
     public function hasExecution(): bool
     {
         return $this->execution !== null;
+    }
+
+    /**
+     * Set value for failFast. If not bool value it sets warning and set the option to 'false'.
+     *
+     * @return string Warning if not bool value. Empty if otherwise.
+     */
+    protected function setFailFastOption(): string
+    {
+        $warning = '';
+        if (!array_key_exists(ToolAbstract::FAIL_FAST, $this->toolConfiguration)) {
+            return $warning;
+        }
+
+        if (!is_bool($this->toolConfiguration[ToolAbstract::FAIL_FAST])) {
+            $warning = "Value for '" . ToolAbstract::FAIL_FAST . "' in tool $this->tool must be boolean. This option will be ignored.";
+            $this->toolConfiguration[ToolAbstract::FAIL_FAST] = false;
+        }
+
+        return $warning;
+    }
+
+    /**
+     * Warn when both failFast and ignoreErrorsOnExit are true.
+     * failFast takes priority — ignoreErrorsOnExit will be ignored for this tool.
+     *
+     * @param array &$warnings
+     * @return void
+     */
+    protected function checkFailFastConflict(array &$warnings): void
+    {
+        $hasFailFast = array_key_exists(ToolAbstract::FAIL_FAST, $this->toolConfiguration)
+            && $this->toolConfiguration[ToolAbstract::FAIL_FAST] === true;
+
+        $hasIgnoreErrors = array_key_exists(ToolAbstract::IGNORE_ERRORS_ON_EXIT, $this->toolConfiguration)
+            && $this->toolConfiguration[ToolAbstract::IGNORE_ERRORS_ON_EXIT] === true;
+
+        if ($hasFailFast && $hasIgnoreErrors) {
+            $warnings[] = "Tool $this->tool has both 'failFast' and 'ignoreErrorsOnExit' set to true. "
+                . "'failFast' takes priority — 'ignoreErrorsOnExit' will be ignored.";
+            $this->toolConfiguration[ToolAbstract::IGNORE_ERRORS_ON_EXIT] = false;
+        }
     }
 
     /**

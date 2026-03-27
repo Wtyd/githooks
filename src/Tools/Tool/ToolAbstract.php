@@ -77,6 +77,8 @@ abstract class ToolAbstract
 
     public const IGNORE_ERRORS_ON_EXIT = 'ignoreErrorsOnExit';
 
+    public const FAIL_FAST = 'failFast';
+
     /** @var string|null Custom name alias for the script tool (e.g. 'php-cs-fixer' instead of 'script') */
     private static $scriptAlias = null;
 
@@ -191,6 +193,11 @@ abstract class ToolAbstract
     public function isIgnoreErrorsOnExit(): bool
     {
         return $this->args[self::IGNORE_ERRORS_ON_EXIT] ?? false;
+    }
+
+    public function isFailFast(): bool
+    {
+        return $this->args[self::FAIL_FAST] ?? false;
     }
 
     /**

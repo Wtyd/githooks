@@ -20,6 +20,7 @@ class ExecuteToolCommand extends BaseCommand
                             {--executablePath= : Path to executable}
                             {--paths= :  Paths or files against the tool will be executed}
                             {--processes= : Number of parallel processes in which the tools will be executed}
+                            {--failFast= : Stop all remaining tools when this tool fails. When tool is \'all\' applies for all tools}
                             {-c|--config= : Path to configuration file}'
                             ;
 
@@ -41,7 +42,8 @@ class ExecuteToolCommand extends BaseCommand
                     strval($this->option('executablePath')),
                     strval($this->option('paths')),
                     intval($this->option('processes')),
-                    strval($this->option('config'))
+                    strval($this->option('config')),
+                    $this->option('failFast')
                 ));
 
             $tools = $this->toolsPreparer->__invoke($configurationFile);

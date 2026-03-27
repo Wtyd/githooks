@@ -29,6 +29,7 @@ class PhpunitTest extends UnitTestCase
             'configuration' => 'path/to/configuration.xml',
             'log-junit' => 'junit.xml',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
             'executablePath' => 'path/to/phpunit',
         ];
         $toolConfiguration = new ToolConfiguration('phpunit', $configuration);

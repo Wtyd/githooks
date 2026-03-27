@@ -24,6 +24,7 @@ phpstan:
 #Se ejecuta contra la raiz del proyecto
 parallel-lint:
     executablePath: vendor/bin/parallel-lint
+    failFast: true
     paths: ['./']
     exclude: [vendor, qa, tools]
     otherArguments: '--colors'

@@ -79,14 +79,18 @@ class Printer
      * @param int $passed
      * @param int $total
      * @param array $toolResults Array of ['displayName' => string, 'success' => bool]
+     * @param array $skippedResults Array of ['displayName' => string]
      */
-    public function summary(int $passed, int $total, array $toolResults): void
+    public function summary(int $passed, int $total, array $toolResults, array $skippedResults = []): void
     {
         $icon = ($passed === $total) ? '✔️' : '';
         echo "\nResults: $passed/$total passed $icon\n";
         foreach ($toolResults as $result) {
             $resultIcon = $result['success'] ? '✔️' : '❌';
             echo "  $resultIcon " . $result['displayName'] . "\n";
+        }
+        foreach ($skippedResults as $result) {
+            echo "  ⏩ " . $result['displayName'] . " (skipped by failFast)\n";
         }
     }
 

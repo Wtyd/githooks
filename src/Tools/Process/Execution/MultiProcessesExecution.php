@@ -24,6 +24,9 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
     /** @var array<string, array{displayName: string, success: bool}> */
     protected $toolResults = [];
 
+    /** @var bool */
+    protected $failFastTriggered = false;
+
     public function runProcesses(): Errors
     {
         $startCommandExecution = microtime(true);
@@ -50,7 +53,7 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
                 } catch (Throwable $th) {
                     $this->errors->setError('Tool crash', $th->getMessage());
                 }
-            } while ($totalProcesses > $this->numberOfRunnedProcesses);
+            } while ($this->hasPendingWork($totalProcesses));
         } catch (\Throwable $th) {
             $this->errors->setError('General', $th->getMessage());
         }
@@ -66,6 +69,10 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
      */
     protected function addProcessToQueue(): void
     {
+        if ($this->failFastTriggered) {
+            return;
+        }
+
         foreach ($this->processes as $toolName => $process) {
             if (count($this->runningProcesses) === $this->threads) {
                 break;
@@ -109,6 +116,10 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
             $this->printer->resultError($this->getErrorString($displayName, $executionTime));
             $this->printer->framedErrorBlock($displayName, $errorMessage);
             $this->toolResults[$toolName] = ['displayName' => $displayName, 'success' => false];
+
+            if ($tool->isFailFast()) {
+                $this->failFastTriggered = true;
+            }
         }
 
         unset($this->runningProcesses[$toolName]);
@@ -116,21 +127,33 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
         return count($this->runnedProcesses);
     }
 
+    protected function hasPendingWork(int $totalProcesses): bool
+    {
+        if ($this->failFastTriggered && empty($this->runningProcesses)) {
+            return false;
+        }
+
+        return $totalProcesses > $this->numberOfRunnedProcesses;
+    }
+
     protected function printSummary(): void
     {
         $failedResults = [];
+        $skippedResults = [];
         $passed = 0;
         foreach ($this->tools as $toolName => $tool) {
-            if (isset($this->toolResults[$toolName]) && $this->toolResults[$toolName]['success']) {
+            if (!isset($this->toolResults[$toolName])) {
+                $skippedResults[] = ['displayName' => $tool->getDisplayName()];
+                continue;
+            }
+
+            if ($this->toolResults[$toolName]['success']) {
                 $passed++;
             } else {
-                $displayName = isset($this->toolResults[$toolName])
-                    ? $this->toolResults[$toolName]['displayName']
-                    : $tool->getDisplayName();
-                $failedResults[] = ['displayName' => $displayName, 'success' => false];
+                $failedResults[] = ['displayName' => $this->toolResults[$toolName]['displayName'], 'success' => false];
             }
         }
-        $total = count($this->tools);
-        $this->printer->summary($passed, $total, $failedResults);
+        $total = count($this->tools) - count($skippedResults);
+        $this->printer->summary($passed, $total, $failedResults, $skippedResults);
     }
 }

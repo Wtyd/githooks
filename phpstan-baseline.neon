@@ -6,6 +6,11 @@ parameters:
 			path: src/ConfigurationFile/CliArguments.php
 
 		-
+			message: "#^Method Wtyd\\\\GitHooks\\\\ConfigurationFile\\\\CliArguments\\:\\:__construct\\(\\) has parameter \\$failFast with no type specified\\.$#"
+			count: 1
+			path: src/ConfigurationFile/CliArguments.php
+
+		-
 			message: "#^Dead catch \\- TypeError is never thrown in the try block\\.$#"
 			count: 2
 			path: src/ConfigurationFile/OptionsConfiguration.php

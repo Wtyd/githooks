@@ -23,6 +23,7 @@ class Psalm extends ToolAbstract
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,
         self::IGNORE_ERRORS_ON_EXIT,
+        self::FAIL_FAST,
         self::PSALM_CONFIGURATION_FILE,
         self::MEMORY_LIMIT,
         self::THREADS,

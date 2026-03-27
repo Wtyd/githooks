@@ -31,6 +31,7 @@ class PhpcsTest extends UnitTestCase
             'parallel' => 2,
             'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
+            'failFast' => false,
         ];
 
         $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
