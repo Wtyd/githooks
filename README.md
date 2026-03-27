@@ -4,7 +4,7 @@
     <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
-    <a href="#tada-php-support" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%208.4-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
+    <a href="#2-requirements" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%208.4-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
 <p align="center">
@@ -53,7 +53,7 @@ It is also convenient to add it to the `post-install-cm` event so that the rest 
     "post-install-cmd": "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"
 }
 ```
-#### 2. Install all needed [supported tools](#supported-tools). How you install the tools doesn't matter.
+#### 2. Install all needed [supported tools](#5-supported-tools). How you install the tools doesn't matter.
 
 #### 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.php`).
 #### 4. Run `githooks hook`. It Copies the script for launch GitHooks on the pre-commit event in `.git/hooks` directory. You can, also run `githooks hook otherHook MyScriptFile.php` for set any hook with a custom script. See the [wiki](https://github.com/Wtyd/githooks/wiki/Console%20Commands#hook) for more information.
@@ -71,25 +71,45 @@ To ensure that it is configured automatically, we can configure the command in t
 }
 ```
 
-#### 5. [Set the configuration file](#Set-the-configuration-file).
+#### 5. [Set the configuration file](#6-set-the-configuration-file).
 
 # 4. Usage
-When you commit, all the configured code check tools are automatically launched. If your code pass all checks, GitHooks allows you to commit. If not, you have to fix the code and try again:
-<p>
-    <img src="https://i.ibb.co/F0m9ZfV/Git-Hooks-OK.png" alt="Imagen todo OK">
-</p>
-<p>
-    <img src="https://i.ibb.co/VWb6Ks4/Git-Hooks-KO.png" alt="Imagen con KO">
-</p>
+When you commit, all the configured code check tools are automatically launched. If your code pass all checks, GitHooks allows you to commit. If not, you have to fix the code and try again.
+
+**All checks passed:**
+```
+✔️ parallel-lint - OK. Time: 150ms
+✔️ phpcs - OK. Time: 890ms
+✔️ phpstan - OK. Time: 2.34s
+✔️ phpmd - OK. Time: 1.23s
+
+Total Runtime: 3.45s
+
+Results: 4/4 passed ✔️
+```
+
+**Some checks failed:**
+```
+✔️ parallel-lint - OK. Time: 150ms
+✔️ phpcs - OK. Time: 890ms
+❌ phpstan - KO. Time: 2.34s
+  ┌───────────────────────────────────────────────────────────────────────────────
+  │ /src/Foo.php:12  Access to undefined property $bar
+  │ /src/Foo.php:34  Method doSomething() has no return type
+  └───────────────────────────────────────────────────────────────────────────────
+✔️ phpmd - OK. Time: 1.23s
+
+Total Runtime: 3.45s
+
+Results: 3/4 passed
+  ❌ phpstan
+```
 
 You can also run GitHooks whenever you want. All tools at same time or one by one:
 ```bash
-githooks tool all # Run all tools
-githooks tool phpcs # Run only phpcs
+githooks tool all  # Run all tools
+githooks tool phpcs  # Run only phpcs
 ```
-<p>
-    <img src="https://i.ibb.co/tXPb9Sn/phpmd.png" alt="Imagen de una herramienta" height="225">
-</p>
 
 # 5. Supported Tools
 At this moment, the supported tools are:

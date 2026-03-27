@@ -82,7 +82,7 @@ class Printer
      */
     public function summary(int $passed, int $total, array $toolResults): void
     {
-        $icon = ($passed === $total) ? '✔️' : '❌';
+        $icon = ($passed === $total) ? '✔️' : '';
         echo "\nResults: $passed/$total passed $icon\n";
         foreach ($toolResults as $result) {
             $resultIcon = $result['success'] ? '✔️' : '❌';
