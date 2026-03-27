@@ -71,25 +71,29 @@ class OptionsConfiguration
 
         if (array_key_exists(self::EXECUTION_TAG, $options)) {
             $execution = $options[self::EXECUTION_TAG];
-            try {
-                $this->setExecution($execution);
-                $this->defaultExecution = false;
-            } catch (WrongOptionsValueException $ex) {
-                $this->errors[] = $ex->getMessage();
-            } catch (\TypeError $throwable) {
+            if (!is_string($execution)) {
                 $this->errors[] = WrongOptionsValueException::getExceptionMessage($execution);
+            } else {
+                try {
+                    $this->setExecution($execution);
+                    $this->defaultExecution = false;
+                } catch (WrongOptionsValueException $ex) {
+                    $this->errors[] = $ex->getMessage();
+                }
             }
         }
 
         if (array_key_exists(self::PROCESSES_TAG, $options)) {
             $processes = $options[self::PROCESSES_TAG];
-            try {
-                $this->setProcesses($processes);
-                $this->defaultProcesses = false;
-            } catch (WrongOptionsValueException $ex) {
-                $this->errors[] = $ex->getMessage();
-            } catch (\TypeError $throwable) {
+            if (!is_int($processes)) {
                 $this->errors[] = WrongOptionsValueException::getExceptionMessageForProcesses($processes);
+            } else {
+                try {
+                    $this->setProcesses($processes);
+                    $this->defaultProcesses = false;
+                } catch (WrongOptionsValueException $ex) {
+                    $this->errors[] = $ex->getMessage();
+                }
             }
         }
     }

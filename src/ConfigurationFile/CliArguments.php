@@ -35,6 +35,10 @@ class CliArguments
     /** @var string */
     protected $configFile;
 
+    /**
+     * @param string|bool|null $ignoreErrorsOnExit
+     * @param string|bool|null $failFast
+     */
     public function __construct(
         string $tool,
         string $execution,
