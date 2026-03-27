@@ -25,7 +25,11 @@ class PhpcsTest extends UnitTestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2',
+            'cache' => true,
+            'no-cache' => false,
+            'report' => 'summary',
+            'parallel' => 2,
+            'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
         ];
 
@@ -48,7 +52,10 @@ class PhpcsTest extends UnitTestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2',
+            'cache' => true,
+            'report' => 'summary',
+            'parallel' => 2,
+            'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
         ];
 
@@ -68,6 +75,9 @@ class PhpcsTest extends UnitTestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
+            'cache' => true,
+            'report' => 'summary',
+            'parallel' => 2,
             'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
@@ -80,6 +90,33 @@ class PhpcsTest extends UnitTestCase
 
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $phpcs->getArguments());
+    }
+
+    /** @test */
+    function it_prepares_phpcs_command_with_cache_report_and_parallel()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/phpcs',
+            'paths' => ['src'],
+            'standard' => 'PSR12',
+            'ignore' => ['vendor'],
+            'error-severity' => 1,
+            'warning-severity' => 6,
+            'cache' => true,
+            'report' => 'summary',
+            'parallel' => 2,
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $phpcs = new PhpcsFake($toolConfiguration);
+
+        $cmd = $phpcs->prepareCommand();
+        $this->assertStringContainsString('--standard=PSR12', $cmd);
+        $this->assertStringContainsString('--error-severity=1', $cmd);
+        $this->assertStringContainsString('--warning-severity=6', $cmd);
+        $this->assertStringContainsString('--cache', $cmd);
+        $this->assertStringContainsString('--report=summary', $cmd);
+        $this->assertStringContainsString('--parallel=2', $cmd);
     }
 
     /** @test */

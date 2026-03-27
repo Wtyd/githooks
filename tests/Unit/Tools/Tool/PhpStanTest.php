@@ -23,8 +23,11 @@ class PhpStanTest extends UnitTestCase
             'paths' => ['src'],
             'config' => 'phpstan.neon',
             'memory-limit' => '1G',
+            'error-format' => 'json',
+            'no-progress' => true,
+            'clear-result-cache' => true,
             'level' => 5,
-            'otherArguments' => '--no-progress',
+            'otherArguments' => '--ansi',
             'ignoreErrorsOnExit' => true,
         ];
 
@@ -47,6 +50,7 @@ class PhpStanTest extends UnitTestCase
             'config' => 'path/tools/phpstan.neon',
             'memory-limit' => '1G',
             'level' => 1,
+            'no-progress' => true,
             'otherArguments' => '--strict',
             'ignoreErrorsOnExit' => true,
         ];
@@ -66,6 +70,9 @@ class PhpStanTest extends UnitTestCase
             'executablePath' => 'path/tools/phpstan',
             'config' => 'path/tools/phpstan.neon',
             'memory-limit' => '1G',
+            'error-format' => 'json',
+            'no-progress' => true,
+            'clear-result-cache' => true,
             'level' => 1,
             'otherArguments' => '--strict',
             'ignoreErrorsOnExit' => true,
@@ -80,6 +87,36 @@ class PhpStanTest extends UnitTestCase
 
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $phpstan->getArguments());
+    }
+
+    /** @test */
+    function it_prepares_phpstan_command_with_all_arguments()
+    {
+        $configuration = [
+            'executablePath' => 'vendor/bin/phpstan',
+            'config' => 'phpstan.neon',
+            'level' => 8,
+            'memory-limit' => '1G',
+            'error-format' => 'json',
+            'no-progress' => true,
+            'clear-result-cache' => true,
+            'otherArguments' => '--ansi',
+            'paths' => ['src', 'app'],
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+        $phpstan = new PhpstanFake($toolConfiguration);
+
+        $cmd = $phpstan->prepareCommand();
+        $this->assertStringContainsString('vendor/bin/phpstan analyse', $cmd);
+        $this->assertStringContainsString('-c phpstan.neon', $cmd);
+        $this->assertStringContainsString('-l 8', $cmd);
+        $this->assertStringContainsString('--memory-limit=1G', $cmd);
+        $this->assertStringContainsString('--error-format=json', $cmd);
+        $this->assertStringContainsString('--no-progress', $cmd);
+        $this->assertStringContainsString('--clear-result-cache', $cmd);
+        $this->assertStringContainsString('--ansi', $cmd);
+        $this->assertStringEndsWith('src app', $cmd);
     }
 
     /**

@@ -22,11 +22,26 @@ class Phpmd extends ToolAbstract
 
     public const PATHS = 'paths';
 
+    public const CACHE = 'cache';
+
+    public const CACHE_FILE = 'cache-file';
+
+    public const CACHE_STRATEGY = 'cache-strategy';
+
+    public const SUFFIXES = 'suffixes';
+
+    public const BASELINE_FILE = 'baseline-file';
+
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::PATHS,
         self::RULES,
         self::EXCLUDE,
+        self::CACHE,
+        self::CACHE_FILE,
+        self::CACHE_STRATEGY,
+        self::SUFFIXES,
+        self::BASELINE_FILE,
         self::OTHER_ARGS_OPTION,
         self::IGNORE_ERRORS_ON_EXIT,
     ];
@@ -41,6 +56,9 @@ class Phpmd extends ToolAbstract
         }
     }
 
+    /**
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
     public function prepareCommand(): string
     {
         $command = '';
@@ -61,6 +79,15 @@ class Phpmd extends ToolAbstract
                     break;
                 case self::EXCLUDE:
                     $command .= ' --exclude "' . implode(',', $this->args[$option]) . '"';
+                    break;
+                case self::CACHE:
+                    $command .= ' --cache';
+                    break;
+                case self::CACHE_FILE:
+                case self::CACHE_STRATEGY:
+                case self::SUFFIXES:
+                case self::BASELINE_FILE:
+                    $command .= ' --' . $option . '=' . $this->args[$option];
                     break;
                 case self::IGNORE_ERRORS_ON_EXIT:
                     break;

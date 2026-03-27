@@ -23,6 +23,11 @@ class PhpmdTest extends UnitTestCase
             'paths' => ['src'],
             'rules' => 'unusedcode',
             'exclude' => ['vendor'],
+            'cache' => true,
+            'cache-file' => '.phpmd.cache',
+            'cache-strategy' => 'content',
+            'suffixes' => 'php,inc',
+            'baseline-file' => 'phpmd-baseline.xml',
             'otherArguments' => '--strict',
             'ignoreErrorsOnExit' => true,
         ];
@@ -45,6 +50,7 @@ class PhpmdTest extends UnitTestCase
             'paths' => ['src'],
             'rules' => 'unusedcode',
             'exclude' => ['vendor'],
+            'cache' => true,
             'otherArguments' => '--strict',
             'ignoreErrorsOnExit' => true,
         ];
@@ -64,6 +70,11 @@ class PhpmdTest extends UnitTestCase
             'executablePath' => 'path/tools/phpmd',
             'rules' => 'unusedcode',
             'exclude' => ['vendor'],
+            'cache' => true,
+            'cache-file' => '.phpmd.cache',
+            'cache-strategy' => 'content',
+            'suffixes' => 'php,inc',
+            'baseline-file' => 'phpmd-baseline.xml',
             'otherArguments' => '--strict',
             'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
@@ -77,6 +88,37 @@ class PhpmdTest extends UnitTestCase
 
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $phpmd->getArguments());
+    }
+
+    /** @test */
+    function it_prepares_phpmd_command_with_cache_and_all_arguments()
+    {
+        $configuration = [
+            'executablePath' => 'vendor/bin/phpmd',
+            'paths' => ['src'],
+            'rules' => 'cleancode,codesize',
+            'exclude' => ['vendor'],
+            'cache' => true,
+            'cache-file' => '.phpmd.cache',
+            'cache-strategy' => 'content',
+            'suffixes' => 'php,inc',
+            'baseline-file' => 'phpmd-baseline.xml',
+            'otherArguments' => '--strict',
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+        $phpmd = new PhpmdFake($toolConfiguration);
+
+        $cmd = $phpmd->prepareCommand();
+        $this->assertStringContainsString('vendor/bin/phpmd', $cmd);
+        $this->assertStringContainsString('src ansi cleancode,codesize', $cmd);
+        $this->assertStringContainsString('--exclude "vendor"', $cmd);
+        $this->assertStringContainsString('--cache', $cmd);
+        $this->assertStringContainsString('--cache-file=.phpmd.cache', $cmd);
+        $this->assertStringContainsString('--cache-strategy=content', $cmd);
+        $this->assertStringContainsString('--suffixes=php,inc', $cmd);
+        $this->assertStringContainsString('--baseline-file=phpmd-baseline.xml', $cmd);
+        $this->assertStringContainsString('--strict', $cmd);
     }
 
     /** @test */

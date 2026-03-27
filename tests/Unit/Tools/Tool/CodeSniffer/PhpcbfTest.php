@@ -25,7 +25,11 @@ class PhpcbfTest extends UnitTestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2',
+            'cache' => true,
+            'no-cache' => false,
+            'report' => 'summary',
+            'parallel' => 2,
+            'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
         ];
 
@@ -48,7 +52,10 @@ class PhpcbfTest extends UnitTestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2',
+            'cache' => true,
+            'report' => 'summary',
+            'parallel' => 2,
+            'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
         ];
 
@@ -68,7 +75,10 @@ class PhpcbfTest extends UnitTestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2',
+            'cache' => true,
+            'report' => 'summary',
+            'parallel' => 2,
+            'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
@@ -91,7 +101,10 @@ class PhpcbfTest extends UnitTestCase
             'ignore' => ['vendor'],
             'error-severity' => 1,
             'warning-severity' => 6,
-            'otherArguments' => '--report=summary --parallel=2',
+            'cache' => true,
+            'report' => 'summary',
+            'parallel' => 2,
+            'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
         ];
 

@@ -17,9 +17,15 @@ class Phpcpd extends ToolAbstract
 
     public const PATHS = 'paths';
 
+    public const MIN_LINES = 'min-lines';
+
+    public const MIN_TOKENS = 'min-tokens';
+
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::EXCLUDE,
+        self::MIN_LINES,
+        self::MIN_TOKENS,
         self::OTHER_ARGS_OPTION,
         self::PATHS,
         self::IGNORE_ERRORS_ON_EXIT,
@@ -53,6 +59,10 @@ class Phpcpd extends ToolAbstract
                 case self::EXCLUDE:
                     $prefix = $this->addPrefixToArray($this->args[self::EXCLUDE], '--exclude ');
                     $command .= ' ' . implode(' ', $prefix);
+                    break;
+                case self::MIN_LINES:
+                case self::MIN_TOKENS:
+                    $command .= ' --' . $option . '=' . $this->args[$option];
                     break;
                 case self::IGNORE_ERRORS_ON_EXIT:
                     break;

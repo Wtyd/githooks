@@ -22,7 +22,9 @@ class PhpcpdTest extends UnitTestCase
             'executablePath' => 'path/tools/phpcpd',
             'paths' => ['src'],
             'exclude' => ['vendor'],
-            'otherArguments' => '--min-lines=5',
+            'min-lines' => 5,
+            'min-tokens' => 70,
+            'otherArguments' => '--fuzzy',
             'ignoreErrorsOnExit' => true,
         ];
 
@@ -43,7 +45,8 @@ class PhpcpdTest extends UnitTestCase
         $configuration = [
             'paths' => ['src'],
             'exclude' => ['vendor'],
-            'otherArguments' => '--min-lines=5',
+            'min-lines' => 5,
+            'otherArguments' => '--fuzzy',
             'ignoreErrorsOnExit' => true,
         ];
 
@@ -61,7 +64,8 @@ class PhpcpdTest extends UnitTestCase
             'executablePath' => 'path/tools/phpcpd',
             'paths' => ['src'],
             'exclude' => ['vendor'],
-            'otherArguments' => '--min-lines=5',
+            'min-lines' => 5,
+            'otherArguments' => '--fuzzy',
             'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
@@ -74,6 +78,26 @@ class PhpcpdTest extends UnitTestCase
 
         unset($configuration['unexpected or supported argument']);
         $this->assertEquals($configuration, $phpcpd->getArguments());
+    }
+
+    /** @test */
+    function it_prepares_phpcpd_command_with_min_lines_and_min_tokens()
+    {
+        $configuration = [
+            'executablePath' => 'path/tools/phpcpd',
+            'paths' => ['src'],
+            'exclude' => ['vendor'],
+            'min-lines' => 5,
+            'min-tokens' => 70,
+        ];
+
+        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
+        $phpcpd = new PhpcpdFake($toolConfiguration);
+
+        $cmd = $phpcpd->prepareCommand();
+        $this->assertStringContainsString('--min-lines=5', $cmd);
+        $this->assertStringContainsString('--min-tokens=70', $cmd);
+        $this->assertStringEndsWith('src', $cmd);
     }
 
     /** @test */

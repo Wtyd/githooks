@@ -31,7 +31,10 @@ Tools:
 #   memory-limit: '1G' # Examples: 1M 2000M 1G 5G
 #   paths: ['./src']
 #   level: 9 #level 0-9 (0 default, 9 max)
-#   otherArguments: '--no-progress'
+#   error-format: 'table' # Output format: table, json, raw, github, gitlab, junit, checkstyle, etc.
+#   no-progress: true # Suppress progress output
+#   clear-result-cache: false # Clear result cache before analysis
+#   otherArguments: '--ansi'
 #   ignoreErrorsOnExit: false # Optional: default false
 
 # parallel-lint:
@@ -50,7 +53,11 @@ Tools:
 #   ignore: [vendor]
 #   error-severity: 1
 #   warning-severity: 6
-#   otherArguments: '--report=summary --parallel=2'
+#   cache: true # Enable result caching
+#   no-cache: false # Disable caching (overrides cache)
+#   report: 'summary' # Report format: full, summary, json, csv, checkstyle, etc.
+#   parallel: 2 # Number of parallel processes
+#   otherArguments: '--colors'
 #   ignoreErrorsOnExit: false # Optional: default false
 
 # phpcs:
@@ -60,7 +67,11 @@ Tools:
 #   ignore: [vendor]
 #   error-severity: 1
 #   warning-severity: 6
-#   otherArguments: '--report=summary --parallel=2'
+#   cache: true # Enable result caching
+#   no-cache: false # Disable caching (overrides cache)
+#   report: 'summary' # Report format: full, summary, json, csv, checkstyle, etc.
+#   parallel: 2 # Number of parallel processes
+#   otherArguments: '--colors'
 #   ignoreErrorsOnExit: false # Optional: default false
 
 # phpmd:
@@ -68,6 +79,11 @@ Tools:
 #   paths: ['./src/']
 #   rules: './myRules.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
 #   exclude: [vendor]
+#   cache: true # Enable caching (PHPMD 2.13.0+)
+#   cache-file: '.phpmd.cache' # Custom cache file path
+#   cache-strategy: 'content' # Cache strategy: content or timestamp
+#   suffixes: 'php' # File suffixes to check (comma-separated, default: php)
+#   baseline-file: 'phpmd-baseline.xml' # Baseline file to ignore known violations
 #   otherArguments: --strict
 #   ignoreErrorsOnExit: false # Optional: default false
 
@@ -75,7 +91,9 @@ Tools:
 #   executablePath: phpcpd
 #   paths: ['./']
 #   exclude: ['vendor']
-#   otherArguments: '--min-lines=5'
+#   min-lines: 5 # Minimum number of identical lines to detect as copy-paste
+#   min-tokens: 70 # Minimum number of identical tokens to detect as copy-paste
+#   otherArguments: '--fuzzy'
 #   ignoreErrorsOnExit: false # Optional: default false
 
 # phpunit:

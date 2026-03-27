@@ -21,6 +21,14 @@ abstract class CodeSniffer extends ToolAbstract
 
     public const WARNING_SEVERITY = 'warning-severity';
 
+    public const CACHE = 'cache';
+
+    public const NO_CACHE = 'no-cache';
+
+    public const REPORT = 'report';
+
+    public const PARALLEL = 'parallel';
+
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::PATHS,
@@ -28,10 +36,17 @@ abstract class CodeSniffer extends ToolAbstract
         self::IGNORE,
         self::ERROR_SEVERITY,
         self::WARNING_SEVERITY,
+        self::CACHE,
+        self::NO_CACHE,
+        self::REPORT,
+        self::PARALLEL,
         self::OTHER_ARGS_OPTION,
         self::IGNORE_ERRORS_ON_EXIT,
     ];
 
+    /**
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
     public function prepareCommand(): string
     {
         $command = $this->args[self::EXECUTABLE_PATH_OPTION];
@@ -49,10 +64,16 @@ abstract class CodeSniffer extends ToolAbstract
                 case self::STANDARD:
                 case self::ERROR_SEVERITY:
                 case self::WARNING_SEVERITY:
+                case self::REPORT:
+                case self::PARALLEL:
                     $command .= " --$option=" . $this->args[$option];
                     break;
                 case self::IGNORE:
                     $command .= " --$option=" . implode(',', $this->args[$option]);
+                    break;
+                case self::CACHE:
+                case self::NO_CACHE:
+                    $command .= " --$option";
                     break;
                 case self::IGNORE_ERRORS_ON_EXIT:
                     break;

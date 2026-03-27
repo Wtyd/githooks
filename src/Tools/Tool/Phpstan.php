@@ -21,11 +21,20 @@ class Phpstan extends ToolAbstract
 
     public const MEMORY_LIMIT = 'memory-limit';
 
+    public const ERROR_FORMAT = 'error-format';
+
+    public const NO_PROGRESS = 'no-progress';
+
+    public const CLEAR_RESULT_CACHE = 'clear-result-cache';
+
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::PHPSTAN_CONFIGURATION_FILE,
         self::LEVEL,
         self::MEMORY_LIMIT,
+        self::ERROR_FORMAT,
+        self::NO_PROGRESS,
+        self::CLEAR_RESULT_CACHE,
         self::OTHER_ARGS_OPTION,
         self::PATHS,
         self::IGNORE_ERRORS_ON_EXIT,
@@ -50,6 +59,9 @@ class Phpstan extends ToolAbstract
      *
      * @return string Example return: analyse -c=phpstan.neon --no-progress --ansi -l=1 --memory-limit=1G ./src1 ./src2
      */
+    /**
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
+     */
     public function prepareCommand(): string
     {
         $command = '';
@@ -73,6 +85,13 @@ class Phpstan extends ToolAbstract
                     break;
                 case self::MEMORY_LIMIT:
                     $command .= ' --memory-limit=' . $this->args[self::MEMORY_LIMIT];
+                    break;
+                case self::ERROR_FORMAT:
+                    $command .= ' --error-format=' . $this->args[self::ERROR_FORMAT];
+                    break;
+                case self::NO_PROGRESS:
+                case self::CLEAR_RESULT_CACHE:
+                    $command .= ' --' . $option;
                     break;
                 case self::IGNORE_ERRORS_ON_EXIT:
                     break;
