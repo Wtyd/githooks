@@ -18,7 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.4']
+        php-versions: ['8.5']
     name: Code Coverage
     steps:
     - name: Checkout
@@ -68,7 +68,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.4']
+        php-versions: ['8.5']
     name: Infection
     steps:
     - name: Checkout
@@ -121,7 +121,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.4']
+        php-versions: ['8.5']
     name: PhpMetrics
     steps:
     - name: Checkout

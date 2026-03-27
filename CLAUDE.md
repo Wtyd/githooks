@@ -75,7 +75,7 @@ El contenedor tiene PHP 7.0 a 8.4. Se invocan como `php7.0`, `php7.1`, ..., `php
 |---|---|---|
 | `php7.1 tools/composer update` | PHP 7.1, 7.2 | `builds/php7.1/` |
 | `php7.3 tools/composer update` | PHP 7.3, 7.4, 8.0 | `builds/php7.3/` |
-| `php8.1 tools/composer update` | PHP 8.1, 8.2, 8.3, 8.4 | `builds/` |
+| `php8.1 tools/composer update` | PHP 8.1, 8.2, 8.3, 8.4, 8.5 | `builds/` |
 
 Para probar con otra versión, primero actualizar dependencias con el `composer update` correspondiente al tier.
 
