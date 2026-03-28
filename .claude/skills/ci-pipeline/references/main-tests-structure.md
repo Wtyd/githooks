@@ -13,7 +13,7 @@ on:
 ## Job: tests (Linux)
 
 - **OS:** ubuntu-latest
-- **PHP:** 7.2, 7.4, 8.1, 8.4
+- **PHP:** 7.2, 7.4, 8.1, 8.5
 - **fail-fast:** false
 
 ### Steps en orden
@@ -43,7 +43,7 @@ on:
 ## Job: tests_windows
 
 - **OS:** windows-latest
-- **PHP:** 7.1, 8.1
+- **PHP:** 7.1, 8.5
 - **fail-fast:** false
 
 ### Steps en orden
