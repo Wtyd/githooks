@@ -1,7 +1,8 @@
 name: Schedule CI
 # https://github.com/shivammathur/setup-php
 on:
-  # push
+  # push:
+  #   branches: [ rc-2.8.0 ]
   schedule:
     - cron:  '0 4 * * sun' # Sundays at 04 am
 
@@ -18,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.4']
+        php-versions: ['8.5']
     name: Code Coverage
     steps:
     - name: Checkout
@@ -68,7 +69,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.4']
+        php-versions: ['8.5']
     name: Infection
     steps:
     - name: Checkout
@@ -121,7 +122,7 @@ jobs:
     strategy:
       matrix:
         operating-system: [ubuntu-latest]
-        php-versions: ['8.4']
+        php-versions: ['8.5']
     name: PhpMetrics
     steps:
     - name: Checkout
