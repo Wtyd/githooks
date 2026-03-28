@@ -67,4 +67,14 @@ class CheckConfigurationFileTest extends ReleaseTestCase
 
         $this->deleteDirStructure('custom/');
     }
+
+    /** @test */
+    function it_shows_configuration_file_path()
+    {
+        $this->configurationFileBuilder->buildInFileSystem('./', true);
+        passthru("$this->githooks conf:check", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('Configuration file:', $this->getActualOutput());
+    }
 }

@@ -159,7 +159,7 @@ class ConfigurationFileBuilder
             ],
 
             ToolAbstract::PHPUNIT => [
-                Phpunit::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpunit',
+                Phpunit::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'phpunit',
                 Phpunit::GROUP => ['integration'],
                 Phpunit::EXCLUDE_GROUP => ['slow'],
                 Phpunit::FILTER => 'testSomething',
@@ -178,7 +178,7 @@ class ConfigurationFileBuilder
                 Psalm::MEMORY_LIMIT => '512M',
                 Psalm::THREADS => 1,
                 Psalm::NO_DIFF => false,
-                Psalm::OUTPUT_FORMAT => 'ansi',
+                Psalm::OUTPUT_FORMAT => 'console',
                 Psalm::PLUGIN => '',
                 Psalm::USE_BASELINE => false,
                 Psalm::REPORT => 'report.txt',

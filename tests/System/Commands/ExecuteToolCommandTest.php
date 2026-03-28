@@ -69,7 +69,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'psalm' => [
                 'tool' => 'psalm',
-                'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
+                'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=console --report=report.txt --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'psalm'
             ],
             'script' => [
@@ -141,7 +141,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'psalm' => [
                 'tool' => 'psalm',
-                'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
+                'command' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=console --report=report.txt --no-progress $this->path/src",
                 'Alias of the tool when is executed' => 'psalm'
             ],
             'script' => [
@@ -201,7 +201,7 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'parallel-lint' => "parallel-lint $this->path/src --exclude $this->path/vendor",
                     'phpstan' => "phpstan analyse --no-progress --ansi $this->path/src",
                     'phpunit' => "phpunit --group integration --exclude-group slow --filter testSomething --colors -c $this->path/phpunit.xml --log-junit $this->path/junit.xml",
-                    'psalm' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=ansi --report=report.txt --no-progress $this->path/src",
+                    'psalm' => "psalm --config=$this->path/qa/psalm.xml --memory-limit=512M --threads=1 --output-format=console --report=report.txt --no-progress $this->path/src",
                     'script' => 'my-custom-script --verbose',
                 ],
             ],

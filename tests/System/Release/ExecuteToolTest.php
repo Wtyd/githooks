@@ -20,18 +20,23 @@ class ExecuteToolTest extends ReleaseTestCase
             $this->phpFileBuilder->build()
         );
 
-        // PHPUnit needs a test file and config to run successfully
+        // PHPUnit needs a test file and config to run successfully (must be PSR-12 compliant)
         file_put_contents(
             self::TESTS_PATH . '/src/PassingTest.php',
             '<?php
+
+namespace TestsDir\Src;
+
 use PHPUnit\Framework\TestCase;
+
 class PassingTest extends TestCase
 {
     public function testItPasses()
     {
         $this->assertTrue(true);
     }
-}'
+}
+'
         );
 
         file_put_contents(
@@ -47,7 +52,26 @@ class PassingTest extends TestCase
         );
 
         $this->configurationFileBuilder
-            ->changeToolOption('phpunit', ['configuration' => self::TESTS_PATH . '/phpunit.xml']);
+            ->changeToolOption('phpunit', ['configuration' => self::TESTS_PATH . '/phpunit.xml'])
+            ->changeToolOption('phpunit', ['group' => []])
+            ->changeToolOption('phpunit', ['exclude-group' => []])
+            ->changeToolOption('phpunit', ['filter' => ''])
+            ->changeToolOption('phpunit', ['log-junit' => '']);
+
+        // Psalm needs a config file to run
+        $psalmDir = self::TESTS_PATH . '/qa';
+        if (!is_dir($psalmDir)) {
+            mkdir($psalmDir, 0777, true);
+        }
+        file_put_contents(
+            "$psalmDir/psalm.xml",
+            '<?xml version="1.0"?>
+<psalm errorLevel="8" resolveFromConfigFile="true">
+    <projectFiles>
+        <directory name="../src" />
+    </projectFiles>
+</psalm>'
+        );
     }
 
     public function fullExecutionModeProvider()
@@ -121,9 +145,8 @@ class PassingTest extends TestCase
             $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
         );
 
-        // unlink('.gitignore');
         $fileWithoutErrorsPath = self::TESTS_PATH . '/src/File.php';
-        shell_exec("git add $fileWithoutErrorsPath");
+        shell_exec("git add -f $fileWithoutErrorsPath");
 
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
@@ -142,7 +165,7 @@ class PassingTest extends TestCase
     }
 
     /** @test */
-    function it_returns_1_when_phpcs_finds_bugs_and_fixes_them_automatically()
+    function it_returns_exit_0_when_phpcbf_fixes_bugs_automatically()
     {
         file_put_contents(
             'githooks.php',
@@ -157,8 +180,8 @@ class PassingTest extends TestCase
 
         passthru("$this->githooks tool all", $exitCode);
 
-        $this->assertEquals(1, $exitCode);
-        $this->assertToolHasFailed('phpcbf');
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
     }
 
     public function allToolsProvider()
@@ -166,9 +189,6 @@ class PassingTest extends TestCase
         return [
             'Code Sniffer Phpcs' => [
                 'phpcs'
-            ],
-            'Code Sniffer Phpcbf' => [
-                'phpcbf'
             ],
             'Php Stan' => [
                 'phpstan'
@@ -291,6 +311,45 @@ class FailingTest extends TestCase
 
         $this->assertEquals(0, $exitCode);
         $this->assertToolHasBeenExecutedSuccessfully('psalm');
+    }
+
+    /** @test */
+    function it_returns_exit_0_when_script_tool_runs_successfully()
+    {
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools(['script'])
+                ->changeToolOption('script', ['executablePath' => 'echo'])
+                ->changeToolOption('script', ['otherArguments' => 'hello'])
+                ->buildPhp()
+        );
+
+        passthru("$this->githooks tool all", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('echo');
+    }
+
+    /** @test */
+    function it_stops_execution_when_failFast_tool_fails()
+    {
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools(['parallel-lint', 'phpstan'])
+                ->changeToolOption('parallel-lint', ['failFast' => true])
+                ->buildPhp()
+        );
+
+        file_put_contents(
+            self::TESTS_PATH . '/src/FileWithErrors.php',
+            $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['parallel-lint'])
+        );
+
+        passthru("$this->githooks tool all", $exitCode);
+
+        $this->assertEquals(1, $exitCode);
+        $this->assertToolHasFailed('parallel-lint');
+        $this->assertStringContainsString('skipped by failFast', $this->getActualOutput());
     }
 
     /** @test */

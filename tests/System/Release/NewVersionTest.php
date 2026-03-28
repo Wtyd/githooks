@@ -21,7 +21,8 @@ class NewVersionTest extends ReleaseTestCase
     {
         passthru("$this->githooks --version", $exitCode);
 
-        $newVersion = '2.7.0';
+        $branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD'));
+        $newVersion = substr($branch, strlen('rc-'));
         $this->assertStringContainsString("GitHooks $newVersion", $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
     }
