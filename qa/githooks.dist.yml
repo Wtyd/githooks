@@ -23,6 +23,7 @@ Tools:
 #   executablePath: composer audit
 #   otherArguments: '-format json'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # phpstan:
 #   executablePath: phpstan
@@ -36,6 +37,7 @@ Tools:
 #   clear-result-cache: false # Clear result cache before analysis
 #   otherArguments: '--ansi'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # parallel-lint:
 #   executablePath: parallel-lint
@@ -43,6 +45,7 @@ Tools:
 #   exclude: [vendor]
 #   otherArguments: '--colors'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # phpcbf:
 #   usePhpcsConfiguration: true # if true no more configuration is needed. It graves the arguments of phpcs configuration
@@ -59,6 +62,7 @@ Tools:
 #   parallel: 2 # Number of parallel processes
 #   otherArguments: '--colors'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # phpcs:
 #   executablePath: phpcs
@@ -73,6 +77,7 @@ Tools:
 #   parallel: 2 # Number of parallel processes
 #   otherArguments: '--colors'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # phpmd:
 #   executablePath: phpmd
@@ -86,6 +91,7 @@ Tools:
 #   baseline-file: 'phpmd-baseline.xml' # Baseline file to ignore known violations
 #   otherArguments: --strict
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # phpcpd:
 #   executablePath: phpcpd
@@ -95,6 +101,7 @@ Tools:
 #   min-tokens: 70 # Minimum number of identical tokens to detect as copy-paste
 #   otherArguments: '--fuzzy'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # phpunit:
 #   executablePath: phpunit
@@ -105,6 +112,7 @@ Tools:
 #   log-junit: 'junit.xml' # Log test execution in JUnit XML format
 #   otherArguments: '--colors=always'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # psalm:
 #   executablePath: psalm
@@ -119,9 +127,11 @@ Tools:
 #   paths: ['src', 'app'] # Directories to analyze
 #   otherArguments: '--no-progress'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
 
 # script:
 #   name: php-cs-fixer # Optional: custom name for Tools array and CLI (e.g. githooks tool php-cs-fixer)
 #   executablePath: vendor/bin/php-cs-fixer # Required: path to the executable
 #   otherArguments: 'fix --dry-run --config=.php-cs-fixer.php'
 #   ignoreErrorsOnExit: false # Optional: default false
+#   failFast: false # Optional: default false. Stop remaining tools on failure
