@@ -358,7 +358,7 @@ class FailingTest extends TestCase
         // Configure only phpstan tool
         file_put_contents(
             'githooks.php',
-            $this->configurationFileBuilder->setTools([['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan']])
+            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
                 ->buildPhp()
         );
 
@@ -377,5 +377,67 @@ class FailingTest extends TestCase
         $this->assertStringContainsString("Syntax error, unexpected ';' on line 1 ", $output);
         $this->assertStringContainsString('FileWithSyntaxError.php', $output);
         $this->assertStringContainsString('Syntax error', $output);
+    }
+
+    /** @test */
+    function it_runs_tools_with_custom_config_path()
+    {
+        // Create a default config with an invalid tool in root (this would fail)
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools(['invalid-tool'])->buildPhp()
+        );
+
+        // Create valid config in custom folder
+        $this->createDirStructure('custom');
+
+        file_put_contents(
+            self::TESTS_PATH . '/custom/githooks.php',
+            $this->configurationFileBuilder
+                ->setTools(['phpcs', 'parallel-lint'])
+                ->buildPhp()
+        );
+
+        passthru("$this->githooks tool all --config=" . self::TESTS_PATH . "/custom/githooks.php", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpcs');
+        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+    }
+
+    /** @test */
+    function it_applies_per_tool_execution_mode_override()
+    {
+        // Create file with phpcs AND phpmd errors (NOT staged in git)
+        file_put_contents(
+            self::TESTS_PATH . '/src/FileWithErrors.php',
+            $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'phpmd'])
+        );
+
+        // Stage the clean file only
+        $fileWithoutErrorsPath = self::TESTS_PATH . '/src/File.php';
+        shell_exec("git add -f $fileWithoutErrorsPath");
+
+        // Global: full, but phpcs overridden to fast
+        // In fast mode, phpcs only checks staged files (the clean one) → should pass
+        // phpmd runs in full mode → checks all files in paths (including FileWithErrors) → should fail
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder
+                ->setTools(['phpcs', 'phpmd'])
+                ->setOptions(['execution' => 'full'])
+                ->changeToolOption('phpcs', ['execution' => 'fast'])
+                ->buildPhp()
+        );
+
+        passthru("$this->githooks tool all", $exitCode);
+
+        // Cleanup git staging
+        shell_exec('git restore -- ' . self::TESTS_PATH . "/.gitignore");
+        shell_exec("git reset -- $fileWithoutErrorsPath");
+
+        $this->assertEquals(1, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpcs'); // fast: only staged clean file
+        $this->assertToolHasFailed('phpmd'); // full: checks all files, finds errors
     }
 }
