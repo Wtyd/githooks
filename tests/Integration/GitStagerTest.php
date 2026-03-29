@@ -25,6 +25,10 @@ class GitStagerTest extends SystemTestCase
         // Ensure clean git state before each test
         shell_exec('git reset --hard HEAD 2>/dev/null');
 
+        // Git identity needed for commits in CI runners
+        shell_exec('git config user.email "test@test.com" 2>/dev/null');
+        shell_exec('git config user.name "Test" 2>/dev/null');
+
         mkdir(self::$gitFilesPathTest);
 
         $this->headBeforeTest = trim(shell_exec('git rev-parse HEAD'));
@@ -49,11 +53,11 @@ class GitStagerTest extends SystemTestCase
         $renamedPath = self::$gitFilesPathTest . '/Renamed.php';
         file_put_contents($originalPath, "<?php\nclass Original {}\n");
 
-        shell_exec('git add ' . $originalPath);
+        shell_exec('git add -f ' . $originalPath);
         shell_exec('git commit -m "temp: add file for restage test"');
 
         // Rename the file and then modify it (simulating phpcbf fix after rename)
-        shell_exec('git mv ' . $originalPath . ' ' . $renamedPath);
+        shell_exec('git mv -f ' . $originalPath . ' ' . $renamedPath);
         file_put_contents($renamedPath, "<?php\n\nclass Renamed\n{\n}\n");
 
         // Verify: rename is staged, content modification is unstaged

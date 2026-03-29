@@ -25,6 +25,10 @@ class FileUtilsTest extends SystemTestCase
         // Ensure clean git state before each test
         shell_exec('git reset --hard HEAD 2>/dev/null');
 
+        // Git identity needed for commits in CI runners
+        shell_exec('git config user.email "test@test.com" 2>/dev/null');
+        shell_exec('git config user.name "Test" 2>/dev/null');
+
         mkdir(self::$gitFilesPathTest);
 
         $this->app->bind(FileUtilsInterface::class, FileUtils::class);
@@ -52,7 +56,7 @@ class FileUtilsTest extends SystemTestCase
         $filename = self::$gitFilesPathTest . '/NewFile.php';
         file_put_contents($filename, $fileBuilder->build());
 
-        shell_exec('git add ' . $filename);
+        shell_exec('git add -f ' . $filename);
 
         $gitFiles = $this->app->make(FileUtils::class);
 
@@ -92,7 +96,7 @@ class FileUtilsTest extends SystemTestCase
         $filename = self::$gitFilesPathTest . '/ToDelete.php';
         file_put_contents($filename, $fileBuilder->build());
 
-        shell_exec('git add ' . $filename);
+        shell_exec('git add -f ' . $filename);
         shell_exec('git commit -m "temp: add file for deletion test"');
 
         shell_exec('git rm ' . $filename);
@@ -111,10 +115,10 @@ class FileUtilsTest extends SystemTestCase
         $renamedPath = self::$gitFilesPathTest . '/Renamed.php';
         file_put_contents($originalPath, $fileBuilder->build());
 
-        shell_exec('git add ' . $originalPath);
+        shell_exec('git add -f ' . $originalPath);
         shell_exec('git commit -m "temp: add file for rename test"');
 
-        shell_exec('git mv ' . $originalPath . ' ' . $renamedPath);
+        shell_exec('git mv -f ' . $originalPath . ' ' . $renamedPath);
 
         $gitFiles = $this->app->make(FileUtils::class);
         $modifiedFiles = $gitFiles->getModifiedFiles();
