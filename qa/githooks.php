@@ -19,7 +19,7 @@ return [
         'config' => './qa/phpstan.neon',
         // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
         'paths' => ['src'],
-        // 'level' => 8, // level 0-8 (0 default, 8 max)
+        // 'level' => 8, // level 0-10 (0 default). Max depends on PHPStan version
         'otherArguments' => '--no-progress --ansi',
     ],
     'parallel-lint' => [

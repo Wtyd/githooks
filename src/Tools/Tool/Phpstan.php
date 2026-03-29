@@ -54,7 +54,7 @@ class Phpstan extends ToolAbstract
     /**
      * Crea la cadena de argumentos que ejecutará phpstan
      * -c (--configuration): .neon file with extra configuration
-     * -l (--level): rule level from 0 (default) to 8
+     * -l (--level): rule level from 0 (default) to 10 (PHPStan 2.x)
      * --memory-limit: increase memory limit by default of php. Example values: 1G, 1M 1024M
      * paths: directories with code to analyse.
      *
