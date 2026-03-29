@@ -43,6 +43,7 @@ Tools:
 #   executablePath: parallel-lint
 #   paths: ['./']
 #   exclude: [vendor]
+#   jobs: 10 # Number of parallel jobs (-j flag)
 #   otherArguments: '--colors'
 #   ignoreErrorsOnExit: false # Optional: default false
 #   failFast: false # Optional: default false. Stop remaining tools on failure

@@ -22,6 +22,7 @@ class ParallelLintTest extends UnitTestCase
             'executablePath' => 'path/tools/parallel-lint',
             'paths' => ['./'],
             'exclude' => ['vendor', 'qa'],
+            'jobs' => 10,
             'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => false,
             'failFast' => true,
@@ -84,6 +85,7 @@ class ParallelLintTest extends UnitTestCase
             'executablePath' => 'path/tools/parallel-lint',
             'paths' => ['src', 'tests'],
             'exclude' => ['vendor', 'app'],
+            'jobs' => 8,
             'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
         ];
@@ -94,5 +96,6 @@ class ParallelLintTest extends UnitTestCase
 
         $this->assertStringEndsWith('src tests', $parallelLint->prepareCommand());
         $this->assertStringContainsString('--exclude vendor --exclude app', $parallelLint->prepareCommand());
+        $this->assertStringContainsString('-j 8', $parallelLint->prepareCommand());
     }
 }

@@ -17,8 +17,11 @@ class ParallelLint extends ToolAbstract
 
     public const PATHS = 'paths';
 
+    public const JOBS = 'jobs';
+
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
+        self::JOBS,
         self::EXCLUDE,
         self::OTHER_ARGS_OPTION,
         self::PATHS,
@@ -48,6 +51,9 @@ class ParallelLint extends ToolAbstract
             switch ($option) {
                 case self::EXECUTABLE_PATH_OPTION:
                     $command .= $this->args[self::EXECUTABLE_PATH_OPTION];
+                    break;
+                case self::JOBS:
+                    $command .= ' -j ' . $this->args[self::JOBS];
                     break;
                 case self::PATHS:
                     $command .= ' ' . implode(' ', $this->args[$option]);
