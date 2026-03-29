@@ -2,7 +2,10 @@
 return [
     'Options' => [
         'execution' => 'full', // Optional: default full. Values: full or fast
-        'processes' => 1, // Optional: default 1. Number of parallel processes
+        // Number of tools to run simultaneously. Some tools (phpstan, parallel-lint,
+        // phpcs, psalm) spawn their own worker processes internally, so actual OS
+        // processes may be higher than this value. Keep low on machines with few cores.
+        'processes' => 1,
     ],
     'Tools' => [
         'security-checker',

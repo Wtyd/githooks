@@ -24,7 +24,15 @@ class OptionsConfiguration
     /** @var bool False when execution is setted. Useful to know how to print the output of options (OptionsTable) */
     protected $defaultExecution = true;
 
-    /** @var int */
+    /**
+     * Number of tools to run simultaneously (tool all command).
+     *
+     * This controls GitHooks-level parallelism only. Some tools (phpstan, parallel-lint,
+     * phpcs/phpcbf, psalm) spawn their own worker processes internally, so actual OS
+     * processes may be significantly higher than this value.
+     *
+     * @var int
+     */
     protected $processes = 1;
 
     /** @var bool False when processes is setted. Useful to know how to print the output of options (OptionsTable) */
