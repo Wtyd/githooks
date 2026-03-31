@@ -11,8 +11,8 @@ use Wtyd\GitHooks\Utils\Storage;
 
 class CreateConfigurationFileCommand extends Command
 {
-    protected $signature = 'conf:init';
-    protected $description = 'Creates the configuration file githooks.yml in the project path';
+    protected $signature = 'conf:init {--legacy : Generate legacy (v2) format instead of v3 hooks/flows/jobs}';
+    protected $description = 'Creates the configuration file githooks.php in the project path';
 
     protected Printer $printer;
 
@@ -27,7 +27,9 @@ class CreateConfigurationFileCommand extends Command
 
     public function handle()
     {
-        $origin = 'vendor/wtyd/githooks/qa/githooks.dist.php';
+        $origin = $this->option('legacy')
+            ? 'vendor/wtyd/githooks/qa/githooks.dist.php'
+            : 'vendor/wtyd/githooks/qa/githooks.v3.dist.php';
         $destiny = 'githooks.php';
 
         try {
