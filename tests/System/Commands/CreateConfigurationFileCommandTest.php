@@ -12,13 +12,13 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     {
         $templatePath = $this->path . '/vendor/wtyd/githooks/qa/';
         mkdir($templatePath, 0777, true);
-        file_put_contents($templatePath . 'githooks.dist.php', '');
+        file_put_contents($templatePath . 'githooks.v3.dist.php', '');
 
         $this->artisan('conf:init')
             ->containsStringInOutput('Configuration file githooks.php has been created in root path')
             ->assertExitCode(0);
 
-        $this->assertFileEquals($templatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+        $this->assertFileEquals($templatePath . 'githooks.v3.dist.php', $this->path . '/githooks.php');
     }
 
     public function configurationFileDataProvider()
@@ -46,7 +46,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     function it_prints_an_error_message_when_something_wrong_happens()
     {
         $this->artisan('conf:init')
-            ->containsStringInOutput('Failed to copy vendor/wtyd/githooks/qa/githooks.dist.php to githooks.php')
+            ->containsStringInOutput('Failed to copy vendor/wtyd/githooks/qa/githooks.v3.dist.php to githooks.php')
             ->assertExitCode(1);
 
         $this->assertFileDoesNotExist($this->path . '/githooks.php');

@@ -63,10 +63,7 @@ class RegisterBindings
             ToolRegistry::class => ToolRegistry::class,
             JobRegistry::class => JobRegistry::class,
             ConfigurationParser::class => function (Container $c) {
-                return new ConfigurationParser(
-                    getcwd() ?: '',
-                    $c->make(ToolRegistry::class)
-                );
+                return new ConfigurationParser($c->make(ToolRegistry::class));
             },
             FlowPreparer::class => function (Container $c) {
                 return new FlowPreparer($c->make(JobRegistry::class));

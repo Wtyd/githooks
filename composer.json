@@ -34,7 +34,7 @@
     "require-dev": {
         "fakerphp/faker": "^1.19",
         "intonate/tinker-zero": "1.*",
-        "laravel-zero/framework": "^5.0 | ^6.0 | ^7.0 | 8.* | 9.*",
+        "laravel-zero/framework": "8.* | 9.* | 10.* | 11.* | 12.*",
         "laravel-zero/phar-updater": "^1.0.6",
         "mikey179/vfsstream": "^1.6",
         "mockery/mockery": "^1.3",
