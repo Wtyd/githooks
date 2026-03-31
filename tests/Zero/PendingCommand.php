@@ -63,6 +63,16 @@ class PendingCommand
     protected $showOutput = false;
 
     /**
+     * Output captured via ob_start during command execution.
+     * Used by verifyExpectations() for assertions that check raw output
+     * (containsStringInOutput, toolHasFailed, etc.), since the Printer
+     * class writes via echo bypassing Symfony's OutputInterface.
+     *
+     * @var string
+     */
+    protected $capturedOutput = '';
+
+    /**
      * Create a new pending console command run.
      *
      * @param  \PHPUnit\Framework\TestCase  $test
@@ -327,8 +337,22 @@ class PendingCommand
         try {
             $this->OutputShouldBeShown();
 
+            // Wrap execution with ob_start to capture raw echo output
+            // from Printer class, which bypasses Symfony's OutputInterface.
+            ob_start();
             $exitCode = $this->app->make(Kernel::class)->call($this->command, $this->parameters, $mock);
+            $this->capturedOutput = ob_get_clean() ?: '';
+
+            // Re-echo so PHPUnit's getActualOutput() still works for
+            // tests that call it directly after the fluent chain.
+            echo $this->capturedOutput;
         } catch (NoMatchingExpectationException $e) {
+            // Clean up output buffer on exception
+            if (ob_get_level()) {
+                $this->capturedOutput = ob_get_clean() ?: '';
+                echo $this->capturedOutput;
+            }
+
             if ($e->getMethodName() === 'askQuestion') {
                 $this->test->fail('Unexpected question "' . $e->getActualArguments()[0]->getQuestion() . '" was asked.');
             }
@@ -404,7 +428,7 @@ class PendingCommand
             foreach ($this->test->containsStringInOutput as $key => $string) {
                 $this->test->assertStringContainsString(
                     $string,
-                    $this->test->getActualOutput(),
+                    $this->capturedOutput,
                     'Output "' . $string . '" was not printed.'
                 );
                 unset($this->test->containsStringInOutput[$key]);
@@ -415,10 +439,10 @@ class PendingCommand
             foreach ($this->test->notContainsStringInOutput as $key => $string) {
                 $this->test->assertStringNotContainsString(
                     $string,
-                    $this->test->getActualOutput(),
+                    $this->capturedOutput,
                     'Output "' . $string . '" was printed.'
                 );
-                unset($this->test->containsStringInOutput[$key]);
+                unset($this->test->notContainsStringInOutput[$key]);
             }
         }
 
@@ -426,21 +450,21 @@ class PendingCommand
             foreach ($this->test->matchesRegularExpression as $key => $pattern) {
                 $this->test->assertMatchesRegularExpression(
                     $pattern,
-                    $this->test->getActualOutput(),
-                    'Output "' . $this->test->getActualOutput() . '" does not match with regular expression given:' . $pattern
+                    $this->capturedOutput,
+                    'Output "' . $this->capturedOutput . '" does not match with regular expression given:' . $pattern
                 );
                 unset($this->test->matchesRegularExpression[$key]);
             }
         }
 
-        if (count($this->test->matchesRegularExpression)) {
-            foreach ($this->test->matchesRegularExpression as $key => $pattern) {
-                $this->test->assertMatchesRegularExpression(
+        if (count($this->test->notMatchesRegularExpression)) {
+            foreach ($this->test->notMatchesRegularExpression as $key => $pattern) {
+                $this->test->assertDoesNotMatchRegularExpression(
                     $pattern,
-                    $this->test->getActualOutput(),
-                    'Output "' . $this->test->getActualOutput() . '" match with regular expression given:' . $pattern
+                    $this->capturedOutput,
+                    'Output "' . $this->capturedOutput . '" matches regular expression given:' . $pattern
                 );
-                unset($this->test->matchesRegularExpression[$key]);
+                unset($this->test->notMatchesRegularExpression[$key]);
             }
         }
 
@@ -448,7 +472,7 @@ class PendingCommand
             foreach ($this->test->toolHasBeenExecutedSuccessfully as $key => $tool) {
                 $this->test->assertMatchesRegularExpression(
                     "%$tool(\.phar)? - OK\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%",
-                    $this->test->getActualOutput(),
+                    $this->capturedOutput,
                     "The tool $tool has not been executed successfully"
                 );
                 unset($this->test->toolHasBeenExecutedSuccessfully[$key]);
@@ -459,10 +483,10 @@ class PendingCommand
             foreach ($this->test->toolHasFailed as $key => $tool) {
                 $this->test->assertMatchesRegularExpression(
                     "%$tool(\.phar)? - KO\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%",
-                    $this->test->getActualOutput(),
+                    $this->capturedOutput,
                     "The tool $tool has not failed"
                 );
-                unset($this->test->toolHasBeenExecutedSuccessfully[$key]);
+                unset($this->test->toolHasFailed[$key]);
             }
         }
 
@@ -470,10 +494,10 @@ class PendingCommand
             foreach ($this->test->toolDidNotRun as $key => $tool) {
                 $this->test->assertStringNotContainsString(
                     $tool,
-                    $this->test->getActualOutput(),
+                    $this->capturedOutput,
                     "The tool $tool has been run"
                 );
-                unset($this->test->containsStringInOutput[$key]);
+                unset($this->test->toolDidNotRun[$key]);
             }
         }
     }

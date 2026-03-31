@@ -17,9 +17,9 @@ class ConfigurationParser
 
     private ToolRegistry $toolRegistry;
 
-    public function __construct(ToolRegistry $toolRegistry)
+    public function __construct(ToolRegistry $toolRegistry, string $rootPath = '')
     {
-        $this->rootPath = getcwd() ?: '';
+        $this->rootPath = $rootPath !== '' ? $rootPath : (getcwd() ?: '');
         $this->toolRegistry = $toolRegistry;
     }
 

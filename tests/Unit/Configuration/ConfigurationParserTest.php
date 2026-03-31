@@ -30,7 +30,7 @@ class ConfigurationParserTest extends TestCase
     /** @test */
     public function it_detects_legacy_format()
     {
-        $parser = new ConfigurationParser($this->fixturesPath, $this->registry);
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
 
         $this->assertTrue($parser->isLegacyFormat([
             'Options' => ['execution' => 'full'],
@@ -76,7 +76,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->fixturesPath, $this->registry);
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->isLegacy());
@@ -106,7 +106,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->fixturesPath, $this->registry);
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->isLegacy());
@@ -132,7 +132,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->fixturesPath, $this->registry);
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -156,7 +156,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->fixturesPath, $this->registry);
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -183,7 +183,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->fixturesPath, $this->registry);
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));

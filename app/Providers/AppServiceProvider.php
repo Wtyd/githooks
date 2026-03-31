@@ -4,12 +4,12 @@ namespace Wtyd\GitHooks\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
-use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
+use Tests\Doubles\FileReaderFake;
+use Tests\Doubles\SecurityCheckerFake;
 use Wtyd\GitHooks\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider

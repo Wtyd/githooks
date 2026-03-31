@@ -66,9 +66,11 @@ abstract class ConsoleTestCase extends ZeroTestCase
 
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
         $this->app->bind(GitStagerInterface::class, GitStagerFake::class);
-        $this->app->singleton(FileReader::class, FileReaderFake::class);
-        $this->app->singleton(SecurityChecker::class, SecurityCheckerFake::class);
-        $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
+        // FileReader, SecurityChecker and ProcessExecutionFactory singletons
+        // are already registered in AppServiceProvider::testsRegister() during
+        // bootstrap. Do NOT re-register them here — the command instances were
+        // constructed during bootstrap and hold references to those singletons.
+        // Re-registering would create new instances invisible to commands.
     }
 
     /**
