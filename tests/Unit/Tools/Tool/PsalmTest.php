@@ -7,14 +7,15 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Psalm;
-use Wtyd\GitHooks\Tools\Tool\PsalmFake;
+use Tests\Doubles\PsalmFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class PsalmTest extends UnitTestCase
 {
     /** @test */
     function psalm_is_a_supported_tool()
     {
-        $this->assertTrue(Psalm::checkTool('psalm'));
+        $this->assertTrue((new ToolRegistry())->isSupported('psalm'));
     }
 
     /** @test */
@@ -36,7 +37,7 @@ class PsalmTest extends UnitTestCase
             'paths' => ['src'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('psalm', $configuration);
+        $toolConfiguration = new ToolConfiguration('psalm', $configuration, new ToolRegistry());
         $psalm = new PsalmFake($toolConfiguration);
 
         $this->assertEquals($configuration['executablePath'], $psalm->getExecutablePath());
@@ -55,7 +56,7 @@ class PsalmTest extends UnitTestCase
             'ignoreErrorsOnExit' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('psalm', $configuration);
+        $toolConfiguration = new ToolConfiguration('psalm', $configuration, new ToolRegistry());
         $psalm = new PsalmFake($toolConfiguration);
 
         $this->assertEquals('psalm', $psalm->getExecutablePath());
@@ -74,7 +75,7 @@ class PsalmTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('psalm', $configuration);
+        $toolConfiguration = new ToolConfiguration('psalm', $configuration, new ToolRegistry());
         $psalm = new PsalmFake($toolConfiguration);
 
         $this->assertEquals($configuration['executablePath'], $psalm->getExecutablePath());
@@ -90,7 +91,7 @@ class PsalmTest extends UnitTestCase
             'paths' => ['src', 'app'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('psalm', $configuration);
+        $toolConfiguration = new ToolConfiguration('psalm', $configuration, new ToolRegistry());
         $psalm = new PsalmFake($toolConfiguration);
 
         $this->assertStringEndsWith('src app', $psalm->prepareCommand());
@@ -112,7 +113,7 @@ class PsalmTest extends UnitTestCase
             // 'paths' => ['src', 'app'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('psalm', $configuration);
+        $toolConfiguration = new ToolConfiguration('psalm', $configuration, new ToolRegistry());
         $psalm = new PsalmFake($toolConfiguration);
 
         $cmd = $psalm->prepareCommand();

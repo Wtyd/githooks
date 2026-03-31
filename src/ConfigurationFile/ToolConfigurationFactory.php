@@ -6,19 +6,19 @@ namespace Wtyd\GitHooks\ConfigurationFile;
 
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolConfigurationDataIsNullException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ToolConfigurationFactory
 {
-    /**
-     * @var array
-     */
-    protected $configurationFile;
+    protected array $configurationFile;
 
-    public function __construct(array $configurationFile)
+    protected ToolRegistry $toolRegistry;
+
+    public function __construct(array $configurationFile, ToolRegistry $toolRegistry)
     {
         $this->configurationFile = $configurationFile;
+        $this->toolRegistry = $toolRegistry;
     }
 
     /**
@@ -32,19 +32,19 @@ class ToolConfigurationFactory
      */
     public function create(string $toolName, $toolData): ToolConfiguration
     {
-        if (!ToolAbstract::checkTool($toolName)) {
+        if (!$this->toolRegistry->isSupported($toolName)) {
             throw ToolIsNotSupportedException::forTool($toolName);
         }
         try {
             $toolConfiguration = null;
-            if (ToolAbstract::PHPCBF === $toolName && Phpcbf::usePhpcsConfiguration($toolData)) {
-                $phpcsConfiguration = new ToolConfiguration(ToolAbstract::PHPCS, $this->configurationFile[ToolAbstract::PHPCS]);
-                $phpcbfConfiguration = new ToolConfiguration($toolName, $toolData);
+            if (ToolRegistry::PHPCBF === $toolName && Phpcbf::usePhpcsConfiguration($toolData)) {
+                $phpcsConfiguration = new ToolConfiguration(ToolRegistry::PHPCS, $this->configurationFile[ToolRegistry::PHPCS], $this->toolRegistry);
+                $phpcbfConfiguration = new ToolConfiguration($toolName, $toolData, $this->toolRegistry);
 
                 $toolData = array_merge($phpcsConfiguration->getToolConfiguration(), $phpcbfConfiguration->getToolConfiguration());
             }
 
-            $toolConfiguration = new ToolConfiguration($toolName, $toolData);
+            $toolConfiguration = new ToolConfiguration($toolName, $toolData, $this->toolRegistry);
         } catch (\TypeError $error) {
             throw ToolConfigurationDataIsNullException::forData($toolName, $toolData);
         }

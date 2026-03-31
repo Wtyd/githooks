@@ -3,44 +3,30 @@
 namespace Wtyd\GitHooks\LoadTools;
 
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\ToolsFactory;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
  * This strategy runs the tools only against files modified by commit.
- * 1. This option only affects the following tools: phpcs, phpmd, phpstan, and parallel-lint (ACCELERABLE_TOOLS). The other tools will run as the full
- * option.
- * 2. WARNING!!! You must set the excludes of the tools either in githooks.yml or in the configuration file of eath tool since this option overwrites the key
+ * 1. This option only affects tools that support fast execution (SUPPORTS_FAST = true). The other tools will run as the full option.
+ * 2. WARNING!!! You must set the excludes of the tools either in githooks.yml or in the configuration file of each tool since this option overwrites the key
  * paths of the tools so that they are executed only against the modified files.
  */
 class FastExecution implements ExecutionMode
 {
 
-    /**
-     * Tools which execution can be improve by ExecutionMode. The following tools are not affected:
-     * 1. Check-Security no executes against any path.
-     * 2. Copy Paste Detector needs all files to be able to compare
-     */
-    public const ACCELERABLE_TOOLS = [
-        ToolAbstract::PHPCS,
-        ToolAbstract::PHPCBF,
-        ToolAbstract::PARALLEL_LINT,
-        ToolAbstract::MESS_DETECTOR,
-        ToolAbstract::PHPSTAN,
-        ToolAbstract::PSALM,
-    ];
+    protected FileUtilsInterface $fileUtils;
 
-    /** @var \Wtyd\GitHooks\Utils\FileUtilsInterface */
-    protected $fileUtils;
+    protected ToolsFactory $toolsFactory;
 
-    /** @var \Wtyd\GitHooks\Tools\ToolsFactory */
-    protected $toolsFactory;
+    protected ToolRegistry $toolRegistry;
 
-    public function __construct(FileUtilsInterface $fileUtils, ToolsFactory $toolsFactory)
+    public function __construct(FileUtilsInterface $fileUtils, ToolsFactory $toolsFactory, ToolRegistry $toolRegistry)
     {
         $this->fileUtils = $fileUtils;
         $this->toolsFactory = $toolsFactory;
+        $this->toolRegistry = $toolRegistry;
     }
 
     /** @inheritDoc */
@@ -54,7 +40,7 @@ class FastExecution implements ExecutionMode
     {
         $tools = [];
         foreach ($toolConfigurations as $tool) {
-            if (!in_array($tool->getTool(), self::ACCELERABLE_TOOLS)) {
+            if (!$this->toolRegistry->isAccelerable($tool->getTool())) {
                 $tools[] = $tool;
                 continue;
             }

@@ -41,11 +41,11 @@ El orden de verificación depende del contexto:
 | **Refactor** | QA + Tests antes (baseline) → Refactor → QA + Tests después |
 
 ```bash
-# Tests (usar php7.1 por defecto)
-php7.1 vendor/bin/phpunit --order-by random
+# Tests (usar php7.4 por defecto)
+php7.4 vendor/bin/phpunit --order-by random
 
 # QA tools
-php7.1 githooks tool all full
+php7.4 githooks tool all full
 ```
 
 Si algún check falla, corregir antes de reportar.
@@ -69,12 +69,11 @@ refactor(FastExecution): simplify file filtering logic
 
 El contenedor tiene PHP 7.0 a 8.4. Se invocan como `php7.0`, `php7.1`, ..., `php8.4`. La versión por defecto (`php`) es 8.4.
 
-**Regla:** usar siempre `php7.1` para desarrollo por defecto. Las dependencias compatibles siguen los tiers del build:
+**Regla:** usar siempre `php7.4` para desarrollo por defecto. Las dependencias compatibles siguen los tiers del build:
 
 | Composer update con | Ejecutable con | Tier |
 |---|---|---|
-| `php7.1 tools/composer update` | PHP 7.1, 7.2 | `builds/php7.1/` |
-| `php7.3 tools/composer update` | PHP 7.3, 7.4, 8.0 | `builds/php7.3/` |
+| `php7.4 tools/composer update` | PHP 7.4, 8.0 | `builds/php7.4/` |
 | `php8.1 tools/composer update` | PHP 8.1, 8.2, 8.3, 8.4, 8.5 | `builds/` |
 
 Para probar con otra versión, primero actualizar dependencias con el `composer update` correspondiente al tier.
@@ -83,18 +82,18 @@ Para probar con otra versión, primero actualizar dependencias con el `composer 
 
 ```bash
 # Tests
-php7.1 vendor/bin/phpunit --order-by random      # Suite completa
-php7.1 vendor/bin/phpunit tests/Unit              # Solo unitarios
-php7.1 vendor/bin/phpunit --group git             # Tests de git (excluidos por defecto)
-php7.1 vendor/bin/phpunit --group release         # Tests de release (requieren .phar)
+php7.4 vendor/bin/phpunit --order-by random      # Suite completa
+php7.4 vendor/bin/phpunit tests/Unit              # Solo unitarios
+php7.4 vendor/bin/phpunit --group git             # Tests de git (excluidos por defecto)
+php7.4 vendor/bin/phpunit --group release         # Tests de release (requieren .phar)
 
 # QA
-php7.1 githooks tool all full                     # Todos los QA tools
-php7.1 githooks tool phpstan                      # Tool individual
+php7.4 githooks tool all full                     # Todos los QA tools
+php7.4 githooks tool phpstan                      # Tool individual
 
 # Build
-php7.1 githooks app:pre-build php
-php7.1 githooks app:build
+php7.4 githooks app:pre-build php
+php7.4 githooks app:build
 ```
 
 Grupos de test excluidos por defecto: `@group release`, `@group git`, `@group windows`.
@@ -137,13 +136,13 @@ return [
 
 ## Restricciones técnicas
 
-- **PHP >=7.1** como mínimo. El `.phar` se compila en 3 binarios: `builds/php7.1/`, `builds/php7.3/`, `builds/` (8.1+). Si tocas `Build.php` o `ComposerUpdater.php`, consulta la skill `ci-pipeline`. Los hooks de hookify verifican automáticamente la compatibilidad de syntax.
+- **PHP >=7.4** como mínimo. El `.phar` se compila en 2 binarios: `builds/php7.4/` (7.4, 8.0), `builds/` (8.1+). Si tocas `Build.php` o `ComposerUpdater.php`, consulta la skill `ci-pipeline`. Los hooks de hookify verifican automáticamente la compatibilidad de syntax.
 - **Sin dependencias runtime en `require`.** Todas las dependencias están en `require-dev` por diseño — el `.phar` las embebe en compilación. Si necesitas añadir una dependencia, va en `require-dev`. Nunca en `require` salvo que se hable explícitamente con el usuario.
 - **Dirección de dependencias:** `src/` nunca importa de `app/` (hook de hookify lo bloquea).
 - **`declare(strict_types=1)`** obligatorio en `src/` (hook de hookify lo verifica).
 - **`ToolsFactory`** — factory que instancia las tools desde la configuración.
 - **`src/Tools/Process/`** excluido de PHPStan — wraps de Symfony Process.
-- **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.1 githooks tool all full`.
+- **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.4 githooks tool all full`.
 
 ## Skills disponibles
 

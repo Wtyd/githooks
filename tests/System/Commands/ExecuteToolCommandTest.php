@@ -6,11 +6,11 @@ use Illuminate\Support\Facades\Storage;
 use Mockery\MockInterface;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
-use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
+use Tests\Doubles\FileUtilsFake;
+use Tests\Doubles\MultiProcessesExecutionFake;
+use Tests\Doubles\ProcessExecutionFake;
 use Wtyd\GitHooks\Utils\FileUtils;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
-use Wtyd\GitHooks\Utils\FileUtilsFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class ExecuteToolCommandTest extends SystemTestCase
@@ -411,7 +411,7 @@ class ExecuteToolCommandTest extends SystemTestCase
         $this->artisan('tool notSupportedTool')
             ->assertExitCode(1)
             ->expectsOutput(
-                'The tool notSupportedTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm, script'
+                'The tool notSupportedTool is not supported by GitHooks.'
             );
     }
 
@@ -670,7 +670,7 @@ class ExecuteToolCommandTest extends SystemTestCase
 
     protected function tearDown(): void
     {
-        ToolAbstract::resetScriptAlias();
+        app(ToolRegistry::class)->resetScriptAlias();
         parent::tearDown();
     }
 }

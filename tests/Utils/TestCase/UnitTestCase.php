@@ -4,11 +4,9 @@ namespace Tests\Utils\TestCase;
 
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Container\RegisterBindings;
-use Tests\Utils\Traits\RetroCompatibilityAssertsTrait;
 
 class UnitTestCase extends TestCase
 {
-    use RetroCompatibilityAssertsTrait;
 
     protected function registerBindings()
     {

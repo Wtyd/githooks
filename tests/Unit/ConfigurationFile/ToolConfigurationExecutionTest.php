@@ -7,6 +7,7 @@ namespace Tests\Unit\ConfigurationFile;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ToolConfigurationExecutionTest extends UnitTestCase
 {
@@ -16,7 +17,7 @@ class ToolConfigurationExecutionTest extends UnitTestCase
         $toolConfig = new ToolConfiguration('phpcs', [
             'paths' => ['src'],
             'execution' => 'fast',
-        ]);
+        ], new ToolRegistry());
 
         $this->assertEquals('fast', $toolConfig->getExecution());
         $this->assertTrue($toolConfig->hasExecution());
@@ -27,7 +28,7 @@ class ToolConfigurationExecutionTest extends UnitTestCase
     {
         $toolConfig = new ToolConfiguration('phpcs', [
             'paths' => ['src'],
-        ]);
+        ], new ToolRegistry());
 
         $this->assertNull($toolConfig->getExecution());
         $this->assertFalse($toolConfig->hasExecution());
@@ -40,7 +41,7 @@ class ToolConfigurationExecutionTest extends UnitTestCase
             'paths' => ['src'],
             'rules' => 'unusedcode',
             'execution' => 'full',
-        ]);
+        ], new ToolRegistry());
 
         $this->assertEquals('full', $toolConfig->getExecution());
         $this->assertTrue($toolConfig->hasExecution());
@@ -53,7 +54,7 @@ class ToolConfigurationExecutionTest extends UnitTestCase
         $toolConfig = new ToolConfiguration('phpcs', [
             'paths' => ['src'],
             'execution' => 'turbo',
-        ]);
+        ], new ToolRegistry());
 
         $this->assertNull($toolConfig->getExecution());
         $this->assertFalse($toolConfig->hasExecution());
@@ -70,7 +71,7 @@ class ToolConfigurationExecutionTest extends UnitTestCase
         $toolConfig = new ToolConfiguration('phpcs', [
             'paths' => ['src'],
             'execution' => 'fast',
-        ]);
+        ], new ToolRegistry());
 
         $this->assertArrayNotHasKey('execution', $toolConfig->getToolConfiguration());
     }
@@ -83,7 +84,7 @@ class ToolConfigurationExecutionTest extends UnitTestCase
             'standard' => 'PSR12',
             'execution' => 'fast',
             'ignoreErrorsOnExit' => false,
-        ]);
+        ], new ToolRegistry());
 
         $config = $toolConfig->getToolConfiguration();
         $this->assertEquals(['src'], $config['paths']);
@@ -100,7 +101,7 @@ class ToolConfigurationExecutionTest extends UnitTestCase
     function it_works_with_all_accelerable_tools($tool, $config)
     {
         $config['execution'] = 'fast';
-        $toolConfig = new ToolConfiguration($tool, $config);
+        $toolConfig = new ToolConfiguration($tool, $config, new ToolRegistry());
 
         $this->assertEquals('fast', $toolConfig->getExecution());
         $this->assertArrayNotHasKey('execution', $toolConfig->getToolConfiguration());

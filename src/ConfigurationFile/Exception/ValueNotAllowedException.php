@@ -6,20 +6,14 @@ namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
 class ValueNotAllowedException extends \UnexpectedValueException
 {
-    /**
-     * @var string The key of the configuration file.
-     */
-    protected $key;
+    /** The key of the configuration file. */
+    protected string $key;
 
-    /**
-     * @var mixed The value for the key.
-     */
+    /** The value for the key. */
     protected $value;
 
-    /**
-     * @var array The possible values for the key.
-     */
-    protected $expectedValues;
+    /** The possible values for the key. */
+    protected array $expectedValues;
 
     /**
      * Named constructor for the ValueNotAllowedException.

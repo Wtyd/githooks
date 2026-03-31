@@ -13,8 +13,7 @@ class ExtractBuildCommand extends Command
     protected $signature = 'app:extract-build {--all}';
     protected $description = 'Extracts the build from the tar file after the build process.';
 
-    /**  @var \Wtyd\GitHooks\Build\Build */
-    private $build;
+    private Build $build;
 
     public function __construct(Build $build)
     {

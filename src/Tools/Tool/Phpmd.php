@@ -14,7 +14,9 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpmd extends ToolAbstract
 {
-    public const NAME = self::MESS_DETECTOR;
+    public const NAME = 'phpmd';
+
+    public const SUPPORTS_FAST = true;
 
     public const RULES = 'rules';
 
@@ -49,7 +51,7 @@ class Phpmd extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::MESS_DETECTOR;
+        $this->executable = self::NAME;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {

@@ -19,6 +19,7 @@ use Wtyd\GitHooks\Tools\Tool\{
 };
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\ToolsFactory;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class FullExecutionTest extends UnitTestCase
 {
@@ -71,13 +72,13 @@ class FullExecutionTest extends UnitTestCase
      */
     function it_can_load_each_tool($toolClass, $tool)
     {
-        $fullExecution = new FullExecution(new ToolsFactory());
+        $fullExecution = new FullExecution(new ToolsFactory(new ToolRegistry()));
 
         $configurationFileBuilder = new ConfigurationFileBuilder('');
         $configurationFileBuilder->setTools([$tool]);
 
         $configurationFile = $configurationFileBuilder->buildArray();
-        $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+        $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFile, $tool, new ToolRegistry()));
 
         $this->assertCount(1, $loadedTools);
 
@@ -88,11 +89,11 @@ class FullExecutionTest extends UnitTestCase
     function it_can_load_all_tools_at_same_time()
     {
 
-        $fullExecution = new FullExecution(new ToolsFactory());
+        $fullExecution = new FullExecution(new ToolsFactory(new ToolRegistry()));
 
         $configurationFileBuilder = new ConfigurationFileBuilder('');
 
-        $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFileBuilder->buildArray(), 'all'));
+        $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFileBuilder->buildArray(), 'all', new ToolRegistry()));
 
 
         $this->assertCount(10, $loadedTools);
@@ -101,9 +102,9 @@ class FullExecutionTest extends UnitTestCase
     /** @test */
     function processTools_loads_a_subset_of_tools()
     {
-        $fullExecution = new FullExecution(new ToolsFactory());
+        $fullExecution = new FullExecution(new ToolsFactory(new ToolRegistry()));
         $configurationFileBuilder = new ConfigurationFileBuilder('');
-        $configurationFile = new ConfigurationFile($configurationFileBuilder->buildArray(), 'all');
+        $configurationFile = new ConfigurationFile($configurationFileBuilder->buildArray(), 'all', new ToolRegistry());
 
         $subset = [
             'phpcs' => $configurationFile->getToolsConfiguration()['phpcs'],

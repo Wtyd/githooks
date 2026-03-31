@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\Container;
 
 use Illuminate\Container\Container;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactory;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Utils\FileUtils;
@@ -50,6 +51,9 @@ class RegisterBindings
      */
     protected function singletons(): array
     {
-        return [ProcessExecutionFactoryAbstract::class => ProcessExecutionFactory::class];
+        return [
+            ProcessExecutionFactoryAbstract::class => ProcessExecutionFactory::class,
+            ToolRegistry::class => ToolRegistry::class,
+        ];
     }
 }

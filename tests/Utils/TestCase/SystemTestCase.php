@@ -2,8 +2,8 @@
 
 namespace Tests\Utils\TestCase;
 
+use Tests\Doubles\FileUtilsFake;
 use Tests\Utils\ConfigurationFileBuilder;
-use Wtyd\GitHooks\Utils\FileUtilsFake;
 use Tests\Utils\Traits\FileSystemTrait;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 

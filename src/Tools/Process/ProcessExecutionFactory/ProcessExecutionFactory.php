@@ -7,7 +7,7 @@ namespace Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory;
 use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecution;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecution;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionAbstract;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ProcessExecutionFactory extends ProcessExecutionFactoryAbstract
 {
@@ -16,7 +16,7 @@ class ProcessExecutionFactory extends ProcessExecutionFactoryAbstract
     public function create(string $tool): ProcessExecutionAbstract
     {
         $processExecution = null;
-        if (ToolAbstract::ALL_TOOLS === $tool) {
+        if (ToolRegistry::ALL_TOOLS === $tool) {
             $processExecution = new MultiProcessesExecution($this->printer, $this->gitStager);
         } else {
             $processExecution = new ProcessExecution($this->printer, $this->gitStager);

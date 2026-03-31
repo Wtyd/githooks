@@ -11,14 +11,11 @@ use Wtyd\GitHooks\Utils\Printer;
 
 abstract class ProcessExecutionFactoryAbstract
 {
-    /** @var \Illuminate\Contracts\Container\Container */
-    protected $container;
+    protected Container $container;
 
-    /** @var \Wtyd\GitHooks\Utils\Printer */
-    protected $printer;
+    protected Printer $printer;
 
-    /** @var \Wtyd\GitHooks\Utils\GitStagerInterface */
-    protected $gitStager;
+    protected GitStagerInterface $gitStager;
 
     public function __construct(Container $container, Printer $printer, GitStagerInterface $gitStager)
     {

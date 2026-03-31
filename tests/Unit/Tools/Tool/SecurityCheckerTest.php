@@ -5,14 +5,15 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
-use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
+use Tests\Doubles\SecurityCheckerFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class SecurityCheckerTest extends UnitTestCase
 {
     /** @test */
     function securityChecker_is_a_supported_tool()
     {
-        $this->assertTrue(SecurityChecker::checkTool('security-checker'));
+        $this->assertTrue((new ToolRegistry())->isSupported('security-checker'));
     }
 
     /** @test */
@@ -25,7 +26,7 @@ class SecurityCheckerTest extends UnitTestCase
             'failFast' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('security-checker', $configuration);
+        $toolConfiguration = new ToolConfiguration('security-checker', $configuration, new ToolRegistry());
 
         $securityChecker = new SecurityCheckerFake($toolConfiguration);
 
@@ -44,7 +45,7 @@ class SecurityCheckerTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('security-checker', $configuration);
+        $toolConfiguration = new ToolConfiguration('security-checker', $configuration, new ToolRegistry());
 
         $securityChecker = new SecurityCheckerFake($toolConfiguration);
 
@@ -61,7 +62,7 @@ class SecurityCheckerTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('security-checker', $configuration);
+        $toolConfiguration = new ToolConfiguration('security-checker', $configuration, new ToolRegistry());
 
         $securityChecker = new SecurityCheckerFake($toolConfiguration);
 

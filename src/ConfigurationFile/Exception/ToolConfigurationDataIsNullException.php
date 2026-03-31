@@ -6,12 +6,8 @@ namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
 class ToolConfigurationDataIsNullException extends \InvalidArgumentException
 {
-    /**
-     * Data for the tool
-     *
-     * @var array|null
-     */
-    protected $data;
+    /** Data for the tool */
+    protected ?array $data;
 
     public static function forData(string $tool, ?array $data): ToolConfigurationDataIsNullException
     {

@@ -3,14 +3,7 @@
 namespace Wtyd\GitHooks\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
 use Wtyd\GitHooks\Container\RegisterBindings;
-use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
-use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
-use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
-use Wtyd\GitHooks\Tools\Tool\SecurityCheckerFake;
-use Wtyd\GitHooks\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -46,7 +39,7 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Register fake clases for testing.
+     * Register testing overrides.
      *
      * The APP_ENV const is setted in Tests\CreatesApplication
      *
@@ -55,10 +48,7 @@ class AppServiceProvider extends ServiceProvider
     protected function testsRegister(): void
     {
         if (defined('APP_ENV') && APP_ENV === 'testing') {
-            $this->app->singleton(FileReader::class, FileReaderFake::class);
-            $this->app->singleton(SecurityChecker::class, SecurityCheckerFake::class);
-            $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
-            Storage::$disk = 'testing';
+            \Wtyd\GitHooks\Utils\Storage::$disk = 'testing';
         }
     }
 }

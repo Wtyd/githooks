@@ -4,10 +4,7 @@ namespace Wtyd\GitHooks\Tools\Exception;
 
 class ExitErrorException extends \RuntimeException implements ToolsExceptionInterface
 {
-    /**
-     * @var array
-     */
-    private $exit;
+    private array $exit;
 
     public static function forExit(array $exit): ExitErrorException
     {

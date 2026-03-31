@@ -4,20 +4,21 @@ namespace Wtyd\GitHooks\Tools;
 
 use Wtyd\GitHooks\LoadTools\ExecutionFactory;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
-use Wtyd\GitHooks\LoadTools\FastExecution;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 
 class ToolsPreparer
 {
-    /** @var ExecutionFactory */
-    protected $executionFactory;
+    protected ExecutionFactory $executionFactory;
 
-    /** @var ConfigurationFile */
-    protected $configurationFile;
+    protected ?ConfigurationFile $configurationFile = null;
 
-    public function __construct(ExecutionFactory $executionFactory)
+    protected ToolRegistry $toolRegistry;
+
+    public function __construct(ExecutionFactory $executionFactory, ToolRegistry $toolRegistry)
     {
         $this->executionFactory = $executionFactory;
+        $this->toolRegistry = $toolRegistry;
     }
 
     /**
@@ -38,7 +39,7 @@ class ToolsPreparer
             $effectiveMode = $this->resolveEffectiveMode($toolConfig, $configurationFile);
 
             if ($effectiveMode === ExecutionMode::FAST_EXECUTION
-                && !in_array($toolConfig->getTool(), FastExecution::ACCELERABLE_TOOLS)
+                && !$this->toolRegistry->isAccelerable($toolConfig->getTool())
             ) {
                 $this->addNonAccelerableWarning($toolConfig->getTool(), $configurationFile);
                 $effectiveMode = ExecutionMode::FULL_EXECUTION;

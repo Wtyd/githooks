@@ -4,15 +4,16 @@ namespace Tests\Unit\Tools\Tool\AdaptRoutes;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\Tool\{
-    CodeSniffer\PhpcbfFake,
-    CodeSniffer\PhpcsFake,
+use Tests\Doubles\{
+    PhpcbfFake,
+    PhpcsFake,
     ParallelLintFake,
     PhpcpdFake,
     PhpmdFake,
     PhpstanFake,
     SecurityCheckerFake
 };
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
  * @group windows
@@ -33,7 +34,7 @@ class UnixToWindowsTest extends UnitTestCase
             'otherArguments' => '--report=summary --parallel=2'
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration, new ToolRegistry());
 
         $phpcbf = new PhpcbfFake($toolConfiguration);
 
@@ -57,7 +58,7 @@ class UnixToWindowsTest extends UnitTestCase
             'otherArguments' => '--report=summary --parallel=2'
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration, new ToolRegistry());
 
         $phpcbf = new PhpcsFake($toolConfiguration);
 
@@ -78,7 +79,7 @@ class UnixToWindowsTest extends UnitTestCase
             'otherArguments' => '--colors',
         ];
 
-        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
+        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration, new ToolRegistry());
 
         $parallelLint = new ParallelLintFake($toolConfiguration);
 
@@ -98,7 +99,7 @@ class UnixToWindowsTest extends UnitTestCase
             'otherArguments' => '--min-lines=5',
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration, new ToolRegistry());
 
         $phpcpd = new PhpcpdFake($toolConfiguration);
 
@@ -119,7 +120,7 @@ class UnixToWindowsTest extends UnitTestCase
             'otherArguments' => '--strict',
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration, new ToolRegistry());
 
         $phpmd = new PhpmdFake($toolConfiguration);
 
@@ -138,7 +139,7 @@ class UnixToWindowsTest extends UnitTestCase
             'otherArguments' => '-format json',
         ];
 
-        $toolConfiguration = new ToolConfiguration('security-checker', $configuration);
+        $toolConfiguration = new ToolConfiguration('security-checker', $configuration, new ToolRegistry());
 
         $securityChecker = new SecurityCheckerFake($toolConfiguration);
 
@@ -158,7 +159,7 @@ class UnixToWindowsTest extends UnitTestCase
             'otherArguments' => '--no-progress',
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration, new ToolRegistry());
 
         $phpstan = new PhpstanFake($toolConfiguration);
 

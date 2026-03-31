@@ -7,7 +7,7 @@ namespace Wtyd\GitHooks\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolConfigurationDataIsNullException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ConfigurationFile
 {
@@ -19,57 +19,37 @@ class ConfigurationFile
 
     public const CLI_EXECUTION_OVERRIDE = '_cliExecutionOverride';
 
-    /**
-     * @var array
-     */
-    protected $configurationFile;
+    protected array $configurationFile;
 
-    /**
-     * @var OptionsConfiguration
-     */
-    protected $options;
+    protected OptionsConfiguration $options;
 
-    /**
-     * @var array of ToolConfiguration
-     */
-    protected $toolsConfiguration = [];
+    protected array $toolsConfiguration = [];
 
-    /**
-     * @var ToolConfigurationFactory
-     */
-    protected $toolConfigurationFactory;
+    protected ToolConfigurationFactory $toolConfigurationFactory;
 
-    /**
-     * @var array
-     */
-    protected $toolsErrors = [];
+    protected array $toolsErrors = [];
 
-    /**
-     * @var array
-     */
-    protected $toolsWarnings = [];
+    protected array $toolsWarnings = [];
 
-    /**
-     * @var bool Whether execution mode was overridden from CLI.
-     */
-    protected $cliExecutionOverride = false;
+    protected bool $cliExecutionOverride = false;
 
-    /**
-     * @var string The tool argument passed to the command ('all' or a specific tool name).
-     */
-    protected $requestedTool;
+    protected string $requestedTool;
+
+    protected ToolRegistry $toolRegistry;
 
     /**
      * Checks data from configuration file
      *
      * @param array $configurationFile
      * @param string $tool The name of the tool or 'all'.
+     * @param ToolRegistry $toolRegistry
      *
      * @throws ToolIsNotSupportedException
      * @throws ConfigurationFileException
      */
-    public function __construct(array $configurationFile, string $tool)
+    public function __construct(array $configurationFile, string $tool, ToolRegistry $toolRegistry)
     {
+        $this->toolRegistry = $toolRegistry;
         $this->cliExecutionOverride = isset($configurationFile[self::CLI_EXECUTION_OVERRIDE]);
         unset($configurationFile[self::CLI_EXECUTION_OVERRIDE]);
 
@@ -83,7 +63,7 @@ class ConfigurationFile
 
         $this->configurationFile = $configurationFile;
 
-        $this->toolConfigurationFactory = new ToolConfigurationFactory($this->configurationFile);
+        $this->toolConfigurationFactory = new ToolConfigurationFactory($this->configurationFile, $this->toolRegistry);
 
         $this->options = new OptionsConfiguration($this->configurationFile);
 
@@ -205,7 +185,7 @@ class ConfigurationFile
 
     protected function isSupportedTool(string $tool): bool
     {
-        if (ToolAbstract::checkTool($tool)) {
+        if ($this->toolRegistry->isSupported($tool)) {
             return true;
         }
 
@@ -302,24 +282,6 @@ class ConfigurationFile
      */
     protected function resolveScriptName(array $configurationFile): array
     {
-        if (!isset($configurationFile[ToolAbstract::SCRIPT]['name'])) {
-            return $configurationFile;
-        }
-
-        $name = $configurationFile[ToolAbstract::SCRIPT]['name'];
-
-        if (empty($name) || !is_string($name)) {
-            return $configurationFile;
-        }
-
-        if (ToolAbstract::getScriptAlias() === null) {
-            ToolAbstract::registerScriptAlias($name);
-        }
-
-        $configurationFile[$name] = $configurationFile[ToolAbstract::SCRIPT];
-        unset($configurationFile[$name]['name']);
-        unset($configurationFile[ToolAbstract::SCRIPT]);
-
-        return $configurationFile;
+        return $this->toolRegistry->resolveScriptName($configurationFile);
     }
 }

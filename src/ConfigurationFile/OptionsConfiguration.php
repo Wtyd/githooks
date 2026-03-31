@@ -18,11 +18,9 @@ class OptionsConfiguration
 
     public const TAGS_OPTIONS_TAG = [self::EXECUTION_TAG, self::PROCESSES_TAG];
 
-    /** @var string full (default)/fast */
-    protected $execution = 'full';
+    protected string $execution = 'full';
 
-    /** @var bool False when execution is setted. Useful to know how to print the output of options (OptionsTable) */
-    protected $defaultExecution = true;
+    protected bool $defaultExecution = true;
 
     /**
      * Number of tools to run simultaneously (tool all command).
@@ -30,19 +28,14 @@ class OptionsConfiguration
      * This controls GitHooks-level parallelism only. Some tools (phpstan, parallel-lint,
      * phpcs/phpcbf, psalm) spawn their own worker processes internally, so actual OS
      * processes may be significantly higher than this value.
-     *
-     * @var int
      */
-    protected $processes = 1;
+    protected int $processes = 1;
 
-    /** @var bool False when processes is setted. Useful to know how to print the output of options (OptionsTable) */
-    protected $defaultProcesses = true;
+    protected bool $defaultProcesses = true;
 
-    /** @var array */
-    protected $errors = [];
+    protected array $errors = [];
 
-    /** @var array */
-    protected $warnings = [];
+    protected array $warnings = [];
 
     public function __construct(array $configurationFile)
     {

@@ -8,10 +8,11 @@ use Tests\Mock;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
+use Tests\Doubles\GitStagerFake;
+use Tests\Doubles\MultiProcessesExecutionFake;
 use Wtyd\GitHooks\Tools\ToolsFactory;
-use Wtyd\GitHooks\Utils\GitStagerFake;
 use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
  * Applied pairwise testing strategy. See tests cases in the link https://pairwise.teremokgames.com/5fujg/
@@ -30,7 +31,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
     {
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
 
-        $this->toolsFactory = new ToolsFactory();
+        $this->toolsFactory = new ToolsFactory(new ToolRegistry());
     }
 
     public function oneToolFailsEachTimeDataProvider()
@@ -52,7 +53,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
      */
     function it_returns_empty_errors_when_all_tools_find_NO_errors()
     {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -78,7 +79,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
      */
     function it_returns_errors_when_a_tool_finds_errors($failedTool, $successTools)
     {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -107,7 +108,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
      */
     function it_returns_errors_when_a_tool_raise_an_exception($failedTool, $successTools)
     {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -137,7 +138,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
      */
     function it_returns_errors_when_a_tool_is_not_succesfully_and_has_errors_in_normal_output_instead_of_errorOutput($failedTool, $successTools)
     {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -192,7 +193,8 @@ class MultiProcessesExecutionTest extends UnitTestCase
             $this->configurationFileBuilder
                 ->changeToolOption($failedToolWithIgnoreErrosOnExit, ['ignoreErrorsOnExit' => true])
                 ->buildArray(),
-            self::ALL_TOOLS
+            self::ALL_TOOLS,
+            new ToolRegistry()
         );
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
@@ -227,7 +229,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
     /** @test */
     function it_stages_files_and_reports_success_when_phpcbf_applies_fix()
     {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -247,7 +249,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
     /** @test */
     function it_stages_files_when_phpcbf_applies_fix_even_if_other_tool_fails()
     {
-        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS);
+        $configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), self::ALL_TOOLS, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -276,7 +278,8 @@ class MultiProcessesExecutionTest extends UnitTestCase
                 ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
                 ->changeToolOption('parallel-lint', ['failFast' => true])
                 ->buildArray(),
-            self::ALL_TOOLS
+            self::ALL_TOOLS,
+            new ToolRegistry()
         );
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
@@ -306,7 +309,8 @@ class MultiProcessesExecutionTest extends UnitTestCase
                 ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
                 ->changeToolOption('parallel-lint', ['failFast' => true])
                 ->buildArray(),
-            self::ALL_TOOLS
+            self::ALL_TOOLS,
+            new ToolRegistry()
         );
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
@@ -330,7 +334,8 @@ class MultiProcessesExecutionTest extends UnitTestCase
             $this->configurationFileBuilder
                 ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
                 ->buildArray(),
-            self::ALL_TOOLS
+            self::ALL_TOOLS,
+            new ToolRegistry()
         );
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
@@ -356,7 +361,8 @@ class MultiProcessesExecutionTest extends UnitTestCase
                 ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
                 ->changeToolOption('parallel-lint', ['failFast' => true, 'ignoreErrorsOnExit' => true])
                 ->buildArray(),
-            self::ALL_TOOLS
+            self::ALL_TOOLS,
+            new ToolRegistry()
         );
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 

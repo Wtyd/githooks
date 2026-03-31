@@ -11,7 +11,9 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpstan extends ToolAbstract
 {
-    public const NAME = self::PHPSTAN;
+    public const NAME = 'phpstan';
+
+    public const SUPPORTS_FAST = true;
 
     public const PHPSTAN_CONFIGURATION_FILE = 'config';
 
@@ -43,7 +45,7 @@ class Phpstan extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::PHPSTAN;
+        $this->executable = self::NAME;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {

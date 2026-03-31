@@ -8,8 +8,7 @@ use Illuminate\Support\Facades\Storage as FacadesStorage;
 
 class Storage
 {
-    /** @var string */
-    public static $disk = 'local';
+    public static string $disk = 'local';
 
     /**
      * Determine if a file or directory exists.

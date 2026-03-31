@@ -7,15 +7,15 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Phpunit;
-use Wtyd\GitHooks\Tools\Tool\PhpunitFake;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Tests\Doubles\PhpunitFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class PhpunitTest extends UnitTestCase
 {
     /** @test */
     function phpunit_is_a_supported_tool()
     {
-        $this->assertTrue(Phpunit::checkTool('phpunit'));
+        $this->assertTrue((new ToolRegistry())->isSupported('phpunit'));
     }
 
     /** @test */
@@ -32,7 +32,7 @@ class PhpunitTest extends UnitTestCase
             'failFast' => false,
             'executablePath' => 'path/to/phpunit',
         ];
-        $toolConfiguration = new ToolConfiguration('phpunit', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpunit', $configuration, new ToolRegistry());
         $phpunit = new PhpunitFake($toolConfiguration);
         $this->assertEquals($configuration['executablePath'], $phpunit->getExecutablePath());
         $this->assertEquals($configuration, $phpunit->getArguments());
@@ -50,7 +50,7 @@ class PhpunitTest extends UnitTestCase
             'otherArguments' => '--colors',
             'ignoreErrorsOnExit' => true,
         ];
-        $toolConfiguration = new ToolConfiguration('phpunit', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpunit', $configuration, new ToolRegistry());
         $phpunit = new PhpunitFake($toolConfiguration);
         $this->assertEquals('phpunit', $phpunit->getExecutablePath());
     }
@@ -69,7 +69,7 @@ class PhpunitTest extends UnitTestCase
             'ignoreErrorsOnExit' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpunit', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpunit', $configuration, new ToolRegistry());
         $phpunit = new PhpunitFake($toolConfiguration);
 
         $cmd = $phpunit->prepareCommand();
@@ -94,7 +94,7 @@ class PhpunitTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
             'unexpected or supported argument' => 'my value'
         ];
-        $toolConfiguration = new ToolConfiguration('phpunit', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpunit', $configuration, new ToolRegistry());
         $phpunit = new PhpunitFake($toolConfiguration);
          $this->assertEquals($configuration['executablePath'], $phpunit->getExecutablePath());
         unset($configuration['unexpected or supported argument']);

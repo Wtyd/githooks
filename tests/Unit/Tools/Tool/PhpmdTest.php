@@ -5,14 +5,15 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Phpmd;
-use Wtyd\GitHooks\Tools\Tool\PhpmdFake;
+use Tests\Doubles\PhpmdFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class PhpmdTest extends UnitTestCase
 {
     /** @test */
     function phpmd_is_a_supported_tool()
     {
-        $this->assertTrue(Phpmd::checkTool('phpmd'));
+        $this->assertTrue((new ToolRegistry())->isSupported('phpmd'));
     }
 
     /** @test */
@@ -33,7 +34,7 @@ class PhpmdTest extends UnitTestCase
             'failFast' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration, new ToolRegistry());
 
         $phpmd = new PhpmdFake($toolConfiguration);
 
@@ -56,7 +57,7 @@ class PhpmdTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration, new ToolRegistry());
 
         $phpmd = new PhpmdFake($toolConfiguration);
 
@@ -81,7 +82,7 @@ class PhpmdTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration, new ToolRegistry());
 
         $phpmd = new PhpmdFake($toolConfiguration);
 
@@ -107,7 +108,7 @@ class PhpmdTest extends UnitTestCase
             'otherArguments' => '--strict',
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration, new ToolRegistry());
         $phpmd = new PhpmdFake($toolConfiguration);
 
         $cmd = $phpmd->prepareCommand();
@@ -132,7 +133,7 @@ class PhpmdTest extends UnitTestCase
             'exclude' => ['vendor', 'app'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpmd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpmd', $configuration, new ToolRegistry());
 
         $phpmd = new PhpmdFake($toolConfiguration);
 

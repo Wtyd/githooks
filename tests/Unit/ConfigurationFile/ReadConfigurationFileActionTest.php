@@ -12,8 +12,9 @@ use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsFormatException;
-use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
+use Tests\Doubles\FileReaderFake;
 use Wtyd\GitHooks\ConfigurationFile\ReadConfigurationFileAction;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
  * Pairwise algorithm https://pairwise.teremokgames.com/2axq4/
@@ -259,7 +260,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             $originalConfigurationFile
         );
 
-        $action = new ReadConfigurationFileAction($fileReaderFake);
+        $action = new ReadConfigurationFileAction($fileReaderFake, new ToolRegistry());
 
         // merge $cliArgumentsParameters with 'config' = ''
         $cliArgumentsParameters = array_merge($cliArgumentsParameters, ['config' => '']);
@@ -281,7 +282,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         if (!empty($cliArgumentsParameters['execution'])) {
             $originalConfigurationFile[ConfigurationFile::CLI_EXECUTION_OVERRIDE] = true;
         }
-        $expectedConfigurationFile = new ConfigurationFile($originalConfigurationFile, $cliArguments->getTool());
+        $expectedConfigurationFile = new ConfigurationFile($originalConfigurationFile, $cliArguments->getTool(), new ToolRegistry());
 
         $this->assertEquals($expectedConfigurationFile, $configurationFile);
     }
@@ -540,7 +541,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             $originalConfigurationFile
         );
 
-        $action = new ReadConfigurationFileAction($fileReaderFake);
+        $action = new ReadConfigurationFileAction($fileReaderFake, new ToolRegistry());
 
         $cliArguments = new CliArguments(
             'all',
@@ -562,7 +563,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         if (!empty($cliArgumentsParameters['execution'])) {
             $expectedConfFileArray[ConfigurationFile::CLI_EXECUTION_OVERRIDE] = true;
         }
-        $expectedConfigurationFile = new ConfigurationFile($expectedConfFileArray, 'all');
+        $expectedConfigurationFile = new ConfigurationFile($expectedConfFileArray, 'all', new ToolRegistry());
 
         $this->assertEquals($expectedConfigurationFile, $configurationFile);
     }
@@ -590,7 +591,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             $originalConfigurationFile
         );
 
-        $action = new ReadConfigurationFileAction($fileReaderFake);
+        $action = new ReadConfigurationFileAction($fileReaderFake, new ToolRegistry());
 
         $invalidTool = 'invalid tool';
         $cliArguments = new CliArguments(
@@ -604,7 +605,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         );
 
         $this->expectException(ToolIsNotSupportedException::class);
-        $this->expectExceptionMessage("The tool $invalidTool is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm");
+        $this->expectExceptionMessage("The tool $invalidTool is not supported by GitHooks.");
 
         $action($cliArguments);
     }
@@ -618,7 +619,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             $originalConfigurationFile
         );
 
-        $action = new ReadConfigurationFileAction($fileReaderFake);
+        $action = new ReadConfigurationFileAction($fileReaderFake, new ToolRegistry());
 
         $cliArguments = new CliArguments(
             'all',
@@ -691,7 +692,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
             $originalConfigurationFile
         );
 
-        $action = new ReadConfigurationFileAction($fileReaderFake);
+        $action = new ReadConfigurationFileAction($fileReaderFake, new ToolRegistry());
 
         $cliArguments = new CliArguments(
             'all',

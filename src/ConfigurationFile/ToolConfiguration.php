@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\ConfigurationFile;
 
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolConfigurationDataIsNullException;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class ToolConfiguration
@@ -14,21 +15,20 @@ class ToolConfiguration
 
     public const EXECUTION_TAG = 'execution';
 
-    /** @var array The tool arguments. The keys of the array must be the tool::ARGUMENTS */
-    protected $toolConfiguration;
+    protected array $toolConfiguration;
 
-    /** @var string Name of the tool. It must be some of the ToolAbstract::SUPPORTED_TOOLS */
-    protected $tool;
+    protected string $tool;
 
-    /** @var string|null Per-tool execution mode. Null means inherit from global Options. */
-    protected $execution;
+    protected ?string $execution = null;
 
-    /** @var array */
-    protected $warnings = [];
+    protected array $warnings = [];
 
-    public function __construct(string $tool, array $toolConfiguration)
+    protected ToolRegistry $toolRegistry;
+
+    public function __construct(string $tool, array $toolConfiguration, ToolRegistry $toolRegistry)
     {
         $this->tool = $tool;
+        $this->toolRegistry = $toolRegistry;
         $this->setToolConfiguration($toolConfiguration);
     }
 
@@ -47,8 +47,8 @@ class ToolConfiguration
 
         $this->extractExecution($warnings);
 
-        $resolvedTool = ToolAbstract::resolveToolName($this->tool);
-        $validOptions = ToolAbstract::SUPPORTED_TOOLS[$resolvedTool]::ARGUMENTS;
+        $resolvedTool = $this->toolRegistry->resolve($this->tool);
+        $validOptions = $this->toolRegistry->getClass($resolvedTool)::ARGUMENTS;
 
         $validOptions[] = ToolAbstract::EXECUTABLE_PATH_OPTION;
 

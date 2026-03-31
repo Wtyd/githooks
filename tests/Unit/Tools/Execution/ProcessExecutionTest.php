@@ -8,10 +8,11 @@ use Tests\Mock;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
+use Tests\Doubles\GitStagerFake;
+use Tests\Doubles\ProcessExecutionFake;
 use Wtyd\GitHooks\Tools\ToolsFactory;
-use Wtyd\GitHooks\Utils\GitStagerFake;
 use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ProcessExecutionTest extends UnitTestCase
 {
@@ -26,7 +27,7 @@ class ProcessExecutionTest extends UnitTestCase
     {
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
 
-        $this->toolsFactory = new ToolsFactory();
+        $this->toolsFactory = new ToolsFactory(new ToolRegistry());
     }
 
     public function allToolsDataProvider()
@@ -48,7 +49,7 @@ class ProcessExecutionTest extends UnitTestCase
      */
     function it_returns_empty_errors_when_the_tool_finds_NO_errors($tool)
     {
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), $tool);
+        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), $tool, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -71,7 +72,7 @@ class ProcessExecutionTest extends UnitTestCase
      */
     function it_returns_errors_when_the_tool_finds_errors($tool)
     {
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), $tool);
+        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), $tool, new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
@@ -98,7 +99,8 @@ class ProcessExecutionTest extends UnitTestCase
             $this->configurationFileBuilder
                 ->changeToolOption($tool, ['ignoreErrorsOnExit' => true])
                 ->buildArray(),
-            $tool
+            $tool,
+            new ToolRegistry()
         );
 
         $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
@@ -118,7 +120,7 @@ class ProcessExecutionTest extends UnitTestCase
     /** @test */
     function it_stages_files_and_reports_success_when_phpcbf_applies_fix()
     {
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'phpcbf');
+        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'phpcbf', new ToolRegistry());
         $tools = $this->toolsFactory->__invoke($this->configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);

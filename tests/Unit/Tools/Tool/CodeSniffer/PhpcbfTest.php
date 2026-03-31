@@ -4,15 +4,16 @@ namespace Tests\Unit\Tools\Tool\CodeSniffer;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\PhpcbfFake;
+use Tests\Doubles\PhpcbfFake;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class PhpcbfTest extends UnitTestCase
 {
     /** @test */
     function phpcs_is_a_supported_tool()
     {
-        $this->assertTrue(Phpcs::checkTool('phpcbf'));
+        $this->assertTrue((new ToolRegistry())->isSupported('phpcbf'));
     }
 
     /** @test */
@@ -34,7 +35,7 @@ class PhpcbfTest extends UnitTestCase
             'failFast' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration, new ToolRegistry());
 
         $phpcbf = new PhpcbfFake($toolConfiguration);
 
@@ -60,7 +61,7 @@ class PhpcbfTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration, new ToolRegistry());
 
         $phpcbf = new PhpcbfFake($toolConfiguration);
 
@@ -84,7 +85,7 @@ class PhpcbfTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration, new ToolRegistry());
 
         $phpcbf = new PhpcbfFake($toolConfiguration);
 
@@ -109,7 +110,7 @@ class PhpcbfTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration, new ToolRegistry());
 
         $phpcbf = new PhpcbfFake($toolConfiguration);
 
@@ -128,7 +129,7 @@ class PhpcbfTest extends UnitTestCase
             'ignore' => ['vendor', 'app'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcbf', $configuration, new ToolRegistry());
 
         $phpcbf = new PhpcbfFake($toolConfiguration);
 
@@ -152,7 +153,7 @@ class PhpcbfTest extends UnitTestCase
      */
     function it_reports_fix_applied_only_for_exit_code_1(int $exitCode, bool $expected)
     {
-        $toolConfiguration = new ToolConfiguration('phpcbf', ['standard' => 'PSR12']);
+        $toolConfiguration = new ToolConfiguration('phpcbf', ['standard' => 'PSR12'], new ToolRegistry());
 
         $phpcbf = new PhpcbfFake($toolConfiguration);
 

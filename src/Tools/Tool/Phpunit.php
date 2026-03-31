@@ -8,7 +8,8 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 class Phpunit extends ToolAbstract
 {
-    public const NAME = self::PHPUNIT;
+    public const NAME = 'phpunit';
+    public const SUPPORTS_FAST = false;
     public const GROUP = 'group';
     public const EXCLUDE_GROUP = 'exclude-group';
     public const FILTER = 'filter';
@@ -28,7 +29,7 @@ class Phpunit extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::PHPUNIT;
+        $this->executable = self::NAME;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {

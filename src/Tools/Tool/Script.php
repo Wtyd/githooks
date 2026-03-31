@@ -16,6 +16,8 @@ class Script extends ToolAbstract
 {
     public const NAME = 'script';
 
+    public const SUPPORTS_FAST = false;
+
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,

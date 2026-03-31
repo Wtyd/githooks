@@ -12,11 +12,9 @@ use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
 
 class FileReader
 {
-    /** @var string */
-    protected $rootPath;
+    protected string $rootPath;
 
-    /** @var string */
-    protected $configurationFilePath = '';
+    protected string $configurationFilePath = '';
 
     public function __construct()
     {

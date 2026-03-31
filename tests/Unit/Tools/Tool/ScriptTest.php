@@ -5,21 +5,29 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Script;
-use Wtyd\GitHooks\Tools\Tool\ScriptFake;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Tests\Doubles\ScriptFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ScriptTest extends UnitTestCase
 {
+    protected ToolRegistry $toolRegistry;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->toolRegistry = new ToolRegistry();
+    }
+
     protected function tearDown(): void
     {
-        ToolAbstract::resetScriptAlias();
+        $this->toolRegistry->resetScriptAlias();
         parent::tearDown();
     }
 
     /** @test */
     function script_is_a_supported_tool()
     {
-        $this->assertTrue(Script::checkTool('script'));
+        $this->assertTrue($this->toolRegistry->isSupported('script'));
     }
 
     /** @test */
@@ -32,7 +40,7 @@ class ScriptTest extends UnitTestCase
             'failFast' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('script', $configuration);
+        $toolConfiguration = new ToolConfiguration('script', $configuration, new ToolRegistry());
 
         $script = new ScriptFake($toolConfiguration);
 
@@ -51,7 +59,7 @@ class ScriptTest extends UnitTestCase
             'ignoreErrorsOnExit' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('script', $configuration);
+        $toolConfiguration = new ToolConfiguration('script', $configuration, new ToolRegistry());
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage("The 'executablePath' option is required for the 'script' tool.");
@@ -69,7 +77,7 @@ class ScriptTest extends UnitTestCase
             'unexpected or supported argument' => 'my value',
         ];
 
-        $toolConfiguration = new ToolConfiguration('script', $configuration);
+        $toolConfiguration = new ToolConfiguration('script', $configuration, new ToolRegistry());
 
         $script = new ScriptFake($toolConfiguration);
 
@@ -88,7 +96,7 @@ class ScriptTest extends UnitTestCase
             'ignoreErrorsOnExit' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('script', $configuration);
+        $toolConfiguration = new ToolConfiguration('script', $configuration, new ToolRegistry());
 
         $script = new ScriptFake($toolConfiguration);
 
@@ -106,7 +114,7 @@ class ScriptTest extends UnitTestCase
             'ignoreErrorsOnExit' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('script', $configuration);
+        $toolConfiguration = new ToolConfiguration('script', $configuration, new ToolRegistry());
 
         $script = new ScriptFake($toolConfiguration);
 
@@ -121,7 +129,7 @@ class ScriptTest extends UnitTestCase
             'ignoreErrorsOnExit' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('script', $configuration);
+        $toolConfiguration = new ToolConfiguration('script', $configuration, new ToolRegistry());
 
         $script = new ScriptFake($toolConfiguration);
 
@@ -133,20 +141,20 @@ class ScriptTest extends UnitTestCase
     /** @test */
     function it_accepts_custom_name_as_alias_via_registerScriptAlias()
     {
-        ToolAbstract::registerScriptAlias('php-cs-fixer');
+        $this->toolRegistry->registerScriptAlias('php-cs-fixer');
 
-        $this->assertTrue(ToolAbstract::checkTool('php-cs-fixer'));
-        $this->assertEquals('script', ToolAbstract::resolveToolName('php-cs-fixer'));
-        $this->assertEquals('php-cs-fixer', ToolAbstract::getScriptAlias());
+        $this->assertTrue($this->toolRegistry->isSupported('php-cs-fixer'));
+        $this->assertEquals('script', $this->toolRegistry->resolve('php-cs-fixer'));
+        $this->assertEquals('php-cs-fixer', $this->toolRegistry->getScriptAlias());
     }
 
     /** @test */
     function it_resolves_non_alias_names_unchanged()
     {
-        ToolAbstract::registerScriptAlias('php-cs-fixer');
+        $this->toolRegistry->registerScriptAlias('php-cs-fixer');
 
-        $this->assertEquals('phpstan', ToolAbstract::resolveToolName('phpstan'));
-        $this->assertEquals('script', ToolAbstract::resolveToolName('script'));
+        $this->assertEquals('phpstan', $this->toolRegistry->resolve('phpstan'));
+        $this->assertEquals('script', $this->toolRegistry->resolve('script'));
     }
 
     /** @test */
@@ -155,17 +163,17 @@ class ScriptTest extends UnitTestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage("conflicts with an existing supported tool");
 
-        ToolAbstract::registerScriptAlias('phpstan');
+        $this->toolRegistry->registerScriptAlias('phpstan');
     }
 
     /** @test */
     function it_resets_alias_correctly()
     {
-        ToolAbstract::registerScriptAlias('php-cs-fixer');
-        $this->assertEquals('php-cs-fixer', ToolAbstract::getScriptAlias());
+        $this->toolRegistry->registerScriptAlias('php-cs-fixer');
+        $this->assertEquals('php-cs-fixer', $this->toolRegistry->getScriptAlias());
 
-        ToolAbstract::resetScriptAlias();
-        $this->assertNull(ToolAbstract::getScriptAlias());
-        $this->assertFalse(ToolAbstract::checkTool('php-cs-fixer'));
+        $this->toolRegistry->resetScriptAlias();
+        $this->assertNull($this->toolRegistry->getScriptAlias());
+        $this->assertFalse($this->toolRegistry->isSupported('php-cs-fixer'));
     }
 }

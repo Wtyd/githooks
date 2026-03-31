@@ -8,7 +8,8 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 
 class Psalm extends ToolAbstract
 {
-    public const NAME = self::PSALM;
+    public const NAME = 'psalm';
+    public const SUPPORTS_FAST = true;
     public const PSALM_CONFIGURATION_FILE = 'config';
     public const MEMORY_LIMIT = 'memory-limit';
     public const THREADS = 'threads';
@@ -56,7 +57,7 @@ class Psalm extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::PSALM;
+        $this->executable = self::NAME;
         $this->setArguments($toolConfiguration->getToolConfiguration());
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
             $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;

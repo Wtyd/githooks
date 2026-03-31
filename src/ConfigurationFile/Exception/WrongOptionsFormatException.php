@@ -6,8 +6,7 @@ namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
 class WrongOptionsFormatException extends \DomainException
 {
-    /** @var array */
-    private $options;
+    private array $options;
 
     /**
      * @param array $options

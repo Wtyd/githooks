@@ -33,31 +33,23 @@ final class BuildCommand extends Command
 
     /**
      * Holds the configuration on is original state.
-     *
-     * @var string|null
      */
-    private static $config;
+    private static ?string $config = null;
 
     /**
      * Holds the box.json on is original state.
-     *
-     * @var string|null
      */
-    private static $box;
+    private static ?string $box = null;
 
     /**
      * Holds the command original output.
-     *
-     * @var \Symfony\Component\Console\Output\OutputInterface
      */
-    private $originalOutput;
+    private ?OutputInterface $originalOutput = null;
 
     /**
      * Provides the build path.
-     *
-     * @var \Wtyd\GitHooks\Build\Build
      */
-    private $build;
+    private Build $build;
 
     public function __construct(Build $build)
     {

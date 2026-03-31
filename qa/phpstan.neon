@@ -7,11 +7,10 @@
             # %currentWorkingDirectory%/src,
             # %currentWorkingDirectory%/tests
         # ]
-        checkMissingIterableValueType: false
         ignoreErrors: [
-            '#Call to an undefined static method Illuminate\\Support\\Facades\\Storage::[a-zA-Z\\_]+\(\)#', # Needed for php 7.1
             '#Call to an undefined method Illuminate\\Contracts\\Filesystem\\Filesystem::path\(\).#'
         ]
+        reportUnmatchedIgnoredErrors: false
         excludePaths: [
             %currentWorkingDirectory%/src/Tools/Process/, # inherits from Symfony
         ]

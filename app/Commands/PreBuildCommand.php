@@ -23,27 +23,19 @@ class PreBuildCommand extends Command
     protected $signature = 'app:pre-build {phpVersion? : Version of php to use. Default is the current version.}';
     protected $description = 'Prepares the app dependencies for the build processs';
 
-    /**
-     * Extra information about the command invoked with the --help flag.
-     *
-     * @var string
-     */
     protected $help = 'Without arguments deletes the pre-commit hook. A optional argument can be the name of another hook. Example: hook:clean pre-push.';
 
-    /**  @var string */
-    private $phpVersion;
+    private string $phpVersion;
 
-    /**  @var integer */
-    private $deleteDevDependenciesExitCode = 0;
+    private int $deleteDevDependenciesExitCode = 0;
 
-    /**  @var integer */
-    private $updateProdDependenciesExitCode = 0;
+    private int $updateProdDependenciesExitCode = 0;
 
-    private $composer = 'tools/composer';
+    private string $composer = 'tools/composer';
 
     public function handle()
     {
-        $this->phpVersion = $this->argument('phpVersion') ?? 'php7.1';
+        $this->phpVersion = $this->argument('phpVersion') ?? 'php7.4';
 
         $this->title('Delete Dev Dependencies and Update Prod Dependencies');
 

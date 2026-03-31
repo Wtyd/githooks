@@ -15,7 +15,8 @@ use Wtyd\GitHooks\LoadTools\FastExecution;
 use Wtyd\GitHooks\LoadTools\FullExecution;
 use Wtyd\GitHooks\Tools\ToolsFactory;
 use Wtyd\GitHooks\Tools\ToolsPreparer;
-use Wtyd\GitHooks\Utils\FileUtilsFake;
+use Tests\Doubles\FileUtilsFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ToolsPreparerTest extends UnitTestCase
 {
@@ -29,7 +30,7 @@ class ToolsPreparerTest extends UnitTestCase
             'Tools' => ['phpcs'],
             'phpcs' => ['paths' => ['src']],
         ];
-        $configurationFile = new ConfigurationFile($configArray, 'all');
+        $configurationFile = new ConfigurationFile($configArray, 'all', new ToolRegistry());
 
         $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
         $fullExecution = new FullExecution($toolsFactorySpy);
@@ -41,7 +42,7 @@ class ToolsPreparerTest extends UnitTestCase
             ->andReturn($fullExecution);
         $executionFactory->shouldNotReceive('__invoke')->with(ExecutionMode::FAST_EXECUTION);
 
-        $preparer = new ToolsPreparer($executionFactory);
+        $preparer = new ToolsPreparer($executionFactory, new ToolRegistry());
         $preparer($configurationFile);
 
         $toolsFactorySpy->shouldHaveReceived('__invoke')->once();
@@ -56,7 +57,7 @@ class ToolsPreparerTest extends UnitTestCase
             'phpcs' => ['paths' => ['src']],
             'phpcbf' => ['paths' => ['src'], 'execution' => 'fast'],
         ];
-        $configurationFile = new ConfigurationFile($configArray, 'all');
+        $configurationFile = new ConfigurationFile($configArray, 'all', new ToolRegistry());
 
         $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
         $fullExecution = new FullExecution($toolsFactorySpy);
@@ -64,7 +65,7 @@ class ToolsPreparerTest extends UnitTestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles(['src/File.php']);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/File.php']);
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, new ToolRegistry());
 
         $executionFactory = Mockery::mock(ExecutionFactory::class);
         $executionFactory->shouldReceive('__invoke')
@@ -74,7 +75,7 @@ class ToolsPreparerTest extends UnitTestCase
             ->with(ExecutionMode::FAST_EXECUTION)
             ->andReturn($fastExecution);
 
-        $preparer = new ToolsPreparer($executionFactory);
+        $preparer = new ToolsPreparer($executionFactory, new ToolRegistry());
         $preparer($configurationFile);
 
         // ToolsFactory should have been called twice: once for full group, once for fast group
@@ -91,7 +92,7 @@ class ToolsPreparerTest extends UnitTestCase
             'phpcs' => ['paths' => ['src'], 'execution' => 'full'],
             'phpcbf' => ['paths' => ['src']],
         ];
-        $configurationFile = new ConfigurationFile($configArray, 'all');
+        $configurationFile = new ConfigurationFile($configArray, 'all', new ToolRegistry());
 
         // CLI says fast, so both tools should use fast (not phpcs's per-tool 'full')
         $this->assertTrue($configurationFile->isCLIExecutionOverride());
@@ -102,7 +103,7 @@ class ToolsPreparerTest extends UnitTestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles(['src/File.php']);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/File.php']);
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, new ToolRegistry());
 
         $executionFactory = Mockery::mock(ExecutionFactory::class);
         $executionFactory->shouldReceive('__invoke')
@@ -110,7 +111,7 @@ class ToolsPreparerTest extends UnitTestCase
             ->andReturn($fastExecution);
         $executionFactory->shouldNotReceive('__invoke')->with(ExecutionMode::FULL_EXECUTION);
 
-        $preparer = new ToolsPreparer($executionFactory);
+        $preparer = new ToolsPreparer($executionFactory, new ToolRegistry());
         $preparer($configurationFile);
 
         // Only fast strategy should be used since CLI overrides all
@@ -125,7 +126,7 @@ class ToolsPreparerTest extends UnitTestCase
             'Tools' => ['phpcpd'],
             'phpcpd' => ['paths' => ['src'], 'execution' => 'fast'],
         ];
-        $configurationFile = new ConfigurationFile($configArray, 'all');
+        $configurationFile = new ConfigurationFile($configArray, 'all', new ToolRegistry());
 
         $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
         $fullExecution = new FullExecution($toolsFactorySpy);
@@ -135,7 +136,7 @@ class ToolsPreparerTest extends UnitTestCase
             ->with(ExecutionMode::FULL_EXECUTION)
             ->andReturn($fullExecution);
 
-        $preparer = new ToolsPreparer($executionFactory);
+        $preparer = new ToolsPreparer($executionFactory, new ToolRegistry());
         $preparer($configurationFile);
 
         $warnings = $preparer->getConfigurationFileWarnings();
@@ -155,7 +156,7 @@ class ToolsPreparerTest extends UnitTestCase
             'phpcs' => ['paths' => ['src']],
             'phpcpd' => ['paths' => ['src']],
         ];
-        $configurationFile = new ConfigurationFile($configArray, 'all');
+        $configurationFile = new ConfigurationFile($configArray, 'all', new ToolRegistry());
 
         $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
         $fullExecution = new FullExecution($toolsFactorySpy);
@@ -163,7 +164,7 @@ class ToolsPreparerTest extends UnitTestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles(['src/File.php']);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/File.php']);
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, new ToolRegistry());
 
         $executionFactory = Mockery::mock(ExecutionFactory::class);
         $executionFactory->shouldReceive('__invoke')
@@ -173,7 +174,7 @@ class ToolsPreparerTest extends UnitTestCase
             ->with(ExecutionMode::FAST_EXECUTION)
             ->andReturn($fastExecution);
 
-        $preparer = new ToolsPreparer($executionFactory);
+        $preparer = new ToolsPreparer($executionFactory, new ToolRegistry());
         $preparer($configurationFile);
 
         $warnings = $preparer->getConfigurationFileWarnings();
@@ -193,7 +194,7 @@ class ToolsPreparerTest extends UnitTestCase
             'phpcpd' => ['paths' => ['src']],
         ];
         // Single tool run, not 'all'
-        $configurationFile = new ConfigurationFile($configArray, 'phpcpd');
+        $configurationFile = new ConfigurationFile($configArray, 'phpcpd', new ToolRegistry());
 
         $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
         $fullExecution = new FullExecution($toolsFactorySpy);
@@ -203,7 +204,7 @@ class ToolsPreparerTest extends UnitTestCase
             ->with(ExecutionMode::FULL_EXECUTION)
             ->andReturn($fullExecution);
 
-        $preparer = new ToolsPreparer($executionFactory);
+        $preparer = new ToolsPreparer($executionFactory, new ToolRegistry());
         $preparer($configurationFile);
 
         $warnings = $preparer->getConfigurationFileWarnings();
@@ -223,7 +224,7 @@ class ToolsPreparerTest extends UnitTestCase
             'phpmd' => ['paths' => ['src'], 'rules' => 'unusedcode', 'execution' => 'fast'],
             'phpstan' => ['paths' => ['src'], 'execution' => 'fast'],
         ];
-        $configurationFile = new ConfigurationFile($configArray, 'all');
+        $configurationFile = new ConfigurationFile($configArray, 'all', new ToolRegistry());
 
         $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
         $fullExecution = new FullExecution($toolsFactorySpy);
@@ -231,7 +232,7 @@ class ToolsPreparerTest extends UnitTestCase
         $gitFiles = new FileUtilsFake();
         $gitFiles->setModifiedfiles(['src/File.php']);
         $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/File.php']);
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, new ToolRegistry());
 
         $executionFactory = Mockery::mock(ExecutionFactory::class);
         $executionFactory->shouldReceive('__invoke')
@@ -243,7 +244,7 @@ class ToolsPreparerTest extends UnitTestCase
             ->once()
             ->andReturn($fastExecution);
 
-        $preparer = new ToolsPreparer($executionFactory);
+        $preparer = new ToolsPreparer($executionFactory, new ToolRegistry());
         $preparer($configurationFile);
 
         // Both strategies called: full for phpcs, fast for phpmd+phpstan

@@ -2,43 +2,43 @@
 
 namespace Tests\Utils\TestCase;
 
+use Tests\Doubles\FileReaderFake;
+use Tests\Doubles\GitStagerFake;
+use Tests\Doubles\ParallelLintFake;
+use Tests\Doubles\PhpcbfFake;
+use Tests\Doubles\PhpcpdFake;
+use Tests\Doubles\PhpcsFake;
+use Tests\Doubles\PhpmdFake;
+use Tests\Doubles\PhpstanFake;
+use Tests\Doubles\PhpunitFake;
+use Tests\Doubles\ProcessExecutionFake;
+use Tests\Doubles\PsalmFake;
+use Tests\Doubles\ScriptFake;
+use Tests\Doubles\SecurityCheckerFake;
 use Tests\Utils\ConfigurationFileBuilder;
-use Tests\Utils\Traits\RetroCompatibilityAssertsTrait;
 use Tests\Zero\{
     ZeroTestCase,
     PendingCommand
 };
+use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
-use Wtyd\GitHooks\Utils\GitStagerFake;
 use Wtyd\GitHooks\Utils\GitStagerInterface;
 use Wtyd\GitHooks\Tools\Tool\{
     CodeSniffer\Phpcbf,
-    CodeSniffer\PhpcbfFake,
     CodeSniffer\Phpcs,
-    CodeSniffer\PhpcsFake,
     ParallelLint,
-    ParallelLintFake,
     Phpcpd,
-    PhpcpdFake,
     Phpmd,
-    PhpmdFake,
     Phpstan,
-    PhpstanFake,
     Phpunit,
-    PhpunitFake,
     Psalm,
-    PsalmFake,
     Script,
-    ScriptFake,
-    SecurityChecker,
-    SecurityCheckerFake
+    SecurityChecker
 };
 
 abstract class ConsoleTestCase extends ZeroTestCase
 {
-    use RetroCompatibilityAssertsTrait;
-
     public $containsStringInOutput = [];
 
     public $notContainsStringInOutput = [];
@@ -66,6 +66,8 @@ abstract class ConsoleTestCase extends ZeroTestCase
 
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
         $this->app->bind(GitStagerInterface::class, GitStagerFake::class);
+        $this->app->singleton(FileReader::class, FileReaderFake::class);
+        $this->app->singleton(SecurityChecker::class, SecurityCheckerFake::class);
         $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
     }
 

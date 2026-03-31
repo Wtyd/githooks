@@ -9,6 +9,7 @@ use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\ConfigurationFile\Printer\OptionsTable;
 use Wtyd\GitHooks\ConfigurationFile\Printer\ToolsTable;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\ToolsPreparer;
 use Wtyd\GitHooks\Utils\Printer;
@@ -18,20 +19,20 @@ class CheckConfigurationFileCommand extends Command
     protected $signature = 'conf:check  {-c|--config= : Path to configuration file}';
     protected $description = 'Check that the configuration file exists and that it is in the proper format.';
 
-    /** @var  FileReader */
-    protected $fileReader;
+    protected FileReader $fileReader;
 
-    /** @var  Printer */
-    protected $printer;
+    protected Printer $printer;
 
-    /** @var  ToolsPreparer */
-    protected $toolsPreparer;
+    protected ToolsPreparer $toolsPreparer;
 
-    public function __construct(FileReader $fileReader, Printer $printer, ToolsPreparer $toolsPreparer)
+    protected ToolRegistry $toolRegistry;
+
+    public function __construct(FileReader $fileReader, Printer $printer, ToolsPreparer $toolsPreparer, ToolRegistry $toolRegistry)
     {
         $this->fileReader = $fileReader;
         $this->printer = $printer;
         $this->toolsPreparer = $toolsPreparer;
+        $this->toolRegistry = $toolRegistry;
         parent::__construct();
     }
 
@@ -43,7 +44,7 @@ class CheckConfigurationFileCommand extends Command
 
             $this->printer->info('Configuration file: ' . $this->fileReader->getRelativeConfigurationFilePath());
 
-            $configurationFile = new ConfigurationFile($file, ConfigurationFile::ALL_TOOLS);
+            $configurationFile = new ConfigurationFile($file, ConfigurationFile::ALL_TOOLS, $this->toolRegistry);
 
             $optionsTable = new OptionsTable($configurationFile);
             $this->table(

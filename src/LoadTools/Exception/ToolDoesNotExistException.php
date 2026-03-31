@@ -4,10 +4,7 @@ namespace Wtyd\GitHooks\LoadTools\Exception;
 
 class ToolDoesNotExistException extends \DomainException implements LoadToolsExceptionInterface
 {
-    /**
-     * @var string Nombre de la herramienta
-     */
-    private $tool;
+    private string $tool;
 
     public static function forTool(string $tool): ToolDoesNotExistException
     {

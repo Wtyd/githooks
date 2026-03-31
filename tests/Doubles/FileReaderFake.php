@@ -1,0 +1,39 @@
+<?php
+
+namespace Tests\Doubles;
+
+use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\ConfigurationFile\FileReader;
+
+class FileReaderFake extends FileReader
+{
+    protected array $mockConfigurationFile = [];
+
+    public function __construct(string $rootPath = null)
+    {
+        $this->rootPath = $rootPath ? $rootPath : SystemTestCase::TESTS_PATH;
+    }
+
+    /**
+     * For system tests it will read file from testing filesystem.
+     * For unit tests or tests with less granularity than system tests it will return $mockConfigurationFile
+     *
+     * @return array
+     */
+    public function readFile(string $configFile = ''): array
+    {
+        if (empty($this->mockConfigurationFile)) {
+            return parent::readFile($configFile);
+        } else {
+            return $this->mockConfigurationFile;
+        }
+    }
+
+    /**
+     * @param array $configurationFile Configuration file in associative array format for testing
+     */
+    public function mockConfigurationFile(array $configurationFile): void
+    {
+        $this->mockConfigurationFile = $configurationFile;
+    }
+}

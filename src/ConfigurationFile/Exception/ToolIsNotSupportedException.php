@@ -4,20 +4,13 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\ConfigurationFile\Exception;
 
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
-
 class ToolIsNotSupportedException extends \UnexpectedValueException
 {
-    /**
-     * @var string
-     */
-    private $tool;
+    private string $tool;
 
     public static function forTool(string $tool): ToolIsNotSupportedException
     {
-        $supportedTools = implode(', ', array_keys(ToolAbstract::SUPPORTED_TOOLS));
-
-        $exception = new self("The tool $tool is not supported by GiHooks. Tools: $supportedTools");
+        $exception = new self("The tool $tool is not supported by GitHooks.");
 
         $exception->tool = $tool;
 

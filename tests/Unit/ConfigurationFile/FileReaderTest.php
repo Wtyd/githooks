@@ -11,7 +11,7 @@ use Tests\Utils\{
 };
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
-use Wtyd\GitHooks\ConfigurationFile\FileReaderFake;
+use Tests\Doubles\FileReaderFake;
 
 /**
  * @group Configuration

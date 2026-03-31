@@ -13,32 +13,20 @@ class CreateHookCommand extends Command
     protected $signature = 'hook  {hook=pre-commit : The hook to be setted} {scriptFile? : The custom script to be setted as the hook (default:GitHooks)}';
     protected $description = 'Copies the hook for the GitHooks execution. The default hook is pre-commit. You can pass scriptFile as argument to set custom scripts.';
 
-    /**
-     * Extra information about the command invoked with the --help flag.
-     *
-     * @var string
-     */
     protected $help = 'The default script is the default GitHooks execution. You can custom your script to execute what ever you want.
 Even the default script and after, other tools which GitHooks not support or vice versa';
 
-    /**
-     * @var Printer
-     */
-    protected $printer;
+    protected Printer $printer;
 
     /**
      * First argument. The hook that will be setted.
-     *
-     * @var string
      */
-    protected $hook;
+    protected string $hook;
 
     /**
      * Second argument. The custom script to be setted as the hook. Per default is the GitHooks script to execute the tools setted in githooks.yml file.
-     *
-     * @var string
      */
-    protected $scriptFile;
+    protected string $scriptFile;
 
     public function __construct(Printer $printer)
     {

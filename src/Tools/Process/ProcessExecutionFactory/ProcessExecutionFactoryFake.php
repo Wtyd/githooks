@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory;
 
-use Wtyd\GitHooks\Tools\Process\Execution\MultiProcessesExecutionFake;
+use Tests\Doubles\MultiProcessesExecutionFake;
+use Tests\Doubles\ProcessExecutionFake;
 use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionAbstract;
-use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ProcessExecutionFactoryFake extends ProcessExecutionFactoryAbstract
 {
@@ -17,7 +17,7 @@ class ProcessExecutionFactoryFake extends ProcessExecutionFactoryAbstract
     {
 
         $processExecution = null;
-        if (ToolAbstract::ALL_TOOLS === $tool) {
+        if (ToolRegistry::ALL_TOOLS === $tool) {
             $processExecution = $this->container->makeWith(MultiProcessesExecutionFake::class, [$this->printer, $this->gitStager]);
         } else {
             $processExecution = $this->container->makeWith(ProcessExecutionFake::class, [$this->printer, $this->gitStager]);

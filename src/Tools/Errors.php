@@ -4,10 +4,7 @@ namespace Wtyd\GitHooks\Tools;
 
 class Errors
 {
-    /**
-     * @var array
-     */
-    protected $errors = [];
+    protected array $errors = [];
 
     public function setError(string $tool, string $error): void
     {

@@ -11,7 +11,9 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class ParallelLint extends ToolAbstract
 {
-    public const NAME = self::PARALLEL_LINT;
+    public const NAME = 'parallel-lint';
+
+    public const SUPPORTS_FAST = true;
 
     public const EXCLUDE = 'exclude';
 
@@ -31,7 +33,7 @@ class ParallelLint extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::PARALLEL_LINT;
+        $this->executable = self::NAME;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
 

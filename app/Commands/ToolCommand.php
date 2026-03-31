@@ -10,14 +10,11 @@ use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryA
 
 abstract class ToolCommand extends Command
 {
-    /**  @var  ReadConfigurationFileAction */
-    protected $readConfigurationFileAction;
+    protected ReadConfigurationFileAction $readConfigurationFileAction;
 
-    /** @var  ToolsPreparer */
-    protected $toolsPreparer;
+    protected ToolsPreparer $toolsPreparer;
 
-    /** @var ProcessExecutionFactoryAbstract */
-    protected $processExecutionFactory;
+    protected ProcessExecutionFactoryAbstract $processExecutionFactory;
 
     public function __construct(
         ReadConfigurationFileAction $readConfigurationFileAction,

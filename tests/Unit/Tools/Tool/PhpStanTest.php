@@ -5,14 +5,15 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Phpstan;
-use Wtyd\GitHooks\Tools\Tool\PhpstanFake;
+use Tests\Doubles\PhpstanFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class PhpStanTest extends UnitTestCase
 {
     /** @test */
     function phpstan_is_a_supported_tool()
     {
-        $this->assertTrue(Phpstan::checkTool('phpstan'));
+        $this->assertTrue((new ToolRegistry())->isSupported('phpstan'));
     }
 
     /** @test */
@@ -32,7 +33,7 @@ class PhpStanTest extends UnitTestCase
             'failFast' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration, new ToolRegistry());
 
         $phpstan = new PhpstanFake($toolConfiguration);
 
@@ -56,7 +57,7 @@ class PhpStanTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration, new ToolRegistry());
 
         $phpstan = new PhpstanFake($toolConfiguration);
 
@@ -80,7 +81,7 @@ class PhpStanTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration, new ToolRegistry());
 
         $phpstan = new PhpstanFake($toolConfiguration);
 
@@ -105,7 +106,7 @@ class PhpStanTest extends UnitTestCase
             'paths' => ['src', 'app'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration, new ToolRegistry());
         $phpstan = new PhpstanFake($toolConfiguration);
 
         $cmd = $phpstan->prepareCommand();
@@ -131,7 +132,7 @@ class PhpStanTest extends UnitTestCase
             'paths' => ['src', 'tests'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpstan', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpstan', $configuration, new ToolRegistry());
 
         $phpstan = new PhpstanFake($toolConfiguration);
 

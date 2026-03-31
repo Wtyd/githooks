@@ -10,8 +10,7 @@ use Wtyd\GitHooks\Tools\ToolsFactory;
  */
 class FullExecution implements ExecutionMode
 {
-    /** @var \Wtyd\GitHooks\Tools\ToolsFactory */
-    protected $toolsFactory;
+    protected ToolsFactory $toolsFactory;
 
     public function __construct(ToolsFactory $toolsFactory)
     {

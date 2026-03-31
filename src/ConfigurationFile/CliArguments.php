@@ -8,32 +8,23 @@ use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
 
 class CliArguments
 {
-    /** @var string Name of the tool to be executed. 'all' for execute all tools setted in githooks.yml */
-    protected $tool;
+    protected string $tool;
 
-    /** @var string Mode execution. Can be 'fast' or 'full'. Default from githooks.yml. */
-    protected $execution;
+    protected string $execution;
 
-    /** @var bool|null */
-    protected $ignoreErrorsOnExit;
+    protected ?bool $ignoreErrorsOnExit;
 
-    /** @var bool|null */
-    protected $failFast;
+    protected ?bool $failFast;
 
-    /** @var string */
-    protected $otherArguments;
+    protected string $otherArguments;
 
-    /** @var string */
-    protected $executablePath;
+    protected string $executablePath;
 
-    /** @var string */
-    protected $paths;
+    protected string $paths;
 
-    /** @var int */
-    protected $processes;
+    protected int $processes;
 
-    /** @var string */
-    protected $configFile;
+    protected string $configFile;
 
     /**
      * @param string|bool|null $ignoreErrorsOnExit

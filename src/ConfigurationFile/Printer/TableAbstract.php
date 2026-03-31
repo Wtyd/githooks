@@ -6,11 +6,9 @@ namespace Wtyd\GitHooks\ConfigurationFile\Printer;
 
 abstract class TableAbstract
 {
-    /** @var  array */
-    protected $headers = [];
+    protected array $headers = [];
 
-    /** @var  array */
-    protected $rows = [];
+    protected array $rows = [];
 
     public function getHeaders(): array
     {

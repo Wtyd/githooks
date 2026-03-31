@@ -6,17 +6,13 @@ use PHPUnit\Framework\TestCase;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
-use Tests\Utils\Traits\{
-    FileSystemTrait,
-    RetroCompatibilityAssertsTrait
-};
+use Tests\Utils\Traits\FileSystemTrait;
 use Wtyd\GitHooks\Build\Build;
 use Wtyd\GitHooks\Exception\ExitException;
 
 class ReleaseTestCase extends TestCase
 {
     use FileSystemTrait;
-    use RetroCompatibilityAssertsTrait;
 
     public const TESTS_PATH = SystemTestCase::TESTS_PATH;
     /**

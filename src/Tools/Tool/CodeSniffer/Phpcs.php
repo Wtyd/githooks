@@ -11,9 +11,11 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpcs extends CodeSniffer
 {
-    public const NAME = self::PHPCS;
+    public const NAME = 'phpcs';
 
-    public $args = [];
+    public const SUPPORTS_FAST = true;
+
+    public array $args = [];
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {

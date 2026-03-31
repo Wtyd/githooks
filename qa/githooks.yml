@@ -1,6 +1,9 @@
 # Configuración general de la herramienta
 Options:
   execution: full #full (default), fast
+  # Number of tools to run simultaneously. Some tools (phpstan, parallel-lint,
+  # phpcs, psalm) spawn their own worker processes internally, so actual OS
+  # processes may be higher than this value. Keep low on machines with few cores.
   processes: 2
 
 # Herramientas que se van a ejecutar
@@ -31,7 +34,7 @@ parallel-lint:
     #ignoreErrorsOnExit: true
 
 phpcs:
-    executablePath: tools/php71/phpcs
+    executablePath: tools/php74/phpcs
     paths: ['./']
     standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
     ignore: [ vendor, tools]
@@ -41,7 +44,7 @@ phpcs:
     
 phpcbf:
     usePhpcsConfiguration: true
-    # executablePath: tools/php71/phpcbf
+    # executablePath: tools/php74/phpcbf
     # paths: ['./']
     # standard: './qa/psr12-ruleset.xml' #or predefined rules: Squiz, PSR12, Generic, PEAR
     # ignore: [vendor] # Se podría configurar en el standard directamente
@@ -49,7 +52,7 @@ phpcbf:
     # warning-severity: 6
 
 phpmd:
-  executablePath: tools/php71/phpmd
+  executablePath: tools/php74/phpmd
   paths: ['./src/']
   rules: './qa/phpmd-ruleset.xml' #or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
   exclude: [vendor]  # Se podría configurar en las rules directamente
@@ -57,11 +60,11 @@ phpmd:
   #ignoreErrorsOnExit: true
 
 phpcpd:
-  executablePath: tools/php71/phpcpd
+  executablePath: tools/php74/phpcpd
   paths: ['./']
   exclude: [vendor, tests, tools]
   # otherArguments: '--min-lines=5'
 
 security-checker:
-  executablePath: tools/php71/local-php-security-checker
+  executablePath: tools/php74/local-php-security-checker
   # otherArguments: '-format json'

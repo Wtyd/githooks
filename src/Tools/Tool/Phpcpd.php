@@ -11,7 +11,9 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpcpd extends ToolAbstract
 {
-    public const NAME = self::COPYPASTE_DETECTOR;
+    public const NAME = 'phpcpd';
+
+    public const SUPPORTS_FAST = false;
 
     public const EXCLUDE = 'exclude';
 
@@ -34,7 +36,7 @@ class Phpcpd extends ToolAbstract
 
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::COPYPASTE_DETECTOR;
+        $this->executable = self::NAME;
 
         $this->setArguments($toolConfiguration->getToolConfiguration());
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {

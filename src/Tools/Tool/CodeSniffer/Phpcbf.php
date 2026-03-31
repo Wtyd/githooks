@@ -11,7 +11,9 @@ use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
  */
 class Phpcbf extends CodeSniffer
 {
-    public const NAME = self::PHPCBF;
+    public const NAME = 'phpcbf';
+
+    public const SUPPORTS_FAST = true;
 
     public const USE_PHPCS_CONFIGURATION = 'usePhpcsConfiguration';
 
@@ -44,7 +46,7 @@ class Phpcbf extends CodeSniffer
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
             $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;
         }
-        $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace(self::PHPCS, self::PHPCBF, $this->args[self::EXECUTABLE_PATH_OPTION]);
+        $this->args[self::EXECUTABLE_PATH_OPTION] = str_replace('phpcs', 'phpcbf', $this->args[self::EXECUTABLE_PATH_OPTION]);
     }
 
     /**

@@ -14,11 +14,9 @@ class CreateConfigurationFileCommand extends Command
     protected $signature = 'conf:init';
     protected $description = 'Creates the configuration file githooks.yml in the project path';
 
-    /** @var \Wtyd\GitHooks\Utils\Printer */
-    protected $printer;
+    protected Printer $printer;
 
-    /** @var \Wtyd\GitHooks\ConfigurationFile\FileReader */
-    protected $fileReader;
+    protected FileReader $fileReader;
 
     public function __construct(Printer $printer, FileReader $fileReader)
     {

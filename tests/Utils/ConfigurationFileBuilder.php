@@ -16,7 +16,7 @@ use Wtyd\GitHooks\Tools\Tool\Phpunit;
 use Wtyd\GitHooks\Tools\Tool\Psalm;
 use Wtyd\GitHooks\Tools\Tool\Script;
 use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
-use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
  * Facilitates the creation of custom 'githooks.yml' configuration files for testing.
@@ -68,20 +68,20 @@ class ConfigurationFileBuilder
         $this->mainToolExecutablePaths  = $this->resolveToolsPath($toolsPath);
 
         $this->tools = [
-            ToolAbstract::PHPCS,
-            ToolAbstract::PHPCBF,
-            ToolAbstract::PARALLEL_LINT,
-            ToolAbstract::MESS_DETECTOR,
-            ToolAbstract::COPYPASTE_DETECTOR,
-            ToolAbstract::PHPSTAN,
-            ToolAbstract::SECURITY_CHECKER,
-            ToolAbstract::PHPUNIT,
-            ToolAbstract::PSALM,
-            ToolAbstract::SCRIPT,
+            ToolRegistry::PHPCS,
+            ToolRegistry::PHPCBF,
+            ToolRegistry::PARALLEL_LINT,
+            ToolRegistry::MESS_DETECTOR,
+            ToolRegistry::COPYPASTE_DETECTOR,
+            ToolRegistry::PHPSTAN,
+            ToolRegistry::SECURITY_CHECKER,
+            ToolRegistry::PHPUNIT,
+            ToolRegistry::PSALM,
+            ToolRegistry::SCRIPT,
         ];
 
         $this->configurationTools = [
-            ToolAbstract::PHPCS => [
+            ToolRegistry::PHPCS => [
                 Phpcs::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcs',
                 Phpcs::PATHS => [$rootPath . '/src'],
                 Phpcs::STANDARD => 'PSR12',
@@ -96,7 +96,7 @@ class ConfigurationFileBuilder
                 Phpcs::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
-            ToolAbstract::PHPCBF => [
+            ToolRegistry::PHPCBF => [
                 Phpcbf::USE_PHPCS_CONFIGURATION => false,
                 Phpcbf::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpcbf',
                 Phpcbf::PATHS => [$rootPath . '/src'],
@@ -112,14 +112,14 @@ class ConfigurationFileBuilder
                 Phpcbf::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
-            ToolAbstract::PARALLEL_LINT => [
+            ToolRegistry::PARALLEL_LINT => [
                 ParallelLint::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'parallel-lint',
                 ParallelLint::PATHS => [$rootPath . '/src'],
                 ParallelLint::EXCLUDE => [$rootPath . '/vendor'],
                 ParallelLint::OTHER_ARGS_OPTION => '--colors',
                 ParallelLint::IGNORE_ERRORS_ON_EXIT => false,
             ],
-            ToolAbstract::MESS_DETECTOR => [
+            ToolRegistry::MESS_DETECTOR => [
                 Phpmd::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'phpmd',
                 Phpmd::PATHS => [$rootPath . '/src'],
                 Phpmd::RULES => 'unusedcode', //codesize,controversial,design,unusedcode,naming
@@ -132,7 +132,7 @@ class ConfigurationFileBuilder
                 Phpmd::OTHER_ARGS_OPTION => '--strict',
                 Phpmd::IGNORE_ERRORS_ON_EXIT => false,
             ],
-            ToolAbstract::COPYPASTE_DETECTOR => [
+            ToolRegistry::COPYPASTE_DETECTOR => [
                 Phpcpd::EXECUTABLE_PATH_OPTION => $this->phpcpdPath($toolsPath) . 'phpcpd',
                 Phpcpd::PATHS => [$rootPath . '/src'],
                 Phpcpd::EXCLUDE => [$rootPath . '/vendor'],
@@ -141,7 +141,7 @@ class ConfigurationFileBuilder
                 Phpcpd::OTHER_ARGS_OPTION => '',
                 Phpcpd::IGNORE_ERRORS_ON_EXIT => false,
             ],
-            ToolAbstract::PHPSTAN => [
+            ToolRegistry::PHPSTAN => [
                 Phpstan::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'phpstan',
                 Phpstan::LEVEL => 0,
                 Phpstan::PATHS => [$rootPath . '/src'],
@@ -152,13 +152,13 @@ class ConfigurationFileBuilder
                 Phpstan::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
-            ToolAbstract::SECURITY_CHECKER => [
+            ToolRegistry::SECURITY_CHECKER => [
                 SecurityChecker::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
                 SecurityChecker::OTHER_ARGS_OPTION => '-format json',
                 SecurityChecker::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
-            ToolAbstract::PHPUNIT => [
+            ToolRegistry::PHPUNIT => [
                 Phpunit::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'phpunit',
                 Phpunit::GROUP => ['integration'],
                 Phpunit::EXCLUDE_GROUP => ['slow'],
@@ -169,7 +169,7 @@ class ConfigurationFileBuilder
                 Phpunit::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
-            ToolAbstract::PSALM => [
+            ToolRegistry::PSALM => [
                 Psalm::PATHS => [$rootPath . '/src'],
                 Psalm::EXECUTABLE_PATH_OPTION => $this->vendorPath($toolsPath) . 'psalm',
                 Psalm::OTHER_ARGS_OPTION => '--no-progress',
@@ -184,7 +184,7 @@ class ConfigurationFileBuilder
                 Psalm::REPORT => 'report.txt',
             ],
 
-            ToolAbstract::SCRIPT => [
+            ToolRegistry::SCRIPT => [
                 Script::EXECUTABLE_PATH_OPTION => 'my-custom-script',
                 Script::OTHER_ARGS_OPTION => '--verbose',
                 Script::IGNORE_ERRORS_ON_EXIT => false,
@@ -272,7 +272,7 @@ class ConfigurationFileBuilder
     /**
      * Set the tools Githooks will run
      *
-     * @param array $tools The possible values of this array are the keys of the ToolAbstract::SUPPORTED_TOOLS array
+     * @param array $tools The possible values of this array are the tool name constants from ToolRegistry
      * @return ConfigurationFileBuilder
      */
     public function setTools(array $tools): ConfigurationFileBuilder
@@ -317,42 +317,42 @@ class ConfigurationFileBuilder
 
     public function setPhpCSConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[ToolAbstract::PHPCS] = $configuration;
+        $this->configurationTools[ToolRegistry::PHPCS] = $configuration;
 
         return $this;
     }
 
     public function setPhpcbfConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[ToolAbstract::PHPCBF] = $configuration;
+        $this->configurationTools[ToolRegistry::PHPCBF] = $configuration;
 
         return $this;
     }
 
     public function setParallelLintConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[ToolAbstract::PARALLEL_LINT] = $configuration;
+        $this->configurationTools[ToolRegistry::PARALLEL_LINT] = $configuration;
 
         return $this;
     }
 
     public function setMessDetectorConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[ToolAbstract::MESS_DETECTOR] = $configuration;
+        $this->configurationTools[ToolRegistry::MESS_DETECTOR] = $configuration;
 
         return $this;
     }
 
     public function setPhpcpdConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[ToolAbstract::COPYPASTE_DETECTOR] = $configuration;
+        $this->configurationTools[ToolRegistry::COPYPASTE_DETECTOR] = $configuration;
 
         return $this;
     }
 
     public function setPhpStanConfiguration(array $configuration): ConfigurationFileBuilder
     {
-        $this->configurationTools[ToolAbstract::PHPSTAN] = $configuration;
+        $this->configurationTools[ToolRegistry::PHPSTAN] = $configuration;
 
         return $this;
     }
@@ -381,11 +381,11 @@ class ConfigurationFileBuilder
      */
     public function setScriptName(string $name): ConfigurationFileBuilder
     {
-        $scriptConfig = $this->configurationTools[ToolAbstract::SCRIPT];
+        $scriptConfig = $this->configurationTools[ToolRegistry::SCRIPT];
         $scriptConfig['name'] = $name;
-        $this->configurationTools[ToolAbstract::SCRIPT] = $scriptConfig;
+        $this->configurationTools[ToolRegistry::SCRIPT] = $scriptConfig;
 
-        $key = array_search(ToolAbstract::SCRIPT, $this->tools);
+        $key = array_search(ToolRegistry::SCRIPT, $this->tools);
         if ($key !== false) {
             $this->tools[$key] = $name;
         }
@@ -423,8 +423,8 @@ class ConfigurationFileBuilder
     protected function pharExecutables(): string
     {
         $path = getcwd();
-        if (version_compare(phpversion(), '7.3.0', '<')) {
-            $path .= '/tools/php71/';
+        if (version_compare(phpversion(), '8.1.0', '<')) {
+            $path .= '/tools/php74/';
         } else {
             $path .= '/tools/php80/';
         }

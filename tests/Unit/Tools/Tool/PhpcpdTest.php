@@ -5,14 +5,15 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\Phpcpd;
-use Wtyd\GitHooks\Tools\Tool\PhpcpdFake;
+use Tests\Doubles\PhpcpdFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class PhpcpdTest extends UnitTestCase
 {
     /** @test */
     function phpcpd_is_a_supported_tool()
     {
-        $this->assertTrue(Phpcpd::checkTool('phpcpd'));
+        $this->assertTrue((new ToolRegistry())->isSupported('phpcpd'));
     }
 
     /** @test */
@@ -29,7 +30,7 @@ class PhpcpdTest extends UnitTestCase
             'failFast' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration, new ToolRegistry());
 
         $phpcpd = new PhpcpdFake($toolConfiguration);
 
@@ -51,7 +52,7 @@ class PhpcpdTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration, new ToolRegistry());
 
         $phpcpd = new PhpcpdFake($toolConfiguration);
 
@@ -71,7 +72,7 @@ class PhpcpdTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration, new ToolRegistry());
 
         $phpcpd = new PhpcpdFake($toolConfiguration);
 
@@ -92,7 +93,7 @@ class PhpcpdTest extends UnitTestCase
             'min-tokens' => 70,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration, new ToolRegistry());
         $phpcpd = new PhpcpdFake($toolConfiguration);
 
         $cmd = $phpcpd->prepareCommand();
@@ -110,7 +111,7 @@ class PhpcpdTest extends UnitTestCase
             'exclude' => ['vendor', 'app'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcpd', $configuration, new ToolRegistry());
 
         $phpcpd = new PhpcpdFake($toolConfiguration);
 

@@ -22,8 +22,6 @@ final class InstallCommand extends Command
 
     /**
      * The list of components installers.
-     *
-     * @var array
      */
     protected $components = [
         'console-dusk' => Components\ConsoleDusk\Installer::class,

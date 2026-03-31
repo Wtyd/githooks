@@ -5,14 +5,15 @@ namespace Tests\Unit\Tools\Tool;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\ParallelLint;
-use Wtyd\GitHooks\Tools\Tool\ParallelLintFake;
+use Tests\Doubles\ParallelLintFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ParallelLintTest extends UnitTestCase
 {
     /** @test */
     function parallelLint_is_a_supported_tool()
     {
-        $this->assertTrue(ParallelLint::checkTool('parallel-lint'));
+        $this->assertTrue((new ToolRegistry())->isSupported('parallel-lint'));
     }
 
     /** @test */
@@ -28,7 +29,7 @@ class ParallelLintTest extends UnitTestCase
             'failFast' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
+        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration, new ToolRegistry());
 
         $parallelLint = new ParallelLintFake($toolConfiguration);
 
@@ -49,7 +50,7 @@ class ParallelLintTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
+        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration, new ToolRegistry());
 
         $parallelLint = new ParallelLintFake($toolConfiguration);
 
@@ -68,7 +69,7 @@ class ParallelLintTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
+        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration, new ToolRegistry());
 
         $parallelLint = new ParallelLintFake($toolConfiguration);
 
@@ -90,7 +91,7 @@ class ParallelLintTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration);
+        $toolConfiguration = new ToolConfiguration('parallel-lint', $configuration, new ToolRegistry());
 
         $parallelLint = new ParallelLintFake($toolConfiguration);
 

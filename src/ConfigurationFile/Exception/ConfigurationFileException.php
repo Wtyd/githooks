@@ -8,10 +8,7 @@ use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 
 class ConfigurationFileException extends \RuntimeException
 {
-    /**
-     * @var ConfigurationFile
-     */
-    protected $configurationFile;
+    protected ConfigurationFile $configurationFile;
 
     public static function forFile(ConfigurationFile $configurationFile): ConfigurationFileException
     {

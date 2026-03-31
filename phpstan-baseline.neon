@@ -1,2 +1,685 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\CliArguments\:\:overrideAllToolsArguments\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/CliArguments.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\CliArguments\:\:overrideAllToolsArguments\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/CliArguments.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\CliArguments\:\:overrideArguments\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/CliArguments.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\CliArguments\:\:overrideArguments\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/CliArguments.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\CliArguments\:\:overrideToolArguments\(\) has parameter \$toolConfiguration with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/CliArguments.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\CliArguments\:\:overrideToolArguments\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/CliArguments.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:__construct\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:addTools\(\) has parameter \$allTools with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:createToolsConfiguration\(\) has parameter \$allToolsInFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:createToolsConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:extractConfigurationFromTools\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:getErrors\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:getOptionErrors\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:getOptionWarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:getToolsConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:getWarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:resolveScriptName\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:resolveScriptName\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:\$configurationFile type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:\$toolsConfiguration type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:\$toolsErrors type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\ConfigurationFile\:\:\$toolsWarnings type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ConfigurationFile.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\ToolConfigurationDataIsNullException\:\:forData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/ToolConfigurationDataIsNullException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\ToolConfigurationDataIsNullException\:\:getData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/ToolConfigurationDataIsNullException.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\Exception\\ToolConfigurationDataIsNullException\:\:\$data type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/ToolConfigurationDataIsNullException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\ValueNotAllowedException\:\:forKey\(\) has parameter \$expectedValues with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/ValueNotAllowedException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\ValueNotAllowedException\:\:getExpectedValues\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/ValueNotAllowedException.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\Exception\\ValueNotAllowedException\:\:\$expectedValues type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/ValueNotAllowedException.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\Exception\\ValueNotAllowedException\:\:\$value has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/ConfigurationFile/Exception/ValueNotAllowedException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\WrongOptionsFormatException\:\:forOptions\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/WrongOptionsFormatException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Exception\\WrongOptionsFormatException\:\:getOptions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/WrongOptionsFormatException.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\Exception\\WrongOptionsFormatException\:\:\$options type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Exception/WrongOptionsFormatException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\FileReader\:\:readFile\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/FileReader.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\FileReader\:\:\$rootPath \(string\) does not accept string\|false\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: src/ConfigurationFile/FileReader.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:__construct\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:arrayIsAssociative\(\) has parameter \$array with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:extractOptions\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:findWarnings\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:findWarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:getErrors\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:getWarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:\$errors type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\OptionsConfiguration\:\:\$warnings type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/OptionsConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Printer\\OptionsTable\:\:getHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Printer/OptionsTable.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Printer\\OptionsTable\:\:getRows\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Printer/OptionsTable.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Printer\\TableAbstract\:\:getHeaders\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Printer/TableAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Printer\\TableAbstract\:\:getRows\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Printer/TableAbstract.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\Printer\\TableAbstract\:\:\$headers type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Printer/TableAbstract.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\Printer\\TableAbstract\:\:\$rows type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Printer/TableAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\Printer\\ToolsTable\:\:__construct\(\) has parameter \$tools with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/Printer/ToolsTable.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ReadConfigurationFileAction\:\:resolveScriptName\(\) has parameter \$file with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ReadConfigurationFileAction.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ReadConfigurationFileAction\:\:resolveScriptName\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ReadConfigurationFileAction.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:__construct\(\) has parameter \$toolConfiguration with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:checkFailFastConflict\(\) has parameter \$warnings with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:extractExecution\(\) has parameter \$warnings with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:getPaths\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:getToolConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:getWarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:setPaths\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:setToolConfiguration\(\) has parameter \$configuration with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:\$toolConfiguration type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\ToolConfiguration\:\:\$warnings type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfiguration.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\ConfigurationFile\\ToolConfigurationFactory\:\:__construct\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfigurationFactory.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\ConfigurationFile\\ToolConfigurationFactory\:\:\$configurationFile type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/ConfigurationFile/ToolConfigurationFactory.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Container\\RegisterBindings\:\:binds\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Container/RegisterBindings.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Container\\RegisterBindings\:\:singletons\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Container/RegisterBindings.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Exception\\ExitException\:\:arrayToString\(\) has parameter \$array with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Exception/ExitException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\LoadTools\\FastExecution\:\:addFilesToToolPaths\(\) has parameter \$modifiedFiles with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/LoadTools/FastExecution.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\LoadTools\\FastExecution\:\:addFilesToToolPaths\(\) has parameter \$originalPaths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/LoadTools/FastExecution.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\LoadTools\\FastExecution\:\:addFilesToToolPaths\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/LoadTools/FastExecution.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\LoadTools\\FastExecution\:\:fileIsInPaths\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/LoadTools/FastExecution.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Registry\\ToolRegistry\:\:getSupportedToolNames\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Registry/ToolRegistry.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Registry\\ToolRegistry\:\:resolveScriptName\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Registry/ToolRegistry.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Registry\\ToolRegistry\:\:resolveScriptName\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Registry/ToolRegistry.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Errors\:\:getErrors\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Errors.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\Tools\\Errors\:\:\$errors type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Errors.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Exception\\ExitErrorException\:\:forExit\(\) has parameter \$exit with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Exception/ExitErrorException.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Exception\\ExitErrorException\:\:getExit\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Exception/ExitErrorException.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\Tools\\Exception\\ExitErrorException\:\:\$exit type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Exception/ExitErrorException.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\CodeSniffer\\CodeSniffer\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/CodeSniffer/CodeSniffer.php
+
+		-
+			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.CyclomaticComplexity\)\)\: Unexpected token "\.CyclomaticComplexity\)", expected ''\)'' at offset 34 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: src/Tools/Tool/CodeSniffer/CodeSniffer.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\CodeSniffer\\Phpcbf\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/CodeSniffer/Phpcbf.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\CodeSniffer\\Phpcbf\:\:usePhpcsConfiguration\(\) has parameter \$phpcbfConfiguration with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/CodeSniffer/Phpcbf.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\Tools\\Tool\\CodeSniffer\\Phpcs\:\:\$args type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/CodeSniffer/Phpcs.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\ParallelLint\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ParallelLint.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\Phpcpd\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Phpcpd.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\Phpmd\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Phpmd.php
+
+		-
+			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.CyclomaticComplexity\)\)\: Unexpected token "\.CyclomaticComplexity\)", expected ''\)'' at offset 34 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: src/Tools/Tool/Phpmd.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\Phpstan\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Phpstan.php
+
+		-
+			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.CyclomaticComplexity\)\)\: Unexpected token "\.CyclomaticComplexity\)", expected ''\)'' at offset 34 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: src/Tools/Tool/Phpstan.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\Phpunit\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Phpunit.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\Phpunit\:\:getArguments\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Phpunit.php
+
+		-
+			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.CyclomaticComplexity\)\)\: Unexpected token "\.CyclomaticComplexity\)", expected ''\)'' at offset 34 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: src/Tools/Tool/Phpunit.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\Psalm\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Psalm.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\Psalm\:\:getArguments\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Psalm.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\Script\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/Script.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\SecurityChecker\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/SecurityChecker.php
+
+		-
+			message: '#^Constant Wtyd\\GitHooks\\Tools\\Tool\\ToolAbstract\:\:ARGUMENTS type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\ToolAbstract\:\:addPrefixToArray\(\) has parameter \$array with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\ToolAbstract\:\:addPrefixToArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\ToolAbstract\:\:routesCorrector\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\ToolAbstract\:\:routesCorrector\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\Tool\\ToolAbstract\:\:setArguments\(\) has parameter \$configurationFile with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.UnusedFormalParameter\)\)\: Unexpected token "\.UnusedFormalParameter\)", expected ''\)'' at offset 241 on line 7$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^Property Wtyd\\GitHooks\\Tools\\Tool\\ToolAbstract\:\:\$args type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/Tool/ToolAbstract.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Tools\\ToolsPreparer\:\:getConfigurationFileWarnings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Tools/ToolsPreparer.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Utils\\FileUtils\:\:getModifiedFiles\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Utils/FileUtils.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Utils\\FileUtilsInterface\:\:getModifiedFiles\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Utils/FileUtilsInterface.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Utils\\Printer\:\:summary\(\) has parameter \$skippedResults with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Utils/Printer.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Utils\\Printer\:\:summary\(\) has parameter \$toolResults with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Utils/Printer.php
+
+		-
+			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.TooManyPublicMethods\)\)\: Unexpected token "\.TooManyPublicMethods\)", expected ''\)'' at offset 30 on line 2$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: src/Utils/Printer.php
+
+		-
+			message: '#^Method Wtyd\\GitHooks\\Utils\\Storage\:\:delete\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Utils/Storage.php
+
+		-
+			message: '#^PHPDoc tag @SuppressWarnings has invalid value \(\(PHPMD\.BooleanArgumentFlag\)\)\: Unexpected token "\.BooleanArgumentFlag\)", expected ''\)'' at offset 191 on line 8$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: src/Utils/Storage.php

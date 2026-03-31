@@ -13,6 +13,8 @@ class SecurityChecker extends ToolAbstract
 {
     public const NAME = 'local-php-security-checker';
 
+    public const SUPPORTS_FAST = false;
+
     public const ARGUMENTS = [
         self::EXECUTABLE_PATH_OPTION,
         self::OTHER_ARGS_OPTION,
@@ -25,7 +27,7 @@ class SecurityChecker extends ToolAbstract
      */
     public function __construct(ToolConfiguration $toolConfiguration)
     {
-        $this->executable = self::SECURITY_CHECKER;
+        $this->executable = 'security-checker';
         $this->setArguments($toolConfiguration->getToolConfiguration());
         if (empty($this->args[self::EXECUTABLE_PATH_OPTION])) {
             $this->args[self::EXECUTABLE_PATH_OPTION] = self::NAME;

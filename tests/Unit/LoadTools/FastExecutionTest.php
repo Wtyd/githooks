@@ -6,7 +6,7 @@ use Wtyd\GitHooks\LoadTools\FastExecution;
 use Wtyd\GitHooks\Tools\ToolsFactory;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use Wtyd\GitHooks\Utils\FileUtilsFake;
+use Tests\Doubles\FileUtilsFake;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
@@ -14,6 +14,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     SecurityChecker,
     Phpcpd
 };
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class FastExecutionTest extends UnitTestCase
 {
@@ -50,11 +51,12 @@ class FastExecutionTest extends UnitTestCase
 
         $expectedFiles = ['app/file1.php', 'src/file2.php', 'tests/Unit/test1.php'];
         $configurationFile[$tool]['paths'] = $expectedFiles;
-        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool], new ToolRegistry())];
 
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, $registry);
 
-        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool, $registry));
 
         $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
     }
@@ -80,10 +82,11 @@ class FastExecutionTest extends UnitTestCase
 
         $expectedFiles = ['src/ClassA.php', 'app/ClassB.php'];
         $configurationFile[$tool]['paths'] = $expectedFiles;
-        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool], new ToolRegistry())];
 
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
-        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, $registry);
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool, $registry));
 
         $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
     }
@@ -108,10 +111,11 @@ class FastExecutionTest extends UnitTestCase
 
         $expectedFiles = ['src/File.php'];
         $configurationFile[$tool]['paths'] = $expectedFiles;
-        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool], new ToolRegistry())];
 
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
-        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, $registry);
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool, $registry));
 
         $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
     }
@@ -138,10 +142,11 @@ class FastExecutionTest extends UnitTestCase
 
         $expectedFiles = [$targetFile];
         $configurationFile[$tool]['paths'] = $expectedFiles;
-        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool], new ToolRegistry())];
 
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
-        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, $registry);
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool, $registry));
 
         $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
 
@@ -164,9 +169,10 @@ class FastExecutionTest extends UnitTestCase
                 'paths' => ['src', 'app']
             ]
         ];
-        $fastExecution = new FastExecution($gitFiles, new ToolsFactory());
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, new ToolsFactory($registry), $registry);
 
-        $configurationFile = new ConfigurationFile($configurationFile, $tool);
+        $configurationFile = new ConfigurationFile($configurationFile, $tool, $registry);
         $loadedTools = $fastExecution->getTools($configurationFile);
 
         $this->assertCount(0, $loadedTools);
@@ -212,10 +218,11 @@ class FastExecutionTest extends UnitTestCase
         $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
 
 
-        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool])];
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $expectedToolConfigurationArray = [new ToolConfiguration($tool, $configurationFile[$tool], new ToolRegistry())];
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, $registry);
 
-        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool));
+        $fastExecution->getTools(new ConfigurationFile($configurationFile, $tool, $registry));
 
         $toolsFactorySpy->shouldHaveReceived('__invoke', [$expectedToolConfigurationArray]);
     }
@@ -236,9 +243,10 @@ class FastExecutionTest extends UnitTestCase
                 'paths' => ['src',]
             ]
         ];
-        $fastExecution = new FastExecution($gitFiles, new ToolsFactory());
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, new ToolsFactory($registry), $registry);
 
-        $configurationFile = new ConfigurationFile($configurationFile, $tool);
+        $configurationFile = new ConfigurationFile($configurationFile, $tool, $registry);
         $loadedTools = $fastExecution->getTools($configurationFile);
 
         $this->assertCount(0, $loadedTools);
@@ -273,13 +281,14 @@ class FastExecutionTest extends UnitTestCase
             'phpcs' => ['paths' => ['src']],
             'phpmd' => ['paths' => ['src'], 'rules' => 'unusedcode'],
         ];
-        $configFile = new ConfigurationFile($configurationFile, 'all');
+        $registry = new ToolRegistry();
+        $configFile = new ConfigurationFile($configurationFile, 'all', $registry);
         $subset = $configFile->getToolsConfiguration();
 
-        $expectedPhpcs = new ToolConfiguration('phpcs', ['paths' => ['src/File.php']]);
-        $expectedPhpmd = new ToolConfiguration('phpmd', ['paths' => ['src/File.php'], 'rules' => 'unusedcode']);
+        $expectedPhpcs = new ToolConfiguration('phpcs', ['paths' => ['src/File.php']], new ToolRegistry());
+        $expectedPhpmd = new ToolConfiguration('phpmd', ['paths' => ['src/File.php'], 'rules' => 'unusedcode'], new ToolRegistry());
 
-        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy);
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, $registry);
         $fastExecution->processTools($subset, $configFile);
 
         $toolsFactorySpy->shouldHaveReceived('__invoke', [[$expectedPhpcs, $expectedPhpmd]]);
@@ -301,9 +310,10 @@ class FastExecutionTest extends UnitTestCase
                 'paths' => ['src',]
             ]
         ];
-        $fastExecution = new FastExecution($gitFiles, new ToolsFactory());
+        $registry = new ToolRegistry();
+        $fastExecution = new FastExecution($gitFiles, new ToolsFactory($registry), $registry);
 
-        $loadedTools = $fastExecution->getTools(new ConfigurationFile($configurationFile, $toolName));
+        $loadedTools = $fastExecution->getTools(new ConfigurationFile($configurationFile, $toolName, $registry));
 
         $this->assertCount(1, $loadedTools);
 

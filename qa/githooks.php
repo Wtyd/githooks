@@ -2,6 +2,9 @@
 return [
     'Options' => [
         'execution' => 'full', // full (default), fast
+        // Number of tools to run simultaneously. Some tools (phpstan, parallel-lint,
+        // phpcs, psalm) spawn their own worker processes internally, so actual OS
+        // processes may be higher than this value. Keep low on machines with few cores.
         'processes' => 2,
     ],
     'Tools' => [
@@ -15,7 +18,7 @@ return [
         // 'psalm',
     ],
     'phpstan' => [
-        'executablePath' => 'vendor/bin/phpstan',
+        'executablePath' => 'php8.1 vendor/bin/phpstan',
         'config' => './qa/phpstan.neon',
         // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
         'paths' => ['src'],
@@ -23,14 +26,14 @@ return [
         'otherArguments' => '--no-progress --ansi',
     ],
     'parallel-lint' => [
-        'executablePath' => 'vendor/bin/parallel-lint',
+        'executablePath' => 'php7.4 vendor/bin/parallel-lint',
         'paths' => ['./'],
         'exclude' => ['vendor', 'qa', 'tools'],
         'otherArguments' => '--colors',
         // 'ignoreErrorsOnExit' => true,
     ],
     'phpcs' => [
-        'executablePath' => 'tools/php71/phpcs',
+        'executablePath' => 'tools/php74/phpcs',
         'paths' => ['./'],
         'standard' => './qa/psr12-ruleset.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
         'ignore' => ['vendor', 'tools'],
@@ -40,7 +43,7 @@ return [
     ],
     'phpcbf' => [
         'usePhpcsConfiguration' => true,
-        // 'executablePath' => 'tools/php71/phpcbf',
+        // 'executablePath' => 'tools/php74/phpcbf',
         // 'paths' => ['./'],
         // 'standard' => './qa/psr12-ruleset.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
         // 'ignore' => ['vendor'], // Se podría configurar en el standard directamente
@@ -48,7 +51,7 @@ return [
         // 'warning-severity' => 6,
     ],
     'phpmd' => [
-        'executablePath' => 'tools/php71/phpmd',
+        'executablePath' => 'tools/php74/phpmd',
         'paths' => ['./src/'],
         'rules' => './qa/phpmd-ruleset.xml', // or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
         'exclude' => ['vendor'], // Se podría configurar en las rules directamente
@@ -56,17 +59,17 @@ return [
         // 'ignoreErrorsOnExit' => true,
     ],
     'phpcpd' => [
-        'executablePath' => 'tools/php71/phpcpd',
+        'executablePath' => 'tools/php74/phpcpd',
         'paths' => ['./'],
         'exclude' => ['vendor', 'tests', 'tools'],
         // 'otherArguments' => '--min-lines=5',
     ],
     'security-checker' => [
-        'executablePath' => 'tools/php71/local-php-security-checker',
+        'executablePath' => 'tools/php74/local-php-security-checker',
         // 'otherArguments' => '-format json',
     ],
     'phpunit' => [
-        'executablePath' => 'php7.1 vendor/bin/phpunit',
+        'executablePath' => 'php7.4 vendor/bin/phpunit',
         // 'group' => 'integration',
         // 'exclude-group' => 'slow',
         // 'filter' => 'testSomething',
@@ -76,7 +79,7 @@ return [
         // 'ignoreErrorsOnExit' => true,
     ],
     'psalm' => [
-        'executablePath' => 'php7.1 vendor/bin/psalm',
+        'executablePath' => 'php7.4 vendor/bin/psalm',
         'config' => 'qa/psalm.xml',
         // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
         // 'threads' => 4,

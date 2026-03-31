@@ -6,6 +6,7 @@ namespace Tests\Unit\ConfigurationFile;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ToolConfigurationFailFastTest extends UnitTestCase
 {
@@ -15,7 +16,7 @@ class ToolConfigurationFailFastTest extends UnitTestCase
         $toolConfig = new ToolConfiguration('parallel-lint', [
             'paths' => ['src'],
             'failFast' => true,
-        ]);
+        ], new ToolRegistry());
 
         $config = $toolConfig->getToolConfiguration();
 
@@ -29,7 +30,7 @@ class ToolConfigurationFailFastTest extends UnitTestCase
         $toolConfig = new ToolConfiguration('parallel-lint', [
             'paths' => ['src'],
             'failFast' => false,
-        ]);
+        ], new ToolRegistry());
 
         $config = $toolConfig->getToolConfiguration();
 
@@ -43,7 +44,7 @@ class ToolConfigurationFailFastTest extends UnitTestCase
         $toolConfig = new ToolConfiguration('parallel-lint', [
             'paths' => ['src'],
             'failFast' => 'yes',
-        ]);
+        ], new ToolRegistry());
 
         $config = $toolConfig->getToolConfiguration();
 
@@ -62,7 +63,7 @@ class ToolConfigurationFailFastTest extends UnitTestCase
             'paths' => ['src'],
             'failFast' => true,
             'ignoreErrorsOnExit' => true,
-        ]);
+        ], new ToolRegistry());
 
         $config = $toolConfig->getToolConfiguration();
 
@@ -88,7 +89,7 @@ class ToolConfigurationFailFastTest extends UnitTestCase
             'paths' => ['src'],
             'failFast' => true,
             'ignoreErrorsOnExit' => false,
-        ]);
+        ], new ToolRegistry());
 
         $config = $toolConfig->getToolConfiguration();
 

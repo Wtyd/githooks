@@ -10,6 +10,7 @@ use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsFormatException;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ConfigurationFileTest extends UnitTestCase
 {
@@ -22,7 +23,7 @@ class ConfigurationFileTest extends UnitTestCase
     function it_creates_a_configuration_file_with_valid_format_for_all_supported_tools()
     {
         $configurationFileArray = $this->configurationFileBuilder->buildArray();
-        $this->configurationFile = new ConfigurationFile($configurationFileArray, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFileArray, 'all', new ToolRegistry());
 
         $this->assertEquals('full', $this->configurationFile->getExecution());
         $this->assertFalse($this->configurationFile->hasErrors());
@@ -56,7 +57,7 @@ class ConfigurationFileTest extends UnitTestCase
      */
     function it_creates_a_configuration_file_for_supported_tool($tool)
     {
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), $tool);
+        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), $tool, new ToolRegistry());
 
         $this->assertEquals('full', $this->configurationFile->getExecution());
         $this->assertFalse($this->configurationFile->hasErrors());
@@ -70,9 +71,9 @@ class ConfigurationFileTest extends UnitTestCase
     {
         $this->expectException(ToolIsNotSupportedException::class);
         $this->expectExceptionMessage(
-            'The tool tool-not-supported is not supported by GiHooks. Tools: phpcs, phpcbf, security-checker, parallel-lint, phpmd, phpcpd, phpstan, phpunit, psalm'
+            'The tool tool-not-supported is not supported by GitHooks.'
         );
-        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'tool-not-supported');
+        $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->buildArray(), 'tool-not-supported', new ToolRegistry());
     }
 
     public function toolsThatNeedConfigurationDataProvider()
@@ -97,7 +98,7 @@ class ConfigurationFileTest extends UnitTestCase
     function it_raises_exception_when_the_tool_is_supported_but_has_not_configuration($tool)
     {
         try {
-            $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->setConfigurationTools([])->buildArray(), $tool);
+            $this->configurationFile = new ConfigurationFile($this->configurationFileBuilder->setConfigurationTools([])->buildArray(), $tool, new ToolRegistry());
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
@@ -117,7 +118,8 @@ class ConfigurationFileTest extends UnitTestCase
         try {
             $this->configurationFile = new ConfigurationFile(
                 $this->configurationFileBuilder->setConfigurationTools([$tool =>  null])->buildArray(),
-                $tool
+                $tool,
+                new ToolRegistry()
             );
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
@@ -136,7 +138,8 @@ class ConfigurationFileTest extends UnitTestCase
         try {
             $this->configurationFile = new ConfigurationFile(
                 $this->configurationFileBuilder->setToolConfiguration($tool, [])->buildArray(),
-                'all'
+                'all',
+                new ToolRegistry()
             );
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
@@ -155,7 +158,7 @@ class ConfigurationFileTest extends UnitTestCase
             ],
         ];
         try {
-            $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+            $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
@@ -193,7 +196,7 @@ class ConfigurationFileTest extends UnitTestCase
     function it_raises_exception_when_Tools_tag_is_empty($configurationFile)
     {
         try {
-            $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+            $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
@@ -235,7 +238,7 @@ class ConfigurationFileTest extends UnitTestCase
     function it_raises_exception_when_Tools_tag_not_contains_any_valid_tool($configurationFile)
     {
         try {
-            $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+            $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
@@ -270,7 +273,7 @@ class ConfigurationFileTest extends UnitTestCase
      */
     function it_sets_warning_when_Options_is_empty($configurationFile)
     {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $this->assertCount(1, $this->configurationFile->getWarnings());
         $this->assertEquals("The tag 'Options' is empty", $this->configurationFile->getWarnings()[0]);
@@ -305,7 +308,7 @@ class ConfigurationFileTest extends UnitTestCase
         $this->expectException(WrongOptionsFormatException::class);
         $this->expectExceptionMessage('The Options label has an invalid format. It must be an associative array with pair of key: value.');
 
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
     }
 
     /** @test */
@@ -316,7 +319,7 @@ class ConfigurationFileTest extends UnitTestCase
             'Tools' => ['security-checker'],
             'security-checker' => ['executablePath' => 'mipath']
         ];
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $this->assertEquals('fast', $this->configurationFile->getExecution());
         $this->assertEquals(2, $this->configurationFile->getProcesses());
@@ -417,7 +420,7 @@ class ConfigurationFileTest extends UnitTestCase
     function it_throws_exception_when_Options_have_valid_keys_with_invalid_values($configurationFile, $expectedError)
     {
         try {
-            $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+            $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
             $this->fail('ConfigurationFileException was not thrown');
         } catch (ConfigurationFileException $exception) {
             $this->assertTrue($exception->getConfigurationFile()->hasErrors());
@@ -492,7 +495,7 @@ class ConfigurationFileTest extends UnitTestCase
      */
     function it_sets_warning_when_Options_have_at_least_a_valid_key_and_invalid_keys($configurationFile, $expectedWarnings)
     {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $this->assertEquals($expectedWarnings, $this->configurationFile->getWarnings());
     }
@@ -532,7 +535,7 @@ class ConfigurationFileTest extends UnitTestCase
      */
     function it_sets_warning_when_Tools_have_at_least_a_valid_key_and_invalid_keys($configurationFile, $expectedWarnings)
     {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $this->assertEquals($expectedWarnings, $this->configurationFile->getWarnings());
     }
@@ -584,7 +587,7 @@ class ConfigurationFileTest extends UnitTestCase
             ]
         ];
         $configurationFile['phpcbf']['usePhpcsConfiguration'] = $usePhpcsConfiguration;
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
         $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
@@ -631,7 +634,7 @@ class ConfigurationFileTest extends UnitTestCase
                 'warning-severity' => 6
             ]
         ];
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
         $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
@@ -678,7 +681,7 @@ class ConfigurationFileTest extends UnitTestCase
      */
     function it_overrides_all_Phpcbf_arguments_when_usePhpcsConfiguration_key_is_true_and_any_other_argument_is_setted($configurationFile, $expectedPhpcbfConfiguration)
     {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf', new ToolRegistry());
 
         $configurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
 
@@ -725,7 +728,7 @@ class ConfigurationFileTest extends UnitTestCase
             ]
         ];
         unset($configurationFile['phpcbf'][$argument]);
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $phpcbfConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
         $phpcsConfigurationFile = $this->configurationFile->getToolsConfiguration()['phpcs'];
@@ -805,7 +808,7 @@ class ConfigurationFileTest extends UnitTestCase
     function it_overrides_Phpcbf_configuration_when_usePhpcsConfiguration_key_is_true_regardless_of_whether_if_Phpcbf_or_Phpcs_are_or_not_in_Tools_key(
         $configurationFile
     ) {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'phpcbf', new ToolRegistry());
 
         $configurationFile = $this->configurationFile->getToolsConfiguration()['phpcbf'];
 
@@ -906,7 +909,7 @@ class ConfigurationFileTest extends UnitTestCase
      */
     function it_checks_all_tools_even_if_they_are_not_in_the_Tools_key($configurationFile)
     {
-        $this->configurationFile = new ConfigurationFile($configurationFile, 'all');
+        $this->configurationFile = new ConfigurationFile($configurationFile, 'all', new ToolRegistry());
 
         $this->assertCount(7, $this->configurationFile->getWarnings());
     }

@@ -38,8 +38,6 @@ class MultiProcessesExecution extends ProcessExecutionAbstract
                 try {
                     $this->addProcessToQueue();
                     foreach ($this->runningProcesses as $toolName => $process) {
-                        // $process->checkTimeout(); // timeout is null for now
-                        // throw new \Exception('asdfasdf');
                         if ($process->isTerminated()) {
                             $this->numberOfRunnedProcesses = $this->finishExecution($process, $toolName);
                         }

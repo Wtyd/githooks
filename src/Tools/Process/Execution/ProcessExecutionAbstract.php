@@ -54,20 +54,6 @@ abstract class ProcessExecutionAbstract
 
     abstract protected function runProcesses(): Errors;
 
-    /**
-     * Prints the errors found by the tool. In case it ends unexpectedly it will not print anything.
-     *
-     * @return void
-     */
-    public function printErrors(ToolAbstract $tool): void
-    {
-        if (is_array($tool->getExit())) {
-            foreach ($tool->getExit() as $line) {
-                $this->printer->line($line);
-            }
-        }
-    }
-
     protected function getErrorString(string $tool, string $time): string
     {
         return $tool . ' - KO. Time: ' . $time;

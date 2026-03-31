@@ -3,23 +3,18 @@
 namespace Wtyd\GitHooks\Tools;
 
 use Illuminate\Container\Container;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\Tool\ToolAbstract;
-use Wtyd\GitHooks\Tools\Tool\{
-    Phpcpd,
-    SecurityChecker,
-    MessDetector,
-    ParallelLint,
-    Phpstan,
-    Phpunit,
-    Psalm
-};
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\{
-    Phpcs,
-    Phpcbf
-};
 
 class ToolsFactory
 {
+    protected ToolRegistry $toolRegistry;
+
+    public function __construct(ToolRegistry $toolRegistry)
+    {
+        $this->toolRegistry = $toolRegistry;
+    }
+
     /**
      * Transform the array with the configuration of the tools into an array of tools.
      *
@@ -33,8 +28,8 @@ class ToolsFactory
 
         $container = Container::getInstance();
         foreach ($toolsConfiguration as $tool) {
-            $resolvedTool = ToolAbstract::resolveToolName($tool->getTool());
-            $loadedTools[$tool->getTool()] = $container->make(ToolAbstract::SUPPORTED_TOOLS[$resolvedTool], [ToolAbstract::TOOL_CONFIGURATION => $tool]);
+            $resolvedTool = $this->toolRegistry->resolve($tool->getTool());
+            $loadedTools[$tool->getTool()] = $container->make($this->toolRegistry->getClass($resolvedTool), [ToolAbstract::TOOL_CONFIGURATION => $tool]);
         }
 
         return $loadedTools;

@@ -4,11 +4,6 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Tools\Tool;
 
-use InvalidArgumentException;
-use Wtyd\GitHooks\LoadTools\Exception\ToolDoesNotExistException;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcbf;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
-
 abstract class ToolAbstract
 {
     /**
@@ -23,54 +18,6 @@ abstract class ToolAbstract
 
     public const TOOL_CONFIGURATION = 'toolConfiguration';
 
-    public const PHPCS = 'phpcs';
-
-    public const PHPCBF = 'phpcbf';
-
-    public const SECURITY_CHECKER = 'security-checker';
-
-    public const PARALLEL_LINT = 'parallel-lint';
-
-    public const MESS_DETECTOR = 'phpmd';
-
-    public const COPYPASTE_DETECTOR = 'phpcpd';
-
-    public const PHPSTAN = 'phpstan';
-
-    public const PHPUNIT = 'phpunit';
-
-    public const PSALM = 'psalm';
-
-    public const SCRIPT = 'script';
-
-    public const ALL_TOOLS = 'all';
-
-    public const SUPPORTED_TOOLS = [
-        self::PHPCS => Phpcs::class,
-        self::PHPCBF => Phpcbf::class,
-        self::SECURITY_CHECKER => SecurityChecker::class,
-        self::PARALLEL_LINT => ParallelLint::class,
-        self::MESS_DETECTOR => Phpmd::class,
-        self::COPYPASTE_DETECTOR => Phpcpd::class,
-        self::PHPSTAN => Phpstan::class,
-        self::PHPUNIT => Phpunit::class,
-        self::PSALM => Psalm::class,
-        self::SCRIPT => Script::class,
-    ];
-
-    public const EXCLUDE_ARGUMENT = [
-        self::PHPCS => Phpcs::IGNORE,
-        self::PHPCBF => Phpcbf::IGNORE,
-        self::SECURITY_CHECKER => '',
-        self::PARALLEL_LINT => ParallelLint::EXCLUDE,
-        self::MESS_DETECTOR => Phpmd::EXCLUDE,
-        self::COPYPASTE_DETECTOR => Phpcpd::EXCLUDE,
-        self::PHPSTAN => '',
-        self::PHPUNIT => '',
-        self::PSALM => '',
-        self::SCRIPT => '',
-    ];
-
     public const EXECUTABLE_PATH_OPTION = 'executablePath';
 
     public const OTHER_ARGS_OPTION = 'otherArguments';
@@ -79,18 +26,9 @@ abstract class ToolAbstract
 
     public const FAIL_FAST = 'failFast';
 
-    /** @var string|null Custom name alias for the script tool (e.g. 'php-cs-fixer' instead of 'script') */
-    private static $scriptAlias = null;
+    protected string $executable;
 
-    /** @var string Name of tool printend when it is runned */
-    protected $executable;
-
-
-    /** @var string */
-    protected $errors = '';
-
-    /** @var array Is an associative array where the keys are the tool ARGUMENTS */
-    protected $args = [];
+    protected array $args = [];
 
     /** @return string The tool command line based on the tool configuration */
     abstract public function prepareCommand(): string;
@@ -185,11 +123,6 @@ abstract class ToolAbstract
         return $this->executable;
     }
 
-    public function getErrors(): string
-    {
-        return $this->errors;
-    }
-
     public function isIgnoreErrorsOnExit(): bool
     {
         return $this->args[self::IGNORE_ERRORS_ON_EXIT] ?? false;
@@ -213,70 +146,4 @@ abstract class ToolAbstract
         return false;
     }
 
-    public static function checkTool(string $tool): bool
-    {
-        return array_key_exists($tool, self::SUPPORTED_TOOLS)
-            || (self::$scriptAlias !== null && $tool === self::$scriptAlias);
-    }
-
-    /**
-     * Resolves a tool name to its canonical name. If the tool is a script alias,
-     * returns 'script'. Otherwise returns the tool name unchanged.
-     *
-     * @param string $tool
-     * @return string
-     */
-    public static function resolveToolName(string $tool): string
-    {
-        if (self::$scriptAlias !== null && $tool === self::$scriptAlias) {
-            return self::SCRIPT;
-        }
-
-        return $tool;
-    }
-
-    /**
-     * Registers a custom name alias for the script tool.
-     *
-     * @param string $alias
-     * @return void
-     * @throws \InvalidArgumentException If the alias conflicts with an existing supported tool.
-     */
-    public static function registerScriptAlias(string $alias): void
-    {
-        if (array_key_exists($alias, self::SUPPORTED_TOOLS)) {
-            throw new InvalidArgumentException(
-                "The script name '$alias' conflicts with an existing supported tool."
-            );
-        }
-
-        self::$scriptAlias = $alias;
-    }
-
-    /**
-     * @return string|null
-     */
-    public static function getScriptAlias()
-    {
-        return self::$scriptAlias;
-    }
-
-    /**
-     * Resets the script alias. For use in test tearDown.
-     *
-     * @return void
-     */
-    public static function resetScriptAlias(): void
-    {
-        self::$scriptAlias = null;
-    }
-
-    public static function excludeArgumentForTool(string $tool): string
-    {
-        $resolved = self::resolveToolName($tool);
-        if (!self::checkTool($resolved)) {
-            throw ToolDoesNotExistException::forTool($tool);
-        }
-        return self::EXCLUDE_ARGUMENT[$resolved];
-    }
 }

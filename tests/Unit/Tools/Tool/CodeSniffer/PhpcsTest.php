@@ -5,14 +5,15 @@ namespace Tests\Unit\Tools\Tool\CodeSniffer;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\Tool\CodeSniffer\Phpcs;
-use Wtyd\GitHooks\Tools\Tool\CodeSniffer\PhpcsFake;
+use Tests\Doubles\PhpcsFake;
+use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class PhpcsTest extends UnitTestCase
 {
     /** @test */
     function phpcs_is_a_supported_tool()
     {
-        $this->assertTrue(Phpcs::checkTool('phpcs'));
+        $this->assertTrue((new ToolRegistry())->isSupported('phpcs'));
     }
 
     /** @test */
@@ -34,7 +35,7 @@ class PhpcsTest extends UnitTestCase
             'failFast' => false,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration, new ToolRegistry());
 
         $phpcs = new PhpcsFake($toolConfiguration);
 
@@ -60,7 +61,7 @@ class PhpcsTest extends UnitTestCase
             'ignoreErrorsOnExit' => true,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration, new ToolRegistry());
 
         $phpcs = new PhpcsFake($toolConfiguration);
 
@@ -83,7 +84,7 @@ class PhpcsTest extends UnitTestCase
             'unexpected or supported argument' => 'my value'
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration, new ToolRegistry());
 
         $phpcs = new PhpcsFake($toolConfiguration);
 
@@ -108,7 +109,7 @@ class PhpcsTest extends UnitTestCase
             'parallel' => 2,
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration, new ToolRegistry());
         $phpcs = new PhpcsFake($toolConfiguration);
 
         $cmd = $phpcs->prepareCommand();
@@ -130,7 +131,7 @@ class PhpcsTest extends UnitTestCase
             'ignore' => ['vendor', 'app'],
         ];
 
-        $toolConfiguration = new ToolConfiguration('phpcs', $configuration);
+        $toolConfiguration = new ToolConfiguration('phpcs', $configuration, new ToolRegistry());
 
         $phpcs = new PhpcsFake($toolConfiguration);
 

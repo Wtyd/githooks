@@ -14,7 +14,6 @@ class MyClassTest extends UnitTestCase
 ```
 
 `UnitTestCase` extiende `PHPUnit\Framework\TestCase` directamente. Incluye:
-- `RetroCompatibilityAssertsTrait` (backport de asserts de PHPUnit 9)
 - `messageRegExp(string $tool, bool $ok)` para verificar mensajes de éxito/fallo de tools
 
 ## Patrón para testear una Tool
