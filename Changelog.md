@@ -17,10 +17,11 @@ All notable changes to this project will be documented in this file.
 - **Jobs**: Individual QA tasks with declarative configuration. Each job declares a `type` (phpstan, phpcs, phpunit, custom, etc.) and its arguments.
 
 ### New Commands
-- `githooks flow <name>` — Run a flow by name.
-- `githooks job <name>` — Run a single job by name.
+- `githooks flow <name>` — Run a flow by name. Supports `--format=json|junit`, `--fast`, `--exclude-jobs`.
+- `githooks job <name>` — Run a single job by name. Supports `--format=json|junit`, `--fast`.
 - `githooks hook run <event>` — Run all flows/jobs associated with a git hook event (called by the universal hook script).
 - `githooks hook` — Install git hooks via `core.hooksPath`.
+- `githooks status` — Show installed hooks, their sync state with config (synced/missing/orphan), and target flows/jobs.
 
 ### New Job Types
 - **Custom**: Run any command via `script` key. Replaces the `script` tool and enables integration of non-native tools (e.g. `composer audit`, `eslint`, `php-cs-fixer`).
@@ -31,6 +32,14 @@ All notable changes to this project will be documented in this file.
 ### New Execution Engine
 - `FlowExecutor`, `FlowPreparer`, `FlowPlan`, `FlowResult`, `JobExecutor`, `JobResult` — replace `ToolsPreparer` and `ProcessExecution*` for v3 commands.
 - `HookRunner`, `HookInstaller` — orchestrate hook resolution and installation.
+
+### Observability and Structured Output
+- **`--format=json` and `--format=junit`**: Structured output for `flow` and `job` commands. JSON for machine-readable results; JUnit XML for CI test reporting integration.
+- **Grouped error output**: In parallel execution, success lines print in real-time while error details are collected and printed grouped at the end.
+- **Fast mode for custom jobs**: `--fast` flag (or automatically on `pre-commit` hooks) exposes `$GITHOOKS_STAGED_FILES` environment variable to custom job scripts with the list of staged files.
+
+### Build Improvements
+- **Box binary moved to `tools/`**: `tools/box` (Box 3.16.0) ships with the project. CI no longer needs `composer global require humbug/box`.
 
 ### Internal Improvements
 - **ToolRegistry** extracted from `ToolAbstract` as injectable service. Centralizes tool name → class mapping, accelerable tools, exclude arguments, and script aliases.
