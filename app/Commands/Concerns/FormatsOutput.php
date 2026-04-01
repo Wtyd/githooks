@@ -39,7 +39,8 @@ trait FormatsOutput
         } else {
             $total = count($result->getJobResults());
             $passed = $result->getPassedCount();
-            $this->line("Results: $passed/$total passed" . ($result->isSuccess() ? ' ✔️' : ''));
+            $time = $result->getTotalTime();
+            $this->line("Results: $passed/$total passed in $time" . ($result->isSuccess() ? ' ✔️' : ''));
         }
     }
 

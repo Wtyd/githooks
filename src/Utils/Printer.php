@@ -94,6 +94,17 @@ class Printer
         }
     }
 
+    // Job status lines — indentation outside color block
+    public function jobSuccess(string $jobName, string $time): void
+    {
+        echo "  \e[42m\e[30m $jobName - OK. Time: $time \033[0m\n";
+    }
+
+    public function jobError(string $jobName, string $time): void
+    {
+        echo "  \e[41m\e[30m $jobName - KO. Time: $time \033[0m\n";
+    }
+
     // Green
     public function info(string $message): void
     {

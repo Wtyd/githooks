@@ -18,7 +18,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function it_prints_success_immediately()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('success')->once()->with('  phpstan_src - OK. Time: 1.23s');
+        $printer->shouldReceive('jobSuccess')->once()->with('phpstan_src', '1.23s');
 
         $handler = new TextOutputHandler($printer);
         $handler->onJobSuccess('phpstan_src', '1.23s');
@@ -28,7 +28,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function it_prints_error_status_immediately_but_buffers_output()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('error')->once()->with('  phpmd_src - KO. Time: 500ms');
+        $printer->shouldReceive('jobError')->once()->with('phpmd_src', '500ms');
         $printer->shouldNotReceive('framedErrorBlock');
 
         $handler = new TextOutputHandler($printer);
@@ -39,7 +39,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function it_prints_buffered_errors_on_flush()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('error')->twice();
+        $printer->shouldReceive('jobError')->twice();
         $printer->shouldReceive('emptyLine')->times(3);
         $printer->shouldReceive('framedErrorBlock')->once()->with('phpmd_src', 'error1');
         $printer->shouldReceive('framedErrorBlock')->once()->with('phpstan_src', 'error2');
@@ -54,7 +54,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function flush_does_nothing_when_no_errors()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('success')->once();
+        $printer->shouldReceive('jobSuccess')->once();
         $printer->shouldNotReceive('emptyLine');
         $printer->shouldNotReceive('framedErrorBlock');
 
@@ -77,7 +77,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function flush_clears_the_buffer()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('error')->once();
+        $printer->shouldReceive('jobError')->once();
         $printer->shouldReceive('emptyLine')->twice();
         $printer->shouldReceive('framedErrorBlock')->once();
 

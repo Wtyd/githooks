@@ -11,7 +11,7 @@ return [
             // Number of jobs to run simultaneously. Some tools (phpstan, parallel-lint,
             // phpcs, psalm) spawn their own worker processes internally, so actual OS
             // processes may be higher than this value. Keep low on machines with few cores.
-            'processes' => 2,
+            'processes' => 10,
         ],
         'qa' => [
             'jobs' => [
