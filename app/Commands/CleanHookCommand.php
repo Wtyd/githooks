@@ -4,30 +4,51 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Hooks;
+use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Utils\Storage;
 
 class CleanHookCommand extends Command
 {
-    protected $signature = 'hook:clean {hook=pre-commit}';
-    protected $description = 'Deletes the hook passed as argument (default pre-commit)';
+    protected $signature = 'hook:clean
+                            {hook=pre-commit}
+                            {--legacy : Clean a single hook from .git/hooks/ instead of cleaning .githooks/}';
 
-    protected $help = 'Without arguments deletes the pre-commit hook. A optional argument can be the name of another hook. Example: hook:clean pre-push.';
+    protected $description = 'Remove installed hooks. By default removes .githooks/ directory and unsets core.hooksPath.';
 
     protected Printer $printer;
 
-    public function __construct(Printer $printer)
+    private HookInstaller $installer;
+
+    public function __construct(Printer $printer, HookInstaller $installer)
     {
         parent::__construct();
         $this->printer = $printer;
+        $this->installer = $installer;
     }
 
     public function handle()
     {
+        if ($this->option('legacy')) {
+            return $this->handleLegacy();
+        }
+
+        return $this->handleV3();
+    }
+
+    private function handleV3(): int
+    {
+        $this->installer->clean();
+        $this->printer->success("Hooks directory .githooks/ removed and core.hooksPath unset");
+        return 0;
+    }
+
+    private function handleLegacy(): int
+    {
         $hook = strval($this->argument('hook'));
 
         if (!Hooks::validate($hook)) {
-            $this->printer->error("'$hook' is not a valid git hook. Avaliable hooks are:");
+            $this->printer->error("'$hook' is not a valid git hook. Available hooks are:");
             $this->printer->error(implode(', ', Hooks::HOOKS));
             return 1;
         }
@@ -41,9 +62,9 @@ class CleanHookCommand extends Command
         if (Storage::delete($file)) {
             $this->printer->success("Hook $hook has been deleted");
             return 0;
-        } else {
-            $this->printer->error("Could not delete $hook hook");
-            return 1;
         }
+
+        $this->printer->error("Could not delete $hook hook");
+        return 1;
     }
 }

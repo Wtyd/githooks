@@ -27,19 +27,43 @@ class CreateConfigurationFileCommand extends Command
 
     public function handle()
     {
-        $origin = $this->option('legacy')
-            ? 'vendor/wtyd/githooks/qa/githooks.dist.php'
-            : 'vendor/wtyd/githooks/qa/githooks.v3.dist.php';
+        $distFile = $this->option('legacy')
+            ? 'githooks.dist.yml'
+            : 'githooks.dist.php';
         $destiny = 'githooks.php';
 
         try {
             $this->fileReader->findConfigurationFile();
         } catch (ConfigurationFileNotFoundException $ex) {
+            // Try as installed dependency first, then local development path
+            $origin = $this->resolveDistFile($distFile);
+
+            if ($origin === null) {
+                $this->printer->error("Distribution file '$distFile' not found.");
+                return 1;
+            }
+
             return $this->copyFile($origin, $destiny);
         }
 
         $this->printer->error('githooks configuration file already exists');
         return 1;
+    }
+
+    protected function resolveDistFile(string $distFile): ?string
+    {
+        $candidates = [
+            "vendor/wtyd/githooks/qa/$distFile",
+            "qa/$distFile",
+        ];
+
+        foreach ($candidates as $path) {
+            if (Storage::exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
     }
 
     protected function copyFile(string $origin, string $destiny): int

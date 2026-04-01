@@ -19,7 +19,7 @@ class CleanHookCommandTest extends SystemTestCase
     {
         Storage::put('/.git/hooks/pre-commit', '');
 
-        $this->artisan('hook:clean')
+        $this->artisan('hook:clean --legacy')
             ->containsStringInOutput('Hook pre-commit has been deleted')
             ->assertExitCode(0);
     }
@@ -66,7 +66,7 @@ class CleanHookCommandTest extends SystemTestCase
     {
         Storage::put("/.git/hooks/$hook", '');
 
-        $this->artisan("hook:clean $hook")
+        $this->artisan("hook:clean $hook --legacy")
             ->containsStringInOutput("Hook $hook has been deleted")
             ->assertExitCode(0);
     }
@@ -74,7 +74,7 @@ class CleanHookCommandTest extends SystemTestCase
     /** @test */
     function it_does_not_delete_a_hook_that_cannot_be_found()
     {
-        $this->artisan('hook:clean pre-commit')
+        $this->artisan('hook:clean pre-commit --legacy')
             ->containsStringInOutput('The hook pre-commit cannot be deleted because it cannot be found')
             ->assertExitCode(1);
     }
@@ -116,8 +116,8 @@ class CleanHookCommandTest extends SystemTestCase
         ];
 
         $supportedHooks2String = implode(', ', $supportedHooks);
-        $this->artisan("hook:clean $noSupportedHook")
-            ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Avaliable hooks are:")
+        $this->artisan("hook:clean $noSupportedHook --legacy")
+            ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Available hooks are:")
             ->containsStringInOutput($supportedHooks2String)
             ->assertExitCode(1);
 

@@ -226,7 +226,7 @@ not found in /home/runner/work/githooks/githooks/tests/Zero/IlluminateTestCase.p
 
 | Severidad | Cantidad | Bugs |
 |---|---|---|
-| ALTA | 6 | ~~#1 #2 #3~~ (corregidos), #4 (hook legacy), #5 (conf:init roto), ~~#13~~ (corregido) |
+| ALTA | 6 | ~~#1 #2 #3~~ (corregidos), ~~#4~~ (corregido), ~~#5~~ (corregido), ~~#13~~ (corregido) |
 | MEDIA | 4 | ~~#6~~ (corregido), #7 (validación tipos), #8 (stack trace), ~~#12~~ (corregido) |
 | BAJA | 3 | #9 (warning confuso), #10 (format fallback), #11 (migrate vacía) |
 
@@ -237,8 +237,8 @@ not found in /home/runner/work/githooks/githooks/tests/Zero/IlluminateTestCase.p
 | #1 `--exclude-jobs` | **Corregido** | `a1559b3` |
 | #2 `--fail-fast` CLI | **Corregido** | `a1559b3` |
 | #3 `--processes` CLI | **Corregido** | `a1559b3` |
-| #4 hook legacy | Pendiente | — |
-| #5 conf:init roto | Pendiente | — |
+| #4 hook legacy | **Corregido** | `CreateHookCommand` usa `HookInstaller` con `core.hooksPath` + `.githooks/`. Legacy vía `--legacy`. |
+| #5 conf:init roto | **Corregido** | Busca `qa/githooks.dist.php` (local) y `vendor/wtyd/githooks/qa/githooks.dist.php` (dependencia) |
 | #6 `-c` shortcut | **Corregido** | Formato `{-c\|--config=}` era inválido en Symfony Console, eliminado shortcut |
 | #7 validación tipos | Pendiente | — |
 | #8 stack trace | Pendiente | — |

@@ -4,106 +4,153 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use Exception;
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Hooks;
+use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Utils\Storage;
 
 class CreateHookCommand extends Command
 {
-    protected $signature = 'hook  {hook=pre-commit : The hook to be setted} {scriptFile? : The custom script to be setted as the hook (default:GitHooks)}';
-    protected $description = 'Copies the hook for the GitHooks execution. The default hook is pre-commit. You can pass scriptFile as argument to set custom scripts.';
+    protected $signature = 'hook
+                            {hook=pre-commit : The hook to install (default: pre-commit). When using v3 config, installs all hooks defined in the config.}
+                            {scriptFile? : Custom script file for legacy mode}
+                            {--legacy : Force legacy installation (.git/hooks/ instead of core.hooksPath)}
+                            {--config= : Path to configuration file}';
 
-    protected $help = 'The default script is the default GitHooks execution. You can custom your script to execute what ever you want.
-Even the default script and after, other tools which GitHooks not support or vice versa';
+    protected $description = 'Install git hooks. With v3 config, uses core.hooksPath and installs all configured hooks.';
 
     protected Printer $printer;
 
-    /**
-     * First argument. The hook that will be setted.
-     */
-    protected string $hook;
+    private ConfigurationParser $parser;
 
-    /**
-     * Second argument. The custom script to be setted as the hook. Per default is the GitHooks script to execute the tools setted in githooks.yml file.
-     */
-    protected string $scriptFile;
+    private HookInstaller $installer;
 
-    public function __construct(Printer $printer)
+    public function __construct(Printer $printer, ConfigurationParser $parser, HookInstaller $installer)
     {
         $this->printer = $printer;
+        $this->parser = $parser;
+        $this->installer = $installer;
         parent::__construct();
     }
 
     public function handle()
     {
-        $this->hook = strval($this->argument('hook'));
-        $this->scriptFile = strval($this->argument('scriptFile')) ?? '';
+        $hook = strval($this->argument('hook'));
 
-        if (!Hooks::validate($this->hook)) {
-            $this->printer->error("'{$this->hook}' is not a valid git hook. Avaliable hooks are:");
+        // If a custom script file is provided, always use legacy mode
+        if (!empty($this->argument('scriptFile'))) {
+            return $this->handleLegacy();
+        }
+
+        // If the hook argument is not a valid git hook, report error
+        // (catches cases like: hook MyScript.php where scriptFile is missing)
+        if (!Hooks::validate($hook)) {
+            $this->printer->error("'$hook' is not a valid git hook. Available hooks are:");
             $this->printer->error(implode(', ', Hooks::HOOKS));
             return 1;
         }
 
-        $origin = $this->path2OriginFile();
+        if ($this->option('legacy')) {
+            return $this->handleLegacy();
+        }
+
+        return $this->handleV3();
+    }
+
+    private function handleV3(): int
+    {
+        $configFile = strval($this->option('config'));
+
         try {
-            $destiny = ".git/hooks/{$this->hook}";
+            $config = $this->parser->parse($configFile);
+        } catch (\Throwable $e) {
+            // No config found — fall back to legacy single-hook install
+            return $this->handleLegacy();
+        }
+
+        if ($config->isLegacy()) {
+            return $this->handleLegacy();
+        }
+
+        $hooks = $config->getHooks();
+
+        if ($hooks === null || empty($hooks->getEvents())) {
+            $this->printer->warning("No hooks defined in configuration. Nothing to install.");
+            return 0;
+        }
+
+        $events = $hooks->getEvents();
+        $created = $this->installer->install($events);
+
+        foreach ($created as $path) {
+            $event = basename($path);
+            $this->printer->success("Hook $event installed");
+        }
+
+        $this->info("  hooks path: .githooks (configured via core.hooksPath)");
+
+        return 0;
+    }
+
+    private function handleLegacy(): int
+    {
+        $hook = strval($this->argument('hook'));
+        $scriptFile = strval($this->argument('scriptFile'));
+
+        if (!Hooks::validate($hook)) {
+            $this->printer->error("'$hook' is not a valid git hook. Available hooks are:");
+            $this->printer->error(implode(', ', Hooks::HOOKS));
+            return 1;
+        }
+
+        if (!empty($scriptFile)) {
+            return $this->installCustomScript($hook, $scriptFile);
+        }
+
+        try {
+            $destiny = ".git/hooks/$hook";
 
             if (Storage::exists($destiny)) {
                 Storage::delete($destiny);
             }
 
-            Storage::copy($origin, $destiny);
+            $scriptContent = "#!/bin/sh\n# Generated by GitHooks — do not edit manually\n"
+                . "php vendor/bin/githooks hook:run \"$(basename \"$0\")\"\n";
+
+            Storage::put($destiny, $scriptContent);
             Storage::chmod($destiny, 0755);
 
-            $this->printer->success("Hook {$this->hook} created");
+            $this->printer->success("Hook $hook created");
+            return 0;
         } catch (\Throwable $th) {
-            $this->printer->error("Error copying $origin in {$this->hook}");
+            $this->printer->error("Error installing hook $hook");
             return 1;
         }
     }
 
-    /**
-     * Find the origin of the scripts for the hook
-     *
-     * @return string File to be executed in the hook.
-     */
-    public function path2OriginFile(): string
+    private function installCustomScript(string $hook, string $scriptFile): int
     {
-        $origin = '';
-        if (empty($this->scriptFile)) {
-            $origin = $this->defaultPrecommit();
-        } else {
-            if (!Storage::exists($this->scriptFile)) {
-                throw new Exception("{$this->scriptFile} file not found");
+        if (!Storage::exists($scriptFile)) {
+            $this->printer->error("$scriptFile file not found");
+            return 1;
+        }
+
+        try {
+            $destiny = ".git/hooks/$hook";
+
+            if (Storage::exists($destiny)) {
+                Storage::delete($destiny);
             }
-            $origin = $this->scriptFile;
-        }
-        return $origin;
-    }
 
-    /**
-     * Returns the path of the file that contains the script to be executed in the hook:
-     * 1. When GitHooks will be a library, it returns the path through 'vendor'.
-     * 2. To work on developing GitHooks itself, it will return the local path to 'hooks'
-     *
-     * @return string The default script to run GitHooks in the hook.
-     */
-    public function defaultPrecommit(): string
-    {
-        $origin = '';
-        if (Storage::exists('vendor/wtyd/githooks/hooks/default.php')) {
-            $origin = 'vendor/wtyd/githooks/hooks/default.php';
-        }
+            Storage::copy($scriptFile, $destiny);
+            Storage::chmod($destiny, 0755);
 
-        if (Storage::exists('hooks/default.php')) {
-            $origin = 'hooks/default.php';
+            $this->printer->success("Hook $hook created with custom script $scriptFile");
+            return 0;
+        } catch (\Throwable $th) {
+            $this->printer->error("Error copying $scriptFile to $hook");
+            return 1;
         }
-
-        if (empty($origin)) {
-            throw new Exception("The file default.php not found");
-        }
-
-        return $origin;
     }
 }

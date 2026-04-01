@@ -33,11 +33,11 @@ class CreateHookCommandTest extends SystemTestCase
     /** @test */
     function it_creates_default_script_for_precommit_when_is_called_without_arguments()
     {
-        $this->artisan('hook')
+        $this->artisan('hook --legacy')
             ->containsStringInOutput('Hook pre-commit created')
             ->assertExitCode(0);
 
-        $this->assertFileExists($this->path . '/.git/hooks/pre-commit', Storage::get('hooks/default.php'));
+        $this->assertFileExists($this->path . '/.git/hooks/pre-commit');
     }
 
     public function hooksProvider()
@@ -80,11 +80,11 @@ class CreateHookCommandTest extends SystemTestCase
      */
     function it_creates_default_script_in_the_hook_passed_as_argument($hook)
     {
-        $this->artisan("hook $hook")
+        $this->artisan("hook $hook --legacy")
             ->containsStringInOutput("Hook $hook created")
             ->assertExitCode(0);
 
-        $this->assertFileExists($this->path . "/.git/hooks/$hook", file_get_contents('hooks/default.php'));
+        $this->assertFileExists($this->path . "/.git/hooks/$hook");
     }
 
     /**
@@ -144,7 +144,7 @@ class CreateHookCommandTest extends SystemTestCase
 
         $supportedHooks2String = implode(', ', $supportedHooks);
         $this->artisan("hook $scriptFilePath")
-            ->containsStringInOutput("'$scriptFilePath' is not a valid git hook. Avaliable hooks are:")
+            ->containsStringInOutput("'$scriptFilePath' is not a valid git hook. Available hooks are:")
             ->containsStringInOutput($supportedHooks2String)
             ->assertExitCode(1);
 
@@ -188,8 +188,8 @@ class CreateHookCommandTest extends SystemTestCase
         ];
 
         $supportedHooks2String = implode(', ', $supportedHooks);
-        $this->artisan("hook $noSupportedHook")
-            ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Avaliable hooks are:")
+        $this->artisan("hook $noSupportedHook --legacy")
+            ->containsStringInOutput("'$noSupportedHook' is not a valid git hook. Available hooks are:")
             ->containsStringInOutput($supportedHooks2String)
             ->assertExitCode(1);
 
