@@ -22,7 +22,7 @@ class ConfigurationResult
 
     private bool $isLegacy;
 
-    /** @var array|null Raw config for legacy format bridge */
+    /** @var array<string, mixed>|null Raw config for legacy format bridge */
     private ?array $legacyConfig;
 
     /**
@@ -47,6 +47,7 @@ class ConfigurationResult
         $this->legacyConfig = null;
     }
 
+    /** @param array<string, mixed> $rawConfig */
     public static function legacy(array $rawConfig, string $filePath, ValidationResult $validation): self
     {
         $instance = new self(
@@ -114,6 +115,7 @@ class ConfigurationResult
         return $this->isLegacy;
     }
 
+    /** @return array<string, mixed>|null */
     public function getLegacyConfig(): ?array
     {
         return $this->legacyConfig;

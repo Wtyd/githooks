@@ -15,6 +15,7 @@ class JobConfiguration
     /** @var array<string, mixed> Tool-specific arguments (everything except 'type') */
     private array $config;
 
+    /** @param array<string, mixed> $config */
     public function __construct(string $name, string $type, array $config)
     {
         $this->name = $name;
@@ -26,7 +27,7 @@ class JobConfiguration
      * Build from raw config entry. Validates type against the registry.
      *
      * @param string $name Job name (the key in 'jobs' section)
-     * @param array $raw   The job definition array
+     * @param array<string, mixed> $raw The job definition array
      */
     public static function fromArray(
         string $name,

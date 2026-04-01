@@ -19,7 +19,7 @@ class OptionsConfiguration
     /**
      * Build from raw config array. Validates and collects errors/warnings.
      *
-     * @param array $raw The 'options' section (from flows level or per-flow)
+     * @param array<string, mixed> $raw The 'options' section (from flows level or per-flow)
      */
     public static function fromArray(array $raw, ValidationResult $result): self
     {

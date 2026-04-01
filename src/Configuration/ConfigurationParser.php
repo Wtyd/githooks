@@ -47,6 +47,7 @@ class ConfigurationParser
         return $this->parseV3($raw, $filePath);
     }
 
+    /** @param array<string, mixed> $config */
     public function isLegacyFormat(array $config): bool
     {
         $hasLegacyKeys = array_key_exists('Options', $config) || array_key_exists('Tools', $config);
@@ -57,6 +58,7 @@ class ConfigurationParser
         return $hasLegacyKeys && !$hasV3Keys;
     }
 
+    /** @param array<string, mixed> $raw */
     protected function parseV3(array $raw, string $filePath): ConfigurationResult
     {
         $result = new ValidationResult();
@@ -74,38 +76,11 @@ class ConfigurationParser
         }
 
         // 2. Parse jobs (standalone, no cross-references)
-        $jobsRaw = $raw['jobs'] ?? [];
-        $jobs = [];
-        if (empty($jobsRaw)) {
-            $result->addError("The 'jobs' section is missing or empty.");
-        } else {
-            foreach ($jobsRaw as $jobName => $jobData) {
-                if (!is_array($jobData)) {
-                    $result->addError("Job '$jobName' must be an array.");
-                    continue;
-                }
-                $job = JobConfiguration::fromArray($jobName, $jobData, $this->toolRegistry, $result);
-                if ($job !== null) {
-                    $jobs[$jobName] = $job;
-                }
-            }
-        }
-
+        $jobs = $this->parseJobs($raw['jobs'] ?? [], $result);
         $availableJobNames = array_keys($jobs);
 
         // 3. Parse flows (reference jobs)
-        $flows = [];
-        foreach ($flowsRaw as $flowName => $flowData) {
-            if (!is_array($flowData)) {
-                $result->addError("Flow '$flowName' must be an array.");
-                continue;
-            }
-            $flow = FlowConfiguration::fromArray($flowName, $flowData, $availableJobNames, $result);
-            if ($flow !== null) {
-                $flows[$flowName] = $flow;
-            }
-        }
-
+        $flows = $this->parseFlows($flowsRaw, $availableJobNames, $result);
         $availableFlowNames = array_keys($flows);
 
         // 4. Parse hooks (reference flows and jobs)
@@ -134,8 +109,54 @@ class ConfigurationParser
     }
 
     /**
+     * @param array<string, mixed> $jobsRaw
+     * @return array<string, JobConfiguration>
+     */
+    private function parseJobs(array $jobsRaw, ValidationResult $result): array
+    {
+        $jobs = [];
+        if (empty($jobsRaw)) {
+            $result->addError("The 'jobs' section is missing or empty.");
+            return $jobs;
+        }
+        foreach ($jobsRaw as $jobName => $jobData) {
+            if (!is_array($jobData)) {
+                $result->addError("Job '$jobName' must be an array.");
+                continue;
+            }
+            $job = JobConfiguration::fromArray($jobName, $jobData, $this->toolRegistry, $result);
+            if ($job !== null) {
+                $jobs[$jobName] = $job;
+            }
+        }
+        return $jobs;
+    }
+
+    /**
+     * @param array<string, mixed> $flowsRaw
+     * @param string[] $availableJobNames
+     * @return array<string, FlowConfiguration>
+     */
+    private function parseFlows(array $flowsRaw, array $availableJobNames, ValidationResult $result): array
+    {
+        $flows = [];
+        foreach ($flowsRaw as $flowName => $flowData) {
+            if (!is_array($flowData)) {
+                $result->addError("Flow '$flowName' must be an array.");
+                continue;
+            }
+            $flow = FlowConfiguration::fromArray($flowName, $flowData, $availableJobNames, $result);
+            if ($flow !== null) {
+                $flows[$flowName] = $flow;
+            }
+        }
+        return $flows;
+    }
+
+    /**
      * @throws ConfigurationFileNotFoundException
      * @throws ParseConfigurationFileException
+     * @return array<string, mixed>
      */
     protected function readFile(string $filePath): array
     {

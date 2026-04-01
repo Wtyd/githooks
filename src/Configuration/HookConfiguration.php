@@ -22,7 +22,7 @@ class HookConfiguration
     /**
      * Build from raw config 'hooks' section.
      *
-     * @param array $raw The 'hooks' section
+     * @param array<string, mixed> $raw The 'hooks' section
      * @param string[] $availableFlowNames
      * @param string[] $availableJobNames
      */

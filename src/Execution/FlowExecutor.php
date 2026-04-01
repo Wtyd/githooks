@@ -72,8 +72,10 @@ class FlowExecutor
 
         while (!empty($queue) || !empty($running)) {
             // Fill the pool
-            while (!$failFastTriggered && !empty($queue) && count($running) < $maxProcesses) {
+            $runningCount = count($running);
+            while (!$failFastTriggered && !empty($queue) && $runningCount < $maxProcesses) {
                 $job = array_shift($queue);
+                $runningCount++;
                 $command = $job->buildCommand();
                 $process = Process::fromShellCommandLine($command);
                 $process->setTimeout(null);
@@ -87,18 +89,19 @@ class FlowExecutor
 
             // Check for completion
             foreach ($running as $name => $entry) {
-                if (!$entry['process']->isRunning()) {
-                    $result = $this->collectResult($entry);
-                    $results[] = $result;
-                    unset($running[$name]);
+                if ($entry['process']->isRunning()) {
+                    continue;
+                }
+                $result = $this->collectResult($entry);
+                $results[] = $result;
+                unset($running[$name]);
 
-                    if ($failFast && !$result->isSuccess()) {
-                        $failFastTriggered = true;
-                        $this->terminateRunning($running);
-                        $running = [];
-                        $queue = [];
-                        break;
-                    }
+                if ($failFast && !$result->isSuccess()) {
+                    $failFastTriggered = true;
+                    $this->terminateRunning($running);
+                    $running = [];
+                    $queue = [];
+                    break;
                 }
             }
 

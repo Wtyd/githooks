@@ -29,7 +29,7 @@ class FlowConfiguration
      * Build from raw config entry.
      *
      * @param string $name Flow name (the key in 'flows' section)
-     * @param array  $raw  The flow definition array
+     * @param array<string, mixed>  $raw  The flow definition array
      * @param string[] $availableJobNames All job names defined in the 'jobs' section
      */
     public static function fromArray(

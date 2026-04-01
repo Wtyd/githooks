@@ -50,9 +50,7 @@ class PhpmdJob extends JobAbstract
                     $command .= " $flag" . $sep . '"' . $list . '"';
                     break;
                 case 'boolean':
-                    if ($value) {
-                        $command .= " $flag";
-                    }
+                    $command .= " $flag";
                     break;
                 case 'key_value':
                     $command .= " --$key=$value";

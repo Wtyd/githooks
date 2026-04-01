@@ -77,49 +77,17 @@ abstract class JobAbstract
         $pathsPart = '';
 
         foreach (static::ARGUMENT_MAP as $key => $spec) {
-            if (!array_key_exists($key, $this->args)) {
+            if (!array_key_exists($key, $this->args) || $this->isEmpty($this->args[$key])) {
                 continue;
             }
-
-            $value = $this->args[$key];
-
-            if ($this->isEmpty($value)) {
-                continue;
-            }
-
-            $flag = $spec['flag'] ?? '';
-            $type = $spec['type'] ?? 'value';
-            $separator = $spec['separator'] ?? '=';
-
-            switch ($type) {
-                case 'value':
-                    $parts[] = $flag . $separator . $value;
-                    break;
-                case 'boolean':
-                    if ($value) {
-                        $parts[] = $flag;
-                    }
-                    break;
-                case 'paths':
-                    // Deferred — always appended at end
-                    $pathsPart = is_array($value) ? implode(' ', $value) : $value;
-                    break;
-                case 'csv':
-                    $list = is_array($value) ? implode(',', $value) : $value;
-                    $parts[] = $flag . $separator . $list;
-                    break;
-                case 'repeat':
-                    foreach ((array) $value as $item) {
-                        $parts[] = $flag . ' ' . $item;
-                    }
-                    break;
-                case 'key_value':
-                    $parts[] = "--$key=$value";
-                    break;
+            $result = $this->buildArgumentPart($key, $this->args[$key], $spec);
+            if ($result === null) {
+                $pathsPart = is_array($this->args[$key]) ? implode(' ', $this->args[$key]) : $this->args[$key];
+            } else {
+                array_push($parts, ...$result);
             }
         }
 
-        // otherArguments — raw string appended before paths
         if (!empty($this->args['otherArguments'])) {
             $parts[] = $this->args['otherArguments'];
         }
@@ -129,6 +97,42 @@ abstract class JobAbstract
         }
 
         return implode(' ', $parts);
+    }
+
+    /**
+     * Build the CLI fragment(s) for a single argument.
+     *
+     * @param string $key  Config key name
+     * @param mixed  $value Argument value (already validated as non-empty)
+     * @param array<string, string> $spec  ARGUMENT_MAP entry
+     * @return string[]|null Parts to append, or null for 'paths' (deferred)
+     */
+    protected function buildArgumentPart(string $key, $value, array $spec): ?array
+    {
+        $flag = $spec['flag'] ?? '';
+        $separator = $spec['separator'] ?? '=';
+
+        switch ($spec['type'] ?? 'value') {
+            case 'value':
+                return [$flag . $separator . $value];
+            case 'boolean':
+                return $value ? [$flag] : [];
+            case 'paths':
+                return null;
+            case 'csv':
+                $list = is_array($value) ? implode(',', $value) : $value;
+                return [$flag . $separator . $list];
+            case 'repeat':
+                $parts = [];
+                foreach ((array) $value as $item) {
+                    $parts[] = $flag . ' ' . $item;
+                }
+                return $parts;
+            case 'key_value':
+                return ["--$key=$value"];
+            default:
+                return [$flag . $separator . $value];
+        }
     }
 
     public function getName(): string
@@ -161,6 +165,7 @@ abstract class JobAbstract
         return false;
     }
 
+    /** @param mixed $value */
     private function isEmpty($value): bool
     {
         if (is_bool($value)) {

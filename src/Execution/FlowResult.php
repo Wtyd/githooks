@@ -51,11 +51,11 @@ class FlowResult
 
     public function getFailedCount(): int
     {
-        return count(array_filter($this->jobResults, fn(JobResult $r) => !$r->isSuccess()));
+        return count(array_filter($this->jobResults, fn(JobResult $result) => !$result->isSuccess()));
     }
 
     public function getPassedCount(): int
     {
-        return count(array_filter($this->jobResults, fn(JobResult $r) => $r->isSuccess()));
+        return count(array_filter($this->jobResults, fn(JobResult $result) => $result->isSuccess()));
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Jobs;
 
+use InvalidArgumentException;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 
 class JobRegistry
@@ -29,7 +30,7 @@ class JobRegistry
     public function getClass(string $type): string
     {
         if (!$this->isSupported($type)) {
-            throw new \InvalidArgumentException("Job type '$type' is not supported.");
+            throw new InvalidArgumentException("Job type '$type' is not supported.");
         }
         return self::TYPE_MAP[$type];
     }
@@ -37,6 +38,7 @@ class JobRegistry
     public function create(JobConfiguration $config): JobAbstract
     {
         $class = $this->getClass($config->getType());
+        /** @var JobAbstract */
         return new $class($config);
     }
 

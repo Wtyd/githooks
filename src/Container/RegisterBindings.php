@@ -62,19 +62,19 @@ class RegisterBindings
             ProcessExecutionFactoryAbstract::class => ProcessExecutionFactory::class,
             ToolRegistry::class => ToolRegistry::class,
             JobRegistry::class => JobRegistry::class,
-            ConfigurationParser::class => function (Container $c) {
-                return new ConfigurationParser($c->make(ToolRegistry::class));
+            ConfigurationParser::class => function (Container $app) {
+                return new ConfigurationParser($app->make(ToolRegistry::class));
             },
-            FlowPreparer::class => function (Container $c) {
-                return new FlowPreparer($c->make(JobRegistry::class));
+            FlowPreparer::class => function (Container $app) {
+                return new FlowPreparer($app->make(JobRegistry::class));
             },
-            FlowExecutor::class => function (Container $c) {
-                return new FlowExecutor($c->make(Printer::class));
+            FlowExecutor::class => function (Container $app) {
+                return new FlowExecutor($app->make(Printer::class));
             },
-            HookRunner::class => function (Container $c) {
+            HookRunner::class => function (Container $app) {
                 return new HookRunner(
-                    $c->make(FlowPreparer::class),
-                    $c->make(FlowExecutor::class)
+                    $app->make(FlowPreparer::class),
+                    $app->make(FlowExecutor::class)
                 );
             },
             HookInstaller::class => function () {
