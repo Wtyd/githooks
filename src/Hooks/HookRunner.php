@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Hooks;
 
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
+use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
  * Resolves a hook event to its flows/jobs and executes them in order.
@@ -19,10 +20,13 @@ class HookRunner
 
     private FlowExecutor $executor;
 
-    public function __construct(FlowPreparer $preparer, FlowExecutor $executor)
+    private FileUtilsInterface $fileUtils;
+
+    public function __construct(FlowPreparer $preparer, FlowExecutor $executor, FileUtilsInterface $fileUtils)
     {
         $this->preparer = $preparer;
         $this->executor = $executor;
+        $this->fileUtils = $fileUtils;
     }
 
     /**
@@ -44,13 +48,18 @@ class HookRunner
             return [];
         }
 
+        // Auto-detect fast mode for pre-commit hooks
+        $context = ($event === 'pre-commit')
+            ? ExecutionContext::forFastMode($this->fileUtils)
+            : null;
+
         $results = [];
 
         foreach ($refs as $ref) {
             $flow = $config->getFlow($ref);
 
             if ($flow !== null) {
-                $plan = $this->preparer->prepare($flow, $config);
+                $plan = $this->preparer->prepare($flow, $config, $context);
                 $results[] = $this->executor->execute($plan);
                 continue;
             }
@@ -59,7 +68,7 @@ class HookRunner
             $jobConfig = $config->getJob($ref);
 
             if ($jobConfig !== null) {
-                $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions());
+                $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
                 $results[] = $this->executor->execute($plan);
                 continue;
             }

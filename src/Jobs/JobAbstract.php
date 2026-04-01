@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Jobs;
 
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Execution\ExecutionContext;
 
 /**
  * Base class for all job types. Subclasses declare ARGUMENT_MAP and the base
@@ -38,6 +39,8 @@ abstract class JobAbstract
     protected bool $ignoreErrorsOnExit;
 
     protected bool $failFast;
+
+    protected ?ExecutionContext $context = null;
 
     public function __construct(JobConfiguration $config)
     {
@@ -158,6 +161,11 @@ abstract class JobAbstract
     public function isFailFast(): bool
     {
         return $this->failFast;
+    }
+
+    public function setExecutionContext(ExecutionContext $context): void
+    {
+        $this->context = $context;
     }
 
     public function isFixApplied(int $exitCode): bool

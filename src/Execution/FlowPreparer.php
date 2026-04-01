@@ -23,10 +23,7 @@ class FlowPreparer
         $this->jobRegistry = $jobRegistry;
     }
 
-    /**
-     * @return FlowPlan
-     */
-    public function prepare(FlowConfiguration $flow, ConfigurationResult $config): FlowPlan
+    public function prepare(FlowConfiguration $flow, ConfigurationResult $config, ?ExecutionContext $context = null): FlowPlan
     {
         $options = $flow->getOptions() ?? $config->getGlobalOptions();
         $jobs = [];
@@ -39,15 +36,15 @@ class FlowPreparer
             $jobs[] = $this->jobRegistry->create($jobConfig);
         }
 
-        return new FlowPlan($flow->getName(), $jobs, $options);
+        return new FlowPlan($flow->getName(), $jobs, $options, $context);
     }
 
     /**
      * Prepare a single job for direct execution (githooks job <name>).
      */
-    public function prepareSingleJob(JobConfiguration $jobConfig, OptionsConfiguration $options): FlowPlan
+    public function prepareSingleJob(JobConfiguration $jobConfig, OptionsConfiguration $options, ?ExecutionContext $context = null): FlowPlan
     {
         $job = $this->jobRegistry->create($jobConfig);
-        return new FlowPlan($jobConfig->getName(), [$job], $options);
+        return new FlowPlan($jobConfig->getName(), [$job], $options, $context);
     }
 }

@@ -29,6 +29,11 @@ class CustomJob extends JobAbstract
 
     public function buildCommand(): string
     {
+        if ($this->context !== null && $this->context->isFastMode()) {
+            $files = implode("\n", $this->context->getStagedFiles());
+            return 'GITHOOKS_STAGED_FILES=' . escapeshellarg($files) . ' ' . $this->script;
+        }
+
         return $this->script;
     }
 }

@@ -19,14 +19,17 @@ class FlowPlan
 
     private OptionsConfiguration $options;
 
+    private ?ExecutionContext $context;
+
     /**
      * @param JobAbstract[] $jobs
      */
-    public function __construct(string $flowName, array $jobs, OptionsConfiguration $options)
+    public function __construct(string $flowName, array $jobs, OptionsConfiguration $options, ?ExecutionContext $context = null)
     {
         $this->flowName = $flowName;
         $this->jobs = $jobs;
         $this->options = $options;
+        $this->context = $context;
     }
 
     public function getFlowName(): string
@@ -43,5 +46,10 @@ class FlowPlan
     public function getOptions(): OptionsConfiguration
     {
         return $this->options;
+    }
+
+    public function getContext(): ?ExecutionContext
+    {
+        return $this->context;
     }
 }
