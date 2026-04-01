@@ -6,18 +6,23 @@ namespace Wtyd\GitHooks\Execution;
 
 use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Jobs\JobAbstract;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\GitHooks\Output\OutputHandler;
 
 /**
  * Orchestrates flow execution: runs jobs respecting processes limit and fail-fast.
  */
 class FlowExecutor
 {
-    private Printer $printer;
+    private OutputHandler $outputHandler;
 
-    public function __construct(Printer $printer)
+    public function __construct(OutputHandler $outputHandler)
     {
-        $this->printer = $printer;
+        $this->outputHandler = $outputHandler;
+    }
+
+    public function setOutputHandler(OutputHandler $outputHandler): void
+    {
+        $this->outputHandler = $outputHandler;
     }
 
     public function execute(FlowPlan $plan): FlowResult
@@ -26,12 +31,19 @@ class FlowExecutor
         $maxProcesses = $plan->getOptions()->getProcesses();
         $failFast = $plan->getOptions()->isFailFast();
         $jobs = $plan->getJobs();
+        $context = $plan->getContext();
+
+        foreach ($jobs as $job) {
+            $this->propagateContext($job, $context);
+        }
 
         if ($maxProcesses <= 1 || count($jobs) <= 1) {
             $results = $this->executeSequential($jobs, $failFast);
         } else {
             $results = $this->executeParallel($jobs, $maxProcesses, $failFast);
         }
+
+        $this->outputHandler->flush();
 
         $elapsed = microtime(true) - $start;
         $totalTime = number_format($elapsed, 2) . 's';
@@ -52,6 +64,7 @@ class FlowExecutor
             $results[] = $result;
 
             if ($failFast && !$result->isSuccess()) {
+                $this->reportSkipped($jobs, $job);
                 break;
             }
         }
@@ -99,6 +112,10 @@ class FlowExecutor
                 if ($failFast && !$result->isSuccess()) {
                     $failFastTriggered = true;
                     $this->terminateRunning($running);
+                    // Report skipped: remaining queue + terminated running
+                    foreach ($queue as $skippedJob) {
+                        $this->outputHandler->onJobSkipped($skippedJob->getDisplayName(), 'skipped by fail-fast');
+                    }
                     $running = [];
                     $queue = [];
                     break;
@@ -111,6 +128,13 @@ class FlowExecutor
         }
 
         return $results;
+    }
+
+    private function propagateContext(JobAbstract $job, ?ExecutionContext $context): void
+    {
+        if ($context !== null) {
+            $job->setExecutionContext($context);
+        }
     }
 
     private function runJob(JobAbstract $job): JobResult
@@ -149,15 +173,32 @@ class FlowExecutor
         $displayName = $job->getDisplayName();
 
         if ($success) {
-            $this->printer->success("$displayName - OK. Time: $time");
+            $this->outputHandler->onJobSuccess($displayName, $time);
         } else {
-            $this->printer->error("$displayName - KO. Time: $time");
-            if (!empty(trim($output))) {
-                $this->printer->line($output);
-            }
+            $this->outputHandler->onJobError($displayName, $time, $output);
         }
 
         return new JobResult($job->getName(), $success, $output, $time, $fixApplied);
+    }
+
+    /**
+     * Report remaining jobs as skipped after a fail-fast trigger (sequential mode).
+     *
+     * @param JobAbstract[] $allJobs
+     * @param JobAbstract $failedJob
+     */
+    private function reportSkipped(array $allJobs, JobAbstract $failedJob): void
+    {
+        $found = false;
+        foreach ($allJobs as $job) {
+            if ($job === $failedJob) {
+                $found = true;
+                continue;
+            }
+            if ($found) {
+                $this->outputHandler->onJobSkipped($job->getDisplayName(), 'skipped by fail-fast');
+            }
+        }
     }
 
     /**

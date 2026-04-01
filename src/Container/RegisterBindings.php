@@ -8,6 +8,7 @@ use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Hooks\HookRunner;
+use Wtyd\GitHooks\Hooks\HookStatusInspector;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactory;
@@ -16,6 +17,8 @@ use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Wtyd\GitHooks\Utils\GitStager;
 use Wtyd\GitHooks\Utils\GitStagerInterface;
+use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\GitHooks\Output\TextOutputHandler;
 use Wtyd\GitHooks\Utils\Printer;
 
 class RegisterBindings
@@ -68,17 +71,24 @@ class RegisterBindings
             FlowPreparer::class => function (Container $app) {
                 return new FlowPreparer($app->make(JobRegistry::class));
             },
+            OutputHandler::class => function (Container $app) {
+                return new TextOutputHandler($app->make(Printer::class));
+            },
             FlowExecutor::class => function (Container $app) {
-                return new FlowExecutor($app->make(Printer::class));
+                return new FlowExecutor($app->make(OutputHandler::class));
             },
             HookRunner::class => function (Container $app) {
                 return new HookRunner(
                     $app->make(FlowPreparer::class),
-                    $app->make(FlowExecutor::class)
+                    $app->make(FlowExecutor::class),
+                    $app->make(FileUtilsInterface::class)
                 );
             },
             HookInstaller::class => function () {
                 return new HookInstaller(getcwd() ?: '');
+            },
+            HookStatusInspector::class => function () {
+                return new HookStatusInspector(getcwd() ?: '');
             },
         ];
     }
