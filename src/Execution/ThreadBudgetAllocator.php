@@ -15,6 +15,7 @@ class ThreadBudgetAllocator
     /**
      * @param int $budget Total cores available (from options.processes)
      * @param JobAbstract[] $jobs All jobs in the flow
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Budget allocation with fixed/controllable/uncontrollable categories
      */
     public function allocate(int $budget, array $jobs): ThreadBudgetPlan
     {
@@ -72,6 +73,7 @@ class ThreadBudgetAllocator
      *
      * @param array<string, int> $allocations
      * @param JobAbstract[] $jobs
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $jobs reserved for future priority-based scheduling
      */
     private function calculateMaxParallel(int $budget, array $allocations, array $jobs): int
     {

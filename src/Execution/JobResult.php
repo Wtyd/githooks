@@ -16,6 +16,7 @@ class JobResult
 
     private bool $fixApplied;
 
+    /** @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object */
     public function __construct(
         string $jobName,
         bool $success,

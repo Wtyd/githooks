@@ -34,6 +34,7 @@ class PhpstanJob extends JobAbstract
         return new ThreadCapability('_phpstan_internal', $workers, 1, false);
     }
 
+    /** @SuppressWarnings(PHPMD.UndefinedVariable) preg_match assigns $matches by reference */
     private function detectNeonWorkers(): int
     {
         $config = $this->args['config'] ?? '';

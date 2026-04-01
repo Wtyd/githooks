@@ -10,6 +10,7 @@ class OptionsConfiguration
 
     private int $processes;
 
+    /** @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object — boolean is the natural type */
     public function __construct(bool $failFast = false, int $processes = 1)
     {
         $this->failFast = $failFast;

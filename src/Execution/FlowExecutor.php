@@ -31,6 +31,7 @@ class FlowExecutor
         $this->outputHandler = $outputHandler;
     }
 
+    /** @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates thread budget + sequential/parallel dispatch */
     public function execute(FlowPlan $plan): FlowResult
     {
         $start = microtime(true);
@@ -110,6 +111,7 @@ class FlowExecutor
     /**
      * @param JobAbstract[] $jobs
      * @return JobResult[]
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Process pool with fail-fast requires multiple control paths
      */
     private function executeParallel(array $jobs, int $maxProcesses, bool $failFast): array
     {
@@ -192,7 +194,7 @@ class FlowExecutor
     private function updatePeakThreads(array $running): void
     {
         $currentThreads = 0;
-        foreach ($running as $name => $entry) {
+        foreach (array_keys($running) as $name) {
             $currentThreads += $this->threadAllocations[$name] ?? 1;
         }
         $this->peakEstimatedThreads = max($this->peakEstimatedThreads, $currentThreads);

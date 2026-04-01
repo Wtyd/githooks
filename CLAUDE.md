@@ -48,7 +48,7 @@ php7.4 vendor/bin/phpunit --order-by random
 php7.4 githooks flow qa
 ```
 
-Si algún check falla, corregir antes de reportar.
+Si algún check falla, seguir la skill `qa-workflow` para gestionar las violaciones (corregir, suprimir o documentar según criterio).
 
 **Si se usó una skill, verificar CADA punto de su checklist antes de reportar.** Leer los ficheros implicados y confirmar que los cambios están presentes — no asumir que está hecho.
 
@@ -152,5 +152,7 @@ return [
 | Crear/modificar un comando artisan | `.claude/skills/add-command/` |
 | Modificar CI/CD o build del .phar | `.claude/skills/ci-pipeline/` |
 | Crear tests para una feature | `.claude/skills/php-test-creator/` |
+| QA antes de commit (phpmd, phpstan, tests) | `.claude/skills/qa-workflow/` |
+| Testing funcional del CLI | `.claude/skills/qa-tester/` |
 
 Consulta la skill correspondiente antes de empezar una tarea que encaje en estas categorías.

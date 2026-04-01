@@ -136,8 +136,8 @@ class ConfigurationMigrator
 
         // Clean up array formatting
         if (is_array($value)) {
-            $items = array_map(function ($v) {
-                return var_export($v, true);
+            $items = array_map(function ($item) {
+                return var_export($item, true);
             }, $value);
             $rendered = '[' . implode(', ', $items) . ']';
         }

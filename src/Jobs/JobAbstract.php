@@ -110,6 +110,7 @@ abstract class JobAbstract
      * @param mixed  $value Argument value (already validated as non-empty)
      * @param array<string, string> $spec  ARGUMENT_MAP entry
      * @return string[]|null Parts to append, or null for 'paths' (deferred)
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Switch covers all ARGUMENT_MAP types
      */
     protected function buildArgumentPart(string $key, $value, array $spec): ?array
     {
@@ -181,12 +182,15 @@ abstract class JobAbstract
     /**
      * Apply thread limit from budget allocator.
      * Override in subclasses that support internal parallelism.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function applyThreadLimit(int $threads): void
     {
         // no-op by default
     }
 
+    /** @SuppressWarnings(PHPMD.UnusedFormalParameter) */
     public function isFixApplied(int $exitCode): bool
     {
         return false;

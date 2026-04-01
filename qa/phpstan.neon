@@ -9,6 +9,7 @@
         # ]
         ignoreErrors: [
             '#Call to an undefined method Illuminate\\Contracts\\Filesystem\\Filesystem::path\(\).#'
+            '#PHPDoc tag @SuppressWarnings has invalid value#'
         ]
         reportUnmatchedIgnoredErrors: false
         excludePaths: [

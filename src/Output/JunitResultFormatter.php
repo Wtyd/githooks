@@ -44,6 +44,8 @@ class JunitResultFormatter implements ResultFormatter
 
     /**
      * Convert formatted time strings (e.g. "234ms", "1.23s", "2m 30s") to seconds.
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) preg_match assigns $matches by reference
      */
     private function parseSeconds(string $time): string
     {

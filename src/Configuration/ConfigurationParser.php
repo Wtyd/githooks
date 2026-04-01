@@ -12,6 +12,7 @@ use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
+/** @SuppressWarnings(PHPMD.CouplingBetweenObjects) Parser orchestrates all configuration types */
 class ConfigurationParser
 {
     private string $rootPath;

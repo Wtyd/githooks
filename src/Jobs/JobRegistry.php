@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Jobs;
 
 use InvalidArgumentException;
+use ReflectionClass;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 
 class JobRegistry
@@ -59,7 +60,7 @@ class JobRegistry
             return [];
         }
         $class = self::TYPE_MAP[$type];
-        $reflection = new \ReflectionClass($class);
+        $reflection = new ReflectionClass($class);
         if ($reflection->hasConstant('ARGUMENT_MAP')) {
             /** @var array<string, array<string, string>> */
             return $reflection->getConstant('ARGUMENT_MAP');

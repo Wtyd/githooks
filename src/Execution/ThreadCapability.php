@@ -17,6 +17,7 @@ class ThreadCapability
 
     private bool $controllable;
 
+    /** @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object */
     public function __construct(string $argumentKey, int $defaultThreads, int $minimumThreads = 1, bool $controllable = true)
     {
         $this->argumentKey = $argumentKey;

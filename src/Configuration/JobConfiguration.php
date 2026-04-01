@@ -75,6 +75,7 @@ class JobConfiguration
      * Validate job arguments against the ARGUMENT_MAP of the target job class.
      *
      * @param array<string, mixed> $config
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Switch covers all ARGUMENT_MAP types
      */
     private static function validateArguments(
         string $name,

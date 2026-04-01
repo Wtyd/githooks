@@ -26,6 +26,7 @@ class PhpmdJob extends JobAbstract
         return 'phpmd';
     }
 
+    /** @SuppressWarnings(PHPMD.CyclomaticComplexity) PHPMD requires positional args + flag iteration */
     public function buildCommand(): string
     {
         $command = $this->executable;

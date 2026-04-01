@@ -21,6 +21,7 @@ use Wtyd\GitHooks\Output\OutputHandler;
 use Wtyd\GitHooks\Output\TextOutputHandler;
 use Wtyd\GitHooks\Utils\Printer;
 
+/** @SuppressWarnings(PHPMD.CouplingBetweenObjects) DI container binds all services by definition */
 class RegisterBindings
 {
     /**
