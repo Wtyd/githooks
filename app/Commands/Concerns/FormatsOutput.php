@@ -37,4 +37,21 @@ trait FormatsOutput
             $this->line("Results: $passed/$total passed" . ($result->isSuccess() ? ' ✔️' : ''));
         }
     }
+
+    private function renderMonitorReport(FlowResult $result): void
+    {
+        $peak = $result->getPeakEstimatedThreads();
+        $budget = $result->getThreadBudget();
+
+        if ($peak === 0 && $budget === 0) {
+            return;
+        }
+
+        $this->line('');
+        $this->line("Thread monitor: peak ~{$peak} threads (budget: {$budget})");
+
+        if ($peak > $budget && $budget > 0) {
+            $this->warn("  Warning: estimated peak ($peak) exceeded budget ($budget). Consider reducing 'processes' or tool parallelism.");
+        }
+    }
 }

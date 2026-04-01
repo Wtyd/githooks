@@ -13,14 +13,25 @@ class FlowResult
 
     private string $totalTime;
 
+    private int $peakEstimatedThreads;
+
+    private int $threadBudget;
+
     /**
      * @param JobResult[] $jobResults
      */
-    public function __construct(string $flowName, array $jobResults, string $totalTime)
-    {
+    public function __construct(
+        string $flowName,
+        array $jobResults,
+        string $totalTime,
+        int $peakEstimatedThreads = 0,
+        int $threadBudget = 0
+    ) {
         $this->flowName = $flowName;
         $this->jobResults = $jobResults;
         $this->totalTime = $totalTime;
+        $this->peakEstimatedThreads = $peakEstimatedThreads;
+        $this->threadBudget = $threadBudget;
     }
 
     public function getFlowName(): string
@@ -57,5 +68,15 @@ class FlowResult
     public function getPassedCount(): int
     {
         return count(array_filter($this->jobResults, fn(JobResult $result) => $result->isSuccess()));
+    }
+
+    public function getPeakEstimatedThreads(): int
+    {
+        return $this->peakEstimatedThreads;
+    }
+
+    public function getThreadBudget(): int
+    {
+        return $this->threadBudget;
     }
 }

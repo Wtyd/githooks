@@ -24,6 +24,7 @@ class FlowCommand extends Command
                             {--exclude-jobs= : Comma-separated list of jobs to skip}
                             {--format= : Output format (text, json, junit)}
                             {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
+                            {--monitor : Show thread usage report after execution}
                             {-c|--config= : Path to configuration file}';
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';
@@ -88,6 +89,10 @@ class FlowCommand extends Command
             }
 
             $this->renderFormattedResult($result);
+
+            if ($this->option('monitor')) {
+                $this->renderMonitorReport($result);
+            }
 
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {

@@ -26,6 +26,7 @@ class FlowPreparer
     public function prepare(FlowConfiguration $flow, ConfigurationResult $config, ?ExecutionContext $context = null): FlowPlan
     {
         $options = $flow->getOptions() ?? $config->getGlobalOptions();
+
         $jobs = [];
 
         foreach ($flow->getJobs() as $jobName) {

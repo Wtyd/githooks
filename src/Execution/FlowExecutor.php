@@ -7,6 +7,7 @@ namespace Wtyd\GitHooks\Execution;
 use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
 
 /**
  * Orchestrates flow execution: runs jobs respecting processes limit and fail-fast.
@@ -14,6 +15,11 @@ use Wtyd\GitHooks\Output\OutputHandler;
 class FlowExecutor
 {
     private OutputHandler $outputHandler;
+
+    private int $peakEstimatedThreads = 0;
+
+    /** @var array<string, int> jobName => estimated threads */
+    private array $threadAllocations = [];
 
     public function __construct(OutputHandler $outputHandler)
     {
@@ -37,6 +43,31 @@ class FlowExecutor
             $this->propagateContext($job, $context);
         }
 
+        // Thread budget: distribute cores among jobs
+        $this->peakEstimatedThreads = 0;
+        $this->threadAllocations = [];
+
+        if ($maxProcesses > 1 && count($jobs) > 1) {
+            $allocator = new ThreadBudgetAllocator();
+            $budgetPlan = $allocator->allocate($maxProcesses, $jobs);
+
+            foreach ($jobs as $job) {
+                $allocation = $budgetPlan->getAllocation($job->getName());
+                if ($allocation !== null) {
+                    $job->applyThreadLimit($allocation);
+                    $this->threadAllocations[$job->getName()] = $allocation;
+                }
+            }
+
+            $maxProcesses = $budgetPlan->getMaxParallelJobs();
+        } else {
+            // Sequential: each job uses its capability default or 1
+            foreach ($jobs as $job) {
+                $cap = $job->getThreadCapability();
+                $this->threadAllocations[$job->getName()] = $cap !== null ? $cap->getDefaultThreads() : 1;
+            }
+        }
+
         if ($maxProcesses <= 1 || count($jobs) <= 1) {
             $results = $this->executeSequential($jobs, $failFast);
         } else {
@@ -47,8 +78,9 @@ class FlowExecutor
 
         $elapsed = microtime(true) - $start;
         $totalTime = number_format($elapsed, 2) . 's';
+        $budget = $plan->getOptions()->getProcesses();
 
-        return new FlowResult($plan->getFlowName(), $results, $totalTime);
+        return new FlowResult($plan->getFlowName(), $results, $totalTime, $this->peakEstimatedThreads, $budget);
     }
 
     /**
@@ -60,6 +92,9 @@ class FlowExecutor
         $results = [];
 
         foreach ($jobs as $job) {
+            $threads = $this->threadAllocations[$job->getName()] ?? 1;
+            $this->peakEstimatedThreads = max($this->peakEstimatedThreads, $threads);
+
             $result = $this->runJob($job);
             $results[] = $result;
 
@@ -98,6 +133,8 @@ class FlowExecutor
                     'job'     => $job,
                     'start'   => microtime(true),
                 ];
+
+                $this->updatePeakThreads($running);
             }
 
             // Check for completion
@@ -147,6 +184,18 @@ class FlowExecutor
         $process->run();
 
         return $this->buildResult($job, $process, $start);
+    }
+
+    /**
+     * @param array<string, array{process: Process, job: JobAbstract, start: float}> $running
+     */
+    private function updatePeakThreads(array $running): void
+    {
+        $currentThreads = 0;
+        foreach ($running as $name => $entry) {
+            $currentThreads += $this->threadAllocations[$name] ?? 1;
+        }
+        $this->peakEstimatedThreads = max($this->peakEstimatedThreads, $currentThreads);
     }
 
     /**

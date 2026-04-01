@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Jobs;
 
+use Wtyd\GitHooks\Execution\ThreadCapability;
+
 class PhpcsJob extends JobAbstract
 {
     protected const ARGUMENT_MAP = [
@@ -21,5 +23,16 @@ class PhpcsJob extends JobAbstract
     public static function getDefaultExecutable(): string
     {
         return 'phpcs';
+    }
+
+    public function getThreadCapability(): ?ThreadCapability
+    {
+        $current = isset($this->args['parallel']) ? (int) $this->args['parallel'] : 1;
+        return new ThreadCapability('parallel', $current);
+    }
+
+    public function applyThreadLimit(int $threads): void
+    {
+        $this->args['parallel'] = $threads;
     }
 }

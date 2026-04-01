@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Jobs;
 
+use Wtyd\GitHooks\Execution\ThreadCapability;
+
 class PsalmJob extends JobAbstract
 {
     protected const ARGUMENT_MAP = [
@@ -21,5 +23,16 @@ class PsalmJob extends JobAbstract
     public static function getDefaultExecutable(): string
     {
         return 'psalm';
+    }
+
+    public function getThreadCapability(): ?ThreadCapability
+    {
+        $current = isset($this->args['threads']) ? (int) $this->args['threads'] : 1;
+        return new ThreadCapability('threads', $current);
+    }
+
+    public function applyThreadLimit(int $threads): void
+    {
+        $this->args['threads'] = (string) $threads;
     }
 }

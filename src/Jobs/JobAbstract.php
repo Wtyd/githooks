@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\Jobs;
 
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\ExecutionContext;
+use Wtyd\GitHooks\Execution\ThreadCapability;
 
 /**
  * Base class for all job types. Subclasses declare ARGUMENT_MAP and the base
@@ -166,6 +167,24 @@ abstract class JobAbstract
     public function setExecutionContext(ExecutionContext $context): void
     {
         $this->context = $context;
+    }
+
+    /**
+     * Declare threading capability for budget allocation.
+     * Override in subclasses that support internal parallelism.
+     */
+    public function getThreadCapability(): ?ThreadCapability
+    {
+        return null;
+    }
+
+    /**
+     * Apply thread limit from budget allocator.
+     * Override in subclasses that support internal parallelism.
+     */
+    public function applyThreadLimit(int $threads): void
+    {
+        // no-op by default
     }
 
     public function isFixApplied(int $exitCode): bool
