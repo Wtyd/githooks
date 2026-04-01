@@ -11,7 +11,7 @@ use Wtyd\GitHooks\Configuration\ConfigurationParser;
 class MigrateConfigurationFileCommand extends Command
 {
     protected $signature = 'conf:migrate
-                            {-c|--config= : Path to configuration file}';
+                            {--config= : Path to configuration file}';
 
     protected $description = 'Migrate a v2 configuration file (Options/Tools) to v3 format (hooks/flows/jobs)';
 

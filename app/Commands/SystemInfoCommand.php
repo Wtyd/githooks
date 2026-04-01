@@ -10,7 +10,7 @@ use Wtyd\GitHooks\Configuration\ConfigurationParser;
 class SystemInfoCommand extends Command
 {
     protected $signature = 'system:info
-                            {-c|--config= : Path to configuration file}';
+                            {--config= : Path to configuration file}';
 
     protected $description = 'Show system CPU information and current processes configuration';
 

@@ -62,7 +62,9 @@ class JobConfiguration
         $config = $raw;
         unset($config['type']);
 
-        if ($jobRegistry !== null && $type !== 'custom') {
+        if ($type === 'custom') {
+            self::validateCustomJobKeys($name, $config, $result);
+        } elseif ($jobRegistry !== null) {
             self::validateArguments($name, $type, $config, $jobRegistry, $result);
         }
 
@@ -128,6 +130,22 @@ class JobConfiguration
                         $result->addWarning("Job '$name': key '$key' expects a string or integer.");
                     }
                     break;
+            }
+        }
+    }
+
+    /**
+     * Validate keys for custom jobs (no ARGUMENT_MAP, only known keys).
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
+    {
+        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast'];
+
+        foreach ($config as $key => $value) {
+            if (!in_array($key, $knownKeys, true)) {
+                $result->addWarning("Job '$name': unknown key '$key' for type 'custom'.");
             }
         }
     }

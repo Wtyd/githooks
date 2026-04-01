@@ -28,7 +28,6 @@ abstract class IlluminateTestCase extends BaseTestCase
     use \Illuminate\Foundation\Testing\Concerns\InteractsWithExceptionHandling;
     use \Illuminate\Foundation\Testing\Concerns\InteractsWithSession;
     use InteractsWithTime;
-    use \Illuminate\Foundation\Testing\Concerns\MocksApplicationServices;
 
     /**
      * The Illuminate application instance.

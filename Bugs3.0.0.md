@@ -183,21 +183,75 @@ at src/Configuration/ConfigurationParser.php:175
 
 ---
 
+### #12 — Custom jobs no validan claves desconocidas (MEDIA)
+
+**Comando:** `githooks conf:check` con config:
+```php
+'Composer Audit' => [
+    'type' => 'custom',
+    'script' => 'tools/composer audit',
+    'ignoreViolationsOnExits' => true,
+    'ignoreViolationsOnExits asdfas' => true,
+],
+```
+
+**Esperado:** Warning por claves desconocidas `ignoreViolationsOnExits` e `ignoreViolationsOnExits asdfas`.
+**Real:** "The configuration file has the correct format." sin ningún warning.
+
+**Causa:** `JobConfiguration::fromArray()` línea 65 salta `validateArguments()` para jobs con `type === 'custom'`. Las claves válidas para custom (`script`, `ignoreErrorsOnExit`) no se verifican. Cualquier clave inventada se acepta silenciosamente.
+
+**Ficheros:** `src/Configuration/JobConfiguration.php:65`
+
+---
+
+### #13 — Tests no pasan en PHP 8.1+ (ALTA)
+
+**Comando:** Ejecutar la suite de tests en PHP 8.1 o 8.5
+**Esperado:** Los tests pasan como en PHP 7.4.
+**Real:** Fatal error al arrancar:
+```
+PHP Fatal error:  Trait "Illuminate\Foundation\Testing\Concerns\MocksApplicationServices"
+not found in /home/runner/work/githooks/githooks/tests/Zero/IlluminateTestCase.php on line 21
+```
+
+**Causa:** Laravel Zero 5.8 (actual) usa traits de Illuminate\Foundation\Testing que no existen en versiones modernas de Laravel. El trait `MocksApplicationServices` fue eliminado. Cuando se ejecuta PHPUnit en PHP 8.1+, Composer resuelve versiones más modernas de dependencias que no incluyen este trait.
+
+**Impacto:** Los system tests y integration tests no se ejecutan en PHP 8.1+. Solo los unit tests puros (sin container) podrían funcionar.
+
+**Ficheros:** `tests/Zero/IlluminateTestCase.php`, `composer.json` (rangos de dependencias)
+
+---
+
 ## Resumen
 
 | Severidad | Cantidad | Bugs |
 |---|---|---|
-| ALTA | 5 | #1 #2 #3 (CLI flags dead code), #4 (hook legacy), #5 (conf:init roto) |
-| MEDIA | 3 | #6 (-c shortcut), #7 (validación tipos), #8 (stack trace) |
+| ALTA | 6 | ~~#1 #2 #3~~ (corregidos), #4 (hook legacy), #5 (conf:init roto), ~~#13~~ (corregido) |
+| MEDIA | 4 | ~~#6~~ (corregido), #7 (validación tipos), #8 (stack trace), ~~#12~~ (corregido) |
 | BAJA | 3 | #9 (warning confuso), #10 (format fallback), #11 (migrate vacía) |
 
-### Causa raíz de #1, #2, #3
+### Estado de correcciones
 
-Los tres comparten la misma causa: `FlowCommand::handle()` define las opciones `--exclude-jobs`, `--fail-fast` y `--processes` en el signature pero nunca las lee con `$this->option()`. `FlowPreparer::prepare()` tampoco acepta estos parámetros — solo recibe la config del fichero. No hay mecanismo para que las opciones CLI sobrescriban los valores de la configuración en runtime.
+| Bug | Estado | Commit |
+|---|---|---|
+| #1 `--exclude-jobs` | **Corregido** | `a1559b3` |
+| #2 `--fail-fast` CLI | **Corregido** | `a1559b3` |
+| #3 `--processes` CLI | **Corregido** | `a1559b3` |
+| #4 hook legacy | Pendiente | — |
+| #5 conf:init roto | Pendiente | — |
+| #6 `-c` shortcut | **Corregido** | Formato `{-c\|--config=}` era inválido en Symfony Console, eliminado shortcut |
+| #7 validación tipos | Pendiente | — |
+| #8 stack trace | Pendiente | — |
+| #9 warning confuso | Pendiente | — |
+| #10 format fallback | Pendiente | — |
+| #11 migrate vacía | Pendiente | — |
+| #12 custom sin validación | **Corregido** | Añadido `validateCustomJobKeys()` para claves de jobs custom |
+| #13 tests PHP 8.1+ | **Corregido** | Eliminado trait `MocksApplicationServices` (nunca usado) + fix `{-c\|--config=}` |
 
 ### Lo que funciona correctamente
 
 - `flow` y `job` ejecutan jobs según la config
+- `--exclude-jobs`, `--fail-fast`, `--processes` funcionan desde CLI (corregidos)
 - `--format=json` y `--format=junit` generan output correcto y parseable
 - `--monitor` muestra report de threads
 - `--fast` propaga `$GITHOOKS_STAGED_FILES` a custom jobs
@@ -209,4 +263,4 @@ Los tres comparten la misma causa: `FlowCommand::handle()` define las opciones `
 - `hook:clean` limpia hooks
 - `tool` (legacy) muestra deprecation warning
 - Thread budget allocation distribuye cores internamente
-- Validación de claves desconocidas en jobs
+- Validación de claves desconocidas en jobs (excepto custom)

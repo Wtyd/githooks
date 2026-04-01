@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Hooks\HookStatusInspector;
 class StatusCommand extends Command
 {
     protected $signature = 'status
-                            {-c|--config= : Path to configuration file}';
+                            {--config= : Path to configuration file}';
 
     protected $description = 'Show the status of installed hooks and their synchronization with the configuration';
 

@@ -25,7 +25,7 @@ class FlowCommand extends Command
                             {--format= : Output format (text, json, junit)}
                             {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
                             {--monitor : Show thread usage report after execution}
-                            {-c|--config= : Path to configuration file}';
+                            {--config= : Path to configuration file}';
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';
 

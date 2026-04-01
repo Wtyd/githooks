@@ -166,4 +166,35 @@ class JobConfigurationTest extends TestCase
         $this->assertEmpty($result->getWarnings());
         $this->assertFalse($result->hasErrors());
     }
+
+    /** @test */
+    public function it_warns_when_custom_job_has_unknown_keys()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('audit', [
+            'type' => 'custom',
+            'script' => 'echo ok',
+            'inventado' => true,
+            'otra clave' => 'valor',
+        ], $this->registry, $result);
+
+        $this->assertCount(2, $result->getWarnings());
+        $this->assertStringContainsString('inventado', $result->getWarnings()[0]);
+        $this->assertStringContainsString('otra clave', $result->getWarnings()[1]);
+    }
+
+    /** @test */
+    public function it_does_not_warn_for_valid_custom_job_keys()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('audit', [
+            'type' => 'custom',
+            'script' => 'composer audit',
+            'ignoreErrorsOnExit' => true,
+            'failFast' => false,
+        ], $this->registry, $result);
+
+        $this->assertEmpty($result->getWarnings());
+        $this->assertFalse($result->hasErrors());
+    }
 }

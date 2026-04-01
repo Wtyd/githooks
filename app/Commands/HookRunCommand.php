@@ -12,7 +12,7 @@ class HookRunCommand extends Command
 {
     protected $signature = 'hook:run
                             {event : The git hook event (e.g. pre-commit, pre-push)}
-                            {-c|--config= : Path to configuration file}';
+                            {--config= : Path to configuration file}';
 
     protected $description = 'Execute all flows/jobs associated with a git hook event. Called by the hook script.';
 
