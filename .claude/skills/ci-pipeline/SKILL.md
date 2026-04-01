@@ -7,7 +7,6 @@ description: >
   "GitHub Actions", "workflow", "CI", "pipeline", "build", "release", "matriz de PHP",
   "phar", "deploy", "artefacto". También cuando se toquen ficheros en .github/workflows/,
   box.json, o los comandos PreBuildCommand/BuildCommand.
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 *), Bash(git add *), Bash(git commit *), Bash(git status), Bash(git diff *), Bash(git log *), Agent
 ---
 
 # CI Pipeline y Build de GitHooks
@@ -102,20 +101,20 @@ Si la tool no está disponible via `shivammathur/setup-php`, añadir un step:
 
 ## release.yml — Pipeline de release
 
-### Cadena de jobs
+### Cadena de jobs (v3: 2 tiers)
 
 ```
-build_rc (PHP 7.1, 7.3, 8.1)
+build_rc (PHP 7.4, 8.1)
     ↓ (genera artefactos .tar por versión)
-test_rc (PHP 7.2, 8.0, 8.5)
+test_rc (PHP 8.0, 8.5)
     ↓ (phpunit --group release)
-commit_rc (PHP 7.1)
+commit_rc (PHP 7.4)
     ↓ (commit builds al branch rc)
 ```
 
 ### build_rc — Compilación
 
-Para cada PHP de la matriz (7.1, 7.3, 8.1):
+Para cada PHP de la matriz (7.4, 8.1):
 1. `tools/composer install` — instala dependencias
 2. `tools/composer global require humbug/box` — instala Box compatible con el PHP
 3. `php githooks app:pre-build php` — elimina dependencias dev
@@ -124,7 +123,7 @@ Para cada PHP de la matriz (7.1, 7.3, 8.1):
 
 ### test_rc — Tests cruzados
 
-Las versiones de test (7.2, 8.0, 8.5) son **deliberadamente diferentes** de las de build (7.1, 7.3, 8.1) para verificar compatibilidad cruzada entre tiers.
+Las versiones de test (8.0, 8.5) son **deliberadamente diferentes** de las de build (7.4, 8.1) para verificar compatibilidad cruzada entre tiers.
 
 Para cada PHP de la matriz:
 1. `composer install` — instala deps incluyendo phpunit para ejecutar tests
@@ -137,7 +136,7 @@ Para cada PHP de la matriz:
 
 ### commit_rc — Commit de binarios
 
-1. Borra binarios viejos: `rm builds/githooks builds/php7.1/githooks builds/php7.3/githooks`
+1. Borra binarios viejos: `rm builds/githooks builds/php7.4/githooks`
 2. Descarga y extrae artefactos frescos
 3. Extrae versión del nombre de rama: `rc-X.Y.Z` → `X.Y.Z`
 4. Commit con `GuillaumeFalourd/git-commit-push`: los 3 binarios
@@ -153,9 +152,9 @@ tools: phpcs, phpcbf, phpmd, phpstan, parallel-Lint, phpcpd, nuevatool
 **Cambiar versiones de PHP del build:**
 ```yaml
 # build_rc — versiones de compilación (una por tier)
-php-versions: ['7.1', '7.3', '8.1']
+php-versions: ['7.4', '8.1']
 # test_rc — versiones de test (cruzadas, una por tier distinta de build)
-php-versions: ['7.2', '8.0', '8.5']
+php-versions: ['8.0', '8.5']
 ```
 
 **Añadir un nuevo tier:**
@@ -265,8 +264,8 @@ Solo se ejecuta domingos. Usa PHP 8.5 con xdebug. Normalmente NO necesitas modif
 ### Comandos
 
 ```bash
-php7.1 githooks app:pre-build php7.1   # Elimina deps dev (argumento = PHP para tools/composer)
-php7.1 githooks app:build              # Compila con Humbug Box
+php7.4 githooks app:pre-build php7.1   # Elimina deps dev (argumento = PHP para tools/composer)
+php7.4 githooks app:build              # Compila con Humbug Box
 ```
 
 **Importante:** El argumento de `app:pre-build` se usa internamente para ejecutar `tools/composer remove` y `tools/composer update`. Si pasas `php` a secas, usará el PHP del sistema (que puede ser otra versión).
@@ -279,7 +278,7 @@ Si añades una nueva dependencia dev, considerar si debe añadirse a la lista de
 **Efecto secundario:** modifica `composer.json` eliminando los paquetes. Hay que restaurarlo después del build:
 ```bash
 git restore --staged --worktree composer.json
-php7.1 tools/composer update
+php7.4 tools/composer update
 ```
 
 ### BuildCommand
@@ -304,8 +303,8 @@ BuildCommand usa el nombre `'box'` que en el sistema resuelve a v2 (incompatible
 
 Localmente hay que hacer lo mismo:
 ```bash
-php7.1 tools/composer global require humbug/box   # Instala Box 3.x compatible
-export PATH="$(php7.1 tools/composer global config home)/vendor/bin:$PATH"
+php7.4 tools/composer global require humbug/box   # Instala Box 3.x compatible
+export PATH="$(php7.4 tools/composer global config home)/vendor/bin:$PATH"
 ```
 
 **Mejora futura:** mover box3/box4 a `tools/` y que BuildCommand seleccione el correcto según versión PHP. Eliminaría la dependencia de `composer global require`.
@@ -328,9 +327,8 @@ Si añades un nuevo directorio al proyecto que deba incluirse en el `.phar`, añ
 
 ### Build paths por versión PHP
 
-`src/Build/Build.php` gestiona los paths:
-- PHP 7.1-7.2: `builds/php7.1/githooks` → `githooks-7.1.tar`
-- PHP 7.3-8.0: `builds/php7.3/githooks` → `githooks-7.3.tar`
+`src/Build/Build.php` gestiona los paths (v3: 2 tiers):
+- PHP 7.4-8.0: `builds/php7.4/githooks` → `githooks-7.4.tar`
 - PHP >= 8.1: `builds/githooks` → `githooks-8.1.tar`
 
 Definidos en `ALL_BUILDS`, `setBuildPath()` y `getTarName()`.
@@ -339,17 +337,17 @@ Definidos en `ALL_BUILDS`, `setBuildPath()` y `getTarName()`.
 
 ```bash
 # 1. Instalar Box 3.x compatible con php7.1 (el 'box' del sistema es v2, incompatible)
-php7.1 tools/composer global require humbug/box
-export COMPOSER_HOME=$(php7.1 tools/composer global config home)
+php7.4 tools/composer global require humbug/box
+export COMPOSER_HOME=$(php7.4 tools/composer global config home)
 export PATH="$COMPOSER_HOME/vendor/bin:$PATH"
 
 # 2. Build (el argumento de pre-build es el PHP para tools/composer)
-php7.1 githooks app:pre-build php7.1
-php7.1 githooks app:build
+php7.4 githooks app:pre-build php7.1
+php7.4 githooks app:build
 
 # 3. Restaurar deps dev (pre-build las elimina de composer.json)
 git restore --staged --worktree composer.json
-php7.1 tools/composer update
+php7.4 tools/composer update
 
 # 4. El .phar usa #!/usr/bin/env php → resuelve al php del sistema (8.4).
 #    El binary Tier 1 (Laravel 5.8) crashea en 8.4 por deprecations.
@@ -358,7 +356,7 @@ mkdir -p /tmp/phpbin && ln -sf /usr/bin/php7.1 /tmp/phpbin/php
 export PATH="/tmp/phpbin:$PATH"
 
 # 5. Ejecutar release tests
-php7.1 vendor/bin/phpunit --group release
+php7.4 vendor/bin/phpunit --group release
 
 # 6. Restaurar entorno (opcional)
 export PATH=$(echo $PATH | sed 's|/tmp/phpbin:||')
@@ -376,7 +374,7 @@ export PATH=$(echo $PATH | sed 's|/tmp/phpbin:||')
 ## Checklist
 
 - [ ] Workflow modificado tiene sintaxis YAML válida
-- [ ] Las versiones PHP de la matriz cubren el rango soportado (7.1+)
+- [ ] Las versiones PHP de la matriz cubren el rango soportado (7.4+)
 - [ ] Si se añade una tool: está en `main-tests.yml` Y en `release.yml` (test_rc)
 - [ ] Si se cambia el build: `box.json` incluye los directorios necesarios
 - [ ] Si se añade dependencia dev: considerado si debe ir en `PreBuildCommand::DEV_DEPENDENCIES`
@@ -411,11 +409,11 @@ export PATH=$(echo $PATH | sed 's|/tmp/phpbin:||')
 - `tests/System/Release/*.php` — Release tests
 
 ### Comandos Bash
-- `php7.1 githooks app:pre-build php7.1` — Pre-build
-- `php7.1 githooks app:build` — Build del .phar
-- `php7.1 vendor/bin/phpunit --order-by random` — Tests completos
-- `php7.1 vendor/bin/phpunit --group release` — Release tests
-- `php7.1 githooks tool all full` — QA completo
+- `php7.4 githooks app:pre-build php7.1` — Pre-build
+- `php7.4 githooks app:build` — Build del .phar
+- `php7.4 vendor/bin/phpunit --order-by random` — Tests completos
+- `php7.4 vendor/bin/phpunit --group release` — Release tests
+- `php7.4 githooks tool all full` — QA completo
 - `git add` / `git commit` — Commits (solo si el usuario lo pide)
 
 ### Agentes

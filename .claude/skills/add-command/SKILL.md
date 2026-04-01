@@ -1,13 +1,11 @@
 ---
 name: add-command
 description: >
-  Guía para crear o modificar comandos artisan en el proyecto GitHooks (wtyd/githooks), incluyendo
-  opciones CLI, interacción con el sistema de configuración, y DI por constructor.
+  Guia para crear o modificar comandos artisan en GitHooks (wtyd/githooks).
   Usa esta skill cuando el usuario quiera crear un nuevo comando, modificar un comando existente,
   añadir opciones al CLI, cambiar el comportamiento de un comando, o cuando mencione "nuevo comando",
-  "añadir opción", "modificar command", "crear subcomando", "flag", "argumento CLI".
-  También cuando se toque CliArguments, OptionsConfiguration, o cualquier fichero en app/Commands/.
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 *), Bash(git add *), Bash(git commit *), Bash(git status), Bash(git diff *), Bash(git log *), Agent
+  "añadir opción", "modificar command", "flag", "argumento CLI".
+  También cuando se toque ConfigurationParser, FlowPreparer, FlowExecutor, o cualquier fichero en app/Commands/.
 ---
 
 # Crear o modificar comandos artisan en GitHooks
@@ -15,14 +13,26 @@ allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 *), Bash(git add *), B
 GitHooks usa Laravel Zero como framework CLI. Los comandos viven en `app/Commands/` y se
 auto-descubren por `config/commands.php`.
 
-## Tipos de comando en el proyecto
+## Tipos de comando
 
-| Tipo | Base class | DI | Ejemplo |
-|---|---|---|---|
-| **Tool command** | `ToolCommand` (abstracto) | `ReadConfigurationFileAction`, `ToolsPreparer`, `ProcessExecutionFactory` | `ExecuteToolCommand` |
-| **Config command** | `Command` (Laravel Zero) | `FileReader`, `Printer`, `ToolsPreparer` | `CheckConfigurationFileCommand` |
-| **Hook command** | `Command` (Laravel Zero) | `Printer` | `CreateHookCommand`, `CleanHookCommand` |
-| **Build command** | `Command` (Laravel Zero) | `Build` | `PreBuildCommand`, `BuildCommand` |
+| Tipo | DI principal | Ejemplos |
+|---|---|---|
+| **Flow/Job** | `ConfigurationParser`, `FlowPreparer`, `FlowExecutor` | `FlowCommand`, `JobCommand` |
+| **Hook** | `ConfigurationParser`, `HookRunner` o `HookInstaller` | `HookRunCommand`, `CreateHookCommand` |
+| **Config** | `ConfigurationParser`, `FileReader`, `JobRegistry` | `CheckConfigurationFileCommand`, `MigrateConfigurationFileCommand` |
+| **Status/Info** | `ConfigurationParser`, `HookStatusInspector` | `StatusCommand`, `SystemInfoCommand` |
+| **Build** | `Build` | `PreBuildCommand`, `BuildCommand` |
+| **Legacy (deprecated)** | `ReadConfigurationFileAction`, `ToolsPreparer` | `ExecuteToolCommand` |
+
+## Flujo v3 de un comando de ejecución
+
+```
+CLI (FlowCommand/JobCommand)
+  → ConfigurationParser::parse()     → ConfigurationResult
+  → FlowPreparer::prepare()          → FlowPlan
+  → FlowExecutor::execute()          → FlowResult
+  → FormatsOutput::renderFormattedResult()
+```
 
 ## Crear un nuevo comando
 
@@ -31,37 +41,59 @@ auto-descubren por `config/commands.php`.
 ```php
 <?php
 
+declare(strict_types=1);
+
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 
 class MyCommand extends Command
 {
-    // Signature con argumentos y opciones Laravel
     protected $signature = 'mycommand
-                            {arg : Descripción del argumento}
+                            {name : Argumento obligatorio}
                             {optionalArg? : Argumento opcional}
-                            {--o|option= : Opción con valor}
-                            {--flag : Flag booleano}';
+                            {--fail-fast : Flag booleano}
+                            {--processes= : Opción con valor}
+                            {--config= : Path to configuration file}';
 
     protected $description = 'Descripción del comando';
 
-    // DI por constructor — Laravel resuelve las dependencias del container
-    public function __construct(DependencyClass $dependency)
+    private ConfigurationParser $parser;
+
+    public function __construct(ConfigurationParser $parser)
     {
-        $this->dependency = $dependency;
-        parent::__construct();  // IMPORTANTE: siempre llamar a parent después de asignar
+        parent::__construct();
+        $this->parser = $parser;
     }
 
-    public function handle()
+    public function handle(): int
     {
-        $arg = strval($this->argument('arg'));
-        $option = strval($this->option('option'));
+        // 1. LEER todas las opciones del signature
+        $name = strval($this->argument('name'));
+        $configFile = strval($this->option('config'));
+        $failFast = (bool) $this->option('fail-fast');
+        $processes = $this->option('processes');
 
         try {
-            // Lógica del comando
+            // 2. Parsear config
+            $config = $this->parser->parse($configFile);
+
+            // 3. Validar
+            if ($config->hasErrors()) {
+                foreach ($config->getValidation()->getErrors() as $error) {
+                    $this->error($error);
+                }
+                return 1;
+            }
+
+            // 4. PROPAGAR opciones CLI al plan/ejecución
+            //    Las opciones del CLI deben sobrescribir la config del fichero
+            // ...
+
             return 0;
-        } catch (SpecificException $e) {
+        } catch (GitHooksExceptionInterface $e) {
             $this->error($e->getMessage());
             return 1;
         }
@@ -69,178 +101,143 @@ class MyCommand extends Command
 }
 ```
 
-### 2. Registro
+### 2. Formato del signature
 
-Los comandos se auto-descubren desde `app/Commands/`. No hace falta registrar manualmente.
+**IMPORTANTE — Bug conocido con shortcuts:**
 
-Para ocultar un comando de la ayuda (pero que siga siendo ejecutable):
+El formato `{-c|--config=}` NO funciona en Laravel Zero. Produce `The "-c" option does not exist.`
+Hasta que se investigue la causa, usar solo la forma larga:
+
+```php
+// MAL — no funciona
+{-c|--config= : Path to configuration file}
+
+// BIEN — funciona
+{--config= : Path to configuration file}
+```
+
+Tipos de opciones:
+
+```php
+{name : ...}              // Argumento obligatorio
+{name? : ...}             // Argumento opcional
+{name=default : ...}      // Argumento con valor por defecto
+{--flag : ...}             // Flag booleano (true/false)
+{--option= : ...}         // Opción que requiere valor
+{--option=default : ...}  // Opción con valor por defecto
+```
+
+### 3. Regla crítica: toda opción DEBE leerse y propagarse
+
+**Cada opción definida en el signature DEBE:**
+1. Leerse en `handle()` con `$this->option('nombre')`
+2. Propagarse al servicio correspondiente (FlowPreparer, FlowExecutor, etc.)
+3. Tener un test que verifique que el valor llega al destino
+
+Si una opción se define en el signature pero no se usa en `handle()`, es código muerto que engaña al usuario.
+
+### 4. Registro
+
+Los comandos se auto-descubren desde `app/Commands/`. Para ocultar de la ayuda:
 
 ```php
 // config/commands.php
 'hidden' => [
-    // ...
     Wtyd\GitHooks\App\Commands\MyCommand::class,
 ],
 ```
 
-### 3. Inyección de dependencias
+### 5. Inyección de dependencias
 
-El container de Laravel inyecta las dependencias por constructor. Los bindings se configuran en:
-
-- `src/Container/RegisterBindings.php` — bindings de producción
-- `app/Providers/AppServiceProvider.php` → `testsRegister()` — swaps para testing
-
-Si tu comando necesita una nueva dependencia que aún no está registrada, añádela en `RegisterBindings`:
+Bindings en `src/Container/RegisterBindings.php`:
 
 ```php
-// src/Container/RegisterBindings.php
-$this->container->bind(MyInterface::class, MyImplementation::class);
+// Singletons principales v3
+ConfigurationParser::class  → (factory con ToolRegistry + JobRegistry)
+FlowPreparer::class         → (factory con JobRegistry)
+FlowExecutor::class         → (factory con OutputHandler)
+HookRunner::class           → (factory con FlowPreparer + FlowExecutor + FileUtils)
+HookInstaller::class        → (factory con getcwd)
+HookStatusInspector::class  → (factory con getcwd)
+JobRegistry::class          → JobRegistry
+ToolRegistry::class         → ToolRegistry
+OutputHandler::class        → TextOutputHandler(Printer)
 ```
 
-Y si necesita un fake para tests:
+Si el comando necesita una nueva dependencia, añadirla en `RegisterBindings::singletons()`.
+
+### 6. Trait FormatsOutput
+
+Para comandos que ejecutan flows/jobs y soportan `--format` y `--monitor`:
 
 ```php
-// app/Providers/AppServiceProvider.php → testsRegister()
-$this->app->singleton(MyInterface::class, MyInterfaceFake::class);
-```
+use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 
-## Añadir una opción CLI al comando `tool`
+class MyCommand extends Command
+{
+    use FormatsOutput;
 
-El flujo es: CLI → `CliArguments` → `overrideArguments()` → `ConfigurationFile`.
+    public function handle(): int
+    {
+        // Antes de ejecutar: configura output handler según formato
+        $this->applyFormat($this->executor);
 
-### 1. Añadir la opción a la signature
+        $result = $this->executor->execute($plan);
 
-```php
-// app/Commands/ExecuteToolCommand.php
-protected $signature = 'tool
-    {tool : ...}
-    {execution? : ...}
-    {--myOption= : Descripción de mi opción}
-    // ...';
-```
+        // Después de ejecutar: renderiza resultado en el formato solicitado
+        $this->renderFormattedResult($result);
 
-### 2. Pasar al CliArguments
-
-```php
-// En handle():
-$configurationFile = $this->readConfigurationFileAction
-    ->__invoke(new CliArguments(
-        $tool,
-        $execution,
-        // ... opciones existentes
-        strval($this->option('myOption')),  // Nuevo
-    ));
-```
-
-### 3. Actualizar CliArguments
-
-```php
-// src/ConfigurationFile/CliArguments.php
-protected $myOption;
-
-public function __construct(
-    // ... parámetros existentes
-    string $myOption = ''
-) {
-    // ... asignaciones existentes
-    $this->myOption = $myOption;
-}
-
-// En overrideArguments() o overrideToolArguments():
-if (!empty($this->myOption)) {
-    $toolConfiguration['myOption'] = $this->myOption;
+        // Opcional: report de threads
+        if ($this->option('monitor')) {
+            $this->renderMonitorReport($result);
+        }
+    }
 }
 ```
 
-### 4. Actualizar OptionsConfiguration (si es una opción global)
-
-Si la opción aplica a todas las tools (como `execution` o `processes`):
-
-```php
-// src/ConfigurationFile/OptionsConfiguration.php
-public const MY_OPTION_TAG = 'myOption';
-
-// En el constructor, añadir validación
-```
-
-## Patrón de manejo de errores
-
-Los comandos de tool usan una cascada de catches específicos:
+### 7. Manejo de errores
 
 ```php
 try {
     // lógica
-} catch (ToolIsNotSupportedException $e) {
-    // Tool no existe en SUPPORTED_TOOLS
-} catch (WrongOptionsValueException $e) {
-    // Valor inválido en Options (e.g., execution='invalid')
-} catch (ConfigurationFileNotFoundException $e) {
-    // No se encontró githooks.php ni githooks.yml
-} catch (ConfigurationFileException $e) {
-    // Cualquier otro error de configuración — muestra errors + warnings
-    foreach ($e->getConfigurationFile()->getErrors() as $error) { ... }
-    foreach ($e->getConfigurationFile()->getWarnings() as $warning) { ... }
+} catch (GitHooksExceptionInterface $e) {
+    // Catch-all para excepciones del dominio
+    $this->error($e->getMessage());
+    return 1;
 }
 ```
 
-`ConfigurationFileException` es el catch-all para errores genéricos de configuración.
-
-## Output
-
-Para output se usan dos mecanismos:
-
-1. **Métodos de `Command`** (Laravel): `$this->info()`, `$this->error()`, `$this->warn()`, `$this->table()`
-2. **`Printer`** (custom): `$printer->resultSuccess()`, `$printer->resultError()`, `$printer->resultWarning()`
-
-`Printer` usa códigos ANSI directamente y es independiente de Laravel.
-Los comandos que extienden `ToolCommand` usan los métodos de `Command`.
-Otros comandos inyectan `Printer` por constructor.
-
-## Testing de comandos
-
-Los system tests en `tests/System/Commands/` son los que verifican los comandos.
-Usa la skill `php-test-creator` y consulta la referencia `system-tests.md`.
-
-El patrón básico:
-```php
-$this->artisan("mycommand arg --option=value")
-    ->assertExitCode(0)
-    ->containsStringInOutput('expected output')
-    ->expectsOutput('exact line');
-```
+Para config inexistente, capturar también `\Throwable` porque `require` de un fichero
+inexistente lanza `ErrorException`.
 
 ## Checklist
 
-- [ ] Clase creada en `app/Commands/`
+### Estructura
+- [ ] Clase en `app/Commands/` con `declare(strict_types=1)`
 - [ ] DI por constructor con `parent::__construct()` al final
 - [ ] Signature con descripciones para todos los argumentos/opciones
-- [ ] Manejo de errores con catches apropiados
 - [ ] Exit code: 0 éxito, 1 error
-- [ ] Si toca `CliArguments`: actualizado constructor + `overrideArguments()`
-- [ ] Si añade binding: registrado en `RegisterBindings` + fake en `testsRegister()`
-- [ ] Tests creados (delegar a `php-test-creator`)
 
-## Permisos necesarios
+### Regla de opciones CLI (CRITICA)
+- [ ] **Toda opción del signature se lee en `handle()` con `$this->option()`**
+- [ ] **Toda opción leída se propaga al servicio que la necesita**
+- [ ] **No hay opciones en el signature que se ignoren silenciosamente**
+- [ ] No usar shortcuts (`{-c|--config=}`) — formato roto en Laravel Zero
 
-### Lectura de ficheros
-- `app/Commands/` — Comandos existentes como referencia (especialmente `ExecuteToolCommand.php`, `CheckConfigurationFileCommand.php`)
-- `app/Commands/ToolCommand.php` — Clase base para comandos de tool
-- `src/ConfigurationFile/` — `CliArguments.php`, `ConfigurationFile.php`, `OptionsConfiguration.php`
-- `src/ConfigurationFile/Exception/` — Excepciones para manejo de errores
-- `app/Providers/RegisterBindings.php` — Bindings del contenedor
-- `tests/` — Tests existentes como referencia
+### DI y bindings
+- [ ] Si usa dependencia nueva: registrada en `RegisterBindings::singletons()`
+- [ ] Si usa FormatsOutput: `use FormatsOutput` + llamar a `applyFormat` y `renderFormattedResult`
 
-### Escritura de ficheros
-- `app/Commands/{NuevoComando}.php` — El nuevo comando
-- `src/ConfigurationFile/CliArguments.php` — Si el comando añade opciones CLI
-- `src/ConfigurationFile/OptionsConfiguration.php` — Si añade opciones de configuración
-- `app/Providers/RegisterBindings.php` — Si necesita bindings
+### Testing
+- [ ] Test que cada opción CLI modifica el comportamiento (no solo que el comando no crashea)
+- [ ] Test con config inexistente → mensaje amigable, no stack trace
+- [ ] Test con config inválida → errores descriptivos
+- [ ] Delegar a skill `php-test-creator` para tests completos
+- [ ] Probar manualmente con la skill `qa-tester` los edge cases
 
-### Comandos Bash
-- `php7.1 vendor/bin/phpunit --order-by random` — Tests completos
-- `php7.1 githooks {nuevo-comando}` — Verificar que el comando funciona
-- `php7.1 githooks tool all full` — QA completo
-- `git add` / `git commit` — Commits (solo si el usuario lo pide)
+## Contexto legacy
 
-### Agentes
-- **Explore** — Para investigar comandos existentes y patrones de DI
+El sistema v2 (Options/Tools/CliArguments) sigue funcionando como puente de compatibilidad.
+Las clases legacy están en `src/ConfigurationFile/`, `src/Tools/`, `src/LoadTools/`.
+El comando `tool` en `ExecuteToolCommand.php` está deprecated.
+No añadir funcionalidad nueva al sistema legacy — solo mantener hasta v4.0.

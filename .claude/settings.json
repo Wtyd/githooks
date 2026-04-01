@@ -37,7 +37,13 @@
       "Bash(git stash:*)",
       "Bash(git rev-parse:*)",
       "Bash(ls:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(rm /tmp/githooks-test:*)",
+      "Bash(rm -rf /tmp/githooks-test:*)",
+      "Bash(cp:*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(cat:*)"
     ]
   }
 }

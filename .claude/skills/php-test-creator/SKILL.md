@@ -5,148 +5,255 @@ description: >
   Usa esta skill siempre que el usuario pida crear tests, añadir tests, testear una feature, verificar
   una funcionalidad, o cuando se implemente una nueva feature que necesite cobertura de tests.
   También cuando se mencione: "añadir tests", "crear tests", "test unitario", "test de integración",
-  "test de sistema", "test de release", "necesito tests para esto", "falta cobertura", o cualquier
-  variación en castellano o inglés relacionada con testing en este proyecto.
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 vendor/bin/phpunit *), Bash(php7.1 githooks tool *), Bash(git add *), Bash(git commit *), Bash(git status), Bash(git diff *), Bash(git log *), Agent
+  "test de sistema", "necesito tests para esto", "falta cobertura".
 ---
 
 # PHP Test Creator para GitHooks
 
-Esta skill genera tests para el proyecto GitHooks siguiendo estrictamente sus convenciones.
-El proyecto tiene 4 niveles de testing, cada uno con un propósito claro y un patrón propio.
+Esta skill genera tests para el proyecto GitHooks siguiendo sus convenciones.
+El proyecto tiene 4 niveles de testing, cada uno con un propósito claro.
 
 ## Flujo de decisión
 
-Ante una nueva feature o bug fix, sigue este orden:
-
 ### 1. Determinar qué tests son necesarios
 
-Pregúntate:
-
-| Pregunta | Si la respuesta es sí → |
+| Pregunta | Si sí → |
 |---|---|
-| ¿Se ha creado/modificado una clase en `src/`? | **Unit test** |
-| ¿Se ha añadido/modificado una Tool? | **Unit test** + actualizar `ConfigurationFileBuilder` + crear `*Fake.php` |
-| ¿Afecta al comportamiento de un comando artisan? | **System test** |
-| ¿Afecta a cómo interactúan varios componentes con el container? | **Integration test** |
-| ¿Es una feature visible para el usuario final del `.phar`? | **Release test** (al menos happy path) |
+| ¿Clase nueva/modificada en `src/Configuration/`? | **Unit test** (patrón v3) |
+| ¿Clase nueva/modificada en `src/Jobs/`? | **Unit test** (patrón v3 — JobBuildCommandTest) |
+| ¿Clase nueva/modificada en `src/Execution/`? | **Unit test** (patrón v3) |
+| ¿Clase nueva/modificada en `src/Hooks/`? | **Unit test** (patrón v3) |
+| ¿Clase nueva/modificada en `src/Tools/Tool/`? | **Unit test** (patrón legacy) + Fake + infra |
+| ¿Comando nuevo/modificado en `app/Commands/`? | **System test** + **testing funcional** (qa-tester) |
+| ¿Comando con opciones CLI nuevas? | **Test que verifique que cada opción llega al servicio** |
+| ¿Feature visible para el usuario final del `.phar`? | **Release test** (al menos happy path) |
 
-**Regla de oro:** toda feature nueva necesita al menos un unit test Y un release test (happy path).
-El release test existe para verificar que la build del `.phar` contiene lo que promete — es un smoke test
-del artefacto de distribución, no del código fuente.
+**Regla de oro:** toda opción CLI nueva necesita un test que verifique que el valor
+se propaga hasta el servicio (no solo que el comando no crashea).
 
 ### 2. Crear los tests
 
-Para cada tipo de test, lee la referencia correspondiente antes de escribir código:
+Para cada tipo, lee la referencia correspondiente:
 
-- **Unit tests** → lee `references/unit-tests.md`
+- **Unit tests v3** → lee `references/unit-tests-v3.md`
+- **Unit tests legacy** → lee `references/unit-tests.md`
 - **Integration tests** → lee `references/integration-tests.md`
 - **System tests** → lee `references/system-tests.md`
 - **Release tests** → lee `references/release-tests.md`
 
-### 3. Actualizar infraestructura de testing (solo si es una Tool nueva)
+### 3. Verificar con testing funcional
 
-Si la feature implica una nueva Tool en `src/Tools/Tool/`:
+Después de los tests automatizados, usar la skill `qa-tester` para:
+- Probar el comando manualmente con distintos inputs
+- Probar edge cases que PHPUnit no cubre (config rota, flags combinados, formatos de salida)
 
-1. Crear `src/Tools/Tool/MyToolFake.php` que extienda la clase real y use `TestToolTrait`
-2. Registrar la tool en `SUPPORTED_TOOLS` de `ToolAbstract`
-3. Añadir la configuración por defecto en `ConfigurationFileBuilder`
-4. Añadir el binding Fake en `ConsoleTestCase::bindFakeTools()`
-5. Añadir la tool en los `dataProvider` de tests existentes (integration y system)
-6. Añadir soporte de errores en `PhpFileBuilder` si la tool analiza código
+## Convenciones transversales
 
-## Convenciones transversales a todos los tests
+- **`/** @test */`** en cada método (nunca prefijo `test`)
+- **snake_case con lenguaje natural**: `it_does_something_when_condition()`
+- **`@dataProvider`** para cobertura paramétrica
+- **Namespace** sigue estructura de directorios
+- **Una clase de test por clase testeada**
+- **No usar `setUp()` si no es necesario**
 
-Estas convenciones aplican a TODOS los tipos de test:
+## Patrones de test v3
 
-- **Anotación `/** @test */`** en cada método de test (nunca prefijo `test` en el nombre)
-- **snake_case con lenguaje natural** para nombres de test: `function it_does_something_when_condition()`
-- **`@dataProvider`** para cobertura paramétrica cuando hay múltiples variantes
-- **Namespace** sigue la estructura de directorios: `Tests\Unit\Tools\Tool\MyToolTest`
-- **Una clase de test por clase testeada** (salvo integration tests que pueden agrupar por feature)
-- **No usar `setUp()` si no es necesario** — preferir configuración inline cuando es simple
+### Unit test para Configuration
+
+```php
+declare(strict_types=1);
+
+namespace Tests\Unit\Configuration;
+
+use PHPUnit\Framework\TestCase;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\GitHooks\Registry\ToolRegistry;
+use Wtyd\GitHooks\Jobs\JobRegistry;
+
+class ConfigurationParserTest extends TestCase
+{
+    private string $fixturesPath;
+
+    protected function setUp(): void
+    {
+        $this->fixturesPath = sys_get_temp_dir() . '/githooks_test_' . uniqid();
+        mkdir($this->fixturesPath, 0755, true);
+    }
+
+    protected function tearDown(): void
+    {
+        array_map('unlink', glob($this->fixturesPath . '/*') ?: []);
+        @rmdir($this->fixturesPath);
+    }
+
+    /** @test */
+    function it_parses_v3_config_with_flows_and_jobs()
+    {
+        file_put_contents($this->fixturesPath . '/githooks.php', '<?php return [
+            "flows" => ["qa" => ["jobs" => ["myjob"]]],
+            "jobs" => ["myjob" => ["type" => "phpstan", "paths" => ["src"]]],
+        ];');
+
+        $parser = new ConfigurationParser(new ToolRegistry(), '', new JobRegistry());
+        $config = $parser->parse($this->fixturesPath . '/githooks.php');
+
+        $this->assertFalse($config->hasErrors());
+        $this->assertNotNull($config->getFlow('qa'));
+    }
+}
+```
+
+### Unit test para Jobs (ARGUMENT_MAP)
+
+```php
+declare(strict_types=1);
+
+namespace Tests\Unit\Jobs;
+
+use PHPUnit\Framework\TestCase;
+use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Jobs\PhpstanJob;
+
+class JobBuildCommandTest extends TestCase
+{
+    /** @test */
+    function phpstan_builds_correct_command()
+    {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'executablePath' => 'vendor/bin/phpstan',
+            'config'         => 'qa/phpstan.neon',
+            'level'          => '8',
+            'paths'          => ['src'],
+            'otherArguments' => '--ansi',
+        ]));
+
+        $this->assertEquals(
+            'vendor/bin/phpstan analyse -c qa/phpstan.neon -l 8 --ansi src',
+            $job->buildCommand()
+        );
+    }
+
+    /** @test */
+    function phpstan_with_empty_paths_omits_paths()
+    {
+        $job = new PhpstanJob(new JobConfiguration('test', 'phpstan', [
+            'paths' => [],
+        ]));
+
+        $command = $job->buildCommand();
+        $this->assertStringNotContainsString('  ', $command); // no double spaces
+    }
+}
+```
+
+### Unit test para Execution
+
+```php
+declare(strict_types=1);
+
+namespace Tests\Unit\Execution;
+
+use PHPUnit\Framework\TestCase;
+use Wtyd\GitHooks\Configuration\ConfigurationResult;
+use Wtyd\GitHooks\Configuration\FlowConfiguration;
+use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\GitHooks\Execution\FlowPreparer;
+use Wtyd\GitHooks\Jobs\JobRegistry;
+
+class FlowPreparerTest extends TestCase
+{
+    private FlowPreparer $preparer;
+
+    protected function setUp(): void
+    {
+        $this->preparer = new FlowPreparer(new JobRegistry());
+    }
+
+    /** @test */
+    function it_prepares_a_flow_with_valid_jobs()
+    {
+        $jobs = [
+            'myjob' => new JobConfiguration('myjob', 'phpstan', ['paths' => ['src']]),
+        ];
+        $flow = new FlowConfiguration('qa', ['myjob'], null);
+        $options = OptionsConfiguration::defaults();
+        $config = new ConfigurationResult('/tmp/test.php', $options, null, ['qa' => $flow], $jobs, new ValidationResult());
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertCount(1, $plan->getJobs());
+    }
+}
+```
+
+### Test para opciones CLI de un comando
+
+**CRITICO: cada opción del signature debe tener un test que verifique que modifica el comportamiento.**
+
+```php
+/** @test */
+function fail_fast_option_stops_execution_on_first_failure()
+{
+    // Configurar 3 jobs donde el 2o falla
+    // Ejecutar con --fail-fast
+    // Verificar que el 3o NO se ejecutó
+}
+
+/** @test */
+function processes_option_overrides_config_value()
+{
+    // Config tiene processes=1
+    // Ejecutar con --processes=4
+    // Verificar que FlowPlan tiene processes=4
+}
+
+/** @test */
+function exclude_jobs_option_removes_jobs_from_plan()
+{
+    // Config tiene jobs [a, b, c]
+    // Ejecutar con --exclude-jobs=b
+    // Verificar que solo se ejecutan a y c
+}
+```
 
 ## Checklist de verificación
 
-**IMPORTANTE:** No decir que los tests están listos hasta haber verificado CADA punto. Leer cada fichero mencionado y confirmar que la nueva tool/feature está cubierta.
-
 ### Estructura
-- [ ] Los tests están en el directorio correcto (`tests/Unit/`, `tests/Integration/`, `tests/System/Commands/`, `tests/System/Release/`)
-- [ ] La clase de test extiende la base class correcta
-- [ ] El namespace coincide con la ruta del fichero
+- [ ] Tests en directorio correcto (`tests/Unit/`, `tests/System/Commands/`, etc.)
+- [ ] Clase extiende la base class correcta
+- [ ] Namespace coincide con la ruta del fichero
 
 ### Convenciones
-- [ ] Todos los métodos de test tienen `/** @test */`
-- [ ] Los nombres de test usan snake_case descriptivo
-- [ ] Se usan `@dataProvider` donde hay variantes paramétricas
-- [ ] No se ha añadido `test` como prefijo del nombre del método
+- [ ] `/** @test */` en todos los métodos
+- [ ] snake_case descriptivo
+- [ ] `@dataProvider` donde hay variantes
 
-### Para Tools nuevas — Infraestructura (LEER CADA FICHERO)
-- [ ] `src/Tools/Tool/MyToolFake.php` existe con `use TestToolTrait`
-- [ ] `src/Tools/Tool/ToolAbstract.php` — tool en `SUPPORTED_TOOLS`
-- [ ] `tests/Utils/ConfigurationFileBuilder.php`:
-  - [ ] Import de la clase Tool
-  - [ ] Tool en `$this->tools`
-  - [ ] Configuración en `$this->configurationTools` con `IGNORE_ERRORS_ON_EXIT => false`
-- [ ] `tests/Utils/TestCase/ConsoleTestCase.php`:
-  - [ ] Import de Tool + ToolFake
-  - [ ] `$this->app->bind(Tool::class, ToolFake::class)` en `bindFakeTools()`
-- [ ] `tests/Utils/PhpFileBuilder.php` (si analiza código):
-  - [ ] Constante `MY_TOOL`
-  - [ ] Método `addMyToolError()`
-  - [ ] Case en `buildWithErrors()`
+### Cobertura de opciones CLI (CRITICA)
+- [ ] **Cada opción del signature tiene un test que verifica que el valor llega al servicio**
+- [ ] **No hay opciones del signature sin cobertura de test**
+- [ ] Test con config inexistente → no produce stack trace
+- [ ] Test con config inválida → errores descriptivos
+- [ ] Test con formato inválido (--format=csv) → comportamiento definido
 
-### Para Tools nuevas — DataProviders (ABRIR Y VERIFICAR CADA UNO)
-- [ ] `tests/Integration/IgnoreErrorsOnExitFlagTest.php` → `allToolsProvider()`
-- [ ] `tests/System/Commands/ExecuteToolCommandTest.php`:
-  - [ ] `allToolsOKDataProvider()` — tool + comando generado por prepareCommand
-  - [ ] `allToolsKODataProvider()` — tool + comando generado
-  - [ ] `allToolsAtSameTimeDataProvider()` — tool en Tools array + Command dict
-  - [ ] `it_runs_all_configured_tools_at_same_time()` — assertions incluyen la tool
-  - [ ] `onlyConfiguredToolsAtSameTimeDataProvider()` — tool en "Not runned tools"
-  - [ ] `exit1DataProvider()` — caso con la tool fallando
-- [ ] `tests/System/Release/ExecuteToolTest.php`:
-  - [ ] `allToolsProvider()` — entrada para la tool (si analiza código)
-  - [ ] 3 tests de `tool all` (full, fast, multi-process) — setTools + assertions
-  - [ ] Test individual happy path
+### Para Jobs v3
+- [ ] `buildCommand()` genera el comando correcto con todos los argumentos
+- [ ] Argumentos opcionales ausentes no generan flags vacíos
+- [ ] `getThreadCapability()` devuelve la capability correcta (o null)
+- [ ] `applyThreadLimit()` modifica el argumento correcto
 
-### Cobertura mínima por nivel
-- [ ] **Unit test:** checkTool(), todos los argumentos, executablePath por defecto, argumentos inesperados, prepareCommand con variantes
-- [ ] **Integration test:** ignoreErrorsOnExit true/false, tanto individual (`tool mytool`) como `tool all`
-- [ ] **System test:** ejecución OK y KO con config real en filesystem, comando completo verificado
-- [ ] **Release test:** al menos happy path individual + incluida en tests de `tool all`
+### Para Tools legacy (solo si se toca código legacy)
+- [ ] Ver `references/unit-tests.md` para el patrón legacy completo
 
 ### Ejecución final (OBLIGATORIO)
-- [ ] `php7.1 vendor/bin/phpunit tests/Unit/...` pasa
-- [ ] `php7.1 vendor/bin/phpunit tests/Integration/...` pasa (si hay integration tests)
-- [ ] `php7.1 vendor/bin/phpunit tests/System/...` pasa (si hay system tests, excluyendo release)
-- [ ] `php7.1 vendor/bin/phpunit --order-by random` — suite completa sin fallos
-- [ ] `php7.1 githooks tool all full` — QA completo sin violaciones nuevas
+- [ ] `php7.4 vendor/bin/phpunit --order-by random` — 0 fallos
+- [ ] `php7.4 githooks flow qa` — QA completo sin violaciones nuevas
+- [ ] Skill `qa-tester` sobre los comandos tocados
 
-## Permisos necesarios
+## Contexto legacy
 
-### Lectura de ficheros
-- `src/` — Clases bajo test (para entender la API pública y comportamiento)
-- `tests/Unit/`, `tests/Integration/`, `tests/System/` — Tests existentes como referencia de patrones
-- `tests/Utils/` — `ConfigurationFileBuilder.php`, `TestCase/`, `Traits/` — Utilidades de test
-- `tests/Mock/` — Mocks existentes
-- `src/Utils/FileUtilsFake.php` — Fake de filesystem para tests unitarios
-- `src/Tools/Process/ProcessFake.php` — Fake de proceso para tests de ejecución
-- `src/Tools/Process/ExecutionFakeTrait.php` — Trait para fakes de ejecución
-- `phpunit.xml` — Configuración de PHPUnit (grupos, suites)
-
-### Escritura de ficheros
-- `tests/Unit/**/*Test.php` — Tests unitarios nuevos o modificados
-- `tests/Integration/**/*Test.php` — Tests de integración
-- `tests/System/**/*Test.php` — Tests de sistema
-- `tests/Utils/ConfigurationFileBuilder.php` — Añadir configuraciones de nuevas tools
-
-### Comandos Bash
-- `php7.1 vendor/bin/phpunit --order-by random` — Suite completa
-- `php7.1 vendor/bin/phpunit tests/Unit/{path}` — Tests específicos
-- `php7.1 vendor/bin/phpunit --filter {testName}` — Test individual
-- `php7.1 githooks tool all full` — QA completo (verificación final)
-- `git add` / `git commit` — Commits (solo si el usuario lo pide)
-
-### Agentes
-- **Explore** — Para investigar patrones de test existentes y cobertura actual
+Los tests legacy (en `tests/Unit/Tools/`, `tests/Integration/`, `tests/System/Commands/ExecuteToolCommandTest.php`,
+`tests/System/Release/`) siguen siendo válidos para el sistema v2. Las references `unit-tests.md`,
+`integration-tests.md`, `system-tests.md`, `release-tests.md` documentan estos patrones.
+No añadir tests legacy para funcionalidades nuevas — usar los patrones v3 de arriba.

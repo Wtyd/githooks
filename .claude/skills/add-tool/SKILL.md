@@ -1,296 +1,204 @@
 ---
 name: add-tool
 description: >
-  Guía completa para añadir una nueva QA tool al proyecto GitHooks (wtyd/githooks).
-  Usa esta skill cuando el usuario quiera añadir soporte para una herramienta de análisis de código
-  (como phpunit, psalm, rector, phpinsights, etc.), integrar una nueva tool, o cuando mencione
-  "nueva tool", "añadir herramienta", "soporte para X", "integrar X tool", "add tool".
-  También se activa cuando se trabaje en los stubs vacíos de Phpunit.php o Psalm.php.
-allowed-tools: Read, Edit, Write, Glob, Grep, Bash(php7.1 *), Bash(git add *), Bash(git commit *), Bash(git mv *), Bash(git status), Bash(git diff *), Bash(git log *), Agent, WebFetch, WebSearch
+  Guia para añadir una nueva herramienta QA al proyecto GitHooks (wtyd/githooks).
+  En v3, las herramientas se implementan como Jobs en src/Jobs/.
+  Usa esta skill cuando el usuario quiera añadir soporte para una herramienta de analisis de codigo
+  (phpunit, psalm, rector, phpinsights, etc.), integrar una nueva tool, o cuando mencione
+  "nueva tool", "añadir herramienta", "soporte para X", "nuevo job type".
 ---
 
-# Añadir una nueva QA Tool a GitHooks
+# Añadir una nueva herramienta QA a GitHooks
 
-Añadir una tool toca 12+ ficheros en un orden específico. Esta skill guía el proceso completo.
+En v3, cada herramienta QA se implementa como un **Job** en `src/Jobs/`.
+Un Job declara un `ARGUMENT_MAP` tipado y genera el comando shell via `buildCommand()`.
 
-## Visión general del flujo
+## Vision general
 
 ```
-1. Clase Tool + Fake          →  src/Tools/Tool/
-2. Registro en ToolAbstract   →  src/Tools/Tool/ToolAbstract.php
-3. ConfigurationFileBuilder   →  tests/Utils/ConfigurationFileBuilder.php
-4. ConsoleTestCase bindings   →  tests/Utils/TestCase/ConsoleTestCase.php
-5. PhpFileBuilder (si aplica) →  tests/Utils/PhpFileBuilder.php
-6. DataProviders existentes   →  tests/Integration/ + tests/System/
-7. Config de QA               →  qa/githooks.php + qa/githooks.dist.yml
-8. GitHub Actions             →  .github/workflows/main-tests.yml + release.yml
-9. Tests                      →  delegar a skill php-test-creator
+1. Clase Job                → src/Jobs/MyToolJob.php
+2. Registro en JobRegistry  → src/Jobs/JobRegistry.php
+3. Tests                    → tests/Unit/Jobs/JobBuildCommandTest.php
+4. Config de QA             → qa/githooks.php + qa/githooks.dist.php
 ```
 
-## Paso 1: Crear la clase Tool
+## Paso 1: Crear la clase Job
 
-Lee `references/tool-class-pattern.md` para el patrón completo.
-
-Fichero: `src/Tools/Tool/MyTool.php`
-
-Elementos obligatorios:
-- `const NAME` — el nombre de la tool (debe coincidir con la key en `SUPPORTED_TOOLS`)
-- `const ARGUMENTS` — array ordenado de todas las opciones de configuración aceptadas
-- Constructor que reciba `ToolConfiguration`, llame a `$this->setArguments()` y asigne default `executablePath`
-- `prepareCommand(): string` — construye el comando shell iterando `ARGUMENTS` con un `switch`
-
-Si la tool tiene argumentos específicos (como `level` en phpstan o `rules` en phpmd), define constantes para ellos.
-
-## Paso 2: Crear la clase Fake
-
-Fichero: `src/Tools/Tool/MyToolFake.php`
+Fichero: `src/Jobs/MyToolJob.php`
 
 ```php
 <?php
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Tool;
+namespace Wtyd\GitHooks\Jobs;
 
-use Wtyd\GitHooks\Tools\Tool\TestToolTrait;
+use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Execution\ThreadCapability;
 
-class MyToolFake extends MyTool
+class MyToolJob extends JobAbstract
 {
-    use TestToolTrait;
+    protected const TOOL_NAME = 'mytool';
+
+    protected const DEFAULT_EXECUTABLE = 'vendor/bin/mytool';
+
+    // Subcomando que va justo después del ejecutable (ej: phpstan usa 'analyse')
+    // protected function getSubcommand(): string { return 'check'; }
+
+    /**
+     * Declaración de argumentos aceptados y cómo se mapean a flags CLI.
+     *
+     * Tipos disponibles:
+     *   value    → --flag=value o -f value (usa 'separator' para elegir)
+     *   boolean  → --flag (presente si truthy)
+     *   paths    → lista de paths al final del comando, separados por espacio
+     *   csv      → --flag=a,b,c
+     *   repeat   → --flag a --flag b (repite el flag por cada valor)
+     *   key_value → --key=value (pares clave-valor)
+     */
+    protected const ARGUMENT_MAP = [
+        'config'    => ['flag' => '--config', 'type' => 'value'],
+        'level'     => ['flag' => '--level',  'type' => 'value'],
+        'exclude'   => ['flag' => '--exclude','type' => 'csv'],
+        'no-cache'  => ['flag' => '--no-cache', 'type' => 'boolean'],
+        'paths'     => ['type' => 'paths'],
+    ];
+
+    // Si la tool soporta paralelismo interno (como phpcs --parallel o psalm --threads)
+    public function getThreadCapability(): ?ThreadCapability
+    {
+        return new ThreadCapability(
+            'parallel',     // Nombre del argumento en ARGUMENT_MAP
+            4,              // Threads por defecto
+            1,              // Minimo threads
+            true            // Controllable (GitHooks puede ajustar el valor)
+        );
+    }
 }
 ```
 
-`TestToolTrait` hace públicos `prepareCommand()`, `getArguments()` y `getExecutablePath()` para tests.
+### Elementos del ARGUMENT_MAP
 
-Las Fake viven en `src/` (no en `tests/`) porque el container de Laravel las resuelve por nombre de clase.
+| Campo | Tipo | Descripcion |
+|---|---|---|
+| `flag` | string | El flag CLI de la herramienta (ej: `--config`, `-l`) |
+| `type` | string | Uno de: `value`, `boolean`, `paths`, `csv`, `repeat`, `key_value` |
+| `separator` | string | Para `value`: `=` genera `--flag=val`, ` ` genera `--flag val` (default: ` `) |
+| `required` | bool | Si es obligatorio en la config (default: false) |
 
-## Paso 3: Registrar en ToolAbstract
+### Metodos opcionales a sobrescribir
 
-Fichero: `src/Tools/Tool/ToolAbstract.php`
-
-1. Añadir constante con el nombre:
 ```php
-public const MY_TOOL = 'mytool';
+// Si el comando tiene un subcomando (phpstan analyse, phpmd check...)
+protected function getSubcommand(): string { return 'analyse'; }
+
+// Si la tool aplica fixes (phpcbf: exit 1 = fixes applied, no es error)
+public function isFixApplied(int $exitCode): bool { return $exitCode === 1; }
+
+// Si necesita orden especifico de argumentos (phpmd: paths antes que rules)
+public function buildCommand(): string { /* override completo */ }
 ```
 
-2. Añadir al array `SUPPORTED_TOOLS`:
+## Paso 2: Registrar en JobRegistry
+
+Fichero: `src/Jobs/JobRegistry.php`
+
+Añadir al array `TYPE_MAP`:
+
 ```php
-self::MY_TOOL => MyTool::class,
-```
-
-3. Añadir al array `EXCLUDE_ARGUMENT` (si tiene opción de exclude):
-```php
-self::MY_TOOL => MyTool::EXCLUDE,  // o '' si no tiene exclude
-```
-
-## Paso 4: Actualizar ConfigurationFileBuilder
-
-Fichero: `tests/Utils/ConfigurationFileBuilder.php`
-
-1. Añadir la tool a `$this->tools` en el constructor:
-```php
-$this->tools = [
-    // ...tools existentes...
-    ToolAbstract::MY_TOOL,
-];
-```
-
-2. Añadir la configuración por defecto a `$this->configurationTools`:
-```php
-ToolAbstract::MY_TOOL => [
-    MyTool::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'mytool',
-    MyTool::PATHS => [$rootPath . '/src'],
-    // ... resto de argumentos con valores por defecto razonables
-    MyTool::IGNORE_ERRORS_ON_EXIT => false,
-],
-```
-
-3. (Opcional) Añadir método setter si la tool necesita configuración especial:
-```php
-public function setMyToolConfiguration(array $configuration): ConfigurationFileBuilder
-{
-    $this->configurationTools[ToolAbstract::MY_TOOL] = $configuration;
-    return $this;
-}
-```
-
-## Paso 5: Actualizar ConsoleTestCase::bindFakeTools()
-
-Fichero: `tests/Utils/TestCase/ConsoleTestCase.php`
-
-Añadir el import y el binding:
-```php
-use Wtyd\GitHooks\Tools\Tool\MyTool;
-use Wtyd\GitHooks\Tools\Tool\MyToolFake;
-
-// En bindFakeTools():
-$this->app->bind(MyTool::class, MyToolFake::class);
-```
-
-## Paso 6: Actualizar PhpFileBuilder (si la tool analiza código)
-
-Fichero: `tests/Utils/PhpFileBuilder.php`
-
-Si la tool detecta errores en código PHP, añadir:
-
-1. Constante: `public const MY_TOOL = 'mytool';`
-2. Método que genere un error detectable:
-```php
-public function addMyToolError(): string
-{
-    return "\n" . '    // código PHP que la tool detectará como error' . "\n";
-}
-```
-3. Case en `buildWithErrors()`:
-```php
-case self::MY_TOOL:
-    $file .= $this->addMyToolError();
-    break;
-```
-
-## Paso 7: Actualizar DataProviders existentes
-
-Estos tests ya tienen `allToolsProvider` o similar — añadir la nueva tool:
-
-- `tests/Integration/IgnoreErrorsOnExitFlagTest.php` → `allToolsProvider()`
-- `tests/System/Commands/ExecuteToolCommandTest.php` → `allToolsOKDataProvider()`, `allToolsKODataProvider()`, `allToolsAtSameTimeDataProvider()`, `onlyConfiguredToolsAtSameTimeDataProvider()`, `exit1DataProvider()`
-- `tests/System/Release/ExecuteToolTest.php` → `allToolsProvider()`, `it_returns_exit_0_when_executes_all_tools_and_all_pass()`
-
-## Paso 8: Actualizar configuración de QA
-
-**`qa/githooks.php`** — añadir la tool a la lista de tools y su bloque de configuración:
-```php
-'Tools' => ['phpstan', 'phpmd', 'phpcs', ..., 'mytool'],
-'mytool' => [
-    'executablePath' => 'path/to/mytool',
-    'paths' => ['./src/', './app/'],
-    // ... configuración para el propio proyecto
-],
-```
-
-**`qa/githooks.dist.yml`** — añadir la configuración de ejemplo en YAML.
-
-## Paso 9: Actualizar GitHub Actions
-
-Lee `references/ci-tool-integration.md` para los detalles de cada workflow.
-
-**`main-tests.yml`** — añadir la tool en el step `Install PHP`:
-```yaml
-tools: phpcs, phpcbf, phpmd, phpstan:1.4, mytool
-```
-
-**`release.yml`** → job `test_rc` → step `Install PHP`:
-```yaml
-tools: phpcs, phpcbf, phpmd, phpstan, parallel-Lint, phpcpd, mytool
-```
-
-## Paso 10: Crear tests
-
-Delega a la skill `php-test-creator` para generar los tests siguiendo los patrones del proyecto.
-
-## Paso 11: FastExecution (si la tool es "acelerarable")
-
-Si la tool acepta paths y tiene sentido ejecutarla solo sobre ficheros modificados en git:
-
-Fichero: `src/LoadTools/FastExecution.php` → añadir al array `ACCELERABLE_TOOLS`:
-```php
-private const ACCELERABLE_TOOLS = [
-    ToolAbstract::PHPCS,
+private const TYPE_MAP = [
+    'phpstan'       => PhpstanJob::class,
+    'phpcs'         => PhpcsJob::class,
     // ...
-    ToolAbstract::MY_TOOL,
+    'mytool'        => MyToolJob::class,
 ];
 ```
 
-No todas las tools son acelerables. `security-checker` no tiene paths, `phpcpd` necesita todos los ficheros para detectar duplicados.
+## Paso 3: Tests
 
-## Checklist final
+Añadir casos al fichero existente `tests/Unit/Jobs/JobBuildCommandTest.php`:
 
-**IMPORTANTE:** No marcar como terminado hasta haber verificado CADA punto. Leer cada fichero y confirmar que la nueva tool está presente.
+```php
+/** @test */
+function mytool_builds_correct_command()
+{
+    $job = new MyToolJob(new JobConfiguration('test', 'mytool', [
+        'config' => 'qa/mytool.xml',
+        'level' => '3',
+        'paths' => ['src', 'app'],
+    ]));
+
+    $this->assertEquals(
+        'vendor/bin/mytool --config qa/mytool.xml --level 3 src app',
+        $job->buildCommand()
+    );
+}
+
+/** @test */
+function mytool_with_custom_executable()
+{
+    $job = new MyToolJob(new JobConfiguration('test', 'mytool', [
+        'executablePath' => '/usr/local/bin/mytool',
+        'paths' => ['src'],
+    ]));
+
+    $this->assertStringStartsWith('/usr/local/bin/mytool', $job->buildCommand());
+}
+```
+
+Delegar tests mas completos a la skill `php-test-creator`.
+
+## Paso 4: Configuracion de QA
+
+**`qa/githooks.php`** — añadir job a un flow:
+
+```php
+'flows' => [
+    'qa' => [
+        'jobs' => [
+            // ...existentes...
+            'MyTool Src',
+        ],
+    ],
+],
+'jobs' => [
+    // ...existentes...
+    'MyTool Src' => [
+        'type' => 'mytool',
+        'executablePath' => 'vendor/bin/mytool',
+        'config' => 'qa/mytool.xml',
+        'paths' => ['src'],
+    ],
+],
+```
+
+**`qa/githooks.dist.php`** — añadir ejemplo comentado con todos los argumentos disponibles.
+
+## Paso 5: Validacion de argumentos en conf:check
+
+`conf:check` valida automaticamente los argumentos contra el `ARGUMENT_MAP` del job.
+Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
+
+## Checklist
 
 ### Ficheros creados
-- [ ] `src/Tools/Tool/MyTool.php` — con `declare(strict_types=1)`
-- [ ] `src/Tools/Tool/MyToolFake.php` — con `declare(strict_types=1)` y `use TestToolTrait`
+- [ ] `src/Jobs/MyToolJob.php` con `declare(strict_types=1)`
 
-### Ficheros modificados — Código fuente
-- [ ] `src/Tools/Tool/ToolAbstract.php` — constante + `SUPPORTED_TOOLS` + `EXCLUDE_ARGUMENT`
-- [ ] `src/Tools/ToolsFactory.php` — añadir `use` import de la nueva clase
-- [ ] `src/LoadTools/FastExecution.php` — añadir a `ACCELERABLE_TOOLS` (si acepta paths y tiene sentido ejecutarla solo sobre ficheros modificados)
+### Ficheros modificados
+- [ ] `src/Jobs/JobRegistry.php` — type añadido a `TYPE_MAP`
+- [ ] `tests/Unit/Jobs/JobBuildCommandTest.php` — tests de buildCommand
+- [ ] `qa/githooks.php` — job añadido al flow qa
+- [ ] `qa/githooks.dist.php` — ejemplo documentado
 
-### Ficheros modificados — Infraestructura de tests (LEER CADA UNO)
-- [ ] `tests/Utils/ConfigurationFileBuilder.php`:
-  - [ ] Import `use` de la clase Tool
-  - [ ] Tool añadida a `$this->tools` en constructor
-  - [ ] Configuración por defecto en `$this->configurationTools` con `IGNORE_ERRORS_ON_EXIT => false`
-- [ ] `tests/Utils/TestCase/ConsoleTestCase.php`:
-  - [ ] Import `use` de Tool y ToolFake
-  - [ ] Binding en `bindFakeTools()`: `$this->app->bind(Tool::class, ToolFake::class)`
-- [ ] `tests/Utils/PhpFileBuilder.php` (si la tool analiza código):
-  - [ ] Constante: `public const MY_TOOL = 'mytool'`
-  - [ ] Método: `addMyToolError(): string`
-  - [ ] Case en `buildWithErrors()` switch
+### Verificacion
+- [ ] `buildCommand()` genera el comando esperado
+- [ ] `conf:check` muestra el job con su comando
+- [ ] `php7.4 vendor/bin/phpunit --order-by random` — 0 fallos
+- [ ] `php7.4 githooks flow qa` — QA sin violaciones nuevas
+- [ ] Probar `githooks job MyTool_Src` manualmente
 
-### Ficheros modificados — DataProviders (VERIFICAR CADA PROVIDER INDIVIDUALMENTE)
-- [ ] `tests/Integration/IgnoreErrorsOnExitFlagTest.php`:
-  - [ ] `allToolsProvider()` — añadir entrada
-- [ ] `tests/System/Commands/ExecuteToolCommandTest.php`:
-  - [ ] `allToolsOKDataProvider()` — tool + comando esperado
-  - [ ] `allToolsKODataProvider()` — tool + comando esperado
-  - [ ] `allToolsAtSameTimeDataProvider()` — tool en array Tools + comando en dict Command
-  - [ ] `it_runs_all_configured_tools_at_same_time()` — assertions de la nueva tool
-  - [ ] `onlyConfiguredToolsAtSameTimeDataProvider()` — tool en "Not runned tools" de cada set
-  - [ ] `exit1DataProvider()` — nuevo caso con la tool fallando
-- [ ] `tests/System/Release/ExecuteToolTest.php`:
-  - [ ] `allToolsProvider()` — añadir entrada (si la tool analiza código)
-  - [ ] `it_returns_exit_0_when_executes_all_tools_and_all_pass()` — setTools + assert
-  - [ ] `it_executes_all_tools_with_fast_execution_mode()` — setTools + assert
-  - [ ] `it_runs_all_tools_in_multipe_processes()` — setTools + assert
-  - [ ] Test individual happy path: `it_returns_exit_0_when_mytool_passes()`
+## Contexto legacy
 
-### Ficheros modificados — Configuración y docs
-- [ ] `qa/githooks.php` — tool en array Tools + bloque de configuración
-- [ ] `qa/githooks.dist.yml` — tool en lista + bloque comentado con todas las opciones
-- [ ] `README.md` — tool en "Supported Tools" + ejemplo de configuración
-- [ ] `.github/workflows/main-tests.yml` — tool en step "Install PHP"
-- [ ] `.github/workflows/release.yml` — tool en job `test_rc`
-
-### Verificación final (ejecutar SIEMPRE)
-- [ ] `php7.1 vendor/bin/phpunit --order-by random` — 0 fallos
-- [ ] `php7.1 githooks tool mytool` — funciona localmente
-- [ ] `php7.1 githooks tool all full` — incluye la nueva tool
-- [ ] `php7.1 githooks conf:check` — muestra la tool en la tabla
-- [ ] phpmd no reporta violaciones nuevas (cyclomatic complexity en prepareCommand)
-
-## Permisos necesarios
-
-### Lectura de ficheros
-- `src/Tools/Tool/` — Clases de tools existentes como referencia y `ToolAbstract.php`
-- `src/Tools/ToolsFactory.php` — Factory de tools (imports)
-- `src/ConfigurationFile/` — `ToolConfiguration.php`, `ConfigurationFile.php`
-- `src/LoadTools/FastExecution.php` — Si la tool es acelerarable
-- `qa/githooks.php`, `qa/githooks.dist.yml` — Configuración del proyecto
-- `tests/Unit/Tools/Tool/` — Tests de otras tools como referencia
-- `tests/Utils/ConfigurationFileBuilder.php` — Builder de configuración para tests
-- `composer.json` — Dependencias
-
-### Escritura de ficheros
-- `src/Tools/Tool/{NuevaTool}.php` — Clase de la tool
-- `src/Tools/Tool/{NuevaTool}Fake.php` — Fake para testing
-- `src/Tools/Tool/ToolAbstract.php` — Constantes y `SUPPORTED_TOOLS`
-- `src/Tools/ToolsFactory.php` — Import de la nueva clase
-- `qa/githooks.php` — Configuración del proyecto
-- `qa/githooks.dist.yml` — Configuración de distribución
-- `tests/Unit/Tools/Tool/{NuevaTool}Test.php` — Tests unitarios
-- `tests/Utils/ConfigurationFileBuilder.php` — Configuración del builder
-- `composer.json` — Dependencia en `require-dev` (si aplica)
-- `qa/{config}.xml` — Fichero de configuración de la tool (si aplica)
-
-### Comandos Bash
-- `php7.1 vendor/bin/phpunit --order-by random` — Tests completos
-- `php7.1 githooks tool {nombre} full` — Verificar tool individual
-- `php7.1 githooks tool all full` — QA completo
-- `php7.1 -l src/Tools/Tool/{NuevaTool}.php` — Verificar sintaxis PHP 7.1
-- `git add` / `git commit` — Commits (solo si el usuario lo pide)
-
-### Agentes
-- **Explore** — Para investigar documentación de la tool externa (flags CLI, config)
-- **general-purpose** — Para fetch de documentación web de la tool (verificar flags reales)
+El sistema legacy de Tools vive en `src/Tools/Tool/` con `ToolAbstract`, `ToolRegistry`,
+`ToolsFactory`, `SUPPORTED_TOOLS`, etc. El paso 11+ de la version anterior de esta skill
+documentaba ese flujo (12+ ficheros). No añadir Tools legacy nuevas — usar Jobs v3.
