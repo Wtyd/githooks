@@ -105,8 +105,7 @@ final class BuildCommand extends Command
             File::makeDirectory($this->build->getBuildPath());
         }
 
-        // $boxBinary = windows_os() ? '.\box.bat' : './box';
-        $boxBinary = windows_os() ? 'box.bat' : 'box'; // box global install
+        $boxBinary = base_path('tools/box');
 
         $process = new Process(
             [$boxBinary, 'compile', '--working-dir=' . base_path(), '--config=' . base_path('box.json')] + $this->getExtraBoxOptions(),
