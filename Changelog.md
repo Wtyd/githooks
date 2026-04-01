@@ -2,41 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.8.0] - Unreleased
+## [3.0.0] - Unreleased
 
-### New Tools
-- **PHPUnit**: New natively supported tool for running PHPUnit tests. Supported options: `group`, `exclude-group`, `filter`, `configuration`, `log-junit`.
-- **Psalm**: New natively supported tool for Psalm static analysis. Supported options: `config`, `memory-limit`, `threads`, `no-diff`, `output-format`, `plugin`, `use-baseline`, `report`, `paths`.
-- **Script**: New generic tool type that allows integrating any QA tool not natively supported by GitHooks (e.g. php-cs-fixer, infection, pdepend). Only requires `executablePath` (mandatory) and `otherArguments`. Supports a `name` key for custom aliasing (e.g. `name: php-cs-fixer`) — use the custom name in the `Tools` array and CLI instead of `script`.
+### Breaking Changes
+- **PHP minimum raised to 7.4**. Dropped support for PHP 7.0–7.3. Build tier `php7.1` eliminated (`builds/php7.1/`, `tools/php71/`).
+- **SecurityChecker tool removed**. Since Composer 2.4, `composer audit` covers this functionality. Use a `custom` job as replacement (see dist files for example).
+- **New configuration format: hooks/flows/jobs**. Replaces the previous `Options`/`Tools` format. The old format still works but emits a deprecation warning.
+- **`tool` command deprecated**. Replaced by `flow` and `job` commands. Will be removed in v4.0.
+- **YAML configuration deprecated**. PHP format is now the primary format. YAML still works but emits a deprecation warning. Will be removed in v4.0.
 
-### Features
-- **PHP 8.5 support**: Fully compatible with PHP 8.5.
-- **Per-tool execution mode override**: Each tool can now have its own `execution: fast` or `execution: full` setting, overriding the global Options. Priority order: CLI argument > per-tool setting > global Options > default (`full`). Non-accelerable tools configured with `fast` show a warning and fall back to `full`.
-- **Per-tool `failFast` option**: New boolean option available on all tools. When `true`, if the tool fails, all remaining tools are skipped (shown as "⏩ toolName (skipped by failFast)"). Takes priority over `ignoreErrorsOnExit` when both are set.
-- **Phpcbf auto-staging**: When phpcbf fixes files during a pre-commit hook run, they are automatically re-staged to git. Deleted files are excluded from re-staging.
-- **Psalm fast mode**: Psalm added to the list of accelerable tools that support `fast` execution mode.
-- **Custom config path (`-c|--config`)**: Both `tool` and `conf:check` commands now accept a custom configuration file path, supporting both absolute and relative paths.
-- **`conf:check` improvements**: Now shows the configuration file path in output.
+### New Architecture — Hooks, Flows, Jobs
+- **Hooks**: Map git events (`pre-commit`, `pre-push`, etc.) to flows and jobs. Uses `core.hooksPath` with a universal script instead of copying files to `.git/hooks/`.
+- **Flows**: Named groups of jobs with shared options (`fail-fast`, `processes`). Reusable across hooks and directly executable from CLI/CI.
+- **Jobs**: Individual QA tasks with declarative configuration. Each job declares a `type` (phpstan, phpcs, phpunit, custom, etc.) and its arguments.
 
-### New Tool-Specific Options
-- **Phpstan**: `error-format`, `no-progress`, `clear-result-cache`.
-- **Phpcs/Phpcbf**: `cache`, `no-cache`, `report`, `parallel`.
-- **Phpmd**: `cache` (PHPMD 2.13.0+), `cache-file`, `cache-strategy`, `suffixes`, `baseline-file`.
-- **Phpcpd**: `min-lines`, `min-tokens`.
-- **Parallel-lint**: `jobs` (number of parallel jobs, `-j` flag).
+### New Commands
+- `githooks flow <name>` — Run a flow by name.
+- `githooks job <name>` — Run a single job by name.
+- `githooks hook run <event>` — Run all flows/jobs associated with a git hook event (called by the universal hook script).
+- `githooks hook` — Install git hooks via `core.hooksPath`.
 
-### Output Improvements
-- Emoji indicators for tool results: ✔️ success, ❌ error, ⚠️ warning.
-- Better time formatting using ms/s/m units instead of raw seconds.
-- Error output displayed in a framed block with line limiting (first 20 lines + last 3 lines, with omitted line count).
-- Summary line: "Results: X/Y passed" with per-tool breakdown for failures.
+### New Job Types
+- **Custom**: Run any command via `script` key. Replaces the `script` tool and enables integration of non-native tools (e.g. `composer audit`, `eslint`, `php-cs-fixer`).
 
-### Bug Fixes
-- Fixed phpcbf handling of fix-applied exit code (exit code 1) in single tool execution.
-- Exclude deleted files when re-staging after phpcbf fix.
-- Fixed process command parsing for proper shell escaping with paths containing spaces.
-- Improved absolute path detection for Windows compatibility.
+### New Configuration Classes
+- `ConfigurationParser`, `ConfigurationResult`, `FlowConfiguration`, `HookConfiguration`, `JobConfiguration`, `OptionsConfiguration`, `ValidationResult` — replace the monolithic `ConfigurationFile`.
 
-### Internal Refactoring
-- Adapt the pipelines and dependency ranges to PHP 8.5.
-- General code cleanup: removed dead code, fixed class naming, simplified internal APIs.
+### New Execution Engine
+- `FlowExecutor`, `FlowPreparer`, `FlowPlan`, `FlowResult`, `JobExecutor`, `JobResult` — replace `ToolsPreparer` and `ProcessExecution*` for v3 commands.
+- `HookRunner`, `HookInstaller` — orchestrate hook resolution and installation.
+
+### Internal Improvements
+- **ToolRegistry** extracted from `ToolAbstract` as injectable service. Centralizes tool name → class mapping, accelerable tools, exclude arguments, and script aliases.
+- **JobRegistry** — maps job types to job classes, extends the pattern established by ToolRegistry.
+- **Jobs use declarative `ARGUMENT_MAP`** instead of imperative `prepareCommand()`. Each job declares its arguments with type information (`value`, `boolean`, `paths`, `csv`, `repeat`, `key_value`).
+- **Fake classes moved** from `src/` to `tests/Doubles/`.
+- **Typed properties** added to remaining legacy classes (`ProcessExecutionAbstract`, `Process`).
+- **Dead code removed**: `ToolAbstract::$errors`, `ProcessExecutionAbstract::printErrors()`, `ToolsTagIsEmptyException`, `ToolsTagIsNotFoundException`, debug code in `MultiProcessesExecution`, `TestToolTrait::$fakeExitCode`.
+- **PHPUnit upgraded to 9.x**, `RetroCompatibilityAssertsTrait` eliminated.
+- **CI reduced from 7 to 5 jobs** (removed PHP 7.0–7.3 matrices).
+- **PHPStan level 8**: 0 errors on all new v3 code.

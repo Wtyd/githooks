@@ -44,7 +44,7 @@ jobs:
         tools/composer install --prefer-dist --no-progress
 
     - name: Execute GitHooks
-      run: php githooks tool all full
+      run: php githooks flow qa
 
   # Code_Analysis:
   #   name: Code Analysis
