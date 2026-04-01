@@ -69,4 +69,63 @@ class OptionsConfigurationTest extends TestCase
         $this->assertCount(1, $result->getWarnings());
         $this->assertStringContainsString('unknown', $result->getWarnings()[0]);
     }
+
+    /** @test */
+    public function defaults_returns_default_values()
+    {
+        $options = OptionsConfiguration::defaults();
+
+        $this->assertFalse($options->isFailFast());
+        $this->assertEquals(1, $options->getProcesses());
+    }
+
+    /** @test */
+    public function with_overrides_applies_fail_fast()
+    {
+        $options = new OptionsConfiguration(false, 2);
+        $overridden = $options->withOverrides(true, null);
+
+        $this->assertTrue($overridden->isFailFast());
+        $this->assertEquals(2, $overridden->getProcesses());
+    }
+
+    /** @test */
+    public function with_overrides_applies_processes()
+    {
+        $options = new OptionsConfiguration(true, 1);
+        $overridden = $options->withOverrides(null, 8);
+
+        $this->assertTrue($overridden->isFailFast());
+        $this->assertEquals(8, $overridden->getProcesses());
+    }
+
+    /** @test */
+    public function with_overrides_applies_both()
+    {
+        $options = new OptionsConfiguration(false, 1);
+        $overridden = $options->withOverrides(true, 4);
+
+        $this->assertTrue($overridden->isFailFast());
+        $this->assertEquals(4, $overridden->getProcesses());
+    }
+
+    /** @test */
+    public function with_overrides_keeps_original_when_nulls()
+    {
+        $options = new OptionsConfiguration(true, 8);
+        $overridden = $options->withOverrides(null, null);
+
+        $this->assertTrue($overridden->isFailFast());
+        $this->assertEquals(8, $overridden->getProcesses());
+    }
+
+    /** @test */
+    public function with_overrides_does_not_mutate_original()
+    {
+        $original = new OptionsConfiguration(false, 1);
+        $original->withOverrides(true, 4);
+
+        $this->assertFalse($original->isFailFast());
+        $this->assertEquals(1, $original->getProcesses());
+    }
 }

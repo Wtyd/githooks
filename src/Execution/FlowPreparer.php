@@ -23,13 +23,19 @@ class FlowPreparer
         $this->jobRegistry = $jobRegistry;
     }
 
-    public function prepare(FlowConfiguration $flow, ConfigurationResult $config, ?ExecutionContext $context = null): FlowPlan
+    /**
+     * @param string[] $excludeJobs Job names to exclude from the plan
+     */
+    public function prepare(FlowConfiguration $flow, ConfigurationResult $config, ?ExecutionContext $context = null, array $excludeJobs = []): FlowPlan
     {
         $options = $flow->getOptions() ?? $config->getGlobalOptions();
 
         $jobs = [];
 
         foreach ($flow->getJobs() as $jobName) {
+            if (in_array($jobName, $excludeJobs, true)) {
+                continue;
+            }
             $jobConfig = $config->getJob($jobName);
             if ($jobConfig === null) {
                 continue;

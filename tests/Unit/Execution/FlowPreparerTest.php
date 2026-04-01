@@ -14,6 +14,7 @@ use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
+use Wtyd\GitHooks\Jobs\PhpmdJob;
 
 class FlowPreparerTest extends TestCase
 {
@@ -110,6 +111,79 @@ class FlowPreparerTest extends TestCase
         );
 
         $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertCount(1, $plan->getJobs());
+    }
+
+    /** @test */
+    public function it_excludes_jobs_by_name()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]),
+            'phpcs_src'   => new JobConfiguration('phpcs_src', 'phpcs', ['paths' => ['src']]),
+            'phpmd_src'   => new JobConfiguration('phpmd_src', 'phpmd', ['paths' => ['src'], 'rules' => 'codesize']),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src', 'phpcs_src', 'phpmd_src']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config, null, ['phpcs_src', 'phpmd_src']);
+
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertInstanceOf(PhpstanJob::class, $plan->getJobs()[0]);
+    }
+
+    /** @test */
+    public function it_excludes_nothing_with_empty_exclude_list()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]),
+            'phpcs_src'   => new JobConfiguration('phpcs_src', 'phpcs', ['paths' => ['src']]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src', 'phpcs_src']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config, null, []);
+
+        $this->assertCount(2, $plan->getJobs());
+    }
+
+    /** @test */
+    public function it_ignores_exclude_names_that_dont_exist()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config, null, ['nonexistent']);
 
         $this->assertCount(1, $plan->getJobs());
     }

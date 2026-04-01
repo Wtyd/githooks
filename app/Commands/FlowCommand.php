@@ -81,7 +81,28 @@ class FlowCommand extends Command
                 ? ExecutionContext::forFastMode($this->getLaravel()->make(FileUtilsInterface::class))
                 : null;
 
-            $plan = $this->preparer->prepare($flow, $config, $context);
+            $excludeJobs = [];
+            $excludeOption = $this->option('exclude-jobs');
+            if (!empty($excludeOption)) {
+                $excludeJobs = array_map('trim', explode(',', strval($excludeOption)));
+            }
+
+            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs);
+
+            // CLI options override config values
+            $cliFailFast = $this->option('fail-fast') ? true : null;
+            $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
+
+            if ($cliFailFast !== null || $cliProcesses !== null) {
+                $overriddenOptions = $plan->getOptions()->withOverrides($cliFailFast, $cliProcesses);
+                $plan = new \Wtyd\GitHooks\Execution\FlowPlan(
+                    $plan->getFlowName(),
+                    $plan->getJobs(),
+                    $overriddenOptions,
+                    $plan->getContext()
+                );
+            }
+
             $result = $this->executor->execute($plan);
 
             foreach ($config->getValidation()->getWarnings() as $warning) {

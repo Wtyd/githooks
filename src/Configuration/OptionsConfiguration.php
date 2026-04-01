@@ -61,4 +61,21 @@ class OptionsConfiguration
     {
         return $this->processes;
     }
+
+    public static function defaults(): self
+    {
+        return new self();
+    }
+
+    /**
+     * Return a new instance with CLI overrides applied.
+     * Only non-null values override the current config.
+     */
+    public function withOverrides(?bool $failFast, ?int $processes): self
+    {
+        return new self(
+            $failFast !== null ? $failFast : $this->failFast,
+            $processes !== null ? $processes : $this->processes
+        );
+    }
 }

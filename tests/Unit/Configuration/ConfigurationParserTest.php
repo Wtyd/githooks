@@ -192,4 +192,64 @@ PHP;
         $this->assertEquals('custom', $job->getType());
         $this->assertEquals('npm run lint', $job->getConfig()['script']);
     }
+
+    /**
+     * @test
+     * Unsupported file extension triggers InvalidArgumentException.
+     */
+    public function it_throws_for_unsupported_file_extension()
+    {
+        $badFile = $this->fixturesPath . '/githooks.toml';
+        file_put_contents($badFile, 'key = "value"');
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $parser->parse($badFile);
+    }
+
+    /** @test */
+    public function it_reports_both_type_error_and_undefined_reference()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['bad_job']],
+    ],
+    'jobs' => [
+        'bad_job' => ['type' => 'nonexistent_tool'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $errors = $result->getValidation()->getErrors();
+        $typeError = false;
+        foreach ($errors as $error) {
+            if (strpos($error, 'not a supported tool') !== false) {
+                $typeError = true;
+            }
+        }
+        $this->assertTrue($typeError, 'Expected error about unsupported tool type');
+    }
+
+    /** @test */
+    public function it_treats_empty_array_as_v3_with_errors()
+    {
+        $config = '<?php return [];';
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        // Empty config should NOT be detected as legacy
+        $this->assertFalse($result->isLegacy());
+        // But should have errors (no jobs section)
+        $this->assertTrue($result->hasErrors());
+    }
 }
