@@ -9,7 +9,7 @@ use Symfony\Component\Process\Process as SymfonyProcess;
 
 class Process extends SymfonyProcess
 {
-    protected $starttime;
+    protected ?float $starttime = null;
 
     /** @inheritDoc */
     public function start(callable $callback = null, array $env = [])

@@ -9,7 +9,7 @@ class ValueNotAllowedException extends \UnexpectedValueException
     /** The key of the configuration file. */
     protected string $key;
 
-    /** The value for the key. */
+    /** @var mixed The value for the key. */
     protected $value;
 
     /** The possible values for the key. */

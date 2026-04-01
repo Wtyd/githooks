@@ -36,6 +36,7 @@ class ConfigurationParser
 
         if ($this->isLegacyFormat($raw)) {
             $result = new ValidationResult();
+            $this->addYamlDeprecationWarning($filePath, $result);
             $result->addWarning(
                 'Legacy configuration format detected (Options/Tools). '
                 . "Use 'githooks conf:init' to generate the new hooks/flows/jobs format."
@@ -59,6 +60,8 @@ class ConfigurationParser
     protected function parseV3(array $raw, string $filePath): ConfigurationResult
     {
         $result = new ValidationResult();
+
+        $this->addYamlDeprecationWarning($filePath, $result);
 
         // 1. Parse global flow-level options
         $globalOptions = null;
@@ -188,5 +191,16 @@ class ConfigurationParser
         }
 
         throw new ConfigurationFileNotFoundException();
+    }
+
+    private function addYamlDeprecationWarning(string $filePath, ValidationResult $result): void
+    {
+        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+        if ($extension === 'yml' || $extension === 'yaml') {
+            $result->addWarning(
+                'YAML configuration files are deprecated since v3.0 and will be removed in v4.0. '
+                . 'Use PHP format (githooks.php) instead. Run "githooks conf:init" to generate.'
+            );
+        }
     }
 }

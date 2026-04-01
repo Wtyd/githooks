@@ -14,7 +14,6 @@ use Tests\Doubles\PhpunitFake;
 use Tests\Doubles\ProcessExecutionFake;
 use Tests\Doubles\PsalmFake;
 use Tests\Doubles\ScriptFake;
-use Tests\Doubles\SecurityCheckerFake;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Zero\{
     ZeroTestCase,
@@ -33,8 +32,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     Phpstan,
     Phpunit,
     Psalm,
-    Script,
-    SecurityChecker
+    Script
 };
 
 abstract class ConsoleTestCase extends ZeroTestCase
@@ -66,7 +64,7 @@ abstract class ConsoleTestCase extends ZeroTestCase
 
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
         $this->app->bind(GitStagerInterface::class, GitStagerFake::class);
-        // FileReader, SecurityChecker and ProcessExecutionFactory singletons
+        // FileReader and ProcessExecutionFactory singletons
         // are already registered in AppServiceProvider::testsRegister() during
         // bootstrap. Do NOT re-register them here — the command instances were
         // constructed during bootstrap and hold references to those singletons.
@@ -101,7 +99,6 @@ abstract class ConsoleTestCase extends ZeroTestCase
         $this->app->bind(Phpcpd::class, PhpcpdFake::class);
         $this->app->bind(Phpmd::class, PhpmdFake::class);
         $this->app->bind(Phpstan::class, PhpstanFake::class);
-        $this->app->bind(SecurityChecker::class, SecurityCheckerFake::class);
         $this->app->bind(Phpstan::class, PhpstanFake::class);
         $this->app->bind(Phpcs::class, PhpcsFake::class);
         $this->app->bind(Phpcbf::class, PhpcbfFake::class);

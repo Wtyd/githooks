@@ -39,7 +39,6 @@ class ProcessExecutionTest extends UnitTestCase
             'phpcpd' => ['phpcpd'],
             'parallel-lint' => ['parallel-lint'],
             'phpstan' => ['phpstan'],
-            'security-checker' => ['security-checker'],
         ];
     }
 

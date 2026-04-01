@@ -10,7 +10,7 @@ namespace Tests\Doubles;
 trait ExecutionFakeTrait
 {
     /** @var array<ProcessFake> */
-    protected $processes = [];
+    protected array $processes = [];
 
     /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstact> */
     protected $toolsThatMustFail = [];

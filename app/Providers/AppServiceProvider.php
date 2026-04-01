@@ -7,9 +7,7 @@ use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
-use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 use Tests\Doubles\FileReaderFake;
-use Tests\Doubles\SecurityCheckerFake;
 use Wtyd\GitHooks\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider
@@ -65,7 +63,6 @@ class AppServiceProvider extends ServiceProvider
     {
         if (defined('APP_ENV') && APP_ENV === 'testing') {
             $this->app->singleton(FileReader::class, FileReaderFake::class);
-            $this->app->singleton(SecurityChecker::class, SecurityCheckerFake::class);
             $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
             Storage::$disk = 'testing';
         }

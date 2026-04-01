@@ -37,13 +37,12 @@ class MultiProcessesExecutionTest extends UnitTestCase
     public function oneToolFailsEachTimeDataProvider()
     {
         return [
-            'Fails phpcs' => ['phpcs', ['phpcpd', 'phpcbf', 'phpmd', 'parallel-lint', 'phpstan', 'security-checker']],
-            'Fails phpcbf' => ['phpcbf', ['phpcs', 'phpcpd', 'phpmd', 'parallel-lint', 'phpstan', 'security-checker']],
-            'Fails phpmd' => ['phpmd', ['phpcs', 'phpcbf', 'phpcpd', 'parallel-lint', 'phpstan', 'security-checker']],
-            'Fails phpcpd' => ['phpcpd', ['phpcs', 'phpcbf', 'phpmd', 'parallel-lint', 'phpstan', 'security-checker']],
-            'Fails parallel-lint' => ['parallel-lint', ['phpcs', 'phpcbf', 'phpmd', 'phpcpd', 'phpstan', 'security-checker']],
-            'Fails phpstan' => ['phpstan', ['phpcs', 'phpcbf', 'phpmd', 'parallel-lint', 'phpcpd', 'security-checker']],
-            'Fails security-checker' => ['security-checker', ['phpcs', 'phpcbf', 'phpmd', 'parallel-lint', 'phpstan', 'phpcpd']],
+            'Fails phpcs' => ['phpcs', ['phpcpd', 'phpcbf', 'phpmd', 'parallel-lint', 'phpstan']],
+            'Fails phpcbf' => ['phpcbf', ['phpcs', 'phpcpd', 'phpmd', 'parallel-lint', 'phpstan']],
+            'Fails phpmd' => ['phpmd', ['phpcs', 'phpcbf', 'phpcpd', 'parallel-lint', 'phpstan']],
+            'Fails phpcpd' => ['phpcpd', ['phpcs', 'phpcbf', 'phpmd', 'parallel-lint', 'phpstan']],
+            'Fails parallel-lint' => ['parallel-lint', ['phpcs', 'phpcbf', 'phpmd', 'phpcpd', 'phpstan']],
+            'Fails phpstan' => ['phpstan', ['phpcs', 'phpcbf', 'phpmd', 'parallel-lint', 'phpcpd']],
         ];
     }
 
@@ -64,7 +63,6 @@ class MultiProcessesExecutionTest extends UnitTestCase
 
         $this->assertTrue($errors->isEmpty());
 
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('security-checker')))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpmd')))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpcs')))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpcbf')))->once();
@@ -99,7 +97,6 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[2])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[3])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[4])))->once();
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[5])))->once();
     }
 
     /**
@@ -128,7 +125,6 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[2])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[3])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[4])))->once();
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[5])))->once();
     }
 
      /**
@@ -158,7 +154,6 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[2])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[3])))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[4])))->once();
-        $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp($successTools[5])))->once();
     }
 
     public function twoToolsFailsDataProvider()
@@ -174,8 +169,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
             'Fails phpmd' => ['phpmd', 'phpcpd', 'failedToolsByFoundedErrors', 'fakes an error\n'],
             'Fails phpcpd' => ['phpcpd', 'parallel-lint', 'failedToolsByFoundedErrors', 'fakes an error\n'],
             'Fails parallel-lint' => ['parallel-lint', 'phpstan', 'failedToolsByFoundedErrors', 'fakes an error\n'],
-            'Fails phpstan' => ['phpstan', 'security-checker', 'failedToolsByFoundedErrors', 'fakes an error\n'],
-            'Fails security-checker' => ['security-checker', 'phpcs', 'failedToolsByFoundedErrors', 'fakes an error\n'],
+            'Fails phpstan' => ['phpstan', 'phpcs', 'failedToolsByFoundedErrors', 'fakes an error\n'],
         ];
     }
 

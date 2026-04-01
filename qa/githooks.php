@@ -1,95 +1,95 @@
 <?php
+
 return [
-    'Options' => [
-        'execution' => 'full', // full (default), fast
-        // Number of tools to run simultaneously. Some tools (phpstan, parallel-lint,
-        // phpcs, psalm) spawn their own worker processes internally, so actual OS
-        // processes may be higher than this value. Keep low on machines with few cores.
-        'processes' => 2,
+    'hooks' => [
+        'pre-commit' => ['qa'],
     ],
-    'Tools' => [
-        'phpstan',
-        'parallel-lint',
-        'phpmd',
-        'phpcpd',
-        'phpcbf',
-        'phpcs',
-        'phpunit',
-        // 'psalm',
+
+    'flows' => [
+        'options' => [
+            'fail-fast' => false,
+            // Number of jobs to run simultaneously. Some tools (phpstan, parallel-lint,
+            // phpcs, psalm) spawn their own worker processes internally, so actual OS
+            // processes may be higher than this value. Keep low on machines with few cores.
+            'processes' => 2,
+        ],
+        'qa' => [
+            'jobs' => [
+                'phpstan_src',
+                'parallel_lint',
+                'phpmd_src',
+                'phpcpd_all',
+                'phpcbf_all',
+                'phpcs_all',
+                'phpunit_all',
+                // 'psalm_src',
+            ],
+        ],
     ],
-    'phpstan' => [
-        'executablePath' => 'php8.1 vendor/bin/phpstan',
-        'config' => './qa/phpstan.neon',
-        // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
-        'paths' => ['src'],
-        // 'level' => 8, // level 0-10 (0 default). Max depends on PHPStan version
-        'otherArguments' => '--no-progress --ansi',
-    ],
-    'parallel-lint' => [
-        'executablePath' => 'php7.4 vendor/bin/parallel-lint',
-        'paths' => ['./'],
-        'exclude' => ['vendor', 'qa', 'tools'],
-        'otherArguments' => '--colors',
-        // 'ignoreErrorsOnExit' => true,
-    ],
-    'phpcs' => [
-        'executablePath' => 'tools/php74/phpcs',
-        'paths' => ['./'],
-        'standard' => './qa/psr12-ruleset.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
-        'ignore' => ['vendor', 'tools'],
-        'error-severity' => 1,
-        'warning-severity' => 6,
-        'otherArguments' => '--report=summary --parallel=2',
-    ],
-    'phpcbf' => [
-        'usePhpcsConfiguration' => true,
-        // 'executablePath' => 'tools/php74/phpcbf',
-        // 'paths' => ['./'],
-        // 'standard' => './qa/psr12-ruleset.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
-        // 'ignore' => ['vendor'], // Se podría configurar en el standard directamente
-        // 'error-severity' => 1,
-        // 'warning-severity' => 6,
-    ],
-    'phpmd' => [
-        'executablePath' => 'tools/php74/phpmd',
-        'paths' => ['./src/'],
-        'rules' => './qa/phpmd-ruleset.xml', // or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
-        'exclude' => ['vendor'], // Se podría configurar en las rules directamente
-        // 'otherArguments' => '--strict',
-        // 'ignoreErrorsOnExit' => true,
-    ],
-    'phpcpd' => [
-        'executablePath' => 'tools/php74/phpcpd',
-        'paths' => ['./'],
-        'exclude' => ['vendor', 'tests', 'tools'],
-        // 'otherArguments' => '--min-lines=5',
-    ],
-    'security-checker' => [
-        'executablePath' => 'tools/php74/local-php-security-checker',
-        // 'otherArguments' => '-format json',
-    ],
-    'phpunit' => [
-        'executablePath' => 'php7.4 vendor/bin/phpunit',
-        // 'group' => 'integration',
-        // 'exclude-group' => 'slow',
-        // 'filter' => 'testSomething',
-        // 'configuration' => 'path/to/configuration.xml',
-        'log-junit' => 'junit.xml',
-        'otherArguments' => '--colors=always',
-        // 'ignoreErrorsOnExit' => true,
-    ],
-    'psalm' => [
-        'executablePath' => 'php7.4 vendor/bin/psalm',
-        'config' => 'qa/psalm.xml',
-        // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
-        // 'threads' => 4,
-        // 'no-diff' => true,
-        // 'output-format' => 'json',
-        // 'plugin' => 'psalm-plugin',
-        // 'use-baseline' => 'path/to/baseline.xml',
-        // 'report' => 'psalm-report.xml',
-        // 'otherArguments' => '--no-progress',
-        // 'ignoreErrorsOnExit' => true,
-        'paths' => ['src', 'app'],
+
+    'jobs' => [
+        'phpstan_src' => [
+            'type' => 'phpstan',
+            'executablePath' => 'php8.1 vendor/bin/phpstan',
+            'config' => './qa/phpstan.neon',
+            'paths' => ['src'],
+            'otherArguments' => '--no-progress --ansi',
+        ],
+        'parallel_lint' => [
+            'type' => 'parallel-lint',
+            'executablePath' => 'php7.4 vendor/bin/parallel-lint',
+            'paths' => ['./'],
+            'exclude' => ['vendor', 'qa', 'tools'],
+            'otherArguments' => '--colors',
+        ],
+        'phpcs_all' => [
+            'type' => 'phpcs',
+            'executablePath' => 'tools/php74/phpcs',
+            'paths' => ['./'],
+            'standard' => './qa/psr12-ruleset.xml',
+            'ignore' => ['vendor', 'tools'],
+            'error-severity' => 1,
+            'warning-severity' => 6,
+            'otherArguments' => '--report=summary --parallel=2',
+        ],
+        'phpcbf_all' => [
+            'type' => 'phpcbf',
+            'executablePath' => 'tools/php74/phpcbf',
+            'paths' => ['./'],
+            'standard' => './qa/psr12-ruleset.xml',
+            'ignore' => ['vendor', 'tools'],
+            'error-severity' => 1,
+            'warning-severity' => 6,
+        ],
+        'phpmd_src' => [
+            'type' => 'phpmd',
+            'executablePath' => 'tools/php74/phpmd',
+            'paths' => ['./src/'],
+            'rules' => './qa/phpmd-ruleset.xml',
+            'exclude' => ['vendor'],
+        ],
+        'phpcpd_all' => [
+            'type' => 'phpcpd',
+            'executablePath' => 'tools/php80/phpcpd',
+            'paths' => ['./'],
+            'exclude' => ['vendor', 'tests', 'tools'],
+        ],
+        'phpunit_all' => [
+            'type' => 'phpunit',
+            'executablePath' => 'php7.4 vendor/bin/phpunit',
+            'log-junit' => 'junit.xml',
+            'otherArguments' => '--colors=always',
+        ],
+        'psalm_src' => [
+            'type' => 'psalm',
+            'executablePath' => 'php7.4 vendor/bin/psalm',
+            'config' => 'qa/psalm.xml',
+            'paths' => ['src', 'app'],
+        ],
+        // Example: replace security-checker with composer audit via custom job
+        // 'composer_audit' => [
+        //     'type' => 'custom',
+        //     'script' => 'composer audit',
+        // ],
     ],
 ];

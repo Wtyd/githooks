@@ -15,13 +15,11 @@ use Wtyd\GitHooks\Tools\Tool\Phpstan;
 use Wtyd\GitHooks\Tools\Tool\Phpunit;
 use Wtyd\GitHooks\Tools\Tool\Psalm;
 use Wtyd\GitHooks\Tools\Tool\Script;
-use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 
 class ToolRegistry
 {
     public const PHPCS = 'phpcs';
     public const PHPCBF = 'phpcbf';
-    public const SECURITY_CHECKER = 'security-checker';
     public const PARALLEL_LINT = 'parallel-lint';
     public const MESS_DETECTOR = 'phpmd';
     public const COPYPASTE_DETECTOR = 'phpcpd';
@@ -34,7 +32,6 @@ class ToolRegistry
     private const SUPPORTED_TOOLS = [
         self::PHPCS => Phpcs::class,
         self::PHPCBF => Phpcbf::class,
-        self::SECURITY_CHECKER => SecurityChecker::class,
         self::PARALLEL_LINT => ParallelLint::class,
         self::MESS_DETECTOR => Phpmd::class,
         self::COPYPASTE_DETECTOR => Phpcpd::class,
@@ -47,7 +44,6 @@ class ToolRegistry
     private const EXCLUDE_ARGUMENT = [
         self::PHPCS => Phpcs::IGNORE,
         self::PHPCBF => Phpcbf::IGNORE,
-        self::SECURITY_CHECKER => '',
         self::PARALLEL_LINT => ParallelLint::EXCLUDE,
         self::MESS_DETECTOR => Phpmd::EXCLUDE,
         self::COPYPASTE_DETECTOR => Phpcpd::EXCLUDE,

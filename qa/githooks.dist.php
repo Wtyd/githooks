@@ -1,146 +1,144 @@
 <?php
+
+/**
+ * GitHooks v3 configuration file.
+ *
+ * Structure: hooks -> flows -> jobs
+ *   - hooks:  Map git events to flows/jobs (optional, only needed for git hooks)
+ *   - flows:  Named groups of jobs with shared options
+ *   - jobs:   Individual QA tasks with their configuration
+ *
+ * Usage:
+ *   githooks flow <name>       Run a flow
+ *   githooks job <name>        Run a single job
+ *   githooks hook              Install git hooks from the 'hooks' section
+ *
+ * All jobs support these common options:
+ *   - executablePath:       Path to the tool binary (default: tool name from PATH)
+ *   - otherArguments:       Extra CLI arguments not natively supported
+ *   - ignoreErrorsOnExit:   Don't fail the flow when this job fails (default: false)
+ *   - failFast:             Stop remaining jobs on failure (default: false)
+ */
 return [
-    'Options' => [
-        'execution' => 'full', // Optional: default full. Values: full or fast
-        // Number of tools to run simultaneously. Some tools (phpstan, parallel-lint,
-        // phpcs, psalm) spawn their own worker processes internally, so actual OS
-        // processes may be higher than this value. Keep low on machines with few cores.
-        'processes' => 1,
-    ],
-    'Tools' => [
-        'security-checker',
-        'phpstan',
-        'parallel-lint',
-        'phpcbf',
-        'phpcs',
-        'phpmd',
-        'phpcpd',
-        'phpunit',
-        'psalm',
-        'script',
-    ],
-    // Configuration of each tool
-    // Each tool supports an optional 'execution' key to override the global mode.
-    // Values: 'full' or 'fast'. If omitted, inherits the global Options.execution value.
-    // CLI execution argument (e.g. `githooks tool all fast`) overrides both global and per-tool settings.
-
-    // 'security-checker' => [
-    //     'executablePath' => 'composer audit',
-    //     'otherArguments' => '-format json',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'phpstan' => [
-    //     'executablePath' => 'phpstan',
-    //     'execution' => 'fast', // Optional: override global execution mode for this tool
-    //     'config' => './qa/phpstan.neon',
-    //     // 'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
-    //     'paths' => ['src'],
-    //     // 'level' => 9, // level 0-10 (0 default). Max depends on PHPStan version
-    //     'error-format' => 'table', // Output format: table, json, raw, github, gitlab, junit, checkstyle, etc.
-    //     'no-progress' => true, // Suppress progress output
-    //     'clear-result-cache' => false, // Clear result cache before analysis
-    //     'otherArguments' => '--ansi',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'parallel-lint' => [
-    //     'executablePath' => 'parallel-lint',
-    //     'paths' => ['./'],
-    //     'exclude' => ['vendor'],
-    //     'jobs' => 10, // Number of parallel jobs (-j flag)
-    //     'otherArguments' => '--colors',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'phpcs' => [
-    //     'executablePath' => 'phpcs',
-    //     'paths' => ['./'],
-    //     'standard' => './myRules.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
-    //     'ignore' => ['vendor'],
-    //     'error-severity' => 1,
-    //     'warning-severity' => 6,
-    //     'cache' => true, // Enable result caching
-    //     'no-cache' => false, // Disable caching (overrides cache)
-    //     'report' => 'summary', // Report format: full, summary, json, csv, checkstyle, etc.
-    //     'parallel' => 2, // Number of parallel processes
-    //     'otherArguments' => '--colors',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'phpcbf' => [
-    //     'usePhpcsConfiguration' => true, // if true no more configuration is needed. It graves the arguments of phpcs configuration
-    //     'execution' => 'fast', // Optional: run phpcbf only against modified files
-    //     'executablePath' => 'phpcbf',
-    //     'paths' => ['./'],
-    //     'standard' => './myRules.xml', // or predefined rules: Squiz, PSR12, Generic, PEAR
-    //     'ignore' => ['vendor'],
-    //     'error-severity' => 1,
-    //     'warning-severity' => 6,
-    //     'cache' => true, // Enable result caching
-    //     'no-cache' => false, // Disable caching (overrides cache)
-    //     'report' => 'summary', // Report format: full, summary, json, csv, checkstyle, etc.
-    //     'parallel' => 2, // Number of parallel processes
-    //     'otherArguments' => '--colors',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'phpmd' => [
-    //     'executablePath' => 'phpmd',
-    //     'paths' => ['./src/'],
-    //     'rules' => './myRules.xml', // or predefined rules cleancode,codesize,controversial,design,naming,unusedcode
-    //     'exclude' => ['vendor'],
-    //     'cache' => true, // Enable caching (PHPMD 2.13.0+)
-    //     'cache-file' => '.phpmd.cache', // Custom cache file path
-    //     'cache-strategy' => 'content', // Cache strategy: content or timestamp
-    //     'suffixes' => 'php', // File suffixes to check (comma-separated, default: php)
-    //     'baseline-file' => 'phpmd-baseline.xml', // Baseline file to ignore known violations
-    //     'otherArguments' => '--strict',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'phpcpd' => [
-    //     'executablePath' => 'phpcpd',
-    //     'paths' => ['./'],
-    //     'exclude' => ['vendor'],
-    //     'min-lines' => 5, // Minimum number of identical lines to detect as copy-paste
-    //     'min-tokens' => 70, // Minimum number of identical tokens to detect as copy-paste
-    //     'otherArguments' => '--fuzzy',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'phpunit' => [
-    //     'executablePath' => 'phpunit',
-    //     'group' => 'integration', // Run only tests from the specified group(s), comma-separated
-    //     'exclude-group' => 'slow', // Exclude tests from the specified group(s), comma-separated
-    //     'filter' => 'testSomething', // Filter which tests to run by regex pattern
-    //     'configuration' => 'phpunit.xml', // Path to PHPUnit XML configuration file
-    //     'log-junit' => 'junit.xml', // Log test execution in JUnit XML format
-    //     'otherArguments' => '--colors=always',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'psalm' => [
-    //     'executablePath' => 'psalm',
-    //     'config' => 'psalm.xml', // Path to Psalm XML configuration file
-    //     'memory-limit' => '1G', // Examples: 1M 2000M 1G 5G
-    //     'threads' => 4, // Number of threads for parallel analysis
-    //     'no-diff' => true, // Disable diff mode (analyze all files)
-    //     'output-format' => 'console', // Output format: console, json, xml, checkstyle, junit, etc.
-    //     'plugin' => 'path/to/plugin.php', // Path to a Psalm plugin
-    //     'use-baseline' => 'psalm-baseline.xml', // Path to baseline file to ignore known issues
-    //     'report' => 'psalm-report.xml', // Generate a report file (format inferred from extension)
-    //     'paths' => ['src', 'app'], // Directories to analyze
-    //     'otherArguments' => '--no-progress',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
-    // ],
-    // 'script' => [
-    //     'name' => 'php-cs-fixer', // Optional: custom name for Tools array and CLI (e.g. githooks tool php-cs-fixer)
-    //     'executablePath' => 'vendor/bin/php-cs-fixer', // Required: path to the executable
-    //     'otherArguments' => 'fix --dry-run --config=.php-cs-fixer.php',
-    //     'ignoreErrorsOnExit' => false, // Optional: default false
-    //     'failFast' => false, // Optional: default false. Stop remaining tools on failure
+    // 'hooks' => [
+    //     'pre-commit' => ['lint'],
+    //     'pre-push'   => ['lint', 'test'],
     // ],
 
+    'flows' => [
+        'options' => [
+            'fail-fast' => false,
+            // Number of jobs to run simultaneously. Some tools (phpstan, parallel-lint,
+            // phpcs, psalm) spawn their own worker processes internally, so actual OS
+            // processes may be higher than this value. Keep low on machines with few cores.
+            'processes' => 1,
+        ],
+        'lint' => [
+            // 'options' => ['fail-fast' => true],  // Override global options per flow
+            'jobs' => ['phpcs_src'],
+        ],
+        // 'test' => [
+        //     'jobs' => ['phpunit_all'],
+        // ],
+    ],
+
+    'jobs' => [
+        // --- PHP_CodeSniffer (phpcs) ---
+        'phpcs_src' => [
+            'type' => 'phpcs',
+            'paths' => ['src'],
+            'standard' => 'PSR12',           // or path to ruleset: './qa/psr12-ruleset.xml'
+            // 'ignore' => ['vendor'],
+            // 'error-severity' => 1,
+            // 'warning-severity' => 6,
+            // 'cache' => true,
+            // 'no-cache' => false,
+            // 'report' => 'summary',
+            // 'parallel' => 2,
+        ],
+
+        // --- PHP Code Beautifier and Fixer (phpcbf) ---
+        // 'phpcbf_src' => [
+        //     'type' => 'phpcbf',
+        //     'paths' => ['src'],
+        //     'standard' => 'PSR12',
+        //     'ignore' => ['vendor'],
+        // ],
+
+        // --- PHPStan ---
+        // 'phpstan_src' => [
+        //     'type' => 'phpstan',
+        //     'config' => 'phpstan.neon',
+        //     'paths' => ['src'],
+        //     // 'level' => 9,                // 0-10 (default: 0)
+        //     // 'memory-limit' => '1G',
+        //     // 'error-format' => 'table',
+        //     // 'no-progress' => true,
+        //     // 'clear-result-cache' => false,
+        // ],
+
+        // --- PHP Mess Detector (phpmd) ---
+        // 'phpmd_src' => [
+        //     'type' => 'phpmd',
+        //     'paths' => ['src'],
+        //     'rules' => 'cleancode,codesize,controversial,design,naming,unusedcode',
+        //     // 'exclude' => ['vendor'],
+        //     // 'cache' => true,              // PHPMD 2.13.0+
+        //     // 'cache-file' => '.phpmd.cache',
+        //     // 'cache-strategy' => 'content',
+        //     // 'suffixes' => 'php',
+        //     // 'baseline-file' => 'phpmd-baseline.xml',
+        // ],
+
+        // --- Parallel-Lint ---
+        // 'parallel_lint' => [
+        //     'type' => 'parallel-lint',
+        //     'paths' => ['./'],
+        //     'exclude' => ['vendor'],
+        //     // 'jobs' => 10,                 // Number of parallel jobs (-j flag)
+        // ],
+
+        // --- PHP Copy/Paste Detector (phpcpd) ---
+        // 'phpcpd_all' => [
+        //     'type' => 'phpcpd',
+        //     'paths' => ['./'],
+        //     'exclude' => ['vendor'],
+        //     // 'min-lines' => 5,
+        //     // 'min-tokens' => 70,
+        // ],
+
+        // --- PHPUnit ---
+        // 'phpunit_all' => [
+        //     'type' => 'phpunit',
+        //     // 'config' => 'phpunit.xml',
+        //     // 'group' => 'integration',
+        //     // 'exclude-group' => 'slow',
+        //     // 'filter' => 'testSomething',
+        //     // 'log-junit' => 'junit.xml',
+        // ],
+
+        // --- Psalm ---
+        // 'psalm_src' => [
+        //     'type' => 'psalm',
+        //     'config' => 'psalm.xml',
+        //     'paths' => ['src'],
+        //     // 'memory-limit' => '1G',
+        //     // 'threads' => 4,
+        //     // 'no-diff' => true,
+        //     // 'output-format' => 'console',
+        //     // 'plugin' => 'path/to/plugin.php',
+        //     // 'use-baseline' => 'psalm-baseline.xml',
+        //     // 'report' => 'psalm-report.xml',
+        // ],
+
+        // --- Custom job (replaces security-checker; use for any non-native tool) ---
+        // 'composer_audit' => [
+        //     'type' => 'custom',
+        //     'script' => 'composer audit',
+        // ],
+        // 'eslint' => [
+        //     'type' => 'custom',
+        //     'script' => 'npx eslint src/',
+        // ],
+    ],
 ];

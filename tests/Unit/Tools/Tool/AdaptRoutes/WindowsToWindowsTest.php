@@ -10,8 +10,7 @@ use Tests\Doubles\{
     ParallelLintFake,
     PhpcpdFake,
     PhpmdFake,
-    PhpstanFake,
-    SecurityCheckerFake
+    PhpstanFake
 };
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
@@ -129,22 +128,6 @@ class WindowsToWindowsTest extends UnitTestCase
         $configuration['rules'] = 'path\to\rules.xml';
         $configuration['exclude'] =  ['path\to\vendor'];
         $this->assertEquals($configuration, $phpmd->getArguments());
-    }
-
-    /** @test */
-    function it_adapts_routes_of_securityChecker()
-    {
-        $configuration = [
-            'executablePath' => 'path\tools\security-checker',
-            'otherArguments' => '-format json',
-        ];
-
-        $toolConfiguration = new ToolConfiguration('security-checker', $configuration, new ToolRegistry());
-
-        $securityChecker = new SecurityCheckerFake($toolConfiguration);
-
-        $configuration['executablePath'] = 'path\tools\security-checker';
-        $this->assertEquals($configuration, $securityChecker->getArguments());
     }
 
     /** @test */

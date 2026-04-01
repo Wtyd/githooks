@@ -15,7 +15,6 @@ use Wtyd\GitHooks\Tools\Tool\Phpstan;
 use Wtyd\GitHooks\Tools\Tool\Phpunit;
 use Wtyd\GitHooks\Tools\Tool\Psalm;
 use Wtyd\GitHooks\Tools\Tool\Script;
-use Wtyd\GitHooks\Tools\Tool\SecurityChecker;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
@@ -74,7 +73,6 @@ class ConfigurationFileBuilder
             ToolRegistry::MESS_DETECTOR,
             ToolRegistry::COPYPASTE_DETECTOR,
             ToolRegistry::PHPSTAN,
-            ToolRegistry::SECURITY_CHECKER,
             ToolRegistry::PHPUNIT,
             ToolRegistry::PSALM,
             ToolRegistry::SCRIPT,
@@ -150,12 +148,6 @@ class ConfigurationFileBuilder
                 Phpstan::CLEAR_RESULT_CACHE => false,
                 Phpstan::OTHER_ARGS_OPTION => '',
                 Phpstan::IGNORE_ERRORS_ON_EXIT => false,
-            ],
-
-            ToolRegistry::SECURITY_CHECKER => [
-                SecurityChecker::EXECUTABLE_PATH_OPTION => $this->mainToolExecutablePaths . 'local-php-security-checker',
-                SecurityChecker::OTHER_ARGS_OPTION => '-format json',
-                SecurityChecker::IGNORE_ERRORS_ON_EXIT => false,
             ],
 
             ToolRegistry::PHPUNIT => [

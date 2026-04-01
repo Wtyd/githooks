@@ -28,6 +28,12 @@ class ExecuteToolCommand extends BaseCommand
 
     public function handle()
     {
+        $this->warn(
+            "The 'tool' command is deprecated and will be removed in v4.0. "
+            . "Use 'githooks flow <name>' or 'githooks job <name>' instead. "
+            . "Run 'githooks conf:init' to generate the new configuration format."
+        );
+
         $errors = new Errors();
         $tool = strval($this->argument('tool'));
         $execution = strval($this->argument('execution'));

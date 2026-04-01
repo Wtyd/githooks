@@ -36,7 +36,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
     public function toolIsDifferentFromAllDataProvider()
     {
         $faker = Factory::create();
-        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint']);
+        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint']);
         $processes = $faker->numberBetween(1, 100); // 0 empty
         return [
             'Case 4' => [
@@ -290,7 +290,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
     public function toolIsAllDataProvider()
     {
         $faker = Factory::create();
-        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm']);
+        $tool = $faker->randomElement(['phpcs', 'phpcbf', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm']);
         $processes = $faker->numberBetween(2, 100); // 0 is empty, 1 default
         return [
             'Case 1' => [
@@ -572,7 +572,7 @@ class ReadConfigurationFileActionTest extends UnitTestCase
         array $originalConfigurationFile,
         array $expectedToolConfiguration
     ): array {
-        $tools = ['phpcs', 'phpcbf', 'security-checker', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm', 'script'];
+        $tools = ['phpcs', 'phpcbf', 'phpmd', 'phpstan', 'phpcpd', 'parallel-lint', 'phpunit', 'psalm', 'script'];
         foreach ($tools as $tool) {
             if (!empty($expectedToolConfiguration)) {
                 $originalConfigurationFile[$tool] = array_replace($originalConfigurationFile[$tool], $expectedToolConfiguration);

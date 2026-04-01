@@ -10,10 +10,7 @@ use Tests\Doubles\FileUtilsFake;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\Tool\{
-    SecurityChecker,
-    Phpcpd
-};
+use Wtyd\GitHooks\Tools\Tool\Phpcpd;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class FastExecutionTest extends UnitTestCase
@@ -182,13 +179,6 @@ class FastExecutionTest extends UnitTestCase
     function noAcelerableToolsProvider()
     {
         return [
-            'security-checker' => [
-                'tool' => 'security-checker',
-                'Configuration File' => [
-                    'Tools' => ['security-checker'],
-                    'security-checker' => ['executablePath' => 'local-php-security-checker']
-                ],
-            ],
             'phpcpd' => [
                 'tool' => 'phpcpd',
                 'Configuration File' => [
@@ -259,10 +249,6 @@ class FastExecutionTest extends UnitTestCase
             'Copy Paste Detector' => [
                 'Tool Name' => 'phpcpd',
                 'Tool Class' => Phpcpd::class
-            ],
-            'Check-Security' => [
-                'Tool Name' => 'security-checker',
-                'Tool Class' => SecurityChecker::class
             ],
         ];
     }

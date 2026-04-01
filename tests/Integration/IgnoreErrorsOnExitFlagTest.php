@@ -31,9 +31,6 @@ class IgnoreErrorsOnExitFlagTest extends ConsoleTestCase
             'Parallel-Lint' => [
                 'parallel-lint'
             ],
-            'Composer Check-security' => [
-                'security-checker'
-            ],
             'PHPUnit' => [
                 'phpunit'
             ],

@@ -44,8 +44,8 @@ El orden de verificación depende del contexto:
 # Tests (usar php7.4 por defecto)
 php7.4 vendor/bin/phpunit --order-by random
 
-# QA tools
-php7.4 githooks tool all full
+# QA tools (v3)
+php7.4 githooks flow qa
 ```
 
 Si algún check falla, corregir antes de reportar.
@@ -87,9 +87,9 @@ php7.4 vendor/bin/phpunit tests/Unit              # Solo unitarios
 php7.4 vendor/bin/phpunit --group git             # Tests de git (excluidos por defecto)
 php7.4 vendor/bin/phpunit --group release         # Tests de release (requieren .phar)
 
-# QA
-php7.4 githooks tool all full                     # Todos los QA tools
-php7.4 githooks tool phpstan                      # Tool individual
+# QA (v3 — usa qa/githooks.php con formato hooks/flows/jobs)
+php7.4 githooks flow qa                           # Flow completo de QA
+php7.4 githooks job phpstan_src                   # Job individual
 
 # Build
 php7.4 githooks app:pre-build php

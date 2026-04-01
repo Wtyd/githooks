@@ -14,8 +14,7 @@ use Wtyd\GitHooks\Tools\Tool\{
     Phpmd,
     Phpstan,
     Phpunit,
-    Psalm,
-    SecurityChecker
+    Psalm
 };
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
 use Wtyd\GitHooks\Tools\ToolsFactory;
@@ -50,10 +49,6 @@ class FullExecutionTest extends UnitTestCase
             'Parallel-Lint' => [
                 ParallelLint::class,
                 'parallel-lint'
-            ],
-            'Composer Check-security' => [
-                SecurityChecker::class,
-                'security-checker'
             ],
             'PHPUnit' => [
                 Phpunit::class,
@@ -96,7 +91,7 @@ class FullExecutionTest extends UnitTestCase
         $loadedTools = $fullExecution->getTools(new ConfigurationFile($configurationFileBuilder->buildArray(), 'all', new ToolRegistry()));
 
 
-        $this->assertCount(10, $loadedTools);
+        $this->assertCount(9, $loadedTools);
     }
 
     /** @test */

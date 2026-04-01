@@ -11,7 +11,7 @@ use Wtyd\GitHooks\Tools\Process\Process;
 class ProcessFake extends Process
 {
     /** @inheritDoc */
-    protected $starttime;
+    protected ?float $starttime = null;
 
     /** @inheritDoc */
     private $lastTime;
@@ -130,7 +130,6 @@ class ProcessFake extends Process
         $tools = [
             ToolRegistry::PHPCS,
             ToolRegistry::PHPCBF,
-            ToolRegistry::SECURITY_CHECKER,
             ToolRegistry::PARALLEL_LINT,
             ToolRegistry::MESS_DETECTOR,
             ToolRegistry::COPYPASTE_DETECTOR,

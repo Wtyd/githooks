@@ -27,11 +27,6 @@ class ExecuteToolCommandTest extends SystemTestCase
     public function allToolsOKDataProvider()
     {
         return [
-            'security-checker' => [
-                'tool' => 'security-checker',
-                'command' => 'local-php-security-checker',
-                'Alias of the tool when is executed' => 'security-checker'
-            ],
             'phpcs' => [
                 'tool' => 'phpcs',
                 'command' => "phpcs $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
@@ -99,11 +94,6 @@ class ExecuteToolCommandTest extends SystemTestCase
     public function allToolsKODataProvider()
     {
         return [
-            'security-checker' => [
-                'tool' => 'security-checker',
-                'command' => 'local-php-security-checker',
-                'Alias of the tool when is executed' => 'security-checker'
-            ],
             'phpcs' => [
                 'tool' => 'phpcs',
                 'command' => "phpcs $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
@@ -181,7 +171,6 @@ class ExecuteToolCommandTest extends SystemTestCase
         return [
             'All tools' => [
                 'Tools' => [
-                    'security-checker',
                     'phpcs',
                     'phpcbf',
                     'phpcpd',
@@ -193,7 +182,6 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'script',
                 ],
                 'Command' =>  [
-                    'security-checker' => 'local-php-security-checker',
                     'phpcs' => "phpcs $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
                     'phpcbf' => "phpcbf $this->path/src --standard=PSR12 --ignore=$this->path/vendor --error-severity=1 --warning-severity=6",
                     'phpcpd' => "phpcpd --exclude $this->path/vendor $this->path/src",
@@ -220,7 +208,6 @@ class ExecuteToolCommandTest extends SystemTestCase
 
         $this->artisan('tool all')
             ->assertExitCode(0)
-            ->toolHasBeenExecutedSuccessfully('security-checker')
             ->toolHasBeenExecutedSuccessfully('phpcs')
             ->toolHasBeenExecutedSuccessfully('phpcbf')
             ->toolHasBeenExecutedSuccessfully('phpcpd')
@@ -246,17 +233,16 @@ class ExecuteToolCommandTest extends SystemTestCase
         return [
             'First set of tools' => [
                 'Tools' => [
-                    'security-checker',
                     'phpcs',
                     'phpcpd',
+                    'phpmd',
                 ],
                 'Runned Tools' => [
-                    'security-checker',
                     'phpcs',
                     'phpcpd',
+                    'phpmd',
                 ],
                 'Not runned tools' =>  [
-                    'phpmd',
                     'parallel-lint',
                     'phpstan',
                     'phpcbf',
@@ -278,7 +264,6 @@ class ExecuteToolCommandTest extends SystemTestCase
                     'phpstan'
                 ],
                 'Not runned tools' =>  [
-                    'security-checker',
                     'phpcs',
                     'phpcpd',
                     'phpunit',
@@ -315,8 +300,8 @@ class ExecuteToolCommandTest extends SystemTestCase
         return [
             'Fail phpcpd' => [
                 'Tools executed successfully' => [
-                    'security-checker',
                     'phpcs',
+                    'phpcbf',
                     'phpmd',
                     'parallel-lint',
                     'phpstan'
@@ -325,7 +310,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'Fail phpmd' => [
                 'Tools executed successfully' => [
-                    'security-checker',
+                    'phpcs',
                     'phpcbf',
                     'phpcpd',
                     'parallel-lint',
@@ -335,7 +320,7 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'Fail phpstan' => [
                 'Tools executed successfully' => [
-                    'security-checker',
+                    'phpcs',
                     'phpcbf',
                     'phpcpd',
                     'phpmd',
@@ -345,8 +330,8 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'Fail phpunit' => [
                 'Tools executed successfully' => [
-                    'security-checker',
                     'phpcs',
+                    'phpcbf',
                     'phpcpd',
                     'phpmd',
                     'parallel-lint'
@@ -355,8 +340,8 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'Fail psalm' => [
                 'Tools executed successfully' => [
-                    'security-checker',
                     'phpcs',
+                    'phpcbf',
                     'phpcpd',
                     'phpmd',
                     'parallel-lint'
@@ -365,8 +350,8 @@ class ExecuteToolCommandTest extends SystemTestCase
             ],
             'Fail script' => [
                 'Tools executed successfully' => [
-                    'security-checker',
                     'phpcs',
+                    'phpcbf',
                     'phpcpd',
                     'phpmd',
                     'parallel-lint'

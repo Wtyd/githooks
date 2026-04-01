@@ -11,62 +11,61 @@ class GitHooksDistYmlTest extends SystemTestCase
     protected function readDistFile(): array
     {
         $distFile = Storage::get('qa/githooks.dist.yml');
-        $distFile = preg_replace('/^\# /m', '', $distFile);
-        $distFile = str_replace("Old Configuration File. Now in php", "# Old Configuration File. Now in php", $distFile);
-        $distFile = str_replace("Configuration of each tool", "# Configuration of each tool", $distFile);
-        $distFile = str_replace("Per-tool execution:", "# Per-tool execution:", $distFile);
-        $distFile = str_replace("CLI execution argument", "# CLI execution argument", $distFile);
-        return Yaml::parse($distFile);
+        // Strip the header comment block (lines starting with #) before any YAML content
+        $lines = explode("\n", $distFile);
+        $yamlLines = [];
+        $headerDone = false;
+        foreach ($lines as $line) {
+            if (!$headerDone && (trim($line) === '' || strpos(ltrim($line), '#') === 0)) {
+                continue;
+            }
+            $headerDone = true;
+            // Uncomment commented-out YAML keys (e.g. "  # phpstan_src:")
+            $yamlLines[] = preg_replace('/^(\s*)# /', '$1', $line);
+        }
+        return Yaml::parse(implode("\n", $yamlLines));
     }
 
     /** @test */
-    function it_checks_dist_configuration_file_has_Options_tags_with_all_options()
+    function it_checks_dist_configuration_file_has_flows_section()
     {
-        $control = $this->configurationFileBuilder->buildArray();
-
         $distFile = $this->readDistFile();
 
-        $this->assertArrayHasKey('Options', $distFile);
-
-        $this->assertEmpty(array_diff_key($control['Options'], $distFile['Options']));
+        $this->assertArrayHasKey('flows', $distFile);
+        $this->assertArrayHasKey('options', $distFile['flows']);
+        $this->assertArrayHasKey('fail-fast', $distFile['flows']['options']);
+        $this->assertArrayHasKey('processes', $distFile['flows']['options']);
     }
 
     /** @test */
-    function it_checks_dist_configuration_file_has_Tool_tag_with_all_tools()
+    function it_checks_dist_configuration_file_has_jobs_section()
     {
-        $control = $this->configurationFileBuilder->buildArray();
-
         $distFile = $this->readDistFile();
 
-        $this->assertArrayHasKey('Tools', $distFile);
-
-        $this->assertEmpty(array_diff_key($control['Tools'], $distFile['Tools']));
+        $this->assertArrayHasKey('jobs', $distFile);
+        $this->assertNotEmpty($distFile['jobs']);
     }
 
-    public function toolsDataProvider()
+    /** @test */
+    function it_checks_dist_configuration_file_has_at_least_one_flow_with_jobs()
     {
-        return [
-            'security-checker' => ['security-checker'],
-            'parallel-lint' => ['parallel-lint'],
-            'phpstan' => ['phpstan'],
-            'phpcbf' => ['phpcbf'],
-            'phpcs' => ['phpcs'],
-            'phpmd' => ['phpmd'],
-            'phpcpd' => ['phpcpd'],
-        ];
-    }
-
-    /**
-     * @test
-     * @dataProvider toolsDataProvider
-     */
-    function it_checks_dist_configuration_file_has_each_tool_configuration_with_all_arguments($tool)
-    {
-        $control = $this->configurationFileBuilder->buildArray();
-
         $distFile = $this->readDistFile();
 
-        $this->assertArrayHasKey($tool, $distFile);
-        $this->assertEmpty(array_diff_key($control[$tool], $distFile[$tool]));
+        $flows = $distFile['flows'];
+        unset($flows['options']);
+        $this->assertNotEmpty($flows, 'Dist file must define at least one flow');
+        foreach ($flows as $flowName => $flowConfig) {
+            $this->assertArrayHasKey('jobs', $flowConfig, "Flow '$flowName' is missing 'jobs' key");
+        }
+    }
+
+    /** @test */
+    function it_checks_dist_jobs_have_type_key()
+    {
+        $distFile = $this->readDistFile();
+
+        foreach ($distFile['jobs'] as $jobName => $jobConfig) {
+            $this->assertArrayHasKey('type', $jobConfig, "Job '$jobName' is missing 'type' key");
+        }
     }
 }

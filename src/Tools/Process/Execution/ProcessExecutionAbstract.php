@@ -12,23 +12,19 @@ use Wtyd\GitHooks\Utils\Printer;
 
 abstract class ProcessExecutionAbstract
 {
-    /** @var \Wtyd\GitHooks\Utils\Printer */
-    protected $printer;
+    protected Printer $printer;
 
-    /** @var \Wtyd\GitHooks\Utils\GitStagerInterface */
-    protected $gitStager;
+    protected GitStagerInterface $gitStager;
 
-    /** @var array<\Wtyd\GitHooks\Tools\Process\Process> */
-    protected $processes = [];
+    /** @var array<Process> */
+    protected array $processes = [];
 
-    /** @var array<\Wtyd\GitHooks\Tools\Tool\ToolAbstract> */
-    protected $tools;
+    /** @var array<ToolAbstract> */
+    protected array $tools = [];
 
-    /** @var \Wtyd\GitHooks\Tools\Errors */
-    protected $errors;
+    protected Errors $errors;
 
-    /** @var int */
-    protected $threads;
+    protected int $threads = 1;
 
     public function __construct(Printer $printer, GitStagerInterface $gitStager)
     {
