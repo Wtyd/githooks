@@ -54,14 +54,14 @@ class MigrateConfigurationFileCommandTest extends SystemTestCase
     }
 
     /** @test */
-    public function it_reports_already_v3_for_empty_config()
+    public function it_shows_errors_for_empty_config_instead_of_already_v3()
     {
         file_put_contents($this->configPath, '<?php return [];');
 
         $this->artisan("conf:migrate --config=$this->configPath")
             ->assertExitCode(0);
 
-        // Bug #11: empty config is reported as "already v3" — regression test
-        $this->containsStringInOutput = ['already in v3 format'];
+        // Bug #11 fix: empty config now shows errors instead of "already v3"
+        $this->containsStringInOutput = ['has errors', 'jobs'];
     }
 }

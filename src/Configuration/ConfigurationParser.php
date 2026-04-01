@@ -80,18 +80,21 @@ class ConfigurationParser
         }
 
         // 2. Parse jobs (standalone, no cross-references)
-        $jobs = $this->parseJobs($raw['jobs'] ?? [], $result);
-        $availableJobNames = array_keys($jobs);
+        $jobsRaw = $raw['jobs'] ?? [];
+        $jobs = $this->parseJobs($jobsRaw, $result);
+        // Use all declared job names (including ones that failed validation) so that
+        // flows don't emit confusing "undefined job" warnings for jobs with type errors.
+        $declaredJobNames = is_array($jobsRaw) ? array_keys($jobsRaw) : [];
 
         // 3. Parse flows (reference jobs)
-        $flows = $this->parseFlows($flowsRaw, $availableJobNames, $result);
+        $flows = $this->parseFlows($flowsRaw, $declaredJobNames, $result);
         $availableFlowNames = array_keys($flows);
 
         // 4. Parse hooks (reference flows and jobs)
         $hooks = null;
         $hooksRaw = $raw['hooks'] ?? [];
         if (!empty($hooksRaw)) {
-            $hooks = HookConfiguration::fromArray($hooksRaw, $availableFlowNames, $availableJobNames, $result);
+            $hooks = HookConfiguration::fromArray($hooksRaw, $availableFlowNames, $declaredJobNames, $result);
         }
 
         // 5. Warn about unknown top-level keys

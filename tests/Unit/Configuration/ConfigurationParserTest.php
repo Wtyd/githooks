@@ -209,7 +209,7 @@ PHP;
     }
 
     /** @test */
-    public function it_reports_both_type_error_and_undefined_reference()
+    public function it_reports_type_error_without_confusing_undefined_warning()
     {
         $config = <<<'PHP'
 <?php
@@ -227,15 +227,24 @@ PHP;
         $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
         $result = $parser->parse();
 
+        // Should have the type error
         $this->assertTrue($result->hasErrors());
-        $errors = $result->getValidation()->getErrors();
         $typeError = false;
-        foreach ($errors as $error) {
+        foreach ($result->getValidation()->getErrors() as $error) {
             if (strpos($error, 'not a supported tool') !== false) {
                 $typeError = true;
             }
         }
         $this->assertTrue($typeError, 'Expected error about unsupported tool type');
+
+        // Bug #9 fix: should NOT have warning about "undefined job"
+        foreach ($result->getValidation()->getWarnings() as $warning) {
+            $this->assertStringNotContainsString(
+                'references undefined job',
+                $warning,
+                'Should not warn about undefined job when the job has a type error'
+            );
+        }
     }
 
     /** @test */

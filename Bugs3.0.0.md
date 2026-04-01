@@ -228,7 +228,7 @@ not found in /home/runner/work/githooks/githooks/tests/Zero/IlluminateTestCase.p
 |---|---|---|
 | ALTA | 6 | ~~#1 #2 #3~~ (corregidos), ~~#4~~ (corregido), ~~#5~~ (corregido), ~~#13~~ (corregido) |
 | MEDIA | 4 | ~~#6~~ (corregido), ~~#7~~ (corregido), ~~#8~~ (corregido), ~~#12~~ (corregido) |
-| BAJA | 3 | #9 (warning confuso), #10 (format fallback), #11 (migrate vacía) |
+| BAJA | 3 | ~~#9~~ (corregido), ~~#10~~ (corregido), ~~#11~~ (corregido) |
 
 ### Estado de correcciones
 
@@ -242,9 +242,9 @@ not found in /home/runner/work/githooks/githooks/tests/Zero/IlluminateTestCase.p
 | #6 `-c` shortcut | **Corregido** | Formato `{-c\|--config=}` era inválido en Symfony Console, eliminado shortcut |
 | #7 validación tipos | **Corregido** | `validateCommonKeys()` para paths/rules fuera del ARGUMENT_MAP |
 | #8 stack trace | **Corregido** | `file_exists()` check en `ConfigurationParser::readFile()` + `ConfigurationFileNotFoundException` implementa `GitHooksExceptionInterface` |
-| #9 warning confuso | Pendiente | — |
-| #10 format fallback | Pendiente | — |
-| #11 migrate vacía | Pendiente | — |
+| #9 warning confuso | **Corregido** | Flows usan `declaredJobNames` (incluye jobs con errores) para evitar warning falso |
+| #10 format fallback | **Corregido** | Warning explícito para formatos no soportados |
+| #11 migrate vacía | **Corregido** | `conf:migrate` muestra errores de config vacía en vez de "already v3" |
 | #12 custom sin validación | **Corregido** | Añadido `validateCustomJobKeys()` para claves de jobs custom |
 | #13 tests PHP 8.1+ | **Corregido** | Eliminado trait `MocksApplicationServices` (nunca usado) + fix `{-c\|--config=}` |
 

@@ -31,7 +31,15 @@ class MigrateConfigurationFileCommand extends Command
             $config = $this->parser->parse($configFile);
 
             if (!$config->isLegacy()) {
-                $this->info('Configuration file is already in v3 format. No migration needed.');
+                if ($config->hasErrors()) {
+                    $this->warn('Configuration file appears to be v3 format but has errors:');
+                    foreach ($config->getValidation()->getErrors() as $error) {
+                        $this->error("  $error");
+                    }
+                    $this->info('No migration performed. Fix the errors above or run conf:init to generate a new config.');
+                } else {
+                    $this->info('Configuration file is already in v3 format. No migration needed.');
+                }
                 return 0;
             }
 

@@ -18,6 +18,11 @@ trait FormatsOutput
     private function applyFormat(FlowExecutor $executor): void
     {
         $format = strval($this->option('format'));
+
+        if ($format !== '' && !in_array($format, ['text', 'json', 'junit'], true)) {
+            $this->warn("Unknown format '$format'. Using text output. Valid formats: text, json, junit.");
+        }
+
         if ($format === 'json' || $format === 'junit') {
             $executor->setOutputHandler(new NullOutputHandler());
         }
