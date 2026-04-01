@@ -47,4 +47,23 @@ class JobRegistry
     {
         return array_keys(self::TYPE_MAP);
     }
+
+    /**
+     * Get the ARGUMENT_MAP for a job type (for validation without instantiation).
+     *
+     * @return array<string, array<string, string>>
+     */
+    public function getArgumentMap(string $type): array
+    {
+        if (!$this->isSupported($type)) {
+            return [];
+        }
+        $class = self::TYPE_MAP[$type];
+        $reflection = new \ReflectionClass($class);
+        if ($reflection->hasConstant('ARGUMENT_MAP')) {
+            /** @var array<string, array<string, string>> */
+            return $reflection->getConstant('ARGUMENT_MAP');
+        }
+        return [];
+    }
 }

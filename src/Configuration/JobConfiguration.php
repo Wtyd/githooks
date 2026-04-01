@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
+use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class JobConfiguration
@@ -33,7 +34,8 @@ class JobConfiguration
         string $name,
         array $raw,
         ToolRegistry $toolRegistry,
-        ValidationResult $result
+        ValidationResult $result,
+        ?JobRegistry $jobRegistry = null
     ): ?self {
         if (!array_key_exists('type', $raw)) {
             $result->addError("Job '$name' is missing the required 'type' key.");
@@ -60,7 +62,74 @@ class JobConfiguration
         $config = $raw;
         unset($config['type']);
 
+        if ($jobRegistry !== null && $type !== 'custom') {
+            self::validateArguments($name, $type, $config, $jobRegistry, $result);
+        }
+
         return new self($name, $type, $config);
+    }
+
+    /**
+     * Validate job arguments against the ARGUMENT_MAP of the target job class.
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateArguments(
+        string $name,
+        string $type,
+        array $config,
+        JobRegistry $jobRegistry,
+        ValidationResult $result
+    ): void {
+        $argumentMap = $jobRegistry->getArgumentMap($type);
+        if (empty($argumentMap)) {
+            return;
+        }
+
+        $knownKeys = array_merge(
+            array_keys($argumentMap),
+            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast']
+        );
+
+        foreach ($config as $key => $value) {
+            if (!in_array($key, $knownKeys, true)) {
+                $result->addWarning("Job '$name': unknown key '$key' for type '$type'.");
+            }
+        }
+
+        foreach ($argumentMap as $key => $spec) {
+            if (!array_key_exists($key, $config)) {
+                continue;
+            }
+
+            $value = $config[$key];
+            $argType = $spec['type'] ?? 'value';
+
+            switch ($argType) {
+                case 'boolean':
+                    if (!is_bool($value) && !is_int($value)) {
+                        $result->addWarning("Job '$name': key '$key' expects a boolean value.");
+                    }
+                    break;
+                case 'paths':
+                case 'repeat':
+                    if (!is_array($value)) {
+                        $result->addWarning("Job '$name': key '$key' expects an array.");
+                    }
+                    break;
+                case 'csv':
+                    if (!is_array($value) && !is_string($value)) {
+                        $result->addWarning("Job '$name': key '$key' expects an array or string.");
+                    }
+                    break;
+                case 'value':
+                case 'key_value':
+                    if (!is_string($value) && !is_int($value)) {
+                        $result->addWarning("Job '$name': key '$key' expects a string or integer.");
+                    }
+                    break;
+            }
+        }
     }
 
     public function getName(): string

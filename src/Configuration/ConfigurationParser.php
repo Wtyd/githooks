@@ -9,6 +9,7 @@ use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
+use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ConfigurationParser
@@ -17,10 +18,13 @@ class ConfigurationParser
 
     private ToolRegistry $toolRegistry;
 
-    public function __construct(ToolRegistry $toolRegistry, string $rootPath = '')
+    private JobRegistry $jobRegistry;
+
+    public function __construct(ToolRegistry $toolRegistry, string $rootPath = '', ?JobRegistry $jobRegistry = null)
     {
         $this->rootPath = $rootPath !== '' ? $rootPath : (getcwd() ?: '');
         $this->toolRegistry = $toolRegistry;
+        $this->jobRegistry = $jobRegistry ?? new JobRegistry();
     }
 
     /**
@@ -124,7 +128,7 @@ class ConfigurationParser
                 $result->addError("Job '$jobName' must be an array.");
                 continue;
             }
-            $job = JobConfiguration::fromArray($jobName, $jobData, $this->toolRegistry, $result);
+            $job = JobConfiguration::fromArray($jobName, $jobData, $this->toolRegistry, $result, $this->jobRegistry);
             if ($job !== null) {
                 $jobs[$jobName] = $job;
             }
