@@ -164,6 +164,12 @@ class ConfigurationParser
      */
     protected function readFile(string $filePath): array
     {
+        if (!file_exists($filePath)) {
+            throw new ConfigurationFileNotFoundException(
+                "Configuration file not found: $filePath"
+            );
+        }
+
         $extension = pathinfo($filePath, PATHINFO_EXTENSION);
 
         try {

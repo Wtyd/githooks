@@ -132,6 +132,36 @@ class JobConfiguration
                     break;
             }
         }
+
+        // Validate common keys not in ARGUMENT_MAP but used by the system
+        self::validateCommonKeys($name, $config, $argumentMap, $result);
+    }
+
+    /**
+     * Validate common config keys (paths, rules) that may not be in the ARGUMENT_MAP
+     * but are handled directly by the job's buildCommand().
+     *
+     * @param array<string, mixed> $config
+     * @param array<string, array<string, string>> $argumentMap
+     */
+    private static function validateCommonKeys(
+        string $name,
+        array $config,
+        array $argumentMap,
+        ValidationResult $result
+    ): void {
+        // Only validate if the key exists in config but NOT already in the ARGUMENT_MAP
+        if (array_key_exists('paths', $config) && !array_key_exists('paths', $argumentMap)) {
+            if (!is_array($config['paths'])) {
+                $result->addWarning("Job '$name': key 'paths' expects an array.");
+            }
+        }
+
+        if (array_key_exists('rules', $config) && !array_key_exists('rules', $argumentMap)) {
+            if (!is_string($config['rules'])) {
+                $result->addWarning("Job '$name': key 'rules' expects a string.");
+            }
+        }
     }
 
     /**

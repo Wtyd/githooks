@@ -197,4 +197,43 @@ class JobConfigurationTest extends TestCase
         $this->assertEmpty($result->getWarnings());
         $this->assertFalse($result->hasErrors());
     }
+
+    /** @test */
+    public function it_warns_when_paths_is_string_outside_argument_map()
+    {
+        // phpmd has paths handled manually (not in ARGUMENT_MAP), so the common key validation must catch it
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpmd_test', [
+            'type' => 'phpmd',
+            'paths' => 'src',
+            'rules' => 'codesize',
+        ], $this->registry, $result, new JobRegistry());
+
+        $found = false;
+        foreach ($result->getWarnings() as $w) {
+            if (strpos($w, 'paths') !== false && strpos($w, 'array') !== false) {
+                $found = true;
+            }
+        }
+        $this->assertTrue($found, 'Expected warning about paths not being an array');
+    }
+
+    /** @test */
+    public function it_warns_when_rules_is_not_string()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpmd_test', [
+            'type' => 'phpmd',
+            'paths' => ['src'],
+            'rules' => 123,
+        ], $this->registry, $result, new JobRegistry());
+
+        $found = false;
+        foreach ($result->getWarnings() as $w) {
+            if (strpos($w, 'rules') !== false && strpos($w, 'string') !== false) {
+                $found = true;
+            }
+        }
+        $this->assertTrue($found, 'Expected warning about rules not being a string');
+    }
 }

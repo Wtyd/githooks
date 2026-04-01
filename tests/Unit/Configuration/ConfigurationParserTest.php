@@ -252,4 +252,14 @@ PHP;
         // But should have errors (no jobs section)
         $this->assertTrue($result->hasErrors());
     }
+
+    /** @test */
+    public function it_throws_friendly_error_for_nonexistent_file()
+    {
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+
+        $this->expectException(\Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException::class);
+        $this->expectExceptionMessage('Configuration file not found');
+        $parser->parse($this->fixturesPath . '/does_not_exist.php');
+    }
 }

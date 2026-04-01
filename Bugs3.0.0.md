@@ -227,7 +227,7 @@ not found in /home/runner/work/githooks/githooks/tests/Zero/IlluminateTestCase.p
 | Severidad | Cantidad | Bugs |
 |---|---|---|
 | ALTA | 6 | ~~#1 #2 #3~~ (corregidos), ~~#4~~ (corregido), ~~#5~~ (corregido), ~~#13~~ (corregido) |
-| MEDIA | 4 | ~~#6~~ (corregido), #7 (validación tipos), #8 (stack trace), ~~#12~~ (corregido) |
+| MEDIA | 4 | ~~#6~~ (corregido), ~~#7~~ (corregido), ~~#8~~ (corregido), ~~#12~~ (corregido) |
 | BAJA | 3 | #9 (warning confuso), #10 (format fallback), #11 (migrate vacía) |
 
 ### Estado de correcciones
@@ -240,8 +240,8 @@ not found in /home/runner/work/githooks/githooks/tests/Zero/IlluminateTestCase.p
 | #4 hook legacy | **Corregido** | `CreateHookCommand` usa `HookInstaller` con `core.hooksPath` + `.githooks/`. Legacy vía `--legacy`. |
 | #5 conf:init roto | **Corregido** | Busca `qa/githooks.dist.php` (local) y `vendor/wtyd/githooks/qa/githooks.dist.php` (dependencia) |
 | #6 `-c` shortcut | **Corregido** | Formato `{-c\|--config=}` era inválido en Symfony Console, eliminado shortcut |
-| #7 validación tipos | Pendiente | — |
-| #8 stack trace | Pendiente | — |
+| #7 validación tipos | **Corregido** | `validateCommonKeys()` para paths/rules fuera del ARGUMENT_MAP |
+| #8 stack trace | **Corregido** | `file_exists()` check en `ConfigurationParser::readFile()` + `ConfigurationFileNotFoundException` implementa `GitHooksExceptionInterface` |
 | #9 warning confuso | Pendiente | — |
 | #10 format fallback | Pendiente | — |
 | #11 migrate vacía | Pendiente | — |
