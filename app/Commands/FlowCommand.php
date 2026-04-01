@@ -5,18 +5,25 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class FlowCommand extends Command
 {
+    use FormatsOutput;
+
     protected $signature = 'flow
                             {name : The flow to execute}
                             {--fail-fast : Stop on first job failure}
                             {--processes= : Number of parallel processes}
                             {--exclude-jobs= : Comma-separated list of jobs to skip}
+                            {--format= : Output format (text, json, junit)}
+                            {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
                             {-c|--config= : Path to configuration file}';
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';
@@ -67,16 +74,20 @@ class FlowCommand extends Command
                 return 1;
             }
 
-            $plan = $this->preparer->prepare($flow, $config);
+            $this->applyFormat($this->executor);
+
+            $context = $this->option('fast')
+                ? ExecutionContext::forFastMode($this->getLaravel()->make(FileUtilsInterface::class))
+                : null;
+
+            $plan = $this->preparer->prepare($flow, $config, $context);
             $result = $this->executor->execute($plan);
 
             foreach ($config->getValidation()->getWarnings() as $warning) {
                 $this->warn($warning);
             }
 
-            $total = count($result->getJobResults());
-            $passed = $result->getPassedCount();
-            $this->line("Results: $passed/$total passed" . ($result->isSuccess() ? ' ✔️' : ''));
+            $this->renderFormattedResult($result);
 
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {

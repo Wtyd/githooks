@@ -5,17 +5,24 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class JobCommand extends Command
 {
+    use FormatsOutput;
+
     protected $signature = 'job
                             {name : The job to execute}
                             {--fail-fast : Stop on failure}
                             {--ignore-errors-on-exit : Continue even if the job fails}
+                            {--format= : Output format (text, json, junit)}
+                            {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
                             {-c|--config= : Path to configuration file}';
 
     protected $description = 'Execute a single job defined in the configuration file';
@@ -66,8 +73,16 @@ class JobCommand extends Command
                 return 1;
             }
 
-            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions());
+            $this->applyFormat($this->executor);
+
+            $context = $this->option('fast')
+                ? ExecutionContext::forFastMode($this->getLaravel()->make(FileUtilsInterface::class))
+                : null;
+
+            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
             $result = $this->executor->execute($plan);
+
+            $this->renderFormattedResult($result);
 
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {
