@@ -18,7 +18,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function it_prints_success_immediately()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('success')->once()->with('phpstan_src - OK. Time: 1.23s');
+        $printer->shouldReceive('success')->once()->with('  phpstan_src - OK. Time: 1.23s');
 
         $handler = new TextOutputHandler($printer);
         $handler->onJobSuccess('phpstan_src', '1.23s');
@@ -28,7 +28,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function it_prints_error_status_immediately_but_buffers_output()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('error')->once()->with('phpmd_src - KO. Time: 500ms');
+        $printer->shouldReceive('error')->once()->with('  phpmd_src - KO. Time: 500ms');
         $printer->shouldNotReceive('framedErrorBlock');
 
         $handler = new TextOutputHandler($printer);
@@ -67,7 +67,7 @@ class TextOutputHandlerTest extends UnitTestCase
     function it_prints_skipped_jobs()
     {
         $printer = Mockery::mock(Printer::class);
-        $printer->shouldReceive('line')->once()->with('⏩ phpunit_all (skipped by fail-fast)');
+        $printer->shouldReceive('line')->once()->with('  ⏩ phpunit_all (skipped by fail-fast)');
 
         $handler = new TextOutputHandler($printer);
         $handler->onJobSkipped('phpunit_all', 'skipped by fail-fast');

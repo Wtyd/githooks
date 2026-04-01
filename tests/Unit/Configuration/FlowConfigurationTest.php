@@ -73,14 +73,15 @@ class FlowConfigurationTest extends TestCase
     }
 
     /** @test */
-    public function it_reports_error_for_undefined_job_reference()
+    public function it_reports_warning_for_undefined_job_reference()
     {
         $result = new ValidationResult();
         FlowConfiguration::fromArray('lint', [
             'jobs' => ['phpcs_src', 'nonexistent'],
         ], ['phpcs_src'], $result);
 
-        $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('nonexistent', $result->getErrors()[0]);
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotEmpty($result->getWarnings());
+        $this->assertStringContainsString('nonexistent', $result->getWarnings()[0]);
     }
 }

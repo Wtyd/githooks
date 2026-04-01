@@ -24,18 +24,18 @@ class TextOutputHandler implements OutputHandler
 
     public function onJobSuccess(string $jobName, string $time): void
     {
-        $this->printer->success("$jobName - OK. Time: $time");
+        $this->printer->success("  $jobName - OK. Time: $time");
     }
 
     public function onJobError(string $jobName, string $time, string $output): void
     {
-        $this->printer->error("$jobName - KO. Time: $time");
+        $this->printer->error("  $jobName - KO. Time: $time");
         $this->errorBuffer[] = ['jobName' => $jobName, 'output' => $output];
     }
 
     public function onJobSkipped(string $jobName, string $reason): void
     {
-        $this->printer->line("⏩ $jobName ($reason)");
+        $this->printer->line("  ⏩ $jobName ($reason)");
     }
 
     public function flush(): void

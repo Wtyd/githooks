@@ -15,34 +15,35 @@ return [
         ],
         'qa' => [
             'jobs' => [
-                'phpstan_src',
-                'parallel_lint',
-                'phpmd_src',
-                'phpcpd_all',
-                'phpcbf_all',
-                'phpcs_all',
-                'phpunit_all',
+                'Phpstan Src',
+                'Parallel-lint',
+                'Phpmd Src',
+                'Phpcpd',
+                'Phpcbf',
+                'Phpcs',
+                'Phpunit',
+                'Composer Audit',
                 // 'psalm_src',
             ],
         ],
     ],
 
     'jobs' => [
-        'phpstan_src' => [
+        'Phpstan Src' => [
             'type' => 'phpstan',
             'executablePath' => 'php8.1 vendor/bin/phpstan',
             'config' => './qa/phpstan.neon',
             'paths' => ['src'],
             'otherArguments' => '--no-progress --ansi',
         ],
-        'parallel_lint' => [
+        'Parallel-lint' => [
             'type' => 'parallel-lint',
             'executablePath' => 'php7.4 vendor/bin/parallel-lint',
             'paths' => ['./'],
             'exclude' => ['vendor', 'qa', 'tools'],
             'otherArguments' => '--colors',
         ],
-        'phpcs_all' => [
+        'Phpcs' => [
             'type' => 'phpcs',
             'executablePath' => 'tools/php74/phpcs',
             'paths' => ['./'],
@@ -52,7 +53,7 @@ return [
             'warning-severity' => 6,
             'otherArguments' => '--report=summary --parallel=2',
         ],
-        'phpcbf_all' => [
+        'Phpcbf' => [
             'type' => 'phpcbf',
             'executablePath' => 'tools/php74/phpcbf',
             'paths' => ['./'],
@@ -61,20 +62,20 @@ return [
             'error-severity' => 1,
             'warning-severity' => 6,
         ],
-        'phpmd_src' => [
+        'Phpmd Src' => [
             'type' => 'phpmd',
             'executablePath' => 'tools/php74/phpmd',
             'paths' => ['./src/'],
             'rules' => './qa/phpmd-ruleset.xml',
             'exclude' => ['vendor'],
         ],
-        'phpcpd_all' => [
+        'Phpcpd' => [
             'type' => 'phpcpd',
             'executablePath' => 'tools/php80/phpcpd',
             'paths' => ['./'],
             'exclude' => ['vendor', 'tests', 'tools'],
         ],
-        'phpunit_all' => [
+        'Phpunit' => [
             'type' => 'phpunit',
             'executablePath' => 'php7.4 vendor/bin/phpunit',
             'log-junit' => 'junit.xml',
@@ -86,10 +87,9 @@ return [
             'config' => 'qa/psalm.xml',
             'paths' => ['src', 'app'],
         ],
-        // Example: replace security-checker with composer audit via custom job
-        // 'composer_audit' => [
-        //     'type' => 'custom',
-        //     'script' => 'composer audit',
-        // ],
+        'Composer Audit' => [
+            'type' => 'custom',
+            'script' => 'php7.4 tools/composer audit',
+        ],
     ],
 ];

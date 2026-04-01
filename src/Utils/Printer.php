@@ -66,7 +66,7 @@ class Printer
             for ($i = 0; $i < $headLines; $i++) {
                 echo "  │ " . $lines[$i] . "\n";
             }
-            echo "  │ ... ($omitted lines omitted — run 'githooks tool $toolName' for full output)\n";
+            echo "  │ ... ($omitted lines omitted — run 'githooks job $toolName' for full output)\n";
             for ($i = $totalLines - $tailLines; $i < $totalLines; $i++) {
                 echo "  │ " . $lines[$i] . "\n";
             }

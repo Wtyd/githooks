@@ -53,7 +53,7 @@ class FlowConfiguration
 
         foreach ($raw['jobs'] as $jobRef) {
             if (!in_array($jobRef, $availableJobNames, true)) {
-                $result->addError("Flow '$name' references undefined job '$jobRef'.");
+                $result->addWarning("Flow '$name' references undefined job '$jobRef'. It will be skipped.");
             }
         }
 

@@ -3,6 +3,9 @@
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\GitHooks\Configuration\ConfigurationResult;
+use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
@@ -27,20 +30,143 @@ class CheckConfigurationFileCommand extends Command
 
     protected ToolRegistry $toolRegistry;
 
-    public function __construct(FileReader $fileReader, Printer $printer, ToolsPreparer $toolsPreparer, ToolRegistry $toolRegistry)
-    {
+    protected ConfigurationParser $configParser;
+
+    protected JobRegistry $jobRegistry;
+
+    public function __construct(
+        FileReader $fileReader,
+        Printer $printer,
+        ToolsPreparer $toolsPreparer,
+        ToolRegistry $toolRegistry,
+        ConfigurationParser $configParser,
+        JobRegistry $jobRegistry
+    ) {
         $this->fileReader = $fileReader;
         $this->printer = $printer;
         $this->toolsPreparer = $toolsPreparer;
         $this->toolRegistry = $toolRegistry;
+        $this->configParser = $configParser;
+        $this->jobRegistry = $jobRegistry;
         parent::__construct();
     }
 
     public function handle()
     {
+        $configFile = strval($this->option('config'));
+
+        // Read the raw config via FileReader (respects testing fakes)
+        try {
+            $rawFile = $this->fileReader->readfile($configFile);
+        } catch (ConfigurationFileNotFoundException $e) {
+            $this->printer->resultError($e->getMessage());
+            return 1;
+        } catch (\Throwable $e) {
+            $this->printer->resultError($e->getMessage());
+            return 1;
+        }
+
+        // Detect format from raw content
+        if (!$this->configParser->isLegacyFormat($rawFile)) {
+            // v3 format: parse with ConfigurationParser using the file FileReader found
+            $filePath = $this->fileReader->getRelativeConfigurationFilePath();
+            try {
+                $config = $this->configParser->parse($filePath);
+                return $this->handleV3($config);
+            } catch (\Throwable $e) {
+                $this->error($e->getMessage());
+                return 1;
+            }
+        }
+
+        return $this->handleLegacy($configFile);
+    }
+
+    protected function handleV3(ConfigurationResult $config): int
+    {
+        $this->printer->info('Configuration file: ' . $config->getFilePath());
+        $this->line('');
+
+        $hasErrors = false;
+
+        // Show errors
+        if ($config->hasErrors()) {
+            $this->error('The configuration file has some errors');
+            foreach ($config->getValidation()->getErrors() as $error) {
+                $this->printer->resultError($error);
+            }
+            $hasErrors = true;
+        }
+
+        // Options table
+        $options = $config->getGlobalOptions();
+        $this->table(
+            ['Option', 'Value'],
+            [
+                ['processes', (string) $options->getProcesses()],
+                ['fail-fast', $options->isFailFast() ? 'true' : 'false'],
+            ]
+        );
+
+        // Hooks table
+        $hooks = $config->getHooks();
+        if ($hooks !== null) {
+            $hookRows = [];
+            foreach ($hooks->getAll() as $event => $targets) {
+                $hookRows[] = [$event, implode(', ', $targets)];
+            }
+            if (!empty($hookRows)) {
+                $this->line('');
+                $this->table(['Hook Event', 'Targets'], $hookRows);
+            }
+        }
+
+        // Flows table
+        $flows = $config->getFlows();
+        if (!empty($flows)) {
+            $flowRows = [];
+            foreach ($flows as $name => $flow) {
+                $flowRows[] = [$name, implode(', ', $flow->getJobs())];
+            }
+            $this->line('');
+            $this->table(['Flow', 'Jobs'], $flowRows);
+        }
+
+        // Jobs table with command
+        $jobs = $config->getJobs();
+        if (!empty($jobs)) {
+            $jobRows = [];
+            foreach ($jobs as $name => $job) {
+                try {
+                    $jobInstance = $this->jobRegistry->create($job);
+                    $command = $jobInstance->buildCommand();
+                } catch (\Throwable $e) {
+                    $command = '(error: ' . $e->getMessage() . ')';
+                }
+                $jobRows[] = [$name, $command];
+            }
+            $this->line('');
+            $this->table(['Job', 'Command'], $jobRows);
+        }
+
+        // Warnings
+        foreach ($config->getValidation()->getWarnings() as $warning) {
+            $this->printer->resultWarning($warning);
+        }
+
+        if (!$hasErrors) {
+            $this->line('');
+            $this->info('The configuration file has the correct format.');
+        }
+
+        return $hasErrors ? 1 : 0;
+    }
+
+    protected function handleLegacy(string $configFile = ''): int
+    {
         $errors = new Errors();
         try {
-            $file = $this->fileReader->readfile(strval($this->option('config')));
+            $file = $this->fileReader->readfile($configFile);
 
             $this->printer->info('Configuration file: ' . $this->fileReader->getRelativeConfigurationFilePath());
 
@@ -62,6 +188,8 @@ class CheckConfigurationFileCommand extends Command
             );
 
             $this->info('The configuration file has the correct format.');
+
+            $this->warn("Legacy configuration format detected. Run 'githooks conf:migrate' to upgrade to v3.");
         } catch (ConfigurationFileNotFoundException $exception) {
             $errors->setError('set error', 'to return 1');
             $this->printer->resultError($exception->getMessage());
@@ -77,7 +205,9 @@ class CheckConfigurationFileCommand extends Command
 
         $exitCode = 0;
         if ($errors->isEmpty()) {
-            $this->printWarnings($configurationFile->getWarnings());
+            if (isset($configurationFile)) {
+                $this->printWarnings($configurationFile->getWarnings());
+            }
         } else {
             $exitCode = 1;
         }

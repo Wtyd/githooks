@@ -85,7 +85,11 @@ class FlowCommand extends Command
             $result = $this->executor->execute($plan);
 
             foreach ($config->getValidation()->getWarnings() as $warning) {
-                $this->warn($warning);
+                if (strpos($warning, 'will be skipped') !== false) {
+                    echo "  \e[43m\e[30m⏩ $warning\033[0m\n";
+                } else {
+                    $this->warn($warning);
+                }
             }
 
             $this->renderFormattedResult($result);
