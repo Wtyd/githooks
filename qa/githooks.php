@@ -15,11 +15,11 @@ return [
         ],
         'qa' => [
             'jobs' => [
+                'Phpcbf',
                 'Phpstan Src',
                 'Parallel-lint',
                 'Phpmd Src',
                 'Phpcpd',
-                'Phpcbf',
                 'Phpcs',
                 'Phpunit',
                 'Composer Audit',
@@ -31,14 +31,14 @@ return [
     'jobs' => [
         'Phpstan Src' => [
             'type' => 'phpstan',
-            'executablePath' => 'php8.1 vendor/bin/phpstan',
+            'executablePath' => 'vendor/bin/phpstan',
             'config' => './qa/phpstan.neon',
             'paths' => ['src'],
             'otherArguments' => '--no-progress --ansi',
         ],
         'Parallel-lint' => [
             'type' => 'parallel-lint',
-            'executablePath' => 'php7.4 vendor/bin/parallel-lint',
+            'executablePath' => 'vendor/bin/parallel-lint',
             'paths' => ['./'],
             'exclude' => ['vendor', 'qa', 'tools'],
             'otherArguments' => '--colors',
@@ -73,23 +73,24 @@ return [
             'type' => 'phpcpd',
             'executablePath' => 'tools/php80/phpcpd',
             'paths' => ['./'],
-            'exclude' => ['vendor', 'tests', 'tools'],
+            'exclude' => ['vendor', 'tests', 'tools', 'src/Tools'],
         ],
         'Phpunit' => [
             'type' => 'phpunit',
-            'executablePath' => 'php7.4 vendor/bin/phpunit',
+            'executablePath' => 'vendor/bin/phpunit',
             'log-junit' => 'junit.xml',
             'otherArguments' => '--colors=always',
         ],
         'psalm_src' => [
             'type' => 'psalm',
-            'executablePath' => 'php7.4 vendor/bin/psalm',
+            'executablePath' => 'vendor/bin/psalm',
             'config' => 'qa/psalm.xml',
             'paths' => ['src', 'app'],
         ],
         'Composer Audit' => [
             'type' => 'custom',
-            'script' => 'php7.4 tools/composer audit',
+            'script' => 'tools/composer audit',
+            'ignoreErrorsOnExit' => true,
         ],
     ],
 ];

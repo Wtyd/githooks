@@ -173,7 +173,7 @@ class JobConfiguration
     {
         $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast'];
 
-        foreach ($config as $key => $value) {
+        foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Job '$name': unknown key '$key' for type 'custom'.");
             }
