@@ -131,4 +131,24 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->notContainsStringInOutput("The 'Tools' tag from configuration file is empty")
             ->notcontainsStringInOutput("The key 'invent option' is not a valid option");
     }
+
+    /** @test */
+    function it_check_the_config_file_using_c_shortcut()
+    {
+        // valid file in custom path
+        $configFilePath = 'custom/path';
+        $this->configurationFileBuilder->buildInFileSystem($configFilePath);
+
+        // file with errors in root path
+        $this->configurationFileBuilder
+            ->setTools([])
+            ->setOptions(['invent option' => 1])
+            ->buildInFileSystem();
+
+        $this->artisan("conf:check -c custom/path/githooks.php")
+            ->assertExitCode(0)
+            ->containsStringInOutput('Configuration file: custom/path/githooks.php')
+            ->expectsOutput('The configuration file has the correct format.')
+            ->notContainsStringInOutput("The 'Tools' tag from configuration file is empty");
+    }
 }

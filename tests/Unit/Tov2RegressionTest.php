@@ -14,22 +14,21 @@ class Tov2RegressionTest extends UnitTestCase
 {
     /**
      * @test
-     * Bug 1: The {-c|--config=} format is invalid Symfony Console syntax.
-     * Symfony interprets -c as a positional argument, not an option shortcut.
-     * In PHP 8.1+ with Symfony 6+, it causes a fatal error at command registration.
+     * Bug 1: The original {-c|--config=} format is invalid Symfony Console syntax.
+     * The correct format is {--c|config=} which defines -c as shortcut for --config.
      */
-    function execute_tool_command_does_not_define_c_shortcut_for_config_option()
+    function execute_tool_command_defines_c_shortcut_with_correct_syntax()
     {
         $rc = new \ReflectionClass(ExecuteToolCommand::class);
         $defaults = $rc->getDefaultProperties();
 
         $this->assertNotFalse(
-            strpos($defaults['signature'], '--config='),
-            'ExecuteToolCommand should define the --config option'
+            strpos($defaults['signature'], '--c|config='),
+            'ExecuteToolCommand should define -c shortcut with correct syntax {--c|config=}'
         );
         $this->assertFalse(
-            strpos($defaults['signature'], '-c|') !== false,
-            'ExecuteToolCommand should not contain -c shortcut (invalid Symfony Console syntax)'
+            strpos($defaults['signature'], '{-c|') !== false,
+            'ExecuteToolCommand must not use invalid {-c|...} syntax'
         );
     }
 
@@ -37,18 +36,18 @@ class Tov2RegressionTest extends UnitTestCase
      * @test
      * Bug 1: Same issue in CheckConfigurationFileCommand.
      */
-    function check_configuration_file_command_does_not_define_c_shortcut_for_config_option()
+    function check_configuration_file_command_defines_c_shortcut_with_correct_syntax()
     {
         $rc = new \ReflectionClass(CheckConfigurationFileCommand::class);
         $defaults = $rc->getDefaultProperties();
 
         $this->assertNotFalse(
-            strpos($defaults['signature'], '--config='),
-            'CheckConfigurationFileCommand should define the --config option'
+            strpos($defaults['signature'], '--c|config='),
+            'CheckConfigurationFileCommand should define -c shortcut with correct syntax {--c|config=}'
         );
         $this->assertFalse(
-            strpos($defaults['signature'], '-c|') !== false,
-            'CheckConfigurationFileCommand should not contain -c shortcut (invalid Symfony Console syntax)'
+            strpos($defaults['signature'], '{-c|') !== false,
+            'CheckConfigurationFileCommand must not use invalid {-c|...} syntax'
         );
     }
 

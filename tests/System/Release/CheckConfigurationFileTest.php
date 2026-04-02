@@ -77,4 +77,25 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('Configuration file:', $this->getActualOutput());
     }
+
+    /** @test */
+    function it_checks_configuration_file_using_c_shortcut()
+    {
+        $this->configurationFileBuilder->setTools(['invalid-tool'])
+            ->buildInFileSystem('./', true);
+
+        // Create valid config in custom folder
+        $this->createDirStructure('custom');
+
+        $this->configurationFileBuilder
+            ->setTools(['phpunit', 'phpcs'])
+                ->buildInFileSystem('custom', true);
+
+        // -c shortcut should work identically to --config
+        passthru("$this->githooks conf:check -c custom/githooks.php", $exitCode);
+
+        $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
+
+        $this->deleteDirStructure('custom/');
+    }
 }

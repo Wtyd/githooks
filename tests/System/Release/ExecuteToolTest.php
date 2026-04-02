@@ -440,4 +440,30 @@ class FailingTest extends TestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpcs'); // fast: only staged clean file
         $this->assertToolHasFailed('phpmd'); // full: checks all files, finds errors
     }
+
+    /** @test */
+    function it_runs_tools_with_c_shortcut_for_config()
+    {
+        // Create a default config with an invalid tool in root (this would fail)
+        file_put_contents(
+            'githooks.php',
+            $this->configurationFileBuilder->setTools(['invalid-tool'])->buildPhp()
+        );
+
+        // Create valid config in custom folder
+        $this->createDirStructure('custom');
+
+        file_put_contents(
+            self::TESTS_PATH . '/custom/githooks.php',
+            $this->configurationFileBuilder
+                ->setTools(['phpcs', 'parallel-lint'])
+                ->buildPhp()
+        );
+
+        passthru("$this->githooks tool all -c " . self::TESTS_PATH . "/custom/githooks.php", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertToolHasBeenExecutedSuccessfully('phpcs');
+        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
+    }
 }

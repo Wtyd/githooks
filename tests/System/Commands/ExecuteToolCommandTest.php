@@ -668,6 +668,22 @@ class ExecuteToolCommandTest extends SystemTestCase
             ->toolHasBeenExecutedSuccessfully('my-custom-script');
     }
 
+    /** @test */
+    function it_runs_tool_using_c_shortcut_for_config()
+    {
+        // valid config in custom path
+        $configFilePath = 'custom';
+        $this->configurationFileBuilder
+            ->setTools(['phpstan'])
+            ->buildInFileSystem($configFilePath);
+
+        file_put_contents($this->path . '/src/File.php', $this->phpFileBuilder->build());
+
+        $this->artisan("tool phpstan -c custom/githooks.php")
+            ->assertExitCode(0)
+            ->toolHasBeenExecutedSuccessfully('phpstan');
+    }
+
     protected function tearDown(): void
     {
         ToolAbstract::resetScriptAlias();
