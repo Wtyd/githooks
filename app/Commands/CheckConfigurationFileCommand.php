@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Utils\Printer;
 
 class CheckConfigurationFileCommand extends Command
 {
-    protected $signature = 'conf:check  {-c|--config= : Path to configuration file}';
+    protected $signature = 'conf:check  {--config= : Path to configuration file}';
     protected $description = 'Check that the configuration file exists and that it is in the proper format.';
 
     /** @var  FileReader */
