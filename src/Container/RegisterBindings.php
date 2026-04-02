@@ -80,7 +80,10 @@ class RegisterBindings
                 return new TextOutputHandler($app->make(Printer::class));
             },
             FlowExecutor::class => function (Container $app) {
-                return new FlowExecutor($app->make(OutputHandler::class));
+                return new FlowExecutor(
+                    $app->make(OutputHandler::class),
+                    $app->make(GitStagerInterface::class)
+                );
             },
             HookRunner::class => function (Container $app) {
                 return new HookRunner(

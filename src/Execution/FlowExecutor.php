@@ -8,22 +8,28 @@ use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Output\OutputHandler;
 use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
+use Wtyd\GitHooks\Utils\GitStagerInterface;
 
 /**
  * Orchestrates flow execution: runs jobs respecting processes limit and fail-fast.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Orchestrator with sequential+parallel+threading+restaging
  */
 class FlowExecutor
 {
     private OutputHandler $outputHandler;
+
+    private ?GitStagerInterface $gitStager;
 
     private int $peakEstimatedThreads = 0;
 
     /** @var array<string, int> jobName => estimated threads */
     private array $threadAllocations = [];
 
-    public function __construct(OutputHandler $outputHandler)
+    public function __construct(OutputHandler $outputHandler, ?GitStagerInterface $gitStager = null)
     {
         $this->outputHandler = $outputHandler;
+        $this->gitStager = $gitStager;
     }
 
     public function setOutputHandler(OutputHandler $outputHandler): void
@@ -219,6 +225,11 @@ class FlowExecutor
 
         if ($job->isIgnoreErrorsOnExit() && !$success) {
             $success = true;
+        }
+
+        // Re-stage fixed files so the commit includes the auto-fixes (e.g. phpcbf)
+        if ($fixApplied && $this->gitStager !== null) {
+            $this->gitStager->stageTrackedFiles();
         }
 
         $displayName = $job->getDisplayName();
