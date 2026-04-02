@@ -32,34 +32,9 @@ Las 5 features de DX planificadas para v3.1.0 se incorporaron a la v3.0.0 antes 
 
 ---
 
-## v3.2.0 — Extensibilidad y madurez
+## v3.2.0 — Extensibilidad
 
 Prepara la herramienta para proyectos complejos y configuración avanzada.
-
-### Variables de entorno en la configuración
-
-Referencias a `$_ENV` en `githooks.php` para adaptar comportamiento (local vs CI) sin duplicar flows.
-
-### Argumentos nativos ampliados
-
-Reducir dependencia de `otherArguments` incorporando flags comunes de cada tool como claves tipadas con validación en `conf:check`.
-
-### Modo de ejecución `incremental`
-
-Tercer modo junto a `full` y `fast`. Cachea último resultado por archivo, re-analiza solo los que cambiaron desde la última ejecución exitosa.
-
-### Herencia de jobs (`extends`)
-
-Evitar duplicar config cuando dos jobs solo difieren en `paths`:
-
-```php
-'phpmd_src' => ['extends' => 'phpmd_base', 'paths' => ['src']],
-'phpmd_app' => ['extends' => 'phpmd_base', 'paths' => ['app']],
-```
-
-### `conf:init` interactivo
-
-Detectar binarios en `vendor/bin/`, preguntar directorios fuente, generar config adaptada al proyecto.
 
 ### Condiciones de ejecución en hooks
 
@@ -78,12 +53,32 @@ Caso de uso: checks pesados solo en pre-push a main, checks ligeros en pre-commi
 ],
 ```
 
-### Gestión de caché de herramientas
+### Herencia de jobs (`extends`)
 
-PHPStan y PHPMD tienen problemas de rendimiento en proyectos grandes por la gestión de su caché interna. Analizar cómo GitHooks puede ayudar:
-- Preservar/invalidar cachés entre ejecuciones
-- Interacción entre caché de la herramienta y los modos fast/incremental de GitHooks
-- Configuración de directorios de caché por job
+Evitar duplicar config cuando dos jobs solo difieren en `paths`:
+
+```php
+'phpmd_src' => ['extends' => 'phpmd_base', 'paths' => ['src']],
+'phpmd_app' => ['extends' => 'phpmd_base', 'paths' => ['app']],
+```
+
+### `conf:init` interactivo
+
+Detectar binarios en `vendor/bin/`, preguntar directorios fuente, generar config adaptada al proyecto.
+
+---
+
+### Features descartadas
+
+Las siguientes features se evaluaron y se descartaron del roadmap:
+
+**Modo de ejecución `incremental`** — Descartado. Las tools que importan (PHPStan, PHPMD, PHPCS, Psalm) ya gestionan su propia caché por fichero y la invalidan automáticamente al detectar cambios. Un modo incremental en GitHooks duplicaría ese trabajo sin beneficio real. Las tools sin caché propia (parallel-lint, phpcpd) son lo bastante rápidas como para no necesitarlo.
+
+**Gestión de caché de herramientas** — Descartado. Cubierto por el comando `cache:clear` para borrar cachés, y por la configuración nativa de cada tool (`tmpDir`, `--cache`, `cache-file`) que ya se expone via ARGUMENT_MAP. GitHooks no necesita una capa adicional de gestión.
+
+**Argumentos nativos ampliados** — Descartado. Los argumentos principales de cada tool ya están en sus ARGUMENT_MAP. Los argumentos secundarios (e.g. `--autoload-file` de PHPStan, `--coverage-html` de PHPUnit) son específicos de configuraciones avanzadas que se gestionan mejor desde la propia config de la tool (`phpstan.neon`, `phpunit.xml`). `otherArguments` cubre correctamente los casos restantes sin necesidad de mapeo tipado.
+
+**Variables de entorno en la configuración** — Descartado. Como `githooks.php` es PHP puro, el usuario ya puede usar `getenv()`, `$_ENV` o cualquier lógica condicional directamente en el return array. No hace falta un sistema adicional.
 
 ---
 
