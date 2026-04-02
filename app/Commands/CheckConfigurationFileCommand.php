@@ -208,7 +208,6 @@ class CheckConfigurationFileCommand extends Command
     {
         $this->checkFileRef($jobArgs, 'config', 'config file', $warnings);
         $this->checkFileRef($jobArgs, 'rules', 'rules file', $warnings, true);
-        $this->checkFileRef($jobArgs, 'standard', 'standard', $warnings, true);
     }
 
     /**
