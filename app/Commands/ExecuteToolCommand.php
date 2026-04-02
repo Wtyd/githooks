@@ -21,7 +21,7 @@ class ExecuteToolCommand extends BaseCommand
                             {--paths= :  Paths or files against the tool will be executed}
                             {--processes= : Number of parallel processes in which the tools will be executed}
                             {--failFast= : Stop all remaining tools when this tool fails. When tool is \'all\' applies for all tools}
-                            {--config= : Path to configuration file}'
+                            {--c|config= : Path to configuration file}'
                             ;
 
     protected $description = 'Run the tool passed as argument. It must be a supported tool by GitHooks. the available options depend on the tool passed as parameter';
