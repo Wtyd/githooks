@@ -132,7 +132,7 @@ class CheckConfigurationFileCommand extends Command
             $this->table(['Flow', 'Jobs'], $flowRows);
         }
 
-        // Jobs table with command
+        // Jobs table with command and validation status
         $jobs = $config->getJobs();
         if (!empty($jobs)) {
             $jobRows = [];
@@ -140,13 +140,15 @@ class CheckConfigurationFileCommand extends Command
                 try {
                     $jobInstance = $this->jobRegistry->create($job);
                     $command = $jobInstance->buildCommand();
+                    $status = $this->validateJob($jobInstance, $job);
                 } catch (\Throwable $e) {
                     $command = '(error: ' . $e->getMessage() . ')';
+                    $status = 'error';
                 }
-                $jobRows[] = [$name, $command];
+                $jobRows[] = [$name, $command, $status];
             }
             $this->line('');
-            $this->table(['Job', 'Command'], $jobRows);
+            $this->table(['Job', 'Command', 'Status'], $jobRows);
         }
 
         // Warnings
@@ -160,6 +162,82 @@ class CheckConfigurationFileCommand extends Command
         }
 
         return $hasErrors ? 1 : 0;
+    }
+
+    /**
+     * @param \Wtyd\GitHooks\Jobs\JobAbstract $jobInstance
+     * @param \Wtyd\GitHooks\Configuration\JobConfiguration $jobConfig
+     */
+    private function validateJob($jobInstance, $jobConfig): string
+    {
+        $warnings = [];
+
+        $this->validateExecutable($jobInstance->getExecutable(), $warnings);
+        $this->validatePaths($jobConfig->getPaths(), $warnings);
+        $this->validateConfigFiles($jobConfig->getConfig(), $warnings);
+
+        return empty($warnings) ? "\u{2714}" : implode('; ', $warnings);
+    }
+
+    /** @param string[] &$warnings */
+    private function validateExecutable(string $executable, array &$warnings): void
+    {
+        if ($executable !== '' && !$this->executableExists($executable)) {
+            $warnings[] = "executable '$executable' not found";
+        }
+    }
+
+    /**
+     * @param string[] $paths
+     * @param string[] &$warnings
+     */
+    private function validatePaths(array $paths, array &$warnings): void
+    {
+        foreach ($paths as $path) {
+            if (!is_dir($path) && !file_exists($path)) {
+                $warnings[] = "path '$path' not found";
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $jobArgs
+     * @param string[] &$warnings
+     */
+    private function validateConfigFiles(array $jobArgs, array &$warnings): void
+    {
+        $this->checkFileRef($jobArgs, 'config', 'config file', $warnings);
+        $this->checkFileRef($jobArgs, 'rules', 'rules file', $warnings, true);
+        $this->checkFileRef($jobArgs, 'standard', 'standard', $warnings, true);
+    }
+
+    /**
+     * @param array<string, mixed> $args
+     * @param string[] &$warnings
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
+     */
+    private function checkFileRef(array $args, string $key, string $label, array &$warnings, bool $skipCsv = false): void
+    {
+        if (empty($args[$key]) || !is_string($args[$key])) {
+            return;
+        }
+        if ($skipCsv && strpos($args[$key], ',') !== false) {
+            return;
+        }
+        if (!file_exists($args[$key])) {
+            $warnings[] = "$label '{$args[$key]}' not found";
+        }
+    }
+
+    private function executableExists(string $executable): bool
+    {
+        if (file_exists($executable)) {
+            return true;
+        }
+        $output = [];
+        $code = 0;
+        exec('which ' . escapeshellarg($executable) . ' 2>/dev/null', $output, $code);
+        return $code === 0;
     }
 
     protected function handleLegacy(string $configFile = ''): int

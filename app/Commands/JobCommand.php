@@ -22,6 +22,7 @@ class JobCommand extends Command
                             {--fail-fast : Stop on failure}
                             {--ignore-errors-on-exit : Continue even if the job fails}
                             {--format= : Output format (text, json, junit)}
+                            {--dry-run : Show commands without executing}
                             {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
                             {--config= : Path to configuration file}';
 
@@ -80,7 +81,7 @@ class JobCommand extends Command
                 : null;
 
             $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
-            $result = $this->executor->execute($plan);
+            $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
             $this->renderFormattedResult($result);
 

@@ -25,6 +25,12 @@ class PhpcsJob extends JobAbstract
         return 'phpcs';
     }
 
+    /** @return string[] */
+    public function getCachePaths(): array
+    {
+        return ['.phpcs.cache'];
+    }
+
     public function getThreadCapability(): ?ThreadCapability
     {
         $current = isset($this->args['parallel']) ? (int) $this->args['parallel'] : 1;

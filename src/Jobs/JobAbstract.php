@@ -48,7 +48,7 @@ abstract class JobAbstract
         $this->name = $config->getName();
         $this->type = $config->getType();
         $this->args = $config->getConfig();
-        $this->executable = $this->args['executablePath'] ?? static::getDefaultExecutable();
+        $this->executable = $this->args['executablePath'] ?? $this->resolveExecutable();
         unset($this->args['executablePath']);
         $this->ignoreErrorsOnExit = (bool) ($this->args['ignoreErrorsOnExit'] ?? false);
         unset($this->args['ignoreErrorsOnExit']);
@@ -57,6 +57,32 @@ abstract class JobAbstract
     }
 
     abstract public static function getDefaultExecutable(): string;
+
+    public function getExecutable(): string
+    {
+        return $this->executable;
+    }
+
+    /**
+     * Resolve executable path: try vendor/bin/{tool} first, fall back to tool name.
+     */
+    protected function resolveExecutable(): string
+    {
+        $default = static::getDefaultExecutable();
+        if ($default === '') {
+            return $default;
+        }
+        $vendorPath = 'vendor/bin/' . $default;
+        if ($this->fileExistsCheck($vendorPath)) {
+            return $vendorPath;
+        }
+        return $default;
+    }
+
+    protected function fileExistsCheck(string $path): bool
+    {
+        return file_exists($path);
+    }
 
     /**
      * Subcommand inserted right after the executable (e.g. "analyse" for phpstan).
@@ -194,6 +220,17 @@ abstract class JobAbstract
     public function isFixApplied(int $exitCode): bool
     {
         return false;
+    }
+
+    /**
+     * Return paths to cache files/directories used by this tool.
+     * Override in subclasses that produce caches.
+     *
+     * @return string[]
+     */
+    public function getCachePaths(): array
+    {
+        return [];
     }
 
     /** @param mixed $value */

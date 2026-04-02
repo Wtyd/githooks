@@ -25,14 +25,18 @@ class FlowPreparer
 
     /**
      * @param string[] $excludeJobs Job names to exclude from the plan
+     * @param string[] $onlyJobs    If non-empty, only these job names are included
      */
-    public function prepare(FlowConfiguration $flow, ConfigurationResult $config, ?ExecutionContext $context = null, array $excludeJobs = []): FlowPlan
+    public function prepare(FlowConfiguration $flow, ConfigurationResult $config, ?ExecutionContext $context = null, array $excludeJobs = [], array $onlyJobs = []): FlowPlan
     {
         $options = $flow->getOptions() ?? $config->getGlobalOptions();
 
         $jobs = [];
 
         foreach ($flow->getJobs() as $jobName) {
+            if (!empty($onlyJobs) && !in_array($jobName, $onlyJobs, true)) {
+                continue;
+            }
             if (in_array($jobName, $excludeJobs, true)) {
                 continue;
             }

@@ -25,6 +25,12 @@ class PsalmJob extends JobAbstract
         return 'psalm';
     }
 
+    /** @return string[] */
+    public function getCachePaths(): array
+    {
+        return ['.psalm/cache/'];
+    }
+
     public function getThreadCapability(): ?ThreadCapability
     {
         $current = isset($this->args['threads']) ? (int) $this->args['threads'] : 1;

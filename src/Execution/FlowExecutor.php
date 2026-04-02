@@ -37,8 +37,11 @@ class FlowExecutor
         $this->outputHandler = $outputHandler;
     }
 
-    /** @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates thread budget + sequential/parallel dispatch */
-    public function execute(FlowPlan $plan): FlowResult
+    /**
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates thread budget + sequential/parallel dispatch
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) dry-run is a simple mode toggle, not an SRP violation
+     */
+    public function execute(FlowPlan $plan, bool $dryRun = false): FlowResult
     {
         $start = microtime(true);
         $maxProcesses = $plan->getOptions()->getProcesses();
@@ -48,6 +51,10 @@ class FlowExecutor
 
         foreach ($jobs as $job) {
             $this->propagateContext($job, $context);
+        }
+
+        if ($dryRun) {
+            return $this->executeDryRun($plan->getFlowName(), $jobs);
         }
 
         // Thread budget: distribute cores among jobs
@@ -88,6 +95,21 @@ class FlowExecutor
         $budget = $plan->getOptions()->getProcesses();
 
         return new FlowResult($plan->getFlowName(), $results, $totalTime, $this->peakEstimatedThreads, $budget);
+    }
+
+    /**
+     * @param JobAbstract[] $jobs
+     */
+    private function executeDryRun(string $flowName, array $jobs): FlowResult
+    {
+        $results = [];
+        foreach ($jobs as $job) {
+            $command = $job->buildCommand();
+            $this->outputHandler->onJobDryRun($job->getDisplayName(), $command);
+            $results[] = new JobResult($job->getName(), true, '', '0ms', false, $command);
+        }
+        $this->outputHandler->flush();
+        return new FlowResult($flowName, $results, '0ms', 0, 0);
     }
 
     /**

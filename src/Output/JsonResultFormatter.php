@@ -12,13 +12,17 @@ class JsonResultFormatter implements ResultFormatter
     public function format(FlowResult $result): string
     {
         $jobs = array_map(function (JobResult $job): array {
-            return [
+            $entry = [
                 'name'        => $job->getJobName(),
                 'success'     => $job->isSuccess(),
                 'time'        => $job->getExecutionTime(),
                 'output'      => $job->getOutput(),
                 'fixApplied'  => $job->isFixApplied(),
             ];
+            if ($job->getCommand() !== null) {
+                $entry['command'] = $job->getCommand();
+            }
+            return $entry;
         }, $result->getJobResults());
 
         $data = [

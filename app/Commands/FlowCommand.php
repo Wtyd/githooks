@@ -10,6 +10,7 @@ use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\FlowExecutor;
+use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
@@ -22,7 +23,9 @@ class FlowCommand extends Command
                             {--fail-fast : Stop on first job failure}
                             {--processes= : Number of parallel processes}
                             {--exclude-jobs= : Comma-separated list of jobs to skip}
+                            {--only-jobs= : Comma-separated list of jobs to run (others skipped)}
                             {--format= : Output format (text, json, junit)}
+                            {--dry-run : Show commands without executing}
                             {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
                             {--monitor : Show thread usage report after execution}
                             {--config= : Path to configuration file}';
@@ -87,7 +90,18 @@ class FlowCommand extends Command
                 $excludeJobs = array_map('trim', explode(',', strval($excludeOption)));
             }
 
-            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs);
+            $onlyJobs = [];
+            $onlyOption = $this->option('only-jobs');
+            if (!empty($onlyOption)) {
+                $onlyJobs = array_map('trim', explode(',', strval($onlyOption)));
+            }
+
+            if (!empty($excludeJobs) && !empty($onlyJobs)) {
+                $this->error('Options --exclude-jobs and --only-jobs cannot be used together.');
+                return 1;
+            }
+
+            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs);
 
             // CLI options override config values
             $cliFailFast = $this->option('fail-fast') ? true : null;
@@ -95,7 +109,7 @@ class FlowCommand extends Command
 
             if ($cliFailFast !== null || $cliProcesses !== null) {
                 $overriddenOptions = $plan->getOptions()->withOverrides($cliFailFast, $cliProcesses);
-                $plan = new \Wtyd\GitHooks\Execution\FlowPlan(
+                $plan = new FlowPlan(
                     $plan->getFlowName(),
                     $plan->getJobs(),
                     $overriddenOptions,
@@ -103,7 +117,7 @@ class FlowCommand extends Command
                 );
             }
 
-            $result = $this->executor->execute($plan);
+            $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
             foreach ($config->getValidation()->getWarnings() as $warning) {
                 if (strpos($warning, 'will be skipped') !== false) {

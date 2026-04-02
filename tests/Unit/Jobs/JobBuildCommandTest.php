@@ -51,7 +51,10 @@ class JobBuildCommandTest extends TestCase
             'paths' => ['src'],
         ]));
 
-        $this->assertStringStartsWith('phpstan analyse', $job->buildCommand());
+        $command = $job->buildCommand();
+
+        // Auto-detection: uses vendor/bin/phpstan if it exists, otherwise phpstan
+        $this->assertRegExp('/^(vendor\/bin\/)?phpstan analyse/', $command);
     }
 
     /** @test */
@@ -101,7 +104,7 @@ class JobBuildCommandTest extends TestCase
             'paths' => ['src'],
         ]));
 
-        $this->assertStringStartsWith('phpcbf', $job->buildCommand());
+        $this->assertRegExp('/^(vendor\/bin\/)?phpcbf/', $job->buildCommand());
         $this->assertTrue($job->isFixApplied(1));
         $this->assertFalse($job->isFixApplied(0));
     }
@@ -119,7 +122,7 @@ class JobBuildCommandTest extends TestCase
 
         $command = $job->buildCommand();
 
-        $this->assertStringStartsWith('psalm', $command);
+        $this->assertRegExp('/^(vendor\/bin\/)?psalm/', $command);
         $this->assertStringContainsString('--config=qa/psalm.xml', $command);
         $this->assertStringContainsString('--memory-limit=1G', $command);
         $this->assertStringContainsString('--threads=4', $command);
@@ -140,7 +143,7 @@ class JobBuildCommandTest extends TestCase
 
         $command = $job->buildCommand();
 
-        $this->assertStringStartsWith('phpunit', $command);
+        $this->assertRegExp('/^(vendor\/bin\/)?phpunit/', $command);
         $this->assertStringContainsString('--group unit', $command);
         $this->assertStringContainsString('--exclude-group slow', $command);
         $this->assertStringContainsString('-c phpunit.xml', $command);
@@ -159,7 +162,7 @@ class JobBuildCommandTest extends TestCase
 
         $command = $job->buildCommand();
 
-        $this->assertStringStartsWith('parallel-lint', $command);
+        $this->assertRegExp('/^(vendor\/bin\/)?parallel-lint/', $command);
         $this->assertStringContainsString('--exclude vendor', $command);
         $this->assertStringContainsString('--exclude tools', $command);
         $this->assertStringContainsString('--colors', $command);
@@ -176,7 +179,7 @@ class JobBuildCommandTest extends TestCase
 
         $command = $job->buildCommand();
 
-        $this->assertStringStartsWith('phpcpd', $command);
+        $this->assertRegExp('/^(vendor\/bin\/)?phpcpd/', $command);
         $this->assertStringContainsString('--exclude vendor', $command);
         $this->assertStringContainsString('--exclude tests', $command);
     }

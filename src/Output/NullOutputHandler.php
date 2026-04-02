@@ -22,6 +22,11 @@ class NullOutputHandler implements OutputHandler
     {
     }
 
+    /** @SuppressWarnings(PHPMD.UnusedFormalParameter) Interface implementation */
+    public function onJobDryRun(string $jobName, string $command): void
+    {
+    }
+
     public function flush(): void
     {
     }

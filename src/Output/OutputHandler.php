@@ -18,6 +18,8 @@ interface OutputHandler
 
     public function onJobSkipped(string $jobName, string $reason): void;
 
+    public function onJobDryRun(string $jobName, string $command): void;
+
     /**
      * Called after all jobs have completed. Implementations that buffer
      * output (e.g. grouped errors) should print here.

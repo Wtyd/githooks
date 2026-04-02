@@ -26,6 +26,12 @@ class PhpmdJob extends JobAbstract
         return 'phpmd';
     }
 
+    /** @return string[] */
+    public function getCachePaths(): array
+    {
+        return [$this->args['cache-file'] ?? '.phpmd.cache'];
+    }
+
     /** @SuppressWarnings(PHPMD.CyclomaticComplexity) PHPMD requires positional args + flag iteration */
     public function buildCommand(): string
     {

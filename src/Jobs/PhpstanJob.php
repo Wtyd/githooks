@@ -34,6 +34,22 @@ class PhpstanJob extends JobAbstract
         return new ThreadCapability('_phpstan_internal', $workers, 1, false);
     }
 
+    /**
+     * @return string[]
+     * @SuppressWarnings(PHPMD.UndefinedVariable) preg_match assigns $matches by reference
+     */
+    public function getCachePaths(): array
+    {
+        $config = $this->args['config'] ?? '';
+        if (!empty($config) && file_exists($config)) {
+            $content = file_get_contents($config);
+            if ($content !== false && preg_match('/tmpDir:\s*(.+)/', $content, $matches)) {
+                return [trim($matches[1])];
+            }
+        }
+        return [sys_get_temp_dir() . '/phpstan'];
+    }
+
     /** @SuppressWarnings(PHPMD.UndefinedVariable) preg_match assigns $matches by reference */
     private function detectNeonWorkers(): int
     {

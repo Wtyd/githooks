@@ -19,4 +19,10 @@ class PhpunitJob extends JobAbstract
     {
         return 'phpunit';
     }
+
+    /** @return string[] */
+    public function getCachePaths(): array
+    {
+        return ['.phpunit.result.cache'];
+    }
 }
