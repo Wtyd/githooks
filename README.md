@@ -119,6 +119,7 @@ GitHooks uses a PHP configuration file (`githooks.php`) with three sections: **h
 return [
     // Git hooks: map git events to flows/jobs
     'hooks' => [
+        'command'    => 'php7.4 vendor/bin/githooks', // optional: customize the hook script command
         'pre-commit' => ['qa'],
         'pre-push'   => [
             ['flow' => 'full', 'only-on' => ['main', 'develop']], // only on these branches
