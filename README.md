@@ -4,7 +4,7 @@
     <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
     <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
-    <a href="#2-requirements" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.1%20to%208.5-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
+    <a href="#2-requirements" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.4%20to%208.5-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
     <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
 </p>
 <p align="center">
@@ -24,7 +24,7 @@ Are many other tools and composer plugins for manage git hooks. But GitHooks off
 Further, it can be used together with javascript validation tools like [typicode/husky](https://github.com/typicode/husky) if you have hybrid projects.
 
 # 2. Requirements
-* PHP >= 7.1
+* PHP >= 7.4
 * The tools you need to check the code.
 * Or your owns scripts for the hooks.
 
@@ -33,26 +33,15 @@ Further, it can be used together with javascript validation tools like [typicode
 ```bash
 composer require --dev wtyd/githooks
 ```
-**Note:** for php < 8.1 you must add the next `post-update-cmd` event to the `scripts` section in your `composer.json`:
+**Note:** for php < 8.1 you must add the next `post-update-cmd` and `post-install-cmd` events to the `scripts` section in your `composer.json`:
 
-```json
-"scripts": {
-    "post-update-cmd": [
-      "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"
-    ]
-}
-```
-Then run `composer update wtyd/githooks`.
-
-> Until version 2.3.0 the method used was **php72orMinorUpdate** but it has been deprecated and will be removed from version 3.0.0
-
-It is also convenient to add it to the `post-install-cm` event so that the rest of the project developers do not have problems with the build
 ```json
 "scripts": {
     "post-update-cmd": "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions",
     "post-install-cmd": "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"
 }
 ```
+Then run `composer update wtyd/githooks`.
 #### 2. Install all needed [supported tools](#5-supported-tools). How you install the tools doesn't matter.
 
 #### 3. Initialize GitHooks with `githooks conf:init`. This command creates the configuration file in the root path (`githooks.php`).
