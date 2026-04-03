@@ -57,6 +57,12 @@ All notable changes to this project will be documented in this file.
 - **Deep validation in `conf:check`**: Jobs table now includes a Status column. Checks that executables exist (via filesystem or PATH), that configured `paths` are real directories, and that referenced config files (`.neon`, `.xml`) are accessible.
 - **Auto-detection of `executablePath`**: When a job does not specify `executablePath`, GitHooks looks for `vendor/bin/{tool}` before falling back to the tool name resolved via PATH. Does not apply to `custom` or `script` job types.
 
+### Conditional Execution Enhancements
+- **`exclude-files`**: New condition key for hook refs. Excludes staged files matching glob patterns from triggering execution. Always prevails over `only-files`. Can be used standalone to mean "run for everything except these files".
+- **`exclude-on`**: New condition key for hook refs. Excludes branches matching glob patterns. Always prevails over `only-on`. Can be used standalone to mean "run on all branches except these".
+- **Double-star (`**`) glob support**: File patterns (`only-files`/`exclude-files`) now support `**` for recursive directory matching. `src/**/*.php` matches all PHP files under `src/` at any depth. Single `*` continues to match only within one directory level.
+- **`hooks.command` config key**: Customize the command used in generated hook scripts (e.g. `'command' => 'php7.4 vendor/bin/githooks'`).
+
 ### Build Improvements
 - **Box binary moved to `tools/`**: `tools/box` (Box 3.16.0) ships with the project. CI no longer needs `composer global require humbug/box`.
 
