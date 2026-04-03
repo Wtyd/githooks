@@ -160,6 +160,80 @@ class HookRunnerTest extends TestCase
         $this->assertCount(1, $results);
     }
 
+    /** @test */
+    public function exclude_on_skips_matching_branch()
+    {
+        $this->fileUtils->setCurrentBranch('GH-42');
+
+        $config = $this->buildConfigWithBranchRef('phpcs', [], ['GH-*']);
+
+        $this->executor->expects($this->never())->method('execute');
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertEmpty($results);
+    }
+
+    /** @test */
+    public function exclude_on_allows_non_matching_branch()
+    {
+        $this->fileUtils->setCurrentBranch('main');
+
+        $config = $this->buildConfigWithBranchRef('phpcs', [], ['GH-*']);
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function exclude_on_prevails_over_only_on()
+    {
+        $this->fileUtils->setCurrentBranch('release/beta-1');
+
+        $config = $this->buildConfigWithBranchRef('phpcs', ['release/*'], ['release/beta-*']);
+
+        $this->executor->expects($this->never())->method('execute');
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertEmpty($results);
+    }
+
+    /** @test */
+    public function only_on_with_exclude_on_allows_non_excluded()
+    {
+        $this->fileUtils->setCurrentBranch('release/v2.0');
+
+        $config = $this->buildConfigWithBranchRef('phpcs', ['release/*'], ['release/beta-*']);
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function exclude_on_without_only_on_excludes_from_all()
+    {
+        $this->fileUtils->setCurrentBranch('temp/experiment');
+
+        $config = $this->buildConfigWithBranchRef('phpcs', [], ['temp/*']);
+
+        $this->executor->expects($this->never())->method('execute');
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertEmpty($results);
+    }
+
     /**
      * @param string[] $onlyFiles
      * @param string[] $excludeFiles
@@ -168,6 +242,22 @@ class HookRunnerTest extends TestCase
     {
         $ref = new HookRef($jobName, [], $onlyFiles, $excludeFiles);
 
+        return $this->buildConfig($jobName, $ref);
+    }
+
+    /**
+     * @param string[] $onlyOn
+     * @param string[] $excludeOn
+     */
+    private function buildConfigWithBranchRef(string $jobName, array $onlyOn, array $excludeOn): ConfigurationResult
+    {
+        $ref = new HookRef($jobName, $onlyOn, [], [], $excludeOn);
+
+        return $this->buildConfig($jobName, $ref);
+    }
+
+    private function buildConfig(string $jobName, HookRef $ref): ConfigurationResult
+    {
         $hookConfig = new HookConfiguration(['pre-commit' => [$ref]]);
 
         $jobConfig = new JobConfiguration($jobName, 'phpcs', []);

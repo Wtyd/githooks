@@ -119,6 +119,9 @@ class CheckConfigurationFileCommand extends Command
                     if (!empty($ref->getOnlyOnBranches())) {
                         $conditions[] = 'on: ' . implode(',', $ref->getOnlyOnBranches());
                     }
+                    if (!empty($ref->getExcludeOnBranches())) {
+                        $conditions[] = 'exclude-on: ' . implode(',', $ref->getExcludeOnBranches());
+                    }
                     if (!empty($ref->getOnlyFiles())) {
                         $conditions[] = 'files: ' . implode(',', $ref->getOnlyFiles());
                     }

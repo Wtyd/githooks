@@ -115,6 +115,49 @@ class HookConfigurationTest extends TestCase
     }
 
     /** @test */
+    public function it_parses_exclude_on_condition()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    ['flow' => 'qa', 'exclude-on' => ['GH-*', 'temp/*']],
+                ],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertCount(1, $refs);
+        $this->assertEquals(['GH-*', 'temp/*'], $refs[0]->getExcludeOnBranches());
+        $this->assertTrue($refs[0]->hasConditions());
+    }
+
+    /** @test */
+    public function it_parses_only_on_with_exclude_on()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-push' => [
+                    ['flow' => 'deploy', 'only-on' => ['release/*'], 'exclude-on' => ['release/beta-*']],
+                ],
+            ],
+            ['deploy'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-push');
+        $this->assertEquals(['release/*'], $refs[0]->getOnlyOnBranches());
+        $this->assertEquals(['release/beta-*'], $refs[0]->getExcludeOnBranches());
+    }
+
+    /** @test */
     public function it_parses_exclude_files_condition()
     {
         $result = new ValidationResult();

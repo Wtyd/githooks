@@ -15,6 +15,9 @@ class HookRef
     private array $onlyOnBranches;
 
     /** @var string[] */
+    private array $excludeOnBranches;
+
+    /** @var string[] */
     private array $onlyFiles;
 
     /** @var string[] */
@@ -22,13 +25,20 @@ class HookRef
 
     /**
      * @param string[] $onlyOnBranches
+     * @param string[] $excludeOnBranches
      * @param string[] $onlyFiles
      * @param string[] $excludeFiles
      */
-    public function __construct(string $target, array $onlyOnBranches = [], array $onlyFiles = [], array $excludeFiles = [])
-    {
+    public function __construct(
+        string $target,
+        array $onlyOnBranches = [],
+        array $onlyFiles = [],
+        array $excludeFiles = [],
+        array $excludeOnBranches = []
+    ) {
         $this->target = $target;
         $this->onlyOnBranches = $onlyOnBranches;
+        $this->excludeOnBranches = $excludeOnBranches;
         $this->onlyFiles = $onlyFiles;
         $this->excludeFiles = $excludeFiles;
     }
@@ -62,6 +72,11 @@ class HookRef
             $onlyOn = is_array($raw['only-on']) ? $raw['only-on'] : [$raw['only-on']];
         }
 
+        $excludeOn = [];
+        if (isset($raw['exclude-on'])) {
+            $excludeOn = is_array($raw['exclude-on']) ? $raw['exclude-on'] : [$raw['exclude-on']];
+        }
+
         $onlyFiles = [];
         if (isset($raw['only-files'])) {
             $onlyFiles = is_array($raw['only-files']) ? $raw['only-files'] : [$raw['only-files']];
@@ -72,14 +87,14 @@ class HookRef
             $excludeFiles = is_array($raw['exclude-files']) ? $raw['exclude-files'] : [$raw['exclude-files']];
         }
 
-        $knownKeys = ['flow', 'job', 'only-on', 'only-files', 'exclude-files'];
+        $knownKeys = ['flow', 'job', 'only-on', 'exclude-on', 'only-files', 'exclude-files'];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Unknown key '$key' in hook ref for '$target'.");
             }
         }
 
-        return new self($target, $onlyOn, $onlyFiles, $excludeFiles);
+        return new self($target, $onlyOn, $onlyFiles, $excludeFiles, $excludeOn);
     }
 
     public function getTarget(): string
@@ -91,6 +106,12 @@ class HookRef
     public function getOnlyOnBranches(): array
     {
         return $this->onlyOnBranches;
+    }
+
+    /** @return string[] */
+    public function getExcludeOnBranches(): array
+    {
+        return $this->excludeOnBranches;
     }
 
     /** @return string[] */
@@ -107,6 +128,9 @@ class HookRef
 
     public function hasConditions(): bool
     {
-        return !empty($this->onlyOnBranches) || !empty($this->onlyFiles) || !empty($this->excludeFiles);
+        return !empty($this->onlyOnBranches)
+            || !empty($this->excludeOnBranches)
+            || !empty($this->onlyFiles)
+            || !empty($this->excludeFiles);
     }
 }

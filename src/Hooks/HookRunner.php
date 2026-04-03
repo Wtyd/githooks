@@ -86,7 +86,7 @@ class HookRunner
     }
 
     /**
-     * Evaluate conditions on a HookRef. Both conditions are AND-ed.
+     * Evaluate conditions on a HookRef. All conditions are AND-ed.
      */
     private function shouldExecute(HookRef $ref): bool
     {
@@ -94,10 +94,11 @@ class HookRunner
             return true;
         }
 
-        $branches = $ref->getOnlyOnBranches();
-        if (!empty($branches)) {
+        $includeBranches = $ref->getOnlyOnBranches();
+        $excludeBranches = $ref->getExcludeOnBranches();
+        if (!empty($includeBranches) || !empty($excludeBranches)) {
             $currentBranch = $this->fileUtils->getCurrentBranch();
-            if (!$this->matchesBranch($currentBranch, $branches)) {
+            if (!$this->matchesBranch($currentBranch, $includeBranches, $excludeBranches)) {
                 return false;
             }
         }
@@ -115,19 +116,33 @@ class HookRunner
     }
 
     /**
-     * @param string[] $patterns Branch names or glob patterns
+     * @param string[] $includePatterns Branch names or glob patterns for inclusion
+     * @param string[] $excludePatterns Branch names or glob patterns for exclusion (always prevails)
      */
-    private function matchesBranch(string $branch, array $patterns): bool
+    private function matchesBranch(string $branch, array $includePatterns, array $excludePatterns = []): bool
     {
         if ($branch === '') {
             return false;
         }
-        foreach ($patterns as $pattern) {
+
+        $matched = empty($includePatterns);
+        foreach ($includePatterns as $pattern) {
             if ($branch === $pattern || fnmatch($pattern, $branch)) {
-                return true;
+                $matched = true;
+                break;
             }
         }
-        return false;
+        if (!$matched) {
+            return false;
+        }
+
+        foreach ($excludePatterns as $pattern) {
+            if ($branch === $pattern || fnmatch($pattern, $branch)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
