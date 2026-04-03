@@ -2,6 +2,7 @@
 
 return [
     'hooks' => [
+        'command' => 'php7.4 vendor/bin/githooks',
         'pre-commit' => ['qa'],
     ],
 

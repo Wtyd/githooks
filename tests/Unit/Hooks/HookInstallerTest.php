@@ -107,6 +107,27 @@ class HookInstallerTest extends TestCase
         $this->assertFileDoesNotExist($this->tempDir . '/.git/hooks/pre-commit');
     }
 
+    /** @test */
+    public function it_uses_custom_command_in_hook_script()
+    {
+        $installer = new HookInstaller($this->tempDir);
+        $installer->install(['pre-commit'], 'php7.4 vendor/bin/githooks');
+
+        $content = file_get_contents($this->tempDir . '/.githooks/pre-commit');
+        $this->assertStringContainsString('php7.4 vendor/bin/githooks hook:run', $content);
+        $this->assertStringNotContainsString('php vendor/bin/githooks', $content);
+    }
+
+    /** @test */
+    public function it_uses_default_command_when_empty()
+    {
+        $installer = new HookInstaller($this->tempDir);
+        $installer->install(['pre-commit'], '');
+
+        $content = file_get_contents($this->tempDir . '/.githooks/pre-commit');
+        $this->assertStringContainsString('php vendor/bin/githooks hook:run', $content);
+    }
+
     private function recursiveDelete(string $dir): void
     {
         if (!is_dir($dir)) {

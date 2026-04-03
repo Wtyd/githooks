@@ -8,15 +8,20 @@ use Wtyd\GitHooks\Hooks;
 
 class HookConfiguration
 {
+    private const DEFAULT_COMMAND = 'php vendor/bin/githooks';
+
     /** @var array<string, HookRef[]> event => HookRef[] */
     private array $hooks;
+
+    private string $command;
 
     /**
      * @param array<string, HookRef[]> $hooks
      */
-    public function __construct(array $hooks)
+    public function __construct(array $hooks, string $command = '')
     {
         $this->hooks = $hooks;
+        $this->command = !empty($command) ? $command : self::DEFAULT_COMMAND;
     }
 
     /**
@@ -26,6 +31,7 @@ class HookConfiguration
      * @param string[] $availableFlowNames
      * @param string[] $availableJobNames
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates both string and array ref formats
+     * @SuppressWarnings(PHPMD.NPathComplexity) Extracts command + validates events with string/array refs
      */
     public static function fromArray(
         array $raw,
@@ -34,6 +40,16 @@ class HookConfiguration
         ValidationResult $result
     ): self {
         $hooks = [];
+        $command = '';
+
+        if (array_key_exists('command', $raw)) {
+            if (!is_string($raw['command'])) {
+                $result->addError("'hooks.command' must be a string (e.g. 'php7.4 vendor/bin/githooks').");
+            } else {
+                $command = $raw['command'];
+            }
+            unset($raw['command']);
+        }
 
         foreach ($raw as $event => $refs) {
             if (!Hooks::validate($event)) {
@@ -77,7 +93,12 @@ class HookConfiguration
             $hooks[$event] = $hookRefs;
         }
 
-        return new self($hooks);
+        return new self($hooks, $command);
+    }
+
+    public function getCommand(): string
+    {
+        return $this->command;
     }
 
     /**

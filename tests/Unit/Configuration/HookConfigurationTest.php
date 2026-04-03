@@ -137,6 +137,59 @@ class HookConfigurationTest extends TestCase
         $this->assertTrue($refs[1]->hasConditions());
     }
 
+    /** @test */
+    public function it_uses_default_command_when_not_specified()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            ['pre-commit' => ['qa']],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertEquals('php vendor/bin/githooks', $hooks->getCommand());
+    }
+
+    /** @test */
+    public function it_reads_custom_command_from_config()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'command' => 'php7.4 vendor/bin/githooks',
+                'pre-commit' => ['qa'],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('php7.4 vendor/bin/githooks', $hooks->getCommand());
+        // 'command' should not be treated as a hook event
+        $this->assertCount(1, $hooks->getEvents());
+        $this->assertEquals(['pre-commit'], $hooks->getEvents());
+    }
+
+    /** @test */
+    public function it_reports_error_for_non_string_command()
+    {
+        $result = new ValidationResult();
+        HookConfiguration::fromArray(
+            [
+                'command' => 123,
+                'pre-commit' => ['qa'],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('hooks.command', $result->getErrors()[0]);
+    }
+
     /**
      * @param string[] $expected
      * @param HookRef[] $refs

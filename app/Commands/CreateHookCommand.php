@@ -81,7 +81,8 @@ class CreateHookCommand extends Command
         }
 
         $events = $hooks->getEvents();
-        $created = $this->installer->install($events);
+        $command = $hooks->getCommand();
+        $created = $this->installer->install($events, $command);
 
         foreach ($created as $path) {
             $event = basename($path);
