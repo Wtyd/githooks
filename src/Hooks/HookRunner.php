@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Hooks;
 
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
+use Wtyd\GitHooks\Configuration\HookRef;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
@@ -56,7 +57,12 @@ class HookRunner
         $results = [];
 
         foreach ($refs as $ref) {
-            $flow = $config->getFlow($ref);
+            if (!$this->shouldExecute($ref)) {
+                continue;
+            }
+
+            $target = $ref->getTarget();
+            $flow = $config->getFlow($target);
 
             if ($flow !== null) {
                 $plan = $this->preparer->prepare($flow, $config, $context);
@@ -65,7 +71,7 @@ class HookRunner
             }
 
             // Not a flow — try as a direct job
-            $jobConfig = $config->getJob($ref);
+            $jobConfig = $config->getJob($target);
 
             if ($jobConfig !== null) {
                 $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
@@ -77,6 +83,66 @@ class HookRunner
         }
 
         return $results;
+    }
+
+    /**
+     * Evaluate conditions on a HookRef. Both conditions are AND-ed.
+     */
+    private function shouldExecute(HookRef $ref): bool
+    {
+        if (!$ref->hasConditions()) {
+            return true;
+        }
+
+        $branches = $ref->getOnlyOnBranches();
+        if (!empty($branches)) {
+            $currentBranch = $this->fileUtils->getCurrentBranch();
+            if (!$this->matchesBranch($currentBranch, $branches)) {
+                return false;
+            }
+        }
+
+        $filePatterns = $ref->getOnlyFiles();
+        if (!empty($filePatterns)) {
+            $stagedFiles = $this->fileUtils->getModifiedFiles();
+            if (!$this->matchesFiles($stagedFiles, $filePatterns)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param string[] $patterns Branch names or glob patterns
+     */
+    private function matchesBranch(string $branch, array $patterns): bool
+    {
+        if ($branch === '') {
+            return false;
+        }
+        foreach ($patterns as $pattern) {
+            if ($branch === $pattern || fnmatch($pattern, $branch)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param string[] $files Staged file paths
+     * @param string[] $patterns Glob patterns (e.g. '*.php', 'src/**')
+     */
+    private function matchesFiles(array $files, array $patterns): bool
+    {
+        foreach ($files as $file) {
+            foreach ($patterns as $pattern) {
+                if (fnmatch($pattern, $file, FNM_PATHNAME)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

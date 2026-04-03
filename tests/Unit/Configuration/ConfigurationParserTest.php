@@ -84,7 +84,8 @@ PHP;
         $this->assertCount(2, $result->getJobs());
         $this->assertCount(1, $result->getFlows());
         $this->assertNotNull($result->getHooks());
-        $this->assertEquals(['lint'], $result->getHooks()->resolve('pre-commit'));
+        $refs = $result->getHooks()->resolve('pre-commit');
+        $this->assertEquals('lint', $refs[0]->getTarget());
         $this->assertEquals(2, $result->getGlobalOptions()->getProcesses());
 
         $lintFlow = $result->getFlow('lint');

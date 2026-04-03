@@ -6,6 +6,7 @@ namespace Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Configuration\HookConfiguration;
+use Wtyd\GitHooks\Configuration\HookRef;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
 class HookConfigurationTest extends TestCase
@@ -22,8 +23,8 @@ class HookConfigurationTest extends TestCase
         );
 
         $this->assertFalse($result->hasErrors());
-        $this->assertEquals(['lint', 'test'], $hooks->resolve('pre-commit'));
-        $this->assertEquals(['phpstan_src'], $hooks->resolve('pre-push'));
+        $this->assertTargets(['lint', 'test'], $hooks->resolve('pre-commit'));
+        $this->assertTargets(['phpstan_src'], $hooks->resolve('pre-push'));
         $this->assertEmpty($hooks->resolve('post-commit'));
         $this->assertCount(2, $hooks->getEvents());
     }
@@ -85,6 +86,66 @@ class HookConfigurationTest extends TestCase
         );
 
         $this->assertFalse($result->hasErrors());
-        $this->assertEquals(['phpstan_src'], $hooks->resolve('pre-commit'));
+        $this->assertTargets(['phpstan_src'], $hooks->resolve('pre-commit'));
+    }
+
+    /** @test */
+    public function it_parses_extended_format_with_conditions()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-push' => [
+                    ['flow' => 'fullAnalysis', 'only-on' => ['main', 'develop']],
+                    ['job' => 'audit', 'only-files' => ['*.php']],
+                ],
+            ],
+            ['fullAnalysis'],
+            ['audit'],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-push');
+        $this->assertCount(2, $refs);
+        $this->assertEquals('fullAnalysis', $refs[0]->getTarget());
+        $this->assertEquals(['main', 'develop'], $refs[0]->getOnlyOnBranches());
+        $this->assertEquals('audit', $refs[1]->getTarget());
+        $this->assertEquals(['*.php'], $refs[1]->getOnlyFiles());
+    }
+
+    /** @test */
+    public function it_mixes_string_and_array_refs()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    'qa',
+                    ['flow' => 'heavy', 'only-on' => ['main']],
+                ],
+            ],
+            ['qa', 'heavy'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertCount(2, $refs);
+        $this->assertFalse($refs[0]->hasConditions());
+        $this->assertTrue($refs[1]->hasConditions());
+    }
+
+    /**
+     * @param string[] $expected
+     * @param HookRef[] $refs
+     */
+    private function assertTargets(array $expected, array $refs): void
+    {
+        $targets = array_map(function (HookRef $ref): string {
+            return $ref->getTarget();
+        }, $refs);
+        $this->assertEquals($expected, $targets);
     }
 }

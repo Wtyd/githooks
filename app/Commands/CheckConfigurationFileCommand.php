@@ -112,8 +112,22 @@ class CheckConfigurationFileCommand extends Command
         $hooks = $config->getHooks();
         if ($hooks !== null) {
             $hookRows = [];
-            foreach ($hooks->getAll() as $event => $targets) {
-                $hookRows[] = [$event, implode(', ', $targets)];
+            foreach ($hooks->getAll() as $event => $refs) {
+                $targetDescriptions = array_map(function ($ref) {
+                    $desc = $ref->getTarget();
+                    $conditions = [];
+                    if (!empty($ref->getOnlyOnBranches())) {
+                        $conditions[] = 'on: ' . implode(',', $ref->getOnlyOnBranches());
+                    }
+                    if (!empty($ref->getOnlyFiles())) {
+                        $conditions[] = 'files: ' . implode(',', $ref->getOnlyFiles());
+                    }
+                    if (!empty($conditions)) {
+                        $desc .= ' [' . implode('; ', $conditions) . ']';
+                    }
+                    return $desc;
+                }, $refs);
+                $hookRows[] = [$event, implode(', ', $targetDescriptions)];
             }
             if (!empty($hookRows)) {
                 $this->line('');
@@ -207,7 +221,13 @@ class CheckConfigurationFileCommand extends Command
     private function validateConfigFiles(array $jobArgs, array &$warnings): void
     {
         $this->checkFileRef($jobArgs, 'config', 'config file', $warnings);
-        $this->checkFileRef($jobArgs, 'rules', 'rules file', $warnings, true);
+        // Only validate 'rules' as file path if it looks like a path (contains / or .xml)
+        if (
+            !empty($jobArgs['rules']) && is_string($jobArgs['rules'])
+            && (strpos($jobArgs['rules'], '/') !== false || strpos($jobArgs['rules'], '.xml') !== false)
+        ) {
+            $this->checkFileRef($jobArgs, 'rules', 'rules file', $warnings);
+        }
     }
 
     /**

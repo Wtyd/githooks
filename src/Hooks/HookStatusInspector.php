@@ -24,7 +24,11 @@ class HookStatusInspector
         $configuredEvents = [];
         $hooks = $config->getHooks();
         if ($hooks !== null) {
-            $configuredEvents = $hooks->getAll();
+            foreach ($hooks->getAll() as $event => $refs) {
+                $configuredEvents[$event] = array_map(function ($ref) {
+                    return $ref->getTarget();
+                }, $refs);
+            }
         }
 
         $installedEvents = $this->getInstalledEvents($hooksDir);

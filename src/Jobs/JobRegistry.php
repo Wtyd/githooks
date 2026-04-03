@@ -50,6 +50,19 @@ class JobRegistry
     }
 
     /**
+     * Get the default executable name for a job type without instantiation.
+     */
+    public function getDefaultExecutable(string $type): string
+    {
+        if (!$this->isSupported($type)) {
+            return '';
+        }
+        /** @var class-string<JobAbstract> */
+        $class = self::TYPE_MAP[$type];
+        return $class::getDefaultExecutable();
+    }
+
+    /**
      * Get the ARGUMENT_MAP for a job type (for validation without instantiation).
      *
      * @return array<string, array<string, string>>

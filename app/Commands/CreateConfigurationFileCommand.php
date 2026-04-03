@@ -2,10 +2,12 @@
 
 namespace Wtyd\GitHooks\App\Commands;
 
-// use Illuminate\Support\Facades\Storage;
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\Configuration\ConfigurationGenerator;
+use Wtyd\GitHooks\Configuration\ToolDetector;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
+use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Utils\Storage;
 
@@ -18,36 +20,101 @@ class CreateConfigurationFileCommand extends Command
 
     protected FileReader $fileReader;
 
-    public function __construct(Printer $printer, FileReader $fileReader)
+    private JobRegistry $jobRegistry;
+
+    public function __construct(Printer $printer, FileReader $fileReader, JobRegistry $jobRegistry)
     {
         $this->printer = $printer;
         $this->fileReader = $fileReader;
+        $this->jobRegistry = $jobRegistry;
         parent::__construct();
     }
 
     public function handle()
     {
+        try {
+            $this->fileReader->findConfigurationFile();
+            $this->printer->error('githooks configuration file already exists');
+            return 1;
+        } catch (ConfigurationFileNotFoundException $ex) {
+            // OK — no config exists, we can create one
+        }
+
+        if (!$this->input->isInteractive() || $this->option('legacy')) {
+            return $this->copyDistFile();
+        }
+
+        return $this->interactive();
+    }
+
+    /** @SuppressWarnings(PHPMD.CyclomaticComplexity) Interactive flow with multiple user prompts */
+    private function interactive(): int
+    {
+        $detector = new ToolDetector($this->jobRegistry);
+        $detected = $detector->detect();
+
+        if (empty($detected)) {
+            $this->warn('No QA tools detected in vendor/bin/. Falling back to template.');
+            return $this->copyDistFile();
+        }
+
+        $this->info('Detected QA tools in vendor/bin/:');
+
+        $selectedTools = [];
+        foreach ($detected as $type) {
+            if ($this->confirm("  Include $type?", true)) {
+                $selectedTools[] = $type;
+            }
+        }
+
+        if (empty($selectedTools)) {
+            $this->warn('No tools selected. Falling back to template.');
+            return $this->copyDistFile();
+        }
+
+        /** @var string $pathsInput */
+        $pathsInput = $this->ask('Source directories (comma-separated)', 'src');
+        $paths = array_map('trim', explode(',', $pathsInput));
+
+        /** @var string $hookChoice */
+        $hookChoice = $this->choice(
+            'Which hook events to configure?',
+            ['pre-commit', 'pre-push', 'both', 'none'],
+            0
+        );
+
+        $hookEvents = [];
+        if ($hookChoice === 'pre-commit') {
+            $hookEvents = ['pre-commit'];
+        } elseif ($hookChoice === 'pre-push') {
+            $hookEvents = ['pre-push'];
+        } elseif ($hookChoice === 'both') {
+            $hookEvents = ['pre-commit', 'pre-push'];
+        }
+
+        $generator = new ConfigurationGenerator();
+        $content = $generator->generate($selectedTools, $paths, $hookEvents);
+
+        file_put_contents('githooks.php', $content);
+        $this->printer->success('Configuration file githooks.php created with ' . count($selectedTools) . ' tool(s).');
+
+        return 0;
+    }
+
+    private function copyDistFile(): int
+    {
         $distFile = $this->option('legacy')
             ? 'githooks.dist.yml'
             : 'githooks.dist.php';
-        $destiny = 'githooks.php';
 
-        try {
-            $this->fileReader->findConfigurationFile();
-        } catch (ConfigurationFileNotFoundException $ex) {
-            // Try as installed dependency first, then local development path
-            $origin = $this->resolveDistFile($distFile);
+        $origin = $this->resolveDistFile($distFile);
 
-            if ($origin === null) {
-                $this->printer->error("Distribution file '$distFile' not found.");
-                return 1;
-            }
-
-            return $this->copyFile($origin, $destiny);
+        if ($origin === null) {
+            $this->printer->error("Distribution file '$distFile' not found.");
+            return 1;
         }
 
-        $this->printer->error('githooks configuration file already exists');
-        return 1;
+        return $this->copyFile($origin, 'githooks.php');
     }
 
     protected function resolveDistFile(string $distFile): ?string
@@ -69,7 +136,6 @@ class CreateConfigurationFileCommand extends Command
     protected function copyFile(string $origin, string $destiny): int
     {
         try {
-            // For php <8.0 when copy fails raise FileNotFoundException. False when >=8.0
             if (Storage::copy($origin, $destiny)) {
                 $this->printer->success('Configuration file githooks.php has been created in root path');
                 return 0;

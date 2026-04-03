@@ -27,4 +27,9 @@ interface FileUtilsInterface
      * @return boolean
      */
     public function directoryContainsFile(string $directory, string $file): bool;
+
+    /**
+     * @return string Current git branch name, or empty string if not in a git repo.
+     */
+    public function getCurrentBranch(): string;
 }

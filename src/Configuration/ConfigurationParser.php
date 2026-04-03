@@ -12,7 +12,10 @@ use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
-/** @SuppressWarnings(PHPMD.CouplingBetweenObjects) Parser orchestrates all configuration types */
+/**
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Parser orchestrates all configuration types
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Parser handles legacy, v3, inheritance, and validation
+ */
 class ConfigurationParser
 {
     private string $rootPath;
@@ -127,6 +130,9 @@ class ConfigurationParser
             $result->addError("The 'jobs' section is missing or empty.");
             return $jobs;
         }
+
+        $jobsRaw = $this->resolveJobInheritance($jobsRaw, $result);
+
         foreach ($jobsRaw as $jobName => $jobData) {
             if (!is_array($jobData)) {
                 $result->addError("Job '$jobName' must be an array.");
@@ -138,6 +144,79 @@ class ConfigurationParser
             }
         }
         return $jobs;
+    }
+
+    /**
+     * Resolve `extends` references in jobs before parsing.
+     * Each child inherits all keys from its parent, with child keys overriding.
+     *
+     * @param array<string, mixed> $jobsRaw
+     * @return array<string, mixed>
+     */
+    private function resolveJobInheritance(array $jobsRaw, ValidationResult $result): array
+    {
+        /** @var array<string, array<string, mixed>> */
+        $resolved = [];
+        /** @var array<string, bool> */
+        $resolving = [];
+
+        foreach (array_keys($jobsRaw) as $name) {
+            $this->resolveOneJob((string) $name, $jobsRaw, $resolved, $resolving, $result);
+        }
+
+        return $resolved;
+    }
+
+    /**
+     * @param array<string, mixed> $all
+     * @param array<string, array<string, mixed>> &$resolved
+     * @param array<string, bool> &$resolving
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates parent exists, no self-ref, no cycles, type
+     */
+    private function resolveOneJob(
+        string $name,
+        array $all,
+        array &$resolved,
+        array &$resolving,
+        ValidationResult $result
+    ): void {
+        if (isset($resolved[$name]) || !isset($all[$name])) {
+            return;
+        }
+
+        $data = $all[$name];
+        if (!is_array($data)) {
+            $resolved[$name] = $data;
+            return;
+        }
+
+        if (isset($resolving[$name])) {
+            $result->addError("Circular 'extends' detected in job '$name'.");
+            return;
+        }
+
+        $resolving[$name] = true;
+
+        if (isset($data['extends'])) {
+            $parent = $data['extends'];
+
+            if (!is_string($parent)) {
+                $result->addError("Job '$name': 'extends' must be a string.");
+            } elseif ($parent === $name) {
+                $result->addError("Job '$name' cannot extend itself.");
+            } elseif (!isset($all[$parent])) {
+                $result->addError("Job '$name' extends '$parent' which is not defined.");
+            } else {
+                $this->resolveOneJob($parent, $all, $resolved, $resolving, $result);
+                if (isset($resolved[$parent]) && is_array($resolved[$parent])) {
+                    $data = array_merge($resolved[$parent], $data);
+                }
+            }
+            unset($data['extends']);
+        }
+
+        $resolved[$name] = $data;
+        unset($resolving[$name]);
     }
 
     /**

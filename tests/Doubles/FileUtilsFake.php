@@ -8,6 +8,8 @@ class FileUtilsFake extends FileUtils
 {
     protected array $modifiedFiles = [];
 
+    protected string $currentBranch = 'main';
+
     protected array $filesThatShouldBeFoundInDirectories = [];
 
     public function getModifiedFiles(): array
@@ -31,5 +33,15 @@ class FileUtilsFake extends FileUtils
             return true;
         }
         return false;
+    }
+
+    public function getCurrentBranch(): string
+    {
+        return $this->currentBranch;
+    }
+
+    public function setCurrentBranch(string $branch): void
+    {
+        $this->currentBranch = $branch;
     }
 }

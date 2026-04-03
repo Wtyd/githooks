@@ -8,11 +8,11 @@ use Wtyd\GitHooks\Hooks;
 
 class HookConfiguration
 {
-    /** @var array<string, string[]> event => [flow/job names] */
+    /** @var array<string, HookRef[]> event => HookRef[] */
     private array $hooks;
 
     /**
-     * @param array<string, string[]> $hooks
+     * @param array<string, HookRef[]> $hooks
      */
     public function __construct(array $hooks)
     {
@@ -25,6 +25,7 @@ class HookConfiguration
      * @param array<string, mixed> $raw The 'hooks' section
      * @param string[] $availableFlowNames
      * @param string[] $availableJobNames
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates both string and array ref formats
      */
     public static function fromArray(
         array $raw,
@@ -45,25 +46,44 @@ class HookConfiguration
                 continue;
             }
 
+            $hookRefs = [];
             foreach ($refs as $ref) {
-                if (
-                    !in_array($ref, $availableFlowNames, true)
-                    && !in_array($ref, $availableJobNames, true)
-                ) {
-                    $result->addError("Hook '$event' references '$ref' which is not a defined flow or job.");
+                $hookRef = null;
+
+                if (is_string($ref)) {
+                    $hookRef = HookRef::fromString($ref);
+                } elseif (is_array($ref)) {
+                    $hookRef = HookRef::fromArray($ref, $result);
+                } else {
+                    $result->addError("Hook '$event': each ref must be a string or array.");
+                    continue;
                 }
+
+                if ($hookRef === null) {
+                    continue;
+                }
+
+                $target = $hookRef->getTarget();
+                if (
+                    !in_array($target, $availableFlowNames, true)
+                    && !in_array($target, $availableJobNames, true)
+                ) {
+                    $result->addError("Hook '$event' references '$target' which is not a defined flow or job.");
+                }
+
+                $hookRefs[] = $hookRef;
             }
 
-            $hooks[$event] = $refs;
+            $hooks[$event] = $hookRefs;
         }
 
         return new self($hooks);
     }
 
     /**
-     * Get the ordered list of flow/job names to execute for a hook event.
+     * Get the HookRefs to execute for a hook event.
      *
-     * @return string[]
+     * @return HookRef[]
      */
     public function resolve(string $event): array
     {
@@ -76,7 +96,7 @@ class HookConfiguration
         return array_keys($this->hooks);
     }
 
-    /** @return array<string, string[]> */
+    /** @return array<string, HookRef[]> */
     public function getAll(): array
     {
         return $this->hooks;

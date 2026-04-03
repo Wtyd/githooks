@@ -60,4 +60,11 @@ class FileUtils implements FileUtilsInterface
 
         return in_array($file, Storage::allFiles($directory));
     }
+
+    public function getCurrentBranch(): string
+    {
+        $output = [];
+        exec('git rev-parse --abbrev-ref HEAD 2>/dev/null', $output);
+        return $output[0] ?? '';
+    }
 }
