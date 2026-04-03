@@ -216,6 +216,7 @@ class ConfigurationParser
             unset($data['extends']);
         }
 
+        /** @var array<string, mixed> $data */
         $resolved[$name] = $data;
         unset($resolving[$name]);
     }

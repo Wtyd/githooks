@@ -185,6 +185,9 @@ jobs:
       - name: Check Version
         run: echo ${{ steps.version_id.outputs.version }} && echo ${{ steps.time.outputs.time }}
 
+      - name: Disable pre-commit hook for CI build commit
+        run: git config --unset core.hooksPath || true
+
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
           files: builds/githooks builds/php7.4/githooks
