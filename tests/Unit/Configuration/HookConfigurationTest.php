@@ -115,6 +115,51 @@ class HookConfigurationTest extends TestCase
     }
 
     /** @test */
+    public function it_parses_exclude_files_condition()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    ['job' => 'phpcs', 'only-files' => ['src/*'], 'exclude-files' => ['src/Process/*']],
+                ],
+            ],
+            [],
+            ['phpcs'],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertCount(1, $refs);
+        $this->assertEquals(['src/*'], $refs[0]->getOnlyFiles());
+        $this->assertEquals(['src/Process/*'], $refs[0]->getExcludeFiles());
+        $this->assertTrue($refs[0]->hasConditions());
+    }
+
+    /** @test */
+    public function it_parses_exclude_files_without_only_files()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    ['flow' => 'qa', 'exclude-files' => ['vendor/*']],
+                ],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertEquals([], $refs[0]->getOnlyFiles());
+        $this->assertEquals(['vendor/*'], $refs[0]->getExcludeFiles());
+        $this->assertTrue($refs[0]->hasConditions());
+    }
+
+    /** @test */
     public function it_mixes_string_and_array_refs()
     {
         $result = new ValidationResult();

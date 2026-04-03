@@ -103,9 +103,10 @@ class HookRunner
         }
 
         $filePatterns = $ref->getOnlyFiles();
-        if (!empty($filePatterns)) {
+        $excludePatterns = $ref->getExcludeFiles();
+        if (!empty($filePatterns) || !empty($excludePatterns)) {
             $stagedFiles = $this->fileUtils->getModifiedFiles();
-            if (!$this->matchesFiles($stagedFiles, $filePatterns)) {
+            if (!$this->matchesFiles($stagedFiles, $filePatterns, $excludePatterns)) {
                 return false;
             }
         }
@@ -131,15 +132,31 @@ class HookRunner
 
     /**
      * @param string[] $files Staged file paths
-     * @param string[] $patterns Glob patterns (e.g. '*.php', 'src/**')
+     * @param string[] $includePatterns Glob patterns for inclusion (e.g. '*.php', 'src/**')
+     * @param string[] $excludePatterns Glob patterns for exclusion (always prevails over inclusion)
      */
-    private function matchesFiles(array $files, array $patterns): bool
+    private function matchesFiles(array $files, array $includePatterns, array $excludePatterns = []): bool
     {
         foreach ($files as $file) {
-            foreach ($patterns as $pattern) {
+            $matched = empty($includePatterns);
+            foreach ($includePatterns as $pattern) {
                 if (fnmatch($pattern, $file, FNM_PATHNAME)) {
-                    return true;
+                    $matched = true;
+                    break;
                 }
+            }
+            if (!$matched) {
+                continue;
+            }
+            $excluded = false;
+            foreach ($excludePatterns as $pattern) {
+                if (fnmatch($pattern, $file, FNM_PATHNAME)) {
+                    $excluded = true;
+                    break;
+                }
+            }
+            if (!$excluded) {
+                return true;
             }
         }
         return false;
