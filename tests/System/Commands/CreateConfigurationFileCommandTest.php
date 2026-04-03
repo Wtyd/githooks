@@ -15,7 +15,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
         mkdir($templatePath, 0777, true);
         file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
 
-        $this->artisan('conf:init')
+        $this->artisan('conf:init', ['--no-interaction' => true])
             ->containsStringInOutput('Configuration file githooks.php has been created in root path')
             ->assertExitCode(0);
 
@@ -46,7 +46,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     /** @test */
     function it_prints_an_error_message_when_dist_file_not_found()
     {
-        $this->artisan('conf:init')
+        $this->artisan('conf:init', ['--no-interaction' => true])
             ->containsStringInOutput("Distribution file 'githooks.dist.php' not found")
             ->assertExitCode(1);
 

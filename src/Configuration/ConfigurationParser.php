@@ -170,6 +170,7 @@ class ConfigurationParser
     /**
      * @param array<string, mixed> $all
      * @param array<string, array<string, mixed>> &$resolved
+     * @param-out array<string, array<string, mixed>> $resolved
      * @param array<string, bool> &$resolving
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates parent exists, no self-ref, no cycles, type
      */
@@ -186,7 +187,7 @@ class ConfigurationParser
 
         $data = $all[$name];
         if (!is_array($data)) {
-            $resolved[$name] = $data;
+            // Non-array jobs are skipped here; parseJobs() will report the error
             return;
         }
 
@@ -208,7 +209,7 @@ class ConfigurationParser
                 $result->addError("Job '$name' extends '$parent' which is not defined.");
             } else {
                 $this->resolveOneJob($parent, $all, $resolved, $resolving, $result);
-                if (isset($resolved[$parent]) && is_array($resolved[$parent])) {
+                if (isset($resolved[$parent])) {
                     $data = array_merge($resolved[$parent], $data);
                 }
             }
