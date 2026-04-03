@@ -145,6 +145,117 @@ class HookRunnerTest extends TestCase
     }
 
     /** @test */
+    public function doublestar_matches_files_in_nested_subdirectories()
+    {
+        $this->fileUtils->setModifiedfiles(['src/Models/User.php']);
+
+        $config = $this->buildConfigWithJobRef('phpcs', ['src/**/*.php'], []);
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function doublestar_matches_deeply_nested_files()
+    {
+        $this->fileUtils->setModifiedfiles(['src/Tools/Process/Runner.php']);
+
+        $config = $this->buildConfigWithJobRef('phpcs', ['src/**/*.php'], []);
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function doublestar_matches_direct_children()
+    {
+        $this->fileUtils->setModifiedfiles(['src/User.php']);
+
+        $config = $this->buildConfigWithJobRef('phpcs', ['src/**/*.php'], []);
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function doublestar_alone_matches_everything_under_directory()
+    {
+        $this->fileUtils->setModifiedfiles(['src/Tools/Process/Runner.php']);
+
+        $config = $this->buildConfigWithJobRef('phpcs', ['src/**'], []);
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function doublestar_does_not_match_outside_prefix()
+    {
+        $this->fileUtils->setModifiedfiles(['vendor/autoload.php']);
+
+        $config = $this->buildConfigWithJobRef('phpcs', ['src/**/*.php'], []);
+
+        $this->executor->expects($this->never())->method('execute');
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertEmpty($results);
+    }
+
+    /** @test */
+    public function doublestar_works_in_exclude_files()
+    {
+        $this->fileUtils->setModifiedfiles([
+            'src/Tools/Process/Runner.php',
+            'src/Models/User.php',
+        ]);
+
+        $config = $this->buildConfigWithJobRef('phpcs', ['src/**/*.php'], ['src/Tools/Process/**']);
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function singlestar_still_does_not_cross_directories()
+    {
+        $this->fileUtils->setModifiedfiles(['src/Models/User.php']);
+
+        $config = $this->buildConfigWithJobRef('phpcs', ['src/*.php'], []);
+
+        $this->executor->expects($this->never())->method('execute');
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertEmpty($results);
+    }
+
+    /** @test */
     public function no_conditions_always_executes()
     {
         $this->fileUtils->setModifiedfiles(['anything.txt']);

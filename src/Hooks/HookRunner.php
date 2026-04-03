@@ -155,7 +155,7 @@ class HookRunner
         foreach ($files as $file) {
             $matched = empty($includePatterns);
             foreach ($includePatterns as $pattern) {
-                if (fnmatch($pattern, $file, FNM_PATHNAME)) {
+                if ($this->fileMatchesPattern($file, $pattern)) {
                     $matched = true;
                     break;
                 }
@@ -165,7 +165,7 @@ class HookRunner
             }
             $excluded = false;
             foreach ($excludePatterns as $pattern) {
-                if (fnmatch($pattern, $file, FNM_PATHNAME)) {
+                if ($this->fileMatchesPattern($file, $pattern)) {
                     $excluded = true;
                     break;
                 }
@@ -175,6 +175,56 @@ class HookRunner
             }
         }
         return false;
+    }
+
+    /**
+     * Match a file path against a glob pattern. Supports ** for recursive directory matching.
+     * Without **, uses fnmatch with FNM_PATHNAME (* does not cross /).
+     */
+    private function fileMatchesPattern(string $file, string $pattern): bool
+    {
+        if (strpos($pattern, '**') === false) {
+            return fnmatch($pattern, $file, FNM_PATHNAME);
+        }
+
+        return (bool) preg_match($this->globToRegex($pattern), $file);
+    }
+
+    /**
+     * Convert a glob pattern with double-star support to a regex.
+     *
+     * Supports: double-star between slashes (zero or more dirs), double-star at end
+     * (everything below), single star (anything except /), ? (one char except /).
+     */
+    private function globToRegex(string $pattern): string
+    {
+        $segments = explode('**', $pattern);
+
+        $regexSegments = array_map(function (string $seg): string {
+            return strtr(preg_quote($seg, '#'), [
+                '\\*' => '[^/]*',
+                '\\?' => '[^/]',
+            ]);
+        }, $segments);
+
+        $regex = $regexSegments[0];
+        for ($i = 1, $count = count($regexSegments); $i < $count; $i++) {
+            $right = $regexSegments[$i];
+            $leftEndsSlash = substr($regex, -1) === '/';
+            $rightStartsSlash = isset($right[0]) && $right[0] === '/';
+
+            if ($leftEndsSlash && $rightStartsSlash) {
+                $regex = substr($regex, 0, -1) . '(?:/.+/|/)' . substr($right, 1);
+            } elseif ($leftEndsSlash) {
+                $regex .= '.*' . $right;
+            } elseif ($rightStartsSlash) {
+                $regex .= '(?:.*/)?' . substr($right, 1);
+            } else {
+                $regex .= '.*' . $right;
+            }
+        }
+
+        return '#^' . $regex . '$#';
     }
 
     /**
