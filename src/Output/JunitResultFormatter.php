@@ -32,7 +32,7 @@ class JunitResultFormatter implements ResultFormatter
             if (!$jobResult->isSuccess()) {
                 $failure = $dom->createElement('failure');
                 $failure->setAttribute('message', $jobResult->getJobName() . ' failed');
-                $failure->appendChild($dom->createTextNode($jobResult->getOutput()));
+                $failure->appendChild($dom->createTextNode($this->stripAnsi($jobResult->getOutput())));
                 $testcase->appendChild($failure);
             }
 
@@ -40,6 +40,11 @@ class JunitResultFormatter implements ResultFormatter
         }
 
         return $dom->saveXML() ?: '';
+    }
+
+    private function stripAnsi(string $text): string
+    {
+        return (string) preg_replace('/\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07)|\r/', '', $text);
     }
 
     /**

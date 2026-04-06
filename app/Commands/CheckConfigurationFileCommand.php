@@ -153,6 +153,7 @@ class CheckConfigurationFileCommand extends Command
         }
 
         // Jobs table with command and validation status
+        $hasValidationWarnings = false;
         $jobs = $config->getJobs();
         if (!empty($jobs)) {
             $jobRows = [];
@@ -161,9 +162,13 @@ class CheckConfigurationFileCommand extends Command
                     $jobInstance = $this->jobRegistry->create($job);
                     $command = $jobInstance->buildCommand();
                     $status = $this->validateJob($jobInstance, $job);
+                    if ($status !== '<fg=green>✔</>') {
+                        $hasValidationWarnings = true;
+                    }
                 } catch (\Throwable $e) {
                     $command = '(error: ' . $e->getMessage() . ')';
-                    $status = 'error';
+                    $status = '<fg=red>error</>';
+                    $hasValidationWarnings = true;
                 }
                 $jobRows[] = [$name, $command, $status];
             }
@@ -178,7 +183,11 @@ class CheckConfigurationFileCommand extends Command
 
         if (!$hasErrors) {
             $this->line('');
-            $this->info('The configuration file has the correct format.');
+            if ($hasValidationWarnings) {
+                $this->warn('The configuration format is correct, but some jobs have validation warnings (see Status column).');
+            } else {
+                $this->info('The configuration file has the correct format.');
+            }
         }
 
         return $hasErrors ? 1 : 0;
@@ -196,7 +205,11 @@ class CheckConfigurationFileCommand extends Command
         $this->validatePaths($jobConfig->getPaths(), $warnings);
         $this->validateConfigFiles($jobConfig->getConfig(), $warnings);
 
-        return empty($warnings) ? "\u{2714}" : implode('; ', $warnings);
+        if (empty($warnings)) {
+            return '<fg=green>✔</>';
+        }
+
+        return '<fg=red>' . implode('; ', $warnings) . '</>';
     }
 
     /** @param string[] &$warnings */

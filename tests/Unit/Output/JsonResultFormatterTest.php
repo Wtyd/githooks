@@ -51,6 +51,24 @@ class JsonResultFormatterTest extends UnitTestCase
     }
 
     /** @test */
+    function it_strips_ansi_escape_sequences_from_output()
+    {
+        $ansiOutput = "\e[1G\e[2K 5/5 [\e[32m▓▓▓▓▓\e[0m] 100%\r\nSome error";
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', false, $ansiOutput, '1s'),
+        ], '1s');
+
+        $formatter = new JsonResultFormatter();
+        $data = json_decode($formatter->format($result), true);
+
+        $output = $data['jobs'][0]['output'];
+        $this->assertStringNotContainsString("\e[", $output);
+        $this->assertStringNotContainsString("\r", $output);
+        $this->assertStringContainsString('Some error', $output);
+    }
+
+    /** @test */
     function it_produces_valid_json()
     {
         $result = new FlowResult('qa', [

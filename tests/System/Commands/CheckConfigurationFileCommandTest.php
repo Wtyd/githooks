@@ -110,6 +110,42 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     }
 
     /** @test */
+    function it_shows_correct_format_for_valid_v3_config()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsOutput('The configuration file has the correct format.');
+    }
+
+    /** @test */
+    function it_shows_validation_warnings_for_v3_config_with_bad_path()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'phpstan_src' => [
+                    'type' => 'phpstan',
+                    'level' => 0,
+                    'paths' => ['nonexistent_directory'],
+                ],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsOutput('The configuration format is correct, but some jobs have validation warnings (see Status column).');
+    }
+
+    /** @test */
     function it_check_the_config_file_pass_as_argument()
     {
         $a = 10;

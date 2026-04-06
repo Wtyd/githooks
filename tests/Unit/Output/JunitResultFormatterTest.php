@@ -66,6 +66,27 @@ class JunitResultFormatterTest extends UnitTestCase
     }
 
     /** @test */
+    function it_strips_ansi_escape_sequences_from_failure_output()
+    {
+        $ansiOutput = "\e[1G\e[2K 5/5 [\e[32m▓▓▓▓▓\e[0m] 100%\r\nSome error";
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', false, $ansiOutput, '1s'),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $xml = $formatter->format($result);
+
+        $dom = new DOMDocument();
+        $this->assertTrue($dom->loadXML($xml), 'Output must be valid XML');
+
+        $failureText = $dom->getElementsByTagName('failure')->item(0)->textContent;
+        $this->assertStringNotContainsString("\e[", $failureText);
+        $this->assertStringNotContainsString("\r", $failureText);
+        $this->assertStringContainsString('Some error', $failureText);
+    }
+
+    /** @test */
     function it_converts_time_formats_to_seconds()
     {
         $result = new FlowResult('qa', [

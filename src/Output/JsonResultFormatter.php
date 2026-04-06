@@ -16,7 +16,7 @@ class JsonResultFormatter implements ResultFormatter
                 'name'        => $job->getJobName(),
                 'success'     => $job->isSuccess(),
                 'time'        => $job->getExecutionTime(),
-                'output'      => $job->getOutput(),
+                'output'      => $this->stripAnsi($job->getOutput()),
                 'fixApplied'  => $job->isFixApplied(),
             ];
             if ($job->getCommand() !== null) {
@@ -37,5 +37,10 @@ class JsonResultFormatter implements ResultFormatter
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         return $json !== false ? $json : '{"error": "JSON encoding failed"}';
+    }
+
+    private function stripAnsi(string $text): string
+    {
+        return (string) preg_replace('/\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07)|\r/', '', $text);
     }
 }
