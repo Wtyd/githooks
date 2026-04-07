@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\System\Commands;
 
+use Tests\Doubles\FileUtilsFake;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class FlowCommandTest extends SystemTestCase
 {
@@ -152,5 +154,28 @@ class FlowCommandTest extends SystemTestCase
 
         $this->artisan("flow qa --config=$this->configPath")
             ->assertExitCode(1);
+    }
+
+    /** @test */
+    public function it_skips_accelerable_jobs_when_no_staged_files_match_in_fast_mode()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+            ])
+            ->buildInFileSystem();
+
+        // Staged files that don't match the job's paths
+        $fileUtils = $this->app->make(FileUtilsInterface::class);
+        if ($fileUtils instanceof FileUtilsFake) {
+            $fileUtils->setModifiedfiles(['tests/FooTest.php']);
+        }
+
+        $this->artisan("flow qa --fast --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->containsStringInOutput = ['skipped'];
     }
 }

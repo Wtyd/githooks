@@ -82,7 +82,7 @@ class JobConfigurationTest extends TestCase
 
         $this->assertNull($job);
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString("'script' key", $result->getErrors()[0]);
+        $this->assertStringContainsString("'script' or 'executablePath' key", $result->getErrors()[0]);
     }
 
     /** @test */

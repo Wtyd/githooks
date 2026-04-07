@@ -29,6 +29,7 @@ class JobConfiguration
      *
      * @param string $name Job name (the key in 'jobs' section)
      * @param array<string, mixed> $raw The job definition array
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates type, custom keys, and tool arguments
      */
     public static function fromArray(
         string $name,
@@ -54,8 +55,8 @@ class JobConfiguration
             return null;
         }
 
-        if ($type === 'custom' && !array_key_exists('script', $raw)) {
-            $result->addError("Job '$name': custom jobs require a 'script' key.");
+        if ($type === 'custom' && !array_key_exists('script', $raw) && !array_key_exists('executablePath', $raw)) {
+            $result->addError("Job '$name': custom jobs require a 'script' or 'executablePath' key.");
             return null;
         }
 
@@ -91,7 +92,7 @@ class JobConfiguration
 
         $knownKeys = array_merge(
             array_keys($argumentMap),
-            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script']
+            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable']
         );
 
         foreach ($config as $key => $value) {
@@ -172,13 +173,39 @@ class JobConfiguration
      */
     private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
     {
-        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast'];
+        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Job '$name': unknown key '$key' for type 'custom'.");
             }
         }
+    }
+
+    /**
+     * Whether this job supports fast mode (path filtering with staged files).
+     * Explicit 'accelerable' in config takes precedence; otherwise uses the type's default.
+     */
+    public function isAccelerable(JobRegistry $jobRegistry): bool
+    {
+        if (array_key_exists('accelerable', $this->config)) {
+            return (bool) $this->config['accelerable'];
+        }
+
+        return $jobRegistry->isAccelerable($this->type);
+    }
+
+    /**
+     * Return a new instance with the given paths (immutable).
+     *
+     * @param string[] $paths
+     */
+    public function withPaths(array $paths): self
+    {
+        $newConfig = $this->config;
+        $newConfig['paths'] = $paths;
+
+        return new self($this->name, $this->type, $newConfig);
     }
 
     public function getName(): string

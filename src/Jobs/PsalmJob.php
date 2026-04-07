@@ -8,6 +8,8 @@ use Wtyd\GitHooks\Execution\ThreadCapability;
 
 class PsalmJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = true;
+
     protected const ARGUMENT_MAP = [
         'config'        => ['type' => 'key_value'],
         'memory-limit'  => ['type' => 'key_value'],

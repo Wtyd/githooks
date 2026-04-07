@@ -10,11 +10,13 @@ use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Jobs\PhpmdJob;
+use Tests\Doubles\FileUtilsFake;
 
 class FlowPreparerTest extends TestCase
 {
@@ -186,5 +188,148 @@ class FlowPreparerTest extends TestCase
         $plan = $this->preparer->prepare($flow, $config, null, ['nonexistent']);
 
         $this->assertCount(1, $plan->getJobs());
+    }
+
+    /** @test */
+    public function it_filters_paths_for_accelerable_jobs_in_fast_mode()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php', 'tests/FooTest.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        $this->assertCount(1, $plan->getJobs());
+        // The command should reference the filtered file, not the original directory
+        $command = $plan->getJobs()[0]->buildCommand();
+        $this->assertEquals('vendor/bin/phpstan analyse src/Foo.php', $command);
+    }
+
+    /** @test */
+    public function it_skips_accelerable_jobs_when_no_staged_files_match()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['tests/FooTest.php']); // no files in src/
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        $this->assertCount(0, $plan->getJobs());
+        $this->assertNotEmpty($validation->getWarnings());
+        $this->assertStringContainsString('skipped', $validation->getWarnings()[0]);
+    }
+
+    /** @test */
+    public function it_does_not_filter_non_accelerable_jobs_in_fast_mode()
+    {
+        $jobs = [
+            'phpunit_tests' => new JobConfiguration('phpunit_tests', 'phpunit', [
+                'configuration' => 'phpunit.xml',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpunit_tests']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        // phpunit is not accelerable, so it runs normally
+        $this->assertCount(1, $plan->getJobs());
+    }
+
+    /** @test */
+    public function it_filters_paths_in_prepare_single_job_fast_mode()
+    {
+        $jobConfig = new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]);
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php', 'tests/FooTest.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $plan = $this->preparer->prepareSingleJob($jobConfig, new OptionsConfiguration(), $context);
+
+        $this->assertCount(1, $plan->getJobs());
+        $command = $plan->getJobs()[0]->buildCommand();
+        $this->assertEquals('vendor/bin/phpstan analyse src/Foo.php', $command);
+    }
+
+    /** @test */
+    public function it_respects_explicit_accelerable_false_override()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths' => ['src'],
+                'accelerable' => false,
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['tests/FooTest.php']); // no match in src/
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        // accelerable=false overrides SUPPORTS_FAST=true, so phpstan runs with full paths
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertStringContainsString('src', $plan->getJobs()[0]->buildCommand());
     }
 }

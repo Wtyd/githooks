@@ -12,6 +12,8 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
  */
 class PhpmdJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = true;
+
     protected const ARGUMENT_MAP = [
         'exclude'        => ['flag' => '--exclude', 'type' => 'csv', 'separator' => ' '],
         'cache'          => ['flag' => '--cache', 'type' => 'boolean'],

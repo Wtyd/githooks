@@ -26,7 +26,7 @@ class FlowCommand extends Command
                             {--only-jobs= : Comma-separated list of jobs to run (others skipped)}
                             {--format= : Output format (text, json, junit)}
                             {--dry-run : Show commands without executing}
-                            {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
+                            {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--monitor : Show thread usage report after execution}
                             {--config= : Path to configuration file}';
 

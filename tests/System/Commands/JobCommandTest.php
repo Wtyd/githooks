@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\System\Commands;
 
+use Tests\Doubles\FileUtilsFake;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class JobCommandTest extends SystemTestCase
 {
@@ -74,5 +76,28 @@ class JobCommandTest extends SystemTestCase
             ->assertExitCode(0);
 
         $this->containsStringInOutput = ['<?xml', 'testsuite'];
+    }
+
+    /** @test */
+    public function it_applies_fast_mode_to_accelerable_job()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/echo', 'paths' => ['src'], 'accelerable' => true],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
+            ->buildInFileSystem();
+
+        $fileUtils = $this->app->make(FileUtilsInterface::class);
+        if ($fileUtils instanceof FileUtilsFake) {
+            $fileUtils->setModifiedfiles(['src/Modified.php']);
+            $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Modified.php']);
+        }
+
+        $this->artisan("job lint_job --fast --dry-run --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->containsStringInOutput = ['src/Modified.php'];
     }
 }

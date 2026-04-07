@@ -6,6 +6,8 @@ namespace Wtyd\GitHooks\Jobs;
 
 class PhpunitJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = false;
+
     protected const ARGUMENT_MAP = [
         'group'         => ['flag' => '--group', 'type' => 'value', 'separator' => ' '],
         'exclude-group' => ['flag' => '--exclude-group', 'type' => 'value', 'separator' => ' '],

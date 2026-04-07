@@ -8,6 +8,8 @@ use Wtyd\GitHooks\Execution\ThreadCapability;
 
 class PhpcsJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = true;
+
     protected const ARGUMENT_MAP = [
         'standard'         => ['flag' => '--standard', 'type' => 'value'],
         'ignore'           => ['flag' => '--ignore', 'type' => 'csv'],

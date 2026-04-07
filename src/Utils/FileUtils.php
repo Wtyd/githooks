@@ -13,7 +13,7 @@ class FileUtils implements FileUtilsInterface
     public function getModifiedFiles(): array
     {
         $modifiedFiles = [];
-        exec('git diff --cached --name-only', $modifiedFiles);
+        exec('git diff --cached --name-only --diff-filter=ACMR', $modifiedFiles);
         //git diff --cached --name-status
 
         return $modifiedFiles;

@@ -63,6 +63,18 @@ class JobRegistry
     }
 
     /**
+     * Whether a job type supports fast execution (path filtering) by default.
+     */
+    public function isAccelerable(string $type): bool
+    {
+        if (!$this->isSupported($type)) {
+            return false;
+        }
+        $class = self::TYPE_MAP[$type];
+        return defined("$class::SUPPORTS_FAST") && $class::SUPPORTS_FAST;
+    }
+
+    /**
      * Get the ARGUMENT_MAP for a job type (for validation without instantiation).
      *
      * @return array<string, array<string, string>>

@@ -26,12 +26,14 @@ class FlowPreparer
     /**
      * @param string[] $excludeJobs Job names to exclude from the plan
      * @param string[] $onlyJobs    If non-empty, only these job names are included
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates filtering, fast mode, and job instantiation
      */
     public function prepare(FlowConfiguration $flow, ConfigurationResult $config, ?ExecutionContext $context = null, array $excludeJobs = [], array $onlyJobs = []): FlowPlan
     {
         $options = $flow->getOptions() ?? $config->getGlobalOptions();
 
         $jobs = [];
+        $isFastMode = $context !== null && $context->isFastMode();
 
         foreach ($flow->getJobs() as $jobName) {
             if (!empty($onlyJobs) && !in_array($jobName, $onlyJobs, true)) {
@@ -44,6 +46,16 @@ class FlowPreparer
             if ($jobConfig === null) {
                 continue;
             }
+
+            if ($isFastMode && $jobConfig->isAccelerable($this->jobRegistry) && !empty($jobConfig->getPaths())) {
+                $filteredFiles = $context->filterFilesForPaths($jobConfig->getPaths());
+                if (empty($filteredFiles)) {
+                    $config->getValidation()->addWarning("Job '$jobName' was skipped: no staged files match its paths.");
+                    continue;
+                }
+                $jobConfig = $jobConfig->withPaths($filteredFiles);
+            }
+
             $jobs[] = $this->jobRegistry->create($jobConfig);
         }
 
@@ -55,6 +67,15 @@ class FlowPreparer
      */
     public function prepareSingleJob(JobConfiguration $jobConfig, OptionsConfiguration $options, ?ExecutionContext $context = null): FlowPlan
     {
+        $isFastMode = $context !== null && $context->isFastMode();
+
+        if ($isFastMode && $jobConfig->isAccelerable($this->jobRegistry) && !empty($jobConfig->getPaths())) {
+            $filteredFiles = $context->filterFilesForPaths($jobConfig->getPaths());
+            if (!empty($filteredFiles)) {
+                $jobConfig = $jobConfig->withPaths($filteredFiles);
+            }
+        }
+
         $job = $this->jobRegistry->create($jobConfig);
         return new FlowPlan($jobConfig->getName(), [$job], $options, $context);
     }

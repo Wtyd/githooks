@@ -7,11 +7,17 @@ namespace Wtyd\GitHooks\Jobs;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 
 /**
- * Executes an arbitrary script verbatim. No argument map — the 'script' config
- * value IS the command.
+ * Executes an arbitrary command. Two modes:
+ *
+ * 1. Structured (with paths): executablePath + paths + otherArguments
+ *    Supports fast mode via path filtering, same as standard tools.
+ *
+ * 2. Legacy (without paths): script is the full command verbatim.
  */
 class CustomJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = false;
+
     protected const ARGUMENT_MAP = [];
 
     private string $script;
@@ -29,9 +35,17 @@ class CustomJob extends JobAbstract
 
     public function buildCommand(): string
     {
-        if ($this->context !== null && $this->context->isFastMode()) {
-            $files = implode("\n", $this->context->getStagedFiles());
-            return 'GITHOOKS_STAGED_FILES=' . escapeshellarg($files) . ' ' . $this->script;
+        $paths = $this->args['paths'] ?? [];
+
+        if (!empty($paths)) {
+            $parts = [$this->executable !== '' ? $this->executable : $this->script];
+            $parts[] = is_array($paths) ? implode(' ', $paths) : $paths;
+
+            if (!empty($this->args['otherArguments'])) {
+                $parts[] = $this->args['otherArguments'];
+            }
+
+            return implode(' ', $parts);
         }
 
         return $this->script;

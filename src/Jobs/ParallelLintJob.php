@@ -8,6 +8,8 @@ use Wtyd\GitHooks\Execution\ThreadCapability;
 
 class ParallelLintJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = true;
+
     protected const ARGUMENT_MAP = [
         'jobs'    => ['flag' => '-j', 'type' => 'value', 'separator' => ' '],
         'exclude' => ['flag' => '--exclude', 'type' => 'repeat'],

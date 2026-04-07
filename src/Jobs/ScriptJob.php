@@ -6,6 +6,8 @@ namespace Wtyd\GitHooks\Jobs;
 
 class ScriptJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = false;
+
     protected const ARGUMENT_MAP = [];
 
     public static function getDefaultExecutable(): string

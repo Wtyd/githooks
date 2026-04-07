@@ -23,7 +23,7 @@ class JobCommand extends Command
                             {--ignore-errors-on-exit : Continue even if the job fails}
                             {--format= : Output format (text, json, junit)}
                             {--dry-run : Show commands without executing}
-                            {--fast : Fast mode — pass staged files to custom jobs via $GITHOOKS_STAGED_FILES}
+                            {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a single job defined in the configuration file';

@@ -8,6 +8,8 @@ use Wtyd\GitHooks\Execution\ThreadCapability;
 
 class PhpstanJob extends JobAbstract
 {
+    public const SUPPORTS_FAST = true;
+
     protected const ARGUMENT_MAP = [
         'config'             => ['flag' => '-c', 'type' => 'value', 'separator' => ' '],
         'level'              => ['flag' => '-l', 'type' => 'value', 'separator' => ' '],

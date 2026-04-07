@@ -233,4 +233,102 @@ class JobBuildCommandTest extends TestCase
         $job = $registry->create(new JobConfiguration('test', 'custom', ['script' => 'echo ok']));
         $this->assertInstanceOf(CustomJob::class, $job);
     }
+
+    /** @test */
+    public function custom_job_with_paths_builds_structured_command()
+    {
+        $job = new CustomJob(new JobConfiguration('eslint_src', 'custom', [
+            'executablePath' => 'eslint',
+            'paths' => ['src'],
+            'otherArguments' => '--fix',
+        ]));
+
+        $this->assertEquals('eslint src --fix', $job->buildCommand());
+    }
+
+    /** @test */
+    public function custom_job_with_paths_and_filtered_files()
+    {
+        $job = new CustomJob(new JobConfiguration('eslint_src', 'custom', [
+            'executablePath' => 'eslint',
+            'paths' => ['src/Foo.php', 'src/Bar.php'],
+            'otherArguments' => '--fix',
+        ]));
+
+        $this->assertEquals('eslint src/Foo.php src/Bar.php --fix', $job->buildCommand());
+    }
+
+    /** @test */
+    public function custom_job_without_paths_uses_script_verbatim()
+    {
+        $job = new CustomJob(new JobConfiguration('full_cmd', 'custom', [
+            'script' => 'eslint src --fix',
+        ]));
+
+        $this->assertEquals('eslint src --fix', $job->buildCommand());
+    }
+
+    /** @test */
+    public function job_registry_reports_accelerable_types()
+    {
+        $registry = new JobRegistry();
+
+        $this->assertTrue($registry->isAccelerable('phpstan'));
+        $this->assertTrue($registry->isAccelerable('phpcs'));
+        $this->assertTrue($registry->isAccelerable('phpcbf'));
+        $this->assertTrue($registry->isAccelerable('phpmd'));
+        $this->assertTrue($registry->isAccelerable('parallel-lint'));
+        $this->assertTrue($registry->isAccelerable('psalm'));
+
+        $this->assertFalse($registry->isAccelerable('phpunit'));
+        $this->assertFalse($registry->isAccelerable('phpcpd'));
+        $this->assertFalse($registry->isAccelerable('script'));
+        $this->assertFalse($registry->isAccelerable('custom'));
+        $this->assertFalse($registry->isAccelerable('nonexistent'));
+    }
+
+    /** @test */
+    public function job_configuration_accelerable_uses_type_default()
+    {
+        $registry = new JobRegistry();
+
+        $phpstanConfig = new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]);
+        $this->assertTrue($phpstanConfig->isAccelerable($registry));
+
+        $phpunitConfig = new JobConfiguration('tests', 'phpunit', []);
+        $this->assertFalse($phpunitConfig->isAccelerable($registry));
+
+        $customConfig = new JobConfiguration('lint', 'custom', ['script' => 'echo ok']);
+        $this->assertFalse($customConfig->isAccelerable($registry));
+    }
+
+    /** @test */
+    public function job_configuration_accelerable_explicit_overrides_default()
+    {
+        $registry = new JobRegistry();
+
+        $phpstanDisabled = new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths' => ['src'],
+            'accelerable' => false,
+        ]);
+        $this->assertFalse($phpstanDisabled->isAccelerable($registry));
+
+        $customEnabled = new JobConfiguration('lint', 'custom', [
+            'executablePath' => 'eslint',
+            'paths' => ['src'],
+            'accelerable' => true,
+        ]);
+        $this->assertTrue($customEnabled->isAccelerable($registry));
+    }
+
+    /** @test */
+    public function job_configuration_with_paths_returns_new_instance()
+    {
+        $original = new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src'], 'level' => 0]);
+        $modified = $original->withPaths(['src/Foo.php', 'src/Bar.php']);
+
+        $this->assertEquals(['src'], $original->getPaths());
+        $this->assertEquals(['src/Foo.php', 'src/Bar.php'], $modified->getPaths());
+        $this->assertNotSame($original, $modified);
+    }
 }

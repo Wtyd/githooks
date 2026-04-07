@@ -61,6 +61,26 @@ class FlowReleaseTest extends ReleaseTestCase
     }
 
     /** @test */
+    public function it_skips_accelerable_jobs_in_fast_mode_when_no_staged_files()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
+            ->setV3Jobs([
+                'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+            ]);
+
+        file_put_contents(
+            self::TESTS_PATH . '/githooks.php',
+            $this->configurationFileBuilder->buildV3Php()
+        );
+
+        passthru("$this->githooks flow qa --fast 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('skipped', $this->getActualOutput());
+    }
+
+    /** @test */
     public function it_outputs_json_format()
     {
         passthru("$this->githooks flow qa --format=json", $exitCode);
