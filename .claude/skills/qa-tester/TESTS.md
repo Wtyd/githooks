@@ -200,7 +200,7 @@ Abreviatura: `GH` = `php7.4 /var/www/html1/githooks`
 | V30-027 | combo | --dry-run + --only-jobs | `GH flow qa --dry-run --only-jobs=parallel_lint --config=githooks-v3.php` | Solo muestra el job parallel_lint (dry-run). No ejecuta | 0 | `d2dadd9` | githooks-v3.php |
 | V30-028 | combo | --dry-run + --format=json | `GH flow qa --dry-run --format=json --config=githooks-v3.php` | JSON con campo `command`, time=0, output="" | 0 | `d2dadd9` | githooks-v3.php |
 | V30-029 | combo | --dry-run + --format=junit | `GH flow qa --dry-run --format=junit --config=githooks-v3.php` | XML JUnit válido con time=0 para todos los testcases | 0 | `d2dadd9` | githooks-v3.php |
-| V30-030 | combo | --dry-run + --monitor | `GH flow qa --dry-run --monitor --config=githooks-v3.php` | No muestra monitor (nada ejecutado, budget=0) o muestra peak=0 | 0 | `d2dadd9` | githooks-v3.php |
+| V30-030 | combo | --dry-run + --monitor | `GH flow qa --dry-run --monitor --config=githooks-v3.php` | --monitor se ignora silenciosamente en dry-run (no hay threads que monitorizar, peak=0 y budget=0) | 0 | `d2dadd9` | githooks-v3.php |
 | V30-031 | combo | --only-jobs + --fail-fast | `GH flow qa --only-jobs=phpcs_src,phpstan_src --fail-fast --config=githooks-v3.php` | Ejecuta solo 2 jobs. Si phpcs falla primero, phpstan se salta | 1 | `d2dadd9` | githooks-v3.php |
 | V30-032 | combo | --exclude-jobs + --format=json | `GH flow qa --exclude-jobs=phpmd_src --format=json --config=githooks-v3.php` | JSON con 3 jobs (sin phpmd_src) | 1 | `d2dadd9` | githooks-v3.php |
 
