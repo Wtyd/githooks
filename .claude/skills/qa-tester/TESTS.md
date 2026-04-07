@@ -189,7 +189,7 @@ Abreviatura: `GH` = `php7.4 /var/www/html1/githooks`
 | V30-021 | flags | --dry-run en flow | `GH flow qa --dry-run --config=githooks-v3.php` | Muestra nombre + comando de cada job. No ejecuta. Time=0ms | 0 | `d2dadd9` | githooks-v3.php |
 | V30-022 | flags | --dry-run en job | `GH job phpcs_src --dry-run --config=githooks-v3.php` | Muestra comando de phpcs. No ejecuta | 0 | `d2dadd9` | githooks-v3.php |
 | V30-023 | flags | --fail-fast en flow | `GH flow qa --fail-fast --config=githooks-v3.php` | Se detiene en primer job que falle. Restantes "skipped by fail-fast" | 1 | `d2dadd9` | githooks-v3.php |
-| V30-024 | flags | --fast en flow | `GH flow qa --fast --config=githooks-v3.php` | Modo fast activado. $GITHOOKS_STAGED_FILES disponible para custom jobs | 1 | `d2dadd9` | githooks-v3.php |
+| V30-024 | flags | --fast en flow (dry-run) | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Con fichero staged: paths de jobs acelerables sustituidos por ficheros filtrados. Sin staged: todos los jobs skipped | 0 | `9d5795a` | githooks-fast.php |
 | V30-025 | flags | --monitor en flow | `GH flow qa --monitor --config=githooks-v3.php` | Muestra al final: "Thread monitor: peak ~N threads (budget: M)" | 1 | `d2dadd9` | githooks-v3.php |
 | V30-026 | flags | --processes=1 (secuencial) | `GH flow qa --processes=1 --config=githooks-v3.php` | Ejecuta jobs secuencialmente (1 a la vez) | 1 | `d2dadd9` | githooks-v3.php |
 
@@ -203,6 +203,25 @@ Abreviatura: `GH` = `php7.4 /var/www/html1/githooks`
 | V30-030 | combo | --dry-run + --monitor | `GH flow qa --dry-run --monitor --config=githooks-v3.php` | --monitor se ignora silenciosamente en dry-run (no hay threads que monitorizar, peak=0 y budget=0) | 0 | `d2dadd9` | githooks-v3.php |
 | V30-031 | combo | --only-jobs + --fail-fast | `GH flow qa --only-jobs=phpcs_src,phpstan_src --fail-fast --config=githooks-v3.php` | Ejecuta solo 2 jobs. Si phpcs falla primero, phpstan se salta | 1 | `d2dadd9` | githooks-v3.php |
 | V30-032 | combo | --exclude-jobs + --format=json | `GH flow qa --exclude-jobs=phpmd_src --format=json --config=githooks-v3.php` | JSON con 3 jobs (sin phpmd_src) | 1 | `d2dadd9` | githooks-v3.php |
+
+### Fast mode (--fast)
+
+Requiere `githooks-fast.php` en html3 (config con jobs estándar + custom con paths/accelerable + phpstan con accelerable=false + phpunit no acelerado + custom legacy sin paths).
+
+| ID | Área | Test | Comando | Salida esperada | Exit | SHA | Config |
+|---|---|---|---|---|---|---|---|
+| V30-061 | fast | Sin staged files → todos skip | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Todos los jobs skipped: "no staged files match its paths." | 0 | `9d5795a` | githooks-fast.php |
+| V30-062 | fast | Con staged file → paths filtrados (dry-run) | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Cada job muestra el fichero staged, no el directorio (ej: `analyse src/CleanFile.php`) | 0 | `9d5795a` | githooks-fast.php |
+| V30-063 | fast | Ejecución real con fichero limpio staged | `GH flow qa --fast --config=githooks-fast.php` | parallel_lint, phpcs, phpstan pasan. phpmd falla por vendor/symfony (no relacionado) | 1 | `9d5795a` | githooks-fast.php |
+| V30-064 | fast | job --fast --dry-run | `GH job phpstan_src --fast --dry-run --config=githooks-fast.php` | Muestra `analyse src/CleanFile.php` | 0 | `9d5795a` | githooks-fast.php |
+| V30-065 | fast | Custom job con executablePath+paths+accelerable | `GH flow custom_flow --fast --dry-run --config=githooks-fast.php` | custom_lint: `/bin/echo src/CleanFile.php --checked`. custom_legacy: `echo legacy-mode-ok` (sin cambio) | 0 | `9d5795a` | githooks-fast.php |
+| V30-066 | fast | accelerable=false override ignora --fast | `GH flow override --fast --dry-run --config=githooks-fast.php` | phpstan_no_accel: `analyse src` (directorio completo, sin filtrar) | 0 | `9d5795a` | githooks-fast.php |
+| V30-067 | fast | --fast + --format=json | `GH flow qa --fast --format=json --config=githooks-fast.php` | JSON válido. parallel_lint reporta "Checked 1 files" | 1 | `9d5795a` | githooks-fast.php |
+| V30-068 | fast | --fast + --fail-fast | `GH flow qa --fast --fail-fast --config=githooks-fast.php` | Se detiene en primer fallo con paths filtrados | 1 | `9d5795a` | githooks-fast.php |
+| V30-069 | fast | --fast + --exclude-jobs | `GH flow qa --fast --exclude-jobs=phpmd_src --dry-run --config=githooks-fast.php` | 3 jobs (sin phpmd_src), todos con fichero filtrado | 0 | `9d5795a` | githooks-fast.php |
+| V30-070 | fast | Fichero eliminado no se pasa a tools | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Con `git rm --cached` de un fichero: no aparece en ningún comando, todos skip si es el único staged | 0 | `9d5795a` | githooks-fast.php |
+| V30-071 | fast | Mixed flow (acelerado + no acelerado) | `GH flow mixed --fast --dry-run --config=githooks-fast.php` | phpstan: fichero filtrado. phpunit: `-c phpunit.xml` (sin filtrar, no acelerado) | 0 | `9d5795a` | githooks-fast.php |
+| V30-072 | fast | Sin --fast → paths completos (regresión) | `GH flow qa --dry-run --config=githooks-fast.php` | Todos los jobs usan `src` (directorio completo) | 0 | `9d5795a` | githooks-fast.php |
 
 ### conf:check
 
@@ -284,5 +303,5 @@ Abreviatura: `GH` = `php7.4 /var/www/html1/githooks`
 | Versión | Tests | Áreas cubiertas |
 |---|---|---|
 | v2.8 | 35 | tool, flags, failFast, per-tool, conf:check, hook, conf:init, error handling, phpcbf, script |
-| v3.0 | 60 | flow, job, format, flags, combos, conf:check, conf:migrate, cache, hooks, status, system:info, legacy, edge cases, missing tools, exec detection |
-| **Total** | **95** | |
+| v3.0 | 72 | flow, job, format, flags, combos, fast mode, conf:check, conf:migrate, cache, hooks, status, system:info, legacy, edge cases, missing tools, exec detection |
+| **Total** | **107** | |

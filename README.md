@@ -104,6 +104,7 @@ Results: 3/4 passed in 3.45s
 
 ```bash
 githooks flow qa                          # Run a flow (group of jobs)
+githooks flow qa --fast                   # Only analyze staged files (accelerable jobs)
 githooks flow qa --only-jobs=phpstan_src  # Run specific jobs from a flow
 githooks flow qa --dry-run                # Show commands without executing
 githooks job phpstan_src                  # Run a single job
@@ -170,6 +171,13 @@ return [
             'type'   => 'custom', // run any command
             'script' => 'composer audit',
         ],
+        'eslint_src' => [
+            'type'           => 'custom',
+            'executablePath' => 'npx eslint',    // structured mode: executable + paths
+            'paths'          => ['resources/js'],
+            'otherArguments' => '--fix',
+            'accelerable'    => true,            // opt-in: filters paths to staged files with --fast
+        ],
     ],
 ];
 ```
@@ -193,9 +201,11 @@ See the [wiki](https://github.com/Wtyd/githooks/wiki/3x-ConfigurationFile) for t
 | [PHPUnit](https://phpunit.de/) | `phpunit` | Unit testing |
 | [Psalm](https://psalm.dev/) | `psalm` | Static analysis |
 | [PHP Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd) | `phpcpd` | Duplicate code detection |
-| Any tool | `custom` | Run any command via `script` key |
+| Any tool | `custom` | Run any command via `script` or `executablePath` + `paths` |
 
-The `custom` type replaces the deprecated `security-checker` and `script` tools. Use it for `composer audit`, `eslint`, `php-cs-fixer`, or any other command.
+The `custom` type replaces the deprecated `security-checker` and `script` tools. Two modes:
+* **Simple**: `script` key contains the full command (`'script' => 'composer audit'`).
+* **With paths**: `executablePath` + `paths` + optional `otherArguments`. Supports `--fast` acceleration when `accelerable: true`.
 
 # 7. Commands
 

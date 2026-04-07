@@ -40,8 +40,8 @@ return [
         'Parallel-lint' => [
             'type' => 'parallel-lint',
             'executablePath' => 'vendor/bin/parallel-lint',
-            'paths' => ['./'],
-            'exclude' => ['vendor', 'qa', 'tools'],
+            'paths' => ['src', 'app', 'config', 'bootstrap'],
+            'exclude' => ['vendor'],
             'otherArguments' => '--colors',
         ],
         'Phpcs' => [

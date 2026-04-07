@@ -30,7 +30,7 @@ All notable changes to this project will be documented in this file.
 - `githooks conf:check` — Updated for v3: shows Options, Hooks, Flows, and Jobs tables with the full command each job will execute. Deep validation: verifies executables exist, paths are valid directories, and config files are accessible. All commands support `--config=path` to specify a custom configuration file.
 
 ### New Job Types
-- **Custom**: Run any command via `script` key. Replaces the `script` tool and enables integration of non-native tools (e.g. `composer audit`, `eslint`, `php-cs-fixer`).
+- **Custom**: Run any command via `script` key (legacy mode) or via `executablePath` + `paths` + `otherArguments` (structured mode). Structured mode enables fast-mode acceleration identical to standard tools. Replaces the `script` tool and enables integration of non-native tools (e.g. `composer audit`, `eslint`, `php-cs-fixer`).
 
 ### New Configuration Classes
 - `ConfigurationParser`, `ConfigurationResult`, `FlowConfiguration`, `HookConfiguration`, `JobConfiguration`, `OptionsConfiguration`, `ValidationResult`, `ConfigurationMigrator` — replace the monolithic `ConfigurationFile`.
@@ -38,14 +38,14 @@ All notable changes to this project will be documented in this file.
 ### New Execution Engine
 - `FlowExecutor`, `FlowPreparer`, `FlowPlan`, `FlowResult`, `JobExecutor`, `JobResult` — replace `ToolsPreparer` and `ProcessExecution*` for v3 commands.
 - `HookRunner`, `HookInstaller`, `HookStatusInspector`, `HookStatusReport`, `HookEventStatus` — orchestrate hook resolution, installation, and status inspection.
-- `ExecutionContext` — propagates fast mode and staged files to custom jobs.
+- `ExecutionContext` — propagates fast mode context and filters staged files against job paths for acceleration.
 - `ThreadBudgetAllocator`, `ThreadBudgetPlan`, `ThreadCapability` — distribute CPU cores across parallel jobs respecting each tool's threading capabilities.
 - `JsonResultFormatter`, `JunitResultFormatter`, `TextOutputHandler`, `NullOutputHandler` — structured output rendering.
 
 ### Observability and Structured Output
 - **`--format=json` and `--format=junit`**: Structured output for `flow` and `job` commands. JSON for machine-readable results; JUnit XML for CI test reporting integration.
 - **Grouped error output**: In parallel execution, success lines print in real-time while error details are collected and printed grouped at the end.
-- **Fast mode for custom jobs**: `--fast` flag (or automatically on `pre-commit` hooks) exposes `$GITHOOKS_STAGED_FILES` environment variable to custom job scripts with the list of staged files.
+- **Fast mode for accelerable jobs**: `--fast` flag filters paths to only staged files for accelerable tools (phpstan, phpcs, phpcbf, phpmd, parallel-lint, psalm). Non-accelerable jobs (phpunit, phpcpd) run with full paths. Per-job `accelerable` config key overrides the default. Custom jobs support structured mode (`executablePath` + `paths` + `otherArguments`) for the same path-filtering mechanism. Deleted files are excluded automatically (`--diff-filter=ACMR`).
 - **Thread budget**: `processes` now controls total CPU cores, not just parallel jobs. GitHooks distributes threads across jobs respecting each tool's capabilities (phpcs `--parallel`, parallel-lint `-j`, psalm `--threads`). PHPStan workers detected from `.neon` config.
 - **`--monitor` flag**: Shows peak estimated thread usage after flow execution, with warning if budget was exceeded.
 - **Job argument validation**: `conf:check` and `flow`/`job` commands validate job configuration keys and types at parse time against each tool's `ARGUMENT_MAP`.
@@ -68,7 +68,7 @@ All notable changes to this project will be documented in this file.
 
 ### Internal Improvements
 - **ToolRegistry** extracted from `ToolAbstract` as injectable service. Centralizes tool name → class mapping, accelerable tools, exclude arguments, and script aliases.
-- **JobRegistry** — maps job types to job classes, extends the pattern established by ToolRegistry.
+- **JobRegistry** — maps job types to job classes, extends the pattern established by ToolRegistry. Includes `isAccelerable()` for fast mode defaults.
 - **Jobs use declarative `ARGUMENT_MAP`** instead of imperative `prepareCommand()`. Each job declares its arguments with type information (`value`, `boolean`, `paths`, `csv`, `repeat`, `key_value`).
 - **Fake classes moved** from `src/` to `tests/Doubles/`.
 - **Typed properties** added to remaining legacy classes (`ProcessExecutionAbstract`, `Process`).
@@ -82,3 +82,5 @@ All notable changes to this project will be documented in this file.
 - **Undefined job references are warnings, not errors**: A typo in a flow's job list no longer blocks the entire flow — the missing job is skipped and a warning is shown.
 - **Output indentation**: Job status lines (OK/KO/skipped) now indented with 2 spaces, aligned with error blocks.
 - **`framedErrorBlock`**: References `githooks job` instead of the deprecated `githooks tool`.
+- **ANSI codes stripped from JUnit/JSON output**: Tool output (PHPStan progress bars, color codes) no longer leaks escape sequences into structured formats.
+- **`conf:check` validation warnings now visible**: Status column colored (green ✔ / red warnings). Final message distinguishes between "format correct" (green) and "format correct but validation warnings" (yellow).
