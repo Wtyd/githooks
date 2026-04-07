@@ -301,6 +301,47 @@ class FlowPreparerTest extends TestCase
     }
 
     /** @test */
+    public function it_only_passes_files_within_job_paths_not_other_directories()
+    {
+        $jobs = [
+            'phpmd_src' => new JobConfiguration('phpmd_src', 'phpmd', [
+                'paths' => ['src'],
+                'rules' => 'unusedcode',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpmd_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles([
+            'src/Service.php',
+            'database/migration.php',
+            'config/app.php',
+        ]);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Service.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        $this->assertCount(1, $plan->getJobs());
+        $command = $plan->getJobs()[0]->buildCommand();
+        // phpmd only receives src/Service.php, not database/ or config/ files
+        $this->assertStringContainsString('src/Service.php', $command);
+        $this->assertStringNotContainsString('database', $command);
+        $this->assertStringNotContainsString('config', $command);
+    }
+
+    /** @test */
     public function it_respects_explicit_accelerable_false_override()
     {
         $jobs = [

@@ -73,6 +73,27 @@ class ExecutionContextTest extends TestCase
     }
 
     /** @test */
+    function it_excludes_files_outside_job_paths_even_if_same_extension()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles([
+            'src/Foo.php',
+            'database/migration.php',
+            'config/app.php',
+        ]);
+        // Only src/Foo.php is inside the 'src' directory
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+
+        $filtered = $context->filterFilesForPaths(['src']);
+
+        $this->assertEquals(['src/Foo.php'], $filtered);
+        $this->assertNotContains('database/migration.php', $filtered);
+        $this->assertNotContains('config/app.php', $filtered);
+    }
+
+    /** @test */
     function it_returns_empty_when_no_staged_files()
     {
         $fileUtils = new FileUtilsFake();

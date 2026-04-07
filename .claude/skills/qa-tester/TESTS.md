@@ -222,6 +222,7 @@ Requiere `githooks-fast.php` en html3 (config con jobs estándar + custom con pa
 | V30-070 | fast | Fichero eliminado no se pasa a tools | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Con `git rm --cached` de un fichero: no aparece en ningún comando, todos skip si es el único staged | 0 | `9d5795a` | githooks-fast.php |
 | V30-071 | fast | Mixed flow (acelerado + no acelerado) | `GH flow mixed --fast --dry-run --config=githooks-fast.php` | phpstan: fichero filtrado. phpunit: `-c phpunit.xml` (sin filtrar, no acelerado) | 0 | `9d5795a` | githooks-fast.php |
 | V30-072 | fast | Sin --fast → paths completos (regresión) | `GH flow qa --dry-run --config=githooks-fast.php` | Todos los jobs usan `src` (directorio completo) | 0 | `9d5795a` | githooks-fast.php |
+| V30-073 | fast | Staged file fuera de paths del job no se pasa | Stagear fichero en `database/` o `config/`, job con `paths: ['src']`. `GH flow qa --fast --dry-run --config=githooks-fast.php` | El job no recibe el fichero de otro directorio. Si no hay ficheros en `src/` staged, el job se salta | 0 | `9d5795a` | githooks-fast.php |
 
 ### conf:check
 
@@ -303,5 +304,5 @@ Requiere `githooks-fast.php` en html3 (config con jobs estándar + custom con pa
 | Versión | Tests | Áreas cubiertas |
 |---|---|---|
 | v2.8 | 35 | tool, flags, failFast, per-tool, conf:check, hook, conf:init, error handling, phpcbf, script |
-| v3.0 | 72 | flow, job, format, flags, combos, fast mode, conf:check, conf:migrate, cache, hooks, status, system:info, legacy, edge cases, missing tools, exec detection |
-| **Total** | **107** | |
+| v3.0 | 73 | flow, job, format, flags, combos, fast mode, conf:check, conf:migrate, cache, hooks, status, system:info, legacy, edge cases, missing tools, exec detection |
+| **Total** | **108** | |
