@@ -184,6 +184,12 @@ class PassingTest extends TestCase
         $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
     }
 
+    /**
+     * Only tools that reliably produce detectable errors across all PHP versions.
+     * phpmd: parse errors in PHP 8.x don't count as violations (exit 0).
+     * psalm: @return type mismatch classified as "issue" not "error" in PHP 8.x (exit 0).
+     * phpcpd: excluded because its phar calls xdebug_disable() which crashes without xdebug.
+     */
     public function allToolsProvider()
     {
         return [
@@ -193,17 +199,8 @@ class PassingTest extends TestCase
             'Php Stan' => [
                 'phpstan'
             ],
-            'Php Mess Detector' => [
-                'phpmd'
-            ],
-            'Php Copy Paste Detector' => [
-                'phpcpd'
-            ],
             'Parallel-Lint' => [
                 'parallel-lint'
-            ],
-            'Psalm' => [
-                'psalm'
             ],
         ];
     }
@@ -408,10 +405,10 @@ class FailingTest extends TestCase
     /** @test */
     function it_applies_per_tool_execution_mode_override()
     {
-        // Create file with phpcs AND phpmd errors (NOT staged in git)
+        // Create file with phpcs AND phpstan errors (NOT staged in git)
         file_put_contents(
             self::TESTS_PATH . '/src/FileWithErrors.php',
-            $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'phpmd'])
+            $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'phpstan'])
         );
 
         // Stage the clean file only
@@ -420,11 +417,11 @@ class FailingTest extends TestCase
 
         // Global: full, but phpcs overridden to fast
         // In fast mode, phpcs only checks staged files (the clean one) → should pass
-        // phpmd runs in full mode → checks all files in paths (including FileWithErrors) → should fail
+        // phpstan runs in full mode → checks all files in paths (including FileWithErrors) → should fail
         file_put_contents(
             'githooks.php',
             $this->configurationFileBuilder
-                ->setTools(['phpcs', 'phpmd'])
+                ->setTools(['phpcs', 'phpstan'])
                 ->setOptions(['execution' => 'full'])
                 ->changeToolOption('phpcs', ['execution' => 'fast'])
                 ->buildPhp()
@@ -438,6 +435,6 @@ class FailingTest extends TestCase
 
         $this->assertEquals(1, $exitCode);
         $this->assertToolHasBeenExecutedSuccessfully('phpcs'); // fast: only staged clean file
-        $this->assertToolHasFailed('phpmd'); // full: checks all files, finds errors
+        $this->assertToolHasFailed('phpstan'); // full: checks all files, finds errors
     }
 }
