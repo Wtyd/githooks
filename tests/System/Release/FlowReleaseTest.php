@@ -11,14 +11,18 @@ use Tests\ReleaseTestCase;
  */
 class FlowReleaseTest extends ReleaseTestCase
 {
+    private string $configPath;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->configPath = self::TESTS_PATH . '/githooks.php';
+
         $this->configurationFileBuilder->enableV3Mode();
 
         file_put_contents(
-            self::TESTS_PATH . '/githooks.php',
+            $this->configPath,
             $this->configurationFileBuilder->buildV3Php()
         );
     }
@@ -26,7 +30,7 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_executes_flow_with_all_jobs_passing()
     {
-        passthru("$this->githooks flow qa", $exitCode);
+        passthru("$this->githooks flow qa --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -34,10 +38,19 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_exits_with_error_for_undefined_flow()
     {
-        passthru("$this->githooks flow nonexistent 2>&1", $exitCode);
+        passthru("$this->githooks flow nonexistent --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertNotEquals(0, $exitCode);
         $this->assertStringContainsString('is not defined', $this->getActualOutput());
+    }
+
+    /** @test */
+    public function it_shows_available_flows_when_undefined()
+    {
+        passthru("$this->githooks flow nonexistent --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertNotEquals(0, $exitCode);
+        $this->assertStringContainsString('Available flows', $this->getActualOutput());
     }
 
     /** @test */
@@ -50,12 +63,9 @@ class FlowReleaseTest extends ReleaseTestCase
                 'fail_job' => ['type' => 'custom', 'script' => 'echo fail && exit 1'],
             ]);
 
-        file_put_contents(
-            self::TESTS_PATH . '/githooks.php',
-            $this->configurationFileBuilder->buildV3Php()
-        );
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --exclude-jobs=fail_job", $exitCode);
+        passthru("$this->githooks flow qa --exclude-jobs=fail_job --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -69,12 +79,9 @@ class FlowReleaseTest extends ReleaseTestCase
                 'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
             ]);
 
-        file_put_contents(
-            self::TESTS_PATH . '/githooks.php',
-            $this->configurationFileBuilder->buildV3Php()
-        );
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fast 2>&1", $exitCode);
+        passthru("$this->githooks flow qa --fast --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('skipped', $this->getActualOutput());
@@ -83,12 +90,193 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_outputs_json_format()
     {
-        passthru("$this->githooks flow qa --format=json", $exitCode);
+        passthru("$this->githooks flow qa --format=json --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
         $decoded = json_decode($output, true);
         $this->assertNotNull($decoded, 'Output is not valid JSON: ' . $output);
         $this->assertEquals('qa', $decoded['flow']);
+    }
+
+    /** @test */
+    public function it_outputs_junit_format()
+    {
+        passthru("$this->githooks flow qa --format=junit --config=$this->configPath", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $output = $this->getActualOutput();
+        $this->assertStringContainsString('<?xml', $output);
+        $this->assertStringContainsString('<testsuite', $output);
+        $this->assertStringContainsString('<testcase', $output);
+    }
+
+    /** @test */
+    public function it_applies_fail_fast_via_cli()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['pass_job', 'fail_job', 'skip_job']]])
+            ->setV3Jobs([
+                'pass_job' => ['type' => 'custom', 'script' => 'echo pass'],
+                'fail_job' => ['type' => 'custom', 'script' => 'echo fail && exit 1'],
+                'skip_job' => ['type' => 'custom', 'script' => 'echo should-not-run'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --fail-fast --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertNotEquals(0, $exitCode);
+        $this->assertStringContainsString('skipped by fail-fast', $this->getActualOutput());
+    }
+
+    /** @test */
+    public function it_applies_only_jobs_filter()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['job_a', 'job_b']]])
+            ->setV3Jobs([
+                'job_a' => ['type' => 'custom', 'script' => 'echo job-a-output'],
+                'job_b' => ['type' => 'custom', 'script' => 'echo job-b-output && exit 1'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --only-jobs=job_a --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+    }
+
+    /** @test */
+    public function it_shows_commands_in_dry_run()
+    {
+        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $output = $this->getActualOutput();
+        $this->assertStringContainsString('/bin/true', $output);
+        $this->assertStringContainsString('0ms', $output);
+    }
+
+    /** @test */
+    public function it_shows_monitor_report()
+    {
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 2])
+            ->setV3Flows(['qa' => ['jobs' => ['job_a', 'job_b']]])
+            ->setV3Jobs([
+                'job_a' => ['type' => 'custom', 'script' => '/bin/true'],
+                'job_b' => ['type' => 'custom', 'script' => '/bin/true'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --monitor --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('Thread monitor', $this->getActualOutput());
+    }
+
+    /** @test */
+    public function it_applies_processes_override()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['job_a', 'job_b']]])
+            ->setV3Jobs([
+                'job_a' => ['type' => 'custom', 'script' => '/bin/true'],
+                'job_b' => ['type' => 'custom', 'script' => '/bin/true'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --processes=2 --monitor --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('budget: 2', $this->getActualOutput());
+    }
+
+    /** @test */
+    public function it_runs_custom_job_with_script()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['audit']]])
+            ->setV3Jobs([
+                'audit' => ['type' => 'custom', 'script' => 'echo custom-ok'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+    }
+
+    /** @test */
+    public function it_runs_custom_job_with_executable_path_and_paths()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint']]])
+            ->setV3Jobs([
+                'lint' => [
+                    'type' => 'custom',
+                    'executablePath' => '/bin/echo',
+                    'paths' => ['src'],
+                    'otherArguments' => '--checked',
+                ],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('/bin/echo src --checked', $this->getActualOutput());
+    }
+
+    /** @test */
+    public function it_strips_ansi_from_junit_output()
+    {
+        file_put_contents(
+            self::TESTS_PATH . '/src/File.php',
+            $this->phpFileBuilder->build()
+        );
+
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => ['type' => 'phpstan', 'level' => 0, 'paths' => [self::TESTS_PATH . '/src']],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --format=junit --config=$this->configPath 2>&1", $exitCode);
+
+        $output = $this->getActualOutput();
+        $this->assertStringNotContainsString("\e[", $output);
+    }
+
+    /** @test */
+    public function it_resolves_job_inheritance_with_extends()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint_src']]])
+            ->setV3Jobs([
+                'base_lint' => [
+                    'type' => 'custom',
+                    'executablePath' => '/bin/echo',
+                    'otherArguments' => '--lint',
+                ],
+                'lint_src' => [
+                    'extends' => 'base_lint',
+                    'paths' => ['src'],
+                ],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('/bin/echo src --lint', $this->getActualOutput());
     }
 }
