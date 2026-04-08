@@ -11,7 +11,7 @@ description: >
 
 # QA Testing funcional de GitHooks
 
-Guía para hacer testing funcional exhaustivo del CLI de GitHooks v3.
+Guía para hacer testing funcional exhaustivo del CLI de GitHooks.
 
 ## Principios de testing
 
@@ -20,17 +20,128 @@ Guía para hacer testing funcional exhaustivo del CLI de GitHooks v3.
 3. **Probar en entorno real**: usar `/var/www/html3` como proyecto de prueba — es un proyecto Composer real con tools instaladas, ficheros con errores a propósito y configs variadas.
 4. **No asumir que funciona**: si el Changelog dice que una feature existe, PROBARLA.
 5. **El CWD importa**: la auto-detección de `executablePath` busca `vendor/bin/` relativo al directorio actual. Ejecutar desde `/var/www/html3` (tiene `vendor/bin/`) vs otro directorio da resultados diferentes.
+6. **Leer la implementación antes de crear configs de test**: ante cualquier output inesperado (warnings, errores), buscar en `src/` el mensaje exacto con Grep para entender de dónde viene antes de catalogar como BUG.
+
+## Paso 0: Preguntar al usuario
+
+Antes de empezar, preguntar:
+
+1. **Versión a probar**: `2.x` o `3.x` (ej: `3.0.0`)
+2. **Versión de PHP**: `7.4`, `8.0`, `8.1`, `8.2`, `8.3`, `8.4`, `8.5`...
+
+Con estos datos se determina:
+
+| Dato | Valor |
+|---|---|
+| Rama RC en html1 | `rc-{versión}` (ej: `rc-3.0.0`) |
+| Rama en html3 | `master` para 3.x, `2.x` para 2.x |
+| Versión Composer | `dev-rc-{versión}` (ej: `dev-rc-3.0.0`) |
+| Binario | `vendor/bin/githooks` (instalado por Composer) |
+| Abreviatura en tests | `GH` = `phpX.Y vendor/bin/githooks` |
+| Post-update necesario | Sí si PHP < 8.1, No si PHP >= 8.1 |
+
+**Prerequisito**: la rama `rc-{versión}` en html1 debe tener los builds construidos (`builds/githooks` y `builds/php7.4/githooks`). Si no existen, construirlos primero con `phpX.Y githooks app:pre-build php && phpX.Y githooks app:build` o indicar al usuario que lance el workflow de release.
+
+## Paso 1: Preparar el entorno de pruebas
+
+```bash
+cd /var/www/html3
+
+# 1. Checkout rama correcta
+git checkout {master|2.x}
+git checkout -b {version}-prueba    # ej: 3.0.0-prueba
+
+# 2. Preparar composer.json desde el example
+cp composer.example.json composer.json
+```
+
+### Editar composer.json
+
+Reemplazar la versión de githooks:
+
+```bash
+# Cambiar "*" por la versión RC
+php{X.Y} -r '
+$json = json_decode(file_get_contents("composer.json"), true);
+$json["require-dev"]["wtyd/githooks"] = "dev-rc-{versión}";
+file_put_contents("composer.json", json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+'
+```
+
+**Si PHP < 8.1**, añadir el evento `post-update-cmd` para instalar el binario correcto:
+
+```bash
+php{X.Y} -r '
+$json = json_decode(file_get_contents("composer.json"), true);
+$json["scripts"] = [
+    "post-update-cmd" => ["Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"]
+];
+file_put_contents("composer.json", json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+'
+```
+
+**Recordatorio — Cuándo es necesario post-update-cmd:**
+
+| Composer update con | Ejecutable con | Tier | Post-update |
+|---|---|---|---|
+| php7.4 | PHP 7.4, 8.0 | `builds/php7.4/` | **Sí** |
+| php8.1+ | PHP 8.1, 8.2, 8.3, 8.4, 8.5 | `builds/` | No |
+
+Sin el post-update-cmd en PHP <8.1, `vendor/bin/githooks` apuntará al build de 8.1+ que no es compatible.
+
+### Instalar dependencias
+
+```bash
+php{X.Y} composer.phar update
+```
+
+Esto instala GitHooks desde Packagist (rama RC) con el binario correcto en `vendor/bin/githooks`.
+
+### Verificar instalación
+
+```bash
+php{X.Y} vendor/bin/githooks --version
+```
+
+Debe mostrar la versión correspondiente sin errores PHP.
+
+## Paso 2: Ejecutar los tests
+
+Consultar `TESTS.md` en la rama actual de html3. Contiene el catálogo completo de tests con comandos exactos, salidas esperadas, exit codes y SHAs de commit para cada test.
+
+### Patrón de ejecución
+
+Todos los tests se ejecutan DESDE `/var/www/html3`:
+
+```bash
+cd /var/www/html3
+php{X.Y} vendor/bin/githooks <comando> [--config=<config>]
+```
+
+Sin `--config`, busca `githooks.php` en el CWD.
+
+### Ir al commit correcto (si el test lo indica)
+
+Algunos tests requieren un SHA específico. Antes de ejecutar:
+
+```bash
+git checkout <SHA>
+```
+
+Tras el test, volver a la rama de prueba:
+
+```bash
+git checkout {version}-prueba
+```
 
 ## Entorno de pruebas: `/var/www/html3`
-
-Proyecto Composer preparado para testing funcional. No hace falta montar nada.
 
 ### Estructura
 
 ```
 /var/www/html3/
-├── composer.json           # Proyecto "prueba/prueba" con tools QA en require-dev
-├── vendor/bin/             # Binarios reales: phpstan, phpcs, phpcbf, phpmd, parallel-lint
+├── composer.example.json   # Template — copiar a composer.json y editar
+├── composer.phar           # Composer standalone (no depende del sistema)
 ├── src/
 │   ├── CleanFile.php       # Código limpio — pasa todas las tools
 │   ├── FileWithErrors.php  # Variable no usada, propiedad undefined — falla phpstan, phpmd
@@ -40,12 +151,10 @@ Proyecto Composer preparado para testing funcional. No hace falta montar nada.
 ├── tests/
 │   ├── PassingTest.php     # assertTrue(true) — pasa phpunit
 │   └── FailingTest.php     # assertTrue(false) — falla phpunit
-├── githooks.php            # Config v2 completa (phpstan, lint, phpcs, phpcbf, phpmd, script)
-├── failfast-githooks.php   # Config v2 con failFast en parallel-lint
-├── pertool-githooks.php    # Config v2 con fast mode por tool
-├── custom/githooks.php     # Config v2 en subdirectorio
 ├── phpunit.xml             # Config PHPUnit (testsuite "default" → tests/)
-└── psalm.xml               # Config Psalm (errorLevel 8, src/)
+├── psalm.xml               # Config Psalm (errorLevel 8, src/)
+├── TESTS.md                # Catálogo completo de tests con SHAs
+└── [configs por rama]      # githooks.php, githooks-v3.php, etc.
 ```
 
 ### Tools disponibles vs no disponibles
@@ -69,65 +178,20 @@ Proyecto Composer preparado para testing funcional. No hace falta montar nada.
 | `SyntaxError.php` | KO (syntax) | KO | KO | KO |
 | `DuplicateA/B.php` | OK | OK | OK | OK |
 
-### Patrón de ejecución
-
-Todos los tests usan este patrón (ejecutar DESDE `/var/www/html3`):
-
-```bash
-cd /var/www/html3
-php7.4 /var/www/html1/githooks <comando> [--config=<config>]
-```
-
-Sin `--config`, busca `githooks.php` en el CWD (la config v2 del proyecto).
-
 ### Configs de test adicionales
 
-Cuando necesites una config v3 o una config rota, créalas en `/var/www/html3/` con nombre descriptivo. Ejemplo de config v3 base:
+Cuando necesites una config v3 o una config rota que no exista ya, créalas en `/var/www/html3/` con nombre descriptivo.
 
-```bash
-cat > /var/www/html3/githooks-v3.php << 'PHPEOF'
-<?php
-return [
-    'flows' => [
-        'options' => ['processes' => 2, 'fail-fast' => false],
-        'qa' => [
-            'jobs' => ['parallel_lint', 'phpcs_src', 'phpmd_src', 'phpstan_src'],
-        ],
-        'lint' => [
-            'options' => ['fail-fast' => true],
-            'jobs' => ['parallel_lint', 'phpcs_src'],
-        ],
+**IMPORTANTE**: antes de crear una config, leer la implementación en `src/` para entender el formato exacto. Las condiciones de ejecución condicional (`only-on`, `exclude-on`, `only-files`, `exclude-files`) van en la sección `hooks` como parte del HookRef, NO en `options` del flow. Ejemplo:
+
+```php
+'hooks' => [
+    'pre-commit' => [
+        ['flow' => 'qa', 'only-on' => ['main', 'release/*']],
+        ['job' => 'audit', 'only-files' => ['src/**/*.php']],
     ],
-    'hooks' => [
-        'pre-commit' => ['qa'],
-    ],
-    'jobs' => [
-        'parallel_lint' => [
-            'type' => 'parallel-lint',
-            'paths' => ['src'],
-            'exclude' => ['vendor'],
-        ],
-        'phpcs_src' => [
-            'type' => 'phpcs',
-            'standard' => 'PSR12',
-            'paths' => ['src'],
-        ],
-        'phpmd_src' => [
-            'type' => 'phpmd',
-            'paths' => ['src'],
-            'rules' => 'unusedcode',
-        ],
-        'phpstan_src' => [
-            'type' => 'phpstan',
-            'level' => 0,
-            'paths' => ['src'],
-        ],
-    ],
-];
-PHPEOF
+],
 ```
-
-Para configs rotas (executable inexistente, paths inválidos, etc.), crear como `githooks-broken.php`.
 
 ## Áreas de testing
 
@@ -135,7 +199,7 @@ Para configs rotas (executable inexistente, paths inválidos, etc.), crear como 
 
 | Comando | Qué probar | Comando exacto |
 |---|---|---|
-| `flow <name>` | Flow existente | `php7.4 /var/www/html1/githooks flow qa --config=githooks-v3.php` |
+| `flow <name>` | Flow existente | `GH flow qa --config=githooks-v3.php` |
 | `flow <name>` | Flow inexistente | `... flow inventado --config=githooks-v3.php` → error + lista de flows |
 | `job <name>` | Job existente | `... job parallel_lint --config=githooks-v3.php` |
 | `job <name>` | Job inexistente | `... job inventado --config=githooks-v3.php` → error + lista de jobs |
@@ -146,6 +210,7 @@ Para configs rotas (executable inexistente, paths inválidos, etc.), crear como 
 | `system:info` | Info del sistema | `... system:info` → CPUs, processes |
 | `cache:clear` | Sin cachés | `... cache:clear --config=githooks-v3.php` → reporta "not found" |
 | `cache:clear` | Con cachés | Crear `.phpcs.cache`, ejecutar, verificar borrado |
+| `cache:clear` | Por flow | `... cache:clear qa --config=githooks-v3.php` → borra cachés de todos los jobs del flow |
 | `tool` (legacy) | Deprecation warning | `... tool all full` → warning de deprecación |
 
 ### 2. Edge cases de configuración
@@ -218,11 +283,12 @@ Los bugs más interesantes salen de combinar flags. Probar explícitamente:
 | Sin cachés | `cache:clear --config=githooks-v3.php` | Reporta cada path como "(not found)" |
 | Con cachés fichero | Crear `.phpcs.cache`, `.phpmd.cache`, ejecutar | Borra, reporta "deleted" |
 | Job específico | `cache:clear phpcs_src --config=githooks-v3.php` | Solo borra caché de phpcs |
-| Múltiples jobs | `cache:clear phpcs_src phpmd_src` | Borra ambas |
-| Job inexistente | `cache:clear inventado` | Warning + "No jobs to clear" |
+| Flow name | `cache:clear qa --config=githooks-v3.php` | Borra cachés de todos los jobs del flow |
+| Múltiples nombres | `cache:clear phpcs_src phpmd_src` | Borra ambas |
+| Nombre inexistente | `cache:clear inventado` | Warning + exit 1 |
+| Mix válido + inexistente | `cache:clear phpcs_src inventado` | Borra phpcs + warning + exit 1 |
 | Directorio (phpstan) | Crear dir `{sys_get_temp_dir}/phpstan/`, ejecutar | Borra recursivamente |
 | Config legacy | `cache:clear` (usa githooks.php v2) | Error: "requires v3 format" |
-| Sin --config | `cache:clear --config=githooks-v3.php` en CWD | Encuentra config |
 
 ### 7. Validación profunda en conf:check
 
@@ -268,8 +334,26 @@ El proyecto html3 no tiene phpunit ni psalm instalados. Verificar que el comport
 | Estado tras limpiar | `status --config=githooks-v3.php` | Shows missing |
 | hook:run sin hooks | `hook:run pre-commit` (config sin sección hooks) | Warning "No hooks section" |
 | hook:run evento inexistente | `hook:run inventado` | Warning "No flows or jobs configured" |
+| Commit real con hook OK | Instalar hook, stage CleanFile.php, commit | Hook dispara, pasa, commit se crea |
+| Commit real con hook KO | Instalar hook, stage SyntaxError.php, commit | Hook dispara, falla, commit bloqueado |
 
-### 11. Migración y compatibilidad legacy
+**Teardown hooks**: `git config --unset core.hooksPath; rm -rf .githooks/`
+
+### 11. Ejecución condicional (solo hooks)
+
+Las condiciones van en la sección `hooks` como parte del HookRef. Se prueban via `hook:run <evento>`.
+
+| Test | Config hooks | Resultado esperado |
+|---|---|---|
+| `only-on` rama coincide | `['flow' => 'qa', 'only-on' => ['3.x-*']]` en pre-commit | Ejecuta (rama 3.x-prueba coincide) |
+| `only-on` rama NO coincide | `['flow' => 'qa', 'only-on' => ['main', 'develop']]` en pre-push | Skip |
+| `exclude-on` rama coincide | `['flow' => 'qa', 'exclude-on' => ['3.x-*']]` en post-merge | Skip |
+| `only-files` con match | `['flow' => 'qa', 'only-files' => ['src/**/*.php']]` + staged src/*.php | Ejecuta |
+| `only-files` sin match | `['flow' => 'qa', 'only-files' => ['tests/**/*.php']]` + staged src/*.php | Skip |
+| `exclude-files` excluye | `['only-files' => ['src/**'], 'exclude-files' => ['src/Clean*']]` + staged CleanFile.php | Skip |
+| `exclude-on` prevails | `['only-on' => ['3.x-*'], 'exclude-on' => ['3.x-prueba']]` | Skip (exclude gana) |
+
+### 12. Migración y compatibilidad legacy
 
 | Test | Comando | Resultado esperado |
 |---|---|---|
@@ -278,6 +362,18 @@ El proyecto html3 no tiene phpunit ni psalm instalados. Verificar que el comport
 | `tool all full` con config v2 | `tool all full` (usa githooks.php) | Ejecuta con deprecation warning |
 | `tool all full` con config v3 | `tool all full --config=githooks-v3.php` | Error o redirección a `flow` |
 | `conf:check` con config legacy | `conf:check` (usa githooks.php v2) | Tablas + warning de migración |
+
+## Paso 3: Limpiar
+
+```bash
+cd /var/www/html3
+git config --unset core.hooksPath 2>/dev/null
+rm -rf .githooks/ 2>/dev/null
+git checkout {master|2.x}
+git branch -D {version}-prueba
+```
+
+**Protección**: nunca borrar `master` ni `2.x`.
 
 ## Formato de reporte
 

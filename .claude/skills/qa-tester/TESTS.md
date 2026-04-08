@@ -2,26 +2,53 @@
 
 Catálogo reproducible de tests funcionales para GitHooks v2.8 y v3.0.
 
-## Cómo usar
+## Protocolo de ejecución
 
-1. **Elegir rama** según la versión a probar:
-   ```bash
-   git checkout 2.x      # Tests v2.8
-   git checkout master    # Tests v3.0
-   ```
+### 1. Crear rama de prueba
 
-2. **Ir al commit** del test:
-   ```bash
-   git checkout <SHA>
-   ```
+**NUNCA ejecutar tests destructivos directamente en `master` o `2.x`.**
 
-3. **Ejecutar el comando** desde `/var/www/html3`:
-   ```bash
-   cd /var/www/html3
-   <comando del test>
-   ```
+```bash
+cd /var/www/html3
+git checkout master                  # o 2.x según la versión
+git checkout -b 3.x-prueba          # crear rama desechable
+```
 
-4. **Verificar** la salida y el exit code (`echo $?`).
+### 2. Ir al commit del test (si aplica)
+
+```bash
+git checkout <SHA>
+```
+
+### 3. Ejecutar el comando
+
+Desde `/var/www/html3`:
+```bash
+cd /var/www/html3
+php7.4 /var/www/html1/githooks <comando> [--config=<config>]
+```
+
+Sustituir `php7.4` por la versión de PHP bajo la que se esté probando.
+
+### 4. Verificar salida y exit code
+
+```bash
+echo $?
+```
+
+### 5. Ejecutar Teardown
+
+Cada test que modifica estado tiene una columna **Teardown** con los comandos necesarios para limpiar. **Ejecutar siempre** antes del siguiente test.
+
+### 6. Limpiar al terminar
+
+```bash
+cd /var/www/html3
+git checkout master                  # volver a rama principal
+git branch -D 3.x-prueba            # borrar rama de prueba
+```
+
+**Protección**: nunca borrar `master` ni `2.x`. El comando `git branch -D` solo acepta la rama de prueba.
 
 ## Binarios
 
@@ -206,23 +233,27 @@ Abreviatura: `GH` = `php7.4 /var/www/html1/githooks`
 
 ### Fast mode (--fast)
 
-Requiere `githooks-fast.php` en html3 (config con jobs estándar + custom con paths/accelerable + phpstan con accelerable=false + phpunit no acelerado + custom legacy sin paths).
+Requiere `githooks-fast.php` en html3. Los tests que necesitan staging requieren rama de prueba.
 
-| ID | Área | Test | Comando | Salida esperada | Exit | SHA | Config |
+**Setup staging** (para V30-062 a V30-069, V30-071): `echo "// test" >> src/CleanFile.php && git add src/CleanFile.php`
+
+**Teardown staging**: `git checkout src/CleanFile.php && git reset HEAD src/CleanFile.php 2>/dev/null`
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
 |---|---|---|---|---|---|---|---|
-| V30-061 | fast | Sin staged files → todos skip | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Todos los jobs skipped: "no staged files match its paths." | 0 | `9d5795a` | githooks-fast.php |
-| V30-062 | fast | Con staged file → paths filtrados (dry-run) | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Cada job muestra el fichero staged, no el directorio (ej: `analyse src/CleanFile.php`) | 0 | `9d5795a` | githooks-fast.php |
-| V30-063 | fast | Ejecución real con fichero limpio staged | `GH flow qa --fast --config=githooks-fast.php` | parallel_lint, phpcs, phpstan pasan. phpmd falla por vendor/symfony (no relacionado) | 1 | `9d5795a` | githooks-fast.php |
-| V30-064 | fast | job --fast --dry-run | `GH job phpstan_src --fast --dry-run --config=githooks-fast.php` | Muestra `analyse src/CleanFile.php` | 0 | `9d5795a` | githooks-fast.php |
-| V30-065 | fast | Custom job con executablePath+paths+accelerable | `GH flow custom_flow --fast --dry-run --config=githooks-fast.php` | custom_lint: `/bin/echo src/CleanFile.php --checked`. custom_legacy: `echo legacy-mode-ok` (sin cambio) | 0 | `9d5795a` | githooks-fast.php |
-| V30-066 | fast | accelerable=false override ignora --fast | `GH flow override --fast --dry-run --config=githooks-fast.php` | phpstan_no_accel: `analyse src` (directorio completo, sin filtrar) | 0 | `9d5795a` | githooks-fast.php |
-| V30-067 | fast | --fast + --format=json | `GH flow qa --fast --format=json --config=githooks-fast.php` | JSON válido. parallel_lint reporta "Checked 1 files" | 1 | `9d5795a` | githooks-fast.php |
-| V30-068 | fast | --fast + --fail-fast | `GH flow qa --fast --fail-fast --config=githooks-fast.php` | Se detiene en primer fallo con paths filtrados | 1 | `9d5795a` | githooks-fast.php |
-| V30-069 | fast | --fast + --exclude-jobs | `GH flow qa --fast --exclude-jobs=phpmd_src --dry-run --config=githooks-fast.php` | 3 jobs (sin phpmd_src), todos con fichero filtrado | 0 | `9d5795a` | githooks-fast.php |
-| V30-070 | fast | Fichero eliminado no se pasa a tools | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Con `git rm --cached` de un fichero: no aparece en ningún comando, todos skip si es el único staged | 0 | `9d5795a` | githooks-fast.php |
-| V30-071 | fast | Mixed flow (acelerado + no acelerado) | `GH flow mixed --fast --dry-run --config=githooks-fast.php` | phpstan: fichero filtrado. phpunit: `-c phpunit.xml` (sin filtrar, no acelerado) | 0 | `9d5795a` | githooks-fast.php |
-| V30-072 | fast | Sin --fast → paths completos (regresión) | `GH flow qa --dry-run --config=githooks-fast.php` | Todos los jobs usan `src` (directorio completo) | 0 | `9d5795a` | githooks-fast.php |
-| V30-073 | fast | Staged file fuera de paths del job no se pasa | Stagear fichero en `database/` o `config/`, job con `paths: ['src']`. `GH flow qa --fast --dry-run --config=githooks-fast.php` | El job no recibe el fichero de otro directorio. Si no hay ficheros en `src/` staged, el job se salta | 0 | `9d5795a` | githooks-fast.php |
+| V30-061 | fast | Sin staged files → todos skip | `GH flow qa --fast --dry-run --config=githooks-fast.php` | Todos los jobs skipped: "no staged files match its paths." | 0 | — | githooks-fast.php |
+| V30-062 | fast | Con staged file → paths filtrados (dry-run) | Setup staging + `GH flow qa --fast --dry-run --config=githooks-fast.php` | Cada job muestra el fichero staged, no el directorio | 0 | Teardown staging | githooks-fast.php |
+| V30-063 | fast | Ejecución real con fichero limpio staged | Setup staging + `GH flow qa --fast --config=githooks-fast.php` | parallel_lint, phpcs, phpstan pasan | 1 | Teardown staging | githooks-fast.php |
+| V30-064 | fast | job --fast --dry-run | Setup staging + `GH job phpstan_src --fast --dry-run --config=githooks-fast.php` | Muestra `analyse src/CleanFile.php` | 0 | Teardown staging | githooks-fast.php |
+| V30-065 | fast | Custom job con executablePath+paths+accelerable | Setup staging + `GH flow custom_flow --fast --dry-run --config=githooks-fast.php` | custom_lint: `/bin/echo src/CleanFile.php --checked`. custom_legacy: sin cambio | 0 | Teardown staging | githooks-fast.php |
+| V30-066 | fast | accelerable=false override ignora --fast | Setup staging + `GH flow override --fast --dry-run --config=githooks-fast.php` | phpstan_no_accel: `analyse src` (directorio completo) | 0 | Teardown staging | githooks-fast.php |
+| V30-067 | fast | --fast + --format=json | Setup staging + `GH flow qa --fast --format=json --config=githooks-fast.php` | JSON válido. parallel_lint "Checked 1 files" | 1 | Teardown staging | githooks-fast.php |
+| V30-068 | fast | --fast + --fail-fast | Setup staging + `GH flow qa --fast --fail-fast --config=githooks-fast.php` | Se detiene en primer fallo | 1 | Teardown staging | githooks-fast.php |
+| V30-069 | fast | --fast + --exclude-jobs | Setup staging + `GH flow qa --fast --exclude-jobs=phpmd_src --dry-run --config=githooks-fast.php` | 3 jobs, todos con fichero filtrado | 0 | Teardown staging | githooks-fast.php |
+| V30-070 | fast | Fichero eliminado no se pasa | `git rm --cached src/DuplicateA.php && GH flow qa --fast --dry-run --config=githooks-fast.php` | Todos skip (eliminado no pasa filtro) | 0 | `git reset HEAD src/DuplicateA.php && git checkout src/DuplicateA.php` | githooks-fast.php |
+| V30-071 | fast | Mixed flow (acelerado + no acelerado) | Setup staging + `GH flow mixed --fast --dry-run --config=githooks-fast.php` | phpstan: fichero filtrado. phpunit: sin filtrar | 0 | Teardown staging | githooks-fast.php |
+| V30-072 | fast | Sin --fast → paths completos (regresión) | `GH flow qa --dry-run --config=githooks-fast.php` | Todos usan `src` (directorio completo) | 0 | — | githooks-fast.php |
+| V30-073 | fast | Staged file fuera de paths del job no se pasa | `echo "test" > /tmp/outside.php && git add /tmp/outside.php; GH flow qa --fast --dry-run --config=githooks-fast.php` | Jobs no reciben ficheros fuera de paths. Todos skip | 0 | `git reset HEAD /tmp/outside.php 2>/dev/null` | githooks-fast.php |
 
 ### conf:check
 
@@ -235,10 +266,10 @@ Requiere `githooks-fast.php` en html3 (config con jobs estándar + custom con pa
 
 ### conf:migrate
 
-| ID | Área | Test | Comando | Salida esperada | Exit | SHA | Config |
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
 |---|---|---|---|---|---|---|---|
-| V30-037 | conf:migrate | Migrar v2 a v3 | `GH conf:migrate --config=githooks-v2-migrate.php` | Genera formato v3 (hooks/flows/jobs). Crea backup .v2.bak | 0 | `1802458` | githooks-v2-migrate.php |
-| V30-038 | conf:migrate | Migrar config ya v3 | `GH conf:migrate --config=githooks-v3.php` | Detecta que ya es v3. No migra | 1 | `1802458` | githooks-v3.php |
+| V30-037 | conf:migrate | Migrar v2 a v3 | `cp githooks.php /tmp/githooks-v2-migrate.php && GH conf:migrate --config=/tmp/githooks-v2-migrate.php` | Genera formato v3 (hooks/flows/jobs). Crea backup .v2.bak | 0 | `rm -f /tmp/githooks-v2-migrate.php /tmp/githooks-v2-migrate.php.v2.bak` | githooks.php (copia) |
+| V30-038 | conf:migrate | Migrar config ya v3 | `GH conf:migrate --config=githooks-v3.php` | Detecta que ya es v3. No migra | 0 | — | githooks-v3.php |
 
 ### cache:clear
 
@@ -251,12 +282,45 @@ Requiere `githooks-fast.php` en html3 (config con jobs estándar + custom con pa
 
 ### Hooks
 
-| ID | Área | Test | Comando | Salida esperada | Exit | SHA | Config |
+Ejecutar en orden. El Teardown de V30-045 limpia el estado para los siguientes tests.
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
 |---|---|---|---|---|---|---|---|
-| V30-043 | hook | Instalar hooks v3 (core.hooksPath) | `GH hook --config=githooks-v3.php` | Crea .githooks/ + configura core.hooksPath | 0 | `d2dadd9` | githooks-v3.php |
-| V30-044 | hook | Status tras instalar → synced | `GH status --config=githooks-v3.php` | pre-commit: synced (targets: qa) | 0 | `d2dadd9` | githooks-v3.php |
-| V30-045 | hook | Limpiar hooks | `GH hook:clean` | Borra .githooks/ + desactiva core.hooksPath | 0 | `d2dadd9` | githooks-v3.php |
-| V30-046 | hook | Status tras limpiar → missing | `GH status --config=githooks-v3.php` | pre-commit: missing | 0 | `d2dadd9` | githooks-v3.php |
+| V30-043 | hook | Instalar hooks v3 (core.hooksPath) | `GH hook --config=githooks-v3.php` | Crea .githooks/ + configura core.hooksPath | 0 | — (V30-044 necesita el estado) | githooks-v3.php |
+| V30-044 | hook | Status tras instalar → synced | `GH status --config=githooks-v3.php` | pre-commit: synced (targets: qa) | 0 | — (V30-045 necesita el estado) | githooks-v3.php |
+| V30-045 | hook | Limpiar hooks | `GH hook:clean` | Borra .githooks/ + desactiva core.hooksPath | 0 | — (este ES el teardown) | githooks-v3.php |
+| V30-046 | hook | Status tras limpiar → missing | `GH status --config=githooks-v3.php` | pre-commit: missing | 0 | — | githooks-v3.php |
+
+### Hook real (commit + revert)
+
+Requiere rama de prueba. Verificar que el hook generado dispara GitHooks al commitear.
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
+|---|---|---|---|---|---|---|---|
+| V30-074 | hook | Commit real dispara pre-commit | `GH hook --config=githooks-v3.php && echo "// test" >> src/CleanFile.php && git add src/CleanFile.php && git commit -m "test hook"` | El output incluye resultados de GitHooks (OK/KO). Si pasa, commit se crea | 0 | `git reset --hard HEAD~1 && git config --unset core.hooksPath && rm -rf .githooks/` | githooks-v3.php |
+| V30-075 | hook | Commit con hook que falla bloquea commit | `GH hook --config=githooks-v3.php && echo "// test" >> src/SyntaxError.php && git add src/SyntaxError.php && git commit -m "test hook fail"` | parallel_lint falla → commit NO se crea | 1 | `git checkout src/SyntaxError.php && git config --unset core.hooksPath && rm -rf .githooks/` | githooks-v3.php |
+
+### Conditional execution
+
+Requiere config con condiciones `only-on`, `exclude-on`, `only-files`, `exclude-files`. Crear `githooks-conditional.php` en html3.
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
+|---|---|---|---|---|---|---|---|
+| V30-076 | cond | only-on rama que coincide | Estar en rama `3.x-prueba`. `GH hook:run pre-commit --config=githooks-conditional.php` (config con `only-on: ['3.x-*']`) | Flow se ejecuta (rama coincide con glob) | 0 | — | githooks-conditional.php |
+| V30-077 | cond | only-on rama que NO coincide | Estar en rama `3.x-prueba`. Config con `only-on: ['main', 'develop']` | Flow se salta (rama no coincide) | 0 | — | githooks-conditional.php |
+| V30-078 | cond | exclude-on rama que coincide | Config con `exclude-on: ['3.x-*']` | Flow se salta (rama excluida) | 0 | — | githooks-conditional.php |
+| V30-079 | cond | only-files con fichero staged que coincide | Setup staging (CleanFile.php) + config con `only-files: ['src/**/*.php']` | Flow se ejecuta | 0/1 | Teardown staging | githooks-conditional.php |
+| V30-080 | cond | only-files sin fichero staged que coincide | Setup staging (CleanFile.php) + config con `only-files: ['tests/**/*.php']` | Flow se salta | 0 | Teardown staging | githooks-conditional.php |
+| V30-081 | cond | exclude-files excluye fichero staged | Setup staging (CleanFile.php) + config con `only-files: ['src/**'], exclude-files: ['src/Clean*']` | Flow se salta (fichero excluido) | 0 | Teardown staging | githooks-conditional.php |
+| V30-082 | cond | exclude-on prevails over only-on | Config con `only-on: ['3.x-*'], exclude-on: ['3.x-prueba']` | Flow se salta (exclude prevails) | 0 | — | githooks-conditional.php |
+
+### Job inheritance (extends) — ejecución real
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
+|---|---|---|---|---|---|---|---|
+| V30-083 | extends | Job hereda config de parent y ejecuta | `GH flow qa --config=githooks-extends.php` (con `phpmd_src extends phpmd_base`) | phpmd ejecuta con rules y paths heredados | 0/1 | — | githooks-extends.php |
+| V30-084 | extends | Job overridea key de parent | `GH flow qa --dry-run --config=githooks-extends.php` (child overridea `paths`) | Comando muestra paths del child, no del parent | 0 | — | githooks-extends.php |
+| V30-085 | extends | Herencia encadenada A→B→C | `GH flow qa --dry-run --config=githooks-extends.php` (A extends B, B extends C) | Comando refleja config resuelta desde C | 0 | — | githooks-extends.php |
 
 ### Status y system:info
 
@@ -304,5 +368,5 @@ Requiere `githooks-fast.php` en html3 (config con jobs estándar + custom con pa
 | Versión | Tests | Áreas cubiertas |
 |---|---|---|
 | v2.8 | 35 | tool, flags, failFast, per-tool, conf:check, hook, conf:init, error handling, phpcbf, script |
-| v3.0 | 73 | flow, job, format, flags, combos, fast mode, conf:check, conf:migrate, cache, hooks, status, system:info, legacy, edge cases, missing tools, exec detection |
-| **Total** | **108** | |
+| v3.0 | 85 | flow, job, format, flags, combos, fast mode, conf:check, conf:migrate, cache, hooks, hook real, conditional execution, extends, status, system:info, legacy, edge cases, missing tools, exec detection |
+| **Total** | **120** | |
