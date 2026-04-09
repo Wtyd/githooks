@@ -14,6 +14,8 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
  * Resolves a hook event to its flows/jobs and executes them in order.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Branch/file matching logic adds necessary private methods
  */
 class HookRunner
 {
@@ -55,34 +57,50 @@ class HookRunner
             : null;
 
         $results = [];
+        $skippedByConditions = 0;
 
         foreach ($refs as $ref) {
             if (!$this->shouldExecute($ref)) {
+                $skippedByConditions++;
                 continue;
             }
 
-            $target = $ref->getTarget();
-            $flow = $config->getFlow($target);
-
-            if ($flow !== null) {
-                $plan = $this->preparer->prepare($flow, $config, $context);
-                $results[] = $this->executor->execute($plan);
-                continue;
+            $result = $this->executeRef($ref, $config, $context);
+            if ($result !== null) {
+                $results[] = $result;
             }
+        }
 
-            // Not a flow — try as a direct job
-            $jobConfig = $config->getJob($target);
-
-            if ($jobConfig !== null) {
-                $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
-                $results[] = $this->executor->execute($plan);
-                continue;
-            }
-
-            // Neither flow nor job — skip (validation should have caught this)
+        if (empty($results) && $skippedByConditions > 0) {
+            $config->getValidation()->addWarning(
+                "All hook refs for event '$event' were skipped by execution conditions (only-on, exclude-on, only-files, exclude-files)."
+            );
         }
 
         return $results;
+    }
+
+    /**
+     * Execute a single HookRef (flow or job).
+     */
+    private function executeRef(HookRef $ref, ConfigurationResult $config, ?ExecutionContext $context): ?FlowResult
+    {
+        $target = $ref->getTarget();
+        $flow = $config->getFlow($target);
+
+        if ($flow !== null) {
+            $plan = $this->preparer->prepare($flow, $config, $context);
+            return $this->executor->execute($plan);
+        }
+
+        $jobConfig = $config->getJob($target);
+
+        if ($jobConfig !== null) {
+            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
+            return $this->executor->execute($plan);
+        }
+
+        return null;
     }
 
     /**

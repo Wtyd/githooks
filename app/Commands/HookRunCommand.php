@@ -55,7 +55,20 @@ class HookRunCommand extends Command
             $results = $this->runner->run($event, $config);
 
             if (empty($results)) {
-                $this->warn("No flows or jobs configured for event '$event'.");
+                $warnings = $config->getValidation()->getWarnings();
+                $conditionWarning = '';
+                foreach ($warnings as $warning) {
+                    if (strpos($warning, 'skipped by execution conditions') !== false) {
+                        $conditionWarning = $warning;
+                        break;
+                    }
+                }
+
+                if ($conditionWarning !== '') {
+                    $this->warn($conditionWarning);
+                } else {
+                    $this->warn("No flows or jobs configured for event '$event'.");
+                }
                 return 0;
             }
 
