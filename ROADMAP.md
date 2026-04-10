@@ -46,3 +46,5 @@ Prioridad baja — nice-to-have:
 
 # No evaluada
 1. Ejecución de flow o job en modo --fast y que acepte un argumento files que sea un array de ficheros contra los que se lanza. La idea es hacer una ejecución fast en ramas de tareas de un CI/CD (se le pasaría por parametro los ficheros modificados en el último commit). Otra opción es que mediante comandos de git el propio Githooks detecto los ficheros modificados en el último commit. En este caso podría ser un nuevo flag --fast-ci.
+
+2. githooks system:info — Show detected CPUs and current processes configuration with budget warning. Añadir test a Windows test.
