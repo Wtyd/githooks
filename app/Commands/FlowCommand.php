@@ -9,6 +9,7 @@ use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\ExecutionContext;
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowPreparer;
@@ -27,6 +28,7 @@ class FlowCommand extends Command
                             {--format= : Output format (text, json, junit)}
                             {--dry-run : Show commands without executing}
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
+                            {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
                             {--monitor : Show thread usage report after execution}
                             {--config= : Path to configuration file}';
 
@@ -80,9 +82,19 @@ class FlowCommand extends Command
 
             $this->applyFormat($this->executor);
 
-            $context = $this->option('fast')
-                ? ExecutionContext::forFastMode($this->getLaravel()->make(FileUtilsInterface::class))
-                : null;
+            $fileUtils = $this->getLaravel()->make(FileUtilsInterface::class);
+
+            $invocationMode = null;
+            if ($this->option('fast')) {
+                $invocationMode = ExecutionMode::FAST;
+            } elseif ($this->option('fast-branch')) {
+                $invocationMode = ExecutionMode::FAST_BRANCH;
+            }
+
+            $mainBranch = $config->getGlobalOptions()->getMainBranch()
+                ?? $fileUtils->detectMainBranch();
+
+            $context = ExecutionContext::create($fileUtils, $mainBranch);
 
             $excludeJobs = [];
             $excludeOption = $this->option('exclude-jobs');
@@ -101,7 +113,7 @@ class FlowCommand extends Command
                 return 1;
             }
 
-            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs);
+            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);
 
             // CLI options override config values
             $cliFailFast = $this->option('fail-fast') ? true : null;

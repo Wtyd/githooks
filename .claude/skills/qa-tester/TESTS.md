@@ -361,6 +361,91 @@ Requiere config con condiciones `only-on`, `exclude-on`, `only-files`, `exclude-
 | V30-059 | exec | Desde html3 sin executablePath → vendor/bin | `GH job phpcs_src --dry-run --config=githooks-v3.php` | El comando mostrado usa vendor/bin/phpcs (auto-detectado) | 0 | `d2dadd9` | githooks-v3.php |
 | V30-060 | exec | Con executablePath explícito → respeta | `GH job phpcs_src --dry-run --config=githooks-explicit-exec.php` | El comando usa vendor/bin/phpcs (el valor explícito, no auto-detectado) | 0 | `1ab3ace` | githooks-explicit-exec.php |
 
+### Execution modes (full / fast / fast-branch)
+
+Requiere config `githooks-execution.php` en html3 con modos de ejecución por job y flow. Ejemplo:
+
+```php
+return [
+    'hooks' => [
+        'command' => 'php7.4 vendor/bin/githooks',
+        'pre-commit' => [
+            ['flow' => 'qa', 'execution' => 'fast'],
+        ],
+        'pre-push' => ['qa'],
+    ],
+    'flows' => [
+        'options' => ['fail-fast' => false, 'processes' => 1],
+        'qa' => ['jobs' => ['phpstan_src', 'phpcs_src', 'phpmd_src']],
+        'mixed' => ['execution' => 'fast', 'jobs' => ['phpstan_src', 'phpcs_full']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+        'phpcs_src' => ['type' => 'phpcs', 'standard' => 'PSR12', 'paths' => ['src']],
+        'phpmd_src' => ['type' => 'phpmd', 'paths' => ['src'], 'rules' => 'unusedcode'],
+        'phpcs_full' => ['type' => 'phpcs', 'standard' => 'PSR12', 'paths' => ['src'], 'execution' => 'full'],
+    ],
+];
+```
+
+Y config `githooks-fast-branch.php` con `main-branch` y `fast-branch-fallback`:
+
+```php
+return [
+    'flows' => [
+        'options' => ['main-branch' => 'master', 'fast-branch-fallback' => 'full'],
+        'qa' => ['jobs' => ['phpstan_src', 'phpcs_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+        'phpcs_src' => ['type' => 'phpcs', 'standard' => 'PSR12', 'paths' => ['src']],
+    ],
+];
+```
+
+**Setup staging** (para tests que necesitan staged files): `echo "// test" >> src/CleanFile.php && git add src/CleanFile.php`
+
+**Teardown staging**: `git checkout src/CleanFile.php && git reset HEAD src/CleanFile.php 2>/dev/null`
+
+#### CLI flag --fast-branch
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
+|---|---|---|---|---|---|---|---|
+| V30-086 | fast-branch | --fast-branch dry-run muestra ficheros de rama | `GH flow qa --fast-branch --dry-run --config=githooks-fast-branch.php` | Jobs muestran ficheros diff de rama vs master (no solo staged) | 0 | — | githooks-fast-branch.php |
+| V30-087 | fast-branch | --fast-branch ejecución real | `GH flow qa --fast-branch --config=githooks-fast-branch.php` | Ejecuta análisis sobre ficheros diff rama. Resultado depende de errores en ficheros | 0/1 | — | githooks-fast-branch.php |
+| V30-088 | fast-branch | --fast-branch en job individual | `GH job phpstan_src --fast-branch --dry-run --config=githooks-fast-branch.php` | Muestra ficheros del branch diff, no directorio completo | 0 | — | githooks-fast-branch.php |
+| V30-089 | fast-branch | --fast + --fast-branch → fast prevalece | `GH flow qa --fast --fast-branch --dry-run --config=githooks-fast-branch.php` | --fast prevalece (es el primer flag evaluado). Solo staged files | 0 | — | githooks-fast-branch.php |
+| V30-090 | fast-branch | --fast-branch + --format=json | `GH flow qa --fast-branch --format=json --config=githooks-fast-branch.php` | JSON válido con resultados de branch diff | 0/1 | — | githooks-fast-branch.php |
+| V30-091 | fast-branch | --fast-branch sin rama principal detectable | (en entorno sin remote ni branch master/main) | Fallback según `fast-branch-fallback` config | 0/1 | — | githooks-fast-branch.php |
+
+#### Execution mode por configuración (job/flow)
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
+|---|---|---|---|---|---|---|---|
+| V30-092 | exec-config | Flow con execution=fast (dry-run) | Setup staging + `GH flow mixed --dry-run --config=githooks-execution.php` | phpstan_src: paths filtrados a ficheros staged. phpcs_full (execution=full): usa `src` completo | 0 | Teardown staging | githooks-execution.php |
+| V30-093 | exec-config | Job execution=full override flow execution=fast | Setup staging + `GH flow mixed --dry-run --config=githooks-execution.php` | phpcs_full tiene `execution: full` → ignora el `fast` del flow. Muestra `src` completo | 0 | Teardown staging | githooks-execution.php |
+| V30-094 | exec-config | Job sin execution hereda del flow | Setup staging + `GH flow mixed --dry-run --config=githooks-execution.php` | phpstan_src (sin execution) hereda fast del flow → paths filtrados | 0 | Teardown staging | githooks-execution.php |
+| V30-095 | exec-config | Invocation mode override config | Setup staging + `GH flow mixed --fast-branch --dry-run --config=githooks-execution.php` | --fast-branch del CLI overridea execution=fast del flow y execution=full del job | 0 | Teardown staging | githooks-execution.php |
+| V30-096 | exec-config | Sin execution en config → full por defecto | `GH flow qa --dry-run --config=githooks-execution.php` | Sin --fast ni execution en config → todos los jobs usan paths completos | 0 | — | githooks-execution.php |
+| V30-097 | exec-config | Job con execution=fast-branch (dry-run) | `GH flow qa --dry-run --config=githooks-fast-branch-job.php` (un job con execution: fast-branch) | Ese job usa ficheros del branch diff | 0 | — | githooks-fast-branch-job.php |
+
+#### HookRef execution mode
+
+| ID | Área | Test | Comando | Salida esperada | Exit | Teardown | Config |
+|---|---|---|---|---|---|---|---|
+| V30-098 | hookref-exec | hook:run pre-commit con HookRef execution=fast | Setup staging + `GH hook:run pre-commit --config=githooks-execution.php` | El hook ejecuta el flow con fast mode (paths filtrados a staged) | 0/1 | Teardown staging | githooks-execution.php |
+| V30-099 | hookref-exec | hook:run pre-push sin execution → full | `GH hook:run pre-push --config=githooks-execution.php` | El hook no tiene execution → ejecuta full (paths completos) | 0/1 | — | githooks-execution.php |
+| V30-100 | hookref-exec | hook:run pre-commit ya no fuerza fast mode | `GH hook:run pre-commit --config=githooks-fast.php` (config sin execution en hookRef) | **Regresión clave**: pre-commit ejecuta en full mode (paths completos), NO fast forzado | 0/1 | — | githooks-fast.php |
+
+#### Opciones de configuración (main-branch, fast-branch-fallback)
+
+| ID | Área | Test | Comando | Salida esperada | Exit | SHA | Config |
+|---|---|---|---|---|---|---|---|
+| V30-101 | options | conf:check con main-branch y fast-branch-fallback | `GH conf:check --config=githooks-fast-branch.php` | No warnings para main-branch ni fast-branch-fallback (claves conocidas) | 0 | — | githooks-fast-branch.php |
+| V30-102 | options | fast-branch-fallback inválido | Config con `'fast-branch-fallback' => 'turbo'` | Error: "'fast-branch-fallback' must be 'fast' or 'full'" | 1 | — | githooks-bad-fallback.php |
+| V30-103 | options | execution inválido en job | Config con `'execution' => 'turbo'` en un job | Error: "'execution' must be one of: full, fast, fast-branch" | 1 | — | githooks-bad-execution.php |
+| V30-104 | options | execution inválido en flow | Config con `'execution' => 123` en un flow | Error similar | 1 | — | githooks-bad-execution-flow.php |
+
 ---
 
 ## Resumen
@@ -368,5 +453,5 @@ Requiere config con condiciones `only-on`, `exclude-on`, `only-files`, `exclude-
 | Versión | Tests | Áreas cubiertas |
 |---|---|---|
 | v2.8 | 35 | tool, flags, failFast, per-tool, conf:check, hook, conf:init, error handling, phpcbf, script |
-| v3.0 | 85 | flow, job, format, flags, combos, fast mode, conf:check, conf:migrate, cache, hooks, hook real, conditional execution, extends, status, system:info, legacy, edge cases, missing tools, exec detection |
-| **Total** | **120** | |
+| v3.0 | 104 | flow, job, format, flags, combos, fast mode, fast-branch, execution modes, conf:check, conf:migrate, cache, hooks, hook real, conditional execution, extends, status, system:info, legacy, edge cases, missing tools, exec detection |
+| **Total** | **139** | |

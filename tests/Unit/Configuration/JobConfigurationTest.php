@@ -7,6 +7,7 @@ namespace Tests\Unit\Configuration;
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
@@ -235,5 +236,104 @@ class JobConfigurationTest extends TestCase
             }
         }
         $this->assertTrue($found, 'Expected warning about rules not being a string');
+    }
+
+    // ========================================================================
+    // Execution mode (TDD — will fail until implementation exists)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_job_with_fast_execution()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_src', [
+            'type'      => 'phpstan',
+            'paths'     => ['src'],
+            'execution' => 'fast',
+        ], $this->registry, $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('fast', $job->getExecution());
+    }
+
+    /** @test */
+    public function it_parses_job_with_fast_branch_execution()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_src', [
+            'type'      => 'phpstan',
+            'paths'     => ['src'],
+            'execution' => 'fast-branch',
+        ], $this->registry, $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('fast-branch', $job->getExecution());
+    }
+
+    /** @test */
+    public function it_defaults_execution_to_null()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_src', [
+            'type'  => 'phpstan',
+            'paths' => ['src'],
+        ], $this->registry, $result);
+
+        $this->assertNull($job->getExecution());
+    }
+
+    /** @test */
+    public function it_reports_error_for_invalid_execution_mode_in_job()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type'      => 'phpstan',
+            'execution' => 'invalid',
+        ], $this->registry, $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('execution', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function execution_does_not_trigger_unknown_key_warning_in_job()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type'      => 'phpstan',
+            'paths'     => ['src'],
+            'execution' => 'full',
+        ], $this->registry, $result, new JobRegistry());
+
+        $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
+            return strpos($w, 'execution') !== false && strpos($w, 'nknown') !== false;
+        });
+        $this->assertEmpty($unknownWarnings);
+    }
+
+    /**
+     * @test
+     * @dataProvider validExecutionModeProvider
+     */
+    public function it_accepts_all_valid_execution_modes(string $mode)
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_src', [
+            'type'      => 'phpstan',
+            'paths'     => ['src'],
+            'execution' => $mode,
+        ], $this->registry, $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals($mode, $job->getExecution());
+    }
+
+    public function validExecutionModeProvider(): array
+    {
+        return [
+            'full'        => ['full'],
+            'fast'        => ['fast'],
+            'fast-branch' => ['fast-branch'],
+        ];
     }
 }

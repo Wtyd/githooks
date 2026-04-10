@@ -128,4 +128,93 @@ class OptionsConfigurationTest extends TestCase
         $this->assertFalse($original->isFailFast());
         $this->assertEquals(1, $original->getProcesses());
     }
+
+    // ========================================================================
+    // Execution mode options (TDD — will fail until implementation exists)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_main_branch_option()
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'main-branch' => 'develop',
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('develop', $options->getMainBranch());
+    }
+
+    /** @test */
+    public function it_defaults_main_branch_to_null()
+    {
+        $options = new OptionsConfiguration();
+
+        $this->assertNull($options->getMainBranch());
+    }
+
+    /** @test */
+    public function it_reports_error_for_non_string_main_branch()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray(['main-branch' => 123], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('main-branch', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_parses_fast_branch_fallback_as_full()
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'fast-branch-fallback' => 'full',
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('full', $options->getFastBranchFallback());
+    }
+
+    /** @test */
+    public function it_parses_fast_branch_fallback_as_fast()
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'fast-branch-fallback' => 'fast',
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('fast', $options->getFastBranchFallback());
+    }
+
+    /** @test */
+    public function it_defaults_fast_branch_fallback_to_full()
+    {
+        $options = new OptionsConfiguration();
+
+        $this->assertEquals('full', $options->getFastBranchFallback());
+    }
+
+    /** @test */
+    public function it_reports_error_for_invalid_fast_branch_fallback()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray(['fast-branch-fallback' => 'fast-branch'], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('fast-branch-fallback', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function main_branch_and_fast_branch_fallback_are_not_unknown_keys()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray([
+            'main-branch' => 'master',
+            'fast-branch-fallback' => 'full',
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings());
+    }
 }

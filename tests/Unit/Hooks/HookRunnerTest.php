@@ -345,6 +345,60 @@ class HookRunnerTest extends TestCase
         $this->assertEmpty($results);
     }
 
+    // ========================================================================
+    // Fix: pre-commit no longer forces fast mode
+    // (TDD — will fail until HookRunner is refactored)
+    // ========================================================================
+
+    /** @test */
+    public function pre_commit_no_longer_forces_fast_mode()
+    {
+        $this->fileUtils->setModifiedfiles(['src/User.php']);
+
+        $config = $this->buildConfigWithJobRef('phpcs', [], []);
+
+        // Expect executor to be called — the plan's context should NOT have isFastMode()=true
+        // (unless the config explicitly sets execution mode)
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->with($this->callback(function ($plan) {
+                $context = $plan->getContext();
+                // Context should exist (for lazy file loading) but NOT be in forced fast mode
+                return $context === null || !$context->isFastMode();
+            }))
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $this->runner->run('pre-commit', $config);
+    }
+
+    /** @test */
+    public function non_pre_commit_events_also_work_without_forced_mode()
+    {
+        $this->fileUtils->setModifiedfiles(['src/User.php']);
+
+        // Build config with pre-push event
+        $ref = new HookRef('phpcs', [], [], []);
+        $hookConfig = new HookConfiguration(['pre-push' => [$ref]]);
+        $jobConfig = new JobConfiguration('phpcs', 'phpcs', []);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            ['phpcs' => $jobConfig],
+            [],
+            $hookConfig,
+            new ValidationResult()
+        );
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $results = $this->runner->run('pre-push', $config);
+
+        $this->assertCount(1, $results);
+    }
+
     /**
      * @param string[] $onlyFiles
      * @param string[] $excludeFiles

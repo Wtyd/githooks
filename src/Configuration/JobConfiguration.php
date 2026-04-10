@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
+/** @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Validation of type, execution mode, arguments, and common keys */
 class JobConfiguration
 {
     private string $name;
@@ -29,7 +31,8 @@ class JobConfiguration
      *
      * @param string $name Job name (the key in 'jobs' section)
      * @param array<string, mixed> $raw The job definition array
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates type, custom keys, and tool arguments
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates type, execution mode, custom keys, and tool arguments
+     * @SuppressWarnings(PHPMD.NPathComplexity) Each validation check adds an independent early-return branch
      */
     public static function fromArray(
         string $name,
@@ -63,6 +66,13 @@ class JobConfiguration
         $config = $raw;
         unset($config['type']);
 
+        if (array_key_exists('execution', $config)) {
+            if (!is_string($config['execution']) || !ExecutionMode::isValid($config['execution'])) {
+                $result->addError("Job '$name': 'execution' must be one of: " . implode(', ', ExecutionMode::ALL) . ".");
+                return null;
+            }
+        }
+
         if ($type === 'custom') {
             self::validateCustomJobKeys($name, $config, $result);
         } elseif ($jobRegistry !== null) {
@@ -92,7 +102,7 @@ class JobConfiguration
 
         $knownKeys = array_merge(
             array_keys($argumentMap),
-            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable']
+            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution']
         );
 
         foreach ($config as $key => $value) {
@@ -173,7 +183,7 @@ class JobConfiguration
      */
     private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
     {
-        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable'];
+        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {
@@ -228,5 +238,10 @@ class JobConfiguration
     public function getPaths(): array
     {
         return $this->config['paths'] ?? [];
+    }
+
+    public function getExecution(): ?string
+    {
+        return $this->config['execution'] ?? null;
     }
 }

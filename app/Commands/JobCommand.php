@@ -9,6 +9,7 @@ use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\ExecutionContext;
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
@@ -24,6 +25,7 @@ class JobCommand extends Command
                             {--format= : Output format (text, json, junit)}
                             {--dry-run : Show commands without executing}
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
+                            {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a single job defined in the configuration file';
@@ -76,11 +78,21 @@ class JobCommand extends Command
 
             $this->applyFormat($this->executor);
 
-            $context = $this->option('fast')
-                ? ExecutionContext::forFastMode($this->getLaravel()->make(FileUtilsInterface::class))
-                : null;
+            $fileUtils = $this->getLaravel()->make(FileUtilsInterface::class);
 
-            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
+            $invocationMode = null;
+            if ($this->option('fast')) {
+                $invocationMode = ExecutionMode::FAST;
+            } elseif ($this->option('fast-branch')) {
+                $invocationMode = ExecutionMode::FAST_BRANCH;
+            }
+
+            $mainBranch = $config->getGlobalOptions()->getMainBranch()
+                ?? $fileUtils->detectMainBranch();
+
+            $context = ExecutionContext::create($fileUtils, $mainBranch);
+
+            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context, $invocationMode);
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
             $this->renderFormattedResult($result);

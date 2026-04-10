@@ -257,7 +257,8 @@ Crear ficheros PHP en `/var/www/html3/` con la config de prueba.
 | `--dry-run` en flow | `flow qa --dry-run` | Muestra nombre + comando, no ejecuta. Time=0ms |
 | `--dry-run` en job | `job phpcs_src --dry-run` | Muestra comando, no ejecuta |
 | `--fail-fast` | `flow qa --fail-fast` | Se detiene en primer fallo, restantes "skipped by fail-fast" |
-| `--fast` | `flow qa --fast` | `$GITHOOKS_STAGED_FILES` se pasa a custom jobs |
+| `--fast` | `flow qa --fast` | Jobs acelerables analizan solo staged files |
+| `--fast-branch` | `flow qa --fast-branch` | Jobs acelerables analizan diff de rama vs principal |
 | `--monitor` | `flow qa --monitor` | Muestra "Thread monitor: peak ~N threads (budget: M)" |
 | `--processes` | `flow qa --processes=4` | Cambia paralelismo |
 | `--config` | Cualquier comando con --config=path | Usa config indicada |

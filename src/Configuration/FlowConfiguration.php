@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Hooks;
 
 class FlowConfiguration
@@ -15,14 +16,17 @@ class FlowConfiguration
 
     private ?OptionsConfiguration $options;
 
+    private ?string $execution;
+
     /**
      * @param string[] $jobs
      */
-    public function __construct(string $name, array $jobs, ?OptionsConfiguration $options = null)
+    public function __construct(string $name, array $jobs, ?OptionsConfiguration $options = null, ?string $execution = null)
     {
         $this->name = $name;
         $this->jobs = $jobs;
         $this->options = $options;
+        $this->execution = $execution;
     }
 
     /**
@@ -31,6 +35,8 @@ class FlowConfiguration
      * @param string $name Flow name (the key in 'flows' section)
      * @param array<string, mixed>  $raw  The flow definition array
      * @param string[] $availableJobNames All job names defined in the 'jobs' section
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Validates name, jobs, options, and execution mode
+     * @SuppressWarnings(PHPMD.NPathComplexity) Each optional config key adds an independent validation branch
      */
     public static function fromArray(
         string $name,
@@ -62,7 +68,16 @@ class FlowConfiguration
             $options = OptionsConfiguration::fromArray($raw['options'], $result);
         }
 
-        return new self($name, $raw['jobs'], $options);
+        $execution = null;
+        if (array_key_exists('execution', $raw)) {
+            if (!is_string($raw['execution']) || !ExecutionMode::isValid($raw['execution'])) {
+                $result->addError("Flow '$name': 'execution' must be one of: " . implode(', ', ExecutionMode::ALL) . ".");
+                return null;
+            }
+            $execution = $raw['execution'];
+        }
+
+        return new self($name, $raw['jobs'], $options, $execution);
     }
 
     public function getName(): string
@@ -79,5 +94,10 @@ class FlowConfiguration
     public function getOptions(): ?OptionsConfiguration
     {
         return $this->options;
+    }
+
+    public function getExecution(): ?string
+    {
+        return $this->execution;
     }
 }

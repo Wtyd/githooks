@@ -51,10 +51,11 @@ class HookRunner
             return [];
         }
 
-        // Auto-detect fast mode for pre-commit hooks
-        $context = ($event === 'pre-commit')
-            ? ExecutionContext::forFastMode($this->fileUtils)
-            : null;
+        // Create lazy context — does not force any execution mode.
+        // Execution mode is determined per-job via config (HookRef, flow, job).
+        $mainBranch = $config->getGlobalOptions()->getMainBranch()
+            ?? $this->fileUtils->detectMainBranch();
+        $context = ExecutionContext::create($this->fileUtils, $mainBranch);
 
         $results = [];
         $skippedByConditions = 0;
@@ -86,17 +87,19 @@ class HookRunner
     private function executeRef(HookRef $ref, ConfigurationResult $config, ?ExecutionContext $context): ?FlowResult
     {
         $target = $ref->getTarget();
+        $invocationMode = $ref->getExecution();
+
         $flow = $config->getFlow($target);
 
         if ($flow !== null) {
-            $plan = $this->preparer->prepare($flow, $config, $context);
+            $plan = $this->preparer->prepare($flow, $config, $context, [], [], $invocationMode);
             return $this->executor->execute($plan);
         }
 
         $jobConfig = $config->getJob($target);
 
         if ($jobConfig !== null) {
-            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context);
+            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context, $invocationMode);
             return $this->executor->execute($plan);
         }
 

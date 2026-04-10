@@ -32,4 +32,21 @@ interface FileUtilsInterface
      * @return string Current git branch name, or empty string if not in a git repo.
      */
     public function getCurrentBranch(): string;
+
+    /**
+     * Get files that differ between the current branch and the main branch.
+     * Includes staged files (union, deduplicated).
+     *
+     * @return string[]|null Null if unable to compute (shallow clone, missing ref, etc.)
+     */
+    public function getBranchDiffFiles(string $mainBranch): ?array;
+
+    /**
+     * Auto-detect the main branch name.
+     * Checks CI env vars (GITHUB_BASE_REF, CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
+     * BITBUCKET_PR_DESTINATION_BRANCH), then git symbolic-ref, then tries master/main.
+     *
+     * @return string|null Null if unable to detect.
+     */
+    public function detectMainBranch(): ?string;
 }

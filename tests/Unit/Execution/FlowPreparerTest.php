@@ -11,6 +11,7 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\ExecutionContext;
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
@@ -372,5 +373,341 @@ class FlowPreparerTest extends TestCase
         // accelerable=false overrides SUPPORTS_FAST=true, so phpstan runs with full paths
         $this->assertCount(1, $plan->getJobs());
         $this->assertStringContainsString('src', $plan->getJobs()[0]->buildCommand());
+    }
+
+    // ========================================================================
+    // Execution mode resolution hierarchy tests
+    // (TDD — will fail until FlowPreparer accepts invocationMode parameter)
+    // ========================================================================
+
+    /** @test */
+    public function invocation_mode_overrides_job_and_flow_execution()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths'     => ['src'],
+                'execution' => 'full', // job says full
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        // invocationMode='fast' should override job's execution='full'
+        $plan = $this->preparer->prepare($flow, $config, $context, [], [], ExecutionMode::FAST);
+
+        $this->assertCount(1, $plan->getJobs());
+        $command = $plan->getJobs()[0]->buildCommand();
+        $this->assertStringContainsString('src/Foo.php', $command);
+    }
+
+    /** @test */
+    public function job_execution_overrides_flow_execution_when_no_invocation()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths'     => ['src'],
+                'execution' => 'full', // job says full
+            ]),
+        ];
+
+        // Flow with execution='fast' (once FlowConfiguration supports it)
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['tests/FooTest.php']); // no files in src/
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        // No invocation mode. Job says full → runs with full paths even if no staged files match
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertStringContainsString('src', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function default_mode_is_full_when_nothing_configured()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths' => ['src'],
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        // No context, no invocation mode, no execution in config → full mode
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertStringContainsString('src', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function mixed_execution_modes_in_same_flow()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths'     => ['src'],
+                'execution' => 'fast',
+            ]),
+            'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'     => ['src'],
+                'execution' => 'full',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src', 'phpcs_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['tests/FooTest.php']); // no files in src/
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        // phpstan_src (fast): no staged files in src/ → skipped
+        // phpcs_src (full): runs with full paths
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertInstanceOf(PhpcsJob::class, $plan->getJobs()[0]);
+    }
+
+    /** @test */
+    public function fast_branch_mode_uses_branch_diff_files()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths'     => ['src'],
+                'execution' => 'fast-branch',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles([]); // nothing staged
+        $fileUtils->setBranchDiffFiles(['src/OldChange.php']); // branch has changes
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/OldChange.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertStringContainsString('src/OldChange.php', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function fast_branch_fallback_to_full_when_diff_fails()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths'     => ['src'],
+                'execution' => 'fast-branch',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $fallbackValidation = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['fast-branch-fallback' => 'full'], $fallbackValidation);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $options,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setBranchDiffFiles(null); // diff failed
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        // Fallback to full → job runs with original paths
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertStringContainsString('src', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function fast_branch_fallback_to_fast_uses_staged_files()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths'     => ['src'],
+                'execution' => 'fast-branch',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $fallbackValidation = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['fast-branch-fallback' => 'fast'], $fallbackValidation);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $options,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setBranchDiffFiles(null); // diff failed
+        $fileUtils->setModifiedfiles(['src/Staged.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Staged.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        // Fallback to fast → uses staged files
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertStringContainsString('src/Staged.php', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function fast_branch_fallback_to_fast_skips_job_when_no_staged_match()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'paths'     => ['src'],
+                'execution' => 'fast-branch',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $fallbackValidation = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['fast-branch-fallback' => 'fast'], $fallbackValidation);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $options,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setBranchDiffFiles(null); // diff failed
+        $fileUtils->setModifiedfiles(['tests/FooTest.php']); // no files in src/
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        // Fallback to fast, but no staged files in src/ → skipped
+        $this->assertCount(0, $plan->getJobs());
+        $this->assertNotEmpty($validation->getWarnings());
+    }
+
+    /** @test */
+    public function non_accelerable_job_runs_full_regardless_of_execution_mode()
+    {
+        $jobs = [
+            'phpunit_tests' => new JobConfiguration('phpunit_tests', 'phpunit', [
+                'configuration' => 'phpunit.xml',
+                'execution'     => 'fast',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpunit_tests']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        // phpunit is not accelerable, runs regardless of execution mode
+        $this->assertCount(1, $plan->getJobs());
+    }
+
+    /** @test */
+    public function single_job_respects_invocation_mode()
+    {
+        $jobConfig = new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]);
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $plan = $this->preparer->prepareSingleJob($jobConfig, new OptionsConfiguration(), $context, ExecutionMode::FAST);
+
+        $this->assertCount(1, $plan->getJobs());
+        $command = $plan->getJobs()[0]->buildCommand();
+        $this->assertStringContainsString('src/Foo.php', $command);
     }
 }

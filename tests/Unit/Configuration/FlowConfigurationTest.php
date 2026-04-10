@@ -84,4 +84,83 @@ class FlowConfigurationTest extends TestCase
         $this->assertNotEmpty($result->getWarnings());
         $this->assertStringContainsString('nonexistent', $result->getWarnings()[0]);
     }
+
+    // ========================================================================
+    // Execution mode (TDD — will fail until implementation exists)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_flow_with_fast_execution()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('lint', [
+            'jobs'      => ['phpcs_src'],
+            'execution' => 'fast',
+        ], ['phpcs_src'], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('fast', $flow->getExecution());
+    }
+
+    /** @test */
+    public function it_parses_flow_with_fast_branch_execution()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('lint', [
+            'jobs'      => ['phpcs_src'],
+            'execution' => 'fast-branch',
+        ], ['phpcs_src'], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('fast-branch', $flow->getExecution());
+    }
+
+    /** @test */
+    public function it_parses_flow_with_full_execution()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('lint', [
+            'jobs'      => ['phpcs_src'],
+            'execution' => 'full',
+        ], ['phpcs_src'], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('full', $flow->getExecution());
+    }
+
+    /** @test */
+    public function it_defaults_execution_to_null()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('lint', [
+            'jobs' => ['phpcs_src'],
+        ], ['phpcs_src'], $result);
+
+        $this->assertNull($flow->getExecution());
+    }
+
+    /** @test */
+    public function it_reports_error_for_invalid_execution_mode()
+    {
+        $result = new ValidationResult();
+        FlowConfiguration::fromArray('lint', [
+            'jobs'      => ['phpcs_src'],
+            'execution' => 'turbo',
+        ], ['phpcs_src'], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('execution', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function execution_does_not_trigger_unknown_key_warning()
+    {
+        $result = new ValidationResult();
+        FlowConfiguration::fromArray('lint', [
+            'jobs'      => ['phpcs_src'],
+            'execution' => 'full',
+        ], ['phpcs_src'], $result);
+
+        $this->assertEmpty($result->getWarnings());
+    }
 }

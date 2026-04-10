@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
+use Wtyd\GitHooks\Execution\ExecutionMode;
+
 /**
  * A reference from a hook event to a flow or job, with optional execution conditions.
  */
@@ -23,6 +25,8 @@ class HookRef
     /** @var string[] */
     private array $excludeFiles;
 
+    private ?string $execution;
+
     /**
      * @param string[] $onlyOnBranches
      * @param string[] $excludeOnBranches
@@ -34,13 +38,15 @@ class HookRef
         array $onlyOnBranches = [],
         array $onlyFiles = [],
         array $excludeFiles = [],
-        array $excludeOnBranches = []
+        array $excludeOnBranches = [],
+        ?string $execution = null
     ) {
         $this->target = $target;
         $this->onlyOnBranches = $onlyOnBranches;
         $this->excludeOnBranches = $excludeOnBranches;
         $this->onlyFiles = $onlyFiles;
         $this->excludeFiles = $excludeFiles;
+        $this->execution = $execution;
     }
 
     /**
@@ -87,14 +93,23 @@ class HookRef
             $excludeFiles = is_array($raw['exclude-files']) ? $raw['exclude-files'] : [$raw['exclude-files']];
         }
 
-        $knownKeys = ['flow', 'job', 'only-on', 'exclude-on', 'only-files', 'exclude-files'];
+        $execution = null;
+        if (isset($raw['execution'])) {
+            if (!is_string($raw['execution']) || !ExecutionMode::isValid($raw['execution'])) {
+                $result->addError("Hook ref for '$target': 'execution' must be one of: " . implode(', ', ExecutionMode::ALL) . ".");
+                return null;
+            }
+            $execution = $raw['execution'];
+        }
+
+        $knownKeys = ['flow', 'job', 'only-on', 'exclude-on', 'only-files', 'exclude-files', 'execution'];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Unknown key '$key' in hook ref for '$target'.");
             }
         }
 
-        return new self($target, $onlyOn, $onlyFiles, $excludeFiles, $excludeOn);
+        return new self($target, $onlyOn, $onlyFiles, $excludeFiles, $excludeOn, $execution);
     }
 
     public function getTarget(): string
@@ -124,6 +139,11 @@ class HookRef
     public function getExcludeFiles(): array
     {
         return $this->excludeFiles;
+    }
+
+    public function getExecution(): ?string
+    {
+        return $this->execution;
     }
 
     public function hasConditions(): bool

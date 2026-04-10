@@ -44,4 +44,29 @@ class FileUtilsFake extends FileUtils
     {
         $this->currentBranch = $branch;
     }
+
+    /** @var string[]|null */
+    protected ?array $branchDiffFiles = null;
+
+    protected ?string $detectedMainBranch = null;
+
+    public function setBranchDiffFiles(?array $files): void
+    {
+        $this->branchDiffFiles = $files;
+    }
+
+    public function getBranchDiffFiles(string $mainBranch): ?array
+    {
+        return $this->branchDiffFiles;
+    }
+
+    public function setDetectedMainBranch(?string $branch): void
+    {
+        $this->detectedMainBranch = $branch;
+    }
+
+    public function detectMainBranch(): ?string
+    {
+        return $this->detectedMainBranch;
+    }
 }

@@ -278,6 +278,128 @@ class HookConfigurationTest extends TestCase
         $this->assertStringContainsString('hooks.command', $result->getErrors()[0]);
     }
 
+    // ========================================================================
+    // HookRef execution mode (TDD — will fail until implementation exists)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_hookref_with_fast_execution()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    ['flow' => 'qa', 'execution' => 'fast'],
+                ],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertEquals('fast', $refs[0]->getExecution());
+    }
+
+    /** @test */
+    public function it_parses_hookref_with_fast_branch_execution()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    ['flow' => 'qa', 'execution' => 'fast-branch'],
+                ],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertEquals('fast-branch', $refs[0]->getExecution());
+    }
+
+    /** @test */
+    public function hookref_without_execution_returns_null()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            ['pre-commit' => [['flow' => 'qa']]],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertNull($refs[0]->getExecution());
+    }
+
+    /** @test */
+    public function hookref_execution_does_not_trigger_unknown_key_warning()
+    {
+        $result = new ValidationResult();
+        HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    ['flow' => 'qa', 'execution' => 'fast'],
+                ],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $executionWarnings = array_filter($result->getWarnings(), function (string $w) {
+            return strpos($w, 'execution') !== false;
+        });
+        $this->assertEmpty($executionWarnings);
+    }
+
+    /** @test */
+    public function string_hookref_has_null_execution()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            ['pre-commit' => ['qa']],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertNull($refs[0]->getExecution());
+    }
+
+    /** @test */
+    public function hookref_with_execution_and_conditions_works()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [
+                    [
+                        'flow'      => 'qa',
+                        'execution' => 'fast-branch',
+                        'only-on'   => ['main'],
+                    ],
+                ],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertFalse($result->hasErrors());
+        $refs = $hooks->resolve('pre-commit');
+        $this->assertEquals('fast-branch', $refs[0]->getExecution());
+        $this->assertEquals(['main'], $refs[0]->getOnlyOnBranches());
+        $this->assertTrue($refs[0]->hasConditions());
+    }
+
     /**
      * @param string[] $expected
      * @param HookRef[] $refs
