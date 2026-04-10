@@ -90,7 +90,7 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /** @test */
-    function it_includes_deleted_file_in_modified_files()
+    function it_excludes_deleted_file_from_modified_files()
     {
         $fileBuilder = new PhpFileBuilder('ToDelete');
         $filename = self::$gitFilesPathTest . '/ToDelete.php';
@@ -104,7 +104,7 @@ class FileUtilsTest extends SystemTestCase
         $gitFiles = $this->app->make(FileUtils::class);
         $modifiedFiles = $gitFiles->getModifiedFiles();
 
-        $this->assertContains($this->deletePathPrefix($filename), $modifiedFiles);
+        $this->assertNotContains($this->deletePathPrefix($filename), $modifiedFiles);
     }
 
     /** @test */
