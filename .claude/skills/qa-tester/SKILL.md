@@ -28,6 +28,7 @@ Antes de empezar, preguntar:
 
 1. **Versión a probar**: `2.x` o `3.x` (ej: `3.0.0`)
 2. **Versión de PHP**: `7.4`, `8.0`, `8.1`, `8.2`, `8.3`, `8.4`, `8.5`...
+3. **Build**: ¿Usar la build actual o construir una nueva?
 
 Con estos datos se determina:
 
@@ -40,7 +41,38 @@ Con estos datos se determina:
 | Abreviatura en tests | `GH` = `phpX.Y vendor/bin/githooks` |
 | Post-update necesario | Sí si PHP < 8.1, No si PHP >= 8.1 |
 
-**Prerequisito**: la rama `rc-{versión}` en html1 debe tener los builds construidos (`builds/githooks` y `builds/php7.4/githooks`). Si no existen, construirlos primero con `phpX.Y githooks app:pre-build php && phpX.Y githooks app:build` o indicar al usuario que lance el workflow de release.
+### Gestión de la build
+
+Los binarios se encuentran en:
+- `builds/githooks` — para PHP 8.1+
+- `builds/php7.4/githooks` — para PHP 7.4, 8.0
+
+**Verificar si la build existe y está actualizada:**
+
+```bash
+ls -la builds/githooks builds/php7.4/githooks   # ¿existen?
+git log --oneline -1 -- builds/                  # ¿cuándo se buildeó?
+git log --oneline -1                             # ¿último commit del código?
+```
+
+Si la build no existe o está desactualizada respecto al código, preguntar al usuario:
+
+> Los builds están desactualizados (código más reciente que la build). ¿Quieres que construya una build nueva antes de probar?
+
+**Si el usuario quiere build nueva**, construir con la versión de PHP del tier correspondiente:
+
+| PHP para tests | PHP para build | Comando |
+|---|---|---|
+| 7.4, 8.0 | `php7.4` | `php7.4 githooks app:pre-build php && php7.4 githooks app:build` |
+| 8.1, 8.2, 8.3, 8.4, 8.5 | `php8.1` | `php8.1 githooks app:pre-build php && php8.1 githooks app:build` |
+
+**Importante**: el build elimina las dev dependencies de html1. Tras el build, restaurarlas:
+
+```bash
+git checkout -- composer.json && php{X.Y} tools/composer update
+```
+
+**Si el usuario quiere usar la build actual**, verificar que los binarios existen. Si no existen, avisar y preguntar de nuevo.
 
 ## Paso 1: Preparar el entorno de pruebas
 
