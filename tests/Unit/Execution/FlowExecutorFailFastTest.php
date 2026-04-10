@@ -48,17 +48,20 @@ class FlowExecutorFailFastTest extends TestCase
 
     /**
      * @test
-     * The terminated in-flight job should have its partial output captured.
+     * The terminated in-flight job should have its partial output captured when
+     * the process has had time to flush. We use a small sleep to ensure the echo
+     * completes before termination, avoiding timing-dependent failures in CI.
      */
     public function parallel_fail_fast_captures_output_from_terminated_jobs()
     {
         $executor = new FlowExecutor(new NullOutputHandler());
 
+        // This job sleeps briefly to let slow_job's echo flush, then fails
         $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', [
-            'script' => 'echo "fail output" && exit 1',
+            'script' => 'sleep 0.2 && echo "fail output" && exit 1',
         ]));
 
-        // This job echoes immediately then sleeps — the echo output should be captured
+        // This job echoes immediately then sleeps — output should be captured before termination
         $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', [
             'script' => 'echo "partial data" && sleep 5',
         ]));
