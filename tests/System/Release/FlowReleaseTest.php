@@ -256,6 +256,58 @@ class FlowReleaseTest extends ReleaseTestCase
     }
 
     /** @test */
+    public function parallel_fail_fast_reports_in_flight_jobs()
+    {
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 2])
+            ->setV3Flows(['qa' => ['jobs' => ['fast_fail', 'slow_job', 'queued_job']]])
+            ->setV3Jobs([
+                'fast_fail' => ['type' => 'custom', 'script' => 'echo "fast output" && exit 1'],
+                'slow_job'  => ['type' => 'custom', 'script' => 'echo "slow output" && sleep 5'],
+                'queued_job' => ['type' => 'custom', 'script' => 'echo "should not run"'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --fail-fast --config=$this->configPath 2>&1", $exitCode);
+
+        $output = $this->getActualOutput();
+
+        $this->assertNotEquals(0, $exitCode);
+        // The in-flight job (slow_job) must appear in the output, not vanish
+        $this->assertStringContainsString('fast_fail', $output);
+        $this->assertStringContainsString('slow_job', $output);
+        // The queued job should be skipped
+        $this->assertStringContainsString('skipped by fail-fast', $output);
+    }
+
+    /** @test */
+    public function parallel_fail_fast_json_includes_in_flight_jobs()
+    {
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 2])
+            ->setV3Flows(['qa' => ['jobs' => ['fast_fail', 'slow_job']]])
+            ->setV3Jobs([
+                'fast_fail' => ['type' => 'custom', 'script' => 'echo "fail" && exit 1'],
+                'slow_job'  => ['type' => 'custom', 'script' => 'echo "slow" && sleep 5'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --fail-fast --format=json --config=$this->configPath 2>&1", $exitCode);
+
+        $output = $this->getActualOutput();
+        $decoded = json_decode($output, true);
+
+        $this->assertNotNull($decoded, 'Output is not valid JSON: ' . $output);
+        $this->assertCount(2, $decoded['jobs'], 'Both jobs (failed + terminated) must appear in JSON');
+
+        $jobNames = array_column($decoded['jobs'], 'name');
+        $this->assertContains('fast_fail', $jobNames);
+        $this->assertContains('slow_job', $jobNames);
+    }
+
+    /** @test */
     public function it_resolves_job_inheritance_with_extends()
     {
         $this->configurationFileBuilder
