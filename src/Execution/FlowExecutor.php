@@ -179,7 +179,11 @@ class FlowExecutor
                 if ($failFast && !$result->isSuccess()) {
                     $failFastTriggered = true;
                     $this->terminateRunning($running);
-                    // Report skipped: remaining queue + terminated running
+                    // Collect results from terminated in-flight jobs
+                    foreach ($running as $terminatedEntry) {
+                        $results[] = $this->collectResult($terminatedEntry);
+                    }
+                    // Report skipped: remaining queue (never started)
                     foreach ($queue as $skippedJob) {
                         $this->outputHandler->onJobSkipped($skippedJob->getDisplayName(), 'skipped by fail-fast');
                     }
