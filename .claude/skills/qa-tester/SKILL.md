@@ -400,13 +400,37 @@ Las condiciones van en la sección `hooks` como parte del HookRef. Se prueban vi
 
 ```bash
 cd /var/www/html3
+
+# 1. Deshacer hooks de git
 git config --unset core.hooksPath 2>/dev/null
 rm -rf .githooks/ 2>/dev/null
+
+# 2. Limpiar staged + working tree (por si algún test dejó restos)
+git restore --staged . 2>/dev/null
+git checkout -- . 2>/dev/null
+git clean -fd 2>/dev/null
+
+# 3. Volver a la rama base y borrar la de prueba
 git checkout {master|2.x}
 git branch -D {version}-prueba
+
+# 4. Verificar que html3 queda completamente limpio
+git status
 ```
 
+**El paso 4 es obligatorio.** No generar el reporte hasta confirmar que `git status` muestra working tree limpio (sin staged, sin modificados, sin untracked). Si queda algo sucio, limpiarlo antes de continuar.
+
 **Protección**: nunca borrar `master` ni `2.x`.
+
+### Teardown durante los tests
+
+Cuando un test modifica ficheros (ej: `echo >> file && git add file` para probar `only-files`), el teardown inmediato tras ese test debe deshacer **tanto el stage como el working tree**:
+
+```bash
+git restore --staged <file> && git checkout -- <file>
+```
+
+`git checkout -- <file>` solo deshace cambios en working tree, **no limpia el staging area**. Si hiciste `git add`, necesitas `git restore --staged` primero.
 
 ## Formato de reporte
 

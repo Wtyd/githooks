@@ -308,6 +308,44 @@ class FlowReleaseTest extends ReleaseTestCase
     }
 
     /** @test */
+    public function it_accepts_fast_branch_flag()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['check']]])
+            ->setV3Jobs([
+                'check' => ['type' => 'custom', 'script' => '/bin/true'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --fast-branch --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+    }
+
+    /** @test */
+    public function it_skips_accelerable_jobs_in_fast_branch_when_no_diff_files_match()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
+            ->setV3Jobs([
+                'lint_job' => [
+                    'type' => 'custom',
+                    'executablePath' => '/bin/true',
+                    'paths' => ['nonexistent_test_path_xyz'],
+                    'accelerable' => true,
+                ],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --fast-branch --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString('skipped', $this->getActualOutput());
+    }
+
+    /** @test */
     public function it_resolves_job_inheritance_with_extends()
     {
         $this->configurationFileBuilder

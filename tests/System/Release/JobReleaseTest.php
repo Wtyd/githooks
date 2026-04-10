@@ -74,6 +74,22 @@ class JobReleaseTest extends ReleaseTestCase
     }
 
     /** @test */
+    public function it_applies_fast_branch_mode()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
+            ->setV3Jobs([
+                'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks job lint_job --fast-branch --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+    }
+
+    /** @test */
     public function it_exits_with_error_for_undefined_job()
     {
         passthru("$this->githooks job nonexistent --config=$this->configPath 2>&1", $exitCode);
