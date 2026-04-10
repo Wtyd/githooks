@@ -327,6 +327,7 @@ class FlowReleaseTest extends ReleaseTestCase
     public function it_skips_accelerable_jobs_in_fast_branch_when_no_diff_files_match()
     {
         $this->configurationFileBuilder
+            ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 1, 'fast-branch-fallback' => 'fast'])
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
             ->setV3Jobs([
                 'lint_job' => [
