@@ -25,6 +25,8 @@ class ConfigurationResult
     /** @var array<string, mixed>|null Raw config for legacy format bridge */
     private ?array $legacyConfig;
 
+    private ?string $localFilePath = null;
+
     /**
      * @param array<string, JobConfiguration> $jobs
      * @param array<string, FlowConfiguration> $flows
@@ -119,5 +121,15 @@ class ConfigurationResult
     public function getLegacyConfig(): ?array
     {
         return $this->legacyConfig;
+    }
+
+    public function getLocalFilePath(): ?string
+    {
+        return $this->localFilePath;
+    }
+
+    public function setLocalFilePath(?string $localFilePath): void
+    {
+        $this->localFilePath = $localFilePath;
     }
 }

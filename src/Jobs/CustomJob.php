@@ -38,7 +38,14 @@ class CustomJob extends JobAbstract
         $paths = $this->args['paths'] ?? [];
 
         if (!empty($paths)) {
-            $parts = [$this->executable !== '' ? $this->executable : $this->script];
+            if ($this->executable !== '') {
+                $base = $this->getEffectiveExecutable();
+            } else {
+                $base = $this->executablePrefix !== ''
+                    ? $this->executablePrefix . ' ' . $this->script
+                    : $this->script;
+            }
+            $parts = [$base];
             $parts[] = is_array($paths) ? implode(' ', $paths) : $paths;
 
             if (!empty($this->args['otherArguments'])) {
@@ -46,6 +53,10 @@ class CustomJob extends JobAbstract
             }
 
             return implode(' ', $parts);
+        }
+
+        if ($this->executablePrefix !== '') {
+            return $this->executablePrefix . ' ' . $this->script;
         }
 
         return $this->script;

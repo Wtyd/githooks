@@ -14,13 +14,24 @@ class OptionsConfiguration
 
     private string $fastBranchFallback;
 
-    /** @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object — boolean is the natural type */
-    public function __construct(bool $failFast = false, int $processes = 1, ?string $mainBranch = null, string $fastBranchFallback = 'full')
-    {
+    private string $executablePrefix;
+
+    /**
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object — boolean is the natural type
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Value object with one parameter per option
+     */
+    public function __construct(
+        bool $failFast = false,
+        int $processes = 1,
+        ?string $mainBranch = null,
+        string $fastBranchFallback = 'full',
+        string $executablePrefix = ''
+    ) {
         $this->failFast = $failFast;
         $this->processes = $processes;
         $this->mainBranch = $mainBranch;
         $this->fastBranchFallback = $fastBranchFallback;
+        $this->executablePrefix = $executablePrefix;
     }
 
     /**
@@ -70,14 +81,23 @@ class OptionsConfiguration
             }
         }
 
-        $knownKeys = ['fail-fast', 'processes', 'main-branch', 'fast-branch-fallback'];
+        $executablePrefix = '';
+        if (array_key_exists('executable-prefix', $raw)) {
+            if (!is_string($raw['executable-prefix'])) {
+                $result->addError("'executable-prefix' must be a string.");
+            } else {
+                $executablePrefix = $raw['executable-prefix'];
+            }
+        }
+
+        $knownKeys = ['fail-fast', 'processes', 'main-branch', 'fast-branch-fallback', 'executable-prefix'];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Unknown option '$key'. It will be ignored.");
             }
         }
 
-        return new self($failFast, $processes, $mainBranch, $fastBranchFallback);
+        return new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix);
     }
 
     public function isFailFast(): bool
@@ -100,6 +120,11 @@ class OptionsConfiguration
         return $this->fastBranchFallback;
     }
 
+    public function getExecutablePrefix(): string
+    {
+        return $this->executablePrefix;
+    }
+
     public static function defaults(): self
     {
         return new self();
@@ -115,7 +140,8 @@ class OptionsConfiguration
             $failFast !== null ? $failFast : $this->failFast,
             $processes !== null ? $processes : $this->processes,
             $this->mainBranch,
-            $this->fastBranchFallback
+            $this->fastBranchFallback,
+            $this->executablePrefix
         );
     }
 }

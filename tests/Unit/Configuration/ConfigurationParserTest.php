@@ -272,4 +272,332 @@ PHP;
         $this->expectExceptionMessage('Configuration file not found');
         $parser->parse($this->fixturesPath . '/does_not_exist.php');
     }
+
+    // ========================================================================
+    // Local override (githooks.local.php)
+    // ========================================================================
+
+    /** @test */
+    public function it_merges_local_override_replacing_scalar_string()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['main-branch' => 'master'],
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        $local = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['main-branch' => 'develop'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $this->assertEquals('develop', $result->getGlobalOptions()->getMainBranch());
+    }
+
+    /** @test */
+    public function it_merges_local_override_replacing_scalar_int()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['processes' => 1],
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        $local = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['processes' => 8],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $this->assertEquals(8, $result->getGlobalOptions()->getProcesses());
+    }
+
+    /** @test */
+    public function it_merges_local_override_replacing_scalar_bool()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['fail-fast' => false],
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        $local = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['fail-fast' => true],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $this->assertTrue($result->getGlobalOptions()->isFailFast());
+    }
+
+    /** @test */
+    public function it_merges_local_override_adding_new_option()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['processes' => 2],
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        $local = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['executable-prefix' => 'docker exec -i app'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $this->assertEquals('docker exec -i app', $result->getGlobalOptions()->getExecutablePrefix());
+        $this->assertEquals(2, $result->getGlobalOptions()->getProcesses());
+    }
+
+    /** @test */
+    public function it_merges_local_override_replacing_nested_job_property()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src'], 'level' => '5'],
+    ],
+];
+PHP;
+        $local = <<<'PHP'
+<?php
+return [
+    'jobs' => [
+        'phpstan_src' => ['level' => '8'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $job = $result->getJob('phpstan_src');
+        $this->assertNotNull($job);
+        $this->assertEquals('8', $job->getConfig()['level']);
+        $this->assertEquals(['src'], $job->getPaths());
+    }
+
+    /** @test */
+    public function it_merges_local_override_adding_new_job()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src', 'phpcs_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        $local = <<<'PHP'
+<?php
+return [
+    'jobs' => [
+        'phpcs_src' => ['type' => 'phpcs', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $this->assertCount(2, $result->getJobs());
+        $this->assertNotNull($result->getJob('phpstan_src'));
+        $this->assertNotNull($result->getJob('phpcs_src'));
+    }
+
+    /** @test */
+    public function it_merges_local_override_indexed_array_replaces_by_index()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src', 'tests']],
+    ],
+];
+PHP;
+        $local = <<<'PHP'
+<?php
+return [
+    'jobs' => [
+        'phpstan_src' => ['paths' => ['app']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $job = $result->getJob('phpstan_src');
+        // array_replace_recursive replaces by index: index 0 → 'app', index 1 → 'tests' (kept)
+        $this->assertEquals(['app', 'tests'], $job->getPaths());
+    }
+
+    /** @test */
+    public function it_works_without_local_override_file()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $this->assertNull($result->getLocalFilePath());
+    }
+
+    /** @test */
+    public function it_does_not_look_for_local_override_on_yaml_files()
+    {
+        $yml = "flows:\n  qa:\n    jobs:\n      - phpstan_src\njobs:\n  phpstan_src:\n    type: phpstan\n    paths:\n      - src\n";
+        $local = '<?php return ["flows" => ["options" => ["processes" => 99]]];';
+
+        file_put_contents($this->fixturesPath . '/githooks.yml', $yml);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        // Local override should be ignored for YAML files
+        $this->assertNull($result->getLocalFilePath());
+        $this->assertEquals(1, $result->getGlobalOptions()->getProcesses());
+    }
+
+    /** @test */
+    public function it_stores_local_file_path_in_result()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        $local = '<?php return [];';
+
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertNotNull($result->getLocalFilePath());
+        $this->assertStringContainsString('githooks.local.php', $result->getLocalFilePath());
+    }
+
+    /** @test */
+    public function it_reports_null_local_path_when_no_local_file()
+    {
+        $main = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertNull($result->getLocalFilePath());
+    }
 }

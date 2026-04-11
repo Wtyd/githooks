@@ -41,6 +41,7 @@ class ConfigurationParser
     {
         $filePath = $this->resolveFilePath($configFile);
         $raw = $this->readFile($filePath);
+        [$raw, $localFilePath] = $this->mergeLocalOverride($raw, $filePath);
 
         if ($this->isLegacyFormat($raw)) {
             $result = new ValidationResult();
@@ -49,10 +50,14 @@ class ConfigurationParser
                 'Legacy configuration format detected (Options/Tools). '
                 . "Use 'githooks conf:init' to generate the new hooks/flows/jobs format."
             );
-            return ConfigurationResult::legacy($raw, $filePath, $result);
+            $configResult = ConfigurationResult::legacy($raw, $filePath, $result);
+            $configResult->setLocalFilePath($localFilePath);
+            return $configResult;
         }
 
-        return $this->parseV3($raw, $filePath);
+        $configResult = $this->parseV3($raw, $filePath);
+        $configResult->setLocalFilePath($localFilePath);
+        return $configResult;
     }
 
     /** @param array<string, mixed> $config */
@@ -307,6 +312,32 @@ class ConfigurationParser
         }
 
         throw new ConfigurationFileNotFoundException();
+    }
+
+    /**
+     * Look for a .local.php sibling of the main config file and merge it.
+     *
+     * @param array<string, mixed> $raw Main config array
+     * @return array{0: array<string, mixed>, 1: string|null} Merged config and local file path
+     */
+    private function mergeLocalOverride(array $raw, string $filePath): array
+    {
+        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+        if ($extension !== 'php') {
+            return [$raw, null];
+        }
+
+        $localPath = substr($filePath, 0, -4) . '.local.php';
+        if (!file_exists($localPath)) {
+            return [$raw, null];
+        }
+
+        $localRaw = $this->readFile($localPath);
+
+        /** @var array<string, mixed> */
+        $merged = array_replace_recursive($raw, $localRaw);
+
+        return [$merged, $localPath];
     }
 
     private function addYamlDeprecationWarning(string $filePath, ValidationResult $result): void

@@ -17,7 +17,7 @@ class ScriptJob extends JobAbstract
 
     public function buildCommand(): string
     {
-        $command = $this->executable;
+        $command = $this->getEffectiveExecutable();
 
         if (!empty($this->args['otherArguments'])) {
             $command .= ' ' . $this->args['otherArguments'];
