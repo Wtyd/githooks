@@ -336,4 +336,57 @@ class JobConfigurationTest extends TestCase
             'fast-branch' => ['fast-branch'],
         ];
     }
+
+    // ========================================================================
+    // executable-prefix as known key
+    // ========================================================================
+
+    /** @test */
+    public function executable_prefix_is_a_known_key_for_tool_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type' => 'phpstan',
+            'paths' => ['src'],
+            'executable-prefix' => 'docker exec -i app',
+        ], $this->registry, $result, new JobRegistry());
+
+        $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
+            return strpos($w, 'executable-prefix') !== false && strpos($w, 'nknown') !== false;
+        });
+        $this->assertEmpty($unknownWarnings);
+    }
+
+    /** @test */
+    public function executable_prefix_null_is_a_known_key_for_tool_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type' => 'phpstan',
+            'paths' => ['src'],
+            'executable-prefix' => null,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
+            return strpos($w, 'executable-prefix') !== false;
+        });
+        $this->assertEmpty($unknownWarnings);
+    }
+
+    /** @test */
+    public function executable_prefix_is_a_known_key_for_custom_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('lint_js', [
+            'type' => 'custom',
+            'script' => 'npm run lint',
+            'executable-prefix' => 'docker exec -i app',
+        ], $this->registry, $result);
+
+        $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
+            return strpos($w, 'executable-prefix') !== false;
+        });
+        $this->assertEmpty($unknownWarnings);
+    }
 }

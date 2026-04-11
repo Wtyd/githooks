@@ -217,4 +217,59 @@ class OptionsConfigurationTest extends TestCase
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings());
     }
+
+    // ========================================================================
+    // executable-prefix option
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_executable_prefix_option()
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'executable-prefix' => 'docker exec -i app',
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEquals('docker exec -i app', $options->getExecutablePrefix());
+    }
+
+    /** @test */
+    public function it_defaults_executable_prefix_to_empty_string()
+    {
+        $options = new OptionsConfiguration();
+
+        $this->assertEquals('', $options->getExecutablePrefix());
+    }
+
+    /** @test */
+    public function it_reports_error_for_non_string_executable_prefix()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray(['executable-prefix' => 123], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('executable-prefix', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function executable_prefix_is_not_an_unknown_key()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray(['executable-prefix' => 'sail exec app'], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings());
+    }
+
+    /** @test */
+    public function with_overrides_preserves_executable_prefix()
+    {
+        $options = new OptionsConfiguration(false, 1, null, 'full', 'docker exec app');
+        $overridden = $options->withOverrides(true, 4);
+
+        $this->assertEquals('docker exec app', $overridden->getExecutablePrefix());
+        $this->assertTrue($overridden->isFailFast());
+        $this->assertEquals(4, $overridden->getProcesses());
+    }
 }

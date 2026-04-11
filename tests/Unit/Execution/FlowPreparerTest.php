@@ -710,4 +710,180 @@ class FlowPreparerTest extends TestCase
         $command = $plan->getJobs()[0]->buildCommand();
         $this->assertStringContainsString('src/Foo.php', $command);
     }
+
+    // ========================================================================
+    // executable-prefix resolution
+    // ========================================================================
+
+    /** @test */
+    public function it_applies_global_executable_prefix_to_all_jobs()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executablePath' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+            ]),
+            'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', [
+                'executablePath' => 'vendor/bin/phpcs',
+                'paths' => ['src'],
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src', 'phpcs_src']);
+
+        $options = new OptionsConfiguration(false, 1, null, 'full', 'docker exec -i app');
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $options,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertCount(2, $plan->getJobs());
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpcs', $plan->getJobs()[1]->buildCommand());
+    }
+
+    /** @test */
+    public function it_applies_flow_executable_prefix_over_global()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executablePath' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+            ]),
+        ];
+
+        $flowOptions = new OptionsConfiguration(false, 1, null, 'full', 'flow-prefix');
+        $flow = new FlowConfiguration('qa', ['phpstan_src'], $flowOptions);
+
+        $globalOptions = new OptionsConfiguration(false, 1, null, 'full', 'global-prefix');
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $globalOptions,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertStringStartsWith('flow-prefix vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function it_does_not_apply_prefix_when_option_is_empty()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executablePath' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertStringStartsWith('vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function it_respects_per_job_executable_prefix_override()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executablePath' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+            ]),
+            'lint_js' => new JobConfiguration('lint_js', 'custom', [
+                'script' => 'npx eslint src/',
+                'executable-prefix' => 'php7.4',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src', 'lint_js']);
+
+        $options = new OptionsConfiguration(false, 1, null, 'full', 'docker exec -i app');
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $options,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertCount(2, $plan->getJobs());
+        // phpstan uses global prefix
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+        // lint_js uses per-job prefix
+        $this->assertStringStartsWith('php7.4 npx eslint', $plan->getJobs()[1]->buildCommand());
+    }
+
+    /** @test */
+    public function it_respects_per_job_executable_prefix_null_opt_out()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executablePath' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+                'executable-prefix' => null,
+            ]),
+            'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', [
+                'executablePath' => 'vendor/bin/phpcs',
+                'paths' => ['src'],
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src', 'phpcs_src']);
+
+        $options = new OptionsConfiguration(false, 1, null, 'full', 'docker exec -i app');
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $options,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertCount(2, $plan->getJobs());
+        // phpstan has explicit null → no prefix
+        $this->assertStringStartsWith('vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+        // phpcs uses global prefix
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpcs', $plan->getJobs()[1]->buildCommand());
+    }
+
+    /** @test */
+    public function it_applies_executable_prefix_to_single_job()
+    {
+        $jobConfig = new JobConfiguration('phpstan_src', 'phpstan', [
+            'executablePath' => 'vendor/bin/phpstan',
+            'paths' => ['src'],
+        ]);
+
+        $options = new OptionsConfiguration(false, 1, null, 'full', 'docker exec -i app');
+        $plan = $this->preparer->prepareSingleJob($jobConfig, $options);
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+    }
 }

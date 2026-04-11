@@ -66,7 +66,9 @@ class FlowPreparer
                 continue; // skipped by execution mode filtering
             }
 
-            $jobs[] = $this->jobRegistry->create($jobConfig);
+            $job = $this->jobRegistry->create($jobConfig);
+            $this->applyExecutablePrefix($job, $jobConfig, $options);
+            $jobs[] = $job;
         }
 
         return new FlowPlan($flow->getName(), $jobs, $options, $context);
@@ -92,6 +94,7 @@ class FlowPreparer
         $jobConfig = $this->applyExecutionModeSingleJob($jobConfig, $effectiveInvocation, $context, $options);
 
         $job = $this->jobRegistry->create($jobConfig);
+        $this->applyExecutablePrefix($job, $jobConfig, $options);
         return new FlowPlan($jobConfig->getName(), [$job], $options, $context);
     }
 
@@ -218,5 +221,31 @@ class FlowPreparer
         }
 
         return $jobConfig->withPaths($filteredFiles);
+    }
+
+    /**
+     * Resolve and apply executable prefix to a job.
+     * Priority: per-job > options (flow-level or global).
+     */
+    private function applyExecutablePrefix(
+        JobAbstract $job,
+        JobConfiguration $jobConfig,
+        OptionsConfiguration $options
+    ): void {
+        $jobRawConfig = $jobConfig->getConfig();
+
+        if (array_key_exists('executable-prefix', $jobRawConfig)) {
+            $jobPrefix = $jobRawConfig['executable-prefix'];
+            if (is_string($jobPrefix) && $jobPrefix !== '') {
+                $job->applyExecutablePrefix($jobPrefix);
+            }
+            // If null or empty string: explicit opt-out, don't apply any prefix
+            return;
+        }
+
+        $globalPrefix = $options->getExecutablePrefix();
+        if ($globalPrefix !== '') {
+            $job->applyExecutablePrefix($globalPrefix);
+        }
     }
 }

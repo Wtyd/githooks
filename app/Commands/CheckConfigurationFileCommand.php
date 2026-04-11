@@ -85,6 +85,9 @@ class CheckConfigurationFileCommand extends Command
     protected function handleV3(ConfigurationResult $config): int
     {
         $this->printer->info('Configuration file: ' . $config->getFilePath());
+        if ($config->getLocalFilePath() !== null) {
+            $this->printer->info('Local override: ' . $config->getLocalFilePath());
+        }
         $this->line('');
 
         $hasErrors = false;
@@ -100,13 +103,14 @@ class CheckConfigurationFileCommand extends Command
 
         // Options table
         $options = $config->getGlobalOptions();
-        $this->table(
-            ['Option', 'Value'],
-            [
-                ['processes', (string) $options->getProcesses()],
-                ['fail-fast', $options->isFailFast() ? 'true' : 'false'],
-            ]
-        );
+        $optionRows = [
+            ['processes', (string) $options->getProcesses()],
+            ['fail-fast', $options->isFailFast() ? 'true' : 'false'],
+        ];
+        if ($options->getExecutablePrefix() !== '') {
+            $optionRows[] = ['executable-prefix', $options->getExecutablePrefix()];
+        }
+        $this->table(['Option', 'Value'], $optionRows);
 
         // Hooks table
         $hooks = $config->getHooks();

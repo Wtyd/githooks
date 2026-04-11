@@ -41,6 +41,8 @@ abstract class JobAbstract
 
     protected bool $failFast;
 
+    protected string $executablePrefix = '';
+
     protected ?ExecutionContext $context = null;
 
     public function __construct(JobConfiguration $config)
@@ -60,6 +62,20 @@ abstract class JobAbstract
 
     public function getExecutable(): string
     {
+        return $this->executable;
+    }
+
+    public function applyExecutablePrefix(string $prefix): void
+    {
+        $this->executablePrefix = $prefix;
+    }
+
+    protected function getEffectiveExecutable(): string
+    {
+        if ($this->executablePrefix !== '') {
+            return $this->executablePrefix . ' ' . $this->executable;
+        }
+
         return $this->executable;
     }
 
@@ -97,7 +113,7 @@ abstract class JobAbstract
      */
     public function buildCommand(): string
     {
-        $parts = [$this->executable];
+        $parts = [$this->getEffectiveExecutable()];
 
         $subcommand = $this->getSubcommand();
         if ($subcommand !== '') {

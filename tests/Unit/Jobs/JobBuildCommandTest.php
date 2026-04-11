@@ -331,4 +331,154 @@ class JobBuildCommandTest extends TestCase
         $this->assertEquals(['src/Foo.php', 'src/Bar.php'], $modified->getPaths());
         $this->assertNotSame($original, $modified);
     }
+
+    // ========================================================================
+    // executable-prefix
+    // ========================================================================
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_phpstan_command()
+    {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'executablePath' => 'vendor/bin/phpstan',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan analyse', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_phpcs_command()
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'executablePath' => 'vendor/bin/phpcs',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpcs', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_phpcbf_command()
+    {
+        $job = new PhpcbfJob(new JobConfiguration('phpcbf_src', 'phpcbf', [
+            'executablePath' => 'vendor/bin/phpcbf',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpcbf', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_phpmd_command()
+    {
+        $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
+            'executablePath' => 'vendor/bin/phpmd',
+            'paths'          => ['src'],
+            'rules'          => 'cleancode',
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpmd', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_phpunit_command()
+    {
+        $job = new PhpunitJob(new JobConfiguration('phpunit', 'phpunit', [
+            'executablePath' => 'vendor/bin/phpunit',
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpunit', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_psalm_command()
+    {
+        $job = new PsalmJob(new JobConfiguration('psalm_src', 'psalm', [
+            'executablePath' => 'vendor/bin/psalm',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('sail exec app');
+
+        $this->assertStringStartsWith('sail exec app vendor/bin/psalm', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_parallel_lint_command()
+    {
+        $job = new ParallelLintJob(new JobConfiguration('lint', 'parallel-lint', [
+            'executablePath' => 'vendor/bin/parallel-lint',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/parallel-lint', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_phpcpd_command()
+    {
+        $job = new PhpcpdJob(new JobConfiguration('cpd', 'phpcpd', [
+            'executablePath' => 'vendor/bin/phpcpd',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpcpd', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_script_job_command()
+    {
+        $job = new ScriptJob(new JobConfiguration('my_script', 'script', [
+            'executablePath' => 'vendor/bin/my-tool',
+            'otherArguments' => '--verbose',
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertEquals('docker exec -i app vendor/bin/my-tool --verbose', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_custom_job_structured_mode()
+    {
+        $job = new CustomJob(new JobConfiguration('eslint_src', 'custom', [
+            'executablePath' => 'eslint',
+            'paths'          => ['src'],
+            'otherArguments' => '--fix',
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertEquals('docker exec -i app eslint src --fix', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_custom_job_legacy_mode()
+    {
+        $job = new CustomJob(new JobConfiguration('lint_js', 'custom', [
+            'script' => 'npm run lint -- --fix',
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertEquals('docker exec -i app npm run lint -- --fix', $job->buildCommand());
+    }
+
+    /** @test */
+    public function empty_executable_prefix_does_not_alter_command()
+    {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'executablePath' => 'vendor/bin/phpstan',
+            'paths'          => ['src'],
+        ]));
+
+        $commandBefore = $job->buildCommand();
+        $job->applyExecutablePrefix('');
+
+        $this->assertEquals($commandBefore, $job->buildCommand());
+    }
 }
