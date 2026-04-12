@@ -14,8 +14,6 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
  * Resolves a hook event to its flows/jobs and executes them in order.
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Branch/file matching logic adds necessary private methods
  */
 class HookRunner
 {
@@ -25,11 +23,14 @@ class HookRunner
 
     private FileUtilsInterface $fileUtils;
 
-    public function __construct(FlowPreparer $preparer, FlowExecutor $executor, FileUtilsInterface $fileUtils)
+    private PatternMatcher $patternMatcher;
+
+    public function __construct(FlowPreparer $preparer, FlowExecutor $executor, FileUtilsInterface $fileUtils, ?PatternMatcher $patternMatcher = null)
     {
         $this->preparer = $preparer;
         $this->executor = $executor;
         $this->fileUtils = $fileUtils;
+        $this->patternMatcher = $patternMatcher ?? new PatternMatcher();
     }
 
     /**
@@ -119,7 +120,7 @@ class HookRunner
         $excludeBranches = $ref->getExcludeOnBranches();
         if (!empty($includeBranches) || !empty($excludeBranches)) {
             $currentBranch = $this->fileUtils->getCurrentBranch();
-            if (!$this->matchesBranch($currentBranch, $includeBranches, $excludeBranches)) {
+            if (!$this->patternMatcher->matchesBranch($currentBranch, $includeBranches, $excludeBranches)) {
                 return false;
             }
         }
@@ -128,124 +129,12 @@ class HookRunner
         $excludePatterns = $ref->getExcludeFiles();
         if (!empty($filePatterns) || !empty($excludePatterns)) {
             $stagedFiles = $this->fileUtils->getModifiedFiles();
-            if (!$this->matchesFiles($stagedFiles, $filePatterns, $excludePatterns)) {
+            if (!$this->patternMatcher->matchesFiles($stagedFiles, $filePatterns, $excludePatterns)) {
                 return false;
             }
         }
 
         return true;
-    }
-
-    /**
-     * @param string[] $includePatterns Branch names or glob patterns for inclusion
-     * @param string[] $excludePatterns Branch names or glob patterns for exclusion (always prevails)
-     */
-    private function matchesBranch(string $branch, array $includePatterns, array $excludePatterns = []): bool
-    {
-        if ($branch === '') {
-            return false;
-        }
-
-        $matched = empty($includePatterns);
-        foreach ($includePatterns as $pattern) {
-            if ($branch === $pattern || fnmatch($pattern, $branch)) {
-                $matched = true;
-                break;
-            }
-        }
-        if (!$matched) {
-            return false;
-        }
-
-        foreach ($excludePatterns as $pattern) {
-            if ($branch === $pattern || fnmatch($pattern, $branch)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * @param string[] $files Staged file paths
-     * @param string[] $includePatterns Glob patterns for inclusion (e.g. '*.php', 'src/**')
-     * @param string[] $excludePatterns Glob patterns for exclusion (always prevails over inclusion)
-     */
-    private function matchesFiles(array $files, array $includePatterns, array $excludePatterns = []): bool
-    {
-        foreach ($files as $file) {
-            $matched = empty($includePatterns);
-            foreach ($includePatterns as $pattern) {
-                if ($this->fileMatchesPattern($file, $pattern)) {
-                    $matched = true;
-                    break;
-                }
-            }
-            if (!$matched) {
-                continue;
-            }
-            $excluded = false;
-            foreach ($excludePatterns as $pattern) {
-                if ($this->fileMatchesPattern($file, $pattern)) {
-                    $excluded = true;
-                    break;
-                }
-            }
-            if (!$excluded) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Match a file path against a glob pattern. Supports ** for recursive directory matching.
-     * Without **, uses fnmatch with FNM_PATHNAME (* does not cross /).
-     */
-    private function fileMatchesPattern(string $file, string $pattern): bool
-    {
-        if (strpos($pattern, '**') === false) {
-            return fnmatch($pattern, $file, FNM_PATHNAME);
-        }
-
-        return (bool) preg_match($this->globToRegex($pattern), $file);
-    }
-
-    /**
-     * Convert a glob pattern with double-star support to a regex.
-     *
-     * Supports: double-star between slashes (zero or more dirs), double-star at end
-     * (everything below), single star (anything except /), ? (one char except /).
-     */
-    private function globToRegex(string $pattern): string
-    {
-        $segments = explode('**', $pattern);
-
-        $regexSegments = array_map(function (string $seg): string {
-            return strtr(preg_quote($seg, '#'), [
-                '\\*' => '[^/]*',
-                '\\?' => '[^/]',
-            ]);
-        }, $segments);
-
-        $regex = $regexSegments[0];
-        for ($i = 1, $count = count($regexSegments); $i < $count; $i++) {
-            $right = $regexSegments[$i];
-            $leftEndsSlash = substr($regex, -1) === '/';
-            $rightStartsSlash = isset($right[0]) && $right[0] === '/';
-
-            if ($leftEndsSlash && $rightStartsSlash) {
-                $regex = substr($regex, 0, -1) . '(?:/.+/|/)' . substr($right, 1);
-            } elseif ($leftEndsSlash) {
-                $regex .= '.*' . $right;
-            } elseif ($rightStartsSlash) {
-                $regex .= '(?:.*/)?' . substr($right, 1);
-            } else {
-                $regex .= '.*' . $right;
-            }
-        }
-
-        return '#^' . $regex . '$#';
     }
 
     /**

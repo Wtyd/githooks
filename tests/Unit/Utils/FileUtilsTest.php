@@ -108,4 +108,56 @@ class FileUtilsTest extends ZeroTestCase
 
         $this->assertFalse($fileUtils->directoryContainsFile($directory, $file));
     }
+
+    // ========================================================================
+    // isSameFile tests
+    // ========================================================================
+
+    /** @test */
+    function isSameFile_returns_true_for_identical_paths()
+    {
+        $fileUtils = new FileUtils();
+
+        $this->assertTrue($fileUtils->isSameFile('src/Foo.php', 'src/Foo.php'));
+    }
+
+    /** @test */
+    function isSameFile_returns_false_for_different_paths()
+    {
+        $fileUtils = new FileUtils();
+
+        $this->assertFalse($fileUtils->isSameFile('src/Foo.php', 'src/Bar.php'));
+    }
+
+    /** @test */
+    function isSameFile_strips_root_path_prefix_from_first_file()
+    {
+        $fileUtils = new FileUtils();
+
+        $this->assertTrue($fileUtils->isSameFile('./src/Foo.php', 'src/Foo.php'));
+    }
+
+    /** @test */
+    function isSameFile_strips_root_path_prefix_from_second_file()
+    {
+        $fileUtils = new FileUtils();
+
+        $this->assertTrue($fileUtils->isSameFile('src/Foo.php', './src/Foo.php'));
+    }
+
+    /** @test */
+    function isSameFile_strips_root_path_prefix_from_both_files()
+    {
+        $fileUtils = new FileUtils();
+
+        $this->assertTrue($fileUtils->isSameFile('./src/Foo.php', './src/Foo.php'));
+    }
+
+    /** @test */
+    function isSameFile_returns_false_when_base_paths_differ_with_root_prefix()
+    {
+        $fileUtils = new FileUtils();
+
+        $this->assertFalse($fileUtils->isSameFile('./src/Foo.php', './tests/Foo.php'));
+    }
 }

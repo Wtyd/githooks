@@ -1,0 +1,148 @@
+site_name: GitHooks
+site_url: https://wtyd.github.io/githooks/
+site_description: >-
+  Standalone CLI tool for managing git hooks and running QA tools in PHP projects.
+  One config file. Every QA tool. Every git hook.
+repo_url: https://github.com/Wtyd/githooks
+repo_name: Wtyd/githooks
+edit_uri: edit/master/docs/
+
+copyright: Copyright &copy; 2024-2026 Wtyd/GitHooks contributors
+
+theme:
+  name: material
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+
+plugins:
+  - search:
+      lang: en
+
+markdown_extensions:
+  # Python Markdown
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+
+  # PyMdownx
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.mark
+  - pymdownx.tilde
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Wtyd/githooks
+  generator: false
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Your First Config: getting-started/first-config.md
+    - Running Your First Hook: getting-started/first-hook.md
+  - Configuration:
+    - configuration/index.md
+    - Hooks: configuration/hooks.md
+    - Flows: configuration/flows.md
+    - Jobs: configuration/jobs.md
+    - Options: configuration/options.md
+    - Configuration File: configuration/file.md
+  - Tools Reference:
+    - tools/index.md
+    - PHPStan: tools/phpstan.md
+    - PHP CodeSniffer: tools/phpcs.md
+    - PHP Mess Detector: tools/phpmd.md
+    - PHPUnit: tools/phpunit.md
+    - Psalm: tools/psalm.md
+    - Parallel Lint: tools/parallel-lint.md
+    - PHP Copy Paste Detector: tools/phpcpd.md
+    - Custom Jobs: tools/custom.md
+  - Execution Modes: execution-modes.md
+  - CLI Reference:
+    - cli/index.md
+    - githooks flow: cli/flow.md
+    - githooks job: cli/job.md
+    - githooks hook: cli/hook.md
+    - githooks status: cli/status.md
+    - githooks conf init: cli/conf-init.md
+    - githooks conf check: cli/conf-check.md
+    - githooks conf migrate: cli/conf-migrate.md
+    - githooks cache clear: cli/cache-clear.md
+    - githooks system info: cli/system-info.md
+  - How-To Guides:
+    - how-to/index.md
+    - Parallel Execution & Thread Budget: how-to/parallel-execution.md
+    - Conditional Hooks: how-to/conditional-hooks.md
+    - CI/CD Integration: how-to/ci-cd.md
+    - Frontend Tools: how-to/frontend-tools.md
+    - Job Inheritance: how-to/job-inheritance.md
+    - Output Formats: how-to/output-formats.md
+    - Automating Hook Installation: how-to/automate-install.md
+  - Migration:
+    - migration/index.md
+    - From v2 to v3: migration/v2-to-v3.md
+    - From GrumPHP: migration/from-grumphp.md
+    - From CaptainHook: migration/from-captainhook.md
+  - Comparison: comparison.md
