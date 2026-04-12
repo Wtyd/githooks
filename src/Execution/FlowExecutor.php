@@ -139,62 +139,39 @@ class FlowExecutor
     /**
      * @param JobAbstract[] $jobs
      * @return JobResult[]
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Process pool with fail-fast requires multiple control paths
      */
     private function executeParallel(array $jobs, int $maxProcesses, bool $failFast): array
     {
         $results = [];
-        $running = []; // name => ['process' => Process, 'job' => JobAbstract, 'start' => float]
-        $queue = $jobs;
+        $pool = new ProcessPool($maxProcesses);
+        $pool->enqueue($jobs);
         $failFastTriggered = false;
 
-        while (!empty($queue) || !empty($running)) {
-            // Fill the pool
-            $runningCount = count($running);
-            while (!$failFastTriggered && !empty($queue) && $runningCount < $maxProcesses) {
-                $job = array_shift($queue);
-                $runningCount++;
-                $command = $job->buildCommand();
-                $process = Process::fromShellCommandLine($command);
-                $process->setTimeout(null);
-                $process->start();
-                $running[$job->getName()] = [
-                    'process' => $process,
-                    'job'     => $job,
-                    'start'   => microtime(true),
-                ];
-
-                $this->updatePeakThreads($running);
+        while ($pool->hasWork()) {
+            if (!$failFastTriggered) {
+                $pool->fillPool();
+                $this->updatePeakThreads($pool->getRunning());
             }
 
-            // Check for completion
-            foreach ($running as $name => $entry) {
-                if ($entry['process']->isRunning()) {
-                    continue;
-                }
+            foreach ($pool->pollCompleted() as $entry) {
                 $result = $this->collectResult($entry);
                 $results[] = $result;
-                unset($running[$name]);
 
                 if ($failFast && !$result->isSuccess()) {
                     $failFastTriggered = true;
-                    $this->terminateRunning($running);
-                    // Collect results from terminated in-flight jobs
-                    foreach ($running as $terminatedEntry) {
+                    foreach ($pool->terminateAll() as $terminatedEntry) {
                         $results[] = $this->collectResult($terminatedEntry);
                     }
-                    // Report skipped: remaining queue (never started)
-                    foreach ($queue as $skippedJob) {
+                    foreach ($pool->getQueuedJobs() as $skippedJob) {
                         $this->outputHandler->onJobSkipped($skippedJob->getDisplayName(), 'skipped by fail-fast');
                     }
-                    $running = [];
-                    $queue = [];
+                    $pool->clearQueue();
                     break;
                 }
             }
 
-            if (!empty($running)) {
-                usleep(10000); // 10ms poll
+            if ($pool->hasRunning()) {
+                usleep(10000);
             }
         }
 
@@ -285,18 +262,6 @@ class FlowExecutor
             }
             if ($found) {
                 $this->outputHandler->onJobSkipped($job->getDisplayName(), 'skipped by fail-fast');
-            }
-        }
-    }
-
-    /**
-     * @param array<string, array{process: Process, job: JobAbstract, start: float}> $running
-     */
-    private function terminateRunning(array $running): void
-    {
-        foreach ($running as $entry) {
-            if ($entry['process']->isRunning()) {
-                $entry['process']->stop(0);
             }
         }
     }

@@ -201,4 +201,103 @@ class ExecutionContextTest extends TestCase
 
         $this->assertEquals(['src/Foo.php'], $filtered);
     }
+
+    // ========================================================================
+    // Lazy loading edge cases (targeting escaped mutants)
+    // ========================================================================
+
+    /** @test */
+    function create_with_null_main_branch_returns_null_for_fast_branch()
+    {
+        $fileUtils = new FileUtilsFake();
+        $context = ExecutionContext::create($fileUtils, null);
+
+        $result = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+
+        $this->assertNull($result);
+    }
+
+    /** @test */
+    function fast_branch_diff_failure_is_cached_returns_null_on_retry()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setBranchDiffFiles(null); // simulate diff failure
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        // First call: diff fails
+        $result1 = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+        $this->assertNull($result1);
+
+        // Second call: should return null without retrying (cached false sentinel)
+        $result2 = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+        $this->assertNull($result2);
+    }
+
+    /** @test */
+    function fast_branch_success_is_cached()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/New.php']);
+        $fileUtils->setBranchDiffFiles(['src/Old.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Old.php', 'src/New.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        $result1 = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+        $result2 = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+
+        // Both should return same result (cached)
+        $this->assertEquals($result1, $result2);
+    }
+
+    /** @test */
+    function filter_files_for_mode_with_unknown_mode_returns_null()
+    {
+        $fileUtils = new FileUtilsFake();
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        $result = $context->filterFilesForMode('turbo', ['src']);
+
+        $this->assertNull($result);
+    }
+
+    /** @test */
+    function create_lazy_loads_staged_files_on_first_access()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        // Staged files should be loaded lazily on first access
+        $staged = $context->getStagedFiles();
+        $this->assertEquals(['src/Foo.php'], $staged);
+    }
+
+    /** @test */
+    function filter_file_list_with_empty_paths_returns_empty()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $filtered = $context->filterFilesForPaths([]);
+
+        $this->assertEmpty($filtered);
+    }
+
+    /** @test */
+    function fast_branch_with_empty_diff_returns_empty_filtered_list()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles([]);
+        $fileUtils->setBranchDiffFiles([]);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $result = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
 }

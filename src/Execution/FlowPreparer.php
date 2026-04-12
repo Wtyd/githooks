@@ -130,24 +130,11 @@ class FlowPreparer
     ): ?JobConfiguration {
         $mode = $this->resolveMode($invocationMode, $jobConfig, $flow);
 
-        if ($mode === ExecutionMode::FULL) {
-            return $jobConfig;
-        }
-
-        if (!$jobConfig->isAccelerable($this->jobRegistry) || empty($jobConfig->getPaths())) {
-            return $jobConfig;
-        }
-
-        if ($context === null) {
-            return $jobConfig;
-        }
-
-        return $this->filterJobByMode($jobConfig, $mode, $context, $options, $config);
+        return $this->filterJobForMode($jobConfig, $mode, $context, $options, $config);
     }
 
     /**
      * Apply execution mode filtering to a single job (no flow context).
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Handles mode resolution, accelerability check, and fallback
      */
     private function applyExecutionModeSingleJob(
         JobConfiguration $jobConfig,
@@ -157,6 +144,24 @@ class FlowPreparer
     ): JobConfiguration {
         $mode = $invocationMode ?? ($jobConfig->getExecution() ?? ExecutionMode::FULL);
 
+        return $this->filterJobForMode($jobConfig, $mode, $context, $options) ?? $jobConfig;
+    }
+
+    /**
+     * Core execution mode filtering shared by both flow and single-job paths.
+     * Returns null if the job should be skipped, or the (possibly filtered) JobConfiguration.
+     *
+     * @param ConfigurationResult|null $config When non-null, warnings about skipped jobs are added
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Consolidates mode/accelerability/fallback logic from two paths
+     * @SuppressWarnings(PHPMD.NPathComplexity) Each early-return adds an independent branch
+     */
+    private function filterJobForMode(
+        JobConfiguration $jobConfig,
+        string $mode,
+        ?ExecutionContext $context,
+        OptionsConfiguration $options,
+        ?ConfigurationResult $config = null
+    ): ?JobConfiguration {
         if ($mode === ExecutionMode::FULL) {
             return $jobConfig;
         }
@@ -169,6 +174,7 @@ class FlowPreparer
             return $jobConfig;
         }
 
+        $jobName = $jobConfig->getName();
         $filteredFiles = $context->filterFilesForMode($mode, $jobConfig->getPaths());
 
         if ($filteredFiles === null && $mode === ExecutionMode::FAST_BRANCH) {
@@ -177,46 +183,19 @@ class FlowPreparer
                 return $jobConfig;
             }
             $filteredFiles = $context->filterFilesForMode(ExecutionMode::FAST, $jobConfig->getPaths());
-        }
-
-        if ($filteredFiles !== null && !empty($filteredFiles)) {
-            $jobConfig = $jobConfig->withPaths($filteredFiles);
-        }
-
-        return $jobConfig;
-    }
-
-    /**
-     * Filter job files based on execution mode, with fast-branch fallback logic.
-     * Returns null if the job should be skipped.
-     */
-    private function filterJobByMode(
-        JobConfiguration $jobConfig,
-        string $mode,
-        ExecutionContext $context,
-        OptionsConfiguration $options,
-        ConfigurationResult $config
-    ): ?JobConfiguration {
-        $jobName = $jobConfig->getName();
-        $filteredFiles = $context->filterFilesForMode($mode, $jobConfig->getPaths());
-
-        if ($filteredFiles === null && $mode === ExecutionMode::FAST_BRANCH) {
-            // fast-branch diff failed — apply fallback
-            $fallbackMode = $options->getFastBranchFallback();
-            if ($fallbackMode === ExecutionMode::FULL) {
-                return $jobConfig; // run with original paths
-            }
-            // fallback to fast (staged)
-            $filteredFiles = $context->filterFilesForMode(ExecutionMode::FAST, $jobConfig->getPaths());
             if (empty($filteredFiles)) {
-                $config->getValidation()->addWarning("Job '$jobName' was skipped: no staged files match its paths (fast-branch fallback to fast).");
+                if ($config !== null) {
+                    $config->getValidation()->addWarning("Job '$jobName' was skipped: no staged files match its paths (fast-branch fallback to fast).");
+                }
                 return null;
             }
             return $jobConfig->withPaths($filteredFiles);
         }
 
         if (empty($filteredFiles)) {
-            $config->getValidation()->addWarning("Job '$jobName' was skipped: no staged files match its paths.");
+            if ($config !== null) {
+                $config->getValidation()->addWarning("Job '$jobName' was skipped: no staged files match its paths.");
+            }
             return null;
         }
 

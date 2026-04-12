@@ -135,4 +135,110 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
         $this->assertSame(8, $plan->getAllocation('phpcs_all'));
         $this->assertSame(1, $plan->getMaxParallelJobs());
     }
+
+    // ========================================================================
+    // Edge cases targeting escaped mutants
+    // ========================================================================
+
+    /** @test */
+    function it_clamps_negative_budget_to_1()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [$this->makeJob('a')];
+
+        $plan = $allocator->allocate(-5, $jobs);
+
+        $this->assertSame(1, $plan->getAllocation('a'));
+        $this->assertSame(1, $plan->getMaxParallelJobs());
+    }
+
+    /** @test */
+    function it_clamps_zero_budget_to_1()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [$this->makeJob('a')];
+
+        $plan = $allocator->allocate(0, $jobs);
+
+        $this->assertSame(1, $plan->getAllocation('a'));
+        $this->assertSame(1, $plan->getMaxParallelJobs());
+    }
+
+    /** @test */
+    function all_uncontrollable_jobs_exceed_budget()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('phpstan', new ThreadCapability('_internal', 4, 1, false)),
+            $this->makeJob('psalm', new ThreadCapability('_internal', 6, 1, false)),
+        ];
+
+        $plan = $allocator->allocate(5, $jobs);
+
+        // Both are uncontrollable, fixed cost = 10 > budget = 5
+        // maxParallel should still be >= 1
+        $this->assertSame(4, $plan->getAllocation('phpstan'));
+        $this->assertSame(6, $plan->getAllocation('psalm'));
+        $this->assertGreaterThanOrEqual(1, $plan->getMaxParallelJobs());
+    }
+
+    /** @test */
+    function budget_exactly_equals_fixed_costs_gives_threadable_minimum()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('a'),  // fixed: 1
+            $this->makeJob('b'),  // fixed: 1
+            $this->makeJob('c', new ThreadCapability('parallel', 8)),
+        ];
+
+        // Budget = 2 = fixed cost of a+b → remainingBudget = 0 → threadable gets 1
+        $plan = $allocator->allocate(2, $jobs);
+
+        $this->assertSame(1, $plan->getAllocation('a'));
+        $this->assertSame(1, $plan->getAllocation('b'));
+        $this->assertSame(1, $plan->getAllocation('c'));
+    }
+
+    /** @test */
+    function threadable_job_respects_minimum_threads()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('special', new ThreadCapability('parallel', 8, 3)),
+        ];
+
+        // Budget = 2, but minimum = 3 → should still get 3 (max(min, threadsPerJob))
+        $plan = $allocator->allocate(2, $jobs);
+
+        $this->assertSame(3, $plan->getAllocation('special'));
+    }
+
+    /** @test */
+    function calculate_max_parallel_with_budget_exceeding_all_costs()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('a'),  // 1
+            $this->makeJob('b'),  // 1
+            $this->makeJob('c'),  // 1
+        ];
+
+        $plan = $allocator->allocate(100, $jobs);
+
+        // All 3 jobs can run in parallel (costs 1+1+1 <= 100)
+        $this->assertSame(3, $plan->getMaxParallelJobs());
+    }
+
+    /** @test */
+    function single_non_threadable_job_max_parallel_is_1()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [$this->makeJob('phpmd')];
+
+        $plan = $allocator->allocate(8, $jobs);
+
+        $this->assertSame(1, $plan->getMaxParallelJobs());
+        $this->assertSame(1, $plan->getAllocation('phpmd'));
+    }
 }
