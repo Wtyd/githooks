@@ -45,3 +45,8 @@ githooks-80
 *.md
 !/CLAUDE.md
 !.claude/**/*.md
+!docs/**/*.md
+
+# MkDocs build output
+site/
+public/
