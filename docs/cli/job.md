@@ -17,6 +17,7 @@ githooks job <name> [options]
 | `--fast` | Fast mode — analyze only staged files. |
 | `--fast-branch` | Fast-branch mode — analyze branch diff files. |
 | `--config=PATH` | Path to configuration file. |
+| `-- ARGS...` | Extra arguments passed to the tool. Place after `--` separator. |
 
 ## Examples
 
@@ -25,6 +26,8 @@ githooks job phpstan_src                  # Run a single job
 githooks job phpstan_src --dry-run        # Show command without running
 githooks job phpunit_all --format=json    # JSON output
 githooks job phpcs_src --fast             # Only staged files
+githooks job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
+githooks job phpstan_src -- --memory-limit=2G         # Override memory limit
 ```
 
 ## Exit codes

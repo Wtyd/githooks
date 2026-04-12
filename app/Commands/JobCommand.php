@@ -39,6 +39,7 @@ class JobCommand extends Command
     public function __construct(ConfigurationParser $parser, FlowPreparer $preparer, FlowExecutor $executor)
     {
         parent::__construct();
+        $this->ignoreValidationErrors();
         $this->parser = $parser;
         $this->preparer = $preparer;
         $this->executor = $executor;
@@ -92,7 +93,9 @@ class JobCommand extends Command
 
             $context = ExecutionContext::create($fileUtils, $mainBranch);
 
-            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context, $invocationMode);
+            $cliExtraArgs = $this->getCliExtraArguments();
+
+            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context, $invocationMode, $cliExtraArgs);
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
             $this->renderFormattedResult($result);
@@ -102,5 +105,19 @@ class JobCommand extends Command
             $this->error($e->getMessage());
             return 1;
         }
+    }
+
+    private function getCliExtraArguments(): string
+    {
+        $argv = $_SERVER['argv'] ?? [];
+        $dashDashIndex = array_search('--', $argv, true);
+
+        if ($dashDashIndex === false) {
+            return '';
+        }
+
+        $extraParts = array_slice($argv, $dashDashIndex + 1);
+
+        return implode(' ', $extraParts);
     }
 }

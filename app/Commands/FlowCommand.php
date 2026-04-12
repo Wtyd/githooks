@@ -43,6 +43,7 @@ class FlowCommand extends Command
     public function __construct(ConfigurationParser $parser, FlowPreparer $preparer, FlowExecutor $executor)
     {
         parent::__construct();
+        $this->ignoreValidationErrors();
         $this->parser = $parser;
         $this->preparer = $preparer;
         $this->executor = $executor;
@@ -113,7 +114,9 @@ class FlowCommand extends Command
                 return 1;
             }
 
-            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);
+            $cliExtraArgs = $this->getCliExtraArguments();
+
+            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode, $cliExtraArgs);
 
             // CLI options override config values
             $cliFailFast = $this->option('fail-fast') ? true : null;
@@ -150,5 +153,19 @@ class FlowCommand extends Command
             $this->error($e->getMessage());
             return 1;
         }
+    }
+
+    private function getCliExtraArguments(): string
+    {
+        $argv = $_SERVER['argv'] ?? [];
+        $dashDashIndex = array_search('--', $argv, true);
+
+        if ($dashDashIndex === false) {
+            return '';
+        }
+
+        $extraParts = array_slice($argv, $dashDashIndex + 1);
+
+        return implode(' ', $extraParts);
     }
 }

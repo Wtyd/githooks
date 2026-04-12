@@ -43,6 +43,8 @@ abstract class JobAbstract
 
     protected string $executablePrefix = '';
 
+    protected string $cliExtraArguments = '';
+
     protected ?ExecutionContext $context = null;
 
     public function __construct(JobConfiguration $config)
@@ -68,6 +70,11 @@ abstract class JobAbstract
     public function applyExecutablePrefix(string $prefix): void
     {
         $this->executablePrefix = $prefix;
+    }
+
+    public function applyCliExtraArguments(string $args): void
+    {
+        $this->cliExtraArguments = $args;
     }
 
     protected function getEffectiveExecutable(): string
@@ -110,6 +117,8 @@ abstract class JobAbstract
 
     /**
      * Build the full CLI command string from executable + ARGUMENT_MAP + args.
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Iterates ARGUMENT_MAP types + appends optional parts
      */
     public function buildCommand(): string
     {
@@ -136,6 +145,10 @@ abstract class JobAbstract
 
         if (!empty($this->args['otherArguments'])) {
             $parts[] = $this->args['otherArguments'];
+        }
+
+        if ($this->cliExtraArguments !== '') {
+            $parts[] = $this->cliExtraArguments;
         }
 
         if ($pathsPart !== '') {
