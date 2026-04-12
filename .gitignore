@@ -15,6 +15,9 @@ coverage/
 *.phar
 infection.log*
 
+# reports (coverage, infection, phpmetrics)
+reports/
+
 informes/
 codecoverage/
 vendor

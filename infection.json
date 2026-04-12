@@ -6,9 +6,10 @@
         ]
     },
     "logs": {
-        "text": "informes/infection/infection.log",
-        "summary": "informes/infection/infection-summary.log",
-        "perMutator": "informes/infection/per-mutator.md"
+        "text": "reports/infection/infection.log",
+        "summary": "reports/infection/infection-summary.log",
+        "perMutator": "reports/infection/per-mutator.md",
+        "html": "reports/infection/mutation-report.html"
     },
     "mutators": {
         "@default": true,

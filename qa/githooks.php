@@ -27,6 +27,19 @@ return [
                 // 'psalm_src',
             ],
         ],
+        'schedule' => [
+            'options' => [
+                'processes' => 1,
+                'fail-fast' => true,
+            ],
+            'jobs' => [
+                'Composer Update',
+                'Coverage',
+                'Infection',
+                'PhpMetrics',
+                'Composer Downgrade',
+            ],
+        ],
     ],
 
     'jobs' => [
@@ -92,6 +105,30 @@ return [
             'type' => 'custom',
             'script' => 'tools/composer audit',
             'ignoreErrorsOnExit' => true,
+        ],
+        'Composer Update' => [
+            'type' => 'custom',
+            'script' => 'php8.4 tools/composer update',
+        ],
+        'Composer Downgrade' => [
+            'type' => 'custom',
+            'script' => 'php7.4 tools/composer update',
+        ],
+        'Coverage' => [
+            'type' => 'phpunit',
+            'executablePath' => 'vendor/bin/phpunit',
+            'executable-prefix' => 'php8.5 -d xdebug.mode=coverage',
+            'otherArguments' => '--coverage-html reports/coverage/coverage-html --coverage-xml reports/coverage/coverage-xml --log-junit reports/coverage/junit.xml --testdox-html reports/coverage/documentation.html',
+        ],
+        'Infection' => [
+            'type' => 'custom',
+            'executable-prefix' => 'php8.4',
+            'script' => 'tools/infection --threads=10 --skip-initial-tests --no-progress --coverage=reports/coverage',
+        ],
+        'PhpMetrics' => [
+            'type' => 'custom',
+            'executable-prefix' => 'php8.4',
+            'script' => 'tools/phpmetrics --report-html=reports/phpmetrics --junit=reports/coverage/junit.xml ./src',
         ],
     ],
 ];
