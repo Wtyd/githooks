@@ -481,4 +481,113 @@ class JobBuildCommandTest extends TestCase
 
         $this->assertEquals($commandBefore, $job->buildCommand());
     }
+
+    // ========================================================================
+    // CLI extra arguments (-- args)
+    // ========================================================================
+
+    /** @test */
+    public function cli_extra_arguments_are_appended_to_command()
+    {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'executablePath' => 'vendor/bin/phpstan',
+            'paths'          => ['src'],
+        ]));
+        $job->applyCliExtraArguments('--memory-limit=2G');
+
+        $command = $job->buildCommand();
+
+        $this->assertStringContainsString('--memory-limit=2G', $command);
+        $this->assertStringEndsWith('src', $command);
+    }
+
+    /** @test */
+    public function cli_extra_arguments_are_placed_after_other_arguments()
+    {
+        $job = new PhpunitJob(new JobConfiguration('phpunit', 'phpunit', [
+            'executablePath'  => 'vendor/bin/phpunit',
+            'otherArguments'  => '--colors=always',
+        ]));
+        $job->applyCliExtraArguments('--filter=testFoo');
+
+        $command = $job->buildCommand();
+
+        $colorsPos = strpos($command, '--colors=always');
+        $filterPos = strpos($command, '--filter=testFoo');
+
+        $this->assertNotFalse($colorsPos);
+        $this->assertNotFalse($filterPos);
+        $this->assertGreaterThan($colorsPos, $filterPos);
+    }
+
+    /** @test */
+    public function cli_extra_arguments_with_multiple_args()
+    {
+        $job = new PhpunitJob(new JobConfiguration('phpunit', 'phpunit', [
+            'executablePath' => 'vendor/bin/phpunit',
+        ]));
+        $job->applyCliExtraArguments('--filter=testFoo --testdox');
+
+        $command = $job->buildCommand();
+
+        $this->assertStringContainsString('--filter=testFoo', $command);
+        $this->assertStringContainsString('--testdox', $command);
+    }
+
+    /** @test */
+    public function empty_cli_extra_arguments_do_not_alter_command()
+    {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'executablePath' => 'vendor/bin/phpstan',
+            'paths'          => ['src'],
+        ]));
+
+        $commandBefore = $job->buildCommand();
+        $job->applyCliExtraArguments('');
+
+        $this->assertEquals($commandBefore, $job->buildCommand());
+    }
+
+    /** @test */
+    public function cli_extra_arguments_work_with_custom_job_script_mode()
+    {
+        $job = new CustomJob(new JobConfiguration('audit', 'custom', [
+            'script' => 'composer audit',
+        ]));
+        $job->applyCliExtraArguments('--format=json');
+
+        $this->assertEquals('composer audit --format=json', $job->buildCommand());
+    }
+
+    /** @test */
+    public function cli_extra_arguments_work_with_custom_job_structured_mode()
+    {
+        $job = new CustomJob(new JobConfiguration('eslint', 'custom', [
+            'executablePath' => 'eslint',
+            'paths'          => ['src'],
+            'otherArguments' => '--fix',
+        ]));
+        $job->applyCliExtraArguments('--max-warnings=0');
+
+        $command = $job->buildCommand();
+
+        // Custom structured: executable paths otherArguments cliExtraArgs
+        $this->assertEquals('eslint src --fix --max-warnings=0', $command);
+    }
+
+    /** @test */
+    public function cli_extra_arguments_combine_with_executable_prefix()
+    {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'executablePath' => 'vendor/bin/phpstan',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+        $job->applyCliExtraArguments('--memory-limit=2G');
+
+        $command = $job->buildCommand();
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan', $command);
+        $this->assertStringContainsString('--memory-limit=2G', $command);
+    }
 }

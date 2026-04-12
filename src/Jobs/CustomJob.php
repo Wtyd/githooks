@@ -52,13 +52,21 @@ class CustomJob extends JobAbstract
                 $parts[] = $this->args['otherArguments'];
             }
 
+            if ($this->cliExtraArguments !== '') {
+                $parts[] = $this->cliExtraArguments;
+            }
+
             return implode(' ', $parts);
         }
 
-        if ($this->executablePrefix !== '') {
-            return $this->executablePrefix . ' ' . $this->script;
+        $command = $this->executablePrefix !== ''
+            ? $this->executablePrefix . ' ' . $this->script
+            : $this->script;
+
+        if ($this->cliExtraArguments !== '') {
+            $command .= ' ' . $this->cliExtraArguments;
         }
 
-        return $this->script;
+        return $command;
     }
 }

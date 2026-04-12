@@ -35,7 +35,8 @@ githooks flow qa --fast                   # Only analyze staged files
 githooks flow qa --only-jobs=phpstan_src  # Run specific jobs from a flow
 githooks flow qa --dry-run                # Show commands without executing
 githooks job phpstan_src                  # Run a single job
-githooks job phpstan_src --format=json    # JSON output for CI
+githooks job phpstan_src --format=json    # JSON output for CI and AI integration
+githooks job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
 ```
 
 ## Check hook status

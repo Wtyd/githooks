@@ -886,4 +886,83 @@ class FlowPreparerTest extends TestCase
 
         $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
     }
+
+    // ========================================================================
+    // CLI extra arguments (-- args)
+    // ========================================================================
+
+    /** @test */
+    public function it_passes_cli_extra_args_to_all_jobs_in_flow()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executablePath' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+            ]),
+            'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', [
+                'executablePath' => 'vendor/bin/phpcs',
+                'paths' => ['src'],
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src', 'phpcs_src']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config, null, [], [], null, '--no-cache');
+
+        $this->assertCount(2, $plan->getJobs());
+        $this->assertStringContainsString('--no-cache', $plan->getJobs()[0]->buildCommand());
+        $this->assertStringContainsString('--no-cache', $plan->getJobs()[1]->buildCommand());
+    }
+
+    /** @test */
+    public function it_passes_cli_extra_args_to_single_job()
+    {
+        $jobConfig = new JobConfiguration('phpunit_all', 'phpunit', [
+            'executablePath' => 'vendor/bin/phpunit',
+        ]);
+
+        $plan = $this->preparer->prepareSingleJob($jobConfig, new OptionsConfiguration(), null, null, '--filter=testFoo');
+
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertStringContainsString('--filter=testFoo', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /** @test */
+    public function empty_cli_extra_args_do_not_alter_flow()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executablePath' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $planWithout = $this->preparer->prepare($flow, $config);
+        $planWith = $this->preparer->prepare($flow, $config, null, [], [], null, '');
+
+        $this->assertEquals(
+            $planWithout->getJobs()[0]->buildCommand(),
+            $planWith->getJobs()[0]->buildCommand()
+        );
+    }
 }

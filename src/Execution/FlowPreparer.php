@@ -36,7 +36,8 @@ class FlowPreparer
         ?ExecutionContext $context = null,
         array $excludeJobs = [],
         array $onlyJobs = [],
-        ?string $invocationMode = null
+        ?string $invocationMode = null,
+        string $cliExtraArgs = ''
     ): FlowPlan {
         $options = $flow->getOptions() ?? $config->getGlobalOptions();
 
@@ -67,6 +68,9 @@ class FlowPreparer
             }
 
             $job = $this->jobRegistry->create($jobConfig);
+            if ($cliExtraArgs !== '') {
+                $job->applyCliExtraArguments($cliExtraArgs);
+            }
             $this->applyExecutablePrefix($job, $jobConfig, $options);
             $jobs[] = $job;
         }
@@ -83,7 +87,8 @@ class FlowPreparer
         JobConfiguration $jobConfig,
         OptionsConfiguration $options,
         ?ExecutionContext $context = null,
-        ?string $invocationMode = null
+        ?string $invocationMode = null,
+        string $cliExtraArgs = ''
     ): FlowPlan {
         // Backward compatibility
         $effectiveInvocation = $invocationMode;
@@ -94,6 +99,9 @@ class FlowPreparer
         $jobConfig = $this->applyExecutionModeSingleJob($jobConfig, $effectiveInvocation, $context, $options);
 
         $job = $this->jobRegistry->create($jobConfig);
+        if ($cliExtraArgs !== '') {
+            $job->applyCliExtraArguments($cliExtraArgs);
+        }
         $this->applyExecutablePrefix($job, $jobConfig, $options);
         return new FlowPlan($jobConfig->getName(), [$job], $options, $context);
     }

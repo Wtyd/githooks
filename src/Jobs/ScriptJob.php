@@ -23,6 +23,10 @@ class ScriptJob extends JobAbstract
             $command .= ' ' . $this->args['otherArguments'];
         }
 
+        if ($this->cliExtraArguments !== '') {
+            $command .= ' ' . $this->cliExtraArguments;
+        }
+
         return $command;
     }
 
