@@ -389,4 +389,65 @@ class JobConfigurationTest extends TestCase
         });
         $this->assertEmpty($unknownWarnings);
     }
+
+    // ========================================================================
+    // v3-only type validation (types in JobRegistry but not ToolRegistry)
+    // ========================================================================
+
+    /** @test */
+    public function it_validates_v3_only_type_when_job_registry_provided()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('fixer_src', [
+            'type'   => 'php-cs-fixer',
+            'paths'  => ['src'],
+            'config' => '.php-cs-fixer.dist.php',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($job);
+        $this->assertEquals('php-cs-fixer', $job->getType());
+    }
+
+    /** @test */
+    public function it_validates_v3_only_type_rector_when_job_registry_provided()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('rector_src', [
+            'type'   => 'rector',
+            'paths'  => ['src'],
+            'config' => 'rector.php',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($job);
+        $this->assertEquals('rector', $job->getType());
+    }
+
+    /** @test */
+    public function it_still_rejects_unknown_type_when_both_registries_provided()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('bad_job', [
+            'type' => 'nonexistent',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertNull($job);
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('not a supported tool', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_rejects_v3_only_type_when_job_registry_is_null()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('fixer_src', [
+            'type' => 'php-cs-fixer',
+            'paths' => ['src'],
+        ], $this->registry, $result);
+
+        $this->assertNull($job);
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('not a supported tool', $result->getErrors()[0]);
+    }
 }

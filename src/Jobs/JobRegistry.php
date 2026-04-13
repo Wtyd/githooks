@@ -11,16 +11,18 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 class JobRegistry
 {
     private const TYPE_MAP = [
-        'phpstan'       => PhpstanJob::class,
-        'phpmd'         => PhpmdJob::class,
-        'phpcs'         => PhpcsJob::class,
-        'phpcbf'        => PhpcbfJob::class,
-        'phpunit'       => PhpunitJob::class,
-        'psalm'         => PsalmJob::class,
-        'parallel-lint' => ParallelLintJob::class,
-        'phpcpd'        => PhpcpdJob::class,
-        'script'        => ScriptJob::class,
-        'custom'        => CustomJob::class,
+        'phpstan'        => PhpstanJob::class,
+        'phpmd'          => PhpmdJob::class,
+        'phpcs'          => PhpcsJob::class,
+        'phpcbf'         => PhpcbfJob::class,
+        'phpunit'        => PhpunitJob::class,
+        'psalm'          => PsalmJob::class,
+        'parallel-lint'  => ParallelLintJob::class,
+        'phpcpd'         => PhpcpdJob::class,
+        'php-cs-fixer'   => PhpCsFixerJob::class,
+        'rector'         => RectorJob::class,
+        'script'         => ScriptJob::class,
+        'custom'         => CustomJob::class,
     ];
 
     public function isSupported(string $type): bool

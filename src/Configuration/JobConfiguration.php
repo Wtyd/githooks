@@ -53,7 +53,10 @@ class JobConfiguration
             return null;
         }
 
-        if ($type !== 'custom' && !$toolRegistry->isSupported($type)) {
+        if (
+            $type !== 'custom' && !$toolRegistry->isSupported($type)
+            && ($jobRegistry === null || !$jobRegistry->isSupported($type))
+        ) {
             $result->addError("Job '$name': type '$type' is not a supported tool.");
             return null;
         }

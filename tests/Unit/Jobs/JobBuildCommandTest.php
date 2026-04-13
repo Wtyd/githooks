@@ -11,11 +11,13 @@ use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
 use Wtyd\GitHooks\Jobs\PhpcbfJob;
 use Wtyd\GitHooks\Jobs\PhpcpdJob;
+use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Jobs\PhpmdJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 use Wtyd\GitHooks\Jobs\PhpunitJob;
 use Wtyd\GitHooks\Jobs\PsalmJob;
+use Wtyd\GitHooks\Jobs\RectorJob;
 use Wtyd\GitHooks\Jobs\ScriptJob;
 
 class JobBuildCommandTest extends TestCase
@@ -225,6 +227,8 @@ class JobBuildCommandTest extends TestCase
 
         $this->assertTrue($registry->isSupported('phpstan'));
         $this->assertTrue($registry->isSupported('custom'));
+        $this->assertTrue($registry->isSupported('php-cs-fixer'));
+        $this->assertTrue($registry->isSupported('rector'));
         $this->assertFalse($registry->isSupported('nonexistent'));
 
         $job = $registry->create(new JobConfiguration('test', 'phpstan', ['paths' => ['src']]));
@@ -232,6 +236,12 @@ class JobBuildCommandTest extends TestCase
 
         $job = $registry->create(new JobConfiguration('test', 'custom', ['script' => 'echo ok']));
         $this->assertInstanceOf(CustomJob::class, $job);
+
+        $job = $registry->create(new JobConfiguration('test', 'php-cs-fixer', ['paths' => ['src']]));
+        $this->assertInstanceOf(PhpCsFixerJob::class, $job);
+
+        $job = $registry->create(new JobConfiguration('test', 'rector', ['paths' => ['src']]));
+        $this->assertInstanceOf(RectorJob::class, $job);
     }
 
     /** @test */
@@ -279,6 +289,8 @@ class JobBuildCommandTest extends TestCase
         $this->assertTrue($registry->isAccelerable('phpmd'));
         $this->assertTrue($registry->isAccelerable('parallel-lint'));
         $this->assertTrue($registry->isAccelerable('psalm'));
+        $this->assertTrue($registry->isAccelerable('php-cs-fixer'));
+        $this->assertTrue($registry->isAccelerable('rector'));
 
         $this->assertFalse($registry->isAccelerable('phpunit'));
         $this->assertFalse($registry->isAccelerable('phpcpd'));
@@ -466,6 +478,30 @@ class JobBuildCommandTest extends TestCase
         $job->applyExecutablePrefix('docker exec -i app');
 
         $this->assertEquals('docker exec -i app npm run lint -- --fix', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_php_cs_fixer_command()
+    {
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/php-cs-fixer fix', $job->buildCommand());
+    }
+
+    /** @test */
+    public function executable_prefix_is_prepended_to_rector_command()
+    {
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'executablePath' => 'vendor/bin/rector',
+            'paths'          => ['src'],
+        ]));
+        $job->applyExecutablePrefix('docker exec -i app');
+
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/rector process', $job->buildCommand());
     }
 
     /** @test */

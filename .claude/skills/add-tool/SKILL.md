@@ -114,6 +114,10 @@ private const TYPE_MAP = [
 ];
 ```
 
+**Nota sobre validacion:** El registro en `JobRegistry` es suficiente para que el tipo pase validacion.
+`JobConfiguration::fromArray()` consulta ambos registries: primero `ToolRegistry` (legacy v2) y
+despues `JobRegistry` (v3). Los tipos nuevos no necesitan stubs en `ToolRegistry`.
+
 ## Paso 3: Tests
 
 Añadir casos al fichero existente `tests/Unit/Jobs/JobBuildCommandTest.php`:
@@ -186,7 +190,9 @@ Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
 
 ### Ficheros modificados
 - [ ] `src/Jobs/JobRegistry.php` — type añadido a `TYPE_MAP`
-- [ ] `tests/Unit/Jobs/JobBuildCommandTest.php` — tests de buildCommand
+- [ ] `tests/Unit/Jobs/JobBuildCommandTest.php` — tests de registry y executable prefix
+- [ ] `tests/Unit/Jobs/MyToolJobTest.php` — tests dedicados de la herramienta (buildCommand, argumentos, isFixApplied, cache, threads, prefix, CLI args)
+- [ ] `tests/Unit/Configuration/JobConfigurationTest.php` — verificar que el tipo nuevo pasa validacion con `fromArray()`
 - [ ] `qa/githooks.php` — job añadido al flow qa
 - [ ] `qa/githooks.dist.php` — ejemplo documentado
 
