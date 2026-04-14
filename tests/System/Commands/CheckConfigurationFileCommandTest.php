@@ -146,6 +146,31 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     }
 
     /** @test */
+    function it_handles_v3_config_with_long_commands_without_error()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'phpcpd_all' => [
+                    'type' => 'phpcpd',
+                    'paths' => ['./'],
+                    'exclude' => [
+                        'vendor', 'tools', 'config', 'qa', 'bootstrap',
+                        'database', 'storage', 'tests', 'resources',
+                        'public', 'node_modules', 'docker',
+                    ],
+                ],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['phpcpd_all']]])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
     function it_check_the_config_file_pass_as_argument()
     {
         $a = 10;

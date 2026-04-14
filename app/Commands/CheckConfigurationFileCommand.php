@@ -174,7 +174,7 @@ class CheckConfigurationFileCommand extends Command
                     $status = '<fg=red>error</>';
                     $hasValidationWarnings = true;
                 }
-                $jobRows[] = [$name, $command, $status];
+                $jobRows[] = [$name, $this->truncateCommand($command), $status];
             }
             $this->line('');
             $this->table(['Job', 'Command', 'Status'], $jobRows);
@@ -269,6 +269,18 @@ class CheckConfigurationFileCommand extends Command
         if (!file_exists($args[$key])) {
             $warnings[] = "$label '{$args[$key]}' not found";
         }
+    }
+
+    /**
+     * Truncate long commands for table display readability.
+     */
+    private function truncateCommand(string $command, int $maxLength = 80): string
+    {
+        if (strlen($command) <= $maxLength) {
+            return $command;
+        }
+
+        return substr($command, 0, $maxLength - 3) . '...';
     }
 
     private function executableExists(string $executable): bool
