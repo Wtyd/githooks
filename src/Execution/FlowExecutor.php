@@ -32,6 +32,11 @@ class FlowExecutor
         $this->gitStager = $gitStager;
     }
 
+    public function getOutputHandler(): OutputHandler
+    {
+        return $this->outputHandler;
+    }
+
     public function setOutputHandler(OutputHandler $outputHandler): void
     {
         $this->outputHandler = $outputHandler;

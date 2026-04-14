@@ -30,6 +30,7 @@ class FlowCommand extends Command
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
                             {--monitor : Show thread usage report after execution}
+                            {--no-ci : Disable auto-detection of CI environment annotations}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';

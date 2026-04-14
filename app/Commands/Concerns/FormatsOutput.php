@@ -7,9 +7,13 @@ namespace Wtyd\GitHooks\App\Commands\Concerns;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\GitHooks\Output\CI\CIEnvironment;
+use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
+use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
 use Wtyd\GitHooks\Output\JsonResultFormatter;
 use Wtyd\GitHooks\Output\JunitResultFormatter;
 use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\GitHooks\Output\OutputHandler;
 use Wtyd\GitHooks\Output\ProgressOutputHandler;
 use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
 use Wtyd\GitHooks\Utils\Printer;
@@ -38,21 +42,70 @@ trait FormatsOutput
         }
 
         if ($format === 'json' || $format === 'junit') {
-            $executor->setOutputHandler($this->resolveProgressHandler());
+            $handler = $this->resolveProgressHandler();
+        } elseif (
+            $plan === null
+            || $plan->getOptions()->getProcesses() <= 1
+            || count($plan->getJobs()) <= 1
+        ) {
+            // Text format: use streaming for sequential, keep buffered for parallel
+            $handler = new StreamingTextOutputHandler($this->getLaravel()->make(Printer::class));
+        } else {
+            $handler = null; // keep default TextOutputHandler
+        }
+
+        if ($handler !== null) {
+            $handler = $this->wrapWithCIDecorator($handler);
+            $executor->setOutputHandler($handler);
+        } else {
+            // Parallel text: wrap existing default handler with CI decorator if needed
+            $this->applyCIDecoratorToExecutor($executor);
+        }
+    }
+
+    /**
+     * Wrap handler with CI decorator if auto-detected and not disabled.
+     */
+    private function wrapWithCIDecorator(OutputHandler $handler): OutputHandler
+    {
+        if ($this->isCIDisabled()) {
+            return $handler;
+        }
+
+        $ci = CIEnvironment::detect();
+
+        if ($ci === CIEnvironment::GITHUB_ACTIONS) {
+            return new GitHubActionsDecorator($handler);
+        }
+
+        if ($ci === CIEnvironment::GITLAB_CI) {
+            return new GitLabCIDecorator($handler);
+        }
+
+        return $handler;
+    }
+
+    /**
+     * Apply CI decorator to the executor's existing handler (for parallel text mode).
+     */
+    private function applyCIDecoratorToExecutor(FlowExecutor $executor): void
+    {
+        if ($this->isCIDisabled()) {
             return;
         }
 
-        // Text format: use streaming for sequential, keep buffered for parallel
-        $isSequential = $plan === null
-            || $plan->getOptions()->getProcesses() <= 1
-            || count($plan->getJobs()) <= 1;
+        $ci = CIEnvironment::detect();
 
-        if ($isSequential) {
-            $executor->setOutputHandler(
-                new StreamingTextOutputHandler($this->getLaravel()->make(Printer::class))
-            );
+        if ($ci === CIEnvironment::GITHUB_ACTIONS) {
+            $executor->setOutputHandler(new GitHubActionsDecorator($executor->getOutputHandler()));
+        } elseif ($ci === CIEnvironment::GITLAB_CI) {
+            $executor->setOutputHandler(new GitLabCIDecorator($executor->getOutputHandler()));
         }
-        // else: keep default TextOutputHandler (parallel, buffered)
+    }
+
+    private function isCIDisabled(): bool
+    {
+        return method_exists($this, 'option') && $this->hasOption('no-ci') && $this->option('no-ci');
     }
 
     /**
