@@ -149,7 +149,7 @@ class HookInstaller
     {
         $cwd = getcwd();
         chdir($this->rootPath);
-        shell_exec($command . ' 2>/dev/null');
+        shell_exec($command . ' ' . \Wtyd\GitHooks\Utils\Platform::stderrRedirect());
         if ($cwd !== false) {
             chdir($cwd);
         }

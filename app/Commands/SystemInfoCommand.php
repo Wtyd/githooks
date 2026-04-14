@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\GitHooks\Utils\CpuDetector;
 
 class SystemInfoCommand extends Command
 {
@@ -16,15 +17,18 @@ class SystemInfoCommand extends Command
 
     private ConfigurationParser $parser;
 
-    public function __construct(ConfigurationParser $parser)
+    private CpuDetector $cpuDetector;
+
+    public function __construct(ConfigurationParser $parser, CpuDetector $cpuDetector)
     {
         parent::__construct();
         $this->parser = $parser;
+        $this->cpuDetector = $cpuDetector;
     }
 
     public function handle(): int
     {
-        $cpus = $this->detectCpus();
+        $cpus = $this->cpuDetector->detect();
 
         $this->line('');
         $this->info('System Information');
@@ -54,32 +58,5 @@ class SystemInfoCommand extends Command
 
         $this->line('');
         return 0;
-    }
-
-    private function detectCpus(): int
-    {
-        // Linux: nproc
-        $output = [];
-        $exitCode = 0;
-        exec('nproc 2>/dev/null', $output, $exitCode);
-        if ($exitCode === 0 && !empty($output)) {
-            return (int) $output[0];
-        }
-
-        // macOS: sysctl
-        exec('sysctl -n hw.ncpu 2>/dev/null', $output, $exitCode);
-        if ($exitCode === 0 && !empty($output)) {
-            return (int) $output[0];
-        }
-
-        // Fallback: /proc/cpuinfo
-        if (is_readable('/proc/cpuinfo')) {
-            $content = file_get_contents('/proc/cpuinfo');
-            if ($content !== false) {
-                return substr_count($content, 'processor');
-            }
-        }
-
-        return 1;
     }
 }

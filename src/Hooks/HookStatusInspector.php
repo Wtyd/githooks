@@ -42,7 +42,7 @@ class HookStatusInspector
     {
         $output = [];
         $exitCode = 0;
-        exec('git config core.hooksPath 2>/dev/null', $output, $exitCode);
+        exec('git config core.hooksPath ' . \Wtyd\GitHooks\Utils\Platform::stderrRedirect(), $output, $exitCode);
 
         if ($exitCode !== 0 || empty($output)) {
             return '';
