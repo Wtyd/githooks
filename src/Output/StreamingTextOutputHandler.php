@@ -7,15 +7,14 @@ namespace Wtyd\GitHooks\Output;
 use Wtyd\GitHooks\Utils\Printer;
 
 /**
- * Default text output: success lines print in real-time, error details
- * are buffered and printed grouped at the end via flush().
+ * Text output with real-time streaming for sequential execution.
+ *
+ * Used when format=text and processes<=1 (or single job).
+ * Prints tool output as it arrives, with header separators between jobs.
  */
-class TextOutputHandler implements OutputHandler
+class StreamingTextOutputHandler implements OutputHandler
 {
     private Printer $printer;
-
-    /** @var array<array{jobName: string, output: string}> */
-    private array $errorBuffer = [];
 
     public function __construct(Printer $printer)
     {
@@ -28,11 +27,12 @@ class TextOutputHandler implements OutputHandler
 
     public function onJobStart(string $jobName): void
     {
+        $this->printer->line("  \e[1m--- $jobName ---\e[0m");
     }
 
-    /** @SuppressWarnings(PHPMD.UnusedFormalParameter) No-op in parallel text mode */
     public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
     {
+        echo $chunk;
     }
 
     public function onJobSuccess(string $jobName, string $time): void
@@ -43,7 +43,6 @@ class TextOutputHandler implements OutputHandler
     public function onJobError(string $jobName, string $time, string $output): void
     {
         $this->printer->jobError($jobName, $time);
-        $this->errorBuffer[] = ['jobName' => $jobName, 'output' => $output];
     }
 
     public function onJobSkipped(string $jobName, string $reason): void
@@ -59,19 +58,5 @@ class TextOutputHandler implements OutputHandler
 
     public function flush(): void
     {
-        if (empty($this->errorBuffer)) {
-            return;
-        }
-
-        $this->printer->emptyLine();
-
-        foreach ($this->errorBuffer as $entry) {
-            if (!empty(trim($entry['output']))) {
-                $this->printer->framedErrorBlock($entry['jobName'], $entry['output']);
-                $this->printer->emptyLine();
-            }
-        }
-
-        $this->errorBuffer = [];
     }
 }

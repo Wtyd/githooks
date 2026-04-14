@@ -81,8 +81,6 @@ class FlowCommand extends Command
                 return 1;
             }
 
-            $this->applyFormat($this->executor);
-
             $fileUtils = $this->getLaravel()->make(FileUtilsInterface::class);
 
             $invocationMode = null;
@@ -126,9 +124,12 @@ class FlowCommand extends Command
                     $plan->getFlowName(),
                     $plan->getJobs(),
                     $overriddenOptions,
-                    $plan->getContext()
+                    $plan->getContext(),
+                    $plan->getSkippedJobs()
                 );
             }
+
+            $this->applyFormat($this->executor, $plan);
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 

@@ -12,6 +12,15 @@ namespace Wtyd\GitHooks\Output;
  */
 interface OutputHandler
 {
+    /** Called when flow execution begins, with the total number of jobs. */
+    public function onFlowStart(int $totalJobs): void;
+
+    /** Called before a job starts executing (sequential mode only). */
+    public function onJobStart(string $jobName): void;
+
+    /** Called with real-time output chunks during job execution (sequential mode only). */
+    public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void;
+
     public function onJobSuccess(string $jobName, string $time): void;
 
     public function onJobError(string $jobName, string $time, string $output): void;

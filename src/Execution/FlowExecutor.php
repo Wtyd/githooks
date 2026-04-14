@@ -53,6 +53,8 @@ class FlowExecutor
             $this->propagateContext($job, $context);
         }
 
+        $this->outputHandler->onFlowStart(count($jobs));
+
         if ($dryRun) {
             return $this->executeDryRun($plan->getFlowName(), $jobs);
         }
@@ -206,9 +208,17 @@ class FlowExecutor
         $command = $job->buildCommand();
         $start = microtime(true);
 
+        $this->outputHandler->onJobStart($job->getDisplayName());
+
         $process = Process::fromShellCommandLine($command);
         $process->setTimeout(null);
-        $process->run();
+
+        $displayName = $job->getDisplayName();
+        $handler = $this->outputHandler;
+
+        $process->run(function (string $type, string $buffer) use ($displayName, $handler): void {
+            $handler->onJobOutput($displayName, $buffer, $type === Process::ERR);
+        });
 
         return $this->buildResult($job, $process, $start);
     }

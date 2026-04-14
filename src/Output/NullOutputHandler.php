@@ -10,6 +10,21 @@ namespace Wtyd\GitHooks\Output;
  */
 class NullOutputHandler implements OutputHandler
 {
+    /** @SuppressWarnings(PHPMD.UnusedFormalParameter) Interface implementation */
+    public function onFlowStart(int $totalJobs): void
+    {
+    }
+
+    /** @SuppressWarnings(PHPMD.UnusedFormalParameter) Interface implementation */
+    public function onJobStart(string $jobName): void
+    {
+    }
+
+    /** @SuppressWarnings(PHPMD.UnusedFormalParameter) Interface implementation */
+    public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+    {
+    }
+
     public function onJobSuccess(string $jobName, string $time): void
     {
     }
