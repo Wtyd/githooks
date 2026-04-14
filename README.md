@@ -224,7 +224,20 @@ The `custom` type replaces the deprecated `security-checker` and `script` tools.
 
 See the [wiki](https://github.com/Wtyd/githooks/wiki/3x-ConsoleCommands) for detailed documentation.
 
-# 8. Contributing
+# 8. Documentation
+
+Full documentation is available at **[wtyd.github.io/githooks](https://wtyd.github.io/githooks/)**, including:
+
+- [Getting Started](https://wtyd.github.io/githooks/getting-started/installation/) — installation, first config, first hook.
+- [Configuration Reference](https://wtyd.github.io/githooks/configuration/) — hooks, flows, jobs, options.
+- [Tools Reference](https://wtyd.github.io/githooks/tools/) — all keywords for each QA tool.
+- [CLI Reference](https://wtyd.github.io/githooks/cli/) — every command with options and examples.
+- [How-To Guides](https://wtyd.github.io/githooks/how-to/) — parallel execution, CI/CD, frontend tools, etc.
+- [Migration](https://wtyd.github.io/githooks/migration/v2-to-v3/) — from v2, GrumPHP, or CaptainHook.
+- [Comparison](https://wtyd.github.io/githooks/comparison/) — GitHooks vs GrumPHP vs CaptainHook.
+- [Changelog](https://wtyd.github.io/githooks/changelog/) — what's new in each version.
+
+# 9. Contributing
 Contributions are welcome! Send a [pull request](https://github.com/Wtyd/githooks/pulls) or open an [issue](https://github.com/Wtyd/githooks/issues). See the [Contributing](https://github.com/Wtyd/githooks/wiki/Contributing) guide.
 
 # 9. License

@@ -146,3 +146,4 @@ nav:
     - From GrumPHP: migration/from-grumphp.md
     - From CaptainHook: migration/from-captainhook.md
   - Comparison: comparison.md
+  - Changelog: changelog.md
