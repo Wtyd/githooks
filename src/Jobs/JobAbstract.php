@@ -210,6 +210,12 @@ abstract class JobAbstract
         return $this->name;
     }
 
+    /** @return string[] */
+    public function getConfiguredPaths(): array
+    {
+        return $this->args['paths'] ?? [];
+    }
+
     public function isIgnoreErrorsOnExit(): bool
     {
         return $this->ignoreErrorsOnExit;

@@ -42,6 +42,7 @@ class FlowPreparer
         $options = $flow->getOptions() ?? $config->getGlobalOptions();
 
         $jobs = [];
+        $skippedJobs = [];
 
         // Backward compatibility: if context was created via forFastMode() and no invocationMode,
         // treat it as fast invocation (old behavior)
@@ -62,9 +63,16 @@ class FlowPreparer
                 continue;
             }
 
+            $originalConfig = $jobConfig;
             $jobConfig = $this->applyExecutionMode($jobConfig, $flow, $effectiveInvocation, $context, $options, $config);
             if ($jobConfig === null) {
-                continue; // skipped by execution mode filtering
+                // Job was skipped by execution mode filtering — record it
+                $skippedJobs[$jobName] = [
+                    'type' => $originalConfig->getType(),
+                    'reason' => 'no staged files match its paths',
+                    'paths' => $originalConfig->getPaths(),
+                ];
+                continue;
             }
 
             $job = $this->jobRegistry->create($jobConfig);
@@ -75,7 +83,7 @@ class FlowPreparer
             $jobs[] = $job;
         }
 
-        return new FlowPlan($flow->getName(), $jobs, $options, $context);
+        return new FlowPlan($flow->getName(), $jobs, $options, $context, $skippedJobs);
     }
 
     /**

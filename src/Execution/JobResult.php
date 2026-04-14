@@ -18,14 +18,34 @@ class JobResult
 
     private ?string $command;
 
-    /** @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object */
+    private string $type;
+
+    private ?int $exitCode;
+
+    /** @var string[] */
+    private array $paths;
+
+    private bool $skipped;
+
+    private ?string $skipReason;
+
+    /**
+     * @param string[] $paths
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Value object with backward-compatible defaults
+     */
     public function __construct(
         string $jobName,
         bool $success,
         string $output,
         string $executionTime,
         bool $fixApplied = false,
-        ?string $command = null
+        ?string $command = null,
+        string $type = '',
+        ?int $exitCode = null,
+        array $paths = [],
+        bool $skipped = false,
+        ?string $skipReason = null
     ) {
         $this->jobName = $jobName;
         $this->success = $success;
@@ -33,6 +53,21 @@ class JobResult
         $this->executionTime = $executionTime;
         $this->fixApplied = $fixApplied;
         $this->command = $command;
+        $this->type = $type;
+        $this->exitCode = $exitCode;
+        $this->paths = $paths;
+        $this->skipped = $skipped;
+        $this->skipReason = $skipReason;
+    }
+
+    /**
+     * Create a result for a job that was skipped (not executed).
+     *
+     * @param string[] $paths
+     */
+    public static function skipped(string $jobName, string $type, string $reason, array $paths = []): self
+    {
+        return new self($jobName, true, '', '0ms', false, null, $type, null, $paths, true, $reason);
     }
 
     public function getJobName(): string
@@ -63,5 +98,31 @@ class JobResult
     public function getCommand(): ?string
     {
         return $this->command;
+    }
+
+    public function getType(): string
+    {
+        return $this->type;
+    }
+
+    public function getExitCode(): ?int
+    {
+        return $this->exitCode;
+    }
+
+    /** @return string[] */
+    public function getPaths(): array
+    {
+        return $this->paths;
+    }
+
+    public function isSkipped(): bool
+    {
+        return $this->skipped;
+    }
+
+    public function getSkipReason(): ?string
+    {
+        return $this->skipReason;
     }
 }

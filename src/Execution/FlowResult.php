@@ -17,6 +17,8 @@ class FlowResult
 
     private int $threadBudget;
 
+    private string $executionMode;
+
     /**
      * @param JobResult[] $jobResults
      */
@@ -25,13 +27,15 @@ class FlowResult
         array $jobResults,
         string $totalTime,
         int $peakEstimatedThreads = 0,
-        int $threadBudget = 0
+        int $threadBudget = 0,
+        string $executionMode = 'full'
     ) {
         $this->flowName = $flowName;
         $this->jobResults = $jobResults;
         $this->totalTime = $totalTime;
         $this->peakEstimatedThreads = $peakEstimatedThreads;
         $this->threadBudget = $threadBudget;
+        $this->executionMode = $executionMode;
     }
 
     public function getFlowName(): string
@@ -62,12 +66,18 @@ class FlowResult
 
     public function getFailedCount(): int
     {
-        return count(array_filter($this->jobResults, fn(JobResult $result) => !$result->isSuccess()));
+        return count(array_filter(
+            $this->jobResults,
+            fn(JobResult $result) => !$result->isSuccess() && !$result->isSkipped()
+        ));
     }
 
     public function getPassedCount(): int
     {
-        return count(array_filter($this->jobResults, fn(JobResult $result) => $result->isSuccess()));
+        return count(array_filter(
+            $this->jobResults,
+            fn(JobResult $result) => $result->isSuccess() && !$result->isSkipped()
+        ));
     }
 
     public function getPeakEstimatedThreads(): int
@@ -78,5 +88,15 @@ class FlowResult
     public function getThreadBudget(): int
     {
         return $this->threadBudget;
+    }
+
+    public function getExecutionMode(): string
+    {
+        return $this->executionMode;
+    }
+
+    public function getSkippedCount(): int
+    {
+        return count(array_filter($this->jobResults, fn(JobResult $result) => $result->isSkipped()));
     }
 }

@@ -21,15 +21,25 @@ class FlowPlan
 
     private ?ExecutionContext $context;
 
+    /** @var array<string, array{type: string, reason: string, paths: string[]}> */
+    private array $skippedJobs = [];
+
     /**
      * @param JobAbstract[] $jobs
+     * @param array<string, array{type: string, reason: string, paths: string[]}> $skippedJobs
      */
-    public function __construct(string $flowName, array $jobs, OptionsConfiguration $options, ?ExecutionContext $context = null)
-    {
+    public function __construct(
+        string $flowName,
+        array $jobs,
+        OptionsConfiguration $options,
+        ?ExecutionContext $context = null,
+        array $skippedJobs = []
+    ) {
         $this->flowName = $flowName;
         $this->jobs = $jobs;
         $this->options = $options;
         $this->context = $context;
+        $this->skippedJobs = $skippedJobs;
     }
 
     public function getFlowName(): string
@@ -51,5 +61,11 @@ class FlowPlan
     public function getContext(): ?ExecutionContext
     {
         return $this->context;
+    }
+
+    /** @return array<string, array{type: string, reason: string, paths: string[]}> */
+    public function getSkippedJobs(): array
+    {
+        return $this->skippedJobs;
     }
 }

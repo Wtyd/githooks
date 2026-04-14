@@ -88,6 +88,12 @@ class FlowExecutor
             $results = $this->executeParallel($jobs, $maxProcesses, $failFast);
         }
 
+        // Include skipped jobs from plan (fast mode filtering)
+        foreach ($plan->getSkippedJobs() as $name => $info) {
+            $this->outputHandler->onJobSkipped($name, $info['reason']);
+            $results[] = JobResult::skipped($name, $info['type'], $info['reason'], $info['paths']);
+        }
+
         $this->outputHandler->flush();
 
         $elapsed = microtime(true) - $start;
@@ -106,7 +112,17 @@ class FlowExecutor
         foreach ($jobs as $job) {
             $command = $job->buildCommand();
             $this->outputHandler->onJobDryRun($job->getDisplayName(), $command);
-            $results[] = new JobResult($job->getName(), true, '', '0ms', false, $command);
+            $results[] = new JobResult(
+                $job->getName(),
+                true,
+                '',
+                '0ms',
+                false,
+                $command,
+                $job->getType(),
+                null,
+                $job->getConfiguredPaths()
+            );
         }
         $this->outputHandler->flush();
         return new FlowResult($flowName, $results, '0ms', 0, 0);
@@ -243,7 +259,19 @@ class FlowExecutor
             $this->outputHandler->onJobError($displayName, $time, $output);
         }
 
-        return new JobResult($job->getName(), $success, $output, $time, $fixApplied);
+        $command = $job->buildCommand();
+
+        return new JobResult(
+            $job->getName(),
+            $success,
+            $output,
+            $time,
+            $fixApplied,
+            $command,
+            $job->getType(),
+            $exitCode,
+            $job->getConfiguredPaths()
+        );
     }
 
     /**

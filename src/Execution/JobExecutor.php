@@ -50,7 +50,19 @@ class JobExecutor
             }
         }
 
-        return new JobResult($job->getName(), $success, $output, $time, $fixApplied);
+        $command = $job->buildCommand();
+
+        return new JobResult(
+            $job->getName(),
+            $success,
+            $output,
+            $time,
+            $fixApplied,
+            $command,
+            $job->getType(),
+            $exitCode,
+            $job->getConfiguredPaths()
+        );
     }
 
     private function formatTime(float $seconds): string
