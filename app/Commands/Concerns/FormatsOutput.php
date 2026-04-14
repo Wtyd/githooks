@@ -9,6 +9,7 @@ use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Output\JsonResultFormatter;
 use Wtyd\GitHooks\Output\JunitResultFormatter;
+use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\ProgressOutputHandler;
 use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
 use Wtyd\GitHooks\Utils\Printer;
@@ -37,7 +38,7 @@ trait FormatsOutput
         }
 
         if ($format === 'json' || $format === 'junit') {
-            $executor->setOutputHandler(new ProgressOutputHandler());
+            $executor->setOutputHandler($this->resolveProgressHandler());
             return;
         }
 
@@ -52,6 +53,19 @@ trait FormatsOutput
             );
         }
         // else: keep default TextOutputHandler (parallel, buffered)
+    }
+
+    /**
+     * Resolve the progress handler for structured formats.
+     * Uses the container binding so tests can override with NullOutputHandler.
+     */
+    private function resolveProgressHandler(): ProgressOutputHandler
+    {
+        if ($this->getLaravel()->bound(ProgressOutputHandler::class)) {
+            return $this->getLaravel()->make(ProgressOutputHandler::class);
+        }
+
+        return new ProgressOutputHandler();
     }
 
     private function renderFormattedResult(FlowResult $result): void

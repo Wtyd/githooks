@@ -23,6 +23,7 @@ use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
 use Wtyd\GitHooks\Utils\GitStagerInterface;
+use Wtyd\GitHooks\Output\ProgressOutputHandler;
 use Wtyd\GitHooks\Tools\Tool\{
     CodeSniffer\Phpcbf,
     CodeSniffer\Phpcs,
@@ -64,6 +65,11 @@ abstract class ConsoleTestCase extends ZeroTestCase
 
         $this->configurationFileBuilder = new ConfigurationFileBuilder('');
         $this->app->bind(GitStagerInterface::class, GitStagerFake::class);
+
+        // Silence ProgressOutputHandler in tests (writes to php://temp instead of STDERR)
+        $this->app->bind(ProgressOutputHandler::class, function () {
+            return new ProgressOutputHandler(fopen('php://temp', 'w'));
+        });
         // FileReader and ProcessExecutionFactory singletons
         // are already registered in AppServiceProvider::testsRegister() during
         // bootstrap. Do NOT re-register them here — the command instances were
