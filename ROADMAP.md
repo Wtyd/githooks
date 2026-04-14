@@ -63,11 +63,64 @@ La regla que unifica el diseño: **el formato determina el comportamiento del ou
 
 La separación stderr/stdout es el patrón Unix estándar: progreso para humanos en stderr, datos para máquinas en stdout.
 
+**Ejemplo: antes (v3.1) vs después (v3.2) — single job y flow secuencial:**
+
+```
+# ANTES (v3.1): githooks job "Phpstan Src" — bufferizado, solo OK/KO al final
+  Phpstan Src - OK. Time: 656ms
+Results: 1/1 passed in 0.66s ✔️
+
+# DESPUÉS (v3.2): githooks job "Phpstan Src" — streaming en vivo
+  --- Phpstan Src ---
+
+ [OK] No errors                         ← output real de phpstan en tiempo real
+
+  Phpstan Src - OK. Time: 656ms
+Results: 1/1 passed in 0.66s ✔️
+```
+
+```
+# ANTES (v3.1): githooks flow qa --processes=1 — solo estados al final
+  Phpcbf - OK. Time: 1.93s
+  Phpstan Src - OK. Time: 715ms
+  Parallel-lint - OK. Time: 196ms
+  ...
+Results: 8/8 passed in 12.18s ✔️
+
+# DESPUÉS (v3.2): githooks flow qa --processes=1 — cabecera + streaming por job
+  --- Phpcbf ---
+  No fixable errors were found
+  Time: 1.91 secs; Memory: 16MB
+  Phpcbf - OK. Time: 1.93s
+  --- Phpstan Src ---
+   [OK] No errors                       ← output real de cada herramienta visible
+  Phpstan Src - OK. Time: 715ms
+  --- Parallel-lint ---
+  Checked 144 files in 0.2 seconds
+  No syntax error found
+  Parallel-lint - OK. Time: 196ms
+  ...
+Results: 8/8 passed in 12.18s ✔️
+```
+
+**Ejemplo: formato JSON — progreso en stderr, datos en stdout:**
+
+```bash
+githooks flow qa --format=json 2>/dev/null   # stdout = JSON limpio
+githooks flow qa --format=json               # stderr muestra progreso:
+#   OK Phpcpd (175ms)  [1/8]
+#   OK Phpstan Src (852ms)  [2/8]
+#   OK Parallel-lint (1.27s)  [3/8]
+#   ...
+#   Done. 8/8 completed.
+```
+
 **Cambios en la arquitectura:**
 
-- `FlowExecutor`: dos modos de ejecución. Streaming (`process->wait($callback)`) para texto secuencial. Buffered (`process->run()`) para paralelo y formatos estructurados.
-- `OutputHandler`: nuevo método `onJobOutput(string $jobName, string $chunk)` para streaming.
-- Nuevo `ProgressOutputHandler` para json/junit: barra de progreso en stderr, silencio en stdout.
+- `FlowExecutor`: dos modos de ejecución. Streaming (`process->run($callback)`) para texto secuencial. Buffered para paralelo y formatos estructurados.
+- `OutputHandler`: tres nuevos métodos: `onFlowStart(int $totalJobs)`, `onJobStart(string $jobName)`, `onJobOutput(string $jobName, string $chunk, bool $isStderr)`.
+- `StreamingTextOutputHandler`: imprime cabeceras y output en vivo (texto secuencial).
+- `ProgressOutputHandler`: progreso en stderr para json/junit, silencio en stdout.
 - `ResultFormatter` (json/junit) sin cambios — sigue recibiendo `FlowResult` completo al final.
 
 ### 3b. Truncado de comandos largos en tablas
