@@ -22,7 +22,6 @@ githooks flow <name> [options]
 | `--fast-branch` | Fast-branch mode — analyze files that differ from main branch. |
 | `--monitor` | Show thread usage report after execution. |
 | `--config=PATH` | Path to configuration file. |
-| `-- ARGS...` | Extra arguments passed to all jobs in the flow. Place after `--` separator. |
 
 ## Examples
 
@@ -40,7 +39,6 @@ githooks flow qa --fast                             # Only staged files
 githooks flow qa --fast-branch                      # Only branch diff files
 githooks flow qa --monitor                          # Show thread usage report
 githooks flow qa --config=qa/custom-githooks.php    # Use custom config
-githooks flow qa -- --no-cache                      # Pass extra args to all jobs
 ```
 
 ## Structured output
