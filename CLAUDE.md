@@ -154,5 +154,6 @@ return [
 | Crear tests para una feature | `.claude/skills/php-test-creator/` |
 | QA antes de commit (phpmd, phpstan, tests) | `.claude/skills/qa-workflow/` |
 | Testing funcional del CLI | `.claude/skills/qa-tester/` |
+| Documentación externa (MkDocs) | `.claude/skills/docs/` |
 
 Consulta la skill correspondiente antes de empezar una tarea que encaje en estas categorías.

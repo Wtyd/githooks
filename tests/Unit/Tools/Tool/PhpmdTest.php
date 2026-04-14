@@ -4,7 +4,6 @@ namespace Tests\Unit\Tools\Tool;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\Tool\Phpmd;
 use Tests\Doubles\PhpmdFake;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 

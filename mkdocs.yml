@@ -1,5 +1,6 @@
 site_name: GitHooks
 site_url: https://wtyd.github.io/githooks/
+site_dir: public
 site_description: >-
   Standalone CLI tool for managing git hooks and running QA tools in PHP projects.
   One config file. Every QA tool. Every git hook.
@@ -139,6 +140,7 @@ nav:
     - Frontend Tools: how-to/frontend-tools.md
     - Job Inheritance: how-to/job-inheritance.md
     - Output Formats: how-to/output-formats.md
+    - Docker & Local Override: how-to/docker-local-override.md
     - Automating Hook Installation: how-to/automate-install.md
   - Migration:
     - migration/index.md

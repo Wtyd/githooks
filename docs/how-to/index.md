@@ -10,4 +10,5 @@ Practical recipes for common scenarios.
 | [Frontend Tools](frontend-tools.md) | Run ESLint, Prettier, or other non-PHP tools. |
 | [Job Inheritance](job-inheritance.md) | Share configuration between similar jobs. |
 | [Output Formats](output-formats.md) | Use JSON and JUnit output for CI and automation. |
+| [Docker & Local Override](docker-local-override.md) | Run GitHooks with Docker, Sail, or remote environments. |
 | [Automating Hook Installation](automate-install.md) | Ensure hooks are installed for every team member. |

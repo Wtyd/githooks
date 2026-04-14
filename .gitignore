@@ -42,6 +42,7 @@ githooks-73
 githooks-80
 
 *.zip
+/*.tar
 *.md
 !/CLAUDE.md
 !.claude/**/*.md

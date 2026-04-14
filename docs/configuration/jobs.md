@@ -45,6 +45,7 @@ The following keywords are available for all job types (except `custom`, which h
 | `failFast` | Boolean | Stop remaining jobs in the flow if this one fails. Default `false`. |
 | `accelerable` | Boolean | Override `--fast` behavior. Default depends on type. |
 | `execution` | String | Per-job execution mode override: `full`, `fast`, or `fast-branch`. |
+| `executable-prefix` | String | Per-job prefix override. Set to `null` or `''` to opt out of the global prefix. |
 
 !!! tip
     Missing keys can cause the job to fail at runtime. For example, a `phpcs` job without `standard` may fail if no standard is configured in the tool's own config file.

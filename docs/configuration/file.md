@@ -26,6 +26,41 @@ GitHooks searches for the configuration file in this order:
 
 Use `--config=path` on any command to specify a custom path.
 
+## Local override (`githooks.local.php`)
+
+GitHooks looks for a `githooks.local.php` file in the same location as `githooks.php`. If found, its contents are merged over the main configuration using `array_replace_recursive`.
+
+This allows each developer to customize their environment without modifying the shared configuration. Add `githooks.local.php` to your `.gitignore`.
+
+```php
+// githooks.local.php — Docker user
+<?php
+return [
+    'flows' => [
+        'options' => [
+            'executable-prefix' => 'docker exec -i app',
+        ],
+    ],
+];
+```
+
+```php
+// githooks.local.php — Laravel Sail user
+<?php
+return [
+    'flows' => [
+        'options' => [
+            'executable-prefix' => './vendor/bin/sail exec laravel.test',
+        ],
+    ],
+];
+```
+
+Developers with native PHP don't need a local file at all. The shared `githooks.php` stays clean, with no environment-specific references.
+
+See [Options: executable-prefix](options.md#executable-prefix) for details on how the prefix is applied.
+See [How-To: Docker & Local Override](../how-to/docker-local-override.md) for practical examples.
+
 ## Generate
 
 ```bash

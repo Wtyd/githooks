@@ -11,6 +11,7 @@ Execution options control how flows run their jobs. They can be set globally (fo
 | `ignoreErrorsOnExit` | Boolean | `false` | Flow returns exit 0 even if any job has errors. Overrides job-level setting. |
 | `main-branch` | String | Auto-detected | Main branch name for `fast-branch` diff computation. |
 | `fast-branch-fallback` | String | `'full'` | Fallback when `fast-branch` cannot compute the diff (e.g. shallow clone). `'full'` runs with all paths; `'fast'` falls back to staged files only. |
+| `executable-prefix` | String | `''` | Command prefix prepended to all job executables (e.g. `'docker exec -i app'`). |
 
 ## Priority
 
@@ -73,3 +74,65 @@ However, `fail-fast` is compatible with `ignoreErrorsOnExit` at **job level**. A
 ```
 
 The `ignoreErrorsOnExit` at flow level overrides the same option for all jobs in that flow.
+
+## Executable prefix
+
+The `executable-prefix` option prepends a command to every job's executable. This is the key to running GitHooks inside Docker, Laravel Sail, or any remote environment.
+
+```php
+'flows' => [
+    'options' => [
+        'executable-prefix' => 'docker exec -i app',
+    ],
+],
+```
+
+With this, a job configured as `vendor/bin/phpstan analyse src` will run as `docker exec -i app vendor/bin/phpstan analyse src`.
+
+### Per-job override
+
+Individual jobs can override or opt out of the global prefix:
+
+```php
+'jobs' => [
+    'phpstan_src' => [
+        'type'  => 'phpstan',
+        'paths' => ['src'],
+        // Uses global prefix (docker exec -i app vendor/bin/phpstan ...)
+    ],
+    'eslint_src' => [
+        'type'              => 'custom',
+        'script'            => 'npx eslint src/',
+        'executable-prefix' => '',     // Opt out: runs locally, not in Docker
+    ],
+    'phpcs_remote' => [
+        'type'              => 'phpcs',
+        'paths'             => ['src'],
+        'executable-prefix' => 'ssh server',  // Different prefix for this job
+    ],
+],
+```
+
+### Priority
+
+1. **Per-job `executable-prefix`** — highest priority. Set to `''` (empty string) or `null` to explicitly opt out.
+2. **Flow-level `options.executable-prefix`** — applies to all jobs in that flow.
+3. **Global `flows.options.executable-prefix`** — applies to all jobs.
+
+### Local override
+
+The most common pattern is to set `executable-prefix` in `githooks.local.php` so each developer configures their own environment:
+
+```php
+// githooks.local.php (not committed)
+<?php
+return [
+    'flows' => [
+        'options' => [
+            'executable-prefix' => 'docker exec -i app',
+        ],
+    ],
+];
+```
+
+See [Configuration File: Local Override](file.md#local-override-githookslocalphp) and [How-To: Docker & Local Override](../how-to/docker-local-override.md).
