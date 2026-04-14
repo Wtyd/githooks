@@ -23,10 +23,13 @@ class JsonResultFormatterTest extends UnitTestCase
         $json = $formatter->format($result);
         $data = json_decode($json, true);
 
+        $this->assertSame(2, $data['version']);
         $this->assertSame('qa', $data['flow']);
         $this->assertTrue($data['success']);
+        $this->assertSame('full', $data['executionMode']);
         $this->assertSame(2, $data['passed']);
         $this->assertSame(0, $data['failed']);
+        $this->assertSame(0, $data['skipped']);
         $this->assertCount(2, $data['jobs']);
         $this->assertSame('phpstan_src', $data['jobs'][0]['name']);
         $this->assertTrue($data['jobs'][0]['success']);
@@ -79,5 +82,73 @@ class JsonResultFormatterTest extends UnitTestCase
         $json = $formatter->format($result);
 
         $this->assertNotNull(json_decode($json), 'Output must be valid JSON');
+    }
+
+    /** @test */
+    function it_includes_v2_fields_per_job()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult(
+                'phpstan_src',
+                true,
+                '',
+                '1.23s',
+                false,
+                'vendor/bin/phpstan analyse src',
+                'phpstan',
+                0,
+                ['src']
+            ),
+        ], '1.23s', 0, 0, 'fast');
+
+        $formatter = new JsonResultFormatter();
+        $data = json_decode($formatter->format($result), true);
+
+        $this->assertSame(2, $data['version']);
+        $this->assertSame('fast', $data['executionMode']);
+
+        $job = $data['jobs'][0];
+        $this->assertSame('phpstan', $job['type']);
+        $this->assertSame(0, $job['exitCode']);
+        $this->assertSame(['src'], $job['paths']);
+        $this->assertSame('vendor/bin/phpstan analyse src', $job['command']);
+        $this->assertFalse($job['skipped']);
+        $this->assertNull($job['skipReason']);
+    }
+
+    /** @test */
+    function it_includes_skipped_jobs_in_json()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+            JobResult::skipped('phpcs_src', 'phpcs', 'no staged files match its paths', ['src']),
+        ], '1s');
+
+        $formatter = new JsonResultFormatter();
+        $data = json_decode($formatter->format($result), true);
+
+        $this->assertSame(1, $data['passed']);
+        $this->assertSame(0, $data['failed']);
+        $this->assertSame(1, $data['skipped']);
+
+        $skippedJob = $data['jobs'][1];
+        $this->assertSame('phpcs_src', $skippedJob['name']);
+        $this->assertSame('phpcs', $skippedJob['type']);
+        $this->assertTrue($skippedJob['skipped']);
+        $this->assertSame('no staged files match its paths', $skippedJob['skipReason']);
+        $this->assertSame(['src'], $skippedJob['paths']);
+    }
+
+    /** @test */
+    function it_always_includes_command_field()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+        ], '1s');
+
+        $formatter = new JsonResultFormatter();
+        $data = json_decode($formatter->format($result), true);
+
+        $this->assertArrayHasKey('command', $data['jobs'][0]);
     }
 }

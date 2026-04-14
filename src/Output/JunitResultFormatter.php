@@ -28,8 +28,18 @@ class JunitResultFormatter implements ResultFormatter
             $testcase = $dom->createElement('testcase');
             $testcase->setAttribute('name', $jobResult->getJobName());
             $testcase->setAttribute('time', $this->parseSeconds($jobResult->getExecutionTime()));
+            if ($jobResult->getType() !== '') {
+                $testcase->setAttribute('classname', $jobResult->getType());
+            }
 
-            if (!$jobResult->isSuccess()) {
+            if ($jobResult->isSkipped()) {
+                $skipped = $dom->createElement('skipped');
+                $reason = $jobResult->getSkipReason();
+                if ($reason !== null) {
+                    $skipped->setAttribute('message', $reason);
+                }
+                $testcase->appendChild($skipped);
+            } elseif (!$jobResult->isSuccess()) {
                 $failure = $dom->createElement('failure');
                 $failure->setAttribute('message', $jobResult->getJobName() . ' failed');
                 $failure->appendChild($dom->createTextNode($this->stripAnsi($jobResult->getOutput())));

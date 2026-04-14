@@ -100,4 +100,56 @@ class JunitResultFormatterTest extends UnitTestCase
         $testcase = $dom->getElementsByTagName('testcase')->item(0);
         $this->assertSame('0.234', $testcase->getAttribute('time'));
     }
+
+    /** @test */
+    function it_adds_skipped_element_for_skipped_jobs()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+            JobResult::skipped('phpcs_src', 'phpcs', 'no staged files match its paths', ['src']),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $skippedElements = $dom->getElementsByTagName('skipped');
+        $this->assertSame(1, $skippedElements->length);
+        $this->assertSame('no staged files match its paths', $skippedElements->item(0)->getAttribute('message'));
+
+        // Skipped job should not have failure element
+        $testcases = $dom->getElementsByTagName('testcase');
+        $skippedTestcase = $testcases->item(1);
+        $this->assertSame(0, $skippedTestcase->getElementsByTagName('failure')->length);
+    }
+
+    /** @test */
+    function it_adds_classname_attribute_with_job_type()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s', false, null, 'phpstan'),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $testcase = $dom->getElementsByTagName('testcase')->item(0);
+        $this->assertSame('phpstan', $testcase->getAttribute('classname'));
+    }
+
+    /** @test */
+    function it_omits_classname_when_type_is_empty()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('test', true, '', '1s'),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $testcase = $dom->getElementsByTagName('testcase')->item(0);
+        $this->assertSame('', $testcase->getAttribute('classname'));
+    }
 }

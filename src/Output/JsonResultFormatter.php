@@ -12,26 +12,31 @@ class JsonResultFormatter implements ResultFormatter
     public function format(FlowResult $result): string
     {
         $jobs = array_map(function (JobResult $job): array {
-            $entry = [
+            return [
                 'name'        => $job->getJobName(),
+                'type'        => $job->getType(),
                 'success'     => $job->isSuccess(),
                 'time'        => $job->getExecutionTime(),
+                'exitCode'    => $job->getExitCode(),
                 'output'      => $this->stripAnsi($job->getOutput()),
                 'fixApplied'  => $job->isFixApplied(),
+                'command'     => $job->getCommand(),
+                'paths'       => $job->getPaths(),
+                'skipped'     => $job->isSkipped(),
+                'skipReason'  => $job->getSkipReason(),
             ];
-            if ($job->getCommand() !== null) {
-                $entry['command'] = $job->getCommand();
-            }
-            return $entry;
         }, $result->getJobResults());
 
         $data = [
-            'flow'      => $result->getFlowName(),
-            'success'   => $result->isSuccess(),
-            'totalTime' => $result->getTotalTime(),
-            'passed'    => $result->getPassedCount(),
-            'failed'    => $result->getFailedCount(),
-            'jobs'      => array_values($jobs),
+            'version'       => 2,
+            'flow'          => $result->getFlowName(),
+            'success'       => $result->isSuccess(),
+            'totalTime'     => $result->getTotalTime(),
+            'executionMode' => $result->getExecutionMode(),
+            'passed'        => $result->getPassedCount(),
+            'failed'        => $result->getFailedCount(),
+            'skipped'       => $result->getSkippedCount(),
+            'jobs'          => array_values($jobs),
         ];
 
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
