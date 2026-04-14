@@ -135,7 +135,7 @@ class FlowCommand extends Command
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
             foreach ($config->getValidation()->getWarnings() as $warning) {
-                if (strpos($warning, 'will be skipped') !== false) {
+                if (strpos($warning, 'skipped') !== false) {
                     echo "  \e[43m\e[30m⏩ $warning\033[0m\n";
                 } else {
                     $this->warn($warning);
