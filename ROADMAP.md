@@ -6,7 +6,7 @@
 | -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **v3.0** | Release               | Versión final publicada. Arquitectura hooks/flows/jobs, modos fast/fast-branch, conf:init interactivo, output JSON/JUnit, thread budgeting. |
 | **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
-| **v3.2** | Herramientas y Output | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
+| **v3.2** | Herramientas y Output ✔ | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
 | **v3.3** | Madurez               | Wizard de instalación, validación commit messages, monitor de rendimiento, flag `--files`, receta config compartida Composer, prohibir espacios en nombres de job, comando `flows` multi-flow, estandarizar claves a kebab-case |
 
 ---
@@ -31,17 +31,17 @@ Implementado solo para el comando `job`: `githooks job phpunit_all -- --filter=t
 
 ## v3.2 — Herramientas y Output
 
-Objetivo: cubrir el gap de herramientas nativas y mejorar la integración con CI e IA.
+Objetivo: cubrir el gap de herramientas nativas y mejorar la integración con CI e IA. **Release Candidate en preparación.**
 
-### 1. PHP CS Fixer como tipo nativo
+### 1. PHP CS Fixer como tipo nativo ✔
 
 Argumentos abstraídos: config, rules, dry-run, diff, allow-risky. Auto-staging automático (igual que phpcbf) cuando no se ejecuta en modo `--dry-run`. Modo `accelerable: true` por defecto. Es la herramienta de estilo más usada en proyectos Symfony/Laravel modernos y ejecutarla vía custom pierde la abstracción de argumentos que sí tienen phpcs, phpstan o psalm.
 
-### 2. Rector como tipo nativo
+### 2. Rector como tipo nativo ✔
 
 Argumentos abstraídos: config, dry-run, clear-cache. Rector es cada vez más estándar en el ecosistema PHP para refactorización automática y modernización de código. Mismo razonamiento que PHP CS Fixer.
 
-### 3. Rediseño del sistema de output
+### 3. Rediseño del sistema de output ✔
 
 El sistema de output actual bufferiza toda la salida de los procesos y solo muestra "OK"/"KO" al final. Esto tiene dos problemas: en jobs largos (phpmd puede tardar 800s) parece que la herramienta está congelada, y se pierde la visibilidad en tiempo real que tenía v2.
 
@@ -153,11 +153,11 @@ githooks flow qa --format=json               # stderr muestra progreso:
 - `ProgressOutputHandler`: progreso en stderr para json/junit, silencio en stdout.
 - `ResultFormatter` (json/junit) sin cambios — sigue recibiendo `FlowResult` completo al final.
 
-### 3b. Truncado de comandos largos en tablas
+### 3b. Truncado de comandos largos en tablas ✔
 
 Cuando un job tiene muchos argumentos (ej: phpcpd con 15+ `--exclude`), el comando generado puede superar los 500 caracteres y desbordar la tabla de `conf:check`. Regla: en contextos tabulares (múltiples jobs) truncar a 80 caracteres con `...`; en contextos de job individual (`job X --dry-run`) mostrar el comando completo.
 
-### 4. Output CI nativo y formatos Code Climate / SARIF
+### 4. Output CI nativo y formatos Code Climate / SARIF ✔
 
 Dos niveles de integración CI:
 
@@ -187,7 +187,7 @@ Dos niveles de integración CI:
 
 Ambos formatos requieren que GitHooks parsee el output estructurado de cada herramienta (phpstan `--error-format=json`, phpcs `--report=json`, phpmd `--json`, psalm `--output-format=json`) para extraer file, línea y mensaje. Herramientas que no producen output con localización (phpunit, phpcpd) se excluyen de estos formatos — sus resultados siguen disponibles en `--format=json`.
 
-### 5. Revisión del formato JSON para consumo por IA
+### 5. Revisión del formato JSON para consumo por IA ✔
 
 El JSON actual (`--format=json`) tiene campos básicos pero le falta información clave para que una IA o herramienta externa pueda consumirlo eficazmente. Campos a revisar/añadir:
 
@@ -201,7 +201,7 @@ El JSON actual (`--format=json`) tiene campos básicos pero le falta informació
 
 El objetivo es que el JSON sea un contrato estable que herramientas externas (IA, dashboards, scripts) puedan consumir sin parsear texto plano.
 
-### 6. Tests Windows
+### 6. Tests Windows ✔
 
 Batería de tests que verifique que la funcionalidad core es correcta en Windows. Actualmente todas las pruebas se ejecutan en Linux. Áreas a cubrir: paths con `\`, `DIRECTORY_SEPARATOR`, detección de CPUs (`wmic`, `NUMBER_OF_PROCESSORS`), ejecución de procesos, y resolución de rutas de ejecutables.
 
