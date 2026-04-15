@@ -10,6 +10,7 @@ use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Output\CI\CIEnvironment;
 use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
 use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
+use Wtyd\GitHooks\Output\DashboardOutputHandler;
 use Wtyd\GitHooks\Output\CodeClimateResultFormatter;
 use Wtyd\GitHooks\Output\JsonResultFormatter;
 use Wtyd\GitHooks\Output\JunitResultFormatter;
@@ -59,19 +60,15 @@ trait FormatsOutput
             // Text format: use streaming for sequential, keep buffered for parallel
             $handler = new StreamingTextOutputHandler($this->getLaravel()->make(Printer::class));
         } else {
-            $handler = null; // keep default TextOutputHandler
+            // Parallel text: use dashboard with live timers
+            $handler = new DashboardOutputHandler();
         }
 
-        if ($handler !== null) {
-            // CI decorator only for text format — structured formats write clean output
-            if (!$isStructured) {
-                $handler = $this->wrapWithCIDecorator($handler);
-            }
-            $executor->setOutputHandler($handler);
-        } else {
-            // Parallel text: wrap existing default handler with CI decorator if needed
-            $this->applyCIDecoratorToExecutor($executor);
+        // CI decorator only for text format — structured formats write clean output
+        if (!$isStructured) {
+            $handler = $this->wrapWithCIDecorator($handler);
         }
+        $executor->setOutputHandler($handler);
     }
 
     /**
@@ -94,24 +91,6 @@ trait FormatsOutput
         }
 
         return $handler;
-    }
-
-    /**
-     * Apply CI decorator to the executor's existing handler (for parallel text mode).
-     */
-    private function applyCIDecoratorToExecutor(FlowExecutor $executor): void
-    {
-        if ($this->isCIDisabled()) {
-            return;
-        }
-
-        $ci = CIEnvironment::detect();
-
-        if ($ci === CIEnvironment::GITHUB_ACTIONS) {
-            $executor->setOutputHandler(new GitHubActionsDecorator($executor->getOutputHandler()));
-        } elseif ($ci === CIEnvironment::GITLAB_CI) {
-            $executor->setOutputHandler(new GitLabCIDecorator($executor->getOutputHandler()));
-        }
     }
 
     private function isCIDisabled(): bool

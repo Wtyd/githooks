@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\Execution;
 
 use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\GitHooks\Output\DashboardOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
 use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
 use Wtyd\GitHooks\Utils\GitStagerInterface;
@@ -177,17 +178,38 @@ class FlowExecutor
      * @param JobAbstract[] $jobs
      * @return JobResult[]
      */
+    /**
+     * @param JobAbstract[] $jobs
+     * @return JobResult[]
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates pool + dashboard + fail-fast
+     * @SuppressWarnings(PHPMD.NPathComplexity) Dashboard tick + pool fill + fail-fast paths
+     */
     private function executeParallel(array $jobs, int $maxProcesses, bool $failFast): array
     {
         $results = [];
         $pool = new ProcessPool($maxProcesses);
         $pool->enqueue($jobs);
         $failFastTriggered = false;
+        $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;
+        $lastTick = microtime(true);
+
+        // Register all job names for dashboard display
+        if ($dashboard !== null) {
+            $names = array_map(function (JobAbstract $job): string {
+                return $job->getDisplayName();
+            }, $jobs);
+            $dashboard->registerJobs($names);
+        }
 
         while ($pool->hasWork()) {
             if (!$failFastTriggered) {
-                $pool->fillPool();
+                $started = $pool->fillPool();
                 $this->updatePeakThreads($pool->getRunning());
+
+                // Notify handler about newly started jobs
+                foreach ($started as $entry) {
+                    $this->outputHandler->onJobStart($entry['job']->getDisplayName());
+                }
             }
 
             foreach ($pool->pollCompleted() as $entry) {
@@ -208,6 +230,12 @@ class FlowExecutor
             }
 
             if ($pool->hasRunning()) {
+                // Update dashboard timer at ~200ms intervals
+                $now = microtime(true);
+                if ($dashboard !== null && ($now - $lastTick) >= 0.2) {
+                    $dashboard->tick();
+                    $lastTick = $now;
+                }
                 usleep(10000);
             }
         }
