@@ -6,6 +6,16 @@ namespace Wtyd\GitHooks\Jobs;
 
 class PhpcbfJob extends PhpcsJob
 {
+    public function supportsStructuredOutput(): bool
+    {
+        return false;
+    }
+
+    public function applyStructuredOutputFormat(): bool
+    {
+        return false;
+    }
+
     public static function getDefaultExecutable(): string
     {
         return 'phpcbf';

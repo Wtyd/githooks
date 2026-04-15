@@ -258,6 +258,24 @@ abstract class JobAbstract
     }
 
     /**
+     * Whether this tool type supports structured output parsing (JSON).
+     */
+    public function supportsStructuredOutput(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Apply format overrides for structured output mode (codeclimate/sarif).
+     * Subclasses override to inject JSON output flags (e.g. --error-format=json).
+     * Returns true if overrides were applied.
+     */
+    public function applyStructuredOutputFormat(): bool
+    {
+        return false;
+    }
+
+    /**
      * Return paths to cache files/directories used by this tool.
      * Override in subclasses that produce caches.
      *

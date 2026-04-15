@@ -21,6 +21,8 @@ class FlowExecutor
 
     private ?GitStagerInterface $gitStager;
 
+    private bool $structuredFormat = false;
+
     private int $peakEstimatedThreads = 0;
 
     /** @var array<string, int> jobName => estimated threads */
@@ -42,8 +44,14 @@ class FlowExecutor
         $this->outputHandler = $outputHandler;
     }
 
+    public function setStructuredFormat(bool $structured): void
+    {
+        $this->structuredFormat = $structured;
+    }
+
     /**
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates thread budget + sequential/parallel dispatch
+     * @SuppressWarnings(PHPMD.NPathComplexity) Structured format + thread budget + sequential/parallel paths
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) dry-run is a simple mode toggle, not an SRP violation
      */
     public function execute(FlowPlan $plan, bool $dryRun = false): FlowResult
@@ -56,6 +64,12 @@ class FlowExecutor
 
         foreach ($jobs as $job) {
             $this->propagateContext($job, $context);
+        }
+
+        if ($this->structuredFormat) {
+            foreach ($jobs as $job) {
+                $job->applyStructuredOutputFormat();
+            }
         }
 
         $this->outputHandler->onFlowStart(count($jobs));
@@ -253,7 +267,8 @@ class FlowExecutor
         $elapsed = microtime(true) - $start;
         $time = $this->formatTime($elapsed);
         $exitCode = $process->getExitCode() ?? 1;
-        $output = $process->getOutput() . $process->getErrorOutput();
+        $stdout = $process->getOutput();
+        $output = $stdout . $process->getErrorOutput();
         $fixApplied = $job->isFixApplied($exitCode);
         $success = $exitCode === 0 || $fixApplied;
 
@@ -285,7 +300,10 @@ class FlowExecutor
             $command,
             $job->getType(),
             $exitCode,
-            $job->getConfiguredPaths()
+            $job->getConfiguredPaths(),
+            false,
+            null,
+            $stdout
         );
     }
 

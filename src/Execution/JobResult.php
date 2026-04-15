@@ -29,6 +29,8 @@ class JobResult
 
     private ?string $skipReason;
 
+    private ?string $stdout;
+
     /**
      * @param string[] $paths
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object
@@ -45,7 +47,8 @@ class JobResult
         ?int $exitCode = null,
         array $paths = [],
         bool $skipped = false,
-        ?string $skipReason = null
+        ?string $skipReason = null,
+        ?string $stdout = null
     ) {
         $this->jobName = $jobName;
         $this->success = $success;
@@ -58,6 +61,7 @@ class JobResult
         $this->paths = $paths;
         $this->skipped = $skipped;
         $this->skipReason = $skipReason;
+        $this->stdout = $stdout;
     }
 
     /**
@@ -124,5 +128,11 @@ class JobResult
     public function getSkipReason(): ?string
     {
         return $this->skipReason;
+    }
+
+    /** Raw stdout from the process (separate from combined output). */
+    public function getStdout(): ?string
+    {
+        return $this->stdout;
     }
 }

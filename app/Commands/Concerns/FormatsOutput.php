@@ -10,11 +10,13 @@ use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Output\CI\CIEnvironment;
 use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
 use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
+use Wtyd\GitHooks\Output\CodeClimateResultFormatter;
 use Wtyd\GitHooks\Output\JsonResultFormatter;
 use Wtyd\GitHooks\Output\JunitResultFormatter;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
 use Wtyd\GitHooks\Output\ProgressOutputHandler;
+use Wtyd\GitHooks\Output\SarifResultFormatter;
 use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
 use Wtyd\GitHooks\Utils\Printer;
 
@@ -36,13 +38,19 @@ trait FormatsOutput
     {
         $format = strval($this->option('format'));
 
-        if ($format !== '' && !in_array($format, ['text', 'json', 'junit'], true)) {
-            $this->warn("Unknown format '$format'. Using text output. Valid formats: text, json, junit.");
+        $validFormats = ['text', 'json', 'junit', 'codeclimate', 'sarif'];
+        if ($format !== '' && !in_array($format, $validFormats, true)) {
+            $this->warn("Unknown format '$format'. Using text output. Valid formats: " . implode(', ', $validFormats) . '.');
             $format = 'text';
         }
 
-        if ($format === 'json' || $format === 'junit') {
+        $isStructured = in_array($format, ['json', 'junit', 'codeclimate', 'sarif'], true);
+
+        if ($isStructured) {
             $handler = $this->resolveProgressHandler();
+            if ($format === 'codeclimate' || $format === 'sarif') {
+                $executor->setStructuredFormat(true);
+            }
         } elseif (
             $plan === null
             || $plan->getOptions()->getProcesses() <= 1
@@ -55,7 +63,10 @@ trait FormatsOutput
         }
 
         if ($handler !== null) {
-            $handler = $this->wrapWithCIDecorator($handler);
+            // CI decorator only for text format — structured formats write clean output
+            if (!$isStructured) {
+                $handler = $this->wrapWithCIDecorator($handler);
+            }
             $executor->setOutputHandler($handler);
         } else {
             // Parallel text: wrap existing default handler with CI decorator if needed
@@ -129,12 +140,41 @@ trait FormatsOutput
             $this->line((new JsonResultFormatter())->format($result));
         } elseif ($format === 'junit') {
             $this->line((new JunitResultFormatter())->format($result));
+        } elseif ($format === 'codeclimate') {
+            $this->outputReportToFile(
+                (new CodeClimateResultFormatter())->format($result),
+                'gl-code-quality-report.json'
+            );
+        } elseif ($format === 'sarif') {
+            $this->outputReportToFile(
+                (new SarifResultFormatter())->format($result),
+                'githooks-results.sarif'
+            );
         } else {
             $total = count($result->getJobResults());
             $passed = $result->getPassedCount();
             $time = $result->getTotalTime();
             $this->line("Results: $passed/$total passed in $time" . ($result->isSuccess() ? ' ✔️' : ''));
         }
+    }
+
+    /**
+     * Write report to file (default) or stdout (with --stdout flag).
+     * Supports --output=custom/path.json for custom file paths.
+     */
+    private function outputReportToFile(string $content, string $defaultFilename): void
+    {
+        $useStdout = $this->hasOption('stdout') && $this->option('stdout');
+        $customOutput = $this->hasOption('output') ? $this->option('output') : null;
+
+        if ($useStdout) {
+            $this->line($content);
+            return;
+        }
+
+        $path = !empty($customOutput) ? strval($customOutput) : $defaultFilename;
+        file_put_contents($path, $content . "\n");
+        $this->info("Report written to: $path");
     }
 
     private function renderMonitorReport(FlowResult $result): void

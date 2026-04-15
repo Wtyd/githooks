@@ -14,6 +14,8 @@ class PhpmdJob extends JobAbstract
 {
     public const SUPPORTS_FAST = true;
 
+    private bool $useJsonFormat = false;
+
     protected const ARGUMENT_MAP = [
         'exclude'        => ['flag' => '--exclude', 'type' => 'csv', 'separator' => ' '],
         'cache'          => ['flag' => '--cache', 'type' => 'boolean'],
@@ -28,13 +30,27 @@ class PhpmdJob extends JobAbstract
         return 'phpmd';
     }
 
+    public function supportsStructuredOutput(): bool
+    {
+        return true;
+    }
+
+    public function applyStructuredOutputFormat(): bool
+    {
+        $this->useJsonFormat = true;
+        return true;
+    }
+
     /** @return string[] */
     public function getCachePaths(): array
     {
         return [$this->args['cache-file'] ?? '.phpmd.cache'];
     }
 
-    /** @SuppressWarnings(PHPMD.CyclomaticComplexity) PHPMD requires positional args + flag iteration */
+    /**
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) PHPMD requires positional args + flag iteration
+     * @SuppressWarnings(PHPMD.NPathComplexity) Positional args + format switch + flag iteration
+     */
     public function buildCommand(): string
     {
         $command = $this->getEffectiveExecutable();
@@ -42,7 +58,8 @@ class PhpmdJob extends JobAbstract
         // Positional: paths (comma-separated), format, rules
         $paths = $this->args['paths'] ?? [];
         $command .= ' ' . (is_array($paths) ? implode(',', $paths) : $paths);
-        $command .= ' ansi';
+        $format = $this->useJsonFormat ? 'json' : 'ansi';
+        $command .= ' ' . $format;
         $command .= ' ' . ($this->args['rules'] ?? 'cleancode,codesize,design,naming,unusedcode');
 
         // Flags from ARGUMENT_MAP

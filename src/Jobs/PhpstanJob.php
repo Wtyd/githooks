@@ -30,6 +30,18 @@ class PhpstanJob extends JobAbstract
         return 'analyse';
     }
 
+    public function supportsStructuredOutput(): bool
+    {
+        return true;
+    }
+
+    public function applyStructuredOutputFormat(): bool
+    {
+        $this->args['error-format'] = 'json';
+        $this->args['no-progress'] = true;
+        return true;
+    }
+
     public function getThreadCapability(): ?ThreadCapability
     {
         $workers = $this->detectNeonWorkers();

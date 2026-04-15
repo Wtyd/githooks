@@ -27,6 +27,17 @@ class PsalmJob extends JobAbstract
         return 'psalm';
     }
 
+    public function supportsStructuredOutput(): bool
+    {
+        return true;
+    }
+
+    public function applyStructuredOutputFormat(): bool
+    {
+        $this->args['output-format'] = 'json';
+        return true;
+    }
+
     /** @return string[] */
     public function getCachePaths(): array
     {

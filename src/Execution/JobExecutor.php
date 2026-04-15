@@ -30,7 +30,8 @@ class JobExecutor
         $time = $this->formatTime($elapsed);
 
         $exitCode = $process->getExitCode() ?? 1;
-        $output = $process->getOutput() . $process->getErrorOutput();
+        $stdout = $process->getOutput();
+        $output = $stdout . $process->getErrorOutput();
         $fixApplied = $job->isFixApplied($exitCode);
 
         $success = $exitCode === 0 || $fixApplied;
@@ -61,7 +62,10 @@ class JobExecutor
             $command,
             $job->getType(),
             $exitCode,
-            $job->getConfiguredPaths()
+            $job->getConfiguredPaths(),
+            false,
+            null,
+            $stdout
         );
     }
 

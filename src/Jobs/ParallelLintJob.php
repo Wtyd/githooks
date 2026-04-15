@@ -13,8 +13,20 @@ class ParallelLintJob extends JobAbstract
     protected const ARGUMENT_MAP = [
         'jobs'    => ['flag' => '-j', 'type' => 'value', 'separator' => ' '],
         'exclude' => ['flag' => '--exclude', 'type' => 'repeat'],
+        'json'    => ['flag' => '--json', 'type' => 'boolean'],
         'paths'   => ['type' => 'paths'],
     ];
+
+    public function supportsStructuredOutput(): bool
+    {
+        return true;
+    }
+
+    public function applyStructuredOutputFormat(): bool
+    {
+        $this->args['json'] = true;
+        return true;
+    }
 
     public static function getDefaultExecutable(): string
     {

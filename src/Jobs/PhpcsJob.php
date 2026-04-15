@@ -27,6 +27,17 @@ class PhpcsJob extends JobAbstract
         return 'phpcs';
     }
 
+    public function supportsStructuredOutput(): bool
+    {
+        return true;
+    }
+
+    public function applyStructuredOutputFormat(): bool
+    {
+        $this->args['report'] = 'json';
+        return true;
+    }
+
     /** @return string[] */
     public function getCachePaths(): array
     {
