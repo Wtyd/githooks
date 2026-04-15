@@ -6,8 +6,8 @@
 | -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | **v3.0** | Release               | Versión final publicada. Arquitectura hooks/flows/jobs, modos fast/fast-branch, conf:init interactivo, output JSON/JUnit, thread budgeting. |
 | **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
-| **v3.2** | Herramientas y Output | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming texto + progress bar formatos), output CI nativo, revisión JSON para IA, Wizard de instalación, tests Windows |
-| **v3.3** | Madurez               | Validación commit messages, monitor de rendimiento, flag `--files`, receta config compartida Composer, prohibir espacios en nombres de job, comando `flows` multi-flow, estandarizar claves a kebab-case |
+| **v3.2** | Herramientas y Output | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
+| **v3.3** | Madurez               | Wizard de instalación, validación commit messages, monitor de rendimiento, flag `--files`, receta config compartida Composer, prohibir espacios en nombres de job, comando `flows` multi-flow, estandarizar claves a kebab-case |
 
 ---
 
@@ -53,7 +53,7 @@ La regla que unifica el diseño: **el formato determina el comportamiento del ou
 |---|---|
 | Single job (`job X`) | Streaming en vivo vía `process->wait($callback)`. El usuario ve la salida real de la herramienta como en v2. |
 | Flow secuencial (processes=1) | Cada job streameado con cabecera separadora entre jobs. Como `make` o `docker-compose`. |
-| Flow paralelo (processes>1) | Línea de estado por job ("Running X...") que se actualiza al completar con OK/KO + tiempo. Output completo solo en error. No se puede streamear output paralelo sin interleaving. |
+| Flow paralelo (processes>1) | Dashboard interactivo con tres estados: ⏺ en cola, ⏳ ejecutando [timer], ✓/✗ terminado. Se actualiza en vivo con ANSI cursor. Output completo solo en error. Al final queda la foto limpia de resultados. En CI (no TTY) fallback a output append-only. |
 
 **Formato estructurado (json, junit — máquina, IA, CI):**
 
@@ -103,6 +103,36 @@ Results: 8/8 passed in 12.18s ✔️
 Results: 8/8 passed in 12.18s ✔️
 ```
 
+**Ejemplo: flow paralelo (processes=4, 7 jobs) — dashboard con estados:**
+
+```
+# ANTES (v3.1): nada hasta que terminan
+  Phpcpd - OK. Time: 175ms
+  Phpstan Src - OK. Time: 832ms
+  ...
+
+# DESPUÉS (v3.2): feedback inmediato con 3 estados
+  Phpcpd - OK. Time: 175ms
+  ⏳ Phpstan Src [0.9s]            ← ejecutando (timer en vivo)
+  ⏳ Parallel-lint [0.9s]
+  ⏳ Phpmd Src [0.9s]
+  ⏳ Phpcs [0.1s]                  ← entró al liberarse un slot
+  ⏺ Phpunit                       ← en cola, esperando slot
+  ⏺ Composer Audit
+
+# Cuando todos terminan, queda la foto limpia:
+  Phpcpd - OK. Time: 175ms
+  Phpstan Src - OK. Time: 832ms
+  Parallel-lint - OK. Time: 1.24s
+  Phpmd Src - OK. Time: 1.65s
+  Phpcs - OK. Time: 2.34s
+  Phpunit - OK. Time: 4.23s
+  Composer Audit - OK. Time: 1.47s
+Results: 7/7 passed in 4.23s ✔️
+```
+
+En CI (no TTY), fallback a output append-only sin ANSI cursor movement.
+
 **Ejemplo: formato JSON — progreso en stderr, datos en stdout:**
 
 ```bash
@@ -127,9 +157,35 @@ githooks flow qa --format=json               # stderr muestra progreso:
 
 Cuando un job tiene muchos argumentos (ej: phpcpd con 15+ `--exclude`), el comando generado puede superar los 500 caracteres y desbordar la tabla de `conf:check`. Regla: en contextos tabulares (múltiples jobs) truncar a 80 caracteres con `...`; en contextos de job individual (`job X --dry-run`) mostrar el comando completo.
 
-### 4. Output CI nativo
+### 4. Output CI nativo y formatos Code Climate / SARIF
 
-Detectar automáticamente el entorno de ejecución (GitHub Actions, GitLab CI, etc.) y formatear la salida con anotaciones nativas del entorno. En GitHub Actions, los errores formateados como `::error file=src/User.php,line=14::...` aparecen como anotaciones inline directamente en el PR. En GitLab CI, las secciones colapsables mejoran la legibilidad del log. No cambia la funcionalidad: las mismas herramientas, los mismos errores, pero visualmente integrados en la plataforma de CI.
+Dos niveles de integración CI:
+
+**Nivel 1 — Anotaciones automáticas (ya implementado):** Detección automática de entorno (GitHub Actions, GitLab CI) con anotaciones nativas. En GitHub Actions, `::error file=src/User.php,line=14::...` genera anotaciones inline en el diff del PR. En GitLab CI, secciones colapsables en el log. Se desactiva con `--no-ci`.
+
+**Nivel 2 — Formatos de reporte para CI (Code Climate + SARIF):** Nuevos formatos de output que las plataformas CI consumen como artefactos para mostrar resultados inline en PRs/MRs:
+
+- `--format=codeclimate` → JSON en formato [Code Climate](https://docs.gitlab.com/ci/testing/code_quality/). GitLab CI lo consume como artefacto `codequality` y muestra violaciones inline en el MR. Ejemplo de uso en `.gitlab-ci.yml`:
+
+  ```yaml
+  code_quality:
+    script:
+      - githooks flow qa --format=codeclimate > gl-code-quality-report.json
+    artifacts:
+      reports:
+        codequality: gl-code-quality-report.json
+  ```
+
+- `--format=sarif` → JSON en formato [SARIF](https://sarifweb.azurewebsites.net/). GitHub lo consume via Code Scanning (upload-sarif action) y muestra alertas inline en el PR. Ejemplo en GitHub Actions:
+
+  ```yaml
+  - run: githooks flow qa --format=sarif > results.sarif
+  - uses: github/codeql-action/upload-sarif@v3
+    with:
+      sarif_file: results.sarif
+  ```
+
+Ambos formatos requieren que GitHooks parsee el output estructurado de cada herramienta (phpstan `--error-format=json`, phpcs `--report=json`, phpmd `--json`, psalm `--output-format=json`) para extraer file, línea y mensaje. Herramientas que no producen output con localización (phpunit, phpcpd) se excluyen de estos formatos — sus resultados siguen disponibles en `--format=json`.
 
 ### 5. Revisión del formato JSON para consumo por IA
 
@@ -145,17 +201,7 @@ El JSON actual (`--format=json`) tiene campos básicos pero le falta informació
 
 El objetivo es que el JSON sea un contrato estable que herramientas externas (IA, dashboards, scripts) puedan consumir sin parsear texto plano.
 
-### 6. Wizard de instalación
-
-Evolucionar `conf:init` de un generador de config rápido a un asistente de onboarding completo. Actualmente `conf:init` solo detecta herramientas ya instaladas en `vendor/bin/` y genera un fichero con defaults genéricos. El wizard debe:
-
-- **Ofrecer descargar herramientas** que el usuario quiera pero no tenga instaladas.
-- **Dos métodos de instalación**: Composer (`composer require --dev`) o PHAR (descarga en un directorio dado, por defecto `tools/`).
-- **Guiar sobre buenas prácticas Composer**: herramientas QA en `require-dev`, o `composer.json` separado para evitar conflictos de dependencias.
-- **Configurar cada herramienta paso a paso**: preguntar level de phpstan, standard de phpcs, rules de phpmd, etc. en lugar de poner defaults genéricos.
-- **Explicar al usuario** qué hace cada opción con contexto y tips.
-
-### 7. Tests Windows
+### 6. Tests Windows
 
 Batería de tests que verifique que la funcionalidad core es correcta en Windows. Actualmente todas las pruebas se ejecutan en Linux. Áreas a cubrir: paths con `\`, `DIRECTORY_SEPARATOR`, detección de CPUs (`wmic`, `NUMBER_OF_PROCESSORS`), ejecución de procesos, y resolución de rutas de ejecutables.
 
@@ -165,27 +211,38 @@ Batería de tests que verifique que la funcionalidad core es correcta en Windows
 
 Objetivo: pulir funcionalidades y diferenciar frente a la competencia.
 
-### 1. Validación de commit messages como tipo nativo
+### 1. Wizard de instalación
+
+Evolucionar `conf:init` de un generador de config rápido a un asistente de onboarding completo. Actualmente `conf:init` solo detecta herramientas ya instaladas en `vendor/bin/` y genera un fichero con defaults genéricos. El wizard debe:
+
+- **Ofrecer descargar herramientas** que el usuario quiera pero no tenga instaladas.
+- **Dos métodos de instalación**: Composer (`composer require --dev`) o PHAR (descarga en un directorio dado, por defecto `tools/`).
+- **Guiar sobre buenas prácticas Composer**: herramientas QA en `require-dev`, o `composer.json` separado para evitar conflictos de dependencias.
+- **Configurar cada herramienta paso a paso**: preguntar level de phpstan, standard de phpcs, rules de phpmd, etc. en lugar de poner defaults genéricos.
+- **Explicar al usuario** qué hace cada opción con contexto y tips.
+
+### 2. Validación de commit messages como tipo nativo
 
 Un tipo de job específico que permita validar el mensaje de commit con regex, longitud mínima/máxima y opcionalmente conventional commits como formato predefinido. Hoy se puede hacer con un job `script` en el hook `commit-msg`, pero un tipo nativo abstraería la configuración y sería coherente con la filosofía de GitHooks.
 
-### 2. Monitor de rendimiento
+### 3. Monitor de rendimiento
 
 Evolucionar el `--monitor` existente a un reporte de tiempos por job y por flow. Que el equipo pueda ver que phpstan tarda 12 segundos, phpcs tarda 2 y phpunit tarda 45, y así decidir si sacar phpunit del pre-commit al pre-push, o si ajustar el thread budget. Ninguna de las herramientas competidoras ofrece esto. Diferenciador real.
 
-### 3. Flag `--files` para ejecución contra lista explícita
+### 4. Flag `--files` para ejecución contra lista explícita
 
 Ejecución de flow o job en modo `--fast` aceptando un argumento `--files` con un array de ficheros contra los que se lanza. El caso de uso principal es CI/CD en ramas de tarea: se le pasan por parámetro los ficheros modificados en el último commit. Otra opción es un flag `--fast-ci` donde GitHooks detecta automáticamente los ficheros del último commit vía comandos git.
 
-### 4. Receta de config compartida vía paquete Composer
+### 5. Receta de config compartida vía paquete Composer
 
 Documentar el patrón para empresas con muchos repos que quieran mantener reglas QA centralizadas. No requiere funcionalidad nueva: como la config es PHP, un `require` de un paquete Composer + merge de arrays ya funciona. Solo falta una receta oficial en la documentación que lo explique como patrón recomendado.
 
-### 5. Prohibir espacios en nombres de job
+### 6. Prohibir espacios en nombres de job
 
 Los nombres de job con espacios (`Phpstan Src`) obligan a entrecomillar en CLI: `githooks job "Phpstan Src"`. Añadir validación que rechace espacios en nombres de job y proponga alternativas (`phpstan_src`, `phpstan-src`). Rediseñar `conf:check` al mismo tiempo para usar el nuevo formato sin tablas (comando en su propia línea, jobs agrupados por flow).
 
 ### 7. Comando `flows` — ejecución combinada de múltiples flows
+
 
 Nuevo comando que ejecute varios flows como si fuera uno solo, mergeando sus jobs bajo un único plan de ejecución:
 
@@ -254,6 +311,7 @@ githooks flows qa schedule --processes=4 --fail-fast
 - `ConfigurationResult` no cambia: ya expone flows y jobs por separado.
 
 ### 8. Estandarizar claves de configuración a kebab-case
+
 
 Las claves de job usan camelCase (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) porque vienen de v2. Las claves de options usan kebab-case (`fail-fast`, `main-branch`, `executable-prefix`) porque se crearon en v3. Estandarizar todo a kebab-case con período de deprecation:
 
