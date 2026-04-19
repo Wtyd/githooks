@@ -73,4 +73,110 @@ class PhpcsOutputParserTest extends TestCase
     {
         $this->assertSame([], $this->parser->parse('not json', 'phpcs'));
     }
+
+    /** @test */
+    function it_returns_empty_for_empty_string()
+    {
+        $this->assertSame([], $this->parser->parse('', 'phpcs'));
+    }
+
+    /** @test */
+    function it_returns_empty_when_array_missing_files_key()
+    {
+        $json = json_encode(['totals' => ['errors' => 0]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpcs'));
+    }
+
+    /** @test */
+    function it_skips_file_entries_missing_messages_key()
+    {
+        $json = json_encode(['files' => ['src/A.php' => ['errors' => 1]]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpcs'));
+    }
+
+    /** @test */
+    function it_skips_file_entries_that_are_not_arrays()
+    {
+        $json = json_encode(['files' => ['src/A.php' => 'broken']]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpcs'));
+    }
+
+    /**
+     * @test
+     * @dataProvider messageMissingKeyProvider
+     */
+    function it_skips_message_entries_missing_required_keys(array $message)
+    {
+        $json = json_encode(['files' => ['src/A.php' => ['messages' => [$message]]]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpcs'));
+    }
+
+    public function messageMissingKeyProvider(): array
+    {
+        return [
+            'missing line' => [['message' => 'x', 'type' => 'ERROR']],
+            'missing message' => [['line' => 1, 'type' => 'ERROR']],
+        ];
+    }
+
+    /** @test */
+    function it_treats_lowercase_error_type_as_error_severity()
+    {
+        $json = json_encode([
+            'files' => ['src/A.php' => ['messages' => [
+                ['line' => 1, 'message' => 'x', 'type' => 'error'],
+            ]]],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpcs');
+
+        $this->assertSame('error', $issues[0]->getSeverity());
+    }
+
+    /** @test */
+    function it_defaults_severity_to_warning_when_type_missing()
+    {
+        $json = json_encode([
+            'files' => ['src/A.php' => ['messages' => [
+                ['line' => 1, 'message' => 'x'],
+            ]]],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpcs');
+
+        $this->assertSame('warning', $issues[0]->getSeverity());
+    }
+
+    /** @test */
+    function it_casts_line_and_column_to_int()
+    {
+        $json = json_encode([
+            'files' => ['src/A.php' => ['messages' => [
+                ['line' => '7', 'column' => '3', 'message' => 'x', 'type' => 'ERROR'],
+            ]]],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpcs');
+
+        $this->assertSame(7, $issues[0]->getLine());
+        $this->assertSame(3, $issues[0]->getColumn());
+    }
+
+    /** @test */
+    function it_defaults_source_to_phpcs_when_missing()
+    {
+        $json = json_encode([
+            'files' => ['src/A.php' => ['messages' => [
+                ['line' => 1, 'message' => 'x', 'type' => 'ERROR'],
+            ]]],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpcs');
+
+        $this->assertSame('phpcs', $issues[0]->getRuleId());
+    }
 }

@@ -68,4 +68,47 @@ class PhpstanOutputParserTest extends TestCase
     {
         $this->assertSame([], $this->parser->parse('', 'phpstan'));
     }
+
+    /** @test */
+    function it_returns_empty_when_array_missing_files_key()
+    {
+        $json = json_encode(['totals' => ['errors' => 0]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpstan'));
+    }
+
+    /** @test */
+    function it_skips_file_entries_missing_messages_key()
+    {
+        $json = json_encode(['files' => ['src/A.php' => ['errors' => 1]]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpstan'));
+    }
+
+    /** @test */
+    function it_skips_file_entries_that_are_not_arrays()
+    {
+        $json = json_encode(['files' => ['src/A.php' => 'broken']]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpstan'));
+    }
+
+    /**
+     * @test
+     * @dataProvider messageMissingKeyProvider
+     */
+    function it_skips_message_entries_missing_required_keys(array $message)
+    {
+        $json = json_encode(['files' => ['src/A.php' => ['messages' => [$message]]]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpstan'));
+    }
+
+    public function messageMissingKeyProvider(): array
+    {
+        return [
+            'missing line' => [['message' => 'x']],
+            'missing message' => [['line' => 1]],
+        ];
+    }
 }

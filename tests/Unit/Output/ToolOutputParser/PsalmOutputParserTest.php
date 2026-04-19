@@ -65,4 +65,92 @@ class PsalmOutputParserTest extends TestCase
     {
         $this->assertSame([], $this->parser->parse('not json', 'psalm'));
     }
+
+    /** @test */
+    function it_returns_empty_for_empty_string()
+    {
+        $this->assertSame([], $this->parser->parse('', 'psalm'));
+    }
+
+    /**
+     * @test
+     * @dataProvider itemMissingKeyProvider
+     */
+    function it_skips_items_missing_required_keys(array $item)
+    {
+        $json = json_encode([$item]);
+
+        $this->assertSame([], $this->parser->parse($json, 'psalm'));
+    }
+
+    public function itemMissingKeyProvider(): array
+    {
+        return [
+            'missing file_name' => [['line_from' => 1, 'message' => 'x']],
+            'missing line_from' => [['file_name' => 'A.php', 'message' => 'x']],
+            'missing message' => [['file_name' => 'A.php', 'line_from' => 1]],
+            'not an array' => [[]],
+        ];
+    }
+
+    /** @test */
+    function it_defaults_severity_to_info_when_not_error()
+    {
+        $json = json_encode([[
+            'file_name' => 'A.php',
+            'line_from' => 1,
+            'message' => 'x',
+            'severity' => 'info',
+        ]]);
+
+        $issues = $this->parser->parse($json, 'psalm');
+
+        $this->assertSame('info', $issues[0]->getSeverity());
+    }
+
+    /** @test */
+    function it_defaults_severity_to_info_when_severity_missing()
+    {
+        $json = json_encode([[
+            'file_name' => 'A.php',
+            'line_from' => 1,
+            'message' => 'x',
+        ]]);
+
+        $issues = $this->parser->parse($json, 'psalm');
+
+        $this->assertSame('info', $issues[0]->getSeverity());
+    }
+
+    /** @test */
+    function it_casts_line_from_and_line_to_to_int()
+    {
+        $json = json_encode([[
+            'file_name' => 'A.php',
+            'line_from' => '10',
+            'line_to' => '15',
+            'column_from' => '3',
+            'message' => 'x',
+        ]]);
+
+        $issues = $this->parser->parse($json, 'psalm');
+
+        $this->assertSame(10, $issues[0]->getLine());
+        $this->assertSame(15, $issues[0]->getEndLine());
+        $this->assertSame(3, $issues[0]->getColumn());
+    }
+
+    /** @test */
+    function it_defaults_rule_id_to_psalm_when_type_missing()
+    {
+        $json = json_encode([[
+            'file_name' => 'A.php',
+            'line_from' => 1,
+            'message' => 'x',
+        ]]);
+
+        $issues = $this->parser->parse($json, 'psalm');
+
+        $this->assertSame('psalm', $issues[0]->getRuleId());
+    }
 }

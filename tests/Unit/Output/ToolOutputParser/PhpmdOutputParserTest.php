@@ -72,4 +72,140 @@ class PhpmdOutputParserTest extends TestCase
     {
         $this->assertSame([], $this->parser->parse('not json', 'phpmd'));
     }
+
+    /** @test */
+    function it_returns_empty_for_empty_string()
+    {
+        $this->assertSame([], $this->parser->parse('', 'phpmd'));
+    }
+
+    /** @test */
+    function it_returns_empty_when_array_missing_files_key()
+    {
+        $json = json_encode(['version' => '2.15.0']);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpmd'));
+    }
+
+    /**
+     * @test
+     * @dataProvider fileEntryMissingKeyProvider
+     */
+    function it_skips_file_entries_missing_required_keys(array $fileEntry)
+    {
+        $json = json_encode(['files' => [$fileEntry]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpmd'));
+    }
+
+    public function fileEntryMissingKeyProvider(): array
+    {
+        return [
+            'missing file' => [['violations' => []]],
+            'missing violations' => [['file' => '/abs/A.php']],
+            'not an array' => [[]],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider violationMissingKeyProvider
+     */
+    function it_skips_violations_missing_required_keys(array $violation)
+    {
+        $json = json_encode(['files' => [[
+            'file' => '/abs/A.php',
+            'violations' => [$violation],
+        ]]]);
+
+        $this->assertSame([], $this->parser->parse($json, 'phpmd'));
+    }
+
+    public function violationMissingKeyProvider(): array
+    {
+        return [
+            'missing beginLine' => [['description' => 'x', 'rule' => 'R']],
+            'missing description' => [['beginLine' => 10, 'rule' => 'R']],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider priorityToSeverityProvider
+     */
+    function it_maps_priority_to_severity(int $priority, string $expected)
+    {
+        $json = json_encode(['files' => [[
+            'file' => '/abs/A.php',
+            'violations' => [[
+                'beginLine' => 10,
+                'description' => 'x',
+                'priority' => $priority,
+            ]],
+        ]]]);
+
+        $issues = $this->parser->parse($json, 'phpmd');
+
+        $this->assertSame($expected, $issues[0]->getSeverity());
+    }
+
+    public function priorityToSeverityProvider(): array
+    {
+        return [
+            'priority 1 is error' => [1, 'error'],
+            'priority 2 is error (boundary)' => [2, 'error'],
+            'priority 3 is warning' => [3, 'warning'],
+            'priority 4 is warning' => [4, 'warning'],
+        ];
+    }
+
+    /** @test */
+    function it_defaults_priority_to_3_when_missing_producing_warning()
+    {
+        $json = json_encode(['files' => [[
+            'file' => '/abs/A.php',
+            'violations' => [[
+                'beginLine' => 10,
+                'description' => 'x',
+            ]],
+        ]]]);
+
+        $issues = $this->parser->parse($json, 'phpmd');
+
+        $this->assertSame('warning', $issues[0]->getSeverity());
+    }
+
+    /** @test */
+    function it_defaults_rule_id_to_phpmd_when_missing()
+    {
+        $json = json_encode(['files' => [[
+            'file' => '/abs/A.php',
+            'violations' => [[
+                'beginLine' => 10,
+                'description' => 'x',
+            ]],
+        ]]]);
+
+        $issues = $this->parser->parse($json, 'phpmd');
+
+        $this->assertSame('phpmd', $issues[0]->getRuleId());
+    }
+
+    /** @test */
+    function it_makes_relative_path_when_cwd_has_trailing_slash()
+    {
+        $cwd = getcwd();
+        $json = json_encode(['files' => [[
+            'file' => $cwd . '/src/X.php',
+            'violations' => [[
+                'beginLine' => 10,
+                'description' => 'x',
+                'priority' => 3,
+            ]],
+        ]]]);
+
+        $issues = $this->parser->parse($json, 'phpmd');
+
+        $this->assertSame('src/X.php', $issues[0]->getFile());
+    }
 }
