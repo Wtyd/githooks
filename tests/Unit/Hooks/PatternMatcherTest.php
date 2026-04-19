@@ -226,4 +226,51 @@ class PatternMatcherTest extends TestCase
         $this->assertTrue($this->matcher->matchesFiles(['src/a/b/File.php'], ['src/**/*.php'], []));
         $this->assertFalse($this->matcher->matchesFiles(['vendor/File.php'], ['src/**/*.php'], []));
     }
+
+    /** @test */
+    public function matchesFiles_continues_past_non_matching_files_to_find_a_match()
+    {
+        $this->assertTrue($this->matcher->matchesFiles(
+            ['vendor/auto.php', 'src/Real.php'],
+            ['src/*.php'],
+            []
+        ));
+    }
+
+    // ========================================================================
+    // globToRegex — exact regex asserts
+    // ========================================================================
+
+    /**
+     * @test
+     * @dataProvider globToRegexExactProvider
+     */
+    public function globToRegex_produces_exact_regex(string $pattern, string $expected)
+    {
+        $this->assertSame($expected, $this->matcher->globToRegex($pattern));
+    }
+
+    public function globToRegexExactProvider(): array
+    {
+        return [
+            'single star'                   => ['src/*.php', '#^src/[^/]*\.php$#'],
+            'doublestar between slashes'    => ['src/**/File.php', '#^src(?:/.+/|/)File\.php$#'],
+            'doublestar at end'             => ['src/**', '#^src/.*$#'],
+            'doublestar at start'           => ['**/*.php', '#^(?:.*/)?[^/]*\.php$#'],
+            'doublestar alone'              => ['**', '#^.*$#'],
+            'question mark'                 => ['src/?.php', '#^src/[^/]\.php$#'],
+            'pattern ending in slash'       => ['src/**/', '#^src(?:/.+/|/)$#'],
+            'doublestar then slash no left' => ['a**/b', '#^a(?:.*/)?b$#'],
+            'doublestar no slashes'         => ['a**b', '#^a.*b$#'],
+        ];
+    }
+
+    /** @test */
+    public function globToRegex_doublestar_then_slash_matches_zero_dirs()
+    {
+        $regex = $this->matcher->globToRegex('a**/b');
+
+        $this->assertMatchesRegularExpression($regex, 'ab');
+        $this->assertMatchesRegularExpression($regex, 'ax/b');
+    }
 }

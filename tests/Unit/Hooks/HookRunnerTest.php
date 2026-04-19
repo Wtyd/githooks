@@ -436,4 +436,127 @@ class HookRunnerTest extends TestCase
             new ValidationResult()
         );
     }
+
+    // ========================================================================
+    // Mutation coverage — multiple refs, warning conditions, flow execution
+    // ========================================================================
+
+    /** @test */
+    public function run_executes_all_refs_configured_for_event_returning_one_result_per_ref()
+    {
+        $this->fileUtils->setModifiedfiles(['src/User.php']);
+
+        $refs = [
+            new HookRef('phpcs', [], [], []),
+            new HookRef('phpstan', [], [], []),
+        ];
+        $hookConfig = new HookConfiguration(['pre-commit' => $refs]);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            [
+                'phpcs'   => new JobConfiguration('phpcs', 'phpcs', []),
+                'phpstan' => new JobConfiguration('phpstan', 'phpstan', []),
+            ],
+            [],
+            $hookConfig,
+            new ValidationResult()
+        );
+
+        $this->executor->expects($this->exactly(2))
+            ->method('execute')
+            ->willReturnOnConsecutiveCalls(
+                new FlowResult('phpcs', [], '0.00s'),
+                new FlowResult('phpstan', [], '0.00s')
+            );
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(2, $results);
+    }
+
+    /** @test */
+    public function run_continues_to_next_ref_after_one_is_skipped_by_conditions()
+    {
+        $this->fileUtils->setModifiedfiles(['src/User.php']);
+        $this->fileUtils->setCurrentBranch('main');
+
+        $skippedRef = new HookRef('phpcs', [], [], [], ['main']); // excluded by current branch
+        $executedRef = new HookRef('phpstan', [], [], []);
+        $hookConfig = new HookConfiguration(['pre-commit' => [$skippedRef, $executedRef]]);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            [
+                'phpcs'   => new JobConfiguration('phpcs', 'phpcs', []),
+                'phpstan' => new JobConfiguration('phpstan', 'phpstan', []),
+            ],
+            [],
+            $hookConfig,
+            new ValidationResult()
+        );
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpstan', [], '0.00s'));
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+    }
+
+    /** @test */
+    public function run_propagates_flow_result_when_ref_targets_a_flow()
+    {
+        $flowConfig = new \Wtyd\GitHooks\Configuration\FlowConfiguration('qa', ['phpcs'], null);
+        $ref = new HookRef('qa', [], [], []);
+        $hookConfig = new HookConfiguration(['pre-commit' => [$ref]]);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            ['phpcs' => new JobConfiguration('phpcs', 'phpcs', [])],
+            ['qa' => $flowConfig],
+            $hookConfig,
+            new ValidationResult()
+        );
+
+        $expected = new FlowResult('qa', [], '0.00s');
+        $this->executor->expects($this->once())->method('execute')->willReturn($expected);
+
+        $results = $this->runner->run('pre-commit', $config);
+
+        $this->assertCount(1, $results);
+        $this->assertSame($expected, $results[0]);
+    }
+
+    /** @test */
+    public function run_adds_warning_when_all_refs_skipped_by_conditions()
+    {
+        $this->fileUtils->setCurrentBranch('main');
+
+        $config = $this->buildConfigWithBranchRef('phpcs', [], ['main']);
+        $this->executor->expects($this->never())->method('execute');
+
+        $this->runner->run('pre-commit', $config);
+
+        $warnings = $config->getValidation()->getWarnings();
+        $this->assertNotEmpty($warnings, 'expected a warning when all refs are skipped by conditions');
+    }
+
+    /** @test */
+    public function run_does_not_add_warning_when_event_has_no_refs_configured()
+    {
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            [],
+            [],
+            new HookConfiguration([]),
+            new ValidationResult()
+        );
+
+        $this->runner->run('pre-commit', $config);
+
+        $this->assertSame([], $config->getValidation()->getWarnings());
+    }
 }
