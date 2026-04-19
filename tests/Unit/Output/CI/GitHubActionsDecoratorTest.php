@@ -87,4 +87,81 @@ class GitHubActionsDecoratorTest extends TestCase
         $decorator->onJobSkipped('phpcs', 'reason');
         $decorator->flush();
     }
+
+    /** @test */
+    public function on_job_error_matches_on_line_pattern()
+    {
+        $inner = $this->createMock(OutputHandler::class);
+
+        $decorator = new GitHubActionsDecorator($inner);
+
+        ob_start();
+        $decorator->onJobError(
+            'phpmd_src',
+            '1s',
+            'The method foo() in src/Service/Foo.php on line 42 has too many parameters.'
+        );
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('::error file=src/Service/Foo.php,line=42::', $output);
+    }
+
+    /** @test */
+    public function on_job_error_emits_one_annotation_per_matching_line()
+    {
+        $inner = $this->createMock(OutputHandler::class);
+
+        $decorator = new GitHubActionsDecorator($inner);
+
+        $errorOutput = implode("\n", [
+            'Header without file reference',
+            ' src/A.php:10 first issue',
+            ' src/B.php:20 second issue',
+            'Trailing noise',
+        ]);
+
+        ob_start();
+        $decorator->onJobError('phpstan_src', '1s', $errorOutput);
+        $output = ob_get_clean();
+
+        $this->assertSame(2, substr_count($output, '::error '));
+        $this->assertStringContainsString('::error file=src/A.php,line=10::', $output);
+        $this->assertStringContainsString('::error file=src/B.php,line=20::', $output);
+    }
+
+    /** @test */
+    public function on_job_error_matches_nested_paths()
+    {
+        $inner = $this->createMock(OutputHandler::class);
+
+        $decorator = new GitHubActionsDecorator($inner);
+
+        ob_start();
+        $decorator->onJobError(
+            'phpstan_src',
+            '1s',
+            ' src/Deep/Nested/Module/Service.php:123 something happened'
+        );
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('::error file=src/Deep/Nested/Module/Service.php,line=123::', $output);
+    }
+
+    /** @test */
+    public function on_job_error_does_not_match_non_php_files()
+    {
+        $inner = $this->createMock(OutputHandler::class);
+
+        $decorator = new GitHubActionsDecorator($inner);
+
+        ob_start();
+        $decorator->onJobError(
+            'phpstan_src',
+            '1s',
+            ' src/config.yml:10 irrelevant for code annotation'
+        );
+        $output = ob_get_clean();
+
+        $this->assertStringNotContainsString('::error file=', $output);
+    }
 }

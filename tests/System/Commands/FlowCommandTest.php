@@ -133,6 +133,130 @@ class FlowCommandTest extends SystemTestCase
     }
 
     /** @test */
+    public function it_supports_codeclimate_output_format_to_default_file()
+    {
+        $reportPath = getcwd() . '/gl-code-quality-report.json';
+        @unlink($reportPath);
+
+        try {
+            $this->artisan("flow qa --format=codeclimate --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->assertFileExists($reportPath);
+            $content = file_get_contents($reportPath);
+            $decoded = json_decode(strval($content), true);
+            $this->assertIsArray($decoded, 'codeclimate output is not valid JSON');
+        } finally {
+            @unlink($reportPath);
+        }
+    }
+
+    /** @test */
+    public function it_writes_codeclimate_to_custom_output_path()
+    {
+        $customPath = getcwd() . '/' . self::TESTS_PATH . '/custom-cc.json';
+        @unlink($customPath);
+
+        try {
+            $this->artisan("flow qa --format=codeclimate --output=$customPath --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->assertFileExists($customPath);
+            $content = file_get_contents($customPath);
+            $decoded = json_decode(strval($content), true);
+            $this->assertIsArray($decoded, 'custom codeclimate file is not valid JSON');
+
+            $defaultPath = getcwd() . '/gl-code-quality-report.json';
+            $this->assertFileDoesNotExist($defaultPath, 'default file should not be created when --output is set');
+        } finally {
+            @unlink($customPath);
+        }
+    }
+
+    /** @test */
+    public function it_prints_codeclimate_to_stdout_when_flag_is_set()
+    {
+        $defaultPath = getcwd() . '/gl-code-quality-report.json';
+        @unlink($defaultPath);
+
+        try {
+            $this->artisan("flow qa --format=codeclimate --stdout --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->containsStringInOutput = ['['];
+            $this->assertFileDoesNotExist($defaultPath, 'file must not be created when --stdout is used');
+        } finally {
+            @unlink($defaultPath);
+        }
+    }
+
+    /** @test */
+    public function it_supports_sarif_output_format_to_default_file()
+    {
+        $reportPath = getcwd() . '/githooks-results.sarif';
+        @unlink($reportPath);
+
+        try {
+            $this->artisan("flow qa --format=sarif --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->assertFileExists($reportPath);
+            $content = file_get_contents($reportPath);
+            $decoded = json_decode(strval($content), true);
+            $this->assertIsArray($decoded, 'sarif output is not valid JSON');
+            $this->assertSame('2.1.0', $decoded['version'] ?? null);
+            $this->assertArrayHasKey('runs', $decoded);
+            $this->assertArrayHasKey('$schema', $decoded);
+        } finally {
+            @unlink($reportPath);
+        }
+    }
+
+    /** @test */
+    public function it_writes_sarif_to_custom_output_path()
+    {
+        $customPath = getcwd() . '/' . self::TESTS_PATH . '/custom.sarif';
+        @unlink($customPath);
+
+        try {
+            $this->artisan("flow qa --format=sarif --output=$customPath --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->assertFileExists($customPath);
+            $decoded = json_decode(strval(file_get_contents($customPath)), true);
+            $this->assertSame('2.1.0', $decoded['version'] ?? null);
+        } finally {
+            @unlink($customPath);
+        }
+    }
+
+    /** @test */
+    public function it_prints_sarif_to_stdout_when_flag_is_set()
+    {
+        $defaultPath = getcwd() . '/githooks-results.sarif';
+        @unlink($defaultPath);
+
+        try {
+            $this->artisan("flow qa --format=sarif --stdout --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->containsStringInOutput = ['2.1.0', 'runs'];
+            $this->assertFileDoesNotExist($defaultPath, 'file must not be created when --stdout is used');
+        } finally {
+            @unlink($defaultPath);
+        }
+    }
+
+    /** @test */
+    public function it_warns_on_unknown_format_and_falls_back_to_text()
+    {
+        $this->artisan("flow qa --format=xml --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->containsStringInOutput = ["Unknown format 'xml'"];
+    }
+
+    /** @test */
     public function it_shows_monitor_report()
     {
         $this->artisan("flow qa --monitor --config=$this->configPath")

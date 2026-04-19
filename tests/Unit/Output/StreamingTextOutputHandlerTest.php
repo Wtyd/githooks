@@ -78,4 +78,37 @@ class StreamingTextOutputHandlerTest extends TestCase
         $handler = new StreamingTextOutputHandler($printer);
         $handler->onFlowStart(5);
     }
+
+    /** @test */
+    public function on_job_skipped_prints_skip_line_with_reason()
+    {
+        $printer = $this->createMock(Printer::class);
+        $printer->expects($this->once())
+            ->method('line')
+            ->with($this->logicalAnd(
+                $this->stringContains('phpcs_src'),
+                $this->stringContains('no staged files')
+            ));
+
+        $handler = new StreamingTextOutputHandler($printer);
+        $handler->onJobSkipped('phpcs_src', 'no staged files');
+    }
+
+    /** @test */
+    public function on_job_dry_run_prints_job_name_and_command()
+    {
+        $printer = $this->createMock(Printer::class);
+        $calls = [];
+        $printer->expects($this->exactly(2))
+            ->method('line')
+            ->willReturnCallback(function ($line) use (&$calls) {
+                $calls[] = $line;
+            });
+
+        $handler = new StreamingTextOutputHandler($printer);
+        $handler->onJobDryRun('phpstan_src', 'vendor/bin/phpstan analyse src');
+
+        $this->assertStringContainsString('phpstan_src', $calls[0]);
+        $this->assertStringContainsString('vendor/bin/phpstan analyse src', $calls[1]);
+    }
 }

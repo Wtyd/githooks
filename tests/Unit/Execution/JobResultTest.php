@@ -69,4 +69,58 @@ class JobResultTest extends TestCase
 
         $this->assertEquals([], $result->getPaths());
     }
+
+    /** @test */
+    public function stdout_defaults_to_null_when_not_provided()
+    {
+        $result = new JobResult('phpstan_src', true, 'combined output', '100ms');
+
+        $this->assertNull($result->getStdout());
+    }
+
+    /** @test */
+    public function stdout_is_stored_when_provided_via_constructor()
+    {
+        $stdoutJson = '{"files":{"src/User.php":{"messages":[{"line":14,"message":"Method not found"}]}}}';
+
+        $result = new JobResult(
+            'phpstan_src',
+            false,
+            $stdoutJson . "\nextra stderr",
+            '1.23s',
+            false,
+            'vendor/bin/phpstan analyse',
+            'phpstan',
+            1,
+            ['src'],
+            false,
+            null,
+            $stdoutJson
+        );
+
+        $this->assertSame($stdoutJson, $result->getStdout());
+        $this->assertNotSame($result->getOutput(), $result->getStdout());
+    }
+
+    /** @test */
+    public function stdout_can_be_empty_string()
+    {
+        $result = new JobResult(
+            'phpcs_src',
+            true,
+            '',
+            '50ms',
+            false,
+            null,
+            'phpcs',
+            0,
+            [],
+            false,
+            null,
+            ''
+        );
+
+        $this->assertSame('', $result->getStdout());
+        $this->assertNotNull($result->getStdout());
+    }
 }
