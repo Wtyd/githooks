@@ -15,182 +15,126 @@ El proyecto tiene 4 niveles de testing, cada uno con un propósito claro.
 
 ## Flujo de decisión
 
-### 1. Determinar qué tests son necesarios
+### Paso 0 — ¿La clase ya tiene un test directo?
 
-| Pregunta | Si sí → |
+Antes de añadir tests, comprobar si la clase tiene **un fichero de test propio**:
+
+```bash
+find tests/ -name "$(basename ClassName).php" -o -name "${ClassName}Test.php"
+grep -rL "new ${ClassName}" tests/
+```
+
+Si **no existe**, crear el fichero desde cero siguiendo los patrones v3. La ausencia de test directo es la causa más frecuente de mutaciones escaped y cobertura engañosa (código ejecutado indirectamente pero sin asserts que discriminen su comportamiento).
+
+### Paso 1 — Determinar el tipo de test
+
+| Ubicación del código tocado | Tipo de test |
 |---|---|
-| ¿Clase nueva/modificada en `src/Configuration/`? | **Unit test** (patrón v3) |
-| ¿Clase nueva/modificada en `src/Jobs/`? | **Unit test** (patrón v3 — JobBuildCommandTest) |
-| ¿Clase nueva/modificada en `src/Execution/`? | **Unit test** (patrón v3) |
-| ¿Clase nueva/modificada en `src/Hooks/`? | **Unit test** (patrón v3) |
-| ¿Clase nueva/modificada en `src/Tools/Tool/`? | **Unit test** (patrón legacy) + Fake + infra |
-| ¿Comando nuevo/modificado en `app/Commands/`? | **System test** + **testing funcional** (qa-tester) |
-| ¿Comando con opciones CLI nuevas? | **Test que verifique que cada opción llega al servicio** |
-| ¿Feature visible para el usuario final del `.phar`? | **Release test** (al menos happy path) |
+| `src/Configuration/`, `src/Jobs/`, `src/Execution/`, `src/Hooks/` | **Unit test v3** (`references/unit-tests-v3.md`) |
+| `src/Tools/Tool/` | **Unit test legacy** + Fake + infra (`references/unit-tests.md`) |
+| `app/Commands/` nuevo o con flags nuevos | **System test** + testing funcional (`qa-tester`) |
+| Feature visible desde el `.phar` | **Release test** happy path (`references/release-tests.md`) |
 
-**Regla de oro:** toda opción CLI nueva necesita un test que verifique que el valor
-se propaga hasta el servicio (no solo que el comando no crashea).
+**Regla de oro:** toda opción CLI nueva necesita un test que verifique que el valor se propaga hasta el servicio (no solo que el comando no crashea).
 
-### 2. Crear los tests
+### Paso 2 — Diseñar los casos antes de escribir
 
-Para cada tipo, lee la referencia correspondiente:
+Aplicar las cuatro listas de comprobación siguientes al código que se va a testear. No escribir el fichero de tests hasta haber enumerado los casos.
 
-- **Unit tests v3** → lee `references/unit-tests-v3.md`
-- **Unit tests legacy** → lee `references/unit-tests.md`
-- **Integration tests** → lee `references/integration-tests.md`
-- **System tests** → lee `references/system-tests.md`
-- **Release tests** → lee `references/release-tests.md`
+## Principios de asserts fuertes
 
-### 3. Verificar con testing funcional
+Un test que ejecuta código sin asserts discriminativos es casi equivalente a no tenerlo: el código queda cubierto en líneas pero no en comportamiento.
 
-Después de los tests automatizados, usar la skill `qa-tester` para:
-- Probar el comando manualmente con distintos inputs
-- Probar edge cases que PHPUnit no cubre (config rota, flags combinados, formatos de salida)
+### Reglas
 
-## Convenciones transversales
+- **`assertSame` por defecto** (estricto) en lugar de `assertEquals` (lax). Solo usar `assertEquals` si se compara un objeto por valor y es intencional.
+- **Valores exactos** sobre predicados derivados. Preferir `assertSame(0755, fileperms($p) & 0777)` a `assertTrue(is_executable($p))`.
+- **Contenido completo** en arrays/strings cuando el tamaño lo permita. `assertSame(['a', 'b'], $result)` antes que `assertCount(2, $result)`.
+- **Tipo + valor** en resultados numéricos: `assertSame(42, $n)` (también verifica que es `int`, no `"42"`).
+- **Identidad de referencias** (regex exacta, no `assertMatchesRegularExpression` con un patrón permisivo).
 
-- **`/** @test */`** en cada método (nunca prefijo `test`)
-- **snake_case con lenguaje natural**: `it_does_something_when_condition()`
-- **`@dataProvider`** para cobertura paramétrica
-- **Namespace** sigue estructura de directorios
-- **Una clase de test por clase testeada**
-- **No usar `setUp()` si no es necesario**
-
-## Patrones de test v3
-
-### Unit test para Configuration
+### Anti-patrones a evitar
 
 ```php
-declare(strict_types=1);
+// NO — el mutante que cambia la condición a `|| true` pasa
+$this->assertTrue($result->isSuccess());
 
-namespace Tests\Unit\Configuration;
-
-use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Registry\ToolRegistry;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-
-class ConfigurationParserTest extends TestCase
-{
-    private string $fixturesPath;
-
-    protected function setUp(): void
-    {
-        $this->fixturesPath = sys_get_temp_dir() . '/githooks_test_' . uniqid();
-        mkdir($this->fixturesPath, 0755, true);
-    }
-
-    protected function tearDown(): void
-    {
-        array_map('unlink', glob($this->fixturesPath . '/*') ?: []);
-        @rmdir($this->fixturesPath);
-    }
-
-    /** @test */
-    function it_parses_v3_config_with_flows_and_jobs()
-    {
-        file_put_contents($this->fixturesPath . '/githooks.php', '<?php return [
-            "flows" => ["qa" => ["jobs" => ["myjob"]]],
-            "jobs" => ["myjob" => ["type" => "phpstan", "paths" => ["src"]]],
-        ];');
-
-        $parser = new ConfigurationParser(new ToolRegistry(), '', new JobRegistry());
-        $config = $parser->parse($this->fixturesPath . '/githooks.php');
-
-        $this->assertFalse($config->hasErrors());
-        $this->assertNotNull($config->getFlow('qa'));
-    }
-}
+// SÍ — verifica el valor de la propiedad que generó el éxito
+$this->assertSame(0, $result->getExitCode());
+$this->assertSame([], $result->getErrors());
 ```
-
-### Unit test para Jobs (ARGUMENT_MAP)
 
 ```php
-declare(strict_types=1);
+// NO — `assertCount(1)` se mata con ArrayOneItem pero no con ArrayTwoItems
+$this->assertCount(1, $result);
 
-namespace Tests\Unit\Jobs;
-
-use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-
-class JobBuildCommandTest extends TestCase
-{
-    /** @test */
-    function phpstan_builds_correct_command()
-    {
-        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
-            'config'         => 'qa/phpstan.neon',
-            'level'          => '8',
-            'paths'          => ['src'],
-            'otherArguments' => '--ansi',
-        ]));
-
-        $this->assertEquals(
-            'vendor/bin/phpstan analyse -c qa/phpstan.neon -l 8 --ansi src',
-            $job->buildCommand()
-        );
-    }
-
-    /** @test */
-    function phpstan_with_empty_paths_omits_paths()
-    {
-        $job = new PhpstanJob(new JobConfiguration('test', 'phpstan', [
-            'paths' => [],
-        ]));
-
-        $command = $job->buildCommand();
-        $this->assertStringNotContainsString('  ', $command); // no double spaces
-    }
-}
+// SÍ — fuerza contenido exacto
+$this->assertSame([$expected], $result);
 ```
-
-### Unit test para Execution
 
 ```php
-declare(strict_types=1);
+// NO — permite muchos regex válidos
+$this->assertMatchesRegularExpression('/src/', $regex);
 
-namespace Tests\Unit\Execution;
-
-use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-
-class FlowPreparerTest extends TestCase
-{
-    private FlowPreparer $preparer;
-
-    protected function setUp(): void
-    {
-        $this->preparer = new FlowPreparer(new JobRegistry());
-    }
-
-    /** @test */
-    function it_prepares_a_flow_with_valid_jobs()
-    {
-        $jobs = [
-            'myjob' => new JobConfiguration('myjob', 'phpstan', ['paths' => ['src']]),
-        ];
-        $flow = new FlowConfiguration('qa', ['myjob'], null);
-        $options = OptionsConfiguration::defaults();
-        $config = new ConfigurationResult('/tmp/test.php', $options, null, ['qa' => $flow], $jobs, new ValidationResult());
-
-        $plan = $this->preparer->prepare($flow, $config);
-
-        $this->assertCount(1, $plan->getJobs());
-    }
-}
+// SÍ — mata mutantes de concatenación/assignment
+$this->assertSame('#^src/.*/File\.php$#', $regex);
 ```
 
-### Test para opciones CLI de un comando
+## Cobertura exhaustiva — lista por operador
 
-**CRITICO: cada opción del signature debe tener un test que verifique que modifica el comportamiento.**
+Leer el código del método a testear y marcar cada uno de estos operadores. Cada marca requiere su test.
+
+| Construcción en el código | Tests requeridos |
+|---|---|
+| `<`, `<=`, `>`, `>=` | Test en la **frontera exacta** (valor igual al umbral) + uno a cada lado |
+| `===`, `!==` | Test con el valor exacto + un caso que lo rompa |
+| `??` | Test con operando izquierdo **ausente/null** y otro con valor explícito |
+| `&&` compuesto | Un test por rama significativa (al menos A∧B, ¬A∧B, A∧¬B) |
+| `\|\|` compuesto | Idem, asegurando que ninguna sub-expresión sea mutable a `true` sin test |
+| `foreach` | Test con `0`, `1` y `2+` elementos (muchas `ArrayOneItem` escapan por solo probar 1) |
+| `continue` / `break` | Test que verifique que los elementos **posteriores** al skip/break reciben el tratamiento correcto |
+| `return` temprano | Test que **active** esa rama de return (no solo la principal) |
+
+## Validación defensiva de entrada (parsers, config, deserializers)
+
+Cuando el código valida su entrada con guards del tipo `!is_array($x) || !isset($x['key'])`, hay que cubrir cada cláusula por separado, no solo el happy path.
+
+Para cada parser de entrada externa (JSON, XML, YAML, array de config):
+
+- [ ] Happy path con entrada bien formada
+- [ ] Entrada vacía (`[]`, `{}`, `""`)
+- [ ] Cada clave opcional ausente individualmente
+- [ ] Cada clave con **tipo incorrecto** (string donde se espera int, array donde se espera string)
+- [ ] Nivel anidado: elemento del array sin las claves esperadas
+
+Una única entrada malformada bien elegida mata múltiples mutaciones `LogicalOr` de guards defensivos a la vez.
+
+## Side effects observables
+
+El código que llama a `exec`, `shell_exec`, `chdir`, `mkdir`, `file_put_contents`, o cualquier API global, es testeable solo si el efecto es observable desde el test.
+
+### Opciones (en orden de preferencia)
+
+1. **Verificar estado resultante**: tras invocar, comprobar que el fichero existe con el contenido esperado, que `getcwd()` es el esperado, que la config de git tiene el valor correcto.
+2. **Inyectar el colaborador**: aceptar un callable (`$exec`, `$fs`) en el constructor para poder espiarlo en test y usar la implementación real en producción.
+3. **Extraer a interface**: si hay varios side effects, crear una interfaz (`ProcessRunner`, `Filesystem`) y un Fake para tests.
+
+Nunca aceptar "el test pasa porque no crashea": eso permite que se elimine la llamada sin que el test se entere.
+
+### Convenciones transversales
+
+- **`/** @test */`** en cada método (nunca prefijo `test`).
+- **snake_case con lenguaje natural**: `it_does_something_when_condition()`.
+- **`@dataProvider`** para cobertura paramétrica (preferible a N métodos casi idénticos).
+- **Namespace** espeja la estructura de directorios.
+- **Una clase de test por clase testeada**.
+- **No usar `setUp()`** si no es necesario (fixtures específicas van en el método del test).
+
+## Opciones CLI — sección crítica
+
+**Cada opción del signature de un comando debe tener un test que verifique que modifica el comportamiento.**
+
+No basta con "el comando se ejecuta con --flag y no crashea": hay que verificar el efecto observable del valor pasado.
 
 ```php
 /** @test */
@@ -198,7 +142,7 @@ function fail_fast_option_stops_execution_on_first_failure()
 {
     // Configurar 3 jobs donde el 2o falla
     // Ejecutar con --fail-fast
-    // Verificar que el 3o NO se ejecutó
+    // Verificar que el 3o NO se ejecutó (assertCount sobre jobs ejecutados)
 }
 
 /** @test */
@@ -206,7 +150,7 @@ function processes_option_overrides_config_value()
 {
     // Config tiene processes=1
     // Ejecutar con --processes=4
-    // Verificar que FlowPlan tiene processes=4
+    // Verificar que FlowPlan tiene processes=4 (assertSame(4, $plan->getProcesses()))
 }
 
 /** @test */
@@ -214,11 +158,23 @@ function exclude_jobs_option_removes_jobs_from_plan()
 {
     // Config tiene jobs [a, b, c]
     // Ejecutar con --exclude-jobs=b
-    // Verificar que solo se ejecutan a y c
+    // Verificar que el plan contiene exactamente [a, c]
 }
 ```
 
-## Checklist de verificación
+## Patrones de test por tipo
+
+Los ejemplos completos con imports y estructura están en las referencias:
+
+- **Unit tests v3** → `references/unit-tests-v3.md` (Configuration, Jobs, Execution, Hooks)
+- **Unit tests legacy** → `references/unit-tests.md` (Tools, Fakes, infra)
+- **Integration tests** → `references/integration-tests.md`
+- **System tests** → `references/system-tests.md`
+- **Release tests** → `references/release-tests.md`
+
+Leer la referencia antes de escribir el primer test del tipo correspondiente.
+
+## Checklist de verificación (usar al final)
 
 ### Estructura
 - [ ] Tests en directorio correcto (`tests/Unit/`, `tests/System/Commands/`, etc.)
@@ -230,21 +186,35 @@ function exclude_jobs_option_removes_jobs_from_plan()
 - [ ] snake_case descriptivo
 - [ ] `@dataProvider` donde hay variantes
 
-### Cobertura de opciones CLI (CRITICA)
-- [ ] **Cada opción del signature tiene un test que verifica que el valor llega al servicio**
-- [ ] **No hay opciones del signature sin cobertura de test**
+### Calidad de asserts
+- [ ] `assertSame` usado por defecto (no `assertEquals` salvo justificado)
+- [ ] Cada assert verifica un valor **exacto**, no un predicado derivado
+- [ ] Arrays/strings comparados por contenido completo cuando el tamaño lo permite
+- [ ] Sin `assertTrue($x->isSuccess())` sin verificar el estado interno
+
+### Cobertura lógica
+- [ ] Cada `<`/`<=`/`>`/`>=` del código tiene test **en la frontera**
+- [ ] Cada `?? default` tiene test con operando izquierdo ausente
+- [ ] Cada `||`/`&&` compuesto tiene test por rama significativa
+- [ ] Cada `continue`/`break` tiene test que verifica el estado **después** del skip
+- [ ] Cada guard defensivo (`!is_array`, `!isset`) tiene test con la entrada inválida correspondiente
+
+### Side effects
+- [ ] Toda llamada a `exec`/`shell_exec`/`chdir`/`file_put_contents` tiene un assert sobre el estado resultante
+- [ ] Si no es observable → el código se ha refactorizado para aceptar colaborador inyectable
+
+### Cobertura de opciones CLI (CRÍTICA)
+- [ ] Cada opción del signature tiene un test que verifica que el valor **llega al servicio**
+- [ ] Ninguna opción del signature sin cobertura de test
 - [ ] Test con config inexistente → no produce stack trace
 - [ ] Test con config inválida → errores descriptivos
-- [ ] Test con formato inválido (--format=csv) → comportamiento definido
+- [ ] Test con formato inválido (ej. `--format=csv`) → comportamiento definido
 
 ### Para Jobs v3
-- [ ] `buildCommand()` genera el comando correcto con todos los argumentos
-- [ ] Argumentos opcionales ausentes no generan flags vacíos
+- [ ] `buildCommand()` con todos los argumentos
+- [ ] `buildCommand()` con argumentos opcionales ausentes (sin dobles espacios ni flags vacíos)
 - [ ] `getThreadCapability()` devuelve la capability correcta (o null)
 - [ ] `applyThreadLimit()` modifica el argumento correcto
-
-### Para Tools legacy (solo si se toca código legacy)
-- [ ] Ver `references/unit-tests.md` para el patrón legacy completo
 
 ### Ejecución final (OBLIGATORIO)
 - [ ] `php7.4 vendor/bin/phpunit --order-by random` — 0 fallos
@@ -253,7 +223,4 @@ function exclude_jobs_option_removes_jobs_from_plan()
 
 ## Contexto legacy
 
-Los tests legacy (en `tests/Unit/Tools/`, `tests/Integration/`, `tests/System/Commands/ExecuteToolCommandTest.php`,
-`tests/System/Release/`) siguen siendo válidos para el sistema v2. Las references `unit-tests.md`,
-`integration-tests.md`, `system-tests.md`, `release-tests.md` documentan estos patrones.
-No añadir tests legacy para funcionalidades nuevas — usar los patrones v3 de arriba.
+Los tests legacy (en `tests/Unit/Tools/`, `tests/Integration/`, `tests/System/Commands/ExecuteToolCommandTest.php`, `tests/System/Release/`) siguen siendo válidos para el sistema v2. Las references `unit-tests.md`, `integration-tests.md`, `system-tests.md`, `release-tests.md` documentan estos patrones. **No añadir tests legacy para funcionalidades nuevas** — usar los patrones v3 de arriba.
