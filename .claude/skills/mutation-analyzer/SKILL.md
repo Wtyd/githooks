@@ -28,16 +28,26 @@ Infection se ejecuta manualmente de forma esporádica (no en CI por coste). Cuan
 
 ### 2. Localizar los artefactos
 
-Infection escribe en `reports/infection/`:
+Infection escribe en `reports/infection/`. **Usa sólo los tres ficheros de texto; ignora el HTML.**
 
-```
-infection.log            ← log principal con los diffs de cada mutant
-infection-summary.log    ← resumen numérico (Total/Killed/Escaped/Timeouts…)
-per-mutator.md           ← desglose por tipo de mutator
-mutation-report.html     ← reporte HTML navegable (grande; NO leerlo directo)
-```
+| Fichero | Tamaño típico | Uso |
+|---|---|---|
+| `infection-summary.log` | <1 KB | **Primer vistazo**: volumen total (Escaped / Killed / Timeouts / MSI) |
+| `per-mutator.md` | 10-30 KB | **Segundo vistazo**: desglose por tipo de mutator — identifica patrones repetidos antes de bajar al detalle |
+| `infection.log` | 50-300 KB | **Fuente primaria**: diffs completos de cada mutant. Navegable con `Grep` y `Read` con offset |
+| ~~`mutation-report.html`~~ | **NUNCA leer** | 5-10 MB de HTML con CSS/JS embebidos. Destinado a navegador humano; inútil y contraproducente para el análisis en contexto |
 
-Empezar por `infection-summary.log` para conocer el volumen, después el `.log`. **No leer el HTML**: son MB de ruido.
+**Flujo de lectura:**
+
+1. `Read reports/infection/infection-summary.log` → conocer volumen.
+2. `Read reports/infection/per-mutator.md` → ver qué tipos de mutator dominan (orienta la priorización).
+3. `Grep` sobre `reports/infection/infection.log` para extraer los mutants de un módulo/fichero concreto con su número de línea en el log:
+   ```
+   Grep pattern:"^\d+\) /abs/path/src/Modulo/" path:"reports/infection/infection.log" output_mode:"content" -n:true
+   ```
+4. `Read reports/infection/infection.log` con `offset`/`limit` sobre los rangos que te interesen.
+
+**Nunca usar** `Read` sobre `mutation-report.html` — romperá el límite de mensaje y no añade información sobre los `.log`/`.md`. Si el usuario lo adjunta, recordárselo y pedir que aporte el `infection.log` o que re-ejecute Infection acotado (ver abajo).
 
 ### 3. Diseñar el análisis según volumen
 
@@ -152,16 +162,25 @@ El catálogo completo con ejemplos de código está en `references/mutator-catal
 
 ## Flujo de análisis
 
-### Paso 1 — Resumen del log
+### Paso 1 — Resumen y perfil (los tres ficheros de texto)
 
-```bash
-cat reports/infection/infection-summary.log
-grep -oE '/src/[A-Z][^ ]+\.php:[0-9]+' reports/infection/infection.log | sort -u | head -40
-```
+1. **Volumen total** — `Read reports/infection/infection-summary.log` (siempre pequeño, no necesita offset/limit):
 
-Obtener:
-- Volumen por categoría (Escaped / Timed Out / Errored).
-- Lista única de ficheros afectados.
+   ```
+   Total / Killed / Escaped / Timeouts / MSI
+   ```
+
+2. **Mutators dominantes** — `Read reports/infection/per-mutator.md`. Identifica patrones: si `LogicalOr` concentra 40 escapes, sabes que hay un patrón de guards defensivos repetido.
+
+3. **Ficheros afectados** — sobre `infection.log`:
+
+   ```
+   Grep pattern:"^\d+\) /var/www/html[0-9]*/src/" path:"reports/infection/infection.log" output_mode:"content" -n:true
+   ```
+
+   Devuelve `línea_log:índice) path:línea Mutator`. Guardar los rangos de líneas del log por módulo para agentes paralelos.
+
+**Nunca abrir `mutation-report.html`**: es HTML de 5-10 MB con CSS/JS embebidos; rompe el límite de mensaje y no aporta sobre los `.log`/`.md`.
 
 ### Paso 2 — Agrupar por fichero
 
@@ -230,7 +249,7 @@ El log principal (`reports/infection/infection.log`) se genera automáticamente 
 
 - **No clasificar "real" por defecto.** Muchos mutants son equivalentes genuinos; forzar test para todos infla la suite sin beneficio.
 - **No perseguir mutantes cosméticos.** Strings ANSI, paddings y anchos de marco no necesitan test — documentar y descartar.
-- **No leer `mutation-report.html`** para analizar. Es un informe para navegar en navegador, no para tu contexto. Usar el `.log` de texto.
+- **Nunca hacer `Read` sobre `mutation-report.html`.** Es HTML con CSS/JS embebido de 5-10 MB pensado para navegador humano; en contexto LLM rompe el límite de mensaje sin aportar nada sobre los tres ficheros de texto. Si el usuario lo menciona o adjunta, recordarle que la fuente correcta es `infection.log` + `infection-summary.log` + `per-mutator.md`.
 - **No mezclar fixes de código con tests en el mismo commit.** Los bugs latentes detectados merecen PR propio.
 
 ## Checklist de verificación
