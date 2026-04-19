@@ -136,6 +136,45 @@ class SarifResultFormatterTest extends TestCase
         $this->assertSame('2.1.0', $data['version']);
         $this->assertCount(1, $data['runs']);
         $this->assertSame([], $data['runs'][0]['results']);
+        $this->assertSame('githooks', $data['runs'][0]['tool']['driver']['name']);
+    }
+
+    /** @test */
+    function it_maps_critical_severity_to_sarif_error_level()
+    {
+        $psalmStdout = json_encode([
+            ['file_name' => 'src/X.php', 'line_from' => 1, 'type' => 'CriticalBug', 'message' => 'x', 'severity' => 'error'],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('psalm', false, '', '1s', false, null, 'psalm', 1, [], false, null, $psalmStdout),
+        ], '1s');
+
+        $formatter = new SarifResultFormatter();
+        $data = json_decode($formatter->format($result), true);
+
+        $this->assertSame('error', $data['runs'][0]['results'][0]['level']);
+    }
+
+    /** @test */
+    function rule_entries_include_short_description_matching_rule_id()
+    {
+        $phpcsStdout = json_encode([
+            'files' => ['f.php' => ['messages' => [
+                ['message' => 'e', 'line' => 1, 'source' => 'PSR12.Files.EndFileNewline', 'type' => 'ERROR'],
+            ]]],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpcs', false, '', '1s', false, null, 'phpcs', 1, [], false, null, $phpcsStdout),
+        ], '1s');
+
+        $formatter = new SarifResultFormatter();
+        $data = json_decode($formatter->format($result), true);
+
+        $rule = $data['runs'][0]['tool']['driver']['rules'][0];
+        $this->assertSame('PSR12.Files.EndFileNewline', $rule['id']);
+        $this->assertSame('PSR12.Files.EndFileNewline', $rule['shortDescription']['text']);
     }
 
     /** @test */

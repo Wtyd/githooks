@@ -101,6 +101,37 @@ class JunitResultFormatterTest extends UnitTestCase
         $this->assertSame('0.234', $testcase->getAttribute('time'));
     }
 
+    /**
+     * @test
+     * @dataProvider timeFormatProvider
+     */
+    function it_parses_time_formats_with_anchored_regex(string $time, string $expected)
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('job', true, '', $time),
+        ], $time);
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $testcase = $dom->getElementsByTagName('testcase')->item(0);
+        $this->assertSame($expected, $testcase->getAttribute('time'));
+    }
+
+    public function timeFormatProvider(): array
+    {
+        return [
+            'milliseconds' => ['500ms', '0.500'],
+            'seconds integer' => ['2s', '2'],
+            'seconds decimal' => ['1.5s', '1.5'],
+            'minutes and seconds' => ['2m 30s', '150'],
+            'minutes and seconds no space' => ['1m10s', '70'],
+            'unrecognised input falls through' => ['1.5s trailing', '1.5s trailing'],
+            'seconds with prefix does not match' => ['t 1.5s', 't 1.5s'],
+        ];
+    }
+
     /** @test */
     function it_adds_skipped_element_for_skipped_jobs()
     {

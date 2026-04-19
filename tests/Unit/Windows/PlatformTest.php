@@ -16,6 +16,14 @@ class PlatformTest extends TestCase
     }
 
     /** @test */
+    public function is_windows_matches_current_platform()
+    {
+        $expected = substr(PHP_OS, 0, 3) === 'WIN';
+
+        $this->assertSame($expected, Platform::isWindows());
+    }
+
+    /** @test */
     public function normalize_path_converts_forward_slashes()
     {
         $result = Platform::normalizePath('src/Models/User.php');
