@@ -35,11 +35,24 @@ class DashboardOutputHandler implements OutputHandler
 
     private bool $isTty;
 
+    /** @var resource */
+    private $output;
+
     /** @var array<array{jobName: string, output: string}> */
     private array $errorBuffer = [];
 
-    public function __construct(?bool $forceTty = null)
+    /**
+     * @param resource|null $output Output stream. Defaults to `php://output` so
+     *                              tests can capture writes via ob_start(); inject a
+     *                              php://memory stream to capture without buffering.
+     */
+    public function __construct(?bool $forceTty = null, $output = null)
     {
+        if ($output === null) {
+            $default = fopen('php://output', 'w');
+            $output = $default !== false ? $default : STDOUT;
+        }
+        $this->output = $output;
         $this->isTty = $forceTty ?? $this->detectTty();
     }
 
@@ -72,7 +85,7 @@ class DashboardOutputHandler implements OutputHandler
         }));
 
         if (!$this->isTty) {
-            echo "  ⏳ $jobName...\n";
+            fwrite($this->output, "  ⏳ $jobName...\n");
         }
     }
 
@@ -89,7 +102,7 @@ class DashboardOutputHandler implements OutputHandler
         if ($this->isTty) {
             $this->renderDashboard();
         } else {
-            echo "  $jobName - OK. Time: $time\n";
+            fwrite($this->output, "  $jobName - OK. Time: $time\n");
         }
     }
 
@@ -102,7 +115,7 @@ class DashboardOutputHandler implements OutputHandler
         if ($this->isTty) {
             $this->renderDashboard();
         } else {
-            echo "  $jobName - KO. Time: $time\n";
+            fwrite($this->output, "  $jobName - KO. Time: $time\n");
         }
     }
 
@@ -114,14 +127,14 @@ class DashboardOutputHandler implements OutputHandler
         $this->completed[$jobName] = "  ⏩ $jobName ($reason)";
 
         if (!$this->isTty) {
-            echo "  ⏩ $jobName ($reason)\n";
+            fwrite($this->output, "  ⏩ $jobName ($reason)\n");
         }
     }
 
     public function onJobDryRun(string $jobName, string $command): void
     {
-        echo "  \e[36m$jobName\e[0m\n";
-        echo "     $command\n";
+        fwrite($this->output, "  \e[36m$jobName\e[0m\n");
+        fwrite($this->output, "     $command\n");
     }
 
     /**
@@ -144,11 +157,11 @@ class DashboardOutputHandler implements OutputHandler
         }
 
         if (!empty($this->errorBuffer)) {
-            echo "\n";
+            fwrite($this->output, "\n");
             foreach ($this->errorBuffer as $entry) {
                 if (!empty(trim($entry['output']))) {
                     $this->printFramedError($entry['jobName'], $entry['output']);
-                    echo "\n";
+                    fwrite($this->output, "\n");
                 }
             }
             $this->errorBuffer = [];
@@ -184,7 +197,7 @@ class DashboardOutputHandler implements OutputHandler
         }
 
         foreach ($lines as $line) {
-            echo $line . "\n";
+            fwrite($this->output, $line . "\n");
         }
 
         $this->dashboardLines = count($lines);
@@ -194,11 +207,11 @@ class DashboardOutputHandler implements OutputHandler
     {
         if ($this->dashboardLines > 0) {
             // Move cursor up N lines and clear each
-            echo "\033[{$this->dashboardLines}A";
+            fwrite($this->output, "\033[{$this->dashboardLines}A");
             for ($i = 0; $i < $this->dashboardLines; $i++) {
-                echo "\033[2K\n";
+                fwrite($this->output, "\033[2K\n");
             }
-            echo "\033[{$this->dashboardLines}A";
+            fwrite($this->output, "\033[{$this->dashboardLines}A");
         }
     }
 
@@ -206,7 +219,7 @@ class DashboardOutputHandler implements OutputHandler
     {
         foreach ($this->allJobs as $jobName) {
             if (isset($this->completed[$jobName])) {
-                echo $this->completed[$jobName] . "\n";
+                fwrite($this->output, $this->completed[$jobName] . "\n");
             }
         }
     }
@@ -214,13 +227,13 @@ class DashboardOutputHandler implements OutputHandler
     private function printFramedError(string $jobName, string $output): void
     {
         $width = 79;
-        echo "  \e[31m┌" . str_repeat('─', $width) . "\e[0m\n";
-        echo "  \e[31m│\e[0m \e[1m$jobName\e[0m\n";
-        echo "  \e[31m│\e[0m\n";
+        fwrite($this->output, "  \e[31m┌" . str_repeat('─', $width) . "\e[0m\n");
+        fwrite($this->output, "  \e[31m│\e[0m \e[1m$jobName\e[0m\n");
+        fwrite($this->output, "  \e[31m│\e[0m\n");
         foreach (explode("\n", $output) as $line) {
-            echo "  \e[31m│\e[0m " . $line . "\n";
+            fwrite($this->output, "  \e[31m│\e[0m " . $line . "\n");
         }
-        echo "  \e[31m└" . str_repeat('─', $width) . "\e[0m\n";
+        fwrite($this->output, "  \e[31m└" . str_repeat('─', $width) . "\e[0m\n");
     }
 
     private function detectTty(): bool

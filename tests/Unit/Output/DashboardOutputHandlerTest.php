@@ -165,44 +165,45 @@ class DashboardOutputHandlerTest extends TestCase
     /** @test */
     function tick_in_tty_renders_when_jobs_are_running()
     {
-        ob_start();
-        $handler = new DashboardOutputHandler(true);
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
         $handler->registerJobs(['job1']);
         $handler->onJobStart('job1');
-        ob_clean();
+        ftruncate($stream, 0);
+        rewind($stream);
 
         $handler->tick();
-        $output = ob_get_clean();
 
-        $this->assertStringContainsString('job1', $output);
+        $this->assertStringContainsString('job1', $this->readStream($stream));
     }
 
     /** @test */
     function tick_in_tty_with_no_running_jobs_produces_no_output()
     {
-        ob_start();
-        $handler = new DashboardOutputHandler(true);
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
         $handler->registerJobs(['job1']);
-        ob_clean();
+        ftruncate($stream, 0);
+        rewind($stream);
 
         $handler->tick();
-        $output = ob_get_clean();
 
-        $this->assertSame('', $output);
+        $this->assertSame('', $this->readStream($stream));
     }
 
     /** @test */
     function on_job_skipped_removes_job_from_queued_state_in_tty_render()
     {
-        ob_start();
-        $handler = new DashboardOutputHandler(true);
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
         $handler->registerJobs(['job_a', 'job_b']);
         $handler->onJobSkipped('job_a', 'no files');
         $handler->onJobStart('job_b');
-        ob_clean();
+        ftruncate($stream, 0);
+        rewind($stream);
 
         $handler->tick();
-        $output = ob_get_clean();
+        $output = $this->readStream($stream);
 
         $this->assertStringNotContainsString('⏺ job_a', $output);
         $this->assertStringContainsString('⏩ job_a', $output);
@@ -211,15 +212,16 @@ class DashboardOutputHandlerTest extends TestCase
     /** @test */
     function flush_in_tty_after_dashboard_rendered_clears_it_before_final_results()
     {
-        ob_start();
-        $handler = new DashboardOutputHandler(true);
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
         $handler->registerJobs(['job1']);
         $handler->onJobStart('job1');
         $handler->onJobSuccess('job1', '100ms');
-        ob_clean();
+        ftruncate($stream, 0);
+        rewind($stream);
 
         $handler->flush();
-        $output = ob_get_clean();
+        $output = $this->readStream($stream);
 
         $this->assertStringContainsString("\e[", $output);
         $this->assertStringContainsString('job1 - OK', $output);
@@ -228,12 +230,20 @@ class DashboardOutputHandlerTest extends TestCase
     /** @test */
     function flush_in_tty_with_no_dashboard_rendered_does_not_clear()
     {
-        $handler = new DashboardOutputHandler(true);
-        ob_start();
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
 
         $handler->flush();
-        $output = ob_get_clean();
 
-        $this->assertSame('', $output);
+        $this->assertSame('', $this->readStream($stream));
+    }
+
+    /**
+     * @param resource $stream
+     */
+    private function readStream($stream): string
+    {
+        rewind($stream);
+        return stream_get_contents($stream) ?: '';
     }
 }
