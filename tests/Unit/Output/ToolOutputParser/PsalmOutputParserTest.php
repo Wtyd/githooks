@@ -101,7 +101,8 @@ class PsalmOutputParserTest extends TestCase
             'line_from' => 1,
             'message' => 'x',
             'severity' => 'info',
-        ]]);
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'psalm');
 
@@ -115,7 +116,8 @@ class PsalmOutputParserTest extends TestCase
             'file_name' => 'A.php',
             'line_from' => 1,
             'message' => 'x',
-        ]]);
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'psalm');
 
@@ -131,7 +133,8 @@ class PsalmOutputParserTest extends TestCase
             'line_to' => '15',
             'column_from' => '3',
             'message' => 'x',
-        ]]);
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'psalm');
 
@@ -147,7 +150,8 @@ class PsalmOutputParserTest extends TestCase
             'file_name' => 'A.php',
             'line_from' => 1,
             'message' => 'x',
-        ]]);
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'psalm');
 

@@ -162,7 +162,9 @@ class SarifResultFormatterTest extends TestCase
         $phpcsStdout = json_encode([
             'files' => ['f.php' => ['messages' => [
                 ['message' => 'e', 'line' => 1, 'source' => 'PSR12.Files.EndFileNewline', 'type' => 'ERROR'],
-            ]]],
+            ]
+            ]
+            ],
         ]);
 
         $result = new FlowResult('qa', [

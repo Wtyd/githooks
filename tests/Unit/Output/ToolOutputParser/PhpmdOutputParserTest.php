@@ -116,7 +116,9 @@ class PhpmdOutputParserTest extends TestCase
         $json = json_encode(['files' => [[
             'file' => '/abs/A.php',
             'violations' => [$violation],
-        ]]]);
+        ]
+        ]
+        ]);
 
         $this->assertSame([], $this->parser->parse($json, 'phpmd'));
     }
@@ -141,8 +143,11 @@ class PhpmdOutputParserTest extends TestCase
                 'beginLine' => 10,
                 'description' => 'x',
                 'priority' => $priority,
-            ]],
-        ]]]);
+            ]
+            ],
+        ]
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'phpmd');
 
@@ -167,8 +172,11 @@ class PhpmdOutputParserTest extends TestCase
             'violations' => [[
                 'beginLine' => 10,
                 'description' => 'x',
-            ]],
-        ]]]);
+            ]
+            ],
+        ]
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'phpmd');
 
@@ -183,8 +191,11 @@ class PhpmdOutputParserTest extends TestCase
             'violations' => [[
                 'beginLine' => 10,
                 'description' => 'x',
-            ]],
-        ]]]);
+            ]
+            ],
+        ]
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'phpmd');
 
@@ -201,8 +212,11 @@ class PhpmdOutputParserTest extends TestCase
                 'beginLine' => 10,
                 'description' => 'x',
                 'priority' => 3,
-            ]],
-        ]]]);
+            ]
+            ],
+        ]
+        ]
+        ]);
 
         $issues = $this->parser->parse($json, 'phpmd');
 

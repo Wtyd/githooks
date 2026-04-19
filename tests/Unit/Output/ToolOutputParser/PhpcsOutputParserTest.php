@@ -129,7 +129,9 @@ class PhpcsOutputParserTest extends TestCase
         $json = json_encode([
             'files' => ['src/A.php' => ['messages' => [
                 ['line' => 1, 'message' => 'x', 'type' => 'error'],
-            ]]],
+            ]
+            ]
+            ],
         ]);
 
         $issues = $this->parser->parse($json, 'phpcs');
@@ -143,7 +145,9 @@ class PhpcsOutputParserTest extends TestCase
         $json = json_encode([
             'files' => ['src/A.php' => ['messages' => [
                 ['line' => 1, 'message' => 'x'],
-            ]]],
+            ]
+            ]
+            ],
         ]);
 
         $issues = $this->parser->parse($json, 'phpcs');
@@ -157,7 +161,9 @@ class PhpcsOutputParserTest extends TestCase
         $json = json_encode([
             'files' => ['src/A.php' => ['messages' => [
                 ['line' => '7', 'column' => '3', 'message' => 'x', 'type' => 'ERROR'],
-            ]]],
+            ]
+            ]
+            ],
         ]);
 
         $issues = $this->parser->parse($json, 'phpcs');
@@ -172,7 +178,9 @@ class PhpcsOutputParserTest extends TestCase
         $json = json_encode([
             'files' => ['src/A.php' => ['messages' => [
                 ['line' => 1, 'message' => 'x', 'type' => 'ERROR'],
-            ]]],
+            ]
+            ]
+            ],
         ]);
 
         $issues = $this->parser->parse($json, 'phpcs');
