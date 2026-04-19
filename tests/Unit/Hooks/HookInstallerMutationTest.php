@@ -19,8 +19,21 @@ class HookInstallerMutationTest extends TestCase
     {
         $this->tempDir = sys_get_temp_dir() . '/githooks_test_' . uniqid();
         mkdir($this->tempDir, 0755, true);
-        // Create .git/hooks for legacy tests
-        mkdir($this->tempDir . '/.git/hooks', 0755, true);
+        shell_exec('git -C ' . escapeshellarg($this->tempDir) . ' init --quiet 2>&1');
+        if (!is_dir($this->tempDir . '/.git/hooks')) {
+            $this->markTestSkipped('git init did not create .git/hooks — environment lacks git.');
+        }
+    }
+
+    private function readCoreHooksPath(): ?string
+    {
+        $cmd = 'git -C ' . escapeshellarg($this->tempDir) . ' config --get core.hooksPath 2>/dev/null';
+        $out = shell_exec($cmd);
+        if ($out === null) {
+            return null;
+        }
+        $trimmed = trim($out);
+        return $trimmed === '' ? null : $trimmed;
     }
 
     protected function tearDown(): void
@@ -68,13 +81,44 @@ class HookInstallerMutationTest extends TestCase
     }
 
     /** @test */
-    public function install_sets_file_permissions_to_executable()
+    public function install_sets_file_permissions_to_0755()
     {
         $installer = new HookInstaller($this->tempDir);
 
         $created = $installer->install(['pre-commit']);
 
-        $this->assertTrue(is_executable($created[0]));
+        $this->assertSame(0755, fileperms($created[0]) & 0777);
+    }
+
+    /** @test */
+    public function install_sets_githooks_directory_permissions_to_0755()
+    {
+        $installer = new HookInstaller($this->tempDir);
+
+        $installer->install(['pre-commit']);
+
+        $this->assertSame(0755, fileperms($this->tempDir . '/.githooks') & 0777);
+    }
+
+    /** @test */
+    public function install_configures_core_hooks_path_to_githooks()
+    {
+        $installer = new HookInstaller($this->tempDir);
+
+        $installer->install(['pre-commit']);
+
+        $this->assertSame('.githooks', $this->readCoreHooksPath());
+    }
+
+    /** @test */
+    public function install_preserves_current_working_directory()
+    {
+        $installer = new HookInstaller($this->tempDir);
+        $cwdBefore = getcwd();
+
+        $installer->install(['pre-commit']);
+
+        $this->assertSame($cwdBefore, getcwd());
     }
 
     /** @test */
@@ -195,13 +239,13 @@ class HookInstallerMutationTest extends TestCase
     }
 
     /** @test */
-    public function installLegacy_sets_executable_permissions()
+    public function installLegacy_sets_file_permissions_to_0755()
     {
         $installer = new HookInstaller($this->tempDir);
 
         $created = $installer->installLegacy(['pre-commit']);
 
-        $this->assertTrue(is_executable($created[0]));
+        $this->assertSame(0755, fileperms($created[0]) & 0777);
     }
 
     // ========================================================================
@@ -226,10 +270,33 @@ class HookInstallerMutationTest extends TestCase
     {
         $installer = new HookInstaller($this->tempDir);
 
-        // Should not throw
         $installer->clean();
 
         $this->assertDirectoryDoesNotExist($this->tempDir . '/.githooks');
+    }
+
+    /** @test */
+    public function clean_unsets_core_hooks_path()
+    {
+        $installer = new HookInstaller($this->tempDir);
+        $installer->install(['pre-commit']);
+        $this->assertSame('.githooks', $this->readCoreHooksPath());
+
+        $installer->clean();
+
+        $this->assertNull($this->readCoreHooksPath());
+    }
+
+    /** @test */
+    public function clean_preserves_current_working_directory()
+    {
+        $installer = new HookInstaller($this->tempDir);
+        $installer->install(['pre-commit']);
+        $cwdBefore = getcwd();
+
+        $installer->clean();
+
+        $this->assertSame($cwdBefore, getcwd());
     }
 
     // ========================================================================
