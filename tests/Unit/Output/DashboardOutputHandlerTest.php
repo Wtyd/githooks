@@ -165,10 +165,11 @@ class DashboardOutputHandlerTest extends TestCase
     /** @test */
     function tick_in_tty_renders_when_jobs_are_running()
     {
+        ob_start();
         $handler = new DashboardOutputHandler(true);
         $handler->registerJobs(['job1']);
         $handler->onJobStart('job1');
-        ob_start();
+        ob_clean();
 
         $handler->tick();
         $output = ob_get_clean();
@@ -179,9 +180,10 @@ class DashboardOutputHandlerTest extends TestCase
     /** @test */
     function tick_in_tty_with_no_running_jobs_produces_no_output()
     {
+        ob_start();
         $handler = new DashboardOutputHandler(true);
         $handler->registerJobs(['job1']);
-        ob_start();
+        ob_clean();
 
         $handler->tick();
         $output = ob_get_clean();
@@ -192,16 +194,16 @@ class DashboardOutputHandlerTest extends TestCase
     /** @test */
     function on_job_skipped_removes_job_from_queued_state_in_tty_render()
     {
+        ob_start();
         $handler = new DashboardOutputHandler(true);
         $handler->registerJobs(['job_a', 'job_b']);
-
         $handler->onJobSkipped('job_a', 'no files');
         $handler->onJobStart('job_b');
-        ob_start();
+        ob_clean();
+
         $handler->tick();
         $output = ob_get_clean();
 
-        // job_a should appear as skipped (⏩), not as queued (⏺)
         $this->assertStringNotContainsString('⏺ job_a', $output);
         $this->assertStringContainsString('⏩ job_a', $output);
     }
@@ -209,16 +211,16 @@ class DashboardOutputHandlerTest extends TestCase
     /** @test */
     function flush_in_tty_after_dashboard_rendered_clears_it_before_final_results()
     {
+        ob_start();
         $handler = new DashboardOutputHandler(true);
         $handler->registerJobs(['job1']);
         $handler->onJobStart('job1');
         $handler->onJobSuccess('job1', '100ms');
-        ob_start();
+        ob_clean();
 
         $handler->flush();
         $output = ob_get_clean();
 
-        // flush() in TTY should emit the ANSI cursor-up clear sequence (ESC [A)
         $this->assertStringContainsString("\e[", $output);
         $this->assertStringContainsString('job1 - OK', $output);
     }
