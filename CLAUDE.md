@@ -155,5 +155,6 @@ return [
 | QA antes de commit (phpmd, phpstan, tests) | `.claude/skills/qa-workflow/` |
 | Testing funcional del CLI | `.claude/skills/qa-tester/` |
 | Documentación externa (MkDocs) | `.claude/skills/docs/` |
+| Analizar informe de Infection (mutants escaped) | `.claude/skills/mutation-analyzer/` |
 
 Consulta la skill correspondiente antes de empezar una tarea que encaje en estas categorías.
