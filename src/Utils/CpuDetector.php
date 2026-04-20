@@ -26,7 +26,7 @@ class CpuDetector
         // wmic fallback (legacy Windows)
         $output = [];
         $exitCode = 0;
-        exec('wmic cpu get NumberOfLogicalProcessors 2>NUL', $output, $exitCode);
+        exec('wmic cpu get NumberOfLogicalProcessors ' . Platform::stderrRedirect(), $output, $exitCode);
         if ($exitCode === 0) {
             foreach ($output as $line) {
                 $trimmed = trim($line);

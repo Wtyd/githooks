@@ -25,6 +25,28 @@ class CpuDetectorTest extends TestCase
     }
 
     /** @test */
+    function windows_path_on_unix_does_not_create_stray_nul_file()
+    {
+        $original = getenv('NUMBER_OF_PROCESSORS');
+        putenv('NUMBER_OF_PROCESSORS');
+
+        $nulFile = getcwd() . DIRECTORY_SEPARATOR . 'NUL';
+        @unlink($nulFile);
+
+        try {
+            (new WindowsCpuDetectorStub())->detect();
+            $this->assertFileDoesNotExist($nulFile);
+        } finally {
+            @unlink($nulFile);
+            if ($original === false) {
+                putenv('NUMBER_OF_PROCESSORS');
+            } else {
+                putenv("NUMBER_OF_PROCESSORS=$original");
+            }
+        }
+    }
+
+    /** @test */
     function windows_detects_via_number_of_processors_env()
     {
         $original = getenv('NUMBER_OF_PROCESSORS');
