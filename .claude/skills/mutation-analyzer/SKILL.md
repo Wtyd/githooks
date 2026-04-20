@@ -49,20 +49,48 @@ Infection escribe en `reports/infection/`. **Usa sólo los tres ficheros de text
 
 **Nunca usar** `Read` sobre `mutation-report.html` — romperá el límite de mensaje y no añade información sobre los `.log`/`.md`. Si el usuario lo adjunta, recordárselo y pedir que aporte el `infection.log` o que re-ejecute Infection acotado (ver abajo).
 
-### 3. Diseñar el análisis según volumen
+### 3. Diseñar el análisis: calidad primero
 
-| Escaped | Estrategia |
+**Regla general: priorizar análisis centralizado.** El orquestador principal tiene más contexto acumulado (puede correlacionar módulos, ver patrones cross-fichero, y re-leer el mismo test desde ángulos distintos). Los subagentes trabajan en silos con presupuesto cognitivo acotado y tienden a sesgo defensivo.
+
+**Criterio de delegación (nuevo):**
+
+| Situación | Estrategia |
 |---|---|
-| 0–30 | Análisis directo: leer el log, clasificar cada mutant en el mismo turno |
-| 30–80 | Agrupar por fichero; analizar un fichero cada vez |
-| >80 | Delegar a **agentes paralelos por módulo** (`Agent(subagent_type=general-purpose)`) con el rango de líneas del log que le corresponde a cada uno |
+| Cualquier volumen, ventana de contexto holgada | **Análisis centralizado**: leer log + código + test iterativamente hasta clasificar con evidencia. Preferido por defecto. |
+| Volumen grande y ventana comprometida (ej. >150 mutants densos con código de contexto obligatorio) | **Análisis centralizado por módulo** (no paralelo): procesa un módulo a la vez, consolida y pasa al siguiente. |
+| Volumen extremo o restricción dura de contexto | **Delegación con piloto** (ver abajo). Último recurso. |
 
-Cuando delegues, cada agente necesita:
-- Ruta del log y rango de líneas de su sección
-- Lista de ficheros con número de mutants
-- La taxonomía (ver abajo) para clasificar
-- Formato de salida (tabla por fichero)
-- Instrucción de límite de palabras (≤600 por agente)
+El volumen no es el criterio; la complejidad y el presupuesto de contexto disponibles sí. Con Opus 1M de contexto, 228 mutants se procesan centralizadamente sin problema.
+
+### 3.b Delegación (sólo si no queda alternativa)
+
+Si se delega, no lanzar todos los lotes a la vez:
+
+**Fase piloto obligatoria.** Lanzar **un único lote representativo** primero (p.ej. un módulo con mutants heterogéneos: Hooks, Jobs o Execution). Revisar el output contra el código y tests reales:
+- ¿Clasificó algo como EQUIVALENTE sin citar línea de test que lo cubre?
+- ¿Aplicó una pista como veredicto sin verificar?
+- ¿Hay mutants agrupados por razón genérica ("rama inalcanzable") que no encaje con el código real?
+
+Si hay ≥2 errores en el piloto, **no lanzar el resto**: reajustar pistas, endurecer el prompt, o caer a análisis centralizado.
+
+**Diseño del prompt de lote** — pasar tareas de verificación, no veredictos:
+
+- ❌ *"CpuDetector tiene ramas Windows/Darwin inalcanzables en Linux CI — clasifica como equivalentes"*
+- ✅ *"CpuDetector tiene ramas guardadas por `PHP_OS_FAMILY`. Antes de clasificar como EQUIVALENTE, verifica si existe un stub (`WindowsCpuDetectorStub`, `DarwinCpuDetectorStub`) en `tests/` y si lo usa algún test. Cita el método de test que cubre la rama o marca AMBIGUO."*
+
+- ❌ *"Dashboard concentra cosméticos ANSI — sé estricto agrupándolos"*
+- ✅ *"Dashboard tiene mezcla de lógica real (queued/clear/render) y decoración (marcos, padding, timers). Para cada mutant en líneas 188-236, verifica si algún test TTY (`dashboard_handler_*_tty_*`) hace assert sobre el output exacto. Si lo hace → MEDIA/ALTA; si sólo verifica presencia de substring → COSMÉTICO."*
+
+La pista orienta **qué verificar**, no **cómo clasificar**.
+
+**Post-validación obligatoria por lote.** Tras recibir la respuesta del subagente, antes de consolidar:
+
+1. Muestrear 3 clasificaciones al azar por lote (una ALTA, una MEDIA, una EQUIV/COSM).
+2. Re-inspeccionar el código + test referenciado.
+3. Si alguna clasificación no resiste la inspección, **re-clasificar manualmente** y marcar el lote como no fiable: re-procesar el resto del lote centralizadamente.
+
+Lanza lotes en paralelo **sólo después** de pasar el piloto.
 
 ## Formato del log de Infection
 
@@ -93,72 +121,16 @@ Timed Out mutants:  (mutants que no terminaron — trátalos aparte si los hay)
 
 Un `Grep` con patrón `^\d+\) /abs/path/src/Modulo/` filtra los mutants de un módulo concreto con su línea.
 
-## Taxonomía de clasificación
+## Taxonomía y patrones: dónde viven
 
-Cada mutant escaped cae en una de estas cuatro categorías. La clasificación determina la acción.
+La taxonomía detallada (4 categorías) y la tabla de patrones por mutator están en el system prompt del subagente `infection-mutant-classifier` — no se duplican aquí. El catálogo canónico con ejemplos de código sigue en `references/mutator-catalog.md` y el subagente lo consulta bajo demanda para mutators ambiguos.
 
-### 1. Real escape (bug latente)
-
-El mutante cambia comportamiento observable y el código real tiene un bug que no se detecta porque ningún test lo ejerce. **Acción: crear o ampliar test.**
-
-Señales típicas:
-- Clase sin fichero de test directo (busca con `grep -rL "new ClassName" tests/`).
-- Side effect (`exec`, `chdir`, `file_put_contents`) cuya llamada puede eliminarse sin que falle ningún test.
-- Guard defensivo (`!is_array($x) || !isset($x['key'])`) con OR mutable a AND.
-- Operador relacional `<=`/`>=` en frontera sin test en el umbral.
-
-### 2. Cobertura débil
-
-Existe test que ejecuta el código, pero los asserts son demasiado laxos para discriminar el cambio. **Acción: endurecer el assert, no añadir test nuevo.**
-
-Señales típicas:
-- `is_executable()` donde cabe `fileperms & 0777`.
-- `assertCount(1)` en vez de `assertSame([$exact], …)`.
-- `assertMatchesRegularExpression` con patrón permisivo donde cabe `assertSame` de regex exacta.
-- `assertTrue($x->isSuccess())` sin mirar el estado interno.
-
-### 3. Equivalente
-
-El mutante produce la misma salida observable que el original, o el camino mutado nunca se ejecuta bajo precondiciones reales. **Acción: ninguna — documentar y descartar del baseline.**
-
-Señales típicas:
-- Default de parámetro opcional que todos los callsites pasan explícitamente.
-- `exec(..., $exitCode)` con mutación del valor inicial de `$exitCode` (la llamada lo sobrescribe por referencia).
-- Asignación redundante (`$x = false` en L45 sobrescrita en L47).
-- Detección de SO en líneas que dan el mismo `false` en el entorno de test (p.ej. `substr(PHP_OS, 0, 3) === 'WIN'` en Linux — todos los mutantes sobre `substr` dan `false`).
-
-### 4. Cosmético / no accionable sin refactor
-
-El mutante afecta código estético (strings ANSI, padding, ancho de marco) o requeriría infraestructura desproporcionada para mockear. **Acción: ninguna.**
-
-Señales típicas:
-- Mutantes en `str_repeat`, `Concat`, `IncrementInteger` sobre anchos de marco decorativo.
-- `exec`/`file_get_contents` no virtualizados (testearlos requiere refactor para aceptar callable inyectable).
-- Mutantes sobre contadores de reporting (thread allocations, peak usage) que no afectan éxito/fallo.
-
-## Patrones por mutator (resumen)
-
-| Mutator | Clasificación típica | Por qué |
-|---|---|---|
-| `LogicalOr` en guard `\|\| !isset(...)` | **Real escape** | Validación defensiva no cubierta con entrada malformada |
-| `LessThanOrEqualTo` / `GreaterThan` | **Real escape** | Falta test en frontera |
-| `ConcatOperandRemoval` en strings de error/display | **Cobertura débil** o **real** según observabilidad |
-| `ConcatOperandRemoval` en strings ANSI decorativas | **Cosmético** |
-| `Concat` / `UnwrapStrRepeat` en marcos ANSI | **Cosmético** |
-| `IncrementInteger` / `DecrementInteger` en contadores de reporting | **Cosmético** |
-| `IncrementInteger` / `DecrementInteger` en defaults observables (`priority ?? 3`) | **Real escape** |
-| `MethodCallRemoval` / `FunctionCallRemoval` sobre `exec`/`chdir`/`mkdir` | **Real escape** (falta assert de side-effect) |
-| `TrueValue` / `FalseValue` en parámetro opcional con todos los callsites explícitos | **Equivalente** |
-| `TrueValue` / `FalseValue` en bandera interna observable | **Real escape** |
-| `ArrayOneItem` / `ArrayItemRemoval` | **Real escape** si hay lógica sobre múltiples elementos |
-| `Break_` ↔ `Continue_` tras flag ya establecido | **Equivalente** (solo afecta perf) |
-| `Continue_` → `Break_` en bucles de acumulación | **Real escape** (omite elementos posteriores) |
-| `Identical` (`===` ↔ `!==`) en detección de SO (Linux) | **Equivalente** para mutaciones de substr; **real** para el `===` final |
-| `PregMatchRemoveDollar` / regex anchor removal | **Real escape** — test con input con sufijo inválido |
-| `CastInt` | **Cobertura débil** — test con string numérica y assertSame a int |
-| `SharedCaseRemoval` en switch con casos que devuelven lo mismo | **Equivalente** de un lado, **cobertura débil** del otro (test con el case específico) |
-
-El catálogo completo con ejemplos de código está en `references/mutator-catalog.md`.
+Recordatorio corto de las 5 categorías (para orquestar y consolidar):
+- **ALTA** — Real escape: bug latente, crear/ampliar test.
+- **MEDIA** — Cobertura débil: test existe, endurecer assert.
+- **EQUIVALENTE** — Mismo output / rama inalcanzable: descartar con evidencia (cita el test que lo cubre, o la rama SO inalcanzable).
+- **COSMÉTICO** — Decoración ANSI, contadores de reporting: descartar.
+- **AMBIGUO** — No hay evidencia suficiente para decidir tras verificar. El orquestador (no el subagente) re-inspecciona y resuelve. Mejor ambiguo que mal clasificado.
 
 ## Flujo de análisis
 
@@ -182,14 +154,38 @@ El catálogo completo con ejemplos de código está en `references/mutator-catal
 
 **Nunca abrir `mutation-report.html`**: es HTML de 5-10 MB con CSS/JS embebidos; rompe el límite de mensaje y no aporta sobre los `.log`/`.md`.
 
-### Paso 2 — Agrupar por fichero
+### Paso 2 — Análisis (centralizado por defecto)
 
-Un mismo fichero suele concentrar mutants relacionados. Procesar fichero-a-fichero produce diagnósticos coherentes (p.ej. "los 5 parsers tienen el mismo patrón `LogicalOr`").
+**Ruta preferente — centralizado por módulo.** Procesa un módulo a la vez:
 
-Para cada fichero:
-1. Leer el código fuente alrededor de cada línea del mutant.
-2. Leer el test directo de la clase (si existe).
-3. Clasificar cada mutant con la taxonomía.
+1. `Grep` los mutants del módulo sobre `infection.log` (ya lo hiciste en Paso 1).
+2. `Read` el log con `offset`/`limit` del módulo.
+3. Para cada fichero con mutants:
+   - `Read` el código fuente con contexto (±10 líneas por mutante).
+   - `Glob` y `Read` el test directo (`tests/Unit/<subruta>/<Class>Test.php`).
+   - Clasificar cada mutant con **evidencia citada**: qué test lo cubre (MEDIA), qué línea/método lo cubre por rama (EQUIV), qué hace decorativo el cambio (COSM).
+4. Acumular clasificaciones y pasar al siguiente módulo.
+
+Esta es la ruta preferente aunque el log tenga 200+ mutants. Mantener un módulo en contexto a la vez evita silos y permite correlaciones cross-módulo (ej. patrones Windows/Darwin compartidos entre `CpuDetector` y `Platform`).
+
+**Ruta alternativa — delegación.** Sólo si el presupuesto de contexto no alcanza (log muy denso, código fuente voluminoso, muchos tests). En ese caso:
+
+1. **Piloto**: diseñar 1 lote representativo. Invocar `Agent(subagent_type=infection-mutant-classifier)` con prompt de verificación (no de veredicto).
+2. **Validar**: ¿cita evidencia (línea de test) para EQUIV/COSM? ¿hay AMBIGUOS razonables o fuerza categoría? ¿aplica pistas como tareas?
+3. Si el piloto es **sólido** → lanzar el resto de lotes en paralelo.
+4. Si el piloto tiene **errores** → caer a ruta centralizada por módulo.
+
+Criterio de agrupación para lotes (si se delega):
+- Ficheros del mismo sub-árbol de `src/` en el mismo lote.
+- Evitar lotes >60 mutants (truncado).
+- Evitar lotes <15 (overhead).
+
+**Post-validación obligatoria de cada lote delegado** (ver Paso 2 del apartado 3.b): 3 muestras aleatorias re-inspeccionadas antes de consolidar.
+
+El subagente devuelve tablas Markdown. El orquestador:
+- Resuelve los **AMBIGUOS** (re-inspección manual).
+- Revisa cada **EQUIV/COSM** sin evidencia citada (promover a AMBIGUO).
+- Consolida en el informe final del Paso 3.
 
 ### Paso 3 — Salida
 
@@ -201,6 +197,7 @@ Producir un informe en Markdown estructurado así:
 ## Resumen
 - Total / Killed / Escaped / Timeouts
 - MSI cubierto
+- Contadores por categoría (ALTA / MEDIA / EQUIV / COSM). La suma debe cuadrar con Escaped.
 
 ## Prioridad ALTA (bugs latentes reales)
 Tabla por fichero:línea / Mutator / Problema / Acción
@@ -209,15 +206,24 @@ Tabla por fichero:línea / Mutator / Problema / Acción
 Tabla similar
 
 ## No accionable (equivalentes / cosméticos)
-Lista resumida agrupada por tipo
+Lista resumida agrupada por tipo, con evidencia (test que lo cubre o razón de rama inalcanzable)
 
-## Plan de acción
-1. Tests nuevos a crear (con clases sin test directo)
-2. Refuerzos de asserts (asserts existentes a endurecer)
-3. Fixes de código (bugs confirmados — unidad aparte)
+## Candidatos a fixes de código (OBLIGATORIO si aplica)
+Mutants ALTA cuya mutación sugiere que el código actual puede esconder un bug real (no sólo cobertura débil). Tabla: fichero:línea / sospecha / verificación sugerida. PR aparte del refuerzo de tests.
+
+## Plan de acción priorizado por ROI
+1. Tests nuevos (clases sin test directo): cuantificar "mata N mutants".
+2. Refuerzos de asserts masivos (patrones repetidos): cuantificar "mata N mutants".
+3. Refuerzos puntuales.
+4. Supresiones en `infection.json5` (cosméticos densos, ramas inalcanzables).
 ```
 
 Guardar como `Infection.md` en la raíz del proyecto si el usuario lo pide, o mantener en pantalla si sólo quiere revisar.
+
+**Validación final antes de reportar:**
+- La suma de clasificaciones debe igualar el total de escaped. Si faltan mutants, son AMBIGUOS y van explícitamente en una sub-sección.
+- Toda EQUIV/COSM debe llevar evidencia (línea de test que lo cubre, o razón concreta de equivalencia/decoración). Sin evidencia → AMBIGUO.
+- La sección "Candidatos a fixes de código" no se omite: si no hay candidatos, decirlo explícitamente ("No se detectan bugs latentes — todos los ALTA son huecos de test").
 
 ### Paso 4 — Puente con `php-test-creator`
 
@@ -249,6 +255,9 @@ El log principal (`reports/infection/infection.log`) se genera automáticamente 
 
 - **No clasificar "real" por defecto.** Muchos mutants son equivalentes genuinos; forzar test para todos infla la suite sin beneficio.
 - **No perseguir mutantes cosméticos.** Strings ANSI, paddings y anchos de marco no necesitan test — documentar y descartar.
+- **No delegar por defecto.** La delegación a subagentes es un recurso para cuando la ventana de contexto no da más de sí. Con 1M de contexto, 200+ mutants se procesan centralizadamente sin problema y con mejor calidad. Preferir siempre ruta centralizada.
+- **No clasificar sin evidencia.** EQUIVALENTE/COSMÉTICO requiere cita: fichero de test + método que cubre, o razón concreta de decoración/inalcanzabilidad. Sin evidencia → AMBIGUO (que el orquestador resuelve con re-inspección).
+- **No convertir pistas en veredictos.** Una pista del orquestador ("X tiene ramas Windows inalcanzables") no es un veredicto — es una tarea de verificación. El clasificador debe buscar el stub o test de esa rama antes de aplicar la pista.
 - **Nunca hacer `Read` sobre `mutation-report.html`.** Es HTML con CSS/JS embebido de 5-10 MB pensado para navegador humano; en contexto LLM rompe el límite de mensaje sin aportar nada sobre los tres ficheros de texto. Si el usuario lo menciona o adjunta, recordarle que la fuente correcta es `infection.log` + `infection-summary.log` + `per-mutator.md`.
 - **No mezclar fixes de código con tests en el mismo commit.** Los bugs latentes detectados merecen PR propio.
 
@@ -257,9 +266,14 @@ El log principal (`reports/infection/infection.log`) se genera automáticamente 
 Antes de reportar:
 
 - [ ] Leído `infection-summary.log` para conocer volumen total
-- [ ] Clasificado **cada** mutant escaped (no dejar sin categorizar)
-- [ ] Cada "real escape" tiene una sugerencia concreta de test
+- [ ] **Decisión centralizado/delegado registrada explícitamente** (con razón si se delega)
+- [ ] Si se delegó: piloto ejecutado y validado antes de lanzar el resto
+- [ ] Si se delegó: post-validación por lote ejecutada (3 muestras aleatorias re-inspeccionadas)
+- [ ] Clasificado **cada** mutant escaped; la suma de categorías cuadra con total escaped
+- [ ] AMBIGUOS resueltos por el orquestador (re-inspección manual) — no quedar ambiguos en el informe final
+- [ ] Toda EQUIV/COSM con evidencia citada (método de test o razón concreta)
+- [ ] Cada ALTA tiene una sugerencia concreta de test
 - [ ] Mutants agrupados por fichero, no por orden del log
-- [ ] "No accionable" justificado (por qué es equivalente/cosmético)
 - [ ] Plan de acción priorizado por ROI, no por orden de aparición
+- [ ] Sección "Candidatos a fixes de código" presente (o declarada vacía explícitamente)
 - [ ] Mencionar qué mutants quedan fuera de alcance y por qué
