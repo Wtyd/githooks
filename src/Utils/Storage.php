@@ -44,7 +44,7 @@ class Storage
      */
     public static function put($path, $contents, $lock = false)
     {
-        return FacadesStorage::disk(self::$disk)->put($path, $contents, $lock = false);
+        return FacadesStorage::disk(self::$disk)->put($path, $contents, $lock);
     }
 
     /**
