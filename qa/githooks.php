@@ -123,7 +123,7 @@ return [
         'Infection' => [
             'type' => 'custom',
             'executable-prefix' => 'php8.4',
-            'script' => 'tools/infection --threads=10 --skip-initial-tests --no-progress --coverage=reports/coverage',
+            'script' => 'tools/infection --threads=10 --skip-initial-tests --no-progress --show-mutations=0 --coverage=reports/coverage',
         ],
         'PhpMetrics' => [
             'type' => 'custom',
