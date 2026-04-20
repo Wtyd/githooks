@@ -1,0 +1,46 @@
+{
+	"name": "wtyd-nginx (githooks)",
+	"workspaceFolder": "/var/www/html1",
+	"remoteUser": "wtyd",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"anthropic.claude-code",
+				"bdsoftware.format-on-auto-save",
+				"blakeh.jump-to-test",
+				"bmewburn.vscode-intelephense-client",
+				"devsense.composer-php-vscode",
+				"dotjoshjohnson.xml",
+				"eamodio.gitlens",
+				"ecodes.vscode-phpmd",
+				"esbenp.prettier-vscode",
+				"finntenzor.change-case",
+				"github.vscode-github-actions",
+				"gruntfuggly.todo-tree",
+				"hbenl.vscode-test-explorer",
+				"in4margaret.compareit",
+				"injust.better-php-annotation-keywords-colorization",
+				"klesun.deep-assoc-completion-vscode",
+				"kotfire.php-add-property",
+				"marsl.vscode-php-refactoring",
+				"mehedidracula.php-constructor",
+				"mehedidracula.php-namespace-resolver",
+				"ms-azuretools.vscode-containers",
+				"ms-azuretools.vscode-docker",
+				"ms-ceintl.vscode-language-pack-es",
+				"ms-vscode.test-adapter-converter",
+				"neilbrayfield.php-docblocker",
+				"patbenatar.advanced-new-file",
+				"phproberto.vscode-php-getters-setters",
+				"recca0120.vscode-phpunit",
+				"redhat.vscode-yaml",
+				"sanderronde.phpstan-vscode",
+				"sleistner.vscode-fileutils",
+				"usernamehw.errorlens",
+				"valeryanm.vscode-phpsab",
+				"xdebug.php-debug",
+				"yzhang.markdown-all-in-one"
+			]
+		}
+	}
+}
