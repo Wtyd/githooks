@@ -65,6 +65,13 @@ refactor(FastExecution): simplify file filtering logic
 
 **Nunca commitear automáticamente.** Proponer commit cuando haya una unidad de código autosuficiente — funcionalidad que aunque no esté acabada, esté operativa y no rompa nada.
 
+### Señales de alarma (cuándo parar)
+
+Dos umbrales para evitar bucles improductivos:
+
+- **3 ediciones sobre el mismo fichero en la misma tarea** → parar, re-leer el requisito original del usuario y confirmar que el enfoque sigue siendo correcto antes de seguir editando.
+- **2 fallos consecutivos del mismo tipo de acción** (mismo test falla, mismo comando rompe, misma edición genera el mismo error) → parar, diagnosticar la causa raíz. Si no está clara, resumir lo intentado y preguntar al usuario en vez de reintentar.
+
 ## Entorno de ejecución
 
 El contenedor tiene PHP 7.0 a 8.4. Se invocan como `php7.0`, `php7.1`, ..., `php8.4`. La versión por defecto (`php`) es 8.4.
