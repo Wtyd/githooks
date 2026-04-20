@@ -172,15 +172,38 @@ class FileUtilsTest extends ZeroTestCase
         'BITBUCKET_PR_DESTINATION_BRANCH',
     ];
 
+    // When PHPUnit runs inside a git hook (e.g. pre-commit), git exports these
+    // vars and they leak into any `git` subprocess, overriding cwd and making
+    // the temp repo lookups target the parent repo instead.
+    /** @var string[] */
+    private const GIT_ENV_VARS = [
+        'GIT_DIR',
+        'GIT_INDEX_FILE',
+        'GIT_WORK_TREE',
+        'GIT_PREFIX',
+        'GIT_COMMON_DIR',
+    ];
+
     private ?string $detectMainBranchTempDir = null;
 
     private ?string $detectMainBranchCwd = null;
+
+    /** @var array<string, string|false> */
+    private array $savedGitEnv = [];
 
     protected function tearDown(): void
     {
         foreach (self::CI_VARS as $var) {
             putenv($var);
         }
+        foreach ($this->savedGitEnv as $var => $value) {
+            if ($value === false) {
+                putenv($var);
+            } else {
+                putenv("$var=$value");
+            }
+        }
+        $this->savedGitEnv = [];
         if ($this->detectMainBranchCwd !== null) {
             chdir($this->detectMainBranchCwd);
             $this->detectMainBranchCwd = null;
@@ -268,6 +291,7 @@ class FileUtilsTest extends ZeroTestCase
     function detectMainBranch_returns_null_when_no_detection_succeeds()
     {
         $this->clearCiVars();
+        $this->isolateFromParentGitEnv();
         $this->detectMainBranchTempDir = sys_get_temp_dir() . '/githooks_nobranch_' . uniqid();
         mkdir($this->detectMainBranchTempDir, 0755, true);
         $this->detectMainBranchCwd = getcwd() ?: sys_get_temp_dir();
@@ -283,8 +307,19 @@ class FileUtilsTest extends ZeroTestCase
         }
     }
 
+    private function isolateFromParentGitEnv(): void
+    {
+        foreach (self::GIT_ENV_VARS as $var) {
+            if (!array_key_exists($var, $this->savedGitEnv)) {
+                $this->savedGitEnv[$var] = getenv($var);
+            }
+            putenv($var);
+        }
+    }
+
     private function initGitRepoWithMainBranch(string $branchName): void
     {
+        $this->isolateFromParentGitEnv();
         $this->detectMainBranchTempDir = sys_get_temp_dir() . '/githooks_branch_' . uniqid();
         mkdir($this->detectMainBranchTempDir, 0755, true);
         $dir = escapeshellarg($this->detectMainBranchTempDir);
