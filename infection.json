@@ -3,6 +3,9 @@
     "source": {
         "directories": [
             "src"
+        ],
+        "excludes": [
+            "Output/DashboardOutputHandler.php"
         ]
     },
     "logs": {
@@ -17,43 +20,15 @@
 
         "IncrementInteger": {
             "ignore": [
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler",
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
                 "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42"
             ]
         },
         "DecrementInteger": {
             "ignore": [
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler",
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
                 "Wtyd\\GitHooks\\Utils\\Platform::isWindows",
                 "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds::74"
-            ]
-        },
-        "Concat": {
-            "ignore": [
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::renderDashboard",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFramedError",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::clearDashboard",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFinalResults"
-            ]
-        },
-        "ConcatOperandRemoval": {
-            "ignore": [
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::renderDashboard",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFramedError",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::clearDashboard",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFinalResults"
-            ]
-        },
-        "UnwrapStrRepeat": {
-            "ignore": [
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler"
-            ]
-        },
-        "For_": {
-            "ignore": [
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler"
             ]
         },
         "UnwrapStrToUpper": {
@@ -81,13 +56,6 @@
         "TrueValue": {
             "ignore": [
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::migrate"
-            ]
-        },
-        "MethodCallRemoval": {
-            "ignore": [
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::flush",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::onJobSuccess",
-                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::onJobError"
             ]
         },
         "SharedCaseRemoval": {
