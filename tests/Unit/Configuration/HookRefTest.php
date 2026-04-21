@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\HookRef;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
 class HookRefTest extends TestCase
 {
+    use AssertWarningsTrait;
+
     // ========================================================================
     // fromString
     // ========================================================================
@@ -171,14 +174,22 @@ class HookRefTest extends TestCase
         $this->assertFalse($result->hasErrors());
     }
 
-    /** @test */
+    /**
+     * @test
+     * Kills L99 Concat/ConcatOperandRemoval: the error message has to contain
+     * the target name, the 'execution' literal, and the exact list of valid
+     * modes. Exact-string equality kills removals of any half.
+     */
     public function fromArray_with_invalid_execution_returns_null_with_error()
     {
         $result = new ValidationResult();
         $ref = HookRef::fromArray(['flow' => 'qa', 'execution' => 'turbo'], $result);
 
         $this->assertNull($ref);
-        $this->assertTrue($result->hasErrors());
+        $this->assertErrorEquals(
+            "Hook ref for 'qa': 'execution' must be one of: full, fast, fast-branch.",
+            $result
+        );
     }
 
     /** @test */

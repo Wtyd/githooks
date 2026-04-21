@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\ExecutionMode;
@@ -13,6 +14,8 @@ use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class JobConfigurationTest extends TestCase
 {
+    use AssertWarningsTrait;
+
     private ToolRegistry $registry;
 
     protected function setUp(): void
@@ -133,23 +136,49 @@ class JobConfigurationTest extends TestCase
         $this->assertTrue($found, 'Expected warning about paths not being an array');
     }
 
-    /** @test */
-    public function it_warns_when_csv_arg_is_not_array_or_string()
+    /**
+     * @test
+     * Kills L138 LogicalAnd→Or: the guard `!is_array($value) && !is_string($value)`
+     * flipped to `||` would warn for valid array values. Exact-string match on
+     * an integer input plus the "no warning" test below cover both sides.
+     */
+    public function it_warns_with_exact_message_when_csv_arg_is_integer()
     {
         $result = new ValidationResult();
         JobConfiguration::fromArray('test', [
-            'type' => 'phpcs',
+            'type'   => 'phpcs',
             'ignore' => 123,
         ], $this->registry, $result, new JobRegistry());
 
-        $warnings = $result->getWarnings();
-        $found = false;
-        foreach ($warnings as $w) {
-            if (strpos($w, 'ignore') !== false) {
-                $found = true;
-            }
-        }
-        $this->assertTrue($found, 'Expected warning about ignore type');
+        $this->assertWarningEquals("Job 'test': key 'ignore' expects an array or string.", $result);
+    }
+
+    /** @test */
+    public function it_does_not_warn_when_csv_arg_is_a_valid_array()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('test', [
+            'type'   => 'phpcs',
+            'ignore' => ['vendor', 'tools'],
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertEmpty(array_filter($result->getWarnings(), function (string $w) {
+            return strpos($w, "'ignore'") !== false;
+        }));
+    }
+
+    /** @test */
+    public function it_does_not_warn_when_csv_arg_is_a_valid_string()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('test', [
+            'type'   => 'phpcs',
+            'ignore' => 'vendor,tools',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertEmpty(array_filter($result->getWarnings(), function (string $w) {
+            return strpos($w, "'ignore'") !== false;
+        }));
     }
 
     /** @test */
@@ -282,17 +311,24 @@ class JobConfigurationTest extends TestCase
         $this->assertNull($job->getExecution());
     }
 
-    /** @test */
-    public function it_reports_error_for_invalid_execution_mode_in_job()
+    /**
+     * @test
+     * Kills L74 Concat/ConcatOperandRemoval and L75 ReturnRemoval:
+     * invalid execution must produce the exact error string AND return null.
+     */
+    public function it_reports_error_and_returns_null_for_invalid_execution_mode()
     {
         $result = new ValidationResult();
-        JobConfiguration::fromArray('phpstan_src', [
+        $job = JobConfiguration::fromArray('phpstan_src', [
             'type'      => 'phpstan',
             'execution' => 'invalid',
         ], $this->registry, $result);
 
-        $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('execution', $result->getErrors()[0]);
+        $this->assertNull($job);
+        $this->assertErrorEquals(
+            "Job 'phpstan_src': 'execution' must be one of: full, fast, fast-branch.",
+            $result
+        );
     }
 
     /** @test */

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
 class FlowConfigurationTest extends TestCase
 {
+    use AssertWarningsTrait;
+
     /** @test */
     public function it_parses_a_valid_flow()
     {
@@ -39,7 +42,11 @@ class FlowConfigurationTest extends TestCase
         $this->assertTrue($flow->getOptions()->isFailFast());
     }
 
-    /** @test */
+    /**
+     * @test
+     * Exact-match error kills L49 Concat/ConcatOperandRemoval that would drop
+     * either half of the two-sentence error message.
+     */
     public function it_rejects_flow_named_as_git_hook()
     {
         $result = new ValidationResult();
@@ -48,8 +55,11 @@ class FlowConfigurationTest extends TestCase
         ], ['phpcs_src'], $result);
 
         $this->assertNull($flow);
-        $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('git hook event name', $result->getErrors()[0]);
+        $this->assertErrorEquals(
+            "Flow 'pre-commit' cannot use a git hook event name. "
+            . "Use the 'hooks' section to map events to flows.",
+            $result
+        );
     }
 
     /** @test */
@@ -139,17 +149,24 @@ class FlowConfigurationTest extends TestCase
         $this->assertNull($flow->getExecution());
     }
 
-    /** @test */
-    public function it_reports_error_for_invalid_execution_mode()
+    /**
+     * @test
+     * Kills L74 Concat/ConcatOperandRemoval on the execution-mode error and
+     * L75 ReturnRemoval: with an invalid execution the factory must return null.
+     */
+    public function it_reports_error_and_returns_null_for_invalid_execution_mode()
     {
         $result = new ValidationResult();
-        FlowConfiguration::fromArray('lint', [
+        $flow = FlowConfiguration::fromArray('lint', [
             'jobs'      => ['phpcs_src'],
             'execution' => 'turbo',
         ], ['phpcs_src'], $result);
 
-        $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('execution', $result->getErrors()[0]);
+        $this->assertNull($flow);
+        $this->assertErrorEquals(
+            "Flow 'lint': 'execution' must be one of: full, fast, fast-branch.",
+            $result
+        );
     }
 
     /** @test */

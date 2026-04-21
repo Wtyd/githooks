@@ -41,8 +41,13 @@ class ValidationResultTest extends TestCase
         $this->assertCount(1, $result->getWarnings());
     }
 
-    /** @test */
-    public function it_merges_two_results()
+    /**
+     * @test
+     * Kills L46 UnwrapArrayMerge: `array_merge($this->warnings, $other->warnings)`
+     * collapsed to one side would drop the counterpart's warnings. Both sides
+     * must carry warnings and the assert must cover content + order.
+     */
+    public function it_merges_errors_and_warnings_from_both_sides()
     {
         $a = new ValidationResult();
         $a->addError('error A');
@@ -50,10 +55,28 @@ class ValidationResultTest extends TestCase
 
         $b = new ValidationResult();
         $b->addError('error B');
+        $b->addWarning('warning B');
 
         $merged = $a->merge($b);
 
-        $this->assertCount(2, $merged->getErrors());
-        $this->assertCount(1, $merged->getWarnings());
+        $this->assertSame(['error A', 'error B'], $merged->getErrors());
+        $this->assertSame(['warning A', 'warning B'], $merged->getWarnings());
+    }
+
+    /** @test */
+    public function merge_does_not_mutate_operands()
+    {
+        $a = new ValidationResult();
+        $a->addError('error A');
+
+        $b = new ValidationResult();
+        $b->addWarning('warning B');
+
+        $a->merge($b);
+
+        $this->assertSame(['error A'], $a->getErrors());
+        $this->assertSame([], $a->getWarnings());
+        $this->assertSame([], $b->getErrors());
+        $this->assertSame(['warning B'], $b->getWarnings());
     }
 }

@@ -401,6 +401,53 @@ class HookConfigurationTest extends TestCase
     }
 
     /**
+     * @test
+     * Kills L57 Continue_→break: with two events, the first invalid (not a git
+     * hook) and the second valid, `break` would short-circuit the foreach and
+     * drop the second event's configuration.
+     */
+    public function it_keeps_validating_events_after_an_invalid_event_name()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'not-a-real-hook' => ['lint'],
+                'pre-commit'      => ['qa'],
+            ],
+            ['lint', 'qa'],
+            [],
+            $result
+        );
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertTargets(['qa'], $hooks->resolve('pre-commit'));
+        $this->assertSame(['pre-commit'], $hooks->getEvents());
+    }
+
+    /**
+     * @test
+     * Kills L62 Continue_→break: two events, first with an empty refs array and
+     * the second valid. `break` after the first error drops the second hook.
+     */
+    public function it_keeps_validating_events_after_an_empty_refs_array()
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(
+            [
+                'pre-commit' => [],
+                'pre-push'   => ['qa'],
+            ],
+            ['qa'],
+            [],
+            $result
+        );
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertTargets(['qa'], $hooks->resolve('pre-push'));
+        $this->assertSame(['pre-push'], $hooks->getEvents());
+    }
+
+    /**
      * @param string[] $expected
      * @param HookRef[] $refs
      */
