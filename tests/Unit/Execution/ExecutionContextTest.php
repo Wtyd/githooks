@@ -300,4 +300,139 @@ class ExecutionContextTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    // ========================================================================
+    // Infection Tier 2 — lazy loading, cache sentinel, retry paths
+    // ========================================================================
+
+    /**
+     * @test
+     * Kills L86 MethodCallRemoval on `ensureStagedLoaded`: calling
+     * filterFilesForPaths after create() must trigger a lazy load. Without
+     * the method call the staged file list stays empty and no file matches.
+     */
+    function filter_files_for_paths_loads_staged_lazily_from_create_factory()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        $this->assertSame(0, $fileUtils->getModifiedFilesCallCount);
+
+        $filtered = $context->filterFilesForPaths(['src']);
+
+        $this->assertSame(['src/Foo.php'], $filtered);
+        $this->assertSame(1, $fileUtils->getModifiedFilesCallCount);
+    }
+
+    /**
+     * @test
+     * Kills L142 ReturnRemoval after the cache hit branch: once the branch
+     * diff has been successfully loaded, subsequent calls must NOT re-invoke
+     * FileUtils::getBranchDiffFiles. Without the return the second call
+     * re-queries and the counter jumps to 2.
+     */
+    function fast_branch_success_does_not_requery_on_second_call()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/New.php']);
+        $fileUtils->setBranchDiffFiles(['src/Old.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Old.php', 'src/New.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+        $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+
+        $this->assertSame(1, $fileUtils->branchDiffCallCount);
+    }
+
+    /**
+     * @test
+     * Kills L138 ReturnRemoval + L153 FalseValue: a diff failure must be
+     * cached as a sticky sentinel so the second call returns null without
+     * re-querying. If the sentinel flips to `true` or the return disappears,
+     * the counter grows past 1.
+     */
+    function fast_branch_failure_is_cached_and_not_retried()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setBranchDiffFiles(null);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        $first = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+        $second = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+
+        $this->assertNull($first);
+        $this->assertNull($second);
+        $this->assertSame(1, $fileUtils->branchDiffCallCount);
+    }
+
+    /**
+     * @test
+     * Kills L147 FalseValue: when mainBranch is null the lazy loader must
+     * record the failure and never query FileUtils. A mutant flipping the
+     * sentinel to `true` would not stop subsequent re-entries from the
+     * contract.
+     */
+    function fast_branch_without_main_branch_returns_null_without_querying()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setBranchDiffFiles(['src/Other.php']);
+
+        $context = ExecutionContext::create($fileUtils, null);
+
+        $first = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+        $second = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+
+        $this->assertNull($first);
+        $this->assertNull($second);
+        $this->assertSame(0, $fileUtils->branchDiffCallCount);
+    }
+
+    /**
+     * @test
+     * Kills L158 MethodCallRemoval on ensureStagedLoaded inside the dedup
+     * branch + L159 UnwrapArrayMerge: the branch-diff result must be the
+     * deduplicated union of staged and branch files. Without array_merge
+     * one side disappears.
+     */
+    function fast_branch_result_is_dedup_union_of_staged_and_branch_files()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Staged.php', 'src/Shared.php']);
+        $fileUtils->setBranchDiffFiles(['src/Branch.php', 'src/Shared.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories([
+            'src/Staged.php', 'src/Shared.php', 'src/Branch.php',
+        ]);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $result = $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
+
+        sort($result);
+        $this->assertSame(['src/Branch.php', 'src/Shared.php', 'src/Staged.php'], $result);
+    }
+
+    /**
+     * @test
+     * Kills L99 ReturnRemoval on the FULL branch: filterFilesForMode('full', …)
+     * must return null. Since the method eventually falls through to a final
+     * `return null;` when no branch matches, the mutant would only survive
+     * if the intermediate assignments drifted — here we also check that
+     * staged files are NOT loaded as a side-effect in FULL mode.
+     */
+    function filter_files_for_mode_returns_null_without_loading_in_full_mode()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        $this->assertNull($context->filterFilesForMode(ExecutionMode::FULL, ['src']));
+        $this->assertSame(0, $fileUtils->getModifiedFilesCallCount);
+        $this->assertSame(0, $fileUtils->branchDiffCallCount);
+    }
 }

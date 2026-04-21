@@ -14,6 +14,7 @@ class FileUtilsFake extends FileUtils
 
     public function getModifiedFiles(): array
     {
+        $this->getModifiedFilesCallCount++;
         return $this->modifiedFiles;
     }
 
@@ -50,6 +51,10 @@ class FileUtilsFake extends FileUtils
 
     protected ?string $detectedMainBranch = null;
 
+    public int $branchDiffCallCount = 0;
+
+    public int $getModifiedFilesCallCount = 0;
+
     public function setBranchDiffFiles(?array $files): void
     {
         $this->branchDiffFiles = $files;
@@ -57,6 +62,7 @@ class FileUtilsFake extends FileUtils
 
     public function getBranchDiffFiles(string $mainBranch): ?array
     {
+        $this->branchDiffCallCount++;
         return $this->branchDiffFiles;
     }
 
