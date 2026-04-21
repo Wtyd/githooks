@@ -64,4 +64,48 @@ class MigrateConfigurationFileCommandTest extends SystemTestCase
         // Bug #11 fix: empty config now shows errors instead of "already v3"
         $this->containsStringInOutput = ['has errors', 'jobs'];
     }
+
+    /** @test */
+    public function migrates_yaml_legacy_config_and_removes_original_yaml_file()
+    {
+        $yamlPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.yml';
+        $migratedPhpPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $legacyBuilder = new ConfigurationFileBuilder(self::TESTS_PATH);
+        $legacyBuilder->setName('githooks.yml');
+        file_put_contents($yamlPath, $legacyBuilder->buildYaml());
+
+        $this->artisan("conf:migrate --config=$yamlPath")
+            ->assertExitCode(0);
+
+        $this->assertFileDoesNotExist($yamlPath);
+        $this->assertFileExists($migratedPhpPath);
+        $this->assertFileExists($yamlPath . '.v2.bak');
+    }
+
+    /** @test */
+    public function preserves_php_source_path_when_migrating_from_php_legacy_config()
+    {
+        $legacyBuilder = new ConfigurationFileBuilder(self::TESTS_PATH);
+        $legacyBuilder->buildInFileSystem();
+
+        $this->artisan("conf:migrate --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->assertFileExists($this->configPath);
+        $this->assertStringContainsString("'hooks'", file_get_contents($this->configPath));
+    }
+
+    /** @test */
+    public function handles_parser_exception_and_exits_with_error_code()
+    {
+        $yamlPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.yml';
+        file_put_contents($yamlPath, "Tools:\n  - phpstan\n  invalid: [not closed\n");
+
+        $this->artisan("conf:migrate --config=$yamlPath")
+            ->assertExitCode(1);
+
+        $this->assertFileExists($yamlPath);
+        $this->assertFileDoesNotExist($yamlPath . '.v2.bak');
+    }
 }
