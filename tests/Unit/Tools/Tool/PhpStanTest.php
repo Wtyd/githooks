@@ -110,15 +110,59 @@ class PhpStanTest extends UnitTestCase
         $phpstan = new PhpstanFake($toolConfiguration);
 
         $cmd = $phpstan->prepareCommand();
-        $this->assertStringContainsString('vendor/bin/phpstan analyse', $cmd);
-        $this->assertStringContainsString('-c phpstan.neon', $cmd);
-        $this->assertStringContainsString('-l 8', $cmd);
-        $this->assertStringContainsString('--memory-limit=1G', $cmd);
-        $this->assertStringContainsString('--error-format=json', $cmd);
-        $this->assertStringContainsString('--no-progress', $cmd);
-        $this->assertStringContainsString('--clear-result-cache', $cmd);
-        $this->assertStringContainsString('--ansi', $cmd);
+        $this->assertStringStartsWith('vendor/bin/phpstan analyse', $cmd);
+        // Space-sensitive asserts kill L102 Concat / ConcatOperandRemoval mutants that
+        // would produce a glued or empty fragment for otherArguments.
+        $this->assertStringContainsString(' -c phpstan.neon', $cmd);
+        $this->assertStringContainsString(' -l 8', $cmd);
+        $this->assertStringContainsString(' --memory-limit=1G', $cmd);
+        $this->assertStringContainsString(' --error-format=json', $cmd);
+        $this->assertStringContainsString(' --no-progress', $cmd);
+        $this->assertStringContainsString(' --clear-result-cache', $cmd);
+        $this->assertStringContainsString(' --ansi', $cmd);
+        $this->assertStringNotContainsString('  ', $cmd);
         $this->assertStringEndsWith('src app', $cmd);
+    }
+
+    /**
+     * @test
+     * Mutant L102 Concat / ConcatOperandRemoval: the default branch renders
+     * otherArguments with a leading space. Dropping the space or the value
+     * would be invisible to a `--ansi` substring match; the leading-space
+     * assertion kills both mutations.
+     */
+    function other_arguments_are_rendered_with_leading_space()
+    {
+        $toolConfiguration = new ToolConfiguration('phpstan', [
+            'executablePath' => 'tools/phpstan',
+            'paths'          => ['src'],
+            'otherArguments' => '--ansi',
+        ], new ToolRegistry());
+        $phpstan = new PhpstanFake($toolConfiguration);
+
+        $cmd = $phpstan->prepareCommand();
+
+        $this->assertStringContainsString(' --ansi', $cmd);
+        $this->assertStringNotContainsString('analyse--ansi', $cmd);
+        $this->assertStringNotContainsString('  ', $cmd);
+    }
+
+    /**
+     * @test
+     * When otherArguments is absent the command must not emit stray whitespace.
+     */
+    function command_without_other_arguments_has_no_double_or_trailing_space()
+    {
+        $toolConfiguration = new ToolConfiguration('phpstan', [
+            'executablePath' => 'tools/phpstan',
+            'paths'          => ['src'],
+        ], new ToolRegistry());
+        $phpstan = new PhpstanFake($toolConfiguration);
+
+        $cmd = $phpstan->prepareCommand();
+
+        $this->assertStringNotContainsString('  ', $cmd);
+        $this->assertSame($cmd, rtrim($cmd));
     }
 
     /**
