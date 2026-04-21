@@ -6,6 +6,7 @@ namespace Tests\Unit\Execution;
 
 use PHPUnit\Framework\TestCase;
 use Tests\Doubles\GitStagerFake;
+use Tests\Doubles\OutputHandlerSpy;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
@@ -337,5 +338,157 @@ class FlowExecutorTest extends TestCase
         $job = new CustomJob(new JobConfiguration('ok', 'custom', ['script' => 'echo ok']));
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
         $executor->execute($plan);
+    }
+
+    // ========================================================================
+    // OutputHandlerSpy — event-stream assertions
+    // ========================================================================
+
+    /**
+     * @test
+     * Kills L258 MethodCallRemoval on `onJobStart` in the sequential path:
+     * the spy must record both jobs as started in insertion order.
+     */
+    public function sequential_mode_fires_onJobStart_for_each_job_in_order()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('job_a', 'custom', ['script' => 'echo a'])),
+            new CustomJob(new JobConfiguration('job_b', 'custom', ['script' => 'echo b'])),
+        ];
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(false, 1));
+
+        $executor->execute($plan);
+
+        $this->assertSame(['job_a', 'job_b'], $spy->startedJobs);
+        $this->assertSame([2], $spy->flowStarts);
+        $this->assertSame(1, $spy->flushCount);
+    }
+
+    /**
+     * @test
+     * Kills L219 LogicalAnd→Or: `$failFast && !$result->isSuccess()` flipped
+     * to `||` would trigger fail-fast after any successful completion. Two
+     * passing jobs with failFast=true must never produce a skipped event.
+     */
+    public function parallel_fail_fast_does_not_trigger_on_successful_jobs()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('job_a', 'custom', ['script' => 'echo a'])),
+            new CustomJob(new JobConfiguration('job_b', 'custom', ['script' => 'echo b'])),
+        ];
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 2));
+
+        $result = $executor->execute($plan);
+
+        $this->assertTrue($result->isSuccess());
+        $this->assertSame([], $spy->skippedJobs);
+        $this->assertCount(2, $spy->successfulJobs);
+    }
+
+    /**
+     * @test
+     * Kills L220 TrueValue: `$failFastTriggered = true` flipped to `false`
+     * would let the parallel loop keep starting queued jobs. With 1 slot
+     * and the first job failing, the second and third must appear only as
+     * skipped events — never as started.
+     */
+    public function parallel_fail_fast_prevents_queued_jobs_from_starting()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('fail_first', 'custom', ['script' => 'exit 1'])),
+            new CustomJob(new JobConfiguration('queued_a', 'custom', ['script' => 'echo a'])),
+            new CustomJob(new JobConfiguration('queued_b', 'custom', ['script' => 'echo b'])),
+        ];
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 1));
+
+        $executor->execute($plan);
+
+        $this->assertSame(['fail_first'], $spy->startedJobs);
+        $skipped = $spy->skippedJobNames();
+        $this->assertContains('queued_a', $skipped);
+        $this->assertContains('queued_b', $skipped);
+    }
+
+    /**
+     * @test
+     * Kills L224 MethodCallRemoval on `onJobSkipped` and L225 confirms the
+     * reason string is propagated verbatim. Derived from the queued-jobs
+     * scenario above but asserting the exact reason payload.
+     */
+    public function parallel_fail_fast_reports_skipped_jobs_with_exact_reason()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('fail_first', 'custom', ['script' => 'exit 1'])),
+            new CustomJob(new JobConfiguration('queued', 'custom', ['script' => 'echo a'])),
+        ];
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 1));
+
+        $executor->execute($plan);
+
+        $this->assertNotEmpty($spy->skippedJobs);
+        foreach ($spy->skippedJobs as $entry) {
+            $this->assertSame('skipped by fail-fast', $entry['reason']);
+        }
+    }
+
+    /**
+     * @test
+     * Kills L267 Identical `$type === Process::ERR`: a job that writes only
+     * to stderr must produce an output entry with `isStderr === true`.
+     * Flipping `===` to `!==` would mislabel every chunk.
+     */
+    public function stderr_output_is_routed_with_the_error_channel_flag()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $job = new CustomJob(new JobConfiguration('stderr_only', 'custom', [
+            'script' => 'printf "boom" >&2; exit 1',
+        ]));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
+
+        $executor->execute($plan);
+
+        $this->assertContains('stderr_only', $spy->jobNamesWithStderrOutput());
+        $stderrChunks = array_values(array_filter($spy->outputs, function (array $entry): bool {
+            return $entry['isStderr'];
+        }));
+        $this->assertNotEmpty($stderrChunks);
+        $this->assertStringContainsString('boom', implode('', array_column($stderrChunks, 'chunk')));
+    }
+
+    /**
+     * @test
+     * A job writing only to stdout must be routed with `isStderr === false`.
+     * Pairs with the previous test to force identity on the channel flag.
+     */
+    public function stdout_output_is_routed_with_the_non_error_channel_flag()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $job = new CustomJob(new JobConfiguration('stdout_only', 'custom', [
+            'script' => 'printf "hello"',
+        ]));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
+
+        $executor->execute($plan);
+
+        $this->assertNotContains('stdout_only', $spy->jobNamesWithStderrOutput());
+        $this->assertNotEmpty(array_filter($spy->outputs, function (array $entry): bool {
+            return !$entry['isStderr'];
+        }));
     }
 }
