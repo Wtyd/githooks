@@ -212,6 +212,31 @@ class ProcessPoolTest extends TestCase
         $pool->terminateAll();
     }
 
+    /**
+     * @test
+     * Protects the `setTimeout(null)` invariant. Symfony's Process defaults to
+     * a 60-second timeout; a QA job that exceeds it dies with
+     * ProcessTimedOutException. If a refactor drops the setTimeout call, this
+     * test catches it immediately: every started process must report `null`
+     * for its timeout.
+     */
+    function fillPool_starts_processes_without_a_timeout()
+    {
+        $pool = new ProcessPool(2);
+        $pool->enqueue([
+            $this->makeJob('a', 'sleep 0.3'),
+            $this->makeJob('b', 'sleep 0.3'),
+        ]);
+
+        $pool->fillPool();
+
+        foreach ($pool->getRunning() as $entry) {
+            $this->assertNull($entry['process']->getTimeout());
+        }
+
+        $pool->terminateAll();
+    }
+
     private function makeJob(string $name, string $script): CustomJob
     {
         return new CustomJob(new JobConfiguration($name, 'custom', ['script' => $script]));

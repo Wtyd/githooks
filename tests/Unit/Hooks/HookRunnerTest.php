@@ -559,4 +559,81 @@ class HookRunnerTest extends TestCase
 
         $this->assertSame([], $config->getValidation()->getWarnings());
     }
+
+    /**
+     * @test
+     * Kills HookRunner:76 LogicalAnd→Or: the "all refs skipped by conditions"
+     * warning must only appear when NO ref produced a result AND at least one
+     * was skipped. When one ref executes and another is skipped, the mutant
+     * `||` would falsely claim "all skipped".
+     */
+    public function run_does_not_warn_when_only_some_refs_skipped_by_conditions()
+    {
+        $this->fileUtils->setCurrentBranch('develop');
+        $this->fileUtils->setModifiedfiles(['src/User.php']);
+
+        // First ref: no conditions → executes.
+        // Second ref: only-on=main → skipped on develop.
+        $refs = [
+            new HookRef('phpcs', [], [], []),
+            new HookRef('phpstan', ['main'], [], []),
+        ];
+        $hookConfig = new HookConfiguration(['pre-commit' => $refs]);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            [
+                'phpcs'   => new JobConfiguration('phpcs', 'phpcs', []),
+                'phpstan' => new JobConfiguration('phpstan', 'phpstan', []),
+            ],
+            [],
+            $hookConfig,
+            new ValidationResult()
+        );
+
+        $this->executor->expects($this->once())
+            ->method('execute')
+            ->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $this->runner->run('pre-commit', $config);
+
+        $this->assertSame(
+            [],
+            $config->getValidation()->getWarnings(),
+            'no warning should appear when at least one ref executed successfully'
+        );
+    }
+
+    /**
+     * @test
+     * Kills HookRunner:76 GreaterThan→Eq (`> 0` vs `>= 0`): when no ref is
+     * skipped by conditions but all fail to resolve (unknown target), the
+     * mutant `>= 0` would warn falsely since `skipped === 0` satisfies it.
+     */
+    public function run_does_not_warn_when_results_empty_without_any_skip_by_conditions()
+    {
+        // Ref with no conditions (passes shouldExecute) pointing to a
+        // non-existent target → executeRef returns null → results empty,
+        // skippedByConditions stays at 0.
+        $ref = new HookRef('nonexistent_target', [], [], []);
+        $hookConfig = new HookConfiguration(['pre-commit' => [$ref]]);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            [],
+            [],
+            $hookConfig,
+            new ValidationResult()
+        );
+
+        $this->executor->expects($this->never())->method('execute');
+
+        $this->runner->run('pre-commit', $config);
+
+        $this->assertSame(
+            [],
+            $config->getValidation()->getWarnings(),
+            'no warning should appear when nothing was skipped by conditions'
+        );
+    }
 }

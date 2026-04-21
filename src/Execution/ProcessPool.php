@@ -51,6 +51,9 @@ class ProcessPool
             $job = array_shift($this->queue);
             $command = $job->buildCommand();
             $process = Process::fromShellCommandLine($command);
+            // Disable Symfony's 60s default: QA jobs (phpstan, phpunit over large
+            // codebases) can legitimately run longer. Removing this line makes
+            // long jobs die silently with ProcessTimedOutException.
             $process->setTimeout(null);
             $process->start();
 
