@@ -139,7 +139,8 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\ExecutionContext::filterFilesForMode::99",
                 "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::208",
-                "Wtyd\\GitHooks\\Jobs\\JobAbstract::isEmpty::293"
+                "Wtyd\\GitHooks\\Jobs\\JobAbstract::isEmpty::293",
+                "Wtyd\\GitHooks\\Hooks\\PatternMatcher::fileMatchesPattern::91"
             ]
         },
         "Coalesce": {

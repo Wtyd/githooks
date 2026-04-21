@@ -87,4 +87,22 @@ class TextOutputHandlerTest extends UnitTestCase
         // Second flush should do nothing
         $handler->flush();
     }
+
+    /**
+     * @test
+     * Kills L69 UnwrapTrim: the framed-error block must be skipped when the
+     * captured output is whitespace-only. Without trim, `!empty("   \n\t")`
+     * is true and framedErrorBlock fires on empty noise.
+     */
+    function flush_does_not_print_framed_block_for_whitespace_only_output()
+    {
+        $printer = Mockery::mock(Printer::class);
+        $printer->shouldReceive('jobError')->once();
+        $printer->shouldReceive('emptyLine')->once();
+        $printer->shouldNotReceive('framedErrorBlock');
+
+        $handler = new TextOutputHandler($printer);
+        $handler->onJobError('ignorable', '100ms', "   \n\t  ");
+        $handler->flush();
+    }
 }

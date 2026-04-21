@@ -197,6 +197,26 @@ class JobConfigurationTest extends TestCase
         $this->assertFalse($result->hasErrors());
     }
 
+    /**
+     * @test
+     * Kills L111 Foreach_→[] in validateArguments: the loop that warns about
+     * unknown keys on tool-typed jobs (non-custom) must iterate the config.
+     * Emptying the loop would silently accept arbitrary typos.
+     */
+    public function it_warns_about_unknown_keys_for_tool_typed_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type'         => 'phpstan',
+            'paths'        => ['src'],
+            'unknown_foo'  => 'x',
+            'another_bad'  => 42,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertWarningEquals("Job 'phpstan_src': unknown key 'unknown_foo' for type 'phpstan'.", $result);
+        $this->assertWarningEquals("Job 'phpstan_src': unknown key 'another_bad' for type 'phpstan'.", $result);
+    }
+
     /** @test */
     public function it_warns_when_custom_job_has_unknown_keys()
     {

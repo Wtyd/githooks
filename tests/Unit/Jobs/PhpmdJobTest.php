@@ -72,6 +72,28 @@ class PhpmdJobTest extends TestCase
         $this->assertStringNotContainsString('--baseline-file=', $command);
     }
 
+    /**
+     * @test
+     * Kills L67 LogicalOr→And in a different direction from the previous test:
+     * when a key is PRESENT but has an empty value, the guard must still skip
+     * it. With `&&`, only keys that are both absent AND empty are skipped —
+     * keys present with empty values would leak empty flags.
+     */
+    public function command_skips_flags_whose_value_is_empty_string()
+    {
+        $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
+            'executablePath' => 'tools/phpmd',
+            'paths'          => ['src'],
+            'cache-file'     => '',
+            'suffixes'       => '',
+        ]));
+
+        $command = $job->buildCommand();
+
+        $this->assertStringNotContainsString('--cache-file=', $command);
+        $this->assertStringNotContainsString('--suffixes=', $command);
+    }
+
     /** @test */
     public function command_keeps_processing_remaining_flags_after_skipping_an_empty_one()
     {
@@ -108,7 +130,33 @@ class PhpmdJobTest extends TestCase
         $this->assertSame($command, rtrim($command));
     }
 
-    /** @test */
+    /**
+     * @test
+     * Kills L79 Assignment `.=`→`=` on the boolean branch of buildCommand:
+     * a `cache => true` flag emitted via `$command = " --cache"` (with `=`)
+     * would discard everything before the boolean. assertStringStartsWith
+     * on the executable detects it.
+     */
+    public function command_with_boolean_flag_keeps_everything_before_the_flag()
+    {
+        $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
+            'executablePath' => 'tools/phpmd',
+            'paths'          => ['src'],
+            'cache'          => true,
+        ]));
+
+        $command = $job->buildCommand();
+
+        $this->assertStringStartsWith('tools/phpmd src ansi', $command);
+        $this->assertStringContainsString(' --cache', $command);
+    }
+
+    /**
+     * @test
+     * Kills L92 Assignment `.=`→`=` on the cliExtraArguments branch: with `=`,
+     * the command collapses to ' --reportfile=...' losing everything before.
+     * assertStringStartsWith pins the executable prefix.
+     */
     public function command_with_cli_extra_arguments_appends_them_with_single_space()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
@@ -119,6 +167,7 @@ class PhpmdJobTest extends TestCase
 
         $command = $job->buildCommand();
 
+        $this->assertStringStartsWith('tools/phpmd src', $command);
         $this->assertStringEndsWith(' --reportfile=reports/phpmd.txt', $command);
         $this->assertStringNotContainsString('  ', $command);
     }

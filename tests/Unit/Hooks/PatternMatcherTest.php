@@ -114,6 +114,18 @@ class PatternMatcherTest extends TestCase
         $this->assertFalse($this->matcher->matchesBranch('', ['main'], []));
     }
 
+    /**
+     * @test
+     * Kills L27 ReturnRemoval: without the early `return false`, an empty
+     * branch with empty include patterns would evaluate `$matched =
+     * empty([]) = true` and eventually return true. The early-return for
+     * empty branch must be preserved.
+     */
+    public function matchesBranch_empty_branch_returns_false_even_with_empty_patterns()
+    {
+        $this->assertFalse($this->matcher->matchesBranch('', [], []));
+    }
+
     /** @test */
     public function matchesBranch_exact_match()
     {

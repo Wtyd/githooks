@@ -69,6 +69,46 @@ class ConfigurationMigratorTest extends TestCase
         $this->assertStringContainsString("'processes' => 8", $output);
     }
 
+    /**
+     * @test
+     * Kills L20 IncrementInteger: when Options has no 'processes' key, the
+     * coalesce default must be exactly 1 (not 2). Any other value would
+     * silently change single-thread behaviour for legacy configs.
+     */
+    public function it_defaults_processes_to_one_when_options_are_absent()
+    {
+        $legacy = [
+            'Tools' => ['phpstan'],
+            'phpstan' => [],
+        ];
+
+        $output = $this->migrator->migrate($legacy);
+
+        $this->assertStringContainsString("'processes' => 1", $output);
+    }
+
+    /**
+     * @test
+     * Kills L41 UnwrapStrReplace: toJobName must replace hyphens with
+     * underscores so legacy tool names like 'parallel-lint' become valid
+     * v3 job identifiers. Without str_replace, the job name would stay
+     * 'parallel-lint' and not match the rendered 'jobs' section key.
+     */
+    public function it_converts_hyphenated_tool_names_into_underscored_job_names()
+    {
+        $legacy = [
+            'Tools' => ['parallel-lint'],
+            'parallel-lint' => ['paths' => ['src']],
+        ];
+
+        $output = $this->migrator->migrate($legacy);
+        $result = $this->evalConfig($output);
+
+        $this->assertArrayHasKey('parallel_lint', $result['jobs']);
+        $this->assertSame(['parallel_lint'], $result['flows']['qa']['jobs']);
+        $this->assertSame('parallel-lint', $result['jobs']['parallel_lint']['type']);
+    }
+
     /** @test */
     public function it_produces_valid_php_output()
     {
@@ -97,9 +137,13 @@ class ConfigurationMigratorTest extends TestCase
 
     /**
      * @test
-     * Kills L53 LogicalAnd→Or: `$toolName === 'script' && isset($toolConfig['name'])`
-     * flipped to `||` would rewrite a non-script tool carrying a `name` key as a
-     * custom job. Non-script tools with any key must keep their original type.
+     * Kills two mutants in one shot:
+     * - L53 LogicalAnd→Or: `$toolName === 'script' && isset($toolConfig['name'])`
+     *   flipped to `||` would rewrite any non-script tool carrying a `name` key
+     *   as a custom job.
+     * - L68 Continue→break: breaking on the 'name' key would skip every
+     *   subsequent tool-specific key. The paths assertion forces the loop to
+     *   continue past the 'name' skip.
      */
     public function it_preserves_type_when_non_script_tool_has_a_name_key()
     {
@@ -113,6 +157,7 @@ class ConfigurationMigratorTest extends TestCase
 
         $this->assertSame('phpstan', $result['jobs']['phpstan']['type']);
         $this->assertArrayNotHasKey('name', $result['jobs']['phpstan']);
+        $this->assertSame(['src'], $result['jobs']['phpstan']['paths']);
     }
 
     /**
