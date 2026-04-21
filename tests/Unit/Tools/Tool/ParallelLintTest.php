@@ -95,8 +95,35 @@ class ParallelLintTest extends UnitTestCase
 
         $parallelLint = new ParallelLintFake($toolConfiguration);
 
-        $this->assertStringEndsWith('src tests', $parallelLint->prepareCommand());
-        $this->assertStringContainsString('--exclude vendor --exclude app', $parallelLint->prepareCommand());
-        $this->assertStringContainsString('-j 8', $parallelLint->prepareCommand());
+        $command = $parallelLint->prepareCommand();
+
+        // The starts-with assertion kills Infection Tier 2 L58 Assignment mutant
+        // `.=`→`=`: any case that replaces the command instead of appending
+        // would overwrite the executable path and the prefix would not match.
+        $this->assertStringStartsWith('path/tools/parallel-lint', $command);
+        $this->assertStringEndsWith('src tests', $command);
+        $this->assertStringContainsString('--exclude vendor --exclude app', $command);
+        $this->assertStringContainsString(' -j 8', $command);
+        $this->assertStringContainsString(' --colors', $command);
+    }
+
+    /**
+     * @test
+     * Paired assertion keyed on the `jobs` option specifically — forces the
+     * L58 case (`$command .= ' -j ' . ...`). If the `.=` is mutated to `=`,
+     * the resulting command is just ` -j 8`, which fails assertStringStartsWith.
+     */
+    function command_keeps_executable_prefix_when_jobs_option_is_set()
+    {
+        $toolConfiguration = new ToolConfiguration('parallel-lint', [
+            'executablePath' => 'path/tools/parallel-lint',
+            'paths'          => ['src'],
+            'jobs'           => 8,
+        ], new ToolRegistry());
+
+        $command = (new ParallelLintFake($toolConfiguration))->prepareCommand();
+
+        $this->assertStringStartsWith('path/tools/parallel-lint -j 8', $command);
+        $this->assertStringEndsWith(' src', $command);
     }
 }
