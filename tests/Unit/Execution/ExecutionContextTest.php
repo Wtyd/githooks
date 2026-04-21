@@ -435,4 +435,113 @@ class ExecutionContextTest extends TestCase
         $this->assertSame(0, $fileUtils->getModifiedFilesCallCount);
         $this->assertSame(0, $fileUtils->branchDiffCallCount);
     }
+
+    // ========================================================================
+    // Infection Tier 2 — fileIsInPaths with real files on disk
+    // ========================================================================
+
+    /** @var string[] Temporary files to clean up in tearDown */
+    private array $tempPaths = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->tempPaths as $path) {
+            @unlink($path);
+        }
+        $this->tempPaths = [];
+    }
+
+    private function makeTempFile(string $contents = ''): string
+    {
+        $path = sys_get_temp_dir() . '/ctx_test_' . uniqid() . '.php';
+        file_put_contents($path, $contents);
+        $this->tempPaths[] = $path;
+        return $path;
+    }
+
+    /**
+     * @test
+     * Kills L186 guards (six mutants on the file-path match): the first
+     * branch of `fileIsInPaths` reaches `isSameFile($file, $path)` ONLY when
+     * `$path` is a real file on disk. Previous tests used synthetic paths
+     * so `is_file($path)` was always false, leaving the branch untested.
+     *
+     * When paths points to an existing file whose isSameFile returns true,
+     * the file is included in the filtered list.
+     */
+    function fileIsInPaths_matches_via_isSameFile_when_path_is_a_real_file()
+    {
+        $realPath = $this->makeTempFile('<?php // test');
+
+        $fileUtils = new FileUtilsFake();
+        // The staged entry uses the same real path — isSameFile will match.
+        $fileUtils->setModifiedfiles([$realPath]);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $filtered = $context->filterFilesForPaths([$realPath]);
+
+        $this->assertSame([$realPath], $filtered);
+    }
+
+    /**
+     * @test
+     * Kills the second guard in L186: `directoryContainsFile` is only
+     * reached when is_file($path) is false (i.e. $path is a directory or
+     * doesn't exist). A real file in paths that DOESN'T match the staged
+     * file must not be included.
+     */
+    function fileIsInPaths_does_not_match_when_real_file_path_differs_from_staged()
+    {
+        $realPath = $this->makeTempFile();
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Other.php']);
+        // Don't register 'src/Other.php' under $realPath directory.
+        $fileUtils->setFilesThatShouldBeFoundInDirectories([]);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $filtered = $context->filterFilesForPaths([$realPath]);
+
+        $this->assertSame([], $filtered);
+    }
+
+    /**
+     * @test
+     * Kills the short-circuit in the second guard: when $path is a directory
+     * (is_file false) and directoryContainsFile returns true, the file is
+     * included even without isSameFile matching.
+     */
+    function fileIsInPaths_matches_via_directoryContainsFile_when_path_is_a_directory()
+    {
+        $realDir = sys_get_temp_dir();
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $filtered = $context->filterFilesForPaths([$realDir]);
+
+        $this->assertSame(['src/Foo.php'], $filtered);
+    }
+
+    /**
+     * @test
+     * With both guards failing (path is a real file but neither isSameFile
+     * nor directoryContainsFile matches), the file must be excluded. This
+     * forces both branches of the compound guard to be exercised.
+     */
+    function fileIsInPaths_excludes_file_when_neither_guard_matches()
+    {
+        $realPath = $this->makeTempFile();
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Unrelated.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories([]);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $filtered = $context->filterFilesForPaths([$realPath]);
+
+        $this->assertSame([], $filtered);
+    }
 }
