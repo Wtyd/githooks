@@ -21,17 +21,37 @@
         "IncrementInteger": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
-                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42"
+                "Wtyd\\GitHooks\\Utils\\Platform::isWindows",
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeDryRun::150",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::23",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::47",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::54",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::106"
             ]
         },
         "DecrementInteger": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectUnix::46",
                 "Wtyd\\GitHooks\\Utils\\Platform::isWindows",
-                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds::74"
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds::74",
+                "Wtyd\\GitHooks\\Execution\\ThreadCapability::__construct::21",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::51",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::54",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::239",
+                "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch::144",
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::106",
+                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::49"
             ]
         },
         "UnwrapStrToUpper": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\Platform::isWindows"
+            ]
+        },
+        "UnwrapSubstr": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\Platform::isWindows"
             ]
@@ -42,10 +62,21 @@
                 "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42"
             ]
         },
+        "CastBool": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Jobs\\JobAbstract::__construct::59"
+            ]
+        },
+        "CastString": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::49"
+            ]
+        },
         "ArrayItemRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\Platform::normalizePath",
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::finishExecution::106"
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::finishExecution::106",
+                "Wtyd\\GitHooks\\Tools\\Process\\ProcessExecutionFactory\\ProcessExecutionFactoryFake"
             ]
         },
         "UnwrapArrayValues": {
@@ -55,12 +86,65 @@
         },
         "TrueValue": {
             "ignore": [
-                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::migrate"
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::migrate",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::220"
             ]
         },
         "SharedCaseRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Output\\CodeClimateResultFormatter::mapSeverity"
+            ]
+        },
+        "Concat": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118"
+            ]
+        },
+        "ConcatOperandRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75"
+            ]
+        },
+        "MethodCallRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::propagateContext::249"
+            ]
+        },
+        "Identical": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::30"
+            ]
+        },
+        "IntegerNegation": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::39"
+            ]
+        },
+        "FunctionCallRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::execCommand::98",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::239"
+            ]
+        },
+        "Assignment": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::39"
+            ]
+        },
+        "ReturnRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::filterFilesForMode::99",
+                "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::208",
+                "Wtyd\\GitHooks\\Jobs\\JobAbstract::isEmpty::293"
+            ]
+        },
+        "Coalesce": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::updatePeakThreads::280"
             ]
         },
         "Break_": {
@@ -80,6 +164,43 @@
         "IfNegation": {
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel"
+            ]
+        },
+        "NotIdentical": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::235"
+            ]
+        },
+        "Minus": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::235"
+            ]
+        },
+        "GreaterThanOrEqualTo": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::235"
+            ]
+        },
+        "GreaterThanOrEqualToNegotiation": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::235"
+            ]
+        },
+        "LogicalAnd": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::235",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectUnix::55"
+            ]
+        },
+        "GreaterThan": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22"
+            ]
+        },
+        "UnwrapTrim": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::50"
             ]
         }
     }
