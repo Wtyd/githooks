@@ -13,6 +13,114 @@
     },
     "mutators": {
         "@default": true,
-        "@function_signature": false
+        "@function_signature": false,
+
+        "IncrementInteger": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse"
+            ]
+        },
+        "DecrementInteger": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
+                "Wtyd\\GitHooks\\Utils\\Platform::isWindows",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds"
+            ]
+        },
+        "Concat": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::renderDashboard",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFramedError",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::clearDashboard",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFinalResults"
+            ]
+        },
+        "ConcatOperandRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::renderDashboard",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFramedError",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::clearDashboard",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::printFinalResults"
+            ]
+        },
+        "UnwrapStrRepeat": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler"
+            ]
+        },
+        "For_": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler"
+            ]
+        },
+        "UnwrapStrToUpper": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\Platform::isWindows"
+            ]
+        },
+        "CastInt": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse"
+            ]
+        },
+        "ArrayItemRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\Platform::normalizePath",
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::finishExecution"
+            ]
+        },
+        "UnwrapArrayValues": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::getBranchDiffFilesLazy"
+            ]
+        },
+        "TrueValue": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::migrate"
+            ]
+        },
+        "MethodCallRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::flush",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::onJobSuccess",
+                "Wtyd\\GitHooks\\Output\\DashboardOutputHandler::onJobError"
+            ]
+        },
+        "SharedCaseRemoval": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\CodeClimateResultFormatter::mapSeverity"
+            ]
+        },
+        "PregMatchMatches": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds"
+            ]
+        },
+        "Break_": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Hooks\\PatternMatcher",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel"
+            ]
+        },
+        "Continue_": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Hooks\\PatternMatcher"
+            ]
+        },
+        "Ternary": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel"
+            ]
+        },
+        "IfNegation": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel"
+            ]
+        }
     }
 }
