@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
+use Mockery;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class ExecutionContextTest extends TestCase
 {
+    use MockeryPHPUnitIntegration;
+
     /** @test */
     function default_context_is_not_fast_mode()
     {
@@ -308,45 +313,40 @@ class ExecutionContextTest extends TestCase
     /**
      * @test
      * Kills L86 MethodCallRemoval on `ensureStagedLoaded`: calling
-     * filterFilesForPaths after create() must trigger a lazy load. Without
-     * the method call the staged file list stays empty and no file matches.
+     * filterFilesForPaths after create() must trigger a lazy load exactly
+     * once. Mockery's `->once()` expectation captures the characteristic
+     * directly — no manual counter needed.
      */
     function filter_files_for_paths_loads_staged_lazily_from_create_factory()
     {
-        $fileUtils = new FileUtilsFake();
-        $fileUtils->setModifiedfiles(['src/Foo.php']);
-        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+        $fileUtils = Mockery::mock(FileUtilsInterface::class);
+        $fileUtils->shouldReceive('getModifiedFiles')->once()->andReturn(['src/Foo.php']);
+        $fileUtils->shouldReceive('directoryContainsFile')->andReturn(true);
 
         $context = ExecutionContext::create($fileUtils, 'master');
-
-        $this->assertSame(0, $fileUtils->getModifiedFilesCallCount);
-
         $filtered = $context->filterFilesForPaths(['src']);
 
         $this->assertSame(['src/Foo.php'], $filtered);
-        $this->assertSame(1, $fileUtils->getModifiedFilesCallCount);
     }
 
     /**
      * @test
      * Kills L142 ReturnRemoval after the cache hit branch: once the branch
      * diff has been successfully loaded, subsequent calls must NOT re-invoke
-     * FileUtils::getBranchDiffFiles. Without the return the second call
-     * re-queries and the counter jumps to 2.
+     * FileUtils::getBranchDiffFiles. `->once()` is the expectation that
+     * fails if the mutant lets the method be re-entered.
      */
     function fast_branch_success_does_not_requery_on_second_call()
     {
-        $fileUtils = new FileUtilsFake();
-        $fileUtils->setModifiedfiles(['src/New.php']);
-        $fileUtils->setBranchDiffFiles(['src/Old.php']);
-        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Old.php', 'src/New.php']);
+        $fileUtils = Mockery::mock(FileUtilsInterface::class);
+        $fileUtils->shouldReceive('getModifiedFiles')->andReturn(['src/New.php']);
+        $fileUtils->shouldReceive('getBranchDiffFiles')->with('master')->once()->andReturn(['src/Old.php']);
+        $fileUtils->shouldReceive('directoryContainsFile')->andReturn(true);
 
         $context = ExecutionContext::create($fileUtils, 'master');
 
         $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
         $context->filterFilesForMode(ExecutionMode::FAST_BRANCH, ['src']);
-
-        $this->assertSame(1, $fileUtils->branchDiffCallCount);
     }
 
     /**
@@ -354,12 +354,13 @@ class ExecutionContextTest extends TestCase
      * Kills L138 ReturnRemoval + L153 FalseValue: a diff failure must be
      * cached as a sticky sentinel so the second call returns null without
      * re-querying. If the sentinel flips to `true` or the return disappears,
-     * the counter grows past 1.
+     * the second invocation would pass through and Mockery's `->once()`
+     * expectation would fail.
      */
     function fast_branch_failure_is_cached_and_not_retried()
     {
-        $fileUtils = new FileUtilsFake();
-        $fileUtils->setBranchDiffFiles(null);
+        $fileUtils = Mockery::mock(FileUtilsInterface::class);
+        $fileUtils->shouldReceive('getBranchDiffFiles')->with('master')->once()->andReturn(null);
 
         $context = ExecutionContext::create($fileUtils, 'master');
 
@@ -368,20 +369,18 @@ class ExecutionContextTest extends TestCase
 
         $this->assertNull($first);
         $this->assertNull($second);
-        $this->assertSame(1, $fileUtils->branchDiffCallCount);
     }
 
     /**
      * @test
      * Kills L147 FalseValue: when mainBranch is null the lazy loader must
-     * record the failure and never query FileUtils. A mutant flipping the
-     * sentinel to `true` would not stop subsequent re-entries from the
-     * contract.
+     * record the failure and never query FileUtils. Mockery's `->never()`
+     * on getBranchDiffFiles enforces the "never queries" contract.
      */
     function fast_branch_without_main_branch_returns_null_without_querying()
     {
-        $fileUtils = new FileUtilsFake();
-        $fileUtils->setBranchDiffFiles(['src/Other.php']);
+        $fileUtils = Mockery::mock(FileUtilsInterface::class);
+        $fileUtils->shouldReceive('getBranchDiffFiles')->never();
 
         $context = ExecutionContext::create($fileUtils, null);
 
@@ -390,7 +389,6 @@ class ExecutionContextTest extends TestCase
 
         $this->assertNull($first);
         $this->assertNull($second);
-        $this->assertSame(0, $fileUtils->branchDiffCallCount);
     }
 
     /**
@@ -419,21 +417,18 @@ class ExecutionContextTest extends TestCase
     /**
      * @test
      * Kills L99 ReturnRemoval on the FULL branch: filterFilesForMode('full', …)
-     * must return null. Since the method eventually falls through to a final
-     * `return null;` when no branch matches, the mutant would only survive
-     * if the intermediate assignments drifted — here we also check that
-     * staged files are NOT loaded as a side-effect in FULL mode.
+     * must return null without touching FileUtils at all. `->never()` on both
+     * methods declares the intent directly — no counter inspection.
      */
     function filter_files_for_mode_returns_null_without_loading_in_full_mode()
     {
-        $fileUtils = new FileUtilsFake();
-        $fileUtils->setModifiedfiles(['src/Foo.php']);
+        $fileUtils = Mockery::mock(FileUtilsInterface::class);
+        $fileUtils->shouldReceive('getModifiedFiles')->never();
+        $fileUtils->shouldReceive('getBranchDiffFiles')->never();
 
         $context = ExecutionContext::create($fileUtils, 'master');
 
         $this->assertNull($context->filterFilesForMode(ExecutionMode::FULL, ['src']));
-        $this->assertSame(0, $fileUtils->getModifiedFilesCallCount);
-        $this->assertSame(0, $fileUtils->branchDiffCallCount);
     }
 
     // ========================================================================
