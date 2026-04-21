@@ -19,7 +19,7 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Output\\DashboardOutputHandler",
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
-                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse"
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42"
             ]
         },
         "DecrementInteger": {
@@ -27,7 +27,7 @@
                 "Wtyd\\GitHooks\\Output\\DashboardOutputHandler",
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
                 "Wtyd\\GitHooks\\Utils\\Platform::isWindows",
-                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds"
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds::74"
             ]
         },
         "Concat": {
@@ -63,14 +63,14 @@
         },
         "CastInt": {
             "ignore": [
-                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
-                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse"
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22",
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42"
             ]
         },
         "ArrayItemRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\Platform::normalizePath",
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::finishExecution"
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::finishExecution::106"
             ]
         },
         "UnwrapArrayValues": {
@@ -95,21 +95,13 @@
                 "Wtyd\\GitHooks\\Output\\CodeClimateResultFormatter::mapSeverity"
             ]
         },
-        "PregMatchMatches": {
-            "ignore": [
-                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds"
-            ]
-        },
         "Break_": {
             "ignore": [
-                "Wtyd\\GitHooks\\Hooks\\PatternMatcher",
-                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator",
-                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel"
-            ]
-        },
-        "Continue_": {
-            "ignore": [
-                "Wtyd\\GitHooks\\Hooks\\PatternMatcher"
+                "Wtyd\\GitHooks\\Hooks\\PatternMatcher::matchesBranch::34",
+                "Wtyd\\GitHooks\\Hooks\\PatternMatcher::matchesFiles::64",
+                "Wtyd\\GitHooks\\Hooks\\PatternMatcher::matchesFiles::74",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::91",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::228"
             ]
         },
         "Ternary": {
