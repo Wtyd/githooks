@@ -233,6 +233,36 @@ class SummaryCapturingPrinter extends Printer
 
 Esto permite `assertSame($expectedSkippedArray, $spy->lastSkipped)` — comparación estricta que mata mutants `ArrayItem`, `ArrayItemRemoval`, `FalseValue` en los argumentos agregados.
 
+### Spy para una interface de eventos con varios métodos
+
+Cuando el colaborador es una **interface con 5+ métodos de evento** (p.ej. `OutputHandler` con `onFlowStart`, `onJobStart`, `onJobOutput`, `onJobSuccess`, `onJobError`, `onJobSkipped`, `onJobDryRun`, `flush`), crea un **Spy que implemente la interface y exponga listas públicas** de cada evento capturado. Permite aseverar orden, argumentos exactos y ausencia de llamadas, todo con `assertSame` sobre arrays.
+
+```php
+// tests/Doubles/OutputHandlerSpy.php
+class OutputHandlerSpy implements OutputHandler
+{
+    /** @var string[] */     public array $startedJobs = [];
+    /** @var array<int, array{job:string,chunk:string,isStderr:bool}> */ public array $outputs = [];
+    public array $skippedJobs = [];
+    public int $flushCount = 0;
+
+    public function onJobStart(string $jobName): void { $this->startedJobs[] = $jobName; }
+    public function onJobOutput(string $j, string $c, bool $err): void { $this->outputs[] = [...]; }
+    public function onJobSkipped(string $j, string $reason): void { $this->skippedJobs[] = [...]; }
+    public function flush(): void { $this->flushCount++; }
+    // ... resto de métodos stub vacíos
+}
+```
+
+**Ventajas sobre `createMock(Interface::class)` con `expects()`:**
+
+- Tests independientes: no configuras expectativas antes, observas después.
+- Orden y contenido juntos: `assertSame(['a', 'b'], $spy->startedJobs)` mata mutantes de orden + identidad en una línea.
+- Helpers derivados fáciles: métodos como `jobNamesWithStderrOutput()` que filtran las listas capturadas.
+- Se reutiliza entre muchos tests: un único Spy mata decenas de mutantes sobre `MethodCallRemoval`, `Identical` (channel flags), `ArrayItem` (reasons), `TrueValue`.
+
+**Anti-patrón:** `Mockery::spy(OutputHandler::class)` con `shouldHaveReceived()->onJobOutput(...)`. En interfaces con muchos métodos y argumentos complejos los matchers de Mockery fallan silenciosamente y los tests no detectan el mutante.
+
 ## Cobertura exhaustiva — lista por operador
 
 Leer el código del método a testear y marcar cada uno de estos operadores. Cada marca requiere su test.
