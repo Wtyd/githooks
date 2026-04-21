@@ -10,6 +10,7 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Tests\Doubles\GitStagerFake;
 use Tests\Doubles\MultiProcessesExecutionFake;
+use Tests\Doubles\SummaryCapturingPrinter;
 use Wtyd\GitHooks\Tools\ToolsFactory;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Registry\ToolRegistry;
@@ -345,6 +346,100 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldHaveReceived()->resultError(\Mockery::pattern($this->messageRegExp('parallel-lint', false)))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpstan')))->once();
         $printerMock->shouldHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpmd')))->once();
+    }
+
+    /**
+     * @test
+     * Asserts the exact tuple of arguments passed to `summary()`. Kills the
+     * batch of mutants around printSummary (L116 FalseValue, L144 ArrayItem
+     * /ArrayItemRemoval, L145 Continue→break): any of them would shift the
+     * counters or drop entries from the aggregated result.
+     */
+    function it_reports_exact_summary_counts_when_failFast_skips_remaining_tools()
+    {
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
+                ->changeToolOption('parallel-lint', ['failFast' => true])
+                ->buildArray(),
+            self::ALL_TOOLS,
+            new ToolRegistry()
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $spy = new SummaryCapturingPrinter();
+
+        $multiProcessExecution = new MultiProcessesExecutionFake($spy, new GitStagerFake());
+        $multiProcessExecution->failedToolsByFoundedErrors(['parallel-lint']);
+
+        $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertSame(1, $spy->summaryCallCount, 'summary() must be called exactly once');
+        $this->assertSame(0, $spy->lastPassed);
+        $this->assertSame(1, $spy->lastTotal);
+        $this->assertSame(
+            [['displayName' => 'parallel-lint', 'success' => false]],
+            $spy->lastFailed
+        );
+        $this->assertSame(
+            [['displayName' => 'phpstan'], ['displayName' => 'phpmd']],
+            $spy->lastSkipped
+        );
+    }
+
+    /**
+     * @test
+     * Kills L106 TrueValue: when `handleFixApplied` succeeds, the tool must be
+     * recorded as passed (`success => true`). A mutation flipping it to `false`
+     * would re-classify phpcbf as failed and move it out of `passed` in the
+     * summary arguments.
+     */
+    function it_counts_phpcbf_fix_as_passed_in_summary()
+    {
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->setTools(['phpcbf', 'phpstan'])
+                ->buildArray(),
+            self::ALL_TOOLS,
+            new ToolRegistry()
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $spy = new SummaryCapturingPrinter();
+        $multiProcessExecution = new MultiProcessesExecutionFake($spy, new GitStagerFake());
+        $multiProcessExecution->setToolsWithFixApplied(['phpcbf']);
+
+        $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertSame(1, $spy->summaryCallCount);
+        $this->assertSame(2, $spy->lastPassed);
+        $this->assertSame(2, $spy->lastTotal);
+        $this->assertSame([], $spy->lastFailed);
+        $this->assertSame([], $spy->lastSkipped);
+    }
+
+    /** @test */
+    function it_reports_exact_summary_arguments_when_all_tools_pass()
+    {
+        $configurationFile = new ConfigurationFile(
+            $this->configurationFileBuilder
+                ->setTools(['parallel-lint', 'phpstan'])
+                ->buildArray(),
+            self::ALL_TOOLS,
+            new ToolRegistry()
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $spy = new SummaryCapturingPrinter();
+        $multiProcessExecution = new MultiProcessesExecutionFake($spy, new GitStagerFake());
+
+        $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertSame(1, $spy->summaryCallCount);
+        $this->assertSame(2, $spy->lastPassed);
+        $this->assertSame(2, $spy->lastTotal);
+        $this->assertSame([], $spy->lastFailed);
+        $this->assertSame([], $spy->lastSkipped);
     }
 
     /** @test */
