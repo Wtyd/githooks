@@ -26,7 +26,7 @@ class CpuDetector
         // wmic fallback (legacy Windows)
         $output = [];
         $exitCode = 0;
-        exec('wmic cpu get NumberOfLogicalProcessors ' . Platform::stderrRedirect(), $output, $exitCode);
+        $this->execCommand('wmic cpu get NumberOfLogicalProcessors ' . Platform::stderrRedirect(), $output, $exitCode);
         if ($exitCode === 0) {
             foreach ($output as $line) {
                 $trimmed = trim($line);
@@ -44,34 +44,57 @@ class CpuDetector
         // Linux: nproc
         $output = [];
         $exitCode = 0;
-        exec('nproc 2>/dev/null', $output, $exitCode);
+        $this->execCommand('nproc 2>/dev/null', $output, $exitCode);
         if ($exitCode === 0 && !empty($output)) {
             return (int) $output[0];
         }
 
         // macOS: sysctl
         $output = [];
-        exec('sysctl -n hw.ncpu 2>/dev/null', $output, $exitCode);
+        $this->execCommand('sysctl -n hw.ncpu 2>/dev/null', $output, $exitCode);
         if ($exitCode === 0 && !empty($output)) {
             return (int) $output[0];
         }
 
         // Fallback: /proc/cpuinfo
-        if (is_readable('/proc/cpuinfo')) {
-            $content = file_get_contents('/proc/cpuinfo');
-            if ($content !== false) {
-                $count = substr_count($content, 'processor');
-                if ($count > 0) {
-                    return $count;
-                }
-            }
+        $procCount = $this->readProcCpuinfoCount();
+        if ($procCount > 0) {
+            return $procCount;
         }
 
         return 1;
     }
 
+    /**
+     * Count "processor" entries in /proc/cpuinfo. Returns 0 if unreadable.
+     * Extracted as a protected method so tests can stub it.
+     */
+    protected function readProcCpuinfoCount(): int
+    {
+        if (!is_readable('/proc/cpuinfo')) {
+            return 0;
+        }
+        $content = file_get_contents('/proc/cpuinfo');
+        if ($content === false) {
+            return 0;
+        }
+        return substr_count($content, 'processor');
+    }
+
     protected function isWindows(): bool
     {
         return Platform::isWindows();
+    }
+
+    /**
+     * Thin wrapper over `exec()` so tests can substitute a stub subclass.
+     *
+     * @param string      $command
+     * @param array<int,string> $output
+     * @param int         $exitCode
+     */
+    protected function execCommand(string $command, array &$output, int &$exitCode): void
+    {
+        exec($command, $output, $exitCode);
     }
 }
