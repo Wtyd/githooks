@@ -12,6 +12,7 @@ use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Jobs\CustomJob;
+use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
 
@@ -467,6 +468,95 @@ class FlowExecutorTest extends TestCase
         }));
         $this->assertNotEmpty($stderrChunks);
         $this->assertStringContainsString('boom', implode('', array_column($stderrChunks, 'chunk')));
+    }
+
+    /**
+     * @test
+     * Kills L162 Coalesce `?? 1` in executeSequential: a swap would make the
+     * peak equal to 1 regardless of the allocated capability. A single
+     * PhpcsJob with parallel=8 must produce peakEstimatedThreads=8.
+     */
+    public function sequential_peak_threads_comes_from_allocated_capability_not_default()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'parallel' => 8,
+        ]));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
+
+        $result = $executor->execute($plan);
+
+        $this->assertSame(8, $result->getPeakEstimatedThreads());
+    }
+
+    /**
+     * @test
+     * Kills L280 PlusEqual `+=`→`-=` and L278 DecrementInteger on
+     * currentThreads=0→-1: two concurrent CustomJobs (no capability, default
+     * 1 thread each) must push the peak to 2. The sleep ensures both jobs
+     * overlap in the pool before either completes.
+     *
+     * @group slow
+     */
+    public function parallel_peak_threads_sums_concurrent_allocations()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('slow_a', 'custom', ['script' => 'sleep 0.2'])),
+            new CustomJob(new JobConfiguration('slow_b', 'custom', ['script' => 'sleep 0.2'])),
+        ];
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(false, 2));
+
+        $result = $executor->execute($plan);
+
+        $this->assertSame(2, $result->getPeakEstimatedThreads());
+    }
+
+    /**
+     * @test
+     * Kills L299 Concat / ConcatOperandRemoval: the combined output assigned
+     * to the JobResult must contain BOTH the stdout and stderr chunks. A
+     * mutant that drops either operand would miss one stream entirely.
+     */
+    public function job_output_contains_both_stdout_and_stderr_concatenated()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $job = new CustomJob(new JobConfiguration('mixed', 'custom', [
+            'script' => 'printf "out-marker"; printf "err-marker" >&2',
+        ]));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
+
+        $result = $executor->execute($plan);
+        $output = $result->getJobResults()[0]->getOutput();
+
+        $this->assertStringContainsString('out-marker', $output);
+        $this->assertStringContainsString('err-marker', $output);
+    }
+
+    /**
+     * @test
+     * Kills L361 Multiplication `$seconds * 1000`→`/ 1000`: a 150ms sleep
+     * must produce a triple-digit millisecond count, not 0ms. Parses the
+     * rendered time literal to enforce a concrete lower bound.
+     *
+     * @group slow
+     */
+    public function execution_time_in_milliseconds_is_derived_from_multiplication()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $job = new CustomJob(new JobConfiguration('slow', 'custom', ['script' => 'sleep 0.15']));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
+
+        $result = $executor->execute($plan);
+        $time = $result->getJobResults()[0]->getExecutionTime();
+
+        $this->assertMatchesRegularExpression('/^\d+ms$/', $time);
+        $this->assertGreaterThan(100, (int) $time);
     }
 
     /**
