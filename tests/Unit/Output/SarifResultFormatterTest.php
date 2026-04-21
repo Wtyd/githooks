@@ -139,21 +139,73 @@ class SarifResultFormatterTest extends TestCase
         $this->assertSame('githooks', $data['runs'][0]['tool']['driver']['name']);
     }
 
-    /** @test */
+    /**
+     * @test
+     * Mutant L150 SharedCaseRemoval drops `case 'critical':`. The mapLevel()
+     * method is private; invoking it via reflection is the only way to force
+     * a 'critical' severity because no built-in parser emits that value.
+     */
     function it_maps_critical_severity_to_sarif_error_level()
     {
-        $psalmStdout = json_encode([
-            ['file_name' => 'src/X.php', 'line_from' => 1, 'type' => 'CriticalBug', 'message' => 'x', 'severity' => 'error'],
+        $formatter = new SarifResultFormatter();
+        $method = new \ReflectionMethod(SarifResultFormatter::class, 'mapLevel');
+        $method->setAccessible(true);
+
+        $this->assertSame('error', $method->invoke($formatter, 'critical'));
+        $this->assertSame('error', $method->invoke($formatter, 'error'));
+        $this->assertSame('warning', $method->invoke($formatter, 'warning'));
+        $this->assertSame('note', $method->invoke($formatter, 'info'));
+        $this->assertSame('none', $method->invoke($formatter, 'unknown'));
+    }
+
+    /**
+     * @test
+     * Kills L46 Continue→break: the first job has an empty stdout; if the loop
+     * breaks instead of continuing, the second job's issues are never aggregated.
+     */
+    function it_keeps_aggregating_after_skipping_a_job_with_empty_stdout()
+    {
+        $goodStdout = json_encode([
+            'files' => ['src/Survives.php' => ['messages' => [['message' => 'kept', 'line' => 7]]]],
         ]);
 
         $result = new FlowResult('qa', [
-            new JobResult('psalm', false, '', '1s', false, null, 'psalm', 1, [], false, null, $psalmStdout),
-        ], '1s');
+            new JobResult('first', false, '', '1s', false, null, 'phpstan', 0, [], false, null, ''),
+            new JobResult('second', false, '', '1s', false, null, 'phpstan', 1, [], false, null, $goodStdout),
+        ], '2s');
 
         $formatter = new SarifResultFormatter();
         $data = json_decode($formatter->format($result), true);
 
-        $this->assertSame('error', $data['runs'][0]['results'][0]['level']);
+        $this->assertCount(1, $data['runs']);
+        $this->assertSame('phpstan', $data['runs'][0]['tool']['driver']['name']);
+        $this->assertCount(1, $data['runs'][0]['results']);
+        $this->assertSame('kept', $data['runs'][0]['results'][0]['message']['text']);
+        $this->assertSame('src/Survives.php', $data['runs'][0]['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri']);
+    }
+
+    /**
+     * @test
+     * Kills L56 Continue→break: the first job parses to zero issues; if the loop
+     * breaks the second job's issues never reach the output.
+     */
+    function it_keeps_aggregating_after_skipping_a_job_that_parses_to_zero_issues()
+    {
+        $goodStdout = json_encode([
+            'files' => ['src/Later.php' => ['messages' => [['message' => 'late', 'line' => 9]]]],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('empty', true, '', '1s', false, null, 'phpstan', 0, [], false, null, '{"files":{}}'),
+            new JobResult('late', false, '', '1s', false, null, 'phpstan', 1, [], false, null, $goodStdout),
+        ], '2s');
+
+        $formatter = new SarifResultFormatter();
+        $data = json_decode($formatter->format($result), true);
+
+        $this->assertCount(1, $data['runs']);
+        $this->assertCount(1, $data['runs'][0]['results']);
+        $this->assertSame('late', $data['runs'][0]['results'][0]['message']['text']);
     }
 
     /** @test */

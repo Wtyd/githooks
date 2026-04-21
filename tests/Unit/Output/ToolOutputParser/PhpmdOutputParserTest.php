@@ -202,6 +202,62 @@ class PhpmdOutputParserTest extends TestCase
         $this->assertSame('phpmd', $issues[0]->getRuleId());
     }
 
+    /**
+     * @test
+     * Kills L33 Continue→break: two file entries, first invalid and second valid —
+     * `break` drops the second file and the test detects it.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_file_entry()
+    {
+        $json = json_encode(['files' => [
+            ['file' => '/abs/Broken.php'], // invalid: no violations key
+            [
+                'file'       => '/abs/Good.php',
+                'violations' => [[
+                    'beginLine' => 10,
+                    'description' => 'surviving',
+                    'rule' => 'SurvivingRule',
+                ]
+                ],
+            ],
+        ]
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpmd');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame(10, $issues[0]->getLine());
+        $this->assertSame('surviving', $issues[0]->getMessage());
+        $this->assertSame('SurvivingRule', $issues[0]->getRuleId());
+    }
+
+    /**
+     * @test
+     * Kills L39 Continue→break on the violations inner loop.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_violation()
+    {
+        $json = json_encode(['files' => [[
+            'file'       => '/abs/A.php',
+            'violations' => [
+                ['rule' => 'R'], // invalid: no beginLine/description
+                [
+                    'beginLine'   => 55,
+                    'description' => 'surviving',
+                    'rule'        => 'S',
+                ],
+            ],
+        ]
+        ]
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpmd');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame(55, $issues[0]->getLine());
+        $this->assertSame('surviving', $issues[0]->getMessage());
+    }
+
     /** @test */
     function it_makes_relative_path_when_cwd_has_trailing_slash()
     {

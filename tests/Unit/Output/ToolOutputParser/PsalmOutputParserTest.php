@@ -143,6 +143,33 @@ class PsalmOutputParserTest extends TestCase
         $this->assertSame(3, $issues[0]->getColumn());
     }
 
+    /**
+     * @test
+     * Kills L27 Continue→break: two items, first invalid and second valid —
+     * `break` drops the second issue.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_item()
+    {
+        $json = json_encode([
+            ['severity' => 'error'], // invalid: missing file_name/line_from/message
+            [
+                'file_name' => 'src/Good.php',
+                'line_from' => 99,
+                'message'   => 'surviving',
+                'severity'  => 'error',
+                'type'      => 'GoodType',
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'psalm');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame('src/Good.php', $issues[0]->getFile());
+        $this->assertSame(99, $issues[0]->getLine());
+        $this->assertSame('surviving', $issues[0]->getMessage());
+        $this->assertSame('GoodType', $issues[0]->getRuleId());
+    }
+
     /** @test */
     function it_defaults_rule_id_to_psalm_when_type_missing()
     {

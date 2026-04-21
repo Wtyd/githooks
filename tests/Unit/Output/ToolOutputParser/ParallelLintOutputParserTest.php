@@ -106,6 +106,55 @@ class ParallelLintOutputParserTest extends TestCase
         ];
     }
 
+    /**
+     * @test
+     * Kills L29 Continue→break: with two errors, the first invalid and the second
+     * valid, `break` would stop the loop and return no issues. The assert on both
+     * count and identity (line number of the surviving error) forces the mutant.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_error_entry()
+    {
+        $json = json_encode([
+            'results' => [
+                'errors' => [
+                    ['type' => 'SyntaxError'], // invalid: missing file/line/message
+                    ['file' => '/abs/Good.php', 'line' => 77, 'message' => 'good'],
+                ],
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'parallel-lint');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame(77, $issues[0]->getLine());
+        $this->assertSame('good', $issues[0]->getMessage());
+    }
+
+    /**
+     * @test
+     * Kills L46 ArrayOneItem: if the returned array is truncated to one item,
+     * the second valid issue disappears.
+     */
+    function it_returns_all_valid_issues_when_multiple_errors_are_present()
+    {
+        $json = json_encode([
+            'results' => [
+                'errors' => [
+                    ['file' => '/abs/One.php', 'line' => 1, 'message' => 'first'],
+                    ['file' => '/abs/Two.php', 'line' => 2, 'message' => 'second'],
+                ],
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'parallel-lint');
+
+        $this->assertCount(2, $issues);
+        $this->assertSame('first', $issues[0]->getMessage());
+        $this->assertSame(1, $issues[0]->getLine());
+        $this->assertSame('second', $issues[1]->getMessage());
+        $this->assertSame(2, $issues[1]->getLine());
+    }
+
     /** @test */
     function it_makes_relative_path_when_cwd_has_trailing_slash()
     {

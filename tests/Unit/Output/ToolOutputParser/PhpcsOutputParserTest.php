@@ -172,6 +172,53 @@ class PhpcsOutputParserTest extends TestCase
         $this->assertSame(3, $issues[0]->getColumn());
     }
 
+    /**
+     * @test
+     * Kills L30 Continue→break: with two files, the first invalid and the second
+     * valid, `break` would stop the outer loop before processing the second file.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_file_entry()
+    {
+        $json = json_encode([
+            'files' => [
+                'src/Broken.php' => 'not-an-array',
+                'src/Good.php'   => ['messages' => [
+                    ['line' => 42, 'message' => 'good', 'type' => 'ERROR'],
+                ]
+                ],
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpcs');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame('src/Good.php', $issues[0]->getFile());
+        $this->assertSame(42, $issues[0]->getLine());
+    }
+
+    /**
+     * @test
+     * Kills L34 Continue→break: two messages in one file, first invalid and second
+     * valid — `break` drops the second.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_message_entry()
+    {
+        $json = json_encode([
+            'files' => ['src/A.php' => ['messages' => [
+                ['type' => 'ERROR'], // invalid: no line/message
+                ['line' => 99, 'message' => 'surviving', 'type' => 'ERROR'],
+            ]
+            ]
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpcs');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame(99, $issues[0]->getLine());
+        $this->assertSame('surviving', $issues[0]->getMessage());
+    }
+
     /** @test */
     function it_defaults_source_to_phpcs_when_missing()
     {

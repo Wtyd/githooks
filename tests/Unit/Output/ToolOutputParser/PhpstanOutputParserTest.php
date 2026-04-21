@@ -111,4 +111,51 @@ class PhpstanOutputParserTest extends TestCase
             'missing message' => [['line' => 1]],
         ];
     }
+
+    /**
+     * @test
+     * Kills L27 Continue→break: two file entries, first invalid and second valid —
+     * `break` aborts the loop and drops the second.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_file_entry()
+    {
+        $json = json_encode([
+            'files' => [
+                'src/Broken.php' => 'not-an-array',
+                'src/Good.php'   => ['messages' => [
+                    ['line' => 42, 'message' => 'surviving'],
+                ]
+                ],
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpstan');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame('src/Good.php', $issues[0]->getFile());
+        $this->assertSame(42, $issues[0]->getLine());
+        $this->assertSame('surviving', $issues[0]->getMessage());
+    }
+
+    /**
+     * @test
+     * Kills L31 Continue→break on the messages inner loop.
+     */
+    function it_keeps_parsing_after_skipping_an_invalid_message_entry()
+    {
+        $json = json_encode([
+            'files' => ['src/A.php' => ['messages' => [
+                ['message' => 'only'], // invalid: no line
+                ['line' => 88, 'message' => 'surviving'],
+            ]
+            ]
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpstan');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame(88, $issues[0]->getLine());
+        $this->assertSame('surviving', $issues[0]->getMessage());
+    }
 }
