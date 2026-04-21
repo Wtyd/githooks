@@ -263,6 +263,61 @@ class OutputHandlerSpy implements OutputHandler
 
 **Anti-patrón:** `Mockery::spy(OutputHandler::class)` con `shouldHaveReceived()->onJobOutput(...)`. En interfaces con muchos métodos y argumentos complejos los matchers de Mockery fallan silenciosamente y los tests no detectan el mutante.
 
+## Fakes simples vs Mockery para configuración avanzada
+
+Hay un umbral claro entre lo que debería ir en un Fake (`tests/Doubles/*Fake.php`) y lo que debería ser un mock de Mockery configurado in-test:
+
+**Fake apropiado** — replacement estable y casi stateless, o estado trivial:
+- Devolver siempre el mismo valor de una interfaz (`FileUtilsFake::getModifiedFiles()` → array configurable por setter una vez).
+- Un único contador público de invocaciones para asertar retry/cache (`$branchDiffCallCount`).
+- Implementación alternativa concreta, no una simulación (p.ej. `GitStagerFake` que no hace `git add` real).
+
+**Cuando el Fake necesita cualquiera de lo siguiente — bórralo y usa Mockery:**
+- Devoluciones distintas por llamada (primera vez X, segunda vez Y) — `Mockery::mock()->shouldReceive('foo')->andReturn($x, $y)`.
+- Matching de argumentos complejo.
+- Expectativas de número de llamadas (`->times(2)` / `->once()`).
+- Múltiples estados que el test necesita orquestar.
+
+Señal de alarma: si te encuentras añadiendo un segundo contador, un segundo setter condicional, o un mecanismo de fases al Fake, el test pide un mock, no un Fake. El Fake debe quedar en "setters simples + getters". Toda la configuración de comportamiento variable pertenece al test (Mockery) para que quede explícita.
+
+## Asserts: una característica por test
+
+Cada test debe tener un nombre que describe **una característica concreta** (p.ej. `it_keeps_parsing_after_skipping_an_invalid_entry`). Los asserts de ese test deben verificar **esa característica y solo esa**.
+
+**Bueno** — el test sobre `continue→break` necesita dos asserts mínimos:
+```php
+$this->assertCount(1, $result);                       // no se abortó el loop
+$this->assertSame('value-del-segundo', $result[0]);   // se procesó el segundo, no el primero
+```
+
+**Malo** — engordar con asserts que pertenecen a otros tests:
+```php
+$this->assertCount(1, $result);
+$this->assertSame('value-del-segundo', $result[0]);
+$this->assertSame('SomeRule', $result[0]->getRuleId());      // ← corresponde al test de rule-id
+$this->assertSame(42, $result[0]->getLine());                // ← corresponde al test de line-casting
+$this->assertSame('error', $result[0]->getSeverity());       // ← corresponde al test de severity
+```
+
+Un test con 10 asserts que falla no dice **qué** se rompió. Un test con 2 asserts que falla localiza la regresión al instante. Si una característica requiere más de 3-4 asserts, probablemente son varias características disfrazadas de una.
+
+**Excepción**: un assert "identidad" mínimo (el surviving es el segundo, no el primero silenciosamente procesado) sí es parte de la característica de `continue→break` — sin él, `assertCount(1)` no distingue. Ese es el límite, no el mínimo común múltiplo de tests vecinos.
+
+## Triage de mutants: real, equivalente, imposible, descartable
+
+Cuando un mutante escapa, clasifícalo **antes** de escribir un test:
+
+| Tipo | Cómo identificarlo | Acción |
+|---|---|---|
+| **Real (matable)** | Hay input público que distingue el comportamiento mutado del original | Escribir el test siguiendo los patrones de las secciones anteriores |
+| **Equivalente** | La mutación no cambia el comportamiento observable: otro path devuelve el mismo valor, el side-effect es idéntico, o la constante mutada no afecta al resultado | **No escribir test.** Suprimir en `infection.json` con comentario explicando por qué |
+| **Requiere estado no-construible por API pública** | Para matarlo haría falta instanciar el objeto en un estado que ningún factory/constructor expone (p.ej. guard compuesto con combinación de fields imposible) | **Detener.** Dos opciones: (a) refactorizar el código para que el estado sea alcanzable, si el guard defensivo oculta un bug real; (b) aceptar que el mutante sobrevive y suprimir en `infection.json` porque el guard es redundante |
+| **Descartable (cosmético/plataforma/perf)** | Formato ANSI, rama Windows/Darwin en CI Linux, `break→continue` tras flag ya encontrada, padding decimal | **Batch-excluir** en `infection.json` al final del ciclo, cuando la clasificación real/equivalente esté clara para todo el proyecto |
+
+**Regla de oro:** si necesitas `ReflectionProperty`, monkey-patching, o cualquier truco de test para alcanzar el mutante, para y replantea. No es un mutante real matable — es señal de que el código o el mutante están mal.
+
+**Cuándo decidir exclusiones**: al final del ciclo Tier 1 + Tier 2 + Tier 3, con todo el campo a la vista. Excluir antes puede ocultar real escapes que otro test habría cazado.
+
 ## Cobertura exhaustiva — lista por operador
 
 Leer el código del método a testear y marcar cada uno de estos operadores. Cada marca requiere su test.
@@ -312,6 +367,7 @@ Nunca aceptar "el test pasa porque no crashea": eso permite que se elimine la ll
 - **Namespace** espeja la estructura de directorios.
 - **Una clase de test por clase testeada**.
 - **No usar `setUp()`** si no es necesario (fixtures específicas van en el método del test).
+- **`@group slow`** para tests que usen `sleep`, `usleep` o procesos con latencia deliberada. Permite excluirlos del ciclo rápido: `php7.4 vendor/bin/phpunit --exclude-group slow`. No se excluyen por defecto — en CI corren igual.
 
 ## Opciones CLI — sección crítica
 
@@ -374,6 +430,11 @@ Leer la referencia antes de escribir el primer test del tipo correspondiente.
 - [ ] Cada assert verifica un valor **exacto**, no un predicado derivado
 - [ ] Arrays/strings comparados por contenido completo cuando el tamaño lo permite
 - [ ] Sin `assertTrue($x->isSuccess())` sin verificar el estado interno
+- [ ] Cada test asserta **una característica y solo esa** (sin asserts prestados de otros tests)
+
+### Dobles de test
+- [ ] Fakes solo tienen setters simples + contador único si lo exige retry/cache; cualquier comportamiento más complejo → Mockery mock in-test
+- [ ] Sin reflection ni monkey-patching para alcanzar estado no-construible por API pública
 
 ### Cobertura lógica
 - [ ] Cada `<`/`<=`/`>`/`>=` del código tiene test **en la frontera**
