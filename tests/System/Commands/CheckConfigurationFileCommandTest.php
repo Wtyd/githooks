@@ -192,4 +192,94 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->notContainsStringInOutput("The 'Tools' tag from configuration file is empty")
             ->notcontainsStringInOutput("The key 'invent option' is not a valid option");
     }
+
+    /** @test */
+    function shows_errors_summary_when_v3_config_has_invalid_option_type()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'fail-fast' => false,
+                'processes' => 1,
+                'executable-prefix' => 123,
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(1)
+            ->containsStringInOutput("'executable-prefix' must be a string");
+    }
+
+    /** @test */
+    function displays_hook_conditions_in_hooks_table()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks([
+                'pre-commit' => [
+                    [
+                        'flow' => 'qa',
+                        'only-on' => ['main'],
+                        'exclude-on' => ['wip'],
+                        'only-files' => ['src/'],
+                        'exclude-files' => ['tests/'],
+                    ],
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
+    function shows_executable_prefix_row_when_options_include_it()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'fail-fast' => false,
+                'processes' => 1,
+                'executable-prefix' => 'php7.4',
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsTable(
+                ['Option', 'Value'],
+                [
+                    ['processes', '1'],
+                    ['fail-fast', 'false'],
+                    ['executable-prefix', 'php7.4'],
+                ]
+            );
+    }
+
+    /** @test */
+    function check_does_not_crash_when_phpmd_rules_file_path_is_missing()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'phpmd_src' => [
+                    'type' => 'phpmd',
+                    'paths' => ['src'],
+                    'rules' => 'qa/nonexistent-ruleset.xml',
+                ],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['phpmd_src']]])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0);
+    }
 }
