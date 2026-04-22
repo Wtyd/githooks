@@ -11,6 +11,18 @@ use Wtyd\GitHooks\Registry\ToolRegistry;
 /** @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Validation of type, execution mode, arguments, and common keys */
 class JobConfiguration
 {
+    /**
+     * Tool type → native threading argument key. When both `cores` and this
+     * key are set, `cores` wins and conf:check emits a warning. phpstan is
+     * absent on purpose: it has no CLI flag for workers (the .neon decides).
+     */
+    private const THREAD_ARG_KEYS = [
+        'phpcs'         => 'parallel',
+        'psalm'         => 'threads',
+        'parallel-lint' => 'jobs',
+        'paratest'      => 'processes',
+    ];
+
     private string $name;
 
     private string $type;
@@ -82,7 +94,46 @@ class JobConfiguration
             self::validateArguments($name, $type, $config, $jobRegistry, $result);
         }
 
+        self::validateCoresKey($name, $type, $config, $result);
+
         return new self($name, $type, $config);
+    }
+
+    /**
+     * Validate the optional `cores` keyword (positive integer) and warn if it
+     * coexists with the tool's native threading flag (`cores` always wins at
+     * runtime, so the native flag is silently overridden).
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateCoresKey(
+        string $name,
+        string $type,
+        array $config,
+        ValidationResult $result
+    ): void {
+        if (!array_key_exists('cores', $config)) {
+            return;
+        }
+
+        $cores = $config['cores'];
+        if (!is_int($cores) || $cores < 1) {
+            $result->addWarning("Job '$name': 'cores' must be a positive integer.");
+            return;
+        }
+
+        if (!isset(self::THREAD_ARG_KEYS[$type])) {
+            return;
+        }
+
+        $nativeKey = self::THREAD_ARG_KEYS[$type];
+        if (array_key_exists($nativeKey, $config)) {
+            $nativeValue = $config[$nativeKey];
+            $result->addWarning(
+                "Job '$name': 'cores' overrides '$nativeKey' "
+                . "(cores=$cores, $nativeKey=$nativeValue)."
+            );
+        }
     }
 
     /**
@@ -105,7 +156,7 @@ class JobConfiguration
 
         $knownKeys = array_merge(
             array_keys($argumentMap),
-            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix']
+            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores']
         );
 
         foreach ($config as $key => $value) {
@@ -186,7 +237,7 @@ class JobConfiguration
      */
     private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
     {
-        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution', 'executable-prefix'];
+        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {
