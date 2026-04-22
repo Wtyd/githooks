@@ -116,19 +116,13 @@ trait FormatsOutput
         $format = strval($this->option('format'));
 
         if ($format === 'json') {
-            $this->line((new JsonResultFormatter())->format($result));
+            $this->writeStructuredPayload((new JsonResultFormatter())->format($result));
         } elseif ($format === 'junit') {
-            $this->line((new JunitResultFormatter())->format($result));
+            $this->writeStructuredPayload((new JunitResultFormatter())->format($result));
         } elseif ($format === 'codeclimate') {
-            $this->outputReportToFile(
-                (new CodeClimateResultFormatter())->format($result),
-                'gl-code-quality-report.json'
-            );
+            $this->writeStructuredPayload((new CodeClimateResultFormatter())->format($result));
         } elseif ($format === 'sarif') {
-            $this->outputReportToFile(
-                (new SarifResultFormatter())->format($result),
-                'githooks-results.sarif'
-            );
+            $this->writeStructuredPayload((new SarifResultFormatter())->format($result));
         } else {
             $total = count($result->getJobResults());
             $passed = $result->getPassedCount();
@@ -138,20 +132,18 @@ trait FormatsOutput
     }
 
     /**
-     * Write report to file (default) or stdout (with --stdout flag).
-     * Supports --output=custom/path.json for custom file paths.
+     * Write a structured payload to stdout (default) or to a file when --output=PATH is set.
      */
-    private function outputReportToFile(string $content, string $defaultFilename): void
+    private function writeStructuredPayload(string $content): void
     {
-        $useStdout = $this->hasOption('stdout') && $this->option('stdout');
         $customOutput = $this->hasOption('output') ? $this->option('output') : null;
 
-        if ($useStdout) {
+        if (empty($customOutput)) {
             $this->line($content);
             return;
         }
 
-        $path = !empty($customOutput) ? strval($customOutput) : $defaultFilename;
+        $path = strval($customOutput);
         file_put_contents($path, $content . "\n");
         $this->info("Report written to: $path");
     }

@@ -26,8 +26,7 @@ class FlowCommand extends Command
                             {--exclude-jobs= : Comma-separated list of jobs to skip}
                             {--only-jobs= : Comma-separated list of jobs to run (others skipped)}
                             {--format= : Output format (text, json, junit, codeclimate, sarif)}
-                            {--output= : Custom output file path for codeclimate/sarif formats}
-                            {--stdout : Print codeclimate/sarif to stdout instead of writing file}
+                            {--output= : Write the structured payload to PATH (default: stdout)}
                             {--dry-run : Show commands without executing}
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
