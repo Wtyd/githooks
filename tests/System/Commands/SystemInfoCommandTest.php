@@ -50,4 +50,14 @@ class SystemInfoCommandTest extends SystemTestCase
 
         $this->containsStringInOutput = ['exceeds'];
     }
+
+    /** @test */
+    public function handles_parser_exception_and_still_exits_with_success()
+    {
+        $yamlPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.yml';
+        file_put_contents($yamlPath, "Tools:\n  - phpstan\n  invalid: [not closed\n");
+
+        $this->artisan("system:info --config=$yamlPath")
+            ->assertExitCode(0);
+    }
 }
