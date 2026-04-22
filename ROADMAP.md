@@ -413,3 +413,45 @@ Puntos abiertos:
 4. **Anotaciones CI**: los reports por fichero no desactivan las anotaciones CI por stdout — un pipeline puede tener las dos cosas (inline en PR + artefacto SARIF subido).
 
 Decisión pendiente: ¿adoptamos el patrón PHPUnit o mantenemos el `--format=` único? Es la API más disruptiva de los cuatro items pendientes — conviene evaluar en conjunto con el rework general de output.
+
+### Time threshold por job (performance budget con warning o bloqueo)
+
+Hoy un job que tarda demasiado sigue pasando en verde siempre que su exit code sea 0. No hay forma de detectar regresiones de rendimiento ni de impedir que un `pre-commit` se vuelva lento con el tiempo. Propuesta: configurar un umbral de tiempo por job (o por flow) con dos modos de reacción.
+
+**Diseño A — un umbral + acción**:
+
+```php
+'phpunit_src' => [
+    'type'             => 'phpunit',
+    'paths'            => ['src'],
+    'time-threshold'   => 30,       // segundos
+    'threshold-action' => 'warn',   // 'warn' | 'fail'
+],
+```
+
+**Diseño B — dos umbrales escalonados** (warning + bloqueo):
+
+```php
+'phpunit_src' => [
+    'warn-after' => 30,   // amarillo en el resumen, exit 0
+    'fail-after' => 90,   // rojo/KO, exit 1 aunque el tool devuelva 0
+],
+```
+
+**Comportamiento**:
+- `warn` / `warn-after`: el job pasa en el resumen pero aparece en **amarillo** (mismo código de color que los warnings de validation actuales). Exit code del flow no cambia.
+- `fail` / `fail-after`: el job se marca **KO** en el resumen. El flow devuelve exit 1 aunque la tool haya devuelto 0.
+
+**Casos de uso**:
+- Regresión de rendimiento: phpstan solía tardar 5s, ahora 30s → warning para alertar al equipo sin bloquear todavía.
+- Budget estricto en `pre-commit`: "ningún job debería tardar más de 10s" → `fail`.
+- Time budget total en CI: "si QA tarda más de 5 min algo va mal" → threshold a nivel de flow.
+
+**Relación con v3.3.3 (Monitor de rendimiento)**: este item es el complemento accionable del monitor — no solo reportar tiempos al final, sino alertar o bloquear proactivamente cuando cruzan un umbral. El monitor cuenta, el threshold actúa. Vale la pena diseñar ambos juntos para que compartan la misma infra de medición.
+
+**Puntos abiertos**:
+1. **Default global vs explícito**: ¿un umbral a nivel `options` (global) o `flow` que aplique a todos los jobs, con override por job? ¿O siempre explícito?
+2. **Nivel medido**: ¿tiempo total del job (incluye fast-mode path filtering, setup) o sólo la ejecución del tool?
+3. **Flow-level threshold**: ¿el flow entero debería poder tener también `time-threshold` (suma de todos los jobs)? Útil para "QA ≤ 5min total".
+4. **Interacción con `--dry-run`**: en dry-run no hay tiempo real de ejecución. ¿Se desactiva el check?
+5. **Diferenciador**: ninguno de los competidores (GrumPHP, CaptainHook) lo ofrece. Alineado con la filosofía "diferenciador real" de v3.3.
