@@ -79,6 +79,61 @@ class JobCommandTest extends SystemTestCase
     }
 
     /** @test */
+    public function returns_exit_1_when_config_has_validation_errors()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'fail-fast' => false,
+                'processes' => 1,
+                'executable-prefix' => 123,
+            ])
+            ->buildInFileSystem();
+
+        $this->artisan("job phpcs_src --config=$this->configPath")
+            ->assertExitCode(1);
+    }
+
+    /** @test */
+    public function applies_fast_branch_mode_to_accelerable_job()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'lint_job' => [
+                    'type' => 'custom',
+                    'executablePath' => '/bin/echo',
+                    'paths' => ['src'],
+                    'accelerable' => true,
+                ],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
+            ->buildInFileSystem();
+
+        $fileUtils = $this->app->make(FileUtilsInterface::class);
+        if ($fileUtils instanceof FileUtilsFake) {
+            $fileUtils->setModifiedfiles(['tests/FooTest.php']);
+        }
+
+        $this->artisan("job lint_job --fast-branch --config=$this->configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
+    public function parses_cli_extra_arguments_after_double_dash()
+    {
+        $originalArgv = $_SERVER['argv'] ?? [];
+        $_SERVER['argv'] = ['githooks', 'job', 'phpcs_src', '--', 'extra-one', 'extra-two'];
+
+        try {
+            $this->artisan("job phpcs_src --dry-run --config=$this->configPath")
+                ->assertExitCode(0);
+        } finally {
+            $_SERVER['argv'] = $originalArgv;
+        }
+    }
+
+    /** @test */
     public function it_applies_fast_mode_to_accelerable_job()
     {
         $this->configurationFileBuilder
