@@ -281,6 +281,70 @@ class FlowCommandTest extends SystemTestCase
     }
 
     /** @test */
+    public function returns_exit_1_when_config_has_validation_errors()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'fail-fast' => false,
+                'processes' => 1,
+                'executable-prefix' => 123,
+            ])
+            ->buildInFileSystem();
+
+        $this->artisan("flow qa --config=$this->configPath")
+            ->assertExitCode(1);
+    }
+
+    /** @test */
+    public function returns_error_when_both_exclude_and_only_jobs_options_are_provided()
+    {
+        $this->artisan("flow qa --exclude-jobs=a --only-jobs=b --config=$this->configPath")
+            ->assertExitCode(1);
+    }
+
+    /** @test */
+    public function runs_only_specified_jobs_when_only_jobs_option_is_used()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['pass_job', 'fail_job']]])
+            ->setV3Jobs([
+                'pass_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'fail_job' => ['type' => 'custom', 'script' => '/bin/false'],
+            ])
+            ->buildInFileSystem();
+
+        $this->artisan("flow qa --only-jobs=pass_job --config=$this->configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
+    public function applies_fast_branch_mode_to_accelerable_jobs()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => [
+                    'type' => 'custom',
+                    'executablePath' => '/bin/true',
+                    'paths' => ['src'],
+                    'accelerable' => true,
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $fileUtils = $this->app->make(FileUtilsInterface::class);
+        if ($fileUtils instanceof FileUtilsFake) {
+            $fileUtils->setModifiedfiles(['tests/FooTest.php']);
+        }
+
+        $this->artisan("flow qa --fast-branch --config=$this->configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
     public function it_skips_accelerable_jobs_when_no_staged_files_match_in_fast_mode()
     {
         $this->configurationFileBuilder
