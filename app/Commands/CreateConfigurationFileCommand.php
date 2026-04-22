@@ -7,7 +7,6 @@ use Wtyd\GitHooks\Configuration\ConfigurationGenerator;
 use Wtyd\GitHooks\Configuration\ToolDetector;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Utils\Storage;
 
@@ -20,13 +19,13 @@ class CreateConfigurationFileCommand extends Command
 
     protected FileReader $fileReader;
 
-    private JobRegistry $jobRegistry;
+    private ToolDetector $toolDetector;
 
-    public function __construct(Printer $printer, FileReader $fileReader, JobRegistry $jobRegistry)
+    public function __construct(Printer $printer, FileReader $fileReader, ToolDetector $toolDetector)
     {
         $this->printer = $printer;
         $this->fileReader = $fileReader;
-        $this->jobRegistry = $jobRegistry;
+        $this->toolDetector = $toolDetector;
         parent::__construct();
     }
 
@@ -50,8 +49,7 @@ class CreateConfigurationFileCommand extends Command
     /** @SuppressWarnings(PHPMD.CyclomaticComplexity) Interactive flow with multiple user prompts */
     private function interactive(): int
     {
-        $detector = new ToolDetector($this->jobRegistry);
-        $detected = $detector->detect();
+        $detected = $this->toolDetector->detect();
 
         if (empty($detected)) {
             $this->warn('No QA tools detected in vendor/bin/. Falling back to template.');
