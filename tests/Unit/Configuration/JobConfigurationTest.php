@@ -506,4 +506,170 @@ class JobConfigurationTest extends TestCase
         $this->assertTrue($result->hasErrors());
         $this->assertStringContainsString('not a supported tool', $result->getErrors()[0]);
     }
+
+    // ========================================================================
+    // cores: N keyword — validation and conflict warning
+    // ========================================================================
+
+    /** @test */
+    public function it_accepts_cores_as_positive_integer()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpcs_src', [
+            'type'  => 'phpcs',
+            'paths' => ['src'],
+            'cores' => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings(), 'cores as valid int should not emit warnings');
+        $this->assertNotNull($job);
+        $this->assertSame(4, $job->getConfig()['cores']);
+    }
+
+    /** @test */
+    public function it_warns_when_cores_is_not_a_positive_integer()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'  => 'phpcs',
+            'paths' => ['src'],
+            'cores' => 0,
+        ], $this->registry, $result, new JobRegistry());
+
+        $warnings = $result->getWarnings();
+        $found = false;
+        foreach ($warnings as $w) {
+            if (strpos($w, "'cores' must be a positive integer") !== false) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found, 'expected cores-must-be-positive warning');
+    }
+
+    /** @test */
+    public function it_warns_when_cores_is_a_string()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'  => 'phpcs',
+            'paths' => ['src'],
+            'cores' => '4',
+        ], $this->registry, $result, new JobRegistry());
+
+        $warnings = $result->getWarnings();
+        $found = false;
+        foreach ($warnings as $w) {
+            if (strpos($w, "'cores' must be a positive integer") !== false) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found, 'string value should produce a positive-integer warning');
+    }
+
+    /** @test */
+    public function it_warns_when_cores_coexists_with_phpcs_parallel()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => 8,
+            'cores'    => 2,
+        ], $this->registry, $result, new JobRegistry());
+
+        $warnings = $result->getWarnings();
+        $found = false;
+        foreach ($warnings as $w) {
+            if (strpos($w, "'cores' overrides 'parallel'") !== false) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found, 'expected conflict warning between cores and parallel');
+    }
+
+    /** @test */
+    public function it_warns_when_cores_coexists_with_paratest_processes()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('paratest_all', [
+            'type'      => 'paratest',
+            'processes' => 4,
+            'cores'     => 2,
+        ], $this->registry, $result, new JobRegistry());
+
+        $warnings = $result->getWarnings();
+        $found = false;
+        foreach ($warnings as $w) {
+            if (strpos($w, "'cores' overrides 'processes'") !== false) {
+                $found = true;
+                break;
+            }
+        }
+        $this->assertTrue($found);
+    }
+
+    /** @test */
+    public function it_does_not_warn_when_only_cores_or_only_native_thread_key_is_set()
+    {
+        $onlyCores = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'  => 'phpcs',
+            'paths' => ['src'],
+            'cores' => 4,
+        ], $this->registry, $onlyCores, new JobRegistry());
+
+        $onlyNative = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => 4,
+        ], $this->registry, $onlyNative, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($onlyCores->getWarnings(), 'overrides'));
+        $this->assertFalse($this->warningsContain($onlyNative->getWarnings(), 'overrides'));
+    }
+
+    /** @test */
+    public function cores_is_accepted_on_custom_jobs_without_unknown_key_warning()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('paratest_wrapper', [
+            'type'   => 'custom',
+            'script' => 'vendor/bin/paratest --processes=4',
+            'cores'  => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), "unknown key 'cores'"));
+    }
+
+    /** @test */
+    public function phpstan_with_cores_is_budget_only_and_emits_no_conflict_warning()
+    {
+        // phpstan has no CLI flag for workers, so it is absent from THREAD_ARG_KEYS.
+        // Declaring cores: 4 next to phpstan-native keys must NOT trigger a conflict warning.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type'   => 'phpstan',
+            'paths'  => ['src'],
+            'config' => 'qa/phpstan.neon',
+            'cores'  => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'overrides'));
+    }
+
+    /** @param string[] $warnings */
+    private function warningsContain(array $warnings, string $needle): bool
+    {
+        foreach ($warnings as $w) {
+            if (strpos($w, $needle) !== false) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

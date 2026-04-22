@@ -13,12 +13,16 @@ use Wtyd\GitHooks\Jobs\JobAbstract;
 
 class ThreadBudgetAllocatorTest extends UnitTestCase
 {
-    private function makeJob(string $name, ?ThreadCapability $capability = null): JobAbstract
-    {
+    private function makeJob(
+        string $name,
+        ?ThreadCapability $capability = null,
+        ?int $coresOverride = null
+    ): JobAbstract {
         $config = new JobConfiguration($name, 'phpcs', []);
         $job = Mockery::mock(JobAbstract::class)->makePartial();
         $job->shouldReceive('getName')->andReturn($name);
         $job->shouldReceive('getThreadCapability')->andReturn($capability);
+        $job->shouldReceive('getCoresOverride')->andReturn($coresOverride);
         return $job;
     }
 
@@ -240,5 +244,75 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
 
         $this->assertSame(1, $plan->getMaxParallelJobs());
         $this->assertSame(1, $plan->getAllocation('phpmd'));
+    }
+
+    // ========================================================================
+    // cores: N explicit override
+    // ========================================================================
+
+    /** @test */
+    function cores_override_pins_allocation_on_job_without_capability()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('paratest_like', null, 4),
+            $this->makeJob('phpcpd'),
+        ];
+
+        $plan = $allocator->allocate(8, $jobs);
+
+        $this->assertSame(4, $plan->getAllocation('paratest_like'));
+        $this->assertSame(1, $plan->getAllocation('phpcpd'));
+    }
+
+    /** @test */
+    function cores_override_takes_over_controllable_capability_and_skips_reparto()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('phpcs_with_override', new ThreadCapability('parallel', 8), 2),
+            $this->makeJob('psalm_without', new ThreadCapability('threads', 4)),
+        ];
+
+        // phpcs_with_override: pinned at 2 regardless of capability default (8).
+        // Remaining budget = 8 - 2 = 6 for the single threadable psalm → 6.
+        $plan = $allocator->allocate(8, $jobs);
+
+        $this->assertSame(2, $plan->getAllocation('phpcs_with_override'));
+        $this->assertSame(6, $plan->getAllocation('psalm_without'));
+    }
+
+    /** @test */
+    function cores_override_respects_budget_in_max_parallel()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('heavy', null, 4),   // cores: 4
+            $this->makeJob('mid', null, 2),     // cores: 2
+            $this->makeJob('light'),            // 1
+        ];
+
+        $plan = $allocator->allocate(5, $jobs);
+
+        // Sort ascending: 1, 2, 4. 1+2=3 ≤ 5, +4 = 7 > 5. maxParallel = 2.
+        $this->assertSame(4, $plan->getAllocation('heavy'));
+        $this->assertSame(2, $plan->getAllocation('mid'));
+        $this->assertSame(1, $plan->getAllocation('light'));
+        $this->assertSame(2, $plan->getMaxParallelJobs());
+    }
+
+    /** @test */
+    function cores_override_dominates_uncontrollable_capability()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('phpstan_like', new ThreadCapability('_internal', 8, 1, false), 2),
+        ];
+
+        // Without override the job would cost 8 (uncontrollable default).
+        // With cores: 2 the allocation is pinned at 2.
+        $plan = $allocator->allocate(10, $jobs);
+
+        $this->assertSame(2, $plan->getAllocation('phpstan_like'));
     }
 }

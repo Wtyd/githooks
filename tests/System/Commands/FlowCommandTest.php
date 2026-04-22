@@ -222,6 +222,46 @@ class FlowCommandTest extends SystemTestCase
     }
 
     /** @test */
+    public function it_propagates_cores_override_into_tool_flags_on_dry_run()
+    {
+        // cores: 2 on phpcs → --parallel=2 in the generated command
+        // cores: 4 on paratest → --processes=4 in the generated command
+        // custom job with cores: 3 just reserves budget (no flag injection)
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions(['processes' => 10, 'fail-fast' => false])
+            ->setV3Flows(['qa' => ['jobs' => ['phpcs_src', 'paratest_all', 'custom_heavy']]])
+            ->setV3Jobs([
+                'phpcs_src'   => [
+                    'type'           => 'phpcs',
+                    'executablePath' => 'vendor/bin/phpcs',
+                    'paths'          => ['src'],
+                    'cores'          => 2,
+                ],
+                'paratest_all' => [
+                    'type'           => 'paratest',
+                    'executablePath' => 'vendor/bin/paratest',
+                    'configuration'  => 'phpunit.xml',
+                    'cores'          => 4,
+                ],
+                'custom_heavy' => [
+                    'type'   => 'custom',
+                    'script' => '/bin/true',
+                    'cores'  => 3,
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $this->artisan("flow qa --dry-run --format=json --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->containsStringInOutput = [
+            '--parallel=2',
+            '--processes=4',
+        ];
+    }
+
+    /** @test */
     public function it_returns_exit_1_when_a_job_fails()
     {
         $this->configurationFileBuilder
