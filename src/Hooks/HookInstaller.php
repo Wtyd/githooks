@@ -135,12 +135,12 @@ class HookInstaller
             . "$cmd hook:run \"\$(basename \"\$0\")\"\n";
     }
 
-    private function configureHooksPath(): void
+    protected function configureHooksPath(): void
     {
         $this->exec('git config core.hooksPath .githooks');
     }
 
-    private function unsetHooksPath(): void
+    protected function unsetHooksPath(): void
     {
         $this->exec('git config --unset core.hooksPath');
     }

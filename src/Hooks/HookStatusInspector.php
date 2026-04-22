@@ -38,7 +38,7 @@ class HookStatusInspector
         return new HookStatusReport($hooksPathConfigured, $hooksPathValue, $events);
     }
 
-    private function getGitHooksPath(): string
+    protected function getGitHooksPath(): string
     {
         $output = [];
         $exitCode = 0;
