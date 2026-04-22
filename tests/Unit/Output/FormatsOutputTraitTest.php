@@ -278,71 +278,78 @@ class FormatsOutputTraitTest extends TestCase
     }
 
     /** @test */
-    public function render_formatted_result_writes_codeclimate_to_default_file()
+    public function render_formatted_result_prints_codeclimate_to_stdout_by_default()
     {
         $default = getcwd() . '/gl-code-quality-report.json';
         @unlink($default);
 
         try {
-            $double = $this->makeDouble(['format' => 'codeclimate', 'output' => null, 'stdout' => false]);
+            $double = $this->makeDouble(['format' => 'codeclimate', 'output' => null]);
             $double->callRenderFormattedResult($this->buildResult());
 
-            $this->assertFileExists($default);
-            $this->assertSame(1, count($double->infos));
-            $this->assertStringContainsString('gl-code-quality-report.json', $double->infos[0]);
+            $this->assertFileDoesNotExist($default, 'no magic default file should be created');
+            $this->assertCount(1, $double->lines);
+            $decoded = json_decode($double->lines[0], true);
+            $this->assertIsArray($decoded, 'codeclimate payload must be valid JSON');
+            $this->assertSame([], $double->infos, 'no "Report written to" info when writing to stdout');
         } finally {
             @unlink($default);
         }
     }
 
     /** @test */
-    public function render_formatted_result_writes_sarif_to_default_file()
+    public function render_formatted_result_prints_sarif_to_stdout_by_default()
     {
         $default = getcwd() . '/githooks-results.sarif';
         @unlink($default);
 
         try {
-            $double = $this->makeDouble(['format' => 'sarif', 'output' => null, 'stdout' => false]);
+            $double = $this->makeDouble(['format' => 'sarif', 'output' => null]);
             $double->callRenderFormattedResult($this->buildResult());
 
-            $this->assertFileExists($default);
-            $decoded = json_decode(strval(file_get_contents($default)), true);
-            $this->assertSame('2.1.0', $decoded['version']);
+            $this->assertFileDoesNotExist($default, 'no magic default file should be created');
+            $this->assertCount(1, $double->lines);
+            $decoded = json_decode($double->lines[0], true);
+            $this->assertSame('2.1.0', $decoded['version'] ?? null);
+            $this->assertSame([], $double->infos);
         } finally {
             @unlink($default);
         }
     }
 
-    /** @test */
-    public function output_report_to_file_writes_to_stdout_when_flag_is_set()
-    {
-        $double = $this->makeDouble(['format' => 'codeclimate', 'stdout' => true, 'output' => null]);
-
-        $double->callRenderFormattedResult($this->buildResult());
-
-        $this->assertNotEmpty($double->lines);
-        $this->assertStringContainsString('[', $double->lines[0]);
-        $this->assertFileDoesNotExist(getcwd() . '/gl-code-quality-report.json');
-        $this->assertSame([], $double->infos, 'No "Report written to" info should be emitted when --stdout is set');
-    }
-
-    /** @test */
-    public function output_report_to_file_writes_to_custom_output_path()
-    {
-        $custom = sys_get_temp_dir() . '/formats-output-custom-' . uniqid() . '.json';
+    /**
+     * @test
+     * @dataProvider structuredFormatsProvider
+     */
+    public function render_formatted_result_writes_to_custom_output_path_when_output_is_set(
+        string $format,
+        string $extension
+    ): void {
+        $custom = sys_get_temp_dir() . '/formats-output-custom-' . uniqid() . '.' . $extension;
         @unlink($custom);
 
         try {
-            $double = $this->makeDouble(['format' => 'codeclimate', 'output' => $custom, 'stdout' => false]);
+            $double = $this->makeDouble(['format' => $format, 'output' => $custom]);
 
             $double->callRenderFormattedResult($this->buildResult());
 
             $this->assertFileExists($custom);
-            $this->assertFileDoesNotExist(getcwd() . '/gl-code-quality-report.json');
+            $this->assertSame([], $double->lines, "format '$format' must not also print to stdout when --output is set");
             $this->assertStringContainsString($custom, $double->infos[0]);
         } finally {
             @unlink($custom);
         }
+    }
+
+    /** @return array<string, array{0:string,1:string}> */
+    public function structuredFormatsProvider(): array
+    {
+        return [
+            'json'        => ['json', 'json'],
+            'junit'       => ['junit', 'xml'],
+            'codeclimate' => ['codeclimate', 'json'],
+            'sarif'       => ['sarif', 'sarif'],
+        ];
     }
 
     /** @test */

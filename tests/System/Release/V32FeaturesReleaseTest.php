@@ -81,7 +81,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=codeclimate --stdout --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->githooks flow qa --format=codeclimate --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded, 'Code Climate output must be a JSON array');
@@ -102,7 +102,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=sarif --stdout --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->githooks flow qa --format=sarif --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded);

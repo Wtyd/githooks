@@ -133,21 +133,19 @@ class FlowCommandTest extends SystemTestCase
     }
 
     /** @test */
-    public function it_supports_codeclimate_output_format_to_default_file()
+    public function it_prints_codeclimate_to_stdout_by_default()
     {
-        $reportPath = getcwd() . '/gl-code-quality-report.json';
-        @unlink($reportPath);
+        $defaultPath = getcwd() . '/gl-code-quality-report.json';
+        @unlink($defaultPath);
 
         try {
             $this->artisan("flow qa --format=codeclimate --config=$this->configPath")
                 ->assertExitCode(0);
 
-            $this->assertFileExists($reportPath);
-            $content = file_get_contents($reportPath);
-            $decoded = json_decode(strval($content), true);
-            $this->assertIsArray($decoded, 'codeclimate output is not valid JSON');
+            $this->containsStringInOutput = ['['];
+            $this->assertFileDoesNotExist($defaultPath, 'no magic default file should be created');
         } finally {
-            @unlink($reportPath);
+            @unlink($defaultPath);
         }
     }
 
@@ -165,50 +163,25 @@ class FlowCommandTest extends SystemTestCase
             $content = file_get_contents($customPath);
             $decoded = json_decode(strval($content), true);
             $this->assertIsArray($decoded, 'custom codeclimate file is not valid JSON');
-
-            $defaultPath = getcwd() . '/gl-code-quality-report.json';
-            $this->assertFileDoesNotExist($defaultPath, 'default file should not be created when --output is set');
         } finally {
             @unlink($customPath);
         }
     }
 
     /** @test */
-    public function it_prints_codeclimate_to_stdout_when_flag_is_set()
+    public function it_prints_sarif_to_stdout_by_default()
     {
-        $defaultPath = getcwd() . '/gl-code-quality-report.json';
+        $defaultPath = getcwd() . '/githooks-results.sarif';
         @unlink($defaultPath);
-
-        try {
-            $this->artisan("flow qa --format=codeclimate --stdout --config=$this->configPath")
-                ->assertExitCode(0);
-
-            $this->containsStringInOutput = ['['];
-            $this->assertFileDoesNotExist($defaultPath, 'file must not be created when --stdout is used');
-        } finally {
-            @unlink($defaultPath);
-        }
-    }
-
-    /** @test */
-    public function it_supports_sarif_output_format_to_default_file()
-    {
-        $reportPath = getcwd() . '/githooks-results.sarif';
-        @unlink($reportPath);
 
         try {
             $this->artisan("flow qa --format=sarif --config=$this->configPath")
                 ->assertExitCode(0);
 
-            $this->assertFileExists($reportPath);
-            $content = file_get_contents($reportPath);
-            $decoded = json_decode(strval($content), true);
-            $this->assertIsArray($decoded, 'sarif output is not valid JSON');
-            $this->assertSame('2.1.0', $decoded['version'] ?? null);
-            $this->assertArrayHasKey('runs', $decoded);
-            $this->assertArrayHasKey('$schema', $decoded);
+            $this->containsStringInOutput = ['2.1.0', 'runs'];
+            $this->assertFileDoesNotExist($defaultPath, 'no magic default file should be created');
         } finally {
-            @unlink($reportPath);
+            @unlink($defaultPath);
         }
     }
 
@@ -227,23 +200,6 @@ class FlowCommandTest extends SystemTestCase
             $this->assertSame('2.1.0', $decoded['version'] ?? null);
         } finally {
             @unlink($customPath);
-        }
-    }
-
-    /** @test */
-    public function it_prints_sarif_to_stdout_when_flag_is_set()
-    {
-        $defaultPath = getcwd() . '/githooks-results.sarif';
-        @unlink($defaultPath);
-
-        try {
-            $this->artisan("flow qa --format=sarif --stdout --config=$this->configPath")
-                ->assertExitCode(0);
-
-            $this->containsStringInOutput = ['2.1.0', 'runs'];
-            $this->assertFileDoesNotExist($defaultPath, 'file must not be created when --stdout is used');
-        } finally {
-            @unlink($defaultPath);
         }
     }
 
