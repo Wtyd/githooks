@@ -5,9 +5,13 @@ namespace Wtyd\GitHooks\App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
+use Wtyd\GitHooks\Hooks\HookInstaller;
+use Wtyd\GitHooks\Hooks\HookStatusInspector;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
 use Tests\Doubles\FileReaderFake;
+use Tests\Doubles\HookInstallerFake;
+use Tests\Doubles\HookStatusInspectorFake;
 use Wtyd\GitHooks\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider
@@ -64,6 +68,8 @@ class AppServiceProvider extends ServiceProvider
         if (defined('APP_ENV') && APP_ENV === 'testing') {
             $this->app->singleton(FileReader::class, FileReaderFake::class);
             $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
+            $this->app->singleton(HookInstaller::class, HookInstallerFake::class);
+            $this->app->singleton(HookStatusInspector::class, HookStatusInspectorFake::class);
             Storage::$disk = 'testing';
         }
     }
