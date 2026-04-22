@@ -13,6 +13,8 @@ GitHooks provides native support for the most common PHP QA tools, plus a `custo
 | [Psalm](psalm.md) | `psalm` | Yes | `--threads` flag |
 | [Parallel Lint](parallel-lint.md) | `parallel-lint` | Yes | `-j` flag |
 | [PHP Copy Paste Detector](phpcpd.md) | `phpcpd` | No | No |
+| [PHP CS Fixer](phpcsfixer.md) | `php-cs-fixer` | Yes | No |
+| [Rector](rector.md) | `rector` | Yes | No |
 | [Custom Jobs](custom.md) | `custom` | Opt-in | No |
 
 ## Accelerable

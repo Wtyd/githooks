@@ -119,6 +119,8 @@ nav:
     - Psalm: tools/psalm.md
     - Parallel Lint: tools/parallel-lint.md
     - PHP Copy Paste Detector: tools/phpcpd.md
+    - PHP CS Fixer: tools/phpcsfixer.md
+    - Rector: tools/rector.md
     - Custom Jobs: tools/custom.md
   - Execution Modes: execution-modes.md
   - CLI Reference:
