@@ -170,7 +170,7 @@ Dos niveles de integración CI:
   ```yaml
   code_quality:
     script:
-      - githooks flow qa --format=codeclimate > gl-code-quality-report.json
+      - githooks flow qa --format=codeclimate --output=gl-code-quality-report.json
     artifacts:
       reports:
         codequality: gl-code-quality-report.json
@@ -179,7 +179,7 @@ Dos niveles de integración CI:
 - `--format=sarif` → JSON en formato [SARIF](https://sarifweb.azurewebsites.net/). GitHub lo consume via Code Scanning (upload-sarif action) y muestra alertas inline en el PR. Ejemplo en GitHub Actions:
 
   ```yaml
-  - run: githooks flow qa --format=sarif > results.sarif
+  - run: githooks flow qa --format=sarif --output=results.sarif
   - uses: github/codeql-action/upload-sarif@v3
     with:
       sarif_file: results.sarif
@@ -374,6 +374,8 @@ Decisión pendiente: qué balance entre legibilidad por defecto y complejidad de
 
 Hoy `--format=FORMAT` acepta un único valor. Si un pipeline necesita SARIF para GitHub Code Scanning **y** JSON v2 para un bot de Slack **y** JUnit para el widget de "test failures", tiene que correr `githooks flow qa` tres veces — tres veces el coste en CI.
 
+> Punto de partida (resuelto en v3.2 RC): los cuatro formatos estructurados (`json`, `junit`, `codeclimate`, `sarif`) comparten el mismo mecanismo de escritura — stdout por defecto, fichero con `--output=PATH`. Eso elimina la subpregunta sobre cómo conviven `--output` y `--stdout`: ya no hay `--stdout`, y `--output=PATH` es el canal único "a fichero".
+
 Diseño propuesto, inspirado en PHPUnit:
 
 **Flags CLI por reporter**, uno por formato, cada uno apunta a un path:
@@ -407,12 +409,11 @@ Los flags CLI ganan sobre la config (`reports[sarif]` lo sobrescribe `--sarif=ot
 
 Puntos abiertos:
 
-1. **Coexistencia con `--format=`**: el `--format=` actual imprime a stdout. Con los nuevos flags, ¿qué hace `--format=sarif --sarif=file.sarif`? Opciones: (a) deprecar `--format=FORMAT` para formatos estructurados y que el único camino para structured sea `--<format>=`; (b) mantener `--format=` como "primario a stdout" y los `--<format>=` como "además, escribir fichero"; (c) prohibir combinar ambos y emitir error si se dan juntos con distinto formato.
-2. **Substitución de `--output` y `--stdout`**: `--sarif=-` podría significar "a stdout" (convención Unix); `--sarif=reports/x.sarif` a fichero. `--output=PATH` quedaría obsoleto al perder el concepto de "primario".
-3. **Interacción con `conf:check`**: `conf:check` debería validar que las rutas de `reports` son escribibles y advertir si la carpeta no existe.
-4. **Anotaciones CI**: los reports por fichero no desactivan las anotaciones CI por stdout — un pipeline puede tener las dos cosas (inline en PR + artefacto SARIF subido).
+1. **Coexistencia con `--format=` y `--output=`**: hoy `--format=X` imprime a stdout y `--output=PATH` redirige a fichero (un único reporte). Con los nuevos flags, ¿qué hace `--format=sarif --sarif=file.sarif`? Opciones: (a) `--format=` y `--output=` quedan para el caso "un solo reporte"; los `--<format>=` son siempre "además, escribir fichero"; (b) prohibir combinar ambos mundos y emitir error si se mezclan con distinto formato.
+2. **Interacción con `conf:check`**: `conf:check` debería validar que las rutas de `reports` son escribibles y advertir si la carpeta no existe.
+3. **Anotaciones CI**: los reports por fichero no desactivan las anotaciones CI por stdout — un pipeline puede tener las dos cosas (inline en PR + artefacto SARIF subido).
 
-Decisión pendiente: ¿adoptamos el patrón PHPUnit o mantenemos el `--format=` único? Es la API más disruptiva de los cuatro items pendientes — conviene evaluar en conjunto con el rework general de output.
+Decisión pendiente: ¿adoptamos el patrón PHPUnit o mantenemos el `--format=` + `--output=` único? Sigue siendo la API más disruptiva de los pendientes — conviene evaluar en conjunto con el rework general de output.
 
 ### Time threshold por job (performance budget con warning o bloqueo)
 

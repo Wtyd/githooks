@@ -75,20 +75,20 @@ githooks flow qa --format=json 2>/dev/null | jq '.jobs[] | select(.success == fa
 
 ## Writing a report to a file
 
-The mechanism depends on the format (historical reasons — `json` / `junit` predate the `--output` flag):
-
-| Format | How to write to a file |
-|---|---|
-| `json`, `junit` | Shell redirection: `> path/to/report.xml`. Payload always goes to stdout. |
-| `codeclimate`, `sarif` | `--output=PATH` flag, or default file (`gl-code-quality-report.json` / `githooks-results.sarif`). Add `--stdout` to print to stdout instead. |
+All four structured formats print to **stdout** by default. Pass `--output=PATH` to write the payload to a file, or use shell redirection — both are equivalent:
 
 ```bash
-githooks flow qa --format=json       > reports/qa.json
-githooks flow qa --format=junit      > reports/junit.xml
+githooks flow qa --format=json       --output=reports/qa.json
+githooks flow qa --format=junit      --output=reports/junit.xml
 githooks flow qa --format=codeclimate --output=reports/qa-codeclimate.json
 githooks flow qa --format=sarif      --output=reports/qa.sarif
-githooks flow qa --format=sarif      --stdout > reports/qa.sarif    # alt form
+
+# Same result with shell redirection:
+githooks flow qa --format=json       > reports/qa.json
+githooks flow qa --format=sarif      > reports/qa.sarif
 ```
+
+Pick the flag form when the surrounding tooling (pipeline DSL, script linter) prefers explicit arguments over shell glue; pick redirection when you are composing with `tee`, filters, or alternate stdout handling.
 
 ## JSON v2
 
@@ -176,16 +176,15 @@ Use with test reporting actions:
 GitLab-compatible Code Quality report. Emits a JSON array where each entry is a CodeIssue:
 
 ```bash
-githooks flow qa --format=codeclimate             # writes gl-code-quality-report.json
-githooks flow qa --format=codeclimate --stdout    # prints to stdout
-githooks flow qa --format=codeclimate --output=reports/quality.json
+githooks flow qa --format=codeclimate                                # prints to stdout
+githooks flow qa --format=codeclimate --output=reports/quality.json  # writes a file
 ```
 
-Integrate directly with GitLab CI:
+Integrate directly with GitLab CI — the `--output` path must match the `codequality` artifact declared in the job:
 
 ```yaml
 qa:
-  script: vendor/bin/githooks flow qa --format=codeclimate
+  script: vendor/bin/githooks flow qa --format=codeclimate --output=gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -196,15 +195,14 @@ qa:
 SARIF 2.1.0 report consumable by GitHub Code Scanning, Azure DevOps, and other static-analysis tools:
 
 ```bash
-githooks flow qa --format=sarif                   # writes githooks-results.sarif
-githooks flow qa --format=sarif --stdout
-githooks flow qa --format=sarif --output=reports/qa.sarif
+githooks flow qa --format=sarif                              # prints to stdout
+githooks flow qa --format=sarif --output=reports/qa.sarif    # writes a file
 ```
 
-Upload to GitHub Code Scanning:
+Upload to GitHub Code Scanning — the `--output` path must match the `sarif_file` argument of the upload step:
 
 ```yaml
-- run: vendor/bin/githooks flow qa --format=sarif
+- run: vendor/bin/githooks flow qa --format=sarif --output=githooks-results.sarif
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
   with:
@@ -213,12 +211,12 @@ Upload to GitHub Code Scanning:
 
 ## Single job output
 
-The `--format` flag, `--output` and `--stdout` all work with the `job` command too:
+The `--format` and `--output` flags work identically with the `job` command:
 
 ```bash
-githooks job phpstan_src --format=json
-githooks job phpcs_src --format=junit
-githooks job phpstan_src --format=sarif --stdout
+githooks job phpstan_src --format=json                                   # JSON v2 to stdout
+githooks job phpcs_src   --format=junit                                  # JUnit to stdout
+githooks job phpstan_src --format=sarif  --output=reports/phpstan.sarif  # SARIF to a file
 ```
 
 ## Dry-run

@@ -19,8 +19,9 @@ The output behaviour now depends on the format and the execution context. The un
 
 - **JSON schema v2 ([`--format=json`](how-to/output-formats.md#json-v2))**: enriched per-job fields (`type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`) plus top-level `version: 2`, `executionMode`, `passed`, `failed`, `skipped` counters. Stable contract for AI tools, CI dashboards and scripts.
 - **JUnit `<skipped>` support**: skipped jobs now emit `<skipped>` elements with a reason attribute.
-- **Code Climate format ([`--format=codeclimate`](how-to/output-formats.md#code-climate))**: GitLab-compatible Code Quality report. Writes to `gl-code-quality-report.json` by default; supports `--output=PATH` and `--stdout`.
-- **SARIF format ([`--format=sarif`](how-to/output-formats.md#sarif))**: SARIF 2.1.0 report for GitHub Code Scanning, Azure DevOps and other static-analysis consumers. Writes to `githooks-results.sarif` by default; supports `--output=PATH` and `--stdout`.
+- **Code Climate format ([`--format=codeclimate`](how-to/output-formats.md#code-climate))**: GitLab-compatible Code Quality report.
+- **SARIF format ([`--format=sarif`](how-to/output-formats.md#sarif))**: SARIF 2.1.0 report for GitHub Code Scanning, Azure DevOps and other static-analysis consumers.
+- **Unified output target for structured formats**: `json`, `junit`, `codeclimate` and `sarif` all print to stdout by default; pass `--output=PATH` to write the payload to a file. Shell redirection (`> file`) remains equivalent.
 
 #### CI integration
 

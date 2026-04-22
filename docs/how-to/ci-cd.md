@@ -77,7 +77,7 @@ Covered by the basic workflow above. JUnit is the right choice when you want the
 
 ```yaml
 qa:
-  script: vendor/bin/githooks flow qa --format=codeclimate
+  script: vendor/bin/githooks flow qa --format=codeclimate --output=gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -86,7 +86,7 @@ qa:
 ### GitHub Code Scanning
 
 ```yaml
-- run: vendor/bin/githooks flow qa --format=sarif
+- run: vendor/bin/githooks flow qa --format=sarif --output=githooks-results.sarif
   continue-on-error: true
 - uses: github/codeql-action/upload-sarif@v3
   if: always()

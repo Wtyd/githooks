@@ -16,8 +16,7 @@ githooks job <name> [options]
 | `--ignore-errors-on-exit` | Return exit code 0 even if the job fails (useful for advisory checks). |
 | `--dry-run` | Show command without executing. |
 | `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. |
-| `--output=PATH` | Custom path for the `codeclimate` / `sarif` report file. For `json` and `junit` the payload is printed to stdout — write to a file with shell redirection (`> report.xml`). |
-| `--stdout` | Print the `codeclimate` / `sarif` payload to stdout instead of writing a file (`json` and `junit` already go to stdout by default). |
+| `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. |
 | `--fast` | Fast mode — analyze only staged files. |
 | `--fast-branch` | Fast-branch mode — analyze branch diff files. |
 | `--no-ci` | Disable auto-detection of CI annotations. |
@@ -29,8 +28,9 @@ githooks job <name> [options]
 ```bash
 githooks job phpstan_src                  # Run a single job
 githooks job phpstan_src --dry-run        # Show command without running
-githooks job phpunit_all --format=json    # JSON v2 output
-githooks job phpstan_src --format=sarif --stdout   # SARIF 2.1.0 to stdout
+githooks job phpunit_all --format=json    # JSON v2 output to stdout
+githooks job phpstan_src --format=sarif   # SARIF 2.1.0 to stdout
+githooks job phpstan_src --format=sarif --output=reports/phpstan.sarif   # SARIF to a file
 githooks job phpcs_src --fast             # Only staged files
 githooks job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
 githooks job phpstan_src -- --memory-limit=2G         # Override memory limit
