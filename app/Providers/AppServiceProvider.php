@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Wtyd\GitHooks\Configuration\ToolDetector;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Hooks\HookInstaller;
@@ -12,6 +13,7 @@ use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryF
 use Tests\Doubles\FileReaderFake;
 use Tests\Doubles\HookInstallerFake;
 use Tests\Doubles\HookStatusInspectorFake;
+use Tests\Doubles\ToolDetectorFake;
 use Wtyd\GitHooks\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider
@@ -70,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
             $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
             $this->app->singleton(HookInstaller::class, HookInstallerFake::class);
             $this->app->singleton(HookStatusInspector::class, HookStatusInspectorFake::class);
+            $this->app->singleton(ToolDetector::class, ToolDetectorFake::class);
             Storage::$disk = 'testing';
         }
     }
