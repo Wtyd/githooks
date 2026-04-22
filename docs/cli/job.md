@@ -16,8 +16,8 @@ githooks job <name> [options]
 | `--ignore-errors-on-exit` | Return exit code 0 even if the job fails (useful for advisory checks). |
 | `--dry-run` | Show command without executing. |
 | `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. |
-| `--output=PATH` | Custom path for the `codeclimate` / `sarif` report file. |
-| `--stdout` | Print the `codeclimate` / `sarif` payload to stdout instead of writing a file. |
+| `--output=PATH` | Custom path for the `codeclimate` / `sarif` report file. For `json` and `junit` the payload is printed to stdout — write to a file with shell redirection (`> report.xml`). |
+| `--stdout` | Print the `codeclimate` / `sarif` payload to stdout instead of writing a file (`json` and `junit` already go to stdout by default). |
 | `--fast` | Fast mode — analyze only staged files. |
 | `--fast-branch` | Fast-branch mode — analyze branch diff files. |
 | `--no-ci` | Disable auto-detection of CI annotations. |

@@ -73,6 +73,23 @@ githooks flow qa --format=json > report.json
 githooks flow qa --format=json 2>/dev/null | jq '.jobs[] | select(.success == false)'
 ```
 
+## Writing a report to a file
+
+The mechanism depends on the format (historical reasons — `json` / `junit` predate the `--output` flag):
+
+| Format | How to write to a file |
+|---|---|
+| `json`, `junit` | Shell redirection: `> path/to/report.xml`. Payload always goes to stdout. |
+| `codeclimate`, `sarif` | `--output=PATH` flag, or default file (`gl-code-quality-report.json` / `githooks-results.sarif`). Add `--stdout` to print to stdout instead. |
+
+```bash
+githooks flow qa --format=json       > reports/qa.json
+githooks flow qa --format=junit      > reports/junit.xml
+githooks flow qa --format=codeclimate --output=reports/qa-codeclimate.json
+githooks flow qa --format=sarif      --output=reports/qa.sarif
+githooks flow qa --format=sarif      --stdout > reports/qa.sarif    # alt form
+```
+
 ## JSON v2
 
 Machine-readable output for CI pipelines, scripts, and AI tools:

@@ -18,8 +18,8 @@ githooks flow <name> [options]
 | `--only-jobs=a,b` | Comma-separated list of jobs to run (others skipped). Cannot combine with `--exclude-jobs`. |
 | `--dry-run` | Show commands without executing. Works with all `--format` options. |
 | `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. |
-| `--output=PATH` | Custom path for the `codeclimate` / `sarif` report file. Ignored for `text`, `json` and `junit`. |
-| `--stdout` | Print the `codeclimate` / `sarif` payload to stdout instead of writing a file. |
+| `--output=PATH` | Custom path for the `codeclimate` / `sarif` report file. For `json` and `junit` the payload is printed to stdout — write to a file with shell redirection (`> report.xml`). |
+| `--stdout` | Print the `codeclimate` / `sarif` payload to stdout instead of writing a file (`json` and `junit` already go to stdout by default). |
 | `--fast` | Fast mode — accelerable jobs analyze only staged files. |
 | `--fast-branch` | Fast-branch mode — analyze files that differ from main branch. |
 | `--monitor` | Show thread usage report after execution. |
