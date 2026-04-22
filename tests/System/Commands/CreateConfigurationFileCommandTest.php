@@ -2,7 +2,9 @@
 
 namespace Tests\System\Commands;
 
+use Tests\Doubles\ToolDetectorFake;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Configuration\ToolDetector;
 use Wtyd\GitHooks\Utils\Storage;
 
 class CreateConfigurationFileCommandTest extends SystemTestCase
@@ -80,5 +82,126 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(0);
 
         $this->assertFileEquals($vendorTemplatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+    }
+
+    /** @test */
+    function interactive_mode_falls_back_to_template_when_no_qa_tools_detected()
+    {
+        $templatePath = $this->path . '/qa/';
+        mkdir($templatePath, 0777, true);
+        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+
+        // ToolDetectorFake defaults to empty detected list
+        $this->artisan('conf:init')
+            ->containsStringInOutput('Configuration file githooks.php has been created in root path')
+            ->assertExitCode(0);
+
+        $this->assertFileEquals($templatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+    }
+
+    /** @test */
+    function interactive_mode_falls_back_to_template_when_user_deselects_every_tool()
+    {
+        $templatePath = $this->path . '/qa/';
+        mkdir($templatePath, 0777, true);
+        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+
+        /** @var ToolDetectorFake $detector */
+        $detector = $this->app->make(ToolDetector::class);
+        $detector->setDetected(['phpstan']);
+
+        $this->artisan('conf:init')
+            ->expectsConfirmation('  Include phpstan?', 'no')
+            ->containsStringInOutput('Configuration file githooks.php has been created in root path')
+            ->assertExitCode(0);
+
+        $this->assertFileEquals($templatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+    }
+
+    /** @test */
+    function interactive_mode_generates_config_with_selected_tools_for_pre_commit_hook()
+    {
+        /** @var ToolDetectorFake $detector */
+        $detector = $this->app->make(ToolDetector::class);
+        $detector->setDetected(['phpstan', 'phpcs']);
+
+        $this->artisan('conf:init')
+            ->expectsConfirmation('  Include phpstan?', 'yes')
+            ->expectsConfirmation('  Include phpcs?', 'yes')
+            ->expectsQuestion('Source directories (comma-separated)', 'src')
+            ->expectsChoice(
+                'Which hook events to configure?',
+                'pre-commit',
+                ['pre-commit', 'pre-push', 'both', 'none']
+            )
+            ->containsStringInOutput('Configuration file githooks.php created with 2 tool(s)')
+            ->assertExitCode(0);
+
+        $generated = file_get_contents($this->path . '/githooks.php');
+        $this->assertStringContainsString('phpstan', $generated);
+        $this->assertStringContainsString('phpcs', $generated);
+        $this->assertStringContainsString('pre-commit', $generated);
+    }
+
+    /** @test */
+    function interactive_mode_configures_pre_push_hook_when_choice_is_pre_push()
+    {
+        /** @var ToolDetectorFake $detector */
+        $detector = $this->app->make(ToolDetector::class);
+        $detector->setDetected(['phpstan']);
+
+        $this->artisan('conf:init')
+            ->expectsConfirmation('  Include phpstan?', 'yes')
+            ->expectsQuestion('Source directories (comma-separated)', 'src')
+            ->expectsChoice(
+                'Which hook events to configure?',
+                'pre-push',
+                ['pre-commit', 'pre-push', 'both', 'none']
+            )
+            ->assertExitCode(0);
+
+        $this->assertStringContainsString('pre-push', file_get_contents($this->path . '/githooks.php'));
+    }
+
+    /** @test */
+    function interactive_mode_configures_both_hooks_when_choice_is_both()
+    {
+        /** @var ToolDetectorFake $detector */
+        $detector = $this->app->make(ToolDetector::class);
+        $detector->setDetected(['phpstan']);
+
+        $this->artisan('conf:init')
+            ->expectsConfirmation('  Include phpstan?', 'yes')
+            ->expectsQuestion('Source directories (comma-separated)', 'src')
+            ->expectsChoice(
+                'Which hook events to configure?',
+                'both',
+                ['pre-commit', 'pre-push', 'both', 'none']
+            )
+            ->assertExitCode(0);
+
+        $generated = file_get_contents($this->path . '/githooks.php');
+        $this->assertStringContainsString('pre-commit', $generated);
+        $this->assertStringContainsString('pre-push', $generated);
+    }
+
+    /** @test */
+    function interactive_mode_configures_no_hook_events_when_choice_is_none()
+    {
+        /** @var ToolDetectorFake $detector */
+        $detector = $this->app->make(ToolDetector::class);
+        $detector->setDetected(['phpstan']);
+
+        $this->artisan('conf:init')
+            ->expectsConfirmation('  Include phpstan?', 'yes')
+            ->expectsQuestion('Source directories (comma-separated)', 'src')
+            ->expectsChoice(
+                'Which hook events to configure?',
+                'none',
+                ['pre-commit', 'pre-push', 'both', 'none']
+            )
+            ->assertExitCode(0);
+
+        $this->assertFileExists($this->path . '/githooks.php');
     }
 }
