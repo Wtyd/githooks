@@ -21,15 +21,40 @@ githooks flow qa
 Results: 2/3 passed in 3.45s
 ```
 
-## Interactive dashboard
+## Live streaming for `job` and sequential flows
 
-When running with `processes > 1` in an interactive terminal (TTY), the text output upgrades to an interactive dashboard showing queue / running / done states in real time. It falls back to streaming text output in non-TTY environments (CI, piped runs) so the output stays clean for log parsers.
+When you run a single job (`githooks job X`) or a flow with `processes=1`, each tool's output streams in real time. Long-running jobs (phpmd, phpunit with coverage) no longer look frozen — you see the tool's own progress as it happens.
 
-Force the streaming text output in a TTY with:
+For `flow --processes=1`, a header separator is printed between jobs (like `make` or `docker compose up`):
 
-```bash
-githooks flow qa --monitor    # adds a thread-budget summary at the end
 ```
+  --- Phpstan Src ---
+   [OK] No errors
+  Phpstan Src - OK. Time: 715ms
+  --- Parallel-lint ---
+  Checked 144 files in 0.2 seconds
+  Parallel-lint - OK. Time: 196ms
+```
+
+## Interactive parallel dashboard
+
+When running a flow with `processes > 1` in an interactive terminal (TTY), the text output upgrades to a live dashboard showing queue / running / done states with per-job timers:
+
+```
+  ⏳ Phpstan Src [0.9s]            ← running, live timer
+  ⏳ Parallel-lint [0.9s]
+  ⏳ Phpmd Src [0.9s]
+  ⏳ Phpcs [0.1s]                  ← just entered a freed slot
+  ⏺ Phpunit                        ← queued
+  ⏺ Composer Audit
+```
+
+On completion, the dashboard collapses to a clean summary.
+
+**Activation is automatic** via `posix_isatty(STDOUT)`. No flag is needed. In non-TTY environments (CI, redirected stdout, pipes) it falls back to append-only streaming text so logs stay parseable.
+
+!!! tip "`--monitor` is a separate feature"
+    `--monitor` adds a **thread-usage report at the end of execution** (peak estimated threads, warning if the budget was exceeded). It is independent of the dashboard — you can combine them (`--monitor` on top of the dashboard) or use it in CI with the plain output.
 
 ## stdout / stderr split
 

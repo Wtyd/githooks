@@ -6,26 +6,33 @@ All notable changes to this project are documented here.
 
 ### New Features
 
-#### Output formats and CI integration
-- **Code Climate format ([`--format=codeclimate`](how-to/output-formats.md#code-climate))**: Emits a GitLab-compatible Code Quality report. Writes to `gl-code-quality-report.json` by default; supports `--output=PATH` and `--stdout`.
-- **SARIF format ([`--format=sarif`](how-to/output-formats.md#sarif))**: Emits a SARIF 2.1.0 report for GitHub Code Scanning, Azure DevOps and other static-analysis consumers. Writes to `githooks-results.sarif` by default; supports `--output=PATH` and `--stdout`.
-- **JSON schema v2 ([`--format=json`](how-to/output-formats.md#json-v2))**: Enriched per-job fields (`type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`) plus top-level `version: 2`, `executionMode`, `passed`, `failed`, `skipped` counters. Drop-in consumer for AI tools and CI dashboards.
-- **JUnit `<skipped>` support**: Skipped jobs now emit `<skipped>` elements with a reason attribute, compatible with JUnit report consumers.
-- **stdout/stderr split for structured formats**: Progress (`OK job (Xms) [Y/Z]`, `Done.` lines, colors) routes to stderr; structured payload stays on stdout. Enables `githooks flow qa --format=json > report.json` without contamination.
-- **Interactive parallel dashboard ([`--monitor`](how-to/output-formats.md#interactive-dashboard))**: When running in a TTY with `processes > 1`, shows queue/running/done panes in real time. Falls back to streaming text output in non-TTY environments.
-- **Native CI annotations ([CI/CD Integration](how-to/ci-cd.md#ci-annotations))**: Auto-detects `GITHUB_ACTIONS=true` or `GITLAB_CI` and wraps job output in `::group::`/`::endgroup::` plus `::error file=…,line=…::` annotations (GitHub) or `section_start:`/`section_end:` markers (GitLab). Parses `file.php:LINE` patterns from tool output.
-- **`--no-ci` flag**: Opt out of auto-detection; forces plain output even when CI env vars are present.
+#### Redesigned output system
+
+The output behaviour now depends on the format and the execution context. The unifying rule: **the format decides whether the output streams live or is buffered and emitted at the end.**
+
+- **Live streaming in `githooks job X` (single job)**: tool output (phpstan, phpcs, etc.) is now streamed in real time instead of buffered. Long-running jobs (phpmd, phpunit with coverage) no longer look frozen — you see the tool's actual progress as it happens.
+- **Live streaming in `githooks flow` with `processes=1`**: each job is streamed with a header separator between jobs (like `make` or `docker compose up`). You see each tool's output as it runs instead of only `OK/KO` lines at the end.
+- **Interactive parallel dashboard in `githooks flow` with `processes > 1`**: when running in a TTY, the output upgrades to a live dashboard with three states — ⏺ queued, ⏳ running (with a live timer), ✓/✗ done. On completion it collapses to a clean summary. In non-TTY environments (CI, piped stdout) it falls back to append-only streaming text so logs remain parseable. Activated automatically via `posix_isatty(STDOUT)`; no flag needed.
+- **stdout/stderr split for structured formats**: for `json`, `junit`, `codeclimate` and `sarif`, progress lines (`OK job (Xms) [Y/Z]`, `Done.`, colours) route to stderr and the structured payload stays on stdout. Enables `githooks flow qa --format=json > report.json` without contamination; use `2>/dev/null` to silence progress in pipes.
+
+#### Output formats
+
+- **JSON schema v2 ([`--format=json`](how-to/output-formats.md#json-v2))**: enriched per-job fields (`type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`) plus top-level `version: 2`, `executionMode`, `passed`, `failed`, `skipped` counters. Stable contract for AI tools, CI dashboards and scripts.
+- **JUnit `<skipped>` support**: skipped jobs now emit `<skipped>` elements with a reason attribute.
+- **Code Climate format ([`--format=codeclimate`](how-to/output-formats.md#code-climate))**: GitLab-compatible Code Quality report. Writes to `gl-code-quality-report.json` by default; supports `--output=PATH` and `--stdout`.
+- **SARIF format ([`--format=sarif`](how-to/output-formats.md#sarif))**: SARIF 2.1.0 report for GitHub Code Scanning, Azure DevOps and other static-analysis consumers. Writes to `githooks-results.sarif` by default; supports `--output=PATH` and `--stdout`.
+
+#### CI integration
+
+- **Native CI annotations ([CI/CD Integration](how-to/ci-cd.md#ci-annotations))**: auto-detects `GITHUB_ACTIONS=true` or `GITLAB_CI` and wraps job output in `::group::`/`::endgroup::` plus `::error file=…,line=…::` annotations (GitHub) or `section_start:`/`section_end:` markers (GitLab). Parses `file.php:LINE` patterns from tool output.
+- **`--no-ci` flag**: opt out of the auto-detection when a CI env var is set but you want plain output (running `act` locally, custom CI where those markers aren't parsed, or scripting on top of GitHooks).
 
 #### New native job types
-- **[PHP CS Fixer (`type: php-cs-fixer`)](tools/phpcsfixer.md)**: Native support with `config`, `rules`, `dry-run`, `diff`, `allow-risky`, `using-cache`, `cache-file` keywords. Accelerable.
-- **[Rector (`type: rector`)](tools/rector.md)**: Native support with `config`, `dry-run`, `clear-cache`, `no-progress-bar` keywords. Accelerable.
+- **[PHP CS Fixer (`type: php-cs-fixer`)](tools/phpcsfixer.md)**: native support with `config`, `rules`, `dry-run`, `diff`, `allow-risky`, `using-cache`, `cache-file` keywords. Accelerable.
+- **[Rector (`type: rector`)](tools/rector.md)**: native support with `config`, `dry-run`, `clear-cache`, `no-progress-bar` keywords. Accelerable.
 
-#### Platform
-- **Windows platform abstraction**: CPU detection on Windows via `NUMBER_OF_PROCESSORS` env var with `wmic` fallback. Cross-platform `stderrRedirect()` helper (`2>/dev/null` on POSIX, `2>nul` on Windows) for internal shell-outs.
-
-#### Developer experience
-- **Enriched `JobResult` and `FlowResult`**: Internal objects now expose `getType()`, `getExitCode()`, `getPaths()`, `isSkipped()`, `getSkipReason()`. Feeds the JSON v2 schema and downstream consumers.
-- **`conf:check` command truncation**: Long generated commands are truncated to 80 chars (with `…`) in the job table to keep the check output readable on narrow terminals.
+#### Other
+- **`conf:check` command truncation**: long generated commands are truncated to 80 chars (with `…`) in the job table to keep the output readable on narrow terminals. `githooks job X --dry-run` still shows the full command.
 
 ---
 
