@@ -93,7 +93,7 @@ class CreateConfigurationFileCommand extends Command
         $generator = new ConfigurationGenerator();
         $content = $generator->generate($selectedTools, $paths, $hookEvents);
 
-        file_put_contents('githooks.php', $content);
+        Storage::put('githooks.php', $content);
         $this->printer->success('Configuration file githooks.php created with ' . count($selectedTools) . ' tool(s).');
 
         return 0;
