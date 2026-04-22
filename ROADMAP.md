@@ -369,3 +369,47 @@ Alternativas:
 3. **Ambas**: wrap por defecto + flag `--compact` que mantiene el comportamiento actual para scripts que parsean la tabla.
 
 Decisión pendiente: qué balance entre legibilidad por defecto y complejidad de renderizado.
+
+### Múltiples reportes simultáneos en una sola ejecución (estilo PHPUnit)
+
+Hoy `--format=FORMAT` acepta un único valor. Si un pipeline necesita SARIF para GitHub Code Scanning **y** JSON v2 para un bot de Slack **y** JUnit para el widget de "test failures", tiene que correr `githooks flow qa` tres veces — tres veces el coste en CI.
+
+Diseño propuesto, inspirado en PHPUnit:
+
+**Flags CLI por reporter**, uno por formato, cada uno apunta a un path:
+
+```bash
+githooks flow qa \
+  --sarif=reports/qa.sarif \
+  --json=reports/qa.json \
+  --junit=reports/junit.xml \
+  --codeclimate=reports/gl-code-quality.json
+```
+
+Cada flag genera un fichero independiente. El stdout sigue siendo humano (texto / dashboard) salvo que se pase `--format=` explícito. Ejecución única, una sola pasada por cada job.
+
+**Configuración declarativa a nivel de flow**, en el `githooks.php`:
+
+```php
+'qa' => [
+    'jobs'    => [...],
+    'options' => ['processes' => 4],
+    'reports' => [
+        'sarif'       => 'reports/qa.sarif',
+        'json'        => 'reports/qa.json',
+        'junit'       => 'reports/junit.xml',
+        'codeclimate' => 'reports/gl-code-quality.json',
+    ],
+],
+```
+
+Los flags CLI ganan sobre la config (`reports[sarif]` lo sobrescribe `--sarif=otro.sarif`). Pensado para: el pipeline declara una vez qué reportes quiere por flow; el usuario ad-hoc puede pedir uno extra desde la CLI.
+
+Puntos abiertos:
+
+1. **Coexistencia con `--format=`**: el `--format=` actual imprime a stdout. Con los nuevos flags, ¿qué hace `--format=sarif --sarif=file.sarif`? Opciones: (a) deprecar `--format=FORMAT` para formatos estructurados y que el único camino para structured sea `--<format>=`; (b) mantener `--format=` como "primario a stdout" y los `--<format>=` como "además, escribir fichero"; (c) prohibir combinar ambos y emitir error si se dan juntos con distinto formato.
+2. **Substitución de `--output` y `--stdout`**: `--sarif=-` podría significar "a stdout" (convención Unix); `--sarif=reports/x.sarif` a fichero. `--output=PATH` quedaría obsoleto al perder el concepto de "primario".
+3. **Interacción con `conf:check`**: `conf:check` debería validar que las rutas de `reports` son escribibles y advertir si la carpeta no existe.
+4. **Anotaciones CI**: los reports por fichero no desactivan las anotaciones CI por stdout — un pipeline puede tener las dos cosas (inline en PR + artefacto SARIF subido).
+
+Decisión pendiente: ¿adoptamos el patrón PHPUnit o mantenemos el `--format=` único? Es la API más disruptiva de los cuatro items pendientes — conviene evaluar en conjunto con el rework general de output.
