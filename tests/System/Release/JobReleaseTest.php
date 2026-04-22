@@ -48,7 +48,9 @@ class JobReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_outputs_json_format()
     {
-        passthru("$this->githooks job phpcs_src --format=json --config=$this->configPath 2>&1", $exitCode);
+        // Discard stderr: in v3.2 structured formats route progress to stderr;
+        // mixing it into stdout would break json_decode.
+        passthru("$this->githooks job phpcs_src --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();

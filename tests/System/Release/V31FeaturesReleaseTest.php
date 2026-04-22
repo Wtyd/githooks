@@ -307,7 +307,8 @@ class V31FeaturesReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job echo_job --dry-run --format=json --config=$this->configPath -- --extra-flag 2>&1", $exitCode);
+        // Discard stderr: v3.2 routes progress to stderr for structured formats.
+        passthru("$this->githooks job echo_job --dry-run --format=json --config=$this->configPath -- --extra-flag 2>/dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -327,8 +328,9 @@ class V31FeaturesReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        // Real execution with --format=json to capture the tool's output
-        passthru("$this->githooks job echo_job --format=json --config=$this->configPath -- --appended 2>&1", $exitCode);
+        // Real execution with --format=json to capture the tool's output.
+        // Discard stderr: v3.2 routes progress there for structured formats.
+        passthru("$this->githooks job echo_job --format=json --config=$this->configPath -- --appended 2>/dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $json = json_decode($this->getActualOutput(), true);

@@ -249,7 +249,9 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=junit --config=$this->configPath 2>&1", $exitCode);
+        // Discard stderr: in v3.2 structured formats route progress to stderr;
+        // mixing it into stdout would pollute the JUnit XML with ANSI escapes.
+        passthru("$this->githooks flow qa --format=junit --config=$this->configPath 2>/dev/null", $exitCode);
 
         $output = $this->getActualOutput();
         $this->assertStringNotContainsString("\e[", $output);
@@ -294,7 +296,9 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fail-fast --format=json --config=$this->configPath 2>&1", $exitCode);
+        // Discard stderr: in v3.2 structured formats route progress to stderr;
+        // mixing it into stdout would break json_decode.
+        passthru("$this->githooks flow qa --fail-fast --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $output = $this->getActualOutput();
         $decoded = json_decode($output, true);
