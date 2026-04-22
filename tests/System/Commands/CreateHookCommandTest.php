@@ -2,7 +2,9 @@
 
 namespace Tests\System\Commands;
 
+use Tests\Doubles\HookInstallerFake;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Utils\Storage;
 
 /**
@@ -172,6 +174,52 @@ class CreateHookCommandTest extends SystemTestCase
             ->assertExitCode(1);
 
         $this->assertFileDoesNotExist($this->path . '/.git/hooks/pre-push');
+    }
+
+    /** @test */
+    function v3_mode_installs_all_configured_hooks_in_githooks_directory()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa'], 'pre-push' => ['qa']])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("hook pre-commit --config=$configPath")
+            ->assertExitCode(0);
+
+        $this->assertFileExists($this->path . '/.githooks/pre-commit');
+        $this->assertFileExists($this->path . '/.githooks/pre-push');
+
+        /** @var HookInstallerFake $installer */
+        $installer = $this->app->make(HookInstaller::class);
+        $this->assertSame(1, $installer->configureHooksPathCalls);
+    }
+
+    /** @test */
+    function v3_mode_falls_back_to_legacy_when_config_path_does_not_exist()
+    {
+        $missingConfig = getcwd() . '/' . self::TESTS_PATH . '/does-not-exist.php';
+
+        $this->artisan("hook pre-commit --config=$missingConfig")
+            ->containsStringInOutput('Hook pre-commit created')
+            ->assertExitCode(0);
+
+        $this->assertFileExists($this->path . '/.git/hooks/pre-commit');
+    }
+
+    /** @test */
+    function v3_mode_falls_back_to_legacy_when_configuration_is_v2_format()
+    {
+        $this->configurationFileBuilder->buildInFileSystem();
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("hook pre-commit --config=$configPath")
+            ->containsStringInOutput('Hook pre-commit created')
+            ->assertExitCode(0);
+
+        $this->assertFileExists($this->path . '/.git/hooks/pre-commit');
     }
 
     /** @test */
