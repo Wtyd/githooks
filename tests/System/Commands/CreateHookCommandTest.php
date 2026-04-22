@@ -152,6 +152,46 @@ class CreateHookCommandTest extends SystemTestCase
     }
 
     /** @test */
+    function legacy_mode_overwrites_existing_hook_file()
+    {
+        Storage::put('.git/hooks/pre-commit', 'stale content');
+
+        $this->artisan('hook --legacy')
+            ->containsStringInOutput('Hook pre-commit created')
+            ->assertExitCode(0);
+
+        $this->assertFileExists($this->path . '/.git/hooks/pre-commit');
+        $this->assertStringNotEqualsFile($this->path . '/.git/hooks/pre-commit', 'stale content');
+    }
+
+    /** @test */
+    function reports_error_when_custom_script_file_does_not_exist()
+    {
+        $this->artisan('hook pre-push missing-script.php')
+            ->containsStringInOutput('missing-script.php file not found')
+            ->assertExitCode(1);
+
+        $this->assertFileDoesNotExist($this->path . '/.git/hooks/pre-push');
+    }
+
+    /** @test */
+    function v3_mode_warns_when_hooks_section_is_empty()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks([])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("hook pre-commit --config=$configPath")
+            ->containsStringInOutput('No hooks defined in configuration')
+            ->assertExitCode(0);
+
+        $this->assertFileDoesNotExist($this->path . '/.git/hooks/pre-commit');
+    }
+
+    /** @test */
     function it_shows_an_error_message_when_is_setted_an_invalid_hook()
     {
         $noSupportedHook = 'no-valid';
