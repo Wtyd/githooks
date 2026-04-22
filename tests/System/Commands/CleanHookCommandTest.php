@@ -2,7 +2,9 @@
 
 namespace Tests\System\Commands;
 
+use Tests\Doubles\HookInstallerFake;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Utils\Storage;
 
 class CleanHookCommandTest extends SystemTestCase
@@ -77,6 +79,23 @@ class CleanHookCommandTest extends SystemTestCase
         $this->artisan('hook:clean pre-commit --legacy')
             ->containsStringInOutput('The hook pre-commit cannot be deleted because it cannot be found')
             ->assertExitCode(1);
+    }
+
+    /** @test */
+    function v3_mode_removes_githooks_directory_and_unsets_hooks_path()
+    {
+        mkdir($this->path . '/.githooks', 0777, true);
+        file_put_contents($this->path . '/.githooks/pre-commit', '#!/bin/sh');
+        file_put_contents($this->path . '/.githooks/pre-push', '#!/bin/sh');
+
+        $this->artisan('hook:clean')
+            ->assertExitCode(0);
+
+        $this->assertDirectoryDoesNotExist($this->path . '/.githooks');
+
+        /** @var HookInstallerFake $installer */
+        $installer = $this->app->make(HookInstaller::class);
+        $this->assertSame(1, $installer->unsetHooksPathCalls);
     }
 
     /** @test */
