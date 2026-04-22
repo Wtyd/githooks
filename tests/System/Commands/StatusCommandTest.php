@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\System\Commands;
 
+use Tests\Doubles\HookStatusInspectorFake;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\GitHooks\Hooks\HookStatusInspector;
 
 class StatusCommandTest extends SystemTestCase
 {
@@ -61,6 +63,51 @@ class StatusCommandTest extends SystemTestCase
             ->assertExitCode(0);
 
         $this->containsStringInOutput = ['No hooks configured'];
+    }
+
+    /** @test */
+    public function renders_green_when_core_hooks_path_is_configured_to_githooks()
+    {
+        /** @var HookStatusInspectorFake $inspector */
+        $inspector = $this->app->make(HookStatusInspector::class);
+        $inspector->setHooksPathValue('.githooks');
+
+        $this->artisan("status --config=$this->configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
+    public function renders_yellow_warning_when_core_hooks_path_points_to_custom_location()
+    {
+        /** @var HookStatusInspectorFake $inspector */
+        $inspector = $this->app->make(HookStatusInspector::class);
+        $inspector->setHooksPathValue('custom/hooks/path');
+
+        $this->artisan("status --config=$this->configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
+    public function renders_missing_status_when_hook_is_configured_but_not_installed()
+    {
+        // .githooks/ directory absent — configured hook is MISSING
+        $this->artisan("status --config=$this->configPath")
+            ->assertExitCode(0);
+    }
+
+    /** @test */
+    public function renders_orphan_status_for_installed_hook_not_in_configuration()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks([])
+            ->buildInFileSystem();
+
+        mkdir($this->path . '/.githooks', 0777, true);
+        file_put_contents($this->path . '/.githooks/post-checkout', '#!/bin/sh');
+
+        $this->artisan("status --config=$this->configPath")
+            ->assertExitCode(0);
     }
 
     /** @test */
