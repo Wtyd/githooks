@@ -16,6 +16,7 @@ class JobRegistry
         'phpcs'          => PhpcsJob::class,
         'phpcbf'         => PhpcbfJob::class,
         'phpunit'        => PhpunitJob::class,
+        'paratest'       => ParatestJob::class,
         'psalm'          => PsalmJob::class,
         'parallel-lint'  => ParallelLintJob::class,
         'phpcpd'         => PhpcpdJob::class,
