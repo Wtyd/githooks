@@ -83,4 +83,46 @@ class HookRunCommandTest extends SystemTestCase
         $this->artisan("hook:run pre-push --config=$this->configPath")
             ->assertExitCode(1);
     }
+
+    /** @test */
+    public function returns_exit_1_when_config_has_validation_errors()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'fail-fast' => false,
+                'processes' => 1,
+                'executable-prefix' => 123,
+            ])
+            ->buildInFileSystem();
+
+        $this->artisan("hook:run pre-commit --config=$this->configPath")
+            ->assertExitCode(1);
+    }
+
+    /** @test */
+    public function handles_parser_exception_and_exits_with_error_code()
+    {
+        $yamlPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.yml';
+        file_put_contents($yamlPath, "Tools:\n  - phpstan\n  invalid: [not closed\n");
+
+        $this->artisan("hook:run pre-commit --config=$yamlPath")
+            ->assertExitCode(1);
+    }
+
+    /** @test */
+    public function exits_0_when_all_hook_refs_are_skipped_by_execution_conditions()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks([
+                'pre-commit' => [
+                    ['flow' => 'qa', 'only-on' => ['nonexistent-branch']],
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $this->artisan("hook:run pre-commit --config=$this->configPath")
+            ->assertExitCode(0);
+    }
 }
