@@ -62,4 +62,14 @@ class StatusCommandTest extends SystemTestCase
 
         $this->containsStringInOutput = ['No hooks configured'];
     }
+
+    /** @test */
+    public function handles_parser_exception_and_exits_with_error_code()
+    {
+        $yamlPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.yml';
+        file_put_contents($yamlPath, "Tools:\n  - phpstan\n  invalid: [not closed\n");
+
+        $this->artisan("status --config=$yamlPath")
+            ->assertExitCode(1);
+    }
 }
