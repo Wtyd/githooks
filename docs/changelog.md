@@ -2,6 +2,33 @@
 
 All notable changes to this project are documented here.
 
+## [3.2.0]
+
+### New Features
+
+#### Output formats and CI integration
+- **Code Climate format ([`--format=codeclimate`](how-to/output-formats.md#code-climate))**: Emits a GitLab-compatible Code Quality report. Writes to `gl-code-quality-report.json` by default; supports `--output=PATH` and `--stdout`.
+- **SARIF format ([`--format=sarif`](how-to/output-formats.md#sarif))**: Emits a SARIF 2.1.0 report for GitHub Code Scanning, Azure DevOps and other static-analysis consumers. Writes to `githooks-results.sarif` by default; supports `--output=PATH` and `--stdout`.
+- **JSON schema v2 ([`--format=json`](how-to/output-formats.md#json-v2))**: Enriched per-job fields (`type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`) plus top-level `version: 2`, `executionMode`, `passed`, `failed`, `skipped` counters. Drop-in consumer for AI tools and CI dashboards.
+- **JUnit `<skipped>` support**: Skipped jobs now emit `<skipped>` elements with a reason attribute, compatible with JUnit report consumers.
+- **stdout/stderr split for structured formats**: Progress (`OK job (Xms) [Y/Z]`, `Done.` lines, colors) routes to stderr; structured payload stays on stdout. Enables `githooks flow qa --format=json > report.json` without contamination.
+- **Interactive parallel dashboard ([`--monitor`](how-to/output-formats.md#interactive-dashboard))**: When running in a TTY with `processes > 1`, shows queue/running/done panes in real time. Falls back to streaming text output in non-TTY environments.
+- **Native CI annotations ([CI/CD Integration](how-to/ci-cd.md#ci-annotations))**: Auto-detects `GITHUB_ACTIONS=true` or `GITLAB_CI` and wraps job output in `::group::`/`::endgroup::` plus `::error file=…,line=…::` annotations (GitHub) or `section_start:`/`section_end:` markers (GitLab). Parses `file.php:LINE` patterns from tool output.
+- **`--no-ci` flag**: Opt out of auto-detection; forces plain output even when CI env vars are present.
+
+#### New native job types
+- **[PHP CS Fixer (`type: php-cs-fixer`)](tools/phpcsfixer.md)**: Native support with `config`, `rules`, `dry-run`, `diff`, `allow-risky`, `using-cache`, `cache-file` keywords. Accelerable.
+- **[Rector (`type: rector`)](tools/rector.md)**: Native support with `config`, `dry-run`, `clear-cache`, `no-progress-bar` keywords. Accelerable.
+
+#### Platform
+- **Windows platform abstraction**: CPU detection on Windows via `NUMBER_OF_PROCESSORS` env var with `wmic` fallback. Cross-platform `stderrRedirect()` helper (`2>/dev/null` on POSIX, `2>nul` on Windows) for internal shell-outs.
+
+#### Developer experience
+- **Enriched `JobResult` and `FlowResult`**: Internal objects now expose `getType()`, `getExitCode()`, `getPaths()`, `isSkipped()`, `getSkipReason()`. Feeds the JSON v2 schema and downstream consumers.
+- **`conf:check` command truncation**: Long generated commands are truncated to 80 chars (with `…`) in the job table to keep the check output readable on narrow terminals.
+
+---
+
 ## [3.1.0]
 
 ### New Features
