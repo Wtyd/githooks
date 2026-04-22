@@ -346,3 +346,26 @@ GitHooks Status
   Legend: synced = installed & configured, missing = configured but not installed, orphan = installed but not configured
 ```
 Esto es porque al destruirse el contenedor la variable core.path se resetea.
+
+### Silenciar el progreso en stderr cuando hay formato estructurado en CI
+
+Hoy, cuando el usuario lanza `githooks flow qa --format=json` en CI, el progreso (`OK job (Xms) [Y/Z]`, `Done.`) sigue saliendo por stderr. El payload estructurado en stdout está limpio, pero muchos runners de CI mezclan stdout + stderr en el log del job, así que el progreso acaba apareciendo igual y el usuario tiene que añadir `2>/dev/null` a mano.
+
+Como ya detectamos CI (`GITHUB_ACTIONS`, `GITLAB_CI`) para las anotaciones nativas, podríamos aprovechar esa detección para silenciar el progreso automáticamente cuando hay `--format=` estructurado + CI detectado. Dos variantes:
+
+1. **Auto-silenciar**: detección CI + formato estructurado → no emitir progreso en stderr. Menos flags, comportamiento "inteligente". Convive con `--no-ci` como opt-out: si el usuario lo pasa, vuelve el progreso.
+2. **Flag explícito**: `--no-progress` (o `--silent`) que el usuario activa cuando quiera. Comportamiento automático solo cuando se pide.
+
+Decisión pendiente: ¿predecible (flag) o inteligente (auto en CI)? Y si el flag tiene que existir igual para casos fuera de CI (scripts, wrappers), la pregunta real es si el auto en CI aporta suficiente por encima del flag.
+
+### Line-wrap en `conf:check` para comandos largos en lugar de truncar con `…`
+
+Hoy `conf:check` trunca a 80 caracteres con `…` los comandos del job table para mantener la tabla legible en terminales estrechos. El trade-off es que si el usuario quiere revisar los argumentos reales de un job (p.ej. si phpcpd está excluyendo el directorio correcto), tiene que ejecutar `githooks job X --dry-run` en otra pestaña.
+
+Alternativas:
+
+1. **Line-wrap en la celda de la tabla**: dividir el comando en varias líneas cuando supere el ancho disponible, sin truncar. Cero pérdida de información, pero complica el renderizado de la tabla (Symfony Table soporta multilínea por celda via `\n`; hay que medir ancho útil y partir por espacios respetando flags agrupados tipo `--flag=value`).
+2. **Flag opcional**: `--full` / `--expand` en `conf:check` que desactive el truncado (bypasea el `truncateCommand`, imprime una línea por job sin tabla cuando superan X caracteres). Comportamiento por defecto queda igual.
+3. **Ambas**: wrap por defecto + flag `--compact` que mantiene el comportamiento actual para scripts que parsean la tabla.
+
+Decisión pendiente: qué balance entre legibilidad por defecto y complejidad de renderizado.
