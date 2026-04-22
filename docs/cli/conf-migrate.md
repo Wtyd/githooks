@@ -12,7 +12,7 @@ githooks conf:migrate [--config=PATH]
 
 - Creates an automatic backup (`.v2.bak`) of the original file.
 - If the source is YAML, converts to PHP and removes the `.yml` file.
-- Converts `script` tool to `custom` job type.
+- Converts `script` tool to [`custom` job type](../tools/custom.md).
 - Drops `usePhpcsConfiguration` (not supported in v3).
 - Generates a v3 file with a `qa` flow containing all the original tools as jobs.
 

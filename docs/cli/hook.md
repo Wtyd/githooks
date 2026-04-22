@@ -8,12 +8,12 @@ Install or remove git hooks.
 githooks hook [options]
 ```
 
-For each event defined in the `hooks` section of the configuration, GitHooks:
+For each event defined in the [`hooks` section of the configuration](../configuration/hooks.md), GitHooks:
 
 1. Creates a `.githooks/<event>` script file.
 2. Runs `git config core.hooksPath .githooks`.
 
-The generated scripts are universal and identical — each one calls `githooks hook:run <event>`, which resolves the event to its configured flows/jobs. The command prefix is taken from `hooks.command` in the config (defaults to `php vendor/bin/githooks`).
+The generated scripts are universal and identical — each one calls `githooks hook:run <event>`, which resolves the event to its configured flows/jobs. The command prefix is taken from [`hooks.command`](../configuration/hooks.md) in the config (defaults to `php vendor/bin/githooks`).
 
 ```bash
 githooks hook                  # Install all configured hooks

@@ -12,14 +12,14 @@ githooks job <name> [options]
 
 | Option | Description |
 |---|---|
-| `--fail-fast` | Forwarded to the flow-preparer infrastructure; for a single-job run it only affects re-stage behaviour on fix jobs. |
-| `--ignore-errors-on-exit` | Return exit code 0 even if the job fails (useful for advisory checks). |
+| `--fail-fast` | Forwarded to the flow-preparer infrastructure; for a single-job run it only affects re-stage behaviour on fix jobs. See [Options: Fail-fast and ignoreErrorsOnExit](../configuration/options.md#fail-fast-and-ignoreerrorsonexit). |
+| `--ignore-errors-on-exit` | Return exit code 0 even if the job fails (useful for advisory checks). See [Options: Fail-fast and ignoreErrorsOnExit](../configuration/options.md#fail-fast-and-ignoreerrorsonexit). |
 | `--dry-run` | Show command without executing. |
-| `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. |
-| `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. |
-| `--fast` | Fast mode — analyze only staged files. |
-| `--fast-branch` | Fast-branch mode — analyze branch diff files. |
-| `--no-ci` | Disable auto-detection of CI annotations. |
+| `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. See [How-To: Output Formats](../how-to/output-formats.md). |
+| `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. See [Writing a report to a file](../how-to/output-formats.md#writing-a-report-to-a-file). |
+| `--fast` | Fast mode — analyze only staged files. See [Execution Modes](../execution-modes.md). |
+| `--fast-branch` | Fast-branch mode — analyze branch diff files. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
+| `--no-ci` | Disable auto-detection of CI annotations. See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--config=PATH` | Path to configuration file. |
 | `-- ARGS...` | Extra arguments passed to the tool. Place after `--` separator. |
 

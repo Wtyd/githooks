@@ -12,17 +12,17 @@ githooks flow <name> [options]
 
 | Option | Description |
 |---|---|
-| `--fail-fast` | Stop on first job failure. Overrides config value. |
-| `--processes=N` | Number of parallel processes. Overrides config value. |
+| `--fail-fast` | Stop on first job failure. Overrides config value. See [Options: Fail-fast and ignoreErrorsOnExit](../configuration/options.md#fail-fast-and-ignoreerrorsonexit). |
+| `--processes=N` | Number of parallel processes. Overrides config value. `N` is a thread budget that is distributed across internally-parallel tools — see [Options: Thread budget](../configuration/options.md#thread-budget). |
 | `--exclude-jobs=a,b` | Comma-separated list of jobs to skip. |
 | `--only-jobs=a,b` | Comma-separated list of jobs to run (others skipped). Cannot combine with `--exclude-jobs`. |
 | `--dry-run` | Show commands without executing. Works with all `--format` options. |
-| `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. |
-| `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. |
-| `--fast` | Fast mode — accelerable jobs analyze only staged files. |
-| `--fast-branch` | Fast-branch mode — analyze files that differ from main branch. |
-| `--monitor` | Show thread usage report after execution. |
-| `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). |
+| `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. See [How-To: Output Formats](../how-to/output-formats.md). |
+| `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. See [Writing a report to a file](../how-to/output-formats.md#writing-a-report-to-a-file). |
+| `--fast` | Fast mode — accelerable jobs analyze only staged files. See [Execution Modes](../execution-modes.md). |
+| `--fast-branch` | Fast-branch mode — analyze files that differ from the main branch. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
+| `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
+| `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--config=PATH` | Path to configuration file. |
 
 ## Examples
