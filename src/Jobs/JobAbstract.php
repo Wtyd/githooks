@@ -47,6 +47,8 @@ abstract class JobAbstract
 
     protected ?ExecutionContext $context = null;
 
+    protected ?int $coresOverride = null;
+
     public function __construct(JobConfiguration $config)
     {
         $this->name = $config->getName();
@@ -58,6 +60,13 @@ abstract class JobAbstract
         unset($this->args['ignoreErrorsOnExit']);
         $this->failFast = (bool) ($this->args['failFast'] ?? false);
         unset($this->args['failFast']);
+        if (array_key_exists('cores', $this->args)) {
+            $cores = $this->args['cores'];
+            if (is_int($cores) && $cores >= 1) {
+                $this->coresOverride = $cores;
+            }
+            unset($this->args['cores']);
+        }
     }
 
     abstract public static function getDefaultExecutable(): string;
@@ -238,6 +247,17 @@ abstract class JobAbstract
     public function getThreadCapability(): ?ThreadCapability
     {
         return null;
+    }
+
+    /**
+     * Explicit cores reservation declared via the job's 'cores' keyword.
+     * When set, the allocator pins this amount in the budget and, if the
+     * capability is controllable, applyThreadLimit() gets called with this
+     * exact value so the tool's native flag matches.
+     */
+    public function getCoresOverride(): ?int
+    {
+        return $this->coresOverride;
     }
 
     /**

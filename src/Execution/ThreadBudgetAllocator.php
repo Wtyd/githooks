@@ -29,6 +29,16 @@ class ThreadBudgetAllocator
         $allocations = [];
 
         foreach ($jobs as $job) {
+            $override = $job->getCoresOverride();
+            if ($override !== null) {
+                // Explicit 'cores: N' — pin the allocation. If the capability is
+                // controllable, FlowExecutor's applyThreadLimit() will propagate
+                // this value to the tool's native flag.
+                $fixedCost += $override;
+                $allocations[$job->getName()] = $override;
+                continue;
+            }
+
             $capability = $job->getThreadCapability();
             if ($capability === null) {
                 // No threading: counts as 1 core
