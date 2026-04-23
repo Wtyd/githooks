@@ -8,6 +8,9 @@ class PreBuildCommand extends Command
 {
     public const DEV_DEPENDENCIES = [
         // 'intonate/tinker-zero', // No way to use build command without tinker
+        'brianium/paratest',
+        'fakerphp/faker',
+        'friendsofphp/php-cs-fixer',
         'mikey179/vfsstream',
         'mockery/mockery',
         'php-mock/php-mock',
@@ -16,8 +19,10 @@ class PreBuildCommand extends Command
         'phpstan/phpstan',
         'phpunit/php-code-coverage',
         'phpunit/phpunit',
+        'rector/rector',
+        'sebastian/phpcpd',
         'squizlabs/php_codesniffer',
-        'fakerphp/faker',
+        'vimeo/psalm',
     ];
 
     protected $signature = 'app:pre-build {phpVersion? : Version of php to use. Default is the current version.}';

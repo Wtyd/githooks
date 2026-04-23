@@ -32,7 +32,9 @@
         "php": ">=7.4"
     },
     "require-dev": {
+        "brianium/paratest": "^6.0 || ^7.0 || ^8.0",
         "fakerphp/faker": "^1.19",
+        "friendsofphp/php-cs-fixer": "^3.0",
         "intonate/tinker-zero": "1.*",
         "laravel-zero/framework": "8.* | 9.* | 10.* | 11.* | 12.*",
         "laravel-zero/phar-updater": "^1.0.6",
@@ -43,6 +45,8 @@
         "phpstan/phpstan": "^1.4 | ^2.0",
         "phpunit/php-code-coverage": "^9.0 | ^10.0",
         "phpunit/phpunit": "^9.0",
+        "rector/rector": "^1.0 || ^2.0",
+        "sebastian/phpcpd": "^6.0",
         "squizlabs/php_codesniffer": "^3.5",
         "symfony/yaml": "^5.0 | 6.*",
         "vimeo/psalm": "^5.0 | ^6.0"
