@@ -116,7 +116,30 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
     // ========================================================================
 
     /** @test */
-    public function progress_goes_to_stderr_while_json_payload_stays_on_stdout()
+    public function progress_is_silent_without_tty_and_json_payload_stays_on_stdout()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
+            ->setV3Jobs([
+                'ok_job' => ['type' => 'custom', 'script' => '/bin/true'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        // stderr is redirected to a file → not a TTY → progress handler is silent
+        // by default. stdout must still carry a clean JSON payload.
+        $stderrPath = self::TESTS_PATH . '/stderr.log';
+        passthru("$this->githooks flow qa --format=json --config=$this->configPath 2>$stderrPath", $exitCode);
+
+        $stdout = $this->getActualOutput();
+        $stderr = (string) file_get_contents($stderrPath);
+
+        $this->assertNotNull(json_decode($stdout, true), 'stdout should be decodable JSON: ' . $stdout);
+        $this->assertSame('', trim($stderr), 'stderr should be silent off a TTY without -v');
+    }
+
+    /** @test */
+    public function verbose_flag_forces_progress_on_stderr_even_without_tty()
     {
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
@@ -127,15 +150,12 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $stderrPath = self::TESTS_PATH . '/stderr.log';
-        passthru("$this->githooks flow qa --format=json --config=$this->configPath 2>$stderrPath", $exitCode);
+        passthru("$this->githooks flow qa --format=json -v --config=$this->configPath 2>$stderrPath", $exitCode);
 
         $stdout = $this->getActualOutput();
         $stderr = (string) file_get_contents($stderrPath);
 
-        // stdout is pure JSON
         $this->assertNotNull(json_decode($stdout, true), 'stdout should be decodable JSON: ' . $stdout);
-
-        // stderr contains the progress lines
         $this->assertStringContainsString('OK', $stderr);
         $this->assertStringContainsString('Done.', $stderr);
     }
