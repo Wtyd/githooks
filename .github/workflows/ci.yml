@@ -1,0 +1,92 @@
+name: CI
+# Unified workflow replacing code-analysis.yml + main-tests.yml.
+#
+# Strategy:
+#   - PHP 7.4 on Linux runs `flow qa` (full QA: phpstan + phpcs + phpmd + phpcpd
+#     + parallel-lint + phpcbf + phpunit + composer-audit). Canonical version.
+#   - PHP 8.1 / 8.5 on Linux only run the tests slice via `flow ci-tests
+#     --exclude-jobs=phpunit-windows` (phpunit main suite + phpunit-git). Static
+#     analysis tools do not depend on the runtime, so no gain from running
+#     them on every PHP version.
+#   - Windows runners (PHP 7.4 / 8.5) run only `job phpunit-windows`.
+#
+# The matrix is driven by a single `cmd` field so the workflow steps stay
+# identical across all rows.
+on:
+  push:
+    branches-ignore: [ rc** ]
+  pull_request:
+    branches-ignore: [ master ]
+
+jobs:
+  ci:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            php: '7.4'
+            label: 'QA + Tests (PHP 7.4)'
+            cmd: 'flow qa'
+          - os: ubuntu-latest
+            php: '8.1'
+            label: 'Tests (PHP 8.1)'
+            cmd: 'flow ci-tests --exclude-jobs=phpunit-windows'
+          - os: ubuntu-latest
+            php: '8.5'
+            label: 'Tests (PHP 8.5)'
+            cmd: 'flow ci-tests --exclude-jobs=phpunit-windows'
+          - os: windows-latest
+            php: '7.4'
+            label: 'Windows Tests (PHP 7.4)'
+            cmd: 'job phpunit-windows'
+          - os: windows-latest
+            php: '8.5'
+            label: 'Windows Tests (PHP 8.5)'
+            cmd: 'job phpunit-windows'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Needed so fast-branch-style diffs (if ever enabled in ci-tests) can
+          # resolve merge-base. Harmless otherwise.
+          fetch-depth: 0
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ':opcache, fileinfo'
+          ini-values: 'post_max_size=256M'
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            tools/tmp/resultCache.php
+            ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.php }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          chmod -R +x tools/*
+          tools/composer install --prefer-dist --no-progress
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run GitHooks
+        run: php githooks ${{ matrix.cmd }} --show-progress
