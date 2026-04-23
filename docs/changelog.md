@@ -39,6 +39,7 @@ The output behaviour now depends on the format and the execution context. The un
 
 #### Other
 - **`conf:check` command truncation**: long generated commands are truncated to 80 chars (with `…`) in the job table to keep the output readable on narrow terminals. `githooks job X --dry-run` still shows the full command.
+- **All supported tools ship as dev dependencies**: `brianium/paratest`, `friendsofphp/php-cs-fixer`, `rector/rector` and `sebastian/phpcpd` are now declared in `require-dev`, and `psalm` is correctly stripped from the `.phar` at build time (it was being embedded by mistake). Running `composer install` in the repo gives every supported tool a binary under `vendor/bin/`, and the distributed `.phar` no longer ships QA tools internally.
 
 ---
 
