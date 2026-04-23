@@ -18,8 +18,9 @@ Un Job declara un `ARGUMENT_MAP` tipado y genera el comando shell via `buildComm
 ```
 1. Clase Job                → src/Jobs/MyToolJob.php
 2. Registro en JobRegistry  → src/Jobs/JobRegistry.php
-3. Tests                    → tests/Unit/Jobs/JobBuildCommandTest.php
-4. Config de QA             → qa/githooks.php + qa/githooks.dist.php
+3. Dev-dependency           → composer.json + PreBuildCommand::DEV_DEPENDENCIES
+4. Tests                    → tests/Unit/Jobs/JobBuildCommandTest.php
+5. Config de QA             → qa/githooks.php + qa/githooks.dist.php
 ```
 
 ## Paso 1: Crear la clase Job
@@ -118,7 +119,64 @@ private const TYPE_MAP = [
 `JobConfiguration::fromArray()` consulta ambos registries: primero `ToolRegistry` (legacy v2) y
 despues `JobRegistry` (v3). Los tipos nuevos no necesitan stubs en `ToolRegistry`.
 
-## Paso 3: Tests
+## Paso 3 (mandatorio): Declarar como dev-dependency
+
+**Toda tool soportada debe estar en `require-dev` de `composer.json` y en
+`PreBuildCommand::DEV_DEPENDENCIES`.** Si falta uno de los dos pasos:
+
+- Sin `require-dev` → la tool no está en `vendor/bin/` tras `composer install`;
+  bloquea desarrollo, tests locales y release tests.
+- Sin entrada en `DEV_DEPENDENCIES` → la tool se embebe en el `.phar` distribuido
+  (aumenta el tamaño, arrastra todas sus dependencias transitivas y puede
+  colisionar con el proyecto destino — es exactamente lo que pasó históricamente
+  con psalm y causó los crashes "Psalm (unknown version) crashed" en release).
+
+### 3.1 Añadir a `composer.json` (require-dev)
+
+El constraint debe cubrir todos los tiers PHP soportados (7.4 y 8.1+). Usa `||`
+para combinar majors si una sola no los cubre:
+
+```json
+"require-dev": {
+    "vendor/mytool": "^1.0 || ^2.0"
+}
+```
+
+Comando rápido (respeta `sort-packages: true`):
+
+```bash
+php7.4 tools/composer require --dev vendor/mytool:"^1.0 || ^2.0"
+```
+
+### 3.2 Añadir a `PreBuildCommand::DEV_DEPENDENCIES`
+
+Fichero: `app/Commands/PreBuildCommand.php`. Orden alfabético:
+
+```php
+public const DEV_DEPENDENCIES = [
+    ...
+    'vendor/mytool',
+    ...
+];
+```
+
+### 3.3 Verificación
+
+```bash
+# La tool debe aparecer en vendor/bin
+ls vendor/bin/mytool
+php7.4 vendor/bin/mytool --version
+
+# Pre-build debe retirarla (no debe quedar en composer.json tras ejecutar)
+php7.4 githooks app:pre-build php7.4
+grep vendor/mytool composer.json    # no debe devolver nada
+
+# Restaurar
+git restore --staged --worktree composer.json
+php7.4 tools/composer update
+```
+
+## Paso 4: Tests
 
 Añadir casos al fichero existente `tests/Unit/Jobs/JobBuildCommandTest.php`:
 
@@ -152,7 +210,7 @@ function mytool_with_custom_executable()
 
 Delegar tests mas completos a la skill `php-test-creator`.
 
-## Paso 4: Configuracion de QA
+## Paso 5: Configuracion de QA
 
 **`qa/githooks.php`** — añadir job a un flow:
 
@@ -178,7 +236,7 @@ Delegar tests mas completos a la skill `php-test-creator`.
 
 **`qa/githooks.dist.php`** — añadir ejemplo comentado con todos los argumentos disponibles.
 
-## Paso 5: Validacion de argumentos en conf:check
+## Paso 6: Validacion de argumentos en conf:check
 
 `conf:check` valida automaticamente los argumentos contra el `ARGUMENT_MAP` del job.
 Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
@@ -190,6 +248,8 @@ Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
 
 ### Ficheros modificados
 - [ ] `src/Jobs/JobRegistry.php` — type añadido a `TYPE_MAP`
+- [ ] `composer.json` — tool añadida a `require-dev` con constraint que cubra los tiers PHP soportados (7.4 y 8.1+)
+- [ ] `app/Commands/PreBuildCommand.php` — package añadido a `DEV_DEPENDENCIES` (orden alfabético)
 - [ ] `tests/Unit/Jobs/JobBuildCommandTest.php` — tests de registry y executable prefix
 - [ ] `tests/Unit/Jobs/MyToolJobTest.php` — tests dedicados de la herramienta (buildCommand, argumentos, isFixApplied, cache, threads, prefix, CLI args)
 - [ ] `tests/Unit/Configuration/JobConfigurationTest.php` — verificar que el tipo nuevo pasa validacion con `fromArray()`
@@ -199,6 +259,8 @@ Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
 ### Verificacion
 - [ ] `buildCommand()` genera el comando esperado
 - [ ] `conf:check` muestra el job con su comando
+- [ ] `vendor/bin/mytool` existe tras `composer update`
+- [ ] Tras `php7.4 githooks app:pre-build php7.4` el `composer.json` resultante ya no contiene la tool en `require-dev`
 - [ ] `php7.4 vendor/bin/phpunit --order-by random` — 0 fallos
 - [ ] `php7.4 githooks flow qa` — QA sin violaciones nuevas
 - [ ] Probar `githooks job MyTool_Src` manualmente
