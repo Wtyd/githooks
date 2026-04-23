@@ -116,6 +116,7 @@ nav:
     - PHP CodeSniffer: tools/phpcs.md
     - PHP Mess Detector: tools/phpmd.md
     - PHPUnit: tools/phpunit.md
+    - Paratest: tools/paratest.md
     - Psalm: tools/psalm.md
     - Parallel Lint: tools/parallel-lint.md
     - PHP Copy Paste Detector: tools/phpcpd.md

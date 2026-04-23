@@ -31,6 +31,11 @@ The output behaviour now depends on the format and the execution context. The un
 #### New native job types
 - **[PHP CS Fixer (`type: php-cs-fixer`)](tools/phpcsfixer.md)**: native support with `config`, `rules`, `dry-run`, `diff`, `allow-risky`, `using-cache`, `cache-file` keywords. Accelerable.
 - **[Rector (`type: rector`)](tools/rector.md)**: native support with `config`, `dry-run`, `clear-cache`, `no-progress-bar` keywords. Accelerable.
+- **[Paratest (`type: paratest`)](tools/paratest.md)**: first-class support for [paratest](https://github.com/paratestphp/paratest), the parallel driver for PHPUnit. Inherits every PHPUnit keyword and adds `processes` (linked to `cores`).
+
+#### Thread budget
+
+- **Per-job `cores` reservation ([`cores`](configuration/jobs.md#reserving-cores-explicitly-cores))**: every job can declare `cores: N` to reserve N slots in the thread budget. Controllable tools (phpcs, psalm, parallel-lint, paratest) automatically receive their native threading flag (`--parallel`, `--threads`, `-j`, `--processes`) with the same value, so you configure parallelism once per job regardless of the tool. Budget-only tools (phpstan, custom jobs) use `cores` to keep the `--monitor` peak accurate without forcing worker count. `conf:check` warns when `cores` coexists with a tool's native threading flag.
 
 #### Other
 - **`conf:check` command truncation**: long generated commands are truncated to 80 chars (with `…`) in the job table to keep the output readable on narrow terminals. `githooks job X --dry-run` still shows the full command.

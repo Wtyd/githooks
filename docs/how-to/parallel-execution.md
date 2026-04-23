@@ -30,9 +30,51 @@ The `processes` value is the **total CPU cores** available, not the number of pa
 | phpcs / phpcbf | `--parallel` |
 | parallel-lint | `-j` |
 | psalm | `--threads` |
+| paratest | `--processes` |
 | phpstan | Worker count from `.neon` config (read-only) |
 
 For example, with `processes: 4` and two threadable jobs (phpcs and parallel-lint), each gets approximately 2 threads.
+
+## Reserve cores explicitly (`cores`)
+
+Sometimes you want a specific job to always get a fixed amount of cores regardless of what the rest of the flow does — typically for paratest workers, phpstan with many workers declared in `.neon`, or custom jobs running their own parallel runner. Declare [`cores: N`](../configuration/jobs.md#reserving-cores-explicitly-cores) on the job:
+
+```php
+'jobs' => [
+    'phpcs_src' => [
+        'type'  => 'phpcs',
+        'paths' => ['src'],
+        'cores' => 2,   // reserves 2 cores + passes --parallel=2 to phpcs
+    ],
+    'psalm_src' => [
+        'type'  => 'psalm',
+        'paths' => ['src'],
+        'cores' => 4,   // reserves 4 cores + passes --threads=4 to psalm
+    ],
+],
+```
+
+The allocator reserves the declared amount and, for tools with controllable threading, passes the right flag (`--parallel`, `--threads`, `-j`, `--processes`) automatically. You don't need to remember each tool's specific option.
+
+## Running paratest inside a flow
+
+[Paratest](https://github.com/paratestphp/paratest) is a parallel driver for PHPUnit. It reuses the same CLI — `--filter`, `--group`, `-c` — and adds `--processes=N` to control worker count. GitHooks ships with a dedicated `type: paratest`:
+
+```php
+'jobs' => [
+    'paratest_all' => [
+        'type'          => 'paratest',
+        'configuration' => 'phpunit.xml',
+        'cores'         => 4,   // reserves 4 cores + passes --processes=4
+    ],
+],
+'flows' => [
+    'options' => ['processes' => 8],
+    'qa'     => ['jobs' => ['phpcs_src', 'phpstan_src', 'paratest_all']],
+],
+```
+
+With `processes: 8` and paratest declaring `cores: 4`, the allocator leaves 4 cores for the remaining jobs in the flow. See [Paratest](../tools/paratest.md) for the full keyword reference.
 
 ## Monitor thread usage
 

@@ -51,6 +51,10 @@ The `processes` option controls the **total CPU cores** available, not just the 
 
 For example, with `processes: 4` and two threadable jobs, each gets approximately 2 threads. Use `githooks flow <name> --monitor` to see the actual thread usage.
 
+### Per-job reservation (`cores`)
+
+A job can opt out of the automatic split by declaring [`cores: N`](jobs.md#reserving-cores-explicitly-cores). The allocator reserves exactly N cores for that job and, when the tool is controllable (phpcs, psalm, parallel-lint, paratest), passes the corresponding flag automatically. Useful to guarantee a specific budget for paratest workers or to pin a phpstan configuration.
+
 See [How-To: Parallel Execution](../how-to/parallel-execution.md) for detailed examples.
 
 ## Fail-fast and ignoreErrorsOnExit

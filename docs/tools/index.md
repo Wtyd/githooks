@@ -10,6 +10,7 @@ GitHooks provides native support for the most common PHP QA tools, plus a `custo
 | [PHP CodeSniffer](phpcs.md) | `phpcs` / `phpcbf` | Yes | `--parallel` flag |
 | [PHP Mess Detector](phpmd.md) | `phpmd` | Yes | No |
 | [PHPUnit](phpunit.md) | `phpunit` | No | No |
+| [Paratest](paratest.md) | `paratest` | No | `--processes` flag |
 | [Psalm](psalm.md) | `psalm` | Yes | `--threads` flag |
 | [Parallel Lint](parallel-lint.md) | `parallel-lint` | Yes | `-j` flag |
 | [PHP Copy Paste Detector](phpcpd.md) | `phpcpd` | No | No |
