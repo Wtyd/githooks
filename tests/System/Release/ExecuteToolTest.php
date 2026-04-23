@@ -89,28 +89,44 @@ class PassingTest extends TestCase
     }
 
     /**
+     * Tools exercised by the "all tools" scenarios. psalm is dropped on
+     * PHP >= 8.5 because psalm 5.26.1 (the highest version resolvable under
+     * laravel-zero 8 / symfony 5) loads Illuminate 8's helpers.php, whose
+     * `callable $callback = null` signatures are promoted from deprecation
+     * to runtime exception by psalm's own ErrorHandler on 8.5. psalm 6 is
+     * blocked by laravel-zero 8 (symfony 5 cap); Illuminate 9+ is blocked
+     * by the same chain. Revisit when laravel-zero is upgraded.
+     *
+     * @return string[]
+     */
+    protected function supportedToolsForCurrentPhp(): array
+    {
+        $tools = ['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'];
+        if (PHP_VERSION_ID >= 80500) {
+            $tools = array_values(array_diff($tools, ['psalm']));
+        }
+        return $tools;
+    }
+
+    /**
      * @test
      * @dataProvider fullExecutionModeProvider
      */
     function it_returns_exit_0_when_executes_all_tools_and_all_pass($executionModeArgument, $executionModeFile)
     {
+        $tools = $this->supportedToolsForCurrentPhp();
         file_put_contents(
             'githooks.php',
-            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'])
+            $this->configurationFileBuilder->setTools($tools)
                 ->setOptions($executionModeFile)
                 ->buildPhp()
         );
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertToolHasBeenExecutedSuccessfully('phpcs');
-        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
-        $this->assertToolHasBeenExecutedSuccessfully('phpunit');
-        $this->assertToolHasBeenExecutedSuccessfully('psalm');
+        foreach ($tools as $tool) {
+            $this->assertToolHasBeenExecutedSuccessfully($tool);
+        }
     }
 
     public function fastExecutionModeProvider()
@@ -133,9 +149,10 @@ class PassingTest extends TestCase
      */
     function it_executes_all_tools_with_fast_execution_mode($executionModeArgument, $executionModeFile)
     {
+        $tools = $this->supportedToolsForCurrentPhp();
         file_put_contents(
             'githooks.php',
-            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'])
+            $this->configurationFileBuilder->setTools($tools)
                 ->setOptions($executionModeFile)
                 ->buildPhp()
         );
@@ -161,7 +178,9 @@ class PassingTest extends TestCase
         $this->assertToolHasFailed('phpcpd'); // No acelerable tool
         $this->assertToolHasBeenExecutedSuccessfully('phpstan');
         $this->assertToolHasBeenExecutedSuccessfully('phpunit'); // No acelerable tool
-        $this->assertToolHasBeenExecutedSuccessfully('psalm');
+        if (in_array('psalm', $tools, true)) {
+            $this->assertToolHasBeenExecutedSuccessfully('psalm');
+        }
     }
 
     /** @test */
@@ -232,22 +251,18 @@ class PassingTest extends TestCase
     /** @test */
     function it_runs_all_tools_in_multipe_processes()
     {
+        $tools = $this->supportedToolsForCurrentPhp();
         file_put_contents(
             'githooks.php',
-            $this->configurationFileBuilder->setTools(['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'])
+            $this->configurationFileBuilder->setTools($tools)
                 ->buildPhp()
         );
         passthru("$this->githooks tool all --processes=2", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertToolHasBeenExecutedSuccessfully('phpcs');
-        $this->assertToolHasBeenExecutedSuccessfully('phpcbf');
-        $this->assertToolHasBeenExecutedSuccessfully('parallel-lint');
-        $this->assertToolHasBeenExecutedSuccessfully('phpmd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpcpd');
-        $this->assertToolHasBeenExecutedSuccessfully('phpstan');
-        $this->assertToolHasBeenExecutedSuccessfully('phpunit');
-        $this->assertToolHasBeenExecutedSuccessfully('psalm');
+        foreach ($tools as $tool) {
+            $this->assertToolHasBeenExecutedSuccessfully($tool);
+        }
     }
 
     /** @test */
