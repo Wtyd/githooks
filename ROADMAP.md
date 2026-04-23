@@ -7,6 +7,7 @@
 | **v3.0** | Release               | Versión final publicada. Arquitectura hooks/flows/jobs, modos fast/fast-branch, conf:init interactivo, output JSON/JUnit, thread budgeting. |
 | **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
 | **v3.2** | Herramientas y Output ✔ | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
+| **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI |
 | **v3.3** | Madurez               | Wizard de instalación, validación commit messages, monitor de rendimiento, flag `--files`, receta config compartida Composer, prohibir espacios en nombres de job, comando `flows` multi-flow, estandarizar claves a kebab-case |
 
 ---
@@ -207,6 +208,99 @@ Batería de tests que verifique que la funcionalidad core es correcta en Windows
 
 ---
 
+## Fase 0 — Consolidación QA pre-3.3.0
+
+Objetivo: cerrar deuda identificada durante 3.2.0 y reestructurar la infraestructura QA del repo para explotar las capacidades que ofrece la propia herramienta (dogfooding). Tras esta fase, v3.3.0 arranca sobre una base limpia.
+
+### Orden y dependencias
+
+```
+      ┌──── 0.4 (colisión -v) ────┐
+      │     decide el flag final  │
+      ▼                           ▼
+  0.1 (CI + renames + SARIF)   0.6 (silenciar stderr en CI)
+      │
+      ▼
+  0.5 (smoke build 7.4 en release.yml)
+
+  0.2 (dashboard TTY) ─┐
+                       │── independientes, en paralelo
+  0.3 (contador n/m) ──┘
+```
+
+### 0.1 Reestructurar CI aprovechando flows + herencia + renombrado + contrato SARIF
+
+El CI actual tiene dos workflows que se solapan (`code-analysis.yml` ejecuta `flow qa` — que ya incluye Phpunit — y `main-tests.yml` vuelve a ejecutar Phpunit en PHP 7.4). Se explota la propia herramienta (GitHooks) como fuente única de verdad: lo que corre el CI queda definido en `qa/githooks.php`, el workflow es un thin wrapper.
+
+**Subtareas:**
+
+1. **Renombrar jobs de `qa/githooks.php` a kebab-case** (anticipa parte del ítem 6 de v3.3). El resto (`qa/githooks.dist.php`, `.yml`) se ajusta por coherencia con la convención recomendada en docs, no por obligación técnica.
+
+   | Antes | Después |
+   |---|---|
+   | `Phpstan Src` | `phpstan-src` |
+   | `Phpmd Src` | `phpmd-src` |
+   | `Phpcpd`, `Phpcs`, `Phpcbf`, `Phpunit` | `phpcpd`, `phpcs`, `phpcbf`, `phpunit` |
+   | `Composer Audit/Update/Downgrade` | `composer-audit/update/downgrade` |
+   | `Coverage`, `Infection`, `PhpMetrics` | `coverage`, `infection`, `phpmetrics` |
+   | `psalm_src` | `psalm-src` |
+
+2. **Añadir `phpunit-git` y `phpunit-windows`** via `extends: phpunit`, sobrescribiendo sólo el argumento `group`. `phpunit.xml` ya excluye por defecto los grupos `release`, `git` y `windows`, así que el `phpunit` base es automáticamente la "suite principal".
+
+3. **Crear flow `ci-tests`** con los tres jobs de phpunit. Fuente única para la batería de tests de CI.
+
+4. **Fusionar `code-analysis.yml` + `main-tests.yml` → `ci.yml`** con matriz única `{os, php, exclude}`:
+
+   ```yaml
+   matrix:
+     include:
+       - { os: ubuntu-latest,  php: '7.4', mode: 'full-qa' }      # flow qa (incluye phpunit)
+       - { os: ubuntu-latest,  php: '8.1', mode: 'tests-only' }   # flow ci-tests --exclude-jobs=phpunit-windows
+       - { os: ubuntu-latest,  php: '8.5', mode: 'tests-only' }
+       - { os: windows-latest, php: '7.4', mode: 'windows-only' } # job phpunit-windows
+       - { os: windows-latest, php: '8.5', mode: 'windows-only' }
+   ```
+
+   Nota: la matriz unificada **no acelera el setup** (cada entrada sigue siendo un runner independiente con su propio checkout/composer install), pero elimina la duplicación de Phpunit en 7.4 (ahorro ~1 runner-minute) y deja una fuente de verdad única.
+
+5. **Workflow `sarif-contract.yml` on-demand** con triggers `workflow_dispatch` únicamente (opcionalmente añadir `schedule` trimestral en el futuro como canario de drift). Dos jobs internos:
+   - `verify`: ejecuta el flow contra fixture con violaciones controladas, valida el SARIF contra schema 2.1.0 oficial descargado en vivo.
+   - `refresh`: produce el SARIF como artefacto descargable para regenerar el golden file cuando el formato cambie legítimamente.
+
+6. **Fixture de violaciones controladas** en `tests/fixtures/sarif-broken-code/` (ficheros con errores intencionales: variables sin usar, complexity alta, etc.) + config dedicada `qa/githooks.sarif-check.php` que apunta sólo a ese directorio. El QA real del proyecto no se contamina.
+
+7. **Test unitario `SarifResultFormatterSchemaTest`** con dos aserciones nuevas (complementan los 12 unit tests que ya existen en `SarifResultFormatterTest`):
+   - Validación contra schema SARIF 2.1.0 oficial (fixture local en `tests/fixtures/sarif-schema-2.1.0.json`).
+   - Golden file de regresión con violaciones reales.
+
+**Por qué no va al workflow `ci.yml` el upload-sarif permanente:** en este repo el QA pasa siempre, el SARIF va vacío. Añadir el step con `security-events: write` y dependencia en `codeql-action` sin valor real es ceremonia. El ejemplo para consumidores va en `docs/` (skill `docs` en otra tarea).
+
+### 0.2 Tests automatizados del dashboard TTY paralelo
+
+El flujo `flow qa --processes=N` en terminal interactivo (dashboard con ⏺/⏳/✓/✗ y timers en vivo) se valida hoy manualmente con la skill `qa-tester`. Hay que definir si se automatiza vía `expect`/pty, un harness PHP que alimente un stream fake-TTY, o se acepta como verificación manual documentada. La parte no-TTY (append-only) ya está cubierta por los release tests.
+
+### 0.3 Release test del contador `[n/m]` con flow mixto skip/run
+
+El contador del `ProgressOutputHandler` tiene cobertura unitaria, pero no hay test `@group release` que combine jobs ejecutados y jobs saltados (fast-mode sin staged files, fail-fast, hooks condicionales) en el mismo flow para confirmar que `[1/3]`, `[2/3]`, `[3/3]` se emiten correctamente aunque algunos sean skip.
+
+### 0.4 Resolver colisión de `-v` (progreso vs `--verbose` Symfony)
+
+El `--verbose` de Symfony Console se está usando para forzar progreso en `flow`/`job`. Si un comando futuro usa `$this->info()` o `$this->line()` condicionado a `OutputInterface::isVerbose()`, el mismo flag tendrá dos significados. Auditar los comandos actuales y decidir si el override de progreso debe moverse a un flag dedicado (`--progress` / `--show-progress`) antes de que surja el conflicto.
+
+Se ejecuta antes de 0.1 porque condiciona el diseño del nuevo `ci.yml`: si el override se mueve a otro flag, el workflow adopta el flag final desde el primer momento y no hay que rehacerlo.
+
+### 0.5 Smoke test de `builds/php7.4/` en CI release
+
+El rebuild del tier PHP 7.4 falla localmente por incompatibilidades de dependencias dev. El CI lo maneja porque instala el tier correcto con `php7.4 tools/composer update` antes del `app:build`, pero no hay un smoke test explícito que descargue el artefacto y confirme que el `.phar` de `builds/php7.4/` arranca en PHP 7.4 y 8.0. Añadir un job mínimo al pipeline de release.
+
+### 0.6 Silenciar progreso en stderr con `--format=` estructurado en CI
+
+Hoy, cuando el usuario lanza `githooks flow qa --format=json` en CI, el progreso (`OK job (Xms) [Y/Z]`, `Done.`) sigue saliendo por stderr. El payload estructurado en stdout está limpio, pero muchos runners de CI mezclan stdout + stderr en el log del job, así que el progreso acaba apareciendo igual y el usuario tiene que añadir `2>/dev/null` a mano.
+
+Como ya detectamos CI (`GITHUB_ACTIONS`, `GITLAB_CI`) para las anotaciones nativas, podemos aprovechar esa detección para silenciar el progreso automáticamente cuando hay `--format=` estructurado + CI detectado. Decisión pendiente en la planificación de la subtarea: (a) auto-silenciar en CI con formato estructurado, o (b) flag explícito `--no-progress`.
+
+---
+
 ## v3.3 — Madurez
 
 Objetivo: pulir funcionalidades y diferenciar frente a la competencia.
@@ -347,16 +441,9 @@ GitHooks Status
 ```
 Esto es porque al destruirse el contenedor la variable core.path se resetea.
 
-### Silenciar el progreso en stderr cuando hay formato estructurado en CI
+### ~~Silenciar el progreso en stderr cuando hay formato estructurado en CI~~
 
-Hoy, cuando el usuario lanza `githooks flow qa --format=json` en CI, el progreso (`OK job (Xms) [Y/Z]`, `Done.`) sigue saliendo por stderr. El payload estructurado en stdout está limpio, pero muchos runners de CI mezclan stdout + stderr en el log del job, así que el progreso acaba apareciendo igual y el usuario tiene que añadir `2>/dev/null` a mano.
-
-Como ya detectamos CI (`GITHUB_ACTIONS`, `GITLAB_CI`) para las anotaciones nativas, podríamos aprovechar esa detección para silenciar el progreso automáticamente cuando hay `--format=` estructurado + CI detectado. Dos variantes:
-
-1. **Auto-silenciar**: detección CI + formato estructurado → no emitir progreso en stderr. Menos flags, comportamiento "inteligente". Convive con `--no-ci` como opt-out: si el usuario lo pasa, vuelve el progreso.
-2. **Flag explícito**: `--no-progress` (o `--silent`) que el usuario activa cuando quiera. Comportamiento automático solo cuando se pide.
-
-Decisión pendiente: ¿predecible (flag) o inteligente (auto en CI)? Y si el flag tiene que existir igual para casos fuera de CI (scripts, wrappers), la pregunta real es si el auto en CI aporta suficiente por encima del flag.
+Movido a **Fase 0, ítem 0.6**.
 
 ### Line-wrap en `conf:check` para comandos largos en lugar de truncar con `…`
 
