@@ -12,27 +12,61 @@ description: >
 
 ## Cómo ejecutar las herramientas
 
-Las herramientas QA se ejecutan a través de GitHooks usando la configuración de `qa/githooks.php`:
+Las herramientas QA se ejecutan a través de GitHooks usando la configuración de `qa/githooks.php`. **Siempre con `--format=json 2>/dev/null`** para poder parsear la respuesta y extraer los jobs fallidos sin leer bloques ANSI:
 
 ```bash
 # Flow completo (todas las herramientas)
-php7.4 githooks flow qa
+php7.4 githooks flow qa --format=json
 
 # Job individual
-php7.4 githooks job "Phpstan Src"
-php7.4 githooks job "Phpmd Src"
-php7.4 githooks job "Phpcs"
-php7.4 githooks job "Phpcbf"
-php7.4 githooks job "Phpcpd"
-php7.4 githooks job "Parallel-lint"
-php7.4 githooks job "Phpunit"
-php7.4 githooks job "Composer Audit"
+php7.4 githooks job "Phpstan Src" --format=json
+php7.4 githooks job "Phpmd Src" --format=json
+php7.4 githooks job "Phpcs" --format=json
+php7.4 githooks job "Phpcbf" --format=json
+php7.4 githooks job "Phpcpd" --format=json
+php7.4 githooks job "Parallel-lint" --format=json
+php7.4 githooks job "Phpunit" --format=json
+php7.4 githooks job "Composer Audit" --format=json
 
 # Tests
 php7.4 vendor/bin/phpunit --order-by random
 ```
 
 **NUNCA ejecutar las herramientas directamente** (ej: `vendor/bin/phpstan`). Siempre usar `githooks flow` o `githooks job` para que se aplique la configuración del proyecto.
+
+### Parsear la respuesta JSON
+
+Para extraer solo los jobs que han fallado y su causa:
+
+```bash
+php7.4 githooks flow qa --format=json | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+print(f'{d[\"passed\"]}/{d[\"passed\"]+d[\"failed\"]} passed, {d[\"skipped\"]} skipped')
+for j in d['jobs']:
+    if not j['success'] and not j.get('skipped'):
+        print(f'KO {j[\"name\"]} ({j[\"type\"]}): exitCode={j[\"exitCode\"]}')
+        print(j['output'][:400])"
+```
+
+El campo `output` contiene el stdout del tool (sin ANSI) — suficiente para localizar la violación sin necesidad de re-ejecutar en modo texto.
+
+### Pasar argumentos al tool (ej. `--filter` en phpunit)
+
+`githooks job` acepta args extra tras el separador POSIX `--`. **No lanzar `vendor/bin/phpunit` directamente**; usar el job con `--` para preservar la config del proyecto (`--log-junit`, `--colors`, etc.):
+
+```bash
+# Filtrar un test concreto
+php7.4 githooks job "Phpunit" --format=json -- --filter=FooTest
+
+# Por grupo
+php7.4 githooks job "Phpunit" --format=json -- --group=slow
+
+# Combinado
+php7.4 githooks job "Phpunit" --format=json -- --filter=Bar --stop-on-failure
+```
+
+Todo lo que va después de `--` se concatena al comando generado. Vale también para `--group`, `--exclude-group`, `--stop-on-failure`, `--testdox`, etc. No existe en `githooks flow` (cada tool del flow tiene flags distintos).
 
 Los nombres de los jobs son los definidos en `qa/githooks.php`. Son case-sensitive y pueden tener espacios.
 

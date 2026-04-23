@@ -261,9 +261,9 @@ Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
 - [ ] `conf:check` muestra el job con su comando
 - [ ] `vendor/bin/mytool` existe tras `composer update`
 - [ ] Tras `php7.4 githooks app:pre-build php7.4` el `composer.json` resultante ya no contiene la tool en `require-dev`
-- [ ] `php7.4 vendor/bin/phpunit --order-by random` — 0 fallos
-- [ ] `php7.4 githooks flow qa` — QA sin violaciones nuevas
-- [ ] Probar `githooks job MyTool_Src` manualmente
+- [ ] `php7.4 githooks job "Phpunit" --format=json -- --order-by=random` — 0 fallos
+- [ ] `php7.4 githooks flow qa --format=json` — QA sin violaciones nuevas
+- [ ] Probar `php7.4 githooks job MyTool_Src --format=json` manualmente
 
 ## Contexto legacy
 

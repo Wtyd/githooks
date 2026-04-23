@@ -466,9 +466,18 @@ Leer la referencia antes de escribir el primer test del tipo correspondiente.
 - [ ] `applyThreadLimit()` modifica el argumento correcto
 
 ### Ejecución final (OBLIGATORIO)
-- [ ] `php7.4 vendor/bin/phpunit --order-by random` — 0 fallos
-- [ ] `php7.4 githooks flow qa` — QA completo sin violaciones nuevas
+- [ ] `php7.4 githooks job "Phpunit" --format=json -- --order-by=random` — 0 fallos
+- [ ] `php7.4 githooks flow qa --format=json` — QA completo sin violaciones nuevas
 - [ ] Skill `qa-tester` sobre los comandos tocados
+
+**Iterar sobre un test concreto** durante desarrollo (en lugar de correr la suite entera):
+
+```bash
+php7.4 githooks job "Phpunit" --format=json -- --filter=MyNewFeatureTest
+php7.4 githooks job "Phpunit" --format=json -- --filter='MyClassTest::method_x'
+```
+
+El separador `--` pasa los args literales a phpunit. Parsear la respuesta JSON para ver qué falló sin leer bloques ANSI.
 
 ## Contexto legacy
 

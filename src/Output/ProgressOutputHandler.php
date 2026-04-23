@@ -5,22 +5,30 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Output;
 
 /**
- * Progress output on stderr for structured formats (json, junit).
+ * Progress output on stderr for structured formats (json, junit, codeclimate, sarif).
  *
  * All progress goes to stderr so stdout stays clean for structured data.
- * Usage: githooks flow qa --format=json 2>/dev/null → clean JSON on stdout.
+ * The handler is silent when the stream is not a TTY (pipe, CI, agent) unless
+ * force-enabled — consumers parsing stdout get clean output without `2>/dev/null`.
+ * Pass `$forceEnabled = true` (wired to `-v` / verbose in FormatsOutput) to emit
+ * progress regardless of TTY detection.
  */
 class ProgressOutputHandler implements OutputHandler
 {
     /** @var resource */
     private $stream;
 
+    private bool $enabled;
+
     private int $total = 0;
 
     private int $completed = 0;
 
-    /** @param resource $stream Defaults to STDERR */
-    public function __construct($stream = null)
+    /**
+     * @param resource $stream Defaults to STDERR
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) forceEnabled is a configuration toggle, not a branching flag
+     */
+    public function __construct($stream = null, bool $forceEnabled = false)
     {
         if ($stream !== null) {
             $this->stream = $stream;
@@ -31,6 +39,8 @@ class ProgressOutputHandler implements OutputHandler
             $fallback = fopen('php://stderr', 'w');
             $this->stream = $fallback;
         }
+
+        $this->enabled = $forceEnabled || stream_isatty($this->stream);
     }
 
     public function onFlowStart(int $totalJobs): void
@@ -78,6 +88,9 @@ class ProgressOutputHandler implements OutputHandler
 
     private function write(string $message): void
     {
+        if (!$this->enabled) {
+            return;
+        }
         fwrite($this->stream, $message . "\n");
     }
 }

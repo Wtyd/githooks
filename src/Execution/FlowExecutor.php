@@ -114,11 +114,11 @@ class FlowExecutor
             }
         }
 
-        $this->outputHandler->onFlowStart(count($jobs));
-
         if ($dryRun) {
             return $this->executeDryRun($plan->getFlowName(), $jobs, $plan->getExecutionMode());
         }
+
+        $this->outputHandler->onFlowStart(count($jobs));
 
         if ($maxProcesses <= 1 || count($jobs) <= 1) {
             $results = $this->executeSequential($jobs, $failFast);
@@ -169,7 +169,6 @@ class FlowExecutor
                 $job->getConfiguredPaths()
             );
         }
-        $this->outputHandler->flush();
         return new FlowResult($flowName, $results, '0ms', 0, 0, $executionMode);
     }
 

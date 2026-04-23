@@ -58,7 +58,11 @@ class FlowExecutorTest extends TestCase
         $handler = $this->createMock(OutputHandler::class);
         $handler->expects($this->exactly(2))
             ->method('onJobDryRun');
-        $handler->expects($this->once())->method('flush');
+        // Dry-run emits no progress events: onFlowStart/flush are only meaningful
+        // when real execution measures progress. Calling them would make
+        // ProgressOutputHandler emit a bogus "Done. 0/N completed." on stderr.
+        $handler->expects($this->never())->method('onFlowStart');
+        $handler->expects($this->never())->method('flush');
 
         $executor = new FlowExecutor($handler);
 

@@ -95,8 +95,8 @@ php7.4 vendor/bin/phpunit --group git             # Tests de git (excluidos por 
 php7.4 vendor/bin/phpunit --group release         # Tests de release (requieren .phar)
 
 # QA (v3 — usa qa/githooks.php con formato hooks/flows/jobs)
-php7.4 githooks flow qa                           # Flow completo de QA
-php7.4 githooks job phpstan_src                   # Job individual
+php7.4 githooks flow qa --format=json       # Flow completo de QA
+php7.4 githooks job phpstan_src --format=json  # Job individual
 
 # Build
 php7.4 githooks app:pre-build php
@@ -104,6 +104,45 @@ php7.4 githooks app:build
 ```
 
 Grupos de test excluidos por defecto: `@group release`, `@group git`, `@group windows`.
+
+### Invocación por Claude — siempre `--format=json`
+
+**Regla obligatoria**: cuando Claude ejecuta `githooks flow`, `githooks job`, `githooks conf:check`, etc. como parte de una tarea (no para probar el output humano), usar **siempre** `--format=json` y parsear la respuesta.
+
+Razones:
+- **stdout limpio y parseable** — sin ANSI, sin barras de progreso, sin mensajes `⏩` mezclados.
+- **stderr silencioso sin TTY** — el progreso solo aparece cuando hay un terminal interactivo o con `-v`. Ejecutado desde Claude, CI o un pipe, stderr está vacío por defecto. No hace falta `2>/dev/null`.
+- **Output determinista** — estructura fija `{version, flow, success, totalTime, executionMode, passed, failed, skipped, jobs[{name, type, success, exitCode, output, command, paths, skipped, skipReason}]}`.
+- **Extracción directa** — filtrar jobs fallidos (`jq '.jobs[] | select(.success == false)'`) en lugar de parsear bloques coloreados.
+
+Ejemplo idiomático:
+
+```bash
+php7.4 githooks flow qa --format=json | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+print(f'{d[\"passed\"]}/{d[\"passed\"]+d[\"failed\"]} passed, {d[\"skipped\"]} skipped')
+for j in d['jobs']:
+    if not j['success'] and not j.get('skipped'):
+        print(f'  KO {j[\"name\"]} ({j[\"type\"]}): exitCode={j[\"exitCode\"]}')"
+```
+
+**Forzar progreso en CI o pipelines largos**: añadir `-v` (verbose) — el handler emite `OK/KO jobname [n/m]` en stderr aunque no haya TTY. stdout sigue siendo JSON limpio.
+
+**Excepción**: la skill `qa-tester` ejecuta los comandos sin `--format=json` porque su cometido es precisamente validar el output humano (colores, progreso, dashboard TTY).
+
+**Pasar args al tool subyacente**: `githooks job` acepta el separador POSIX `--`; todo lo que va después se concatena al comando generado. Usar esto en lugar de invocar `vendor/bin/<tool>` directamente para iterar sobre un subconjunto:
+
+```bash
+# Correcto — respeta config del proyecto (--log-junit, --colors)
+php7.4 githooks job "Phpunit" --format=json -- --filter=MyTest
+php7.4 githooks job "Phpunit" --format=json -- --group=slow --stop-on-failure
+
+# Evitar — rompe la config
+php7.4 vendor/bin/phpunit --filter=MyTest
+```
+
+`githooks flow` **no** soporta `--` (no tiene sentido aplicar args específicos a todos los jobs del flow).
 
 ## Arquitectura (orientación)
 
