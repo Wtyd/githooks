@@ -40,6 +40,13 @@ return [
                 'composer-downgrade',
             ],
         ],
+        'ci-tests' => [
+            'jobs' => [
+                'phpunit',
+                'phpunit-git',
+                'phpunit-windows',
+            ],
+        ],
     ],
 
     'jobs' => [
@@ -94,6 +101,14 @@ return [
             'executablePath' => 'vendor/bin/phpunit',
             'log-junit' => 'junit.xml',
             'otherArguments' => '--colors=always',
+        ],
+        'phpunit-git' => [
+            'extends' => 'phpunit',
+            'group' => 'git',
+        ],
+        'phpunit-windows' => [
+            'extends' => 'phpunit',
+            'group' => 'windows',
         ],
         'psalm-src' => [
             'type' => 'psalm',
