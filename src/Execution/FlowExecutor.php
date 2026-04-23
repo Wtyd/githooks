@@ -73,21 +73,28 @@ class FlowExecutor
             }
         }
 
-        $this->outputHandler->onFlowStart(count($jobs));
-
-        if ($dryRun) {
-            return $this->executeDryRun($plan->getFlowName(), $jobs);
-        }
-
-        // Thread budget: distribute cores among jobs
+        // Thread budget: distribute cores among jobs. Runs before dry-run so the
+        // commands printed reflect the allocations (cores override + reparto).
         $this->peakEstimatedThreads = 0;
         $this->threadAllocations = [];
+
+        // Explicit `cores: N` overrides always apply, regardless of parallel mode.
+        foreach ($jobs as $job) {
+            $override = $job->getCoresOverride();
+            if ($override !== null) {
+                $job->applyThreadLimit($override);
+                $this->threadAllocations[$job->getName()] = $override;
+            }
+        }
 
         if ($maxProcesses > 1 && count($jobs) > 1) {
             $allocator = new ThreadBudgetAllocator();
             $budgetPlan = $allocator->allocate($maxProcesses, $jobs);
 
             foreach ($jobs as $job) {
+                if (isset($this->threadAllocations[$job->getName()])) {
+                    continue;
+                }
                 $allocation = $budgetPlan->getAllocation($job->getName());
                 if ($allocation !== null) {
                     $job->applyThreadLimit($allocation);
@@ -97,11 +104,20 @@ class FlowExecutor
 
             $maxProcesses = $budgetPlan->getMaxParallelJobs();
         } else {
-            // Sequential: each job uses its capability default or 1
+            // Sequential: each job uses its capability default or 1 (unless overridden).
             foreach ($jobs as $job) {
+                if (isset($this->threadAllocations[$job->getName()])) {
+                    continue;
+                }
                 $cap = $job->getThreadCapability();
                 $this->threadAllocations[$job->getName()] = $cap !== null ? $cap->getDefaultThreads() : 1;
             }
+        }
+
+        $this->outputHandler->onFlowStart(count($jobs));
+
+        if ($dryRun) {
+            return $this->executeDryRun($plan->getFlowName(), $jobs);
         }
 
         if ($maxProcesses <= 1 || count($jobs) <= 1) {

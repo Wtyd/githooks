@@ -12,6 +12,7 @@ use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Jobs\CustomJob;
+use Wtyd\GitHooks\Jobs\ParatestJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
@@ -580,5 +581,77 @@ class FlowExecutorTest extends TestCase
         $this->assertNotEmpty(array_filter($spy->outputs, function (array $entry): bool {
             return !$entry['isStderr'];
         }));
+    }
+
+    // ========================================================================
+    // cores: N override propagation
+    // ========================================================================
+
+    /** @test */
+    public function cores_override_is_applied_to_controllable_job_in_dry_run()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $phpcs = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'executablePath' => 'vendor/bin/phpcs',
+            'paths'          => ['src'],
+            'cores'          => 2,
+        ]));
+        $plan = new FlowPlan('qa', [$phpcs], new OptionsConfiguration(false, 1));
+
+        $result = $executor->execute($plan, true);
+
+        $this->assertTrue($result->isSuccess());
+        $commands = array_map(function ($jr) {
+            return $jr->getCommand();
+        }, $result->getJobResults());
+        $this->assertStringContainsString('--parallel=2', $commands[0]);
+    }
+
+    /** @test */
+    public function cores_override_is_applied_to_paratest_in_dry_run()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $paratest = new ParatestJob(new JobConfiguration('paratest_all', 'paratest', [
+            'executablePath' => 'vendor/bin/paratest',
+            'configuration'  => 'phpunit.xml',
+            'cores'          => 4,
+        ]));
+        $plan = new FlowPlan('qa', [$paratest], new OptionsConfiguration(false, 1));
+
+        $result = $executor->execute($plan, true);
+
+        $this->assertTrue($result->isSuccess());
+        $commands = array_map(function ($jr) {
+            return $jr->getCommand();
+        }, $result->getJobResults());
+        $this->assertStringContainsString('--processes=4', $commands[0]);
+    }
+
+    /** @test */
+    public function cores_override_wins_over_reparto_in_parallel_mode()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        // Without cores, the reparto would split the budget among phpcs and paratest.
+        // With cores declared, each job gets its own fixed amount.
+        $phpcs = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'executablePath' => 'vendor/bin/phpcs',
+            'paths'          => ['src'],
+            'cores'          => 2,
+        ]));
+        $paratest = new ParatestJob(new JobConfiguration('paratest_all', 'paratest', [
+            'executablePath' => 'vendor/bin/paratest',
+            'configuration'  => 'phpunit.xml',
+            'cores'          => 4,
+        ]));
+        $plan = new FlowPlan('qa', [$phpcs, $paratest], new OptionsConfiguration(false, 8));
+
+        $result = $executor->execute($plan, true);
+
+        $jobResults = $result->getJobResults();
+        $this->assertStringContainsString('--parallel=2', $jobResults[0]->getCommand());
+        $this->assertStringContainsString('--processes=4', $jobResults[1]->getCommand());
     }
 }
