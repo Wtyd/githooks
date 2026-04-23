@@ -135,20 +135,15 @@ class FlowCommand extends Command
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
-            $format = strval($this->option('format'));
-            $isStructured = in_array($format, ['json', 'junit', 'codeclimate', 'sarif'], true);
-
             foreach ($config->getValidation()->getWarnings() as $warning) {
+                // Skipped-job warnings are already surfaced by the output handler
+                // (StreamingText / Dashboard / Progress emit an onJobSkipped event
+                // with the reason). Emitting them here again would duplicate the
+                // notice in text mode and leak into stdout for structured formats.
                 if (strpos($warning, 'skipped') !== false) {
-                    $line = "  \e[43m\e[30m⏩ $warning\033[0m\n";
-                    if ($isStructured) {
-                        fwrite(STDERR, $line);
-                    } else {
-                        echo $line;
-                    }
-                } else {
-                    $this->warn($warning);
+                    continue;
                 }
+                $this->warn($warning);
             }
 
             $this->renderFormattedResult($result);

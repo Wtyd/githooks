@@ -348,7 +348,7 @@ class FlowCommandTest extends SystemTestCase
     }
 
     /** @test */
-    public function fast_with_skipped_jobs_keeps_notice_in_text_format()
+    public function fast_with_skipped_jobs_surfaces_the_notice_via_output_handler()
     {
         $this->configurationFileBuilder
             ->enableV3Mode()
@@ -363,9 +363,11 @@ class FlowCommandTest extends SystemTestCase
             $fileUtils->setModifiedfiles(['tests/FooTest.php']);
         }
 
-        // No --format flag → default text → the human banner must still be visible
+        // Text format: the streaming handler emits `⏩ jobname (reason)`, which is
+        // enough feedback — the command must not duplicate it via its own echo.
         $this->artisan("flow qa --fast --config=$this->configPath")
-            ->containsStringInOutput('was skipped')
+            ->containsStringInOutput('⏩ phpstan_src')
+            ->containsStringInOutput('no staged files')
             ->assertExitCode(0);
     }
 }
