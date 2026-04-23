@@ -115,6 +115,71 @@ class CodeClimateResultFormatterTest extends TestCase
     }
 
     /** @test */
+    function it_relativizes_absolute_paths_within_cwd()
+    {
+        $cwd = getcwd();
+        $absolutePath = $cwd . '/src/errors/SyntaxError.php';
+
+        $phpstanStdout = json_encode([
+            'files' => [
+                $absolutePath => [
+                    'messages' => [['message' => 'Boom', 'line' => 7]],
+                ],
+            ],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', false, '', '1s', false, null, 'phpstan', 1, [], false, null, $phpstanStdout),
+        ], '1s');
+
+        $data = json_decode((new CodeClimateResultFormatter())->format($result), true);
+
+        $this->assertSame('src/errors/SyntaxError.php', $data[0]['location']['path']);
+    }
+
+    /** @test */
+    function it_keeps_paths_outside_cwd_unchanged()
+    {
+        $outsidePath = '/tmp/out-of-project/File.php';
+
+        $phpstanStdout = json_encode([
+            'files' => [
+                $outsidePath => [
+                    'messages' => [['message' => 'Boom', 'line' => 1]],
+                ],
+            ],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', false, '', '1s', false, null, 'phpstan', 1, [], false, null, $phpstanStdout),
+        ], '1s');
+
+        $data = json_decode((new CodeClimateResultFormatter())->format($result), true);
+
+        $this->assertSame($outsidePath, $data[0]['location']['path']);
+    }
+
+    /** @test */
+    function it_keeps_already_relative_paths_unchanged()
+    {
+        $phpstanStdout = json_encode([
+            'files' => [
+                'src/Relative.php' => [
+                    'messages' => [['message' => 'Boom', 'line' => 1]],
+                ],
+            ],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', false, '', '1s', false, null, 'phpstan', 1, [], false, null, $phpstanStdout),
+        ], '1s');
+
+        $data = json_decode((new CodeClimateResultFormatter())->format($result), true);
+
+        $this->assertSame('src/Relative.php', $data[0]['location']['path']);
+    }
+
+    /** @test */
     function it_maps_severities_correctly()
     {
         // PHPCS produces both errors and warnings

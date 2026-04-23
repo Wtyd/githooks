@@ -24,6 +24,8 @@ class FlowPlan
     /** @var array<string, array{type: string, reason: string, paths: string[]}> */
     private array $skippedJobs = [];
 
+    private string $executionMode;
+
     /**
      * @param JobAbstract[] $jobs
      * @param array<string, array{type: string, reason: string, paths: string[]}> $skippedJobs
@@ -33,13 +35,15 @@ class FlowPlan
         array $jobs,
         OptionsConfiguration $options,
         ?ExecutionContext $context = null,
-        array $skippedJobs = []
+        array $skippedJobs = [],
+        string $executionMode = ExecutionMode::FULL
     ) {
         $this->flowName = $flowName;
         $this->jobs = $jobs;
         $this->options = $options;
         $this->context = $context;
         $this->skippedJobs = $skippedJobs;
+        $this->executionMode = $executionMode;
     }
 
     public function getFlowName(): string
@@ -67,5 +71,10 @@ class FlowPlan
     public function getSkippedJobs(): array
     {
         return $this->skippedJobs;
+    }
+
+    public function getExecutionMode(): string
+    {
+        return $this->executionMode;
     }
 }

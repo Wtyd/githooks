@@ -117,7 +117,7 @@ class FlowExecutor
         $this->outputHandler->onFlowStart(count($jobs));
 
         if ($dryRun) {
-            return $this->executeDryRun($plan->getFlowName(), $jobs);
+            return $this->executeDryRun($plan->getFlowName(), $jobs, $plan->getExecutionMode());
         }
 
         if ($maxProcesses <= 1 || count($jobs) <= 1) {
@@ -138,13 +138,20 @@ class FlowExecutor
         $totalTime = number_format($elapsed, 2) . 's';
         $budget = $plan->getOptions()->getProcesses();
 
-        return new FlowResult($plan->getFlowName(), $results, $totalTime, $this->peakEstimatedThreads, $budget);
+        return new FlowResult(
+            $plan->getFlowName(),
+            $results,
+            $totalTime,
+            $this->peakEstimatedThreads,
+            $budget,
+            $plan->getExecutionMode()
+        );
     }
 
     /**
      * @param JobAbstract[] $jobs
      */
-    private function executeDryRun(string $flowName, array $jobs): FlowResult
+    private function executeDryRun(string $flowName, array $jobs, string $executionMode): FlowResult
     {
         $results = [];
         foreach ($jobs as $job) {
@@ -163,7 +170,7 @@ class FlowExecutor
             );
         }
         $this->outputHandler->flush();
-        return new FlowResult($flowName, $results, '0ms', 0, 0);
+        return new FlowResult($flowName, $results, '0ms', 0, 0, $executionMode);
     }
 
     /**

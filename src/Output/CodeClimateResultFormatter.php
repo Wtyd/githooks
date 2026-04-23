@@ -44,7 +44,7 @@ class CodeClimateResultFormatter implements ResultFormatter
                     'fingerprint' => $issue->getFingerprint(),
                     'severity'    => $this->mapSeverity($issue->getSeverity()),
                     'location'    => [
-                        'path'  => $issue->getFile(),
+                        'path'  => $this->relativizePath($issue->getFile()),
                         'lines' => ['begin' => $issue->getLine()],
                     ],
                 ];
@@ -54,6 +54,19 @@ class CodeClimateResultFormatter implements ResultFormatter
         $json = json_encode($codeClimateIssues, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         return $json !== false ? $json : '[]';
+    }
+
+    private function relativizePath(string $path): string
+    {
+        $cwd = getcwd();
+        if ($cwd === false || $path === '' || $path[0] !== '/') {
+            return $path;
+        }
+        $prefix = rtrim($cwd, '/') . '/';
+        if (strpos($path, $prefix) === 0) {
+            return substr($path, strlen($prefix));
+        }
+        return $path;
     }
 
     private function mapSeverity(string $severity): string

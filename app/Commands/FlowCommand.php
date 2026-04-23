@@ -135,9 +135,17 @@ class FlowCommand extends Command
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
+            $format = strval($this->option('format'));
+            $isStructured = in_array($format, ['json', 'junit', 'codeclimate', 'sarif'], true);
+
             foreach ($config->getValidation()->getWarnings() as $warning) {
                 if (strpos($warning, 'skipped') !== false) {
-                    echo "  \e[43m\e[30m⏩ $warning\033[0m\n";
+                    $line = "  \e[43m\e[30m⏩ $warning\033[0m\n";
+                    if ($isStructured) {
+                        fwrite(STDERR, $line);
+                    } else {
+                        echo $line;
+                    }
                 } else {
                     $this->warn($warning);
                 }

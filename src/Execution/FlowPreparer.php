@@ -83,7 +83,14 @@ class FlowPreparer
             $jobs[] = $job;
         }
 
-        return new FlowPlan($flow->getName(), $jobs, $options, $context, $skippedJobs);
+        return new FlowPlan(
+            $flow->getName(),
+            $jobs,
+            $options,
+            $context,
+            $skippedJobs,
+            $effectiveInvocation ?? ExecutionMode::FULL
+        );
     }
 
     /**
@@ -111,7 +118,14 @@ class FlowPreparer
             $job->applyCliExtraArguments($cliExtraArgs);
         }
         $this->applyExecutablePrefix($job, $jobConfig, $options);
-        return new FlowPlan($jobConfig->getName(), [$job], $options, $context);
+        return new FlowPlan(
+            $jobConfig->getName(),
+            [$job],
+            $options,
+            $context,
+            [],
+            $effectiveInvocation ?? ExecutionMode::FULL
+        );
     }
 
     /**

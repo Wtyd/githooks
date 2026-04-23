@@ -272,8 +272,10 @@ Crear ficheros PHP en `/var/www/html3/` con la config de prueba.
 | Formato inválido | `flow qa --format=csv` | Warning "Unknown format" + fallback a texto |
 | JSON en job individual | `job X --format=json` | Misma estructura JSON |
 | Texto por defecto | `flow qa` | Output con colores, `Results: X/Y passed in Xs` |
-| JSON dry-run | `flow qa --dry-run --format=json` | Incluye campo `command` en cada job. `time: "0ms"`, `output: ""` |
-| JSON sin dry-run | `flow qa --format=json` | NO incluye campo `command` |
+| JSON dry-run | `flow qa --dry-run --format=json` | Incluye `command` en cada job. `time: "0ms"`, `output: ""` |
+| JSON sin dry-run | `flow qa --format=json` | Incluye `command` con el comando real ejecutado |
+| JSON con `--fast` y skipped | `flow qa --fast --format=json` (sin staged) | stdout es JSON parseable. Mensajes `⏩ was skipped` salen por stderr, no contaminan el payload |
+| JSON `executionMode` | `flow qa --format=json` vs `--fast` vs `--fast-branch` | Campo `executionMode` refleja el modo real (`full`/`fast`/`fast-branch`) |
 
 ### 4. Flags especiales
 
@@ -399,8 +401,11 @@ Estas features están en el changelog de [3.2.0] pero no tienen test `@group rel
 | 5 | JUnit emite `<skipped>` para jobs skippados | `flow qa --fast --format=junit` con un job accelerable que no matchea staged files | Output contiene `<skipped message="..."/>` dentro del `<testcase>` correspondiente |
 | 6 | GitLab CI annotations | `GITLAB_CI=true flow qa` (desde un test con error) | Output incluye markers `section_start:` / `section_end:` entre jobs |
 | 7 | `conf:check` trunca commands a 80 chars | Config con un comando generado largo | Tabla de Jobs muestra `…` al final del comando; `githooks job X --dry-run` muestra el comando completo |
-| 8 | Live streaming sequential (`flow --processes=1`) | `flow qa --processes=1` con varios jobs | Cada job emite su output en tiempo real con separadores `--- JobName ---` entre ellos |
+| 8 | Live streaming sequential (`flow --processes=1`) | `flow qa --processes=1` con varios jobs | Cada job emite su output en tiempo real con separadores `--- job_name ---` (identificador literal del job) entre ellos |
 | 9 | Dashboard TTY paralelo | `flow qa --processes=4` en un terminal interactivo | Aparece dashboard con estados ⏺/⏳/✓/✗ y timers en vivo; al acabar, colapsa al resumen |
+| 10 | `--fast --format=<estructurado>` no contamina stdout | `flow qa --fast --format=json` (sin staged) 1>stdout 2>stderr | `stdout` es JSON parseable; mensajes `⏩ was skipped` solo en stderr |
+| 11 | `executionMode` real en payload JSON | `flow qa --format=json` / `--fast` / `--fast-branch` | Campo `executionMode` refleja el modo del CLI, no siempre `full` |
+| 12 | Code Climate `location.path` relativo | `flow qa --format=codeclimate` con errores en `src/...` | `location.path` es relativo al CWD (`src/errors/...`), no absoluto |
 
 Cada item vale para los dos tiers (`builds/php7.4/` y `builds/`). Priorizar los 1-4 (nuevos de `gh-49-cores` + flags de output más utilizados); 5-9 son útiles pero preexistentes.
 

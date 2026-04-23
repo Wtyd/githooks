@@ -654,4 +654,81 @@ class FlowExecutorTest extends TestCase
         $this->assertStringContainsString('--parallel=2', $jobResults[0]->getCommand());
         $this->assertStringContainsString('--processes=4', $jobResults[1]->getCommand());
     }
+
+    // ========================================================================
+    // Execution mode propagation (plan → result)
+    // ========================================================================
+
+    /** @test */
+    public function execute_propagates_fast_mode_from_plan_to_result()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $job = new CustomJob(new JobConfiguration('ok', 'custom', ['script' => 'echo ok']));
+        $plan = new FlowPlan(
+            'qa',
+            [$job],
+            new OptionsConfiguration(false, 1),
+            null,
+            [],
+            \Wtyd\GitHooks\Execution\ExecutionMode::FAST
+        );
+
+        $result = $executor->execute($plan);
+
+        $this->assertSame('fast', $result->getExecutionMode());
+    }
+
+    /** @test */
+    public function execute_propagates_fast_branch_mode_from_plan_to_result()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $job = new CustomJob(new JobConfiguration('ok', 'custom', ['script' => 'echo ok']));
+        $plan = new FlowPlan(
+            'qa',
+            [$job],
+            new OptionsConfiguration(false, 1),
+            null,
+            [],
+            \Wtyd\GitHooks\Execution\ExecutionMode::FAST_BRANCH
+        );
+
+        $result = $executor->execute($plan);
+
+        $this->assertSame('fast-branch', $result->getExecutionMode());
+    }
+
+    /** @test */
+    public function execute_defaults_to_full_mode_when_plan_has_no_mode()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $job = new CustomJob(new JobConfiguration('ok', 'custom', ['script' => 'echo ok']));
+        $plan = new FlowPlan('qa', [$job], new OptionsConfiguration(false, 1));
+
+        $result = $executor->execute($plan);
+
+        $this->assertSame('full', $result->getExecutionMode());
+    }
+
+    /** @test */
+    public function dry_run_propagates_execution_mode_from_plan_to_result()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $job = new CustomJob(new JobConfiguration('ok', 'custom', ['script' => 'echo ok']));
+        $plan = new FlowPlan(
+            'qa',
+            [$job],
+            new OptionsConfiguration(),
+            null,
+            [],
+            \Wtyd\GitHooks\Execution\ExecutionMode::FAST
+        );
+
+        $result = $executor->execute($plan, true);
+
+        $this->assertSame('fast', $result->getExecutionMode());
+    }
 }

@@ -322,4 +322,50 @@ class FlowCommandTest extends SystemTestCase
 
         $this->containsStringInOutput = ['skipped'];
     }
+
+    /** @test */
+    public function fast_with_skipped_jobs_does_not_contaminate_stdout_in_json_format()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+            ])
+            ->buildInFileSystem();
+
+        $fileUtils = $this->app->make(FileUtilsInterface::class);
+        if ($fileUtils instanceof FileUtilsFake) {
+            $fileUtils->setModifiedfiles(['tests/FooTest.php']);
+        }
+
+        // The '⏩ was skipped' human banner must NOT appear in the captured
+        // stdout when the format is structured — otherwise the JSON payload is
+        // unparseable by consumers.
+        $this->artisan("flow qa --fast --format=json --config=$this->configPath")
+            ->notContainsStringInOutput('was skipped')
+            ->assertExitCode(0);
+    }
+
+    /** @test */
+    public function fast_with_skipped_jobs_keeps_notice_in_text_format()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+            ])
+            ->buildInFileSystem();
+
+        $fileUtils = $this->app->make(FileUtilsInterface::class);
+        if ($fileUtils instanceof FileUtilsFake) {
+            $fileUtils->setModifiedfiles(['tests/FooTest.php']);
+        }
+
+        // No --format flag → default text → the human banner must still be visible
+        $this->artisan("flow qa --fast --config=$this->configPath")
+            ->containsStringInOutput('was skipped')
+            ->assertExitCode(0);
+    }
 }
