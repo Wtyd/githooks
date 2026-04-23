@@ -102,7 +102,8 @@ trait FormatsOutput
      * Resolve the progress handler for structured formats.
      * Uses the container binding so tests can override with NullOutputHandler.
      *
-     * `-v` / --verbose forces progress to be emitted even when stderr is not a TTY.
+     * `--show-progress` forces progress to be emitted even when stderr is not a TTY
+     * (useful in CI with --format=json|junit|sarif|codeclimate).
      */
     private function resolveProgressHandler(): ProgressOutputHandler
     {
@@ -110,7 +111,7 @@ trait FormatsOutput
             return $this->getLaravel()->make(ProgressOutputHandler::class);
         }
 
-        $forceEnabled = method_exists($this, 'getOutput') && $this->getOutput()->isVerbose();
+        $forceEnabled = $this->hasOption('show-progress') && (bool) $this->option('show-progress');
         return new ProgressOutputHandler(null, $forceEnabled);
     }
 

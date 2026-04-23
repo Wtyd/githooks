@@ -146,6 +146,59 @@ class FormatsOutputTraitTest extends TestCase
     }
 
     /** @test */
+    public function show_progress_option_forces_progress_handler_enabled_off_tty()
+    {
+        $double = $this->makeDoubleWithoutProgressBinding(['format' => 'json', 'show-progress' => true]);
+        $executor = $this->makeExecutor();
+
+        $double->callApplyFormat($executor, $this->makePlan(1, 1));
+
+        $handler = $executor->getOutputHandler();
+        $this->assertInstanceOf(ProgressOutputHandler::class, $handler);
+        $this->assertTrue($this->readProgressEnabled($handler), '--show-progress must set enabled=true');
+    }
+
+    /** @test */
+    public function progress_handler_is_not_forced_when_show_progress_option_is_absent()
+    {
+        if (stream_isatty(STDERR)) {
+            $this->markTestSkipped('stderr is a TTY in this environment; cannot assert non-forced disabled state');
+        }
+
+        $double = $this->makeDoubleWithoutProgressBinding(['format' => 'json']);
+        $executor = $this->makeExecutor();
+
+        $double->callApplyFormat($executor, $this->makePlan(1, 1));
+
+        $handler = $executor->getOutputHandler();
+        $this->assertInstanceOf(ProgressOutputHandler::class, $handler);
+        $this->assertFalse(
+            $this->readProgressEnabled($handler),
+            'without --show-progress, enabled must fall back to stream_isatty(STDERR) which is false here'
+        );
+    }
+
+    /** @test */
+    public function verbose_flag_no_longer_forces_progress_handler_enabled()
+    {
+        if (stream_isatty(STDERR)) {
+            $this->markTestSkipped('stderr is a TTY in this environment; cannot assert non-forced disabled state');
+        }
+
+        // Regression: -v / --verbose used to force progress in 3.2 drafts; replaced by --show-progress.
+        $double = $this->makeDoubleWithoutProgressBinding(['format' => 'json', 'verbose' => true]);
+        $executor = $this->makeExecutor();
+
+        $double->callApplyFormat($executor, $this->makePlan(1, 1));
+
+        $handler = $executor->getOutputHandler();
+        $this->assertFalse(
+            $this->readProgressEnabled($handler),
+            'The verbose option must no longer force progress — only --show-progress does'
+        );
+    }
+
+    /** @test */
     public function it_enables_structured_format_on_executor_for_codeclimate()
     {
         $double = $this->makeDouble(['format' => 'codeclimate']);
@@ -370,6 +423,32 @@ class FormatsOutputTraitTest extends TestCase
         $prop = $ref->getProperty('structuredFormat');
         $prop->setAccessible(true);
         return (bool) $prop->getValue($executor);
+    }
+
+    /**
+     * Build a double with a container that does NOT pre-bind ProgressOutputHandler,
+     * so resolveProgressHandler() goes through the real construction path and
+     * reads --show-progress.
+     */
+    private function makeDoubleWithoutProgressBinding(array $options): FormatsOutputCommandDouble
+    {
+        $container = new Container();
+        $container->bind(Printer::class, function () {
+            return $this->createMock(Printer::class);
+        });
+
+        $double = new FormatsOutputCommandDouble();
+        $double->options = $options;
+        $double->laravel = $container;
+        return $double;
+    }
+
+    private function readProgressEnabled(ProgressOutputHandler $handler): bool
+    {
+        $ref = new \ReflectionClass($handler);
+        $prop = $ref->getProperty('enabled');
+        $prop->setAccessible(true);
+        return (bool) $prop->getValue($handler);
     }
 
     private function buildResult(): FlowResult

@@ -28,6 +28,7 @@ class JobCommand extends Command
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
                             {--no-ci : Disable auto-detection of CI environment annotations}
+                            {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a single job defined in the configuration file';

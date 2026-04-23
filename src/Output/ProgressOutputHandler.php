@@ -10,8 +10,8 @@ namespace Wtyd\GitHooks\Output;
  * All progress goes to stderr so stdout stays clean for structured data.
  * The handler is silent when the stream is not a TTY (pipe, CI, agent) unless
  * force-enabled — consumers parsing stdout get clean output without `2>/dev/null`.
- * Pass `$forceEnabled = true` (wired to `-v` / verbose in FormatsOutput) to emit
- * progress regardless of TTY detection.
+ * Pass `$forceEnabled = true` (wired to `--show-progress` in FormatsOutput) to
+ * emit progress regardless of TTY detection.
  */
 class ProgressOutputHandler implements OutputHandler
 {

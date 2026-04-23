@@ -135,12 +135,36 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $stderr = (string) file_get_contents($stderrPath);
 
         $this->assertNotNull(json_decode($stdout, true), 'stdout should be decodable JSON: ' . $stdout);
-        $this->assertSame('', trim($stderr), 'stderr should be silent off a TTY without -v');
+        $this->assertSame('', trim($stderr), 'stderr should be silent off a TTY without --show-progress');
     }
 
     /** @test */
-    public function verbose_flag_forces_progress_on_stderr_even_without_tty()
+    public function show_progress_flag_forces_progress_on_stderr_even_without_tty()
     {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
+            ->setV3Jobs([
+                'ok_job' => ['type' => 'custom', 'script' => '/bin/true'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $stderrPath = self::TESTS_PATH . '/stderr.log';
+        passthru("$this->githooks flow qa --format=json --show-progress --config=$this->configPath 2>$stderrPath", $exitCode);
+
+        $stdout = $this->getActualOutput();
+        $stderr = (string) file_get_contents($stderrPath);
+
+        $this->assertNotNull(json_decode($stdout, true), 'stdout should be decodable JSON: ' . $stdout);
+        $this->assertStringContainsString('OK', $stderr);
+        $this->assertStringContainsString('Done.', $stderr);
+    }
+
+    /** @test */
+    public function verbose_flag_no_longer_forces_progress_on_stderr()
+    {
+        // Regression: in pre-3.2 drafts, `-v` was wired to force progress. It was replaced
+        // by a dedicated `--show-progress` flag to free `-v` for its Symfony-standard use.
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
             ->setV3Jobs([
@@ -156,8 +180,8 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $stderr = (string) file_get_contents($stderrPath);
 
         $this->assertNotNull(json_decode($stdout, true), 'stdout should be decodable JSON: ' . $stdout);
-        $this->assertStringContainsString('OK', $stderr);
-        $this->assertStringContainsString('Done.', $stderr);
+        $this->assertStringNotContainsString('OK', $stderr, '`-v` must no longer emit OK progress lines; use --show-progress');
+        $this->assertStringNotContainsString('Done.', $stderr, '`-v` must no longer emit Done. summary');
     }
 
     // ========================================================================
