@@ -313,6 +313,14 @@ class FailingTest extends TestCase
     /** @test */
     function it_returns_exit_0_when_psalm_passes()
     {
+        if (PHP_VERSION_ID >= 80500) {
+            $this->markTestSkipped(
+                'psalm 5.26.1 crashes on PHP 8.5 via Illuminate 8 helpers.php; '
+                . 'psalm 6 blocked by laravel-zero 8 / symfony 5. '
+                . 'See supportedToolsForCurrentPhp() for context.'
+            );
+        }
+
         file_put_contents(
             'githooks.php',
             $this->configurationFileBuilder->setTools(['psalm'])
