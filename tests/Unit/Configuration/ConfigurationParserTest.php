@@ -600,4 +600,209 @@ PHP;
 
         $this->assertNull($result->getLocalFilePath());
     }
+
+    // ========================================================================
+    // Job inheritance (extends)
+    // ========================================================================
+
+    /** @test */
+    public function it_reports_error_when_job_extends_itself()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['self_ref']],
+    ],
+    'jobs' => [
+        'self_ref' => ['extends' => 'self_ref', 'type' => 'phpstan'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertContains(
+            "Job 'self_ref' cannot extend itself.",
+            $result->getValidation()->getErrors()
+        );
+    }
+
+    /** @test */
+    public function it_detects_a_two_way_circular_extends()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['a']],
+    ],
+    'jobs' => [
+        'a' => ['extends' => 'b', 'type' => 'phpstan'],
+        'b' => ['extends' => 'a', 'type' => 'phpstan'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $circularErrors = array_filter(
+            $result->getValidation()->getErrors(),
+            fn($e) => strpos($e, "Circular 'extends' detected") !== false
+        );
+        $this->assertNotEmpty($circularErrors, 'Expected a circular-extends error');
+    }
+
+    /** @test */
+    public function it_detects_a_three_way_circular_extends()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['a']],
+    ],
+    'jobs' => [
+        'a' => ['extends' => 'b', 'type' => 'phpstan'],
+        'b' => ['extends' => 'c', 'type' => 'phpstan'],
+        'c' => ['extends' => 'a', 'type' => 'phpstan'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $circularErrors = array_filter(
+            $result->getValidation()->getErrors(),
+            fn($e) => strpos($e, "Circular 'extends' detected") !== false
+        );
+        $this->assertNotEmpty($circularErrors, 'Expected a circular-extends error in the 3-way cycle');
+    }
+
+    /** @test */
+    public function it_reports_error_when_parent_job_is_not_defined()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['child']],
+    ],
+    'jobs' => [
+        'child' => ['extends' => 'ghost_parent', 'type' => 'phpstan'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertContains(
+            "Job 'child' extends 'ghost_parent' which is not defined.",
+            $result->getValidation()->getErrors()
+        );
+    }
+
+    /** @test */
+    public function it_reports_error_when_extends_is_not_a_string()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['child']],
+    ],
+    'jobs' => [
+        'child' => ['extends' => 42, 'type' => 'phpstan'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertContains(
+            "Job 'child': 'extends' must be a string.",
+            $result->getValidation()->getErrors()
+        );
+    }
+
+    /** @test */
+    public function it_resolves_a_three_level_inheritance_chain()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_strict_tests']],
+    ],
+    'jobs' => [
+        'phpstan_base'         => ['type' => 'phpstan', 'paths' => ['src']],
+        'phpstan_strict'       => ['extends' => 'phpstan_base', 'level' => '8'],
+        'phpstan_strict_tests' => ['extends' => 'phpstan_strict', 'paths' => ['tests']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+
+        $job = $result->getJob('phpstan_strict_tests');
+        $this->assertNotNull($job);
+        $this->assertSame('phpstan', $job->getType());
+        $this->assertSame(['tests'], $job->getPaths(), 'child paths must override grandparent paths');
+        $this->assertSame('8', $job->getConfig()['level'] ?? null, 'level must be inherited from the middle parent');
+    }
+
+    /** @test */
+    public function child_keys_override_parent_keys_when_extending()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['child']],
+    ],
+    'jobs' => [
+        'parent' => [
+            'type'     => 'phpstan',
+            'paths'    => ['src'],
+            'level'    => '5',
+        ],
+        'child' => [
+            'extends' => 'parent',
+            'level'   => '9',
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+
+        $child = $result->getJob('child');
+        $this->assertNotNull($child);
+        $this->assertSame('phpstan', $child->getType(), 'type inherited from parent');
+        $this->assertSame(['src'], $child->getPaths(), 'paths inherited from parent');
+        $this->assertSame('9', $child->getConfig()['level'] ?? null, 'level overridden by child');
+    }
 }
