@@ -49,20 +49,29 @@ githooks flow qa --config=qa/custom-githooks.php    # Use custom config
 
 ## Structured output
 
-- **`--format=json`** emits JSON v2: top-level `version`, `executionMode`, `passed`, `failed`, `skipped`, and a `jobs` array with `type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`, `command` (dry-run only) and `output`.
+- **`--format=json`** emits JSON v2: top-level `version`, `executionMode` (reflects the actual `--fast`/`--fast-branch` flag), `passed`, `failed`, `skipped`, and a `jobs` array with `type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`, `command` and `output`. Jobs cancelled by `--fail-fast` appear with `skipped: true` and `skipReason: "skipped by fail-fast"`.
 - **`--format=junit`** emits JUnit XML compatible with `mikepenz/action-junit-report` and similar. Skipped jobs emit `<skipped>` elements.
-- **`--format=codeclimate`** emits a GitLab Code Quality JSON array.
-- **`--format=sarif`** emits a SARIF 2.1.0 report for GitHub Code Scanning.
+- **`--format=codeclimate`** emits a GitLab Code Quality JSON array. `location.path` is relative to the CWD.
+- **`--format=sarif`** emits a SARIF 2.1.0 report for GitHub Code Scanning. `artifactLocation.uri` is relative to the CWD.
 
 All four structured formats print to **stdout** by default. Pass `--output=PATH` to write the payload to a file instead (equivalent to `--format=FORMAT > PATH` for scripts that already rely on shell redirection).
 
-For structured formats, progress (`OK`, `Done.`, colours) writes to **stderr** and the structured payload stays on **stdout**. Redirect stderr to silence the progress when piping:
+### stderr progress is TTY-aware
+
+Progress lines (`OK`, `Done.`, colours) write to **stderr** **only when a TTY is attached** (interactive terminal). From scripts, agents, pipes or CI stderr is **silent by default** — `--format=json | jq …` works without `2>/dev/null`:
 
 ```bash
-githooks flow qa --format=json 2>/dev/null | jq '.jobs[] | select(.success == false)'
+# No redirection needed — stderr is naturally empty off a TTY
+githooks flow qa --format=json | jq '.jobs[] | select(.success == false)'
 ```
 
-See [How-To: Output Formats](../how-to/output-formats.md) for the full schema.
+Force progress in long-running CI pipelines with `-v`:
+
+```bash
+githooks flow qa --format=json -v --output=reports/qa.json
+```
+
+`--dry-run` never emits progress (no real execution to measure). See [How-To: Output Formats](../how-to/output-formats.md) for the full schema and stderr rules.
 
 ## Exit codes
 

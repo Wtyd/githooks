@@ -60,18 +60,40 @@ On completion, the dashboard collapses to a clean summary.
 
 For all **structured formats** (`json`, `junit`, `codeclimate`, `sarif`):
 
-- **stdout** carries the structured payload only.
-- **stderr** carries progress lines (`OK job (Xms) [Y/Z]`, `Done. X/Y completed.`), colours, and any CI annotations.
+- **stdout** carries the structured payload only — never mixed with progress, colours or skip notices.
+- **stderr** carries progress lines (`OK job (Xms) [Y/Z]`, `Done. X/Y completed.`), colours, and any CI annotations — **only when a TTY is attached or `-v` is set**.
 
-This means you can pipe cleanly without contamination:
+### Auto-suppress without a TTY
+
+The progress handler detects whether stderr is a TTY. If it is not (pipe, subshell, CI agent, Claude, cron), **no progress is emitted**. stdout stays clean and ready to consume without any redirection:
 
 ```bash
-# Save JSON to disk, let progress show in the terminal
-githooks flow qa --format=json > report.json
+# From a script, agent or pipe — stderr is naturally empty
+githooks flow qa --format=json | jq '.jobs[] | select(.success == false)'
 
-# Feed JSON to jq, discard progress
-githooks flow qa --format=json 2>/dev/null | jq '.jobs[] | select(.success == false)'
+# Interactive terminal — stderr shows OK/KO while the flow runs
+githooks flow qa --format=json > report.json
 ```
+
+!!! tip "No need for `2>/dev/null`"
+    Earlier pre-releases required redirecting stderr to keep consumers happy. From 3.2.0 this is automatic via `stream_isatty(STDERR)` and the idiomatic UNIX pattern used by `git`, `docker` and `npm`.
+
+### Force progress with `-v` (verbose)
+
+Long-running pipelines in CI can look stuck because stderr is silent by default. Pass `-v` (`--verbose`) to force progress to be emitted even when stderr is not a TTY:
+
+```bash
+# In a CI job that takes several minutes
+githooks flow qa --format=json -v --output=report.json
+# → stderr: OK phpcs_src (2.1s) [1/6], KO phpstan_src (5.3s) [2/6], …
+# → report.json: clean JSON payload
+```
+
+The verbose flag is the standard Symfony Console one — it does not add framework-level noise in GitHooks commands, so stdout remains a valid JSON/JUnit/CC/SARIF document.
+
+### Dry-run emits no progress at all
+
+`--dry-run` does not execute any tool, so there is nothing to measure. The progress handler is skipped entirely: stderr stays empty regardless of TTY or `-v`, and stdout contains the structured payload with `totalTime: "0ms"`.
 
 ## Writing a report to a file
 
@@ -128,6 +150,17 @@ githooks flow qa --format=json
 }
 ```
 
+### Top-level fields
+
+| Field | Type | Description |
+|---|---|---|
+| `version` | integer | Schema version — currently `2`. Bumped on breaking changes. |
+| `flow` | string | Flow name (or job name when called from `githooks job`). |
+| `success` | boolean | `true` if **all** non-skipped jobs passed. |
+| `totalTime` | string | Human-readable wall-clock time. `"0ms"` under `--dry-run`. |
+| `executionMode` | string | `"full"`, `"fast"` or `"fast-branch"`. Reflects the actual `--fast` / `--fast-branch` flag used. |
+| `passed` / `failed` / `skipped` | integer | Counters matching the entries in `jobs[]`. |
+
 ### Per-job fields
 
 | Field | Type | Description |
@@ -141,8 +174,26 @@ githooks flow qa --format=json
 | `fixApplied` | boolean | `true` when the job modified files (fix jobs in non dry-run). |
 | `command` | string | Shell command that was executed (always present; useful under `--dry-run`). |
 | `paths` | array | Paths analysed (after fast / fast-branch filtering). |
-| `skipped` | boolean | `true` when the job was skipped (fast mode with no matching files, `--exclude-jobs`, etc.). |
+| `skipped` | boolean | `true` when the job was skipped (fast mode with no matching files, `--exclude-jobs`, or a fail-fast trigger in an earlier job). |
 | `skipReason` | string or null | Free-form reason string when `skipped: true`. |
+
+### Fail-fast and the `jobs[]` array
+
+When `--fail-fast` cancels the remaining jobs after a failure, the JSON payload still contains **every job in the plan**. The ones that were not executed appear with:
+
+```json
+{
+  "name": "phpunit_tests",
+  "type": "phpunit",
+  "success": true,
+  "skipped": true,
+  "skipReason": "skipped by fail-fast",
+  "exitCode": null,
+  "time": "0ms"
+}
+```
+
+This keeps structured consumers honest: the array size equals the declared plan size, and the `skipped` counter at the top level reflects both fast-mode skips and fail-fast cancellations.
 
 ## JUnit
 
@@ -180,6 +231,17 @@ githooks flow qa --format=codeclimate                                # prints to
 githooks flow qa --format=codeclimate --output=reports/quality.json  # writes a file
 ```
 
+Each issue's `location.path` is **relative to the current working directory**. Absolute paths emitted by tool parsers (phpcs, for instance) are normalised to the workspace root so the report is portable and links correctly in the GitLab UI:
+
+```json
+{
+  "description": "...",
+  "location": { "path": "src/errors/SyntaxError.php", "lines": { "begin": 3 } }
+}
+```
+
+Paths outside the CWD are left untouched.
+
 Integrate directly with GitLab CI — the `--output` path must match the `codequality` artifact declared in the job:
 
 ```yaml
@@ -198,6 +260,8 @@ SARIF 2.1.0 report consumable by GitHub Code Scanning, Azure DevOps, and other s
 githooks flow qa --format=sarif                              # prints to stdout
 githooks flow qa --format=sarif --output=reports/qa.sarif    # writes a file
 ```
+
+`artifactLocation.uri` is **relative to the current working directory**, matching the SARIF convention expected by Code Scanning. Absolute paths from tool parsers are normalised; paths outside the CWD are preserved as-is.
 
 Upload to GitHub Code Scanning — the `--output` path must match the `sarif_file` argument of the upload step:
 

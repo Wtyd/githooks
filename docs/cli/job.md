@@ -38,7 +38,9 @@ githooks job phpstan_src -- --memory-limit=2G         # Override memory limit
 
 ## Structured output
 
-`job` accepts the same output formats as `flow` — `json`, `junit`, `codeclimate`, `sarif`. Progress routes to **stderr**, payload stays on **stdout**. See [How-To: Output Formats](../how-to/output-formats.md) for the schema details.
+`job` accepts the same output formats as `flow` — `json`, `junit`, `codeclimate`, `sarif`. Payload on **stdout**; progress on **stderr only when attached to a TTY** (otherwise silent). Use `-v` to force progress in scripts or CI; `--dry-run` never emits progress. Passing extra args after `--` (e.g. `-- --filter=...`) is preserved end-to-end in the generated command.
+
+See [How-To: Output Formats](../how-to/output-formats.md) for the full schema.
 
 ## Exit codes
 
