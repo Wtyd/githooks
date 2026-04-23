@@ -16,15 +16,15 @@ return [
         ],
         'qa' => [
             'jobs' => [
-                'Phpcbf',
-                'Phpstan Src',
-                'Parallel-lint',
-                'Phpmd Src',
-                'Phpcpd',
-                'Phpcs',
-                'Phpunit',
-                'Composer Audit',
-                // 'psalm_src',
+                'phpcbf',
+                'phpstan-src',
+                'parallel-lint',
+                'phpmd-src',
+                'phpcpd',
+                'phpcs',
+                'phpunit',
+                'composer-audit',
+                // 'psalm-src',
             ],
         ],
         'schedule' => [
@@ -33,31 +33,31 @@ return [
                 'fail-fast' => true,
             ],
             'jobs' => [
-                'Composer Update',
-                'Coverage',
-                'Infection',
-                'PhpMetrics',
-                'Composer Downgrade',
+                'composer-update',
+                'coverage',
+                'infection',
+                'phpmetrics',
+                'composer-downgrade',
             ],
         ],
     ],
 
     'jobs' => [
-        'Phpstan Src' => [
+        'phpstan-src' => [
             'type' => 'phpstan',
             'executablePath' => 'vendor/bin/phpstan',
             'config' => './qa/phpstan.neon',
             'paths' => ['src'],
             'otherArguments' => '--no-progress --ansi',
         ],
-        'Parallel-lint' => [
+        'parallel-lint' => [
             'type' => 'parallel-lint',
             'executablePath' => 'vendor/bin/parallel-lint',
             'paths' => ['src', 'app', 'config', 'bootstrap'],
             'exclude' => ['vendor'],
             'otherArguments' => '--colors',
         ],
-        'Phpcs' => [
+        'phpcs' => [
             'type' => 'phpcs',
             'executablePath' => 'vendor/bin/phpcs',
             'paths' => ['./'],
@@ -67,7 +67,7 @@ return [
             'warning-severity' => 6,
             'otherArguments' => '--report=summary --parallel=2',
         ],
-        'Phpcbf' => [
+        'phpcbf' => [
             'type' => 'phpcbf',
             'executablePath' => 'vendor/bin/phpcbf',
             'paths' => ['./'],
@@ -76,56 +76,56 @@ return [
             'error-severity' => 1,
             'warning-severity' => 6,
         ],
-        'Phpmd Src' => [
+        'phpmd-src' => [
             'type' => 'phpmd',
             'executablePath' => 'vendor/bin/phpmd',
             'paths' => ['./src/'],
             'rules' => './qa/phpmd-ruleset.xml',
             'exclude' => ['vendor'],
         ],
-        'Phpcpd' => [
+        'phpcpd' => [
             'type' => 'phpcpd',
             'executablePath' => 'vendor/bin/phpcpd',
             'paths' => ['./'],
             'exclude' => ['vendor', 'tests', 'tools', 'src/Tools'],
         ],
-        'Phpunit' => [
+        'phpunit' => [
             'type' => 'phpunit',
             'executablePath' => 'vendor/bin/phpunit',
             'log-junit' => 'junit.xml',
             'otherArguments' => '--colors=always',
         ],
-        'psalm_src' => [
+        'psalm-src' => [
             'type' => 'psalm',
             'executablePath' => 'vendor/bin/psalm',
             'config' => 'qa/psalm.xml',
             'paths' => ['src', 'app'],
         ],
-        'Composer Audit' => [
+        'composer-audit' => [
             'type' => 'custom',
             'script' => 'tools/composer audit',
             'ignoreErrorsOnExit' => true,
         ],
-        'Composer Update' => [
+        'composer-update' => [
             'type' => 'custom',
             'script' => 'php8.4 tools/composer update',
         ],
-        'Composer Downgrade' => [
+        'composer-downgrade' => [
             'type' => 'custom',
             'script' => 'php7.4 tools/composer update',
         ],
-        'Coverage' => [
+        'coverage' => [
             'type' => 'phpunit',
             'executablePath' => 'vendor/bin/phpunit',
             'executable-prefix' => 'php8.5 -d xdebug.mode=coverage',
             'otherArguments' => '--coverage-html reports/coverage/coverage-html --coverage-xml reports/coverage/coverage-xml --log-junit reports/coverage/junit.xml --testdox-html reports/coverage/documentation.html',
         ],
-        'Infection' => [
+        'infection' => [
             'type' => 'custom',
             'executable-prefix' => 'php8.4',
             'script' => 'tools/infection --threads=10 --skip-initial-tests --no-progress --show-mutations=0 --coverage=reports/coverage',
         ],
-        'PhpMetrics' => [
+        'phpmetrics' => [
             'type' => 'custom',
             'executable-prefix' => 'php8.4',
             'script' => 'tools/phpmetrics --report-html=reports/phpmetrics --junit=reports/coverage/junit.xml ./src',

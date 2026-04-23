@@ -28,12 +28,12 @@ When you run a single job (`githooks job X`) or a flow with `processes=1`, each 
 For `flow --processes=1`, a header separator is printed between jobs (like `make` or `docker compose up`):
 
 ```
-  --- Phpstan Src ---
+  --- phpstan-src ---
    [OK] No errors
-  Phpstan Src - OK. Time: 715ms
-  --- Parallel-lint ---
+  phpstan-src - OK. Time: 715ms
+  --- parallel-lint ---
   Checked 144 files in 0.2 seconds
-  Parallel-lint - OK. Time: 196ms
+  parallel-lint - OK. Time: 196ms
 ```
 
 ## Interactive parallel dashboard
@@ -41,12 +41,12 @@ For `flow --processes=1`, a header separator is printed between jobs (like `make
 When running a flow with `processes > 1` in an interactive terminal (TTY), the text output upgrades to a live dashboard showing queue / running / done states with per-job timers:
 
 ```
-  ⏳ Phpstan Src [0.9s]            ← running, live timer
-  ⏳ Parallel-lint [0.9s]
-  ⏳ Phpmd Src [0.9s]
-  ⏳ Phpcs [0.1s]                  ← just entered a freed slot
-  ⏺ Phpunit                        ← queued
-  ⏺ Composer Audit
+  ⏳ phpstan-src [0.9s]            ← running, live timer
+  ⏳ parallel-lint [0.9s]
+  ⏳ phpmd-src [0.9s]
+  ⏳ phpcs [0.1s]                  ← just entered a freed slot
+  ⏺ phpunit                        ← queued
+  ⏺ composer-audit
 ```
 
 On completion, the dashboard collapses to a clean summary.

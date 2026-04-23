@@ -27,7 +27,7 @@ Plus all [common keywords](../configuration/jobs.md#common-keywords).
 Minimal:
 
 ```php
-'psalm_src' => [
+'psalm-src' => [
     'type'  => 'psalm',
     'paths' => ['src'],
 ],
@@ -36,7 +36,7 @@ Minimal:
 Full:
 
 ```php
-'psalm_src' => [
+'psalm-src' => [
     'type'          => 'psalm',
     'paths'         => ['src', 'app'],
     'config'        => 'qa/psalm.xml',

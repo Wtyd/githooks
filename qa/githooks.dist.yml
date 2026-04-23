@@ -20,25 +20,25 @@ flows:
     processes: 1
   lint:
     jobs:
-      - phpcs_src
+      - phpcs-src
 
 jobs:
-  phpcs_src:
+  phpcs-src:
     type: phpcs
     paths:
       - src
     standard: PSR12
 
-  # phpstan_src:
+  # phpstan-src:
   #   type: phpstan
   #   config: phpstan.neon
   #   paths:
   #     - src
 
-  # phpunit_all:
+  # phpunit-all:
   #   type: phpunit
   #   config: phpunit.xml
 
-  # composer_audit:
+  # composer-audit:
   #   type: custom
   #   script: composer audit

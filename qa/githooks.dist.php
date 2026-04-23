@@ -35,16 +35,16 @@ return [
         ],
         'lint' => [
             // 'options' => ['fail-fast' => true],  // Override global options per flow
-            'jobs' => ['phpcs_src'],
+            'jobs' => ['phpcs-src'],
         ],
         // 'test' => [
-        //     'jobs' => ['phpunit_all'],
+        //     'jobs' => ['phpunit-all'],
         // ],
     ],
 
     'jobs' => [
         // --- PHP_CodeSniffer (phpcs) ---
-        'phpcs_src' => [
+        'phpcs-src' => [
             'type' => 'phpcs',
             'paths' => ['src'],
             'standard' => 'PSR12',           // or path to ruleset: './qa/psr12-ruleset.xml'
@@ -58,7 +58,7 @@ return [
         ],
 
         // --- PHP Code Beautifier and Fixer (phpcbf) ---
-        // 'phpcbf_src' => [
+        // 'phpcbf-src' => [
         //     'type' => 'phpcbf',
         //     'paths' => ['src'],
         //     'standard' => 'PSR12',
@@ -66,7 +66,7 @@ return [
         // ],
 
         // --- PHPStan ---
-        // 'phpstan_src' => [
+        // 'phpstan-src' => [
         //     'type' => 'phpstan',
         //     'config' => 'phpstan.neon',
         //     'paths' => ['src'],
@@ -78,7 +78,7 @@ return [
         // ],
 
         // --- PHP Mess Detector (phpmd) ---
-        // 'phpmd_src' => [
+        // 'phpmd-src' => [
         //     'type' => 'phpmd',
         //     'paths' => ['src'],
         //     'rules' => 'cleancode,codesize,controversial,design,naming,unusedcode',
@@ -91,7 +91,7 @@ return [
         // ],
 
         // --- Parallel-Lint ---
-        // 'parallel_lint' => [
+        // 'parallel-lint' => [
         //     'type' => 'parallel-lint',
         //     'paths' => ['./'],
         //     'exclude' => ['vendor'],
@@ -99,7 +99,7 @@ return [
         // ],
 
         // --- PHP Copy/Paste Detector (phpcpd) ---
-        // 'phpcpd_all' => [
+        // 'phpcpd-all' => [
         //     'type' => 'phpcpd',
         //     'paths' => ['./'],
         //     'exclude' => ['vendor'],
@@ -108,7 +108,7 @@ return [
         // ],
 
         // --- PHPUnit ---
-        // 'phpunit_all' => [
+        // 'phpunit-all' => [
         //     'type' => 'phpunit',
         //     // 'config' => 'phpunit.xml',
         //     // 'group' => 'integration',
@@ -118,7 +118,7 @@ return [
         // ],
 
         // --- Psalm ---
-        // 'psalm_src' => [
+        // 'psalm-src' => [
         //     'type' => 'psalm',
         //     'config' => 'psalm.xml',
         //     'paths' => ['src'],
@@ -132,7 +132,7 @@ return [
         // ],
 
         // --- Custom job (replaces security-checker; use for any non-native tool) ---
-        // 'composer_audit' => [
+        // 'composer-audit' => [
         //     'type' => 'custom',
         //     'script' => 'composer audit',
         // ],

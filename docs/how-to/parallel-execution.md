@@ -11,7 +11,7 @@ Set `processes` in your flow options:
     'options' => [
         'processes' => 4,  // total CPU cores budget
     ],
-    'qa' => ['jobs' => ['phpcs_src', 'phpstan_src', 'phpmd_src', 'parallel_lint']],
+    'qa' => ['jobs' => ['phpcs-src', 'phpstan_src', 'phpmd_src', 'parallel_lint']],
 ],
 ```
 
@@ -41,12 +41,12 @@ Sometimes you want a specific job to always get a fixed amount of cores regardle
 
 ```php
 'jobs' => [
-    'phpcs_src' => [
+    'phpcs-src' => [
         'type'  => 'phpcs',
         'paths' => ['src'],
         'cores' => 2,   // reserves 2 cores + passes --parallel=2 to phpcs
     ],
-    'psalm_src' => [
+    'psalm-src' => [
         'type'  => 'psalm',
         'paths' => ['src'],
         'cores' => 4,   // reserves 4 cores + passes --threads=4 to psalm
@@ -70,7 +70,7 @@ The allocator reserves the declared amount and, for tools with controllable thre
 ],
 'flows' => [
     'options' => ['processes' => 8],
-    'qa'     => ['jobs' => ['phpcs_src', 'phpstan_src', 'paratest_all']],
+    'qa'     => ['jobs' => ['phpcs-src', 'phpstan_src', 'paratest_all']],
 ],
 ```
 

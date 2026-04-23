@@ -19,14 +19,14 @@ Las herramientas QA se ejecutan a través de GitHooks usando la configuración d
 php7.4 githooks flow qa --format=json
 
 # Job individual
-php7.4 githooks job "Phpstan Src" --format=json
-php7.4 githooks job "Phpmd Src" --format=json
-php7.4 githooks job "Phpcs" --format=json
-php7.4 githooks job "Phpcbf" --format=json
-php7.4 githooks job "Phpcpd" --format=json
-php7.4 githooks job "Parallel-lint" --format=json
-php7.4 githooks job "Phpunit" --format=json
-php7.4 githooks job "Composer Audit" --format=json
+php7.4 githooks job phpstan-src --format=json
+php7.4 githooks job phpmd-src --format=json
+php7.4 githooks job phpcs --format=json
+php7.4 githooks job phpcbf --format=json
+php7.4 githooks job phpcpd --format=json
+php7.4 githooks job parallel-lint --format=json
+php7.4 githooks job phpunit --format=json
+php7.4 githooks job composer-audit --format=json
 
 # Tests
 php7.4 vendor/bin/phpunit --order-by random

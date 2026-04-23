@@ -21,7 +21,7 @@ Push/PR (no rc) ──┬── main-tests.yml     Tests unitarios, integración
 
 Push a rama rc** ──── release.yml         Build .phar → Test release → Commit builds
 
-Domingo 04:00 UTC ─── schedule-ci.yml     Coverage + Infection + PhpMetrics
+Domingo 04:00 UTC ─── schedule-ci.yml     coverage + infection + phpmetrics
 ```
 
 ## Flujo de release — paso a paso
