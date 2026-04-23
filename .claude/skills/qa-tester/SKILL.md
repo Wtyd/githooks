@@ -406,6 +406,8 @@ Estas features están en el changelog de [3.2.0] pero no tienen test `@group rel
 | 10 | `--fast --format=<estructurado>` no contamina stdout | `flow qa --fast --format=json` (sin staged) 1>stdout 2>stderr | `stdout` es JSON parseable; mensajes `⏩ was skipped` solo en stderr |
 | 11 | `executionMode` real en payload JSON | `flow qa --format=json` / `--fast` / `--fast-branch` | Campo `executionMode` refleja el modo del CLI, no siempre `full` |
 | 12 | Code Climate `location.path` relativo | `flow qa --format=codeclimate` con errores en `src/...` | `location.path` es relativo al CWD (`src/errors/...`), no absoluto |
+| 13 | SARIF `artifactLocation.uri` relativo | `flow qa --format=sarif` con errores en `src/...` | `runs[].results[].locations[].physicalLocation.artifactLocation.uri` relativo al CWD |
+| 14 | Fail-fast lista skipped en JSON | `flow qa --fail-fast --format=json` (un job falla el primero) | `jobs[]` contiene TODOS los del plan; los no ejecutados aparecen con `"skipped": true` y `"skipReason": "skipped by fail-fast"` |
 
 Cada item vale para los dos tiers (`builds/php7.4/` y `builds/`). Priorizar los 1-4 (nuevos de `gh-49-cores` + flags de output más utilizados); 5-9 son útiles pero preexistentes.
 

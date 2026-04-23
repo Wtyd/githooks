@@ -116,7 +116,101 @@ class FlowExecutorFailFastTest extends TestCase
         // fast_fail and slow_job both started (processes=2), queued_job never started
         $this->assertContains('fast_fail', $jobNames);
         $this->assertContains('slow_job', $jobNames);
-        $this->assertNotContains('queued_job', $jobNames, 'Queued job should not be in results (only skipped)');
-        $this->assertCount(2, $jobResults);
+        // queued_job appears as a skipped entry so structured formats (JSON/JUnit/SARIF)
+        // can report the full plan, not just the subset that actually ran.
+        $this->assertContains('queued_job', $jobNames);
+        $this->assertCount(3, $jobResults);
+
+        $queuedResult = null;
+        foreach ($jobResults as $jr) {
+            if ($jr->getJobName() === 'queued_job') {
+                $queuedResult = $jr;
+            }
+        }
+        $this->assertNotNull($queuedResult);
+        $this->assertTrue($queuedResult->isSkipped());
+        $this->assertSame('skipped by fail-fast', $queuedResult->getSkipReason());
+    }
+
+    /** @test */
+    public function sequential_fail_fast_includes_remaining_jobs_as_skipped_in_results()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('fail', 'custom', ['script' => 'exit 1'])),
+            new CustomJob(new JobConfiguration('never', 'custom', ['script' => 'echo never'])),
+            new CustomJob(new JobConfiguration('also_never', 'custom', ['script' => 'echo also'])),
+        ];
+
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 1));
+        $result = $executor->execute($plan);
+
+        $jobNames = array_map(fn($r) => $r->getJobName(), $result->getJobResults());
+        $this->assertSame(['fail', 'never', 'also_never'], $jobNames);
+
+        $skippedResults = array_filter($result->getJobResults(), fn($r) => $r->isSkipped());
+        $this->assertCount(2, $skippedResults);
+
+        foreach ($skippedResults as $jr) {
+            $this->assertSame('skipped by fail-fast', $jr->getSkipReason());
+        }
+    }
+
+    /** @test */
+    public function sequential_fail_fast_preserves_type_and_paths_in_skipped_results()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('fail', 'custom', ['script' => 'exit 1', 'paths' => ['src']])),
+            new CustomJob(new JobConfiguration('never', 'custom', ['script' => 'echo never', 'paths' => ['tests']])),
+        ];
+
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 1));
+        $result = $executor->execute($plan);
+
+        $neverResult = null;
+        foreach ($result->getJobResults() as $jr) {
+            if ($jr->getJobName() === 'never') {
+                $neverResult = $jr;
+            }
+        }
+
+        $this->assertNotNull($neverResult);
+        $this->assertSame('custom', $neverResult->getType());
+        $this->assertSame(['tests'], $neverResult->getPaths());
+    }
+
+    /** @test */
+    public function parallel_fail_fast_queued_job_preserves_type_and_paths()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', [
+            'script' => 'exit 1',
+        ]));
+        $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', [
+            'script' => 'sleep 5',
+        ]));
+        $queuedJob = new CustomJob(new JobConfiguration('queued_job', 'custom', [
+            'script' => 'echo queued',
+            'paths' => ['src/queued'],
+        ]));
+
+        $plan = new FlowPlan('test', [$fastFail, $slowJob, $queuedJob], new OptionsConfiguration(true, 2));
+        $result = $executor->execute($plan);
+
+        $queuedResult = null;
+        foreach ($result->getJobResults() as $jr) {
+            if ($jr->getJobName() === 'queued_job') {
+                $queuedResult = $jr;
+            }
+        }
+
+        $this->assertNotNull($queuedResult);
+        $this->assertTrue($queuedResult->isSkipped());
+        $this->assertSame('custom', $queuedResult->getType());
+        $this->assertSame(['src/queued'], $queuedResult->getPaths());
     }
 }

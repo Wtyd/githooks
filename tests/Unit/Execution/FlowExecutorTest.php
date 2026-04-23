@@ -119,8 +119,18 @@ class FlowExecutorTest extends TestCase
 
         $names = array_map(fn($r) => $r->getJobName(), $result->getJobResults());
         $this->assertContains('fail', $names);
-        // 'never' should not be in results (skipped, not executed)
-        $this->assertNotContains('never', $names);
+        // 'never' appears in results as a skipped entry so consumers of structured
+        // formats (JSON/JUnit/SARIF) see the full plan, not just executed jobs.
+        $this->assertContains('never', $names);
+
+        $neverResult = null;
+        foreach ($result->getJobResults() as $jr) {
+            if ($jr->getJobName() === 'never') {
+                $neverResult = $jr;
+            }
+        }
+        $this->assertNotNull($neverResult);
+        $this->assertTrue($neverResult->isSkipped());
     }
 
     /** @test */

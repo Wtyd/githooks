@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Output;
 
 use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
 use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
 
 /**
@@ -14,6 +15,8 @@ use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
  */
 class SarifResultFormatter implements ResultFormatter
 {
+    use RelativizesFilePath;
+
     private const SCHEMA = 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json';
 
     private const TOOL_URIS = [
@@ -123,7 +126,7 @@ class SarifResultFormatter implements ResultFormatter
                 'locations' => [
                     [
                         'physicalLocation' => [
-                            'artifactLocation' => ['uri' => $issue->getFile()],
+                            'artifactLocation' => ['uri' => $this->relativizePath($issue->getFile())],
                             'region' => $region,
                         ],
                     ],

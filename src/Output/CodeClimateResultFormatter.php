@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Output;
 
 use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
 use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
 
 /**
@@ -14,6 +15,8 @@ use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
  */
 class CodeClimateResultFormatter implements ResultFormatter
 {
+    use RelativizesFilePath;
+
     private ToolOutputParserRegistry $parserRegistry;
 
     public function __construct(?ToolOutputParserRegistry $parserRegistry = null)
@@ -54,19 +57,6 @@ class CodeClimateResultFormatter implements ResultFormatter
         $json = json_encode($codeClimateIssues, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         return $json !== false ? $json : '[]';
-    }
-
-    private function relativizePath(string $path): string
-    {
-        $cwd = getcwd();
-        if ($cwd === false || $path === '' || $path[0] !== '/') {
-            return $path;
-        }
-        $prefix = rtrim($cwd, '/') . '/';
-        if (strpos($path, $prefix) === 0) {
-            return substr($path, strlen($prefix));
-        }
-        return $path;
     }
 
     private function mapSeverity(string $severity): string

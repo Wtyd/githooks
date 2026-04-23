@@ -189,7 +189,9 @@ class FlowExecutor
             $results[] = $result;
 
             if ($failFast && !$result->isSuccess()) {
-                $this->reportSkipped($jobs, $job);
+                foreach ($this->reportSkipped($jobs, $job) as $skippedResult) {
+                    $results[] = $skippedResult;
+                }
                 break;
             }
         }
@@ -246,6 +248,12 @@ class FlowExecutor
                     }
                     foreach ($pool->getQueuedJobs() as $skippedJob) {
                         $this->outputHandler->onJobSkipped($skippedJob->getDisplayName(), 'skipped by fail-fast');
+                        $results[] = JobResult::skipped(
+                            $skippedJob->getName(),
+                            $skippedJob->getType(),
+                            'skipped by fail-fast',
+                            $skippedJob->getConfiguredPaths()
+                        );
                     }
                     $pool->clearQueue();
                     break;
@@ -360,12 +368,16 @@ class FlowExecutor
 
     /**
      * Report remaining jobs as skipped after a fail-fast trigger (sequential mode).
+     * Returns JobResult::skipped entries so the caller can append them to the
+     * results array — structured formats (JSON/JUnit/SARIF) need the full plan.
      *
      * @param JobAbstract[] $allJobs
      * @param JobAbstract $failedJob
+     * @return JobResult[]
      */
-    private function reportSkipped(array $allJobs, JobAbstract $failedJob): void
+    private function reportSkipped(array $allJobs, JobAbstract $failedJob): array
     {
+        $skipped = [];
         $found = false;
         foreach ($allJobs as $job) {
             if ($job === $failedJob) {
@@ -374,8 +386,15 @@ class FlowExecutor
             }
             if ($found) {
                 $this->outputHandler->onJobSkipped($job->getDisplayName(), 'skipped by fail-fast');
+                $skipped[] = JobResult::skipped(
+                    $job->getName(),
+                    $job->getType(),
+                    'skipped by fail-fast',
+                    $job->getConfiguredPaths()
+                );
             }
         }
+        return $skipped;
     }
 
     private function formatTime(float $seconds): string
