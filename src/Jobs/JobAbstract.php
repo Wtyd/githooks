@@ -23,6 +23,8 @@ use Wtyd\GitHooks\Execution\ThreadCapability;
  *   csv       — --flag=a,b,c
  *   repeat    — --flag a --flag b (flag repeated per value)
  *   key_value — --key=value (flag equals the config key name)
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Base for every job type: config parsing + args consumption + ARGUMENT_MAP dispatch + threading + structured output
  */
 abstract class JobAbstract
 {
@@ -60,13 +62,21 @@ abstract class JobAbstract
         unset($this->args['ignoreErrorsOnExit']);
         $this->failFast = (bool) ($this->args['failFast'] ?? false);
         unset($this->args['failFast']);
-        if (array_key_exists('cores', $this->args)) {
-            $cores = $this->args['cores'];
-            if (is_int($cores) && $cores >= 1) {
-                $this->coresOverride = $cores;
-            }
-            unset($this->args['cores']);
+        $this->coresOverride = $this->extractCoresOverride();
+    }
+
+    /**
+     * Pop `cores` from $this->args and return it as a validated positive integer,
+     * or null when absent/invalid.
+     */
+    private function extractCoresOverride(): ?int
+    {
+        if (!array_key_exists('cores', $this->args)) {
+            return null;
         }
+        $cores = $this->args['cores'];
+        unset($this->args['cores']);
+        return is_int($cores) && $cores >= 1 ? $cores : null;
     }
 
     abstract public static function getDefaultExecutable(): string;
