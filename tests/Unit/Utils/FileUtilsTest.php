@@ -8,7 +8,6 @@ use Wtyd\GitHooks\Utils\FileUtils;
 
 class FileUtilsTest extends ZeroTestCase
 {
-
     /** @test */
     function directory_does_not_contains_a_deleted_file()
     {

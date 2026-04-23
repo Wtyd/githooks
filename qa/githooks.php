@@ -59,7 +59,7 @@ return [
         ],
         'Phpcs' => [
             'type' => 'phpcs',
-            'executablePath' => 'tools/php74/phpcs',
+            'executablePath' => 'vendor/bin/phpcs',
             'paths' => ['./'],
             'standard' => './qa/psr12-ruleset.xml',
             'ignore' => ['vendor', 'tools'],
@@ -69,7 +69,7 @@ return [
         ],
         'Phpcbf' => [
             'type' => 'phpcbf',
-            'executablePath' => 'tools/php74/phpcbf',
+            'executablePath' => 'vendor/bin/phpcbf',
             'paths' => ['./'],
             'standard' => './qa/psr12-ruleset.xml',
             'ignore' => ['vendor', 'tools'],
@@ -78,14 +78,14 @@ return [
         ],
         'Phpmd Src' => [
             'type' => 'phpmd',
-            'executablePath' => 'tools/php74/phpmd',
+            'executablePath' => 'vendor/bin/phpmd',
             'paths' => ['./src/'],
             'rules' => './qa/phpmd-ruleset.xml',
             'exclude' => ['vendor'],
         ],
         'Phpcpd' => [
             'type' => 'phpcpd',
-            'executablePath' => 'tools/php80/phpcpd',
+            'executablePath' => 'vendor/bin/phpcpd',
             'paths' => ['./'],
             'exclude' => ['vendor', 'tests', 'tools', 'src/Tools'],
         ],
