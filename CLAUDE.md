@@ -127,7 +127,7 @@ for j in d['jobs']:
         print(f'  KO {j[\"name\"]} ({j[\"type\"]}): exitCode={j[\"exitCode\"]}')"
 ```
 
-**Forzar progreso en CI o pipelines largos**: añadir `-v` (verbose) — el handler emite `OK/KO jobname [n/m]` en stderr aunque no haya TTY. stdout sigue siendo JSON limpio.
+**Forzar progreso en CI o pipelines largos**: añadir `--show-progress` — el handler emite `OK/KO jobname [n/m]` en stderr aunque no haya TTY. stdout sigue siendo JSON limpio.
 
 **Excepción**: la skill `qa-tester` ejecuta los comandos sin `--format=json` porque su cometido es precisamente validar el output humano (colores, progreso, dashboard TTY).
 

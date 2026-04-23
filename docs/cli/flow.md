@@ -23,6 +23,7 @@ githooks flow <name> [options]
 | `--fast-branch` | Fast-branch mode — analyze files that differ from the main branch. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
 | `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
+| `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--config=PATH` | Path to configuration file. |
 
 ## Examples
@@ -65,10 +66,10 @@ Progress lines (`OK`, `Done.`, colours) write to **stderr** **only when a TTY is
 githooks flow qa --format=json | jq '.jobs[] | select(.success == false)'
 ```
 
-Force progress in long-running CI pipelines with `-v`:
+Force progress in long-running CI pipelines with `--show-progress`:
 
 ```bash
-githooks flow qa --format=json -v --output=reports/qa.json
+githooks flow qa --format=json --show-progress --output=reports/qa.json
 ```
 
 `--dry-run` never emits progress (no real execution to measure). See [How-To: Output Formats](../how-to/output-formats.md) for the full schema and stderr rules.

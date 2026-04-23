@@ -61,7 +61,7 @@ On completion, the dashboard collapses to a clean summary.
 For all **structured formats** (`json`, `junit`, `codeclimate`, `sarif`):
 
 - **stdout** carries the structured payload only — never mixed with progress, colours or skip notices.
-- **stderr** carries progress lines (`OK job (Xms) [Y/Z]`, `Done. X/Y completed.`), colours, and any CI annotations — **only when a TTY is attached or `-v` is set**.
+- **stderr** carries progress lines (`OK job (Xms) [Y/Z]`, `Done. X/Y completed.`), colours, and any CI annotations — **only when a TTY is attached or `--show-progress` is set**.
 
 ### Auto-suppress without a TTY
 
@@ -78,22 +78,22 @@ githooks flow qa --format=json > report.json
 !!! tip "No need for `2>/dev/null`"
     Earlier pre-releases required redirecting stderr to keep consumers happy. From 3.2.0 this is automatic via `stream_isatty(STDERR)` and the idiomatic UNIX pattern used by `git`, `docker` and `npm`.
 
-### Force progress with `-v` (verbose)
+### Force progress with `--show-progress`
 
-Long-running pipelines in CI can look stuck because stderr is silent by default. Pass `-v` (`--verbose`) to force progress to be emitted even when stderr is not a TTY:
+Long-running pipelines in CI can look stuck because stderr is silent by default. Pass `--show-progress` to force progress to be emitted even when stderr is not a TTY:
 
 ```bash
 # In a CI job that takes several minutes
-githooks flow qa --format=json -v --output=report.json
+githooks flow qa --format=json --show-progress --output=report.json
 # → stderr: OK phpcs_src (2.1s) [1/6], KO phpstan_src (5.3s) [2/6], …
 # → report.json: clean JSON payload
 ```
 
-The verbose flag is the standard Symfony Console one — it does not add framework-level noise in GitHooks commands, so stdout remains a valid JSON/JUnit/CC/SARIF document.
+`--show-progress` is a dedicated flag: it only affects progress emission, so stdout remains a valid JSON/JUnit/CC/SARIF document. The standard Symfony `-v` / `--verbose` flag is reserved for its original purpose (framework verbosity) and has no effect on progress output.
 
 ### Dry-run emits no progress at all
 
-`--dry-run` does not execute any tool, so there is nothing to measure. The progress handler is skipped entirely: stderr stays empty regardless of TTY or `-v`, and stdout contains the structured payload with `totalTime: "0ms"`.
+`--dry-run` does not execute any tool, so there is nothing to measure. The progress handler is skipped entirely: stderr stays empty regardless of TTY or `--show-progress`, and stdout contains the structured payload with `totalTime: "0ms"`.
 
 ## Writing a report to a file
 

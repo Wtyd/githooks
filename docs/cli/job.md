@@ -20,6 +20,7 @@ githooks job <name> [options]
 | `--fast` | Fast mode — analyze only staged files. See [Execution Modes](../execution-modes.md). |
 | `--fast-branch` | Fast-branch mode — analyze branch diff files. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
 | `--no-ci` | Disable auto-detection of CI annotations. See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
+| `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--config=PATH` | Path to configuration file. |
 | `-- ARGS...` | Extra arguments passed to the tool. Place after `--` separator. |
 
@@ -38,7 +39,7 @@ githooks job phpstan_src -- --memory-limit=2G         # Override memory limit
 
 ## Structured output
 
-`job` accepts the same output formats as `flow` — `json`, `junit`, `codeclimate`, `sarif`. Payload on **stdout**; progress on **stderr only when attached to a TTY** (otherwise silent). Use `-v` to force progress in scripts or CI; `--dry-run` never emits progress. Passing extra args after `--` (e.g. `-- --filter=...`) is preserved end-to-end in the generated command.
+`job` accepts the same output formats as `flow` — `json`, `junit`, `codeclimate`, `sarif`. Payload on **stdout**; progress on **stderr only when attached to a TTY** (otherwise silent). Use `--show-progress` to force progress in scripts or CI; `--dry-run` never emits progress. Passing extra args after `--` (e.g. `-- --filter=...`) is preserved end-to-end in the generated command.
 
 See [How-To: Output Formats](../how-to/output-formats.md) for the full schema.
 

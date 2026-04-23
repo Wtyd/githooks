@@ -283,7 +283,7 @@ El flujo `flow qa --processes=N` en terminal interactivo (dashboard con ⏺/⏳/
 
 El contador del `ProgressOutputHandler` tiene cobertura unitaria, pero no hay test `@group release` que combine jobs ejecutados y jobs saltados (fast-mode sin staged files, fail-fast, hooks condicionales) en el mismo flow para confirmar que `[1/3]`, `[2/3]`, `[3/3]` se emiten correctamente aunque algunos sean skip.
 
-### 0.4 Resolver colisión de `-v` (progreso vs `--verbose` Symfony)
+### 0.4 Resolver colisión de `-v` (progreso vs `--verbose` Symfony) ✔
 
 El `--verbose` de Symfony Console se está usando para forzar progreso en `flow`/`job`. Si un comando futuro usa `$this->info()` o `$this->line()` condicionado a `OutputInterface::isVerbose()`, el mismo flag tendrá dos significados. Auditar los comandos actuales y decidir si el override de progreso debe moverse a un flag dedicado (`--progress` / `--show-progress`) antes de que surja el conflicto.
 
