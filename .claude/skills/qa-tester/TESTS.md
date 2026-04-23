@@ -539,6 +539,98 @@ GH flow qa --fast --config=githooks-fast.php 2>&1 | cat -v
 
 ---
 
+## Tests v3.2
+
+Todos los comandos se ejecutan desde `/var/www/html3`.
+Abreviatura: `GH` = `php{X.Y} /var/www/html1/githooks`
+
+Features v3.2 **sin cobertura en `@group release`**. Ejecutar a mano tras cada build nuevo del `.phar` hasta que se añadan al pipeline.
+
+Las configs de este bloque son nuevas — crearlas en html3 como describa cada caso (se listan inline para que queden autocontenidas).
+
+### cores: N y paratest (nuevas en gh-49-cores)
+
+| ID      | Área     | Test                                                  | Comando                                                                                | Salida esperada                                                                                                                                        | Exit | Config                             |
+| ------- | -------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | ---------------------------------- |
+| V32-001 | cores    | `cores: N` propaga `--parallel=N` a phpcs (dry-run)   | `GH flow qa --dry-run --format=json --config=githooks-cores.php`                       | JSON parseable. `jobs[].command` del job phpcs_src contiene `--parallel=2`                                                                             | 0    | githooks-cores.php                 |
+| V32-002 | cores    | `cores: N` propaga `--processes=N` a paratest         | `GH flow qa --dry-run --format=json --config=githooks-paratest.php`                    | JSON parseable. `jobs[].command` del job paratest_all contiene `vendor/bin/paratest` y `--processes=4`                                                 | 0    | githooks-paratest.php              |
+| V32-003 | cores    | Conflict warning `cores` vs flag nativo en conf:check | `GH conf:check --config=githooks-cores-conflict.php`                                   | Output incluye `'cores' overrides 'parallel' (cores=2, parallel=8)`                                                                                    | 0/1  | githooks-cores-conflict.php        |
+| V32-004 | cores    | `cores` solo reserva en phpstan (no tiene flag CLI)   | `GH flow qa --monitor --dry-run --config=githooks-cores-phpstan.php`                   | Monitor peak refleja el `cores` declarado. `jobs[].command` NO contiene flags desconocidos                                                             | 0    | githooks-cores-phpstan.php         |
+| V32-005 | cores    | `cores` en custom job solo afecta budget              | `GH flow qa --monitor --dry-run --config=githooks-cores-custom.php`                    | Monitor peak refleja el `cores`. Command del custom no modificado                                                                                      | 0    | githooks-cores-custom.php          |
+| V32-006 | cores    | Override en parallel: varios jobs con cores           | `GH flow qa --dry-run --format=json --config=githooks-cores-mixed.php --processes=10`  | Cada job recibe su `cores` exacto; los controllable reciben su flag nativo. `peakEstimatedThreads` = suma de todos                                     | 0    | githooks-cores-mixed.php           |
+
+### Output unificado `--output=PATH`
+
+| ID      | Área   | Test                                  | Comando                                                                                  | Salida esperada                                                                                   | Exit | Config                   |
+| ------- | ------ | ------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---- | ------------------------ |
+| V32-007 | output | `--output=PATH` para `--format=json`   | `GH flow qa --format=json --output=/tmp/qa.json --config=githooks-v3.php`                 | Exit 0. Info "Report written to: /tmp/qa.json". Fichero contiene JSON parseable                   | 0    | githooks-v3.php          |
+| V32-008 | output | `--output=PATH` para `--format=junit`  | `GH flow qa --format=junit --output=/tmp/qa.xml --config=githooks-v3.php`                 | Exit 0. Fichero contiene XML válido (`xmllint --noout /tmp/qa.xml`)                               | 0    | githooks-v3.php          |
+| V32-009 | output | `--output=PATH` para `--format=codeclimate` | `GH flow qa --format=codeclimate --output=/tmp/qa-cc.json --config=githooks-v3.php`   | Exit 0. Fichero contiene array JSON (`head -c 1 /tmp/qa-cc.json` devuelve `[`)                    | 0    | githooks-v3.php          |
+| V32-010 | output | `--output=PATH` para `--format=sarif`  | `GH flow qa --format=sarif --output=/tmp/qa.sarif --config=githooks-v3.php`              | Exit 0. Fichero contiene SARIF 2.1.0 (objeto JSON con `"version": "2.1.0"` y `"runs"`)            | 0    | githooks-v3.php          |
+| V32-011 | output | Stdout por defecto en los 4 formatos  | `GH flow qa --format={json,junit,codeclimate,sarif} --config=githooks-v3.php` (x 4)      | Payload por stdout. No se crean ficheros `gl-code-quality-report.json` ni `githooks-results.sarif` | 0    | githooks-v3.php          |
+| V32-012 | output | `--stdout` ignorado silenciosamente   | `GH flow qa --format=sarif --stdout --config=githooks-v3.php`                             | Igual que sin `--stdout`: payload a stdout, exit 0 (flag legacy ignorado)                         | 0    | githooks-v3.php          |
+
+### Otras features v3.2 sin cobertura
+
+| ID      | Área      | Test                                                  | Comando                                                                           | Salida esperada                                                                                                                     | Exit | Config                 |
+| ------- | --------- | ----------------------------------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------------------- |
+| V32-013 | junit     | `<skipped>` element para job skippado por fast mode   | `GH flow qa --fast --format=junit --config=githooks-fast.php` (sin staged)        | Output contiene `<skipped message="..."/>` dentro del `<testcase>` del job skippado                                                 | 0    | githooks-fast.php      |
+| V32-014 | ci        | GitLab CI annotations                                 | `GITLAB_CI=true GH flow qa --config=githooks-failing.php 2>&1`                    | Output incluye markers `section_start:` / `section_end:` por cada job                                                               | 1    | githooks-failing.php   |
+| V32-015 | confcheck | Truncation a 80 chars                                 | `GH conf:check --config=githooks-long-command.php`                                | Tabla Jobs: comando con `…` al final si excede 80 chars. `GH job X --dry-run` muestra el comando completo                           | 0    | githooks-long-command.php |
+| V32-016 | output    | Live streaming en `flow --processes=1`                | `GH flow qa --processes=1 --config=githooks-v3.php`                               | Cada job emite output en tiempo real con separador `--- JobName ---` entre ellos                                                    | 0    | githooks-v3.php        |
+| V32-017 | output    | Dashboard TTY paralelo                                | `GH flow qa --processes=4 --config=githooks-v3.php` (terminal interactivo)        | Dashboard con estados ⏺/⏳/✓ + timers en vivo. Al acabar colapsa al resumen                                                          | 0    | githooks-v3.php        |
+
+### Configs ejemplo (crear en html3)
+
+```php
+// githooks-cores.php
+<?php
+return [
+    'jobs' => [
+        'phpcs_src' => [
+            'type' => 'phpcs',
+            'executablePath' => 'vendor/bin/phpcs',
+            'paths' => ['src'],
+            'cores' => 2,
+        ],
+    ],
+    'flows' => ['qa' => ['jobs' => ['phpcs_src'], 'options' => ['processes' => 8]]],
+];
+
+// githooks-paratest.php
+<?php
+return [
+    'jobs' => [
+        'paratest_all' => [
+            'type' => 'paratest',
+            'executablePath' => 'vendor/bin/paratest',
+            'configuration' => 'phpunit.xml',
+            'cores' => 4,
+        ],
+    ],
+    'flows' => ['qa' => ['jobs' => ['paratest_all'], 'options' => ['processes' => 8]]],
+];
+
+// githooks-cores-conflict.php
+<?php
+return [
+    'jobs' => [
+        'phpcs_src' => [
+            'type' => 'phpcs',
+            'executablePath' => 'vendor/bin/phpcs',
+            'paths' => ['src'],
+            'parallel' => 8,
+            'cores' => 2,
+        ],
+    ],
+    'flows' => ['qa' => ['jobs' => ['phpcs_src']]],
+];
+```
+
+Las demás configs siguen el mismo patrón adaptado a cada test. Nombrarlas tal como indica la columna Config.
+
+---
+
 ## Resumen
 
 | Versión   | Tests   | Áreas cubiertas                                                                                                                                                                                                                      |
@@ -546,4 +638,5 @@ GH flow qa --fast --config=githooks-fast.php 2>&1 | cat -v
 | v2.8      | 35      | tool, flags, failFast, per-tool, conf:check, hook, conf:init, error handling, phpcbf, script                                                                                                                                         |
 | v3.0      | 104     | flow, job, format, flags, combos, fast mode, fast-branch, execution modes, conf:check, conf:migrate, cache, hooks, hook real, conditional execution, extends, status, system:info, legacy, edge cases, missing tools, exec detection |
 | v3.1      | 27      | extra-args, executable-prefix, local override, combined features, output visual (colores ANSI)                                                                                                                                       |
-| **Total** | **166** |                                                                                                                                                                                                                                      |
+| v3.2      | 17      | cores override (phpcs/paratest/phpstan/custom/mixed), conflict warning, `--output=PATH` en los 4 formatos, stdout por defecto, `--stdout` ignorado, JUnit `<skipped>`, GitLab annotations, conf:check truncation, live streaming, dashboard TTY |
+| **Total** | **183** |                                                                                                                                                                                                                                      |

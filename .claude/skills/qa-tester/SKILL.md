@@ -386,7 +386,25 @@ Las condiciones van en la sección `hooks` como parte del HookRef. Se prueban vi
 | `exclude-files` excluye | `['only-files' => ['src/**'], 'exclude-files' => ['src/Clean*']]` + staged CleanFile.php | Skip |
 | `exclude-on` prevails | `['only-on' => ['3.x-*'], 'exclude-on' => ['3.x-prueba']]` | Skip (exclude gana) |
 
-### 12. Migración y compatibilidad legacy
+### 12. Features v3.2 sin cobertura en release tests
+
+Estas features están en el changelog de [3.2.0] pero no tienen test `@group release`. Probarlas a mano tras cada build nuevo del `.phar` hasta que se añadan al pipeline:
+
+| # | Feature | Comando / setup | Qué verificar |
+|---|---|---|---|
+| 1 | `cores: N` propaga `--parallel` en phpcs | `flow qa --dry-run --format=json` con `phpcs_src` declarando `cores: 2` | El `jobs[].command` del JSON contiene `--parallel=2` |
+| 2 | `cores: N` propaga `--processes` en paratest | `flow qa --dry-run --format=json` con `paratest_all` (`type: paratest`, `cores: 4`) | El `command` contiene `vendor/bin/paratest ... --processes=4` |
+| 3 | `conf:check` warn de conflicto `cores` vs flag nativo | Config con `phpcs` + `parallel: 8` + `cores: 2` | Output incluye `'cores' overrides 'parallel'` |
+| 4 | `--output=PATH` escribe fichero (los 4 formatos estructurados) | Para cada `FORMAT ∈ {json, junit, codeclimate, sarif}`: `flow qa --format=FORMAT --output=/tmp/qa.out` | Exit 0, fichero `/tmp/qa.out` contiene el payload esperado (JSON parseable, XML válido, …) |
+| 5 | JUnit emite `<skipped>` para jobs skippados | `flow qa --fast --format=junit` con un job accelerable que no matchea staged files | Output contiene `<skipped message="..."/>` dentro del `<testcase>` correspondiente |
+| 6 | GitLab CI annotations | `GITLAB_CI=true flow qa` (desde un test con error) | Output incluye markers `section_start:` / `section_end:` entre jobs |
+| 7 | `conf:check` trunca commands a 80 chars | Config con un comando generado largo | Tabla de Jobs muestra `…` al final del comando; `githooks job X --dry-run` muestra el comando completo |
+| 8 | Live streaming sequential (`flow --processes=1`) | `flow qa --processes=1` con varios jobs | Cada job emite su output en tiempo real con separadores `--- JobName ---` entre ellos |
+| 9 | Dashboard TTY paralelo | `flow qa --processes=4` en un terminal interactivo | Aparece dashboard con estados ⏺/⏳/✓/✗ y timers en vivo; al acabar, colapsa al resumen |
+
+Cada item vale para los dos tiers (`builds/php7.4/` y `builds/`). Priorizar los 1-4 (nuevos de `gh-49-cores` + flags de output más utilizados); 5-9 son útiles pero preexistentes.
+
+### 13. Migración y compatibilidad legacy
 
 | Test | Comando | Resultado esperado |
 |---|---|---|
