@@ -109,6 +109,10 @@ return [
         'phpunit-windows' => [
             'extends' => 'phpunit',
             'group' => 'windows',
+            // On Windows the shell treats `vendor/bin/phpunit` as a command lookup,
+            // not a relative path, so composer's unix-style script is not resolved.
+            // Prefixing with `php` makes the interpreter run the script explicitly.
+            'executable-prefix' => 'php',
         ],
         'psalm-src' => [
             'type' => 'psalm',
