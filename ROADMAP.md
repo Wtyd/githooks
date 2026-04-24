@@ -289,7 +289,7 @@ El `--verbose` de Symfony Console se está usando para forzar progreso en `flow`
 
 Se ejecuta antes de 0.1 porque condiciona el diseño del nuevo `ci.yml`: si el override se mueve a otro flag, el workflow adopta el flag final desde el primer momento y no hay que rehacerlo.
 
-### 0.5 Smoke test de `builds/php7.4/` en CI release
+### 0.5 Smoke test de `builds/php7.4/` en CI release ✔
 
 El rebuild del tier PHP 7.4 falla localmente por incompatibilidades de dependencias dev. El CI lo maneja porque instala el tier correcto con `php7.4 tools/composer update` antes del `app:build`, pero no hay un smoke test explícito que descargue el artefacto y confirme que el `.phar` de `builds/php7.4/` arranca en PHP 7.4 y 8.0. Añadir un job mínimo al pipeline de release.
 

@@ -100,7 +100,23 @@ jobs:
 
     - name: Extract and check build
       run: php githooks app:extract-build
-  
+
+    # Smoke test: verifies that the compiled .phar actually boots as a standalone
+    # binary for a real user. Picks the correct tier based on the runner's PHP
+    # version (builds/php7.4/ for 7.4/8.0, builds/ for 8.1+). `--group release`
+    # exercises the library code but does not cover the binary's startup path.
+    - name: Smoke test — .phar boots and responds to basic commands
+      shell: bash
+      run: |
+        case "${{ matrix.php-versions }}" in
+          7.4|8.0) PHAR="builds/php7.4/githooks" ;;
+          *)       PHAR="builds/githooks" ;;
+        esac
+        echo -e "\e[42m\e[30m**** Smoke test: $PHAR on PHP $(php -r 'echo PHP_VERSION;') ****\033[0m"
+        php "$PHAR" --version
+        php "$PHAR" --help > /dev/null
+        php "$PHAR" system:info
+
     - name: Testing the Aplication
       run: |
         echo -e "\e[42m\e[30m**** Release Test Suite ****\033[0m"
