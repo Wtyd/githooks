@@ -202,5 +202,6 @@ return [
 | Testing funcional del CLI | `.claude/skills/qa-tester/` |
 | Documentación externa (MkDocs) | `.claude/skills/docs/` |
 | Analizar informe de Infection (mutants escaped) | `.claude/skills/mutation-analyzer/` |
+| Generar release notes (CHANGELOG-X.Y.Z.md) al cerrar un release | `.claude/skills/release-changelog/` |
 
 Consulta la skill correspondiente antes de empezar una tarea que encaje en estas categorías.
