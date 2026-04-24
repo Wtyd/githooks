@@ -234,4 +234,27 @@ class PhpcsOutputParserTest extends TestCase
 
         $this->assertSame('phpcs', $issues[0]->getRuleId());
     }
+
+    /**
+     * @test
+     * Defensive: if a future phpcs release (or a merged stderr stream) prefixes
+     * a human preamble to the JSON, the parser must still surface the issues.
+     */
+    function it_tolerates_a_human_preamble_before_the_json_document()
+    {
+        $preamble = "PHP_CodeSniffer output\n--------\nScanning...\n";
+        $json = json_encode(['files' => ['src/A.php' => ['messages' => [
+            ['line' => 7, 'column' => 3, 'message' => 'Line too long', 'type' => 'WARNING'],
+        ]
+        ]
+        ]
+        ]);
+
+        $issues = $this->parser->parse($preamble . $json, 'phpcs');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame('src/A.php', $issues[0]->getFile());
+        $this->assertSame(7, $issues[0]->getLine());
+        $this->assertSame('Line too long', $issues[0]->getMessage());
+    }
 }

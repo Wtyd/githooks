@@ -425,6 +425,29 @@ Kebab-case es la convención dominante en ficheros de configuración (YAML, CLI 
 
 Completado como parte de v3.1. Se creó la página de comparación (`docs/comparison.md`) con tabla de features y guías de migración desde GrumPHP (`docs/migration/from-grumphp.md`) y CaptainHook (`docs/migration/from-captainhook.md`).
 
+### Flag `--also=FORMAT:PATH` para dual output
+
+Hoy `--format=FORMAT` reemplaza el output texto por el estructurado, obligando a elegir una sola cara: o el humano ve el log con colores, o la máquina obtiene un SARIF/JSON/JUnit/CodeClimate. En CI quieres **ambas**: el log legible en Actions para diagnosticar a simple vista, y el SARIF subido a Code Scanning para que las alertas aparezcan inline en el PR.
+
+El workaround actual es correr el flow dos veces (una en texto, otra en el formato estructurado). Cada run vuelve a analizar todo → coste doble en tools como phpstan o phpunit con coverage.
+
+Propuesta: añadir un flag `--also=FORMAT:PATH` que en un único run emita el formato nativo (texto o lo que sea `--format`) a stdout **y además** escriba un segundo payload en otro formato a fichero. Ejemplos:
+
+```bash
+# Texto en log + SARIF para Code Scanning en una sola pasada
+githooks flow qa --also=sarif:reports/qa.sarif
+
+# JSON en stdout + JUnit a fichero para un runner que consume ambos
+githooks flow qa --format=json --also=junit:reports/qa.xml
+
+# Varios formatos adicionales
+githooks flow qa --also=sarif:reports/qa.sarif --also=codeclimate:reports/qa.cc.json
+```
+
+Es más general que un `--also-sarif`: sirve para cualquier formato registrado, compone con `--format` existente, y no rompe el flag actual. Coste de implementación bajo: `FormatsOutput::renderFormattedResult` ya tiene un despachador por formato; sólo hay que invocarlo N veces con los targets declarados en `--also=`.
+
+Encaja con el pendiente "Múltiples reportes simultáneos en una sola ejecución (estilo PHPUnit)" más abajo — conviene fusionar ambas propuestas en un único diseño cuando toque planificarlas.
+
 ### Problema en el contenedor con los hooks
 ```bash 
 php7.4 githooksstatus

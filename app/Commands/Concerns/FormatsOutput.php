@@ -137,6 +137,8 @@ trait FormatsOutput
 
     /**
      * Write a structured payload to stdout (default) or to a file when --output=PATH is set.
+     * Missing parent directories in the target path are created on the fly so that
+     * CI pipelines can use `--output=reports/qa.sarif` without a preceding `mkdir`.
      */
     private function writeStructuredPayload(string $content): void
     {
@@ -148,6 +150,10 @@ trait FormatsOutput
         }
 
         $path = strval($customOutput);
+        $dir = dirname($path);
+        if ($dir !== '' && $dir !== '.' && !is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
         file_put_contents($path, $content . "\n");
         $this->info("Report written to: $path");
     }

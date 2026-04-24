@@ -1,18 +1,25 @@
 name: SARIF Contract (on-demand)
 # Manual workflow to refresh or verify the SARIF 2.1.0 contract end-to-end
-# against GitHub Code Scanning.
+# against GitHub Code Scanning, on both PHP tiers (7.4 uses the php7.4
+# build tier, 8.5 uses the modern tier). Running both catches formatter
+# drift triggered by tool minor-version differences (e.g. phpstan 1.x vs
+# 2.x emitting different human preambles or JSON shapes).
 #
 # Triggered by hand from the Actions UI (or `gh workflow run sarif-contract.yml`).
 # Does NOT run on push/PR — the SARIF formatter is covered on every build by
 # tests/Unit/Output/SarifResultFormatterSchemaTest (schema + golden).
 #
-# Jobs:
-#   - verify: regenerates the SARIF on the broken-code fixture, uploads it
-#     to GitHub Code Scanning (Security → Code Scanning). Confirms that
-#     the formatter output is accepted by GitHub's parser.
-#   - refresh: uploads the generated SARIF as a plain artifact so the
-#     maintainer can download it, diff against the committed golden,
-#     and commit the refreshed golden when the formatter changes.
+# Each matrix job:
+#   - regenerates the SARIF on the broken-code fixture (4 tools:
+#     phpstan, phpcs, phpmd, psalm — composer installs the psalm minor
+#     matching each matrix PHP: 5.26.1 on 7.4, 6.16.1 on 8.5),
+#   - uploads it to GitHub Code Scanning with a per-PHP category so the
+#     alerts stay separated per run,
+#   - publishes the generated SARIF as an artifact so the maintainer can
+#     download it and commit as the new golden when the formatter changes,
+#   - diffs against the committed golden and warns if they drift (a drift
+#     is expected across PHP versions when tools behave differently, so
+#     this is a warning, not an error).
 on:
   workflow_dispatch:
     inputs:
@@ -28,8 +35,12 @@ permissions:
 
 jobs:
   verify:
-    name: Generate and verify SARIF contract
+    name: SARIF contract — PHP ${{ matrix.php }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.5']
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +48,7 @@ jobs:
       - name: Install PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '7.4'
+          php-version: ${{ matrix.php }}
           coverage: none
 
       - name: Install dependencies
@@ -57,18 +68,18 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: reports/sarif-contract.sarif
-          category: sarif-contract
+          category: sarif-contract-php${{ matrix.php }}
 
       - name: Upload SARIF as artifact (for golden refresh)
         uses: actions/upload-artifact@v4
         with:
-          name: sarif-contract-report
+          name: sarif-contract-report-php${{ matrix.php }}
           path: reports/sarif-contract.sarif
 
       - name: Diff against committed golden
         run: |
           if diff -u tests/Fixtures/sarif/golden-with-violations.json reports/sarif-contract.sarif; then
-            echo "Golden is up to date."
+            echo "Golden is up to date for PHP ${{ matrix.php }}."
           else
-            echo "::warning::Generated SARIF differs from golden. Download the artifact and commit the refreshed file if this is intentional."
+            echo "::warning::Generated SARIF differs from golden for PHP ${{ matrix.php }}. Download the artifact and, if the change is intentional, refresh the golden."
           fi

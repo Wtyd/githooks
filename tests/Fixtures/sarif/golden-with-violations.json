@@ -8,9 +8,21 @@
                     "name": "phpstan",
                     "rules": [
                         {
-                            "id": "phpstan",
+                            "id": "missingType.return",
                             "shortDescription": {
-                                "text": "phpstan"
+                                "text": "missingType.return"
+                            }
+                        },
+                        {
+                            "id": "missingType.parameter",
+                            "shortDescription": {
+                                "text": "missingType.parameter"
+                            }
+                        },
+                        {
+                            "id": "variable.undefined",
+                            "shortDescription": {
+                                "text": "variable.undefined"
                             }
                         }
                     ],
@@ -19,7 +31,7 @@
             },
             "results": [
                 {
-                    "ruleId": "phpstan",
+                    "ruleId": "missingType.return",
                     "ruleIndex": 0,
                     "level": "error",
                     "message": {
@@ -32,15 +44,15 @@
                                     "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
                                 },
                                 "region": {
-                                    "startLine": 11
+                                    "startLine": 15
                                 }
                             }
                         }
                     ]
                 },
                 {
-                    "ruleId": "phpstan",
-                    "ruleIndex": 0,
+                    "ruleId": "missingType.parameter",
+                    "ruleIndex": 1,
                     "level": "error",
                     "message": {
                         "text": "Method Tests\\Fixtures\\SarifBrokenCode\\BrokenA::a() has parameter $x with no type specified."
@@ -52,15 +64,15 @@
                                     "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
                                 },
                                 "region": {
-                                    "startLine": 11
+                                    "startLine": 15
                                 }
                             }
                         }
                     ]
                 },
                 {
-                    "ruleId": "phpstan",
-                    "ruleIndex": 0,
+                    "ruleId": "variable.undefined",
+                    "ruleIndex": 2,
                     "level": "error",
                     "message": {
                         "text": "Undefined variable: $y"
@@ -72,7 +84,229 @@
                                     "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
                                 },
                                 "region": {
-                                    "startLine": 14
+                                    "startLine": 18
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "tool": {
+                "driver": {
+                    "name": "phpcs",
+                    "rules": [
+                        {
+                            "id": "Generic.Files.LineLength.TooLong",
+                            "shortDescription": {
+                                "text": "Generic.Files.LineLength.TooLong"
+                            }
+                        }
+                    ],
+                    "informationUri": "https://github.com/PHPCSStandards/PHP_CodeSniffer"
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "Generic.Files.LineLength.TooLong",
+                    "ruleIndex": 0,
+                    "level": "warning",
+                    "message": {
+                        "text": "Line exceeds 120 characters; contains 131 characters"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 14,
+                                    "startColumn": 5
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "tool": {
+                "driver": {
+                    "name": "phpmd",
+                    "rules": [
+                        {
+                            "id": "UnusedFormalParameter",
+                            "shortDescription": {
+                                "text": "UnusedFormalParameter"
+                            }
+                        },
+                        {
+                            "id": "UnusedLocalVariable",
+                            "shortDescription": {
+                                "text": "UnusedLocalVariable"
+                            }
+                        }
+                    ],
+                    "informationUri": "https://phpmd.org"
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "UnusedFormalParameter",
+                    "ruleIndex": 0,
+                    "level": "warning",
+                    "message": {
+                        "text": "Avoid unused parameters such as '$x'."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 15,
+                                    "endLine": 15
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "ruleId": "UnusedLocalVariable",
+                    "ruleIndex": 1,
+                    "level": "warning",
+                    "message": {
+                        "text": "Avoid unused local variables such as '$unused'."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 17,
+                                    "endLine": 17
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "ruleId": "UnusedLocalVariable",
+                    "ruleIndex": 1,
+                    "level": "warning",
+                    "message": {
+                        "text": "Avoid unused local variables such as '$y'."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 18,
+                                    "endLine": 18
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "tool": {
+                "driver": {
+                    "name": "psalm",
+                    "rules": [
+                        {
+                            "id": "MissingReturnType",
+                            "shortDescription": {
+                                "text": "MissingReturnType"
+                            }
+                        },
+                        {
+                            "id": "MissingParamType",
+                            "shortDescription": {
+                                "text": "MissingParamType"
+                            }
+                        },
+                        {
+                            "id": "UndefinedVariable",
+                            "shortDescription": {
+                                "text": "UndefinedVariable"
+                            }
+                        }
+                    ],
+                    "informationUri": "https://psalm.dev"
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "MissingReturnType",
+                    "ruleIndex": 0,
+                    "level": "error",
+                    "message": {
+                        "text": "Method Tests\\Fixtures\\SarifBrokenCode\\BrokenA::a does not have a return type"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 15,
+                                    "endLine": 15,
+                                    "startColumn": 21
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "ruleId": "MissingParamType",
+                    "ruleIndex": 1,
+                    "level": "error",
+                    "message": {
+                        "text": "Parameter $x has no provided type"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 15,
+                                    "endLine": 15,
+                                    "startColumn": 23
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "ruleId": "UndefinedVariable",
+                    "ruleIndex": 2,
+                    "level": "error",
+                    "message": {
+                        "text": "Cannot find referenced variable $y"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 18,
+                                    "endLine": 18,
+                                    "startColumn": 16
                                 }
                             }
                         }

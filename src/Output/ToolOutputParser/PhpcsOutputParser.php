@@ -5,21 +5,27 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Output\ToolOutputParser;
 
 use Wtyd\GitHooks\Output\CodeIssue;
+use Wtyd\GitHooks\Output\ToolOutputParser\Concerns\ExtractsJsonDocument;
 
 /**
  * Parses PHPCS JSON output (--report=json).
  *
  * Input: {"totals":{...},"files":{"path":{"messages":[{line,column,message,source,type}]}}}
+ *
+ * Uses ExtractsJsonDocument to tolerate prologues/epilogues added by the
+ * tool or merged from stderr — the same defensive pattern applied to phpstan.
  */
 class PhpcsOutputParser implements ToolOutputParserInterface
 {
+    use ExtractsJsonDocument;
+
     /**
      * @return CodeIssue[]
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Defensive parsing of external JSON structure
      */
     public function parse(string $stdout, string $toolName): array
     {
-        $data = json_decode($stdout, true);
+        $data = json_decode($this->extractJsonDocument($stdout), true);
         if (!is_array($data) || !isset($data['files'])) {
             return [];
         }
