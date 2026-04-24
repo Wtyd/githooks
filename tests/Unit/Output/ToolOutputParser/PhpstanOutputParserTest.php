@@ -137,6 +137,78 @@ class PhpstanOutputParserTest extends TestCase
         $this->assertSame('surviving', $issues[0]->getMessage());
     }
 
+    /** @test */
+    function it_uses_identifier_field_as_rule_id_when_present()
+    {
+        $json = json_encode(['files' => ['src/A.php' => ['messages' => [
+            [
+                'line' => 14,
+                'message' => 'Undefined variable: $y',
+                'identifier' => 'variable.undefined',
+            ],
+            [
+                'line' => 11,
+                'message' => 'Method has no return type specified.',
+                'identifier' => 'missingType.return',
+            ],
+        ]
+        ]
+        ]
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpstan');
+
+        $this->assertCount(2, $issues);
+        $this->assertSame('variable.undefined', $issues[0]->getRuleId());
+        $this->assertSame('missingType.return', $issues[1]->getRuleId());
+    }
+
+    /** @test */
+    function it_falls_back_to_generic_phpstan_rule_id_when_identifier_missing()
+    {
+        $json = json_encode(['files' => ['src/A.php' => ['messages' => [
+            ['line' => 14, 'message' => 'x'],
+            ['line' => 15, 'message' => 'y', 'identifier' => ''],
+        ]
+        ]
+        ]
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpstan');
+
+        $this->assertCount(2, $issues);
+        $this->assertSame('phpstan', $issues[0]->getRuleId(), 'missing identifier falls back');
+        $this->assertSame('phpstan', $issues[1]->getRuleId(), 'empty identifier falls back too');
+    }
+
+    /**
+     * @test
+     * PHPStan 2.x prints a human preamble (on stderr, but merged with stdout
+     * in some CI capture paths) before the JSON payload. The parser must
+     * tolerate that and still surface the issues.
+     */
+    function it_tolerates_a_human_preamble_before_the_json_document()
+    {
+        $preamble = "Instructions for interpreting errors\n"
+            . "---------\n\n"
+            . "Each error has an associated identifier, like `argument.type`\n"
+            . "or `return.missing`.\n\n"
+            . "Do not add type casts just to silence errors.\n";
+        $json = json_encode(['files' => ['src/User.php' => ['messages' => [
+            ['line' => 14, 'message' => 'Undefined variable: $y'],
+        ]
+        ]
+        ]
+        ]);
+
+        $issues = $this->parser->parse($preamble . $json, 'phpstan');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame('src/User.php', $issues[0]->getFile());
+        $this->assertSame(14, $issues[0]->getLine());
+        $this->assertSame('Undefined variable: $y', $issues[0]->getMessage());
+    }
+
     /**
      * @test
      * Kills L31 Continue→break on the messages inner loop.

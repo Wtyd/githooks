@@ -77,31 +77,38 @@ class SarifResultFormatterSchemaTest extends TestCase
 
     /**
      * Build a FlowResult equivalent to running `flow sarif-check` on the
-     * tests/Fixtures/sarif-broken-code/ fixture. The stdout mimics what
-     * phpstan emits in --error-format=json mode — exactly what the real
-     * flow produces when the SARIF format is requested.
+     * tests/Fixtures/sarif-broken-code/ fixture. Each synthetic stdout
+     * mimics the JSON output of its tool (phpstan --error-format=json,
+     * phpcs --report=json, phpmd renderer=json) — exactly what the real
+     * flow produces when the SARIF format is requested, frozen against
+     * the committed golden fixture.
      */
     private function buildFlowResultMatchingFixture(): FlowResult
     {
+        $file = 'tests/Fixtures/sarif-broken-code/BrokenA.php';
+
         $phpstanStdout = json_encode([
             'totals' => ['errors' => 3, 'file_errors' => 3],
             'files' => [
-                'tests/Fixtures/sarif-broken-code/BrokenA.php' => [
+                $file => [
                     'errors' => 3,
                     'messages' => [
                         [
-                            'line' => 11,
+                            'line' => 15,
                             'message' => 'Method Tests\\Fixtures\\SarifBrokenCode\\BrokenA::a() has no return type specified.',
+                            'identifier' => 'missingType.return',
                             'ignorable' => true,
                         ],
                         [
-                            'line' => 11,
+                            'line' => 15,
                             'message' => 'Method Tests\\Fixtures\\SarifBrokenCode\\BrokenA::a() has parameter $x with no type specified.',
+                            'identifier' => 'missingType.parameter',
                             'ignorable' => true,
                         ],
                         [
-                            'line' => 14,
+                            'line' => 18,
                             'message' => 'Undefined variable: $y',
+                            'identifier' => 'variable.undefined',
                             'ignorable' => true,
                         ],
                     ],
@@ -109,22 +116,117 @@ class SarifResultFormatterSchemaTest extends TestCase
             ],
         ]);
 
-        $jobResult = new JobResult(
-            'phpstan-broken',
+        $phpcsStdout = json_encode([
+            'totals' => ['errors' => 0, 'warnings' => 1, 'fixable' => 0],
+            'files' => [
+                $file => [
+                    'errors' => 0,
+                    'warnings' => 1,
+                    'messages' => [
+                        [
+                            'line' => 14,
+                            'column' => 5,
+                            'message' => 'Line exceeds 120 characters; contains 131 characters',
+                            'source' => 'Generic.Files.LineLength.TooLong',
+                            'severity' => 5,
+                            'type' => 'WARNING',
+                            'fixable' => false,
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $phpmdStdout = json_encode([
+            'files' => [
+                [
+                    'file' => $file,
+                    'violations' => [
+                        [
+                            'beginLine' => 15,
+                            'endLine' => 15,
+                            'description' => "Avoid unused parameters such as '\$x'.",
+                            'rule' => 'UnusedFormalParameter',
+                            'priority' => 3,
+                        ],
+                        [
+                            'beginLine' => 17,
+                            'endLine' => 17,
+                            'description' => "Avoid unused local variables such as '\$unused'.",
+                            'rule' => 'UnusedLocalVariable',
+                            'priority' => 3,
+                        ],
+                        [
+                            'beginLine' => 18,
+                            'endLine' => 18,
+                            'description' => "Avoid unused local variables such as '\$y'.",
+                            'rule' => 'UnusedLocalVariable',
+                            'priority' => 3,
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $psalmStdout = json_encode([
+            [
+                'severity' => 'error',
+                'line_from' => 15,
+                'line_to' => 15,
+                'column_from' => 21,
+                'type' => 'MissingReturnType',
+                'message' => 'Method Tests\\Fixtures\\SarifBrokenCode\\BrokenA::a does not have a return type',
+                'file_name' => $file,
+                'file_path' => $file,
+            ],
+            [
+                'severity' => 'error',
+                'line_from' => 15,
+                'line_to' => 15,
+                'column_from' => 23,
+                'type' => 'MissingParamType',
+                'message' => 'Parameter $x has no provided type',
+                'file_name' => $file,
+                'file_path' => $file,
+            ],
+            [
+                'severity' => 'error',
+                'line_from' => 18,
+                'line_to' => 18,
+                'column_from' => 16,
+                'type' => 'UndefinedVariable',
+                'message' => 'Cannot find referenced variable $y',
+                'file_name' => $file,
+                'file_path' => $file,
+            ],
+        ]);
+
+        $jobs = [
+            $this->buildJobResult('phpstan-broken', 'phpstan', (string) $phpstanStdout),
+            $this->buildJobResult('phpcs-broken', 'phpcs', (string) $phpcsStdout),
+            $this->buildJobResult('phpmd-broken', 'phpmd', (string) $phpmdStdout),
+            $this->buildJobResult('psalm-broken', 'psalm', (string) $psalmStdout),
+        ];
+
+        return new FlowResult('sarif-check', $jobs, '1s');
+    }
+
+    private function buildJobResult(string $name, string $type, string $stdout): JobResult
+    {
+        return new JobResult(
+            $name,
             false,
             '',
             '1s',
             false,
-            'vendor/bin/phpstan analyse tests/Fixtures/sarif-broken-code --error-format=json',
-            'phpstan',
+            "vendor/bin/$type",
+            $type,
             1,
             ['tests/Fixtures/sarif-broken-code'],
             false,
             null,
-            (string) $phpstanStdout
+            $stdout
         );
-
-        return new FlowResult('sarif-check', [$jobResult], '1s');
     }
 
     /**

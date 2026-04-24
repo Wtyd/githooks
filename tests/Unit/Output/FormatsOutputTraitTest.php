@@ -406,6 +406,28 @@ class FormatsOutputTraitTest extends TestCase
     }
 
     /** @test */
+    public function render_formatted_result_creates_missing_parent_directories_for_output_path()
+    {
+        $baseDir = sys_get_temp_dir() . '/formats-output-nested-' . uniqid();
+        $customPath = $baseDir . '/reports/subdir/qa.sarif';
+
+        try {
+            $double = $this->makeDouble(['format' => 'sarif', 'output' => $customPath]);
+
+            $double->callRenderFormattedResult($this->buildResult());
+
+            $this->assertFileExists($customPath, 'parent directories must be created on the fly');
+            $decoded = json_decode((string) file_get_contents($customPath), true);
+            $this->assertSame('2.1.0', $decoded['version'] ?? null);
+        } finally {
+            @unlink($customPath);
+            @rmdir($baseDir . '/reports/subdir');
+            @rmdir($baseDir . '/reports');
+            @rmdir($baseDir);
+        }
+    }
+
+    /** @test */
     public function render_formatted_result_falls_back_to_text_summary_for_unknown_format()
     {
         $double = $this->makeDouble(['format' => 'unknown']);

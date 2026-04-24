@@ -278,4 +278,33 @@ class PhpmdOutputParserTest extends TestCase
 
         $this->assertSame('src/X.php', $issues[0]->getFile());
     }
+
+    /**
+     * @test
+     * Defensive: if a future phpmd release (or a merged stderr stream) prefixes
+     * a human preamble to the JSON, the parser must still surface the violations.
+     */
+    function it_tolerates_a_human_preamble_before_the_json_document()
+    {
+        $preamble = "PHPMD report\n----\nStarting analysis...\n";
+        $json = json_encode(['files' => [[
+            'file' => 'src/A.php',
+            'violations' => [[
+                'beginLine' => 4,
+                'description' => 'Unused variable',
+                'rule' => 'UnusedLocalVariable',
+                'priority' => 3,
+            ]
+            ],
+        ]
+        ]
+        ]);
+
+        $issues = $this->parser->parse($preamble . $json, 'phpmd');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame('src/A.php', $issues[0]->getFile());
+        $this->assertSame(4, $issues[0]->getLine());
+        $this->assertSame('Unused variable', $issues[0]->getMessage());
+    }
 }
