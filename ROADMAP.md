@@ -228,7 +228,7 @@ Objetivo: cerrar deuda identificada durante 3.2.0 y reestructurar la infraestruc
   0.3 (contador n/m) ──┘
 ```
 
-### 0.1 Reestructurar CI aprovechando flows + herencia + renombrado + contrato SARIF
+### 0.1 Reestructurar CI aprovechando flows + herencia + renombrado + contrato SARIF ✔
 
 El CI actual tiene dos workflows que se solapan (`code-analysis.yml` ejecuta `flow qa` — que ya incluye Phpunit — y `main-tests.yml` vuelve a ejecutar Phpunit en PHP 7.4). Se explota la propia herramienta (GitHooks) como fuente única de verdad: lo que corre el CI queda definido en `qa/githooks.php`, el workflow es un thin wrapper.
 
