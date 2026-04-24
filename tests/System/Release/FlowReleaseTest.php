@@ -84,7 +84,8 @@ class FlowReleaseTest extends ReleaseTestCase
         passthru("$this->githooks flow qa --fast --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString('skipped', $this->getActualOutput());
+        $this->assertStringContainsString('⏩', $this->getActualOutput(), 'skip glyph must appear on stdout for fast-mode no-match');
+        $this->assertStringContainsString('no staged files match', $this->getActualOutput());
     }
 
     /** @test */
@@ -347,7 +348,8 @@ class FlowReleaseTest extends ReleaseTestCase
         passthru("$this->githooks flow qa --fast-branch --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString('skipped', $this->getActualOutput());
+        $this->assertStringContainsString('⏩', $this->getActualOutput(), 'skip glyph must appear on stdout for fast-branch no-match');
+        $this->assertStringContainsString('no staged files match', $this->getActualOutput());
     }
 
     /** @test */
