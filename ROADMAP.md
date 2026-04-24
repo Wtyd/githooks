@@ -293,11 +293,13 @@ Se ejecuta antes de 0.1 porque condiciona el diseño del nuevo `ci.yml`: si el o
 
 El rebuild del tier PHP 7.4 falla localmente por incompatibilidades de dependencias dev. El CI lo maneja porque instala el tier correcto con `php7.4 tools/composer update` antes del `app:build`, pero no hay un smoke test explícito que descargue el artefacto y confirme que el `.phar` de `builds/php7.4/` arranca en PHP 7.4 y 8.0. Añadir un job mínimo al pipeline de release.
 
-### 0.6 Silenciar progreso en stderr con `--format=` estructurado en CI
+### 0.6 Silenciar progreso en stderr con `--format=` estructurado en CI ✔ *(superada por 0.4)*
 
-Hoy, cuando el usuario lanza `githooks flow qa --format=json` en CI, el progreso (`OK job (Xms) [Y/Z]`, `Done.`) sigue saliendo por stderr. El payload estructurado en stdout está limpio, pero muchos runners de CI mezclan stdout + stderr en el log del job, así que el progreso acaba apareciendo igual y el usuario tiene que añadir `2>/dev/null` a mano.
+El enunciado original era: en CI con `--format=json` el progreso sale por stderr y, como muchos runners mezclan stdout+stderr en el log, el usuario tiene que añadir `2>/dev/null` a mano. La propuesta barajaba (a) auto-silenciar cuando hay CI detectado + formato estructurado o (b) un flag `--no-progress`.
 
-Como ya detectamos CI (`GITHUB_ACTIONS`, `GITLAB_CI`) para las anotaciones nativas, podemos aprovechar esa detección para silenciar el progreso automáticamente cuando hay `--format=` estructurado + CI detectado. Decisión pendiente en la planificación de la subtarea: (a) auto-silenciar en CI con formato estructurado, o (b) flag explícito `--no-progress`.
+Tras la 0.4, el mecanismo pasa a ser **opt-in** via `--show-progress`: sin TTY (que es el caso en CI) y sin flag, stderr está silencioso por defecto. El caso que la 0.6 pretendía resolver ya no ocurre — el usuario que lance `githooks flow qa --format=json` en CI obtiene stdout limpio y stderr vacío sin hacer nada.
+
+Queda como no-resuelto un caso marginal: usuario en terminal TTY que quiere `--format=json` sin progreso en stderr. Sigue disponible la ruta Unix estándar (`2>/dev/null`). Si algún día aparece demanda real de un `--no-progress` explícito, `FormatsOutput::resolveProgressHandler` es el único punto a tocar.
 
 ---
 
