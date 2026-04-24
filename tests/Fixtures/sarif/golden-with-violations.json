@@ -1,0 +1,84 @@
+{
+    "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+    "version": "2.1.0",
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "phpstan",
+                    "rules": [
+                        {
+                            "id": "phpstan",
+                            "shortDescription": {
+                                "text": "phpstan"
+                            }
+                        }
+                    ],
+                    "informationUri": "https://phpstan.org"
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "phpstan",
+                    "ruleIndex": 0,
+                    "level": "error",
+                    "message": {
+                        "text": "Method Tests\\Fixtures\\SarifBrokenCode\\BrokenA::a() has no return type specified."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 11
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "ruleId": "phpstan",
+                    "ruleIndex": 0,
+                    "level": "error",
+                    "message": {
+                        "text": "Method Tests\\Fixtures\\SarifBrokenCode\\BrokenA::a() has parameter $x with no type specified."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 11
+                                }
+                            }
+                        }
+                    ]
+                },
+                {
+                    "ruleId": "phpstan",
+                    "ruleIndex": 0,
+                    "level": "error",
+                    "message": {
+                        "text": "Undefined variable: $y"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "tests/Fixtures/sarif-broken-code/BrokenA.php"
+                                },
+                                "region": {
+                                    "startLine": 14
+                                }
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

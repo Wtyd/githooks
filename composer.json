@@ -36,6 +36,7 @@
         "fakerphp/faker": "^1.19",
         "friendsofphp/php-cs-fixer": "^3.0",
         "intonate/tinker-zero": "1.*",
+        "justinrainbow/json-schema": "^5.2 | ^6.0",
         "laravel-zero/framework": "8.* | 9.* | 10.* | 11.* | 12.*",
         "laravel-zero/phar-updater": "^1.0.6",
         "mikey179/vfsstream": "^1.6",
