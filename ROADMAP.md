@@ -275,7 +275,7 @@ El CI actual tiene dos workflows que se solapan (`code-analysis.yml` ejecuta `fl
 
 **Por qué no va al workflow `ci.yml` el upload-sarif permanente:** en este repo el QA pasa siempre, el SARIF va vacío. Añadir el step con `security-events: write` y dependencia en `codeql-action` sin valor real es ceremonia. El ejemplo para consumidores va en `docs/` (skill `docs` en otra tarea).
 
-### 0.2 Tests automatizados del dashboard TTY paralelo
+### 0.2 Tests automatizados del dashboard TTY paralelo ✔
 
 El flujo `flow qa --processes=N` en terminal interactivo (dashboard con ⏺/⏳/✓/✗ y timers en vivo) se valida hoy manualmente con la skill `qa-tester`. Hay que definir si se automatiza vía `expect`/pty, un harness PHP que alimente un stream fake-TTY, o se acepta como verificación manual documentada. La parte no-TTY (append-only) ya está cubierta por los release tests.
 

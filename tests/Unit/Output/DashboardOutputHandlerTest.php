@@ -238,6 +238,104 @@ class DashboardOutputHandlerTest extends TestCase
         $this->assertSame('', $this->readStream($stream));
     }
 
+    /** @test */
+    function tty_register_jobs_renders_every_job_in_gray_queued_state()
+    {
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
+
+        $handler->registerJobs(['job_a', 'job_b', 'job_c']);
+
+        $output = $this->readStream($stream);
+        $this->assertStringContainsString("\e[90m⏺ job_a\e[0m", $output);
+        $this->assertStringContainsString("\e[90m⏺ job_b\e[0m", $output);
+        $this->assertStringContainsString("\e[90m⏺ job_c\e[0m", $output);
+    }
+
+    /** @test */
+    function tty_on_job_start_transitions_job_from_queued_to_running_with_timer()
+    {
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
+        $handler->registerJobs(['job_a', 'job_b']);
+        $handler->onJobStart('job_a');
+        ftruncate($stream, 0);
+        rewind($stream);
+
+        $handler->tick();
+        $output = $this->readStream($stream);
+
+        // job_a transitioned: no longer queued, now running with a timer.
+        $this->assertStringNotContainsString('⏺ job_a', $output);
+        $this->assertStringContainsString('⏳', $output);
+        $this->assertStringContainsString('job_a', $output);
+        $this->assertMatchesRegularExpression('/job_a \[\x1b\[33m\d+\.\d+s\x1b\[0m\]/', $output, 'running job must render a live timer in [N.Ns] format');
+        // job_b remains queued.
+        $this->assertStringContainsString('⏺ job_b', $output);
+    }
+
+    /** @test */
+    function tty_redraw_emits_cursor_up_and_clear_line_matching_rendered_line_count()
+    {
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
+        // First render: 3 queued lines.
+        $handler->registerJobs(['a', 'b', 'c']);
+        // Start one job so tick() actually re-renders (tick skips when nothing is running).
+        $handler->onJobStart('a');
+        ftruncate($stream, 0);
+        rewind($stream);
+
+        $handler->tick();
+        $output = $this->readStream($stream);
+
+        // clearDashboard emits: cursor-up N + (clear-line + newline) × N + cursor-up N again.
+        $this->assertStringContainsString("\033[3A", $output, 'cursor-up must match the 3 previously rendered lines');
+        $this->assertSame(3, substr_count($output, "\033[2K"), 'clear-line must fire once per previously rendered line');
+    }
+
+    /** @test */
+    function tty_successful_job_leaves_final_ok_line_without_queued_or_running_markers()
+    {
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
+        $handler->registerJobs(['only_job']);
+        $handler->onJobStart('only_job');
+        $handler->onJobSuccess('only_job', '750ms');
+        ftruncate($stream, 0);
+        rewind($stream);
+
+        $handler->flush();
+        $output = $this->readStream($stream);
+
+        $this->assertStringContainsString('only_job - OK. Time: 750ms', $output);
+        $this->assertStringNotContainsString('⏺', $output, 'no job should be shown as queued after flush');
+        $this->assertStringNotContainsString('⏳', $output, 'no job should be shown as running after flush');
+    }
+
+    /** @test */
+    function tty_end_to_end_flow_collapses_to_final_results_only()
+    {
+        $stream = fopen('php://memory', 'rw');
+        $handler = new DashboardOutputHandler(true, $stream);
+
+        $handler->registerJobs(['job_a', 'job_b']);
+        $handler->onJobStart('job_a');
+        $handler->onJobStart('job_b');
+        $handler->onJobSuccess('job_a', '1.20s');
+        $handler->onJobError('job_b', '2.00s', '');
+        ftruncate($stream, 0);
+        rewind($stream);
+
+        $handler->flush();
+        $output = $this->readStream($stream);
+
+        $this->assertStringContainsString('job_a - OK. Time: 1.20s', $output);
+        $this->assertStringContainsString('job_b - KO. Time: 2.00s', $output);
+        $this->assertStringNotContainsString('⏺', $output);
+        $this->assertStringNotContainsString('⏳', $output);
+    }
+
     /**
      * @param resource $stream
      */

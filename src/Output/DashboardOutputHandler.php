@@ -15,6 +15,17 @@ namespace Wtyd\GitHooks\Output;
  * Uses ANSI cursor movement to update running timers in place.
  * Falls back to append-only output in non-TTY (CI) environments.
  *
+ * Testing notes:
+ *   - Emitted ANSI sequences (\e[33m, \e[90m, \e[42m…, \033[NA, \033[2K),
+ *     state transitions (queued → running → done), redraw line counts, and
+ *     the final collapse after flush() are covered by DashboardOutputHandlerTest
+ *     via `$forceTty=true` + `php://memory` stream injection.
+ *   - What those unit tests cannot cover, and which a human still validates
+ *     through the qa-tester skill (TESTS.md V32-017):
+ *     glyph rendering (⏳/⏺/✓/✗ look like emojis, not `?`), color perception,
+ *     visual fluidity of the timer tick, and the perceived "redraw in place"
+ *     of cursor movement on a real terminal.
+ *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) OutputHandler interface (8) + registerJobs + tick
  */
 class DashboardOutputHandler implements OutputHandler
