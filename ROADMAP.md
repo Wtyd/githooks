@@ -279,7 +279,7 @@ El CI actual tiene dos workflows que se solapan (`code-analysis.yml` ejecuta `fl
 
 El flujo `flow qa --processes=N` en terminal interactivo (dashboard con ⏺/⏳/✓/✗ y timers en vivo) se valida hoy manualmente con la skill `qa-tester`. Hay que definir si se automatiza vía `expect`/pty, un harness PHP que alimente un stream fake-TTY, o se acepta como verificación manual documentada. La parte no-TTY (append-only) ya está cubierta por los release tests.
 
-### 0.3 Release test del contador `[n/m]` con flow mixto skip/run
+### 0.3 Release test del contador `[n/m]` con flow mixto skip/run ✔
 
 El contador del `ProgressOutputHandler` tiene cobertura unitaria, pero no hay test `@group release` que combine jobs ejecutados y jobs saltados (fast-mode sin staged files, fail-fast, hooks condicionales) en el mismo flow para confirmar que `[1/3]`, `[2/3]`, `[3/3]` se emiten correctamente aunque algunos sean skip.
 

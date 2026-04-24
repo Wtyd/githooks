@@ -118,7 +118,9 @@ class FlowExecutor
             return $this->executeDryRun($plan->getFlowName(), $jobs, $plan->getExecutionMode());
         }
 
-        $this->outputHandler->onFlowStart(count($jobs));
+        // Total = executable jobs + plan-level skipped jobs (fast-mode filtering etc.).
+        // Both contribute events to the handler, so the denominator must cover both.
+        $this->outputHandler->onFlowStart(count($jobs) + count($plan->getSkippedJobs()));
 
         if ($maxProcesses <= 1 || count($jobs) <= 1) {
             $results = $this->executeSequential($jobs, $failFast);

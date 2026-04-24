@@ -387,6 +387,37 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
     }
 
     /** @test */
+    public function progress_counter_spans_mixed_run_and_skip_jobs()
+    {
+        // Three jobs: one passes, one fails, one gets skipped by fail-fast.
+        // The stderr progress must show [1/3], [2/3], [3/3] and a final
+        // "Done. 3/3 completed." — covering both emitted and skipped slots
+        // without overrunning the denominator.
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['ok_job', 'fail_job', 'never_job']]])
+            ->setV3Jobs([
+                'ok_job'    => ['type' => 'custom', 'script' => '/bin/true'],
+                'fail_job'  => ['type' => 'custom', 'script' => 'exit 1'],
+                'never_job' => ['type' => 'custom', 'script' => 'echo never'],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $stderrPath = self::TESTS_PATH . '/stderr.log';
+        passthru(
+            "$this->githooks flow qa --fail-fast --format=json --show-progress --config=$this->configPath 2>$stderrPath",
+            $exitCode
+        );
+
+        $stderr = (string) file_get_contents($stderrPath);
+
+        $this->assertStringContainsString('[1/3]', $stderr, 'first counter slot missing');
+        $this->assertStringContainsString('[2/3]', $stderr, 'second counter slot missing');
+        $this->assertStringContainsString('[3/3]', $stderr, 'third counter slot missing');
+        $this->assertStringContainsString('Done. 3/3 completed.', $stderr, 'final banner must cover the full plan');
+        $this->assertStringNotContainsString('[4/', $stderr, 'counter must never overrun the denominator');
+    }
+
+    /** @test */
     public function fail_fast_cancelled_jobs_appear_as_skipped_in_json()
     {
         $this->configurationFileBuilder

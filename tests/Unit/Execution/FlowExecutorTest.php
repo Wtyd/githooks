@@ -356,6 +356,39 @@ class FlowExecutorTest extends TestCase
         $executor->execute($plan);
     }
 
+    /**
+     * @test
+     * Regression: onFlowStart must receive the total count that will be observed
+     * (executable jobs + plan-level skipped jobs such as fast-mode no-staged-files).
+     * If the total excludes plan-skipped jobs, the ProgressOutputHandler emits
+     * counters that overrun the denominator, e.g. [2/1], "Done. 2/1 completed.".
+     */
+    public function onFlowStart_total_includes_plan_skipped_jobs()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $activeJob = new CustomJob(new JobConfiguration('runs', 'custom', ['script' => 'echo ok']));
+        $planSkipped = [
+            'filtered_a' => ['type' => 'phpstan', 'reason' => 'no staged files match its paths', 'paths' => ['src']],
+            'filtered_b' => ['type' => 'phpcs',   'reason' => 'no staged files match its paths', 'paths' => ['app']],
+        ];
+
+        $plan = new FlowPlan(
+            'test',
+            [$activeJob],
+            new OptionsConfiguration(false, 1),
+            null,
+            $planSkipped
+        );
+
+        $executor->execute($plan);
+
+        $this->assertSame([3], $spy->flowStarts, 'onFlowStart must announce total = active (1) + plan-skipped (2)');
+        $this->assertCount(1, $spy->successfulJobs);
+        $this->assertSame(['filtered_a', 'filtered_b'], $spy->skippedJobNames());
+    }
+
     // ========================================================================
     // OutputHandlerSpy — event-stream assertions
     // ========================================================================
