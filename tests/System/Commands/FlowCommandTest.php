@@ -370,4 +370,114 @@ class FlowCommandTest extends SystemTestCase
             ->containsStringInOutput('no staged files')
             ->assertExitCode(0);
     }
+
+    // =========================================================================
+    // Multi-report smokes (v3.3 ítem 2) — wiring CLI/signature → trait → file.
+    // The combinations matrix is covered by FormatsOutputTraitTest. These tests
+    // only verify the end-to-end plumbing through the artisan command.
+    // =========================================================================
+
+    /** @test */
+    public function it_writes_multiple_report_files_via_cli_flags()
+    {
+        $sarifPath = getcwd() . '/' . self::TESTS_PATH . '/multireport.sarif';
+        $junitPath = getcwd() . '/' . self::TESTS_PATH . '/multireport.xml';
+        @unlink($sarifPath);
+        @unlink($junitPath);
+
+        try {
+            $this->artisan(
+                "flow qa --report-sarif=$sarifPath --report-junit=$junitPath --config=$this->configPath"
+            )->assertExitCode(0);
+
+            $this->assertFileExists($sarifPath);
+            $sarif = json_decode(strval(file_get_contents($sarifPath)), true);
+            $this->assertSame('2.1.0', $sarif['version'] ?? null);
+
+            $this->assertFileExists($junitPath);
+            $this->assertNotFalse(
+                simplexml_load_string(strval(file_get_contents($junitPath))),
+                'JUnit report file is not valid XML'
+            );
+        } finally {
+            @unlink($sarifPath);
+            @unlink($junitPath);
+        }
+    }
+
+    /** @test */
+    public function it_writes_report_files_from_declarative_reports_config()
+    {
+        $sarifPath = getcwd() . '/' . self::TESTS_PATH . '/declarative.sarif';
+        $junitPath = getcwd() . '/' . self::TESTS_PATH . '/declarative.xml';
+        @unlink($sarifPath);
+        @unlink($junitPath);
+
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => ['ok'],
+                    'options' => [
+                        'reports' => [
+                            'sarif' => $sarifPath,
+                            'junit' => $junitPath,
+                        ],
+                    ],
+                ],
+            ])
+            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => '/bin/true']])
+            ->buildInFileSystem();
+
+        try {
+            $this->artisan("flow qa --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->assertFileExists($sarifPath);
+            $this->assertFileExists($junitPath);
+        } finally {
+            @unlink($sarifPath);
+            @unlink($junitPath);
+        }
+    }
+
+    /** @test */
+    public function no_reports_flag_silences_config_but_keeps_cli_targets()
+    {
+        $configSarif = getcwd() . '/' . self::TESTS_PATH . '/config.sarif';
+        $cliJunit = getcwd() . '/' . self::TESTS_PATH . '/cli.xml';
+        @unlink($configSarif);
+        @unlink($cliJunit);
+
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => ['ok'],
+                    'options' => [
+                        'reports' => ['sarif' => $configSarif],
+                    ],
+                ],
+            ])
+            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => '/bin/true']])
+            ->buildInFileSystem();
+
+        try {
+            $this->artisan(
+                "flow qa --no-reports --report-junit=$cliJunit --config=$this->configPath"
+            )->assertExitCode(0);
+
+            $this->assertFileDoesNotExist(
+                $configSarif,
+                '--no-reports must skip the sarif declared in config'
+            );
+            $this->assertFileExists(
+                $cliJunit,
+                '--no-reports must NOT cancel the CLI --report-junit flag'
+            );
+        } finally {
+            @unlink($configSarif);
+            @unlink($cliJunit);
+        }
+    }
 }

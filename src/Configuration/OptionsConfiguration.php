@@ -4,8 +4,16 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
+use Wtyd\GitHooks\Output\OutputFormats;
+
 class OptionsConfiguration
 {
+    /**
+     * @deprecated Use {@see OutputFormats::STRUCTURED} directly.
+     * Kept as a backwards-compatible alias for the structured format set.
+     */
+    public const VALID_REPORT_FORMATS = OutputFormats::STRUCTURED;
+
     private bool $failFast;
 
     private int $processes;
@@ -16,7 +24,11 @@ class OptionsConfiguration
 
     private string $executablePrefix;
 
+    /** @var array<string, string> Map [format => path] for declarative multi-report. */
+    private array $reports;
+
     /**
+     * @param array<string, string> $reports Map of report format → output path
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object — boolean is the natural type
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Value object with one parameter per option
      */
@@ -25,13 +37,15 @@ class OptionsConfiguration
         int $processes = 1,
         ?string $mainBranch = null,
         string $fastBranchFallback = 'full',
-        string $executablePrefix = ''
+        string $executablePrefix = '',
+        array $reports = []
     ) {
         $this->failFast = $failFast;
         $this->processes = $processes;
         $this->mainBranch = $mainBranch;
         $this->fastBranchFallback = $fastBranchFallback;
         $this->executablePrefix = $executablePrefix;
+        $this->reports = $reports;
     }
 
     /**
@@ -90,14 +104,52 @@ class OptionsConfiguration
             }
         }
 
-        $knownKeys = ['fail-fast', 'processes', 'main-branch', 'fast-branch-fallback', 'executable-prefix'];
+        $reports = self::parseReports($raw, $result);
+
+        $knownKeys = ['fail-fast', 'processes', 'main-branch', 'fast-branch-fallback', 'executable-prefix', 'reports'];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Unknown option '$key'. It will be ignored.");
             }
         }
 
-        return new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix);
+        return new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix, $reports);
+    }
+
+    /**
+     * Validate and extract the `reports` map. Returns [] when absent or invalid;
+     * errors are collected in the ValidationResult.
+     *
+     * @param array<string, mixed> $raw
+     * @return array<string, string>
+     */
+    private static function parseReports(array $raw, ValidationResult $result): array
+    {
+        if (!array_key_exists('reports', $raw)) {
+            return [];
+        }
+
+        if (!is_array($raw['reports'])) {
+            $result->addError("'reports' must be a map of format => path.");
+            return [];
+        }
+
+        $reports = [];
+        foreach ($raw['reports'] as $format => $path) {
+            if (!is_string($format) || !in_array($format, OutputFormats::STRUCTURED, true)) {
+                $valid = implode(', ', OutputFormats::STRUCTURED);
+                $shown = is_string($format) ? $format : (string) $format;
+                $result->addError("'reports' contains invalid format '$shown'. Valid formats: $valid.");
+                continue;
+            }
+            if (!is_string($path) || $path === '') {
+                $result->addError("'reports.$format' must be a non-empty string path.");
+                continue;
+            }
+            $reports[$format] = $path;
+        }
+
+        return $reports;
     }
 
     public function isFailFast(): bool
@@ -125,6 +177,14 @@ class OptionsConfiguration
         return $this->executablePrefix;
     }
 
+    /**
+     * @return array<string, string> Map [format => path] for declarative multi-report
+     */
+    public function getReports(): array
+    {
+        return $this->reports;
+    }
+
     public static function defaults(): self
     {
         return new self();
@@ -141,7 +201,8 @@ class OptionsConfiguration
             $processes !== null ? $processes : $this->processes,
             $this->mainBranch,
             $this->fastBranchFallback,
-            $this->executablePrefix
+            $this->executablePrefix,
+            $this->reports
         );
     }
 }

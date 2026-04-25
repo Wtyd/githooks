@@ -17,6 +17,8 @@ githooks job <name> [options]
 | `--dry-run` | Show command without executing. |
 | `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. See [How-To: Output Formats](../how-to/output-formats.md). |
 | `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. See [Writing a report to a file](../how-to/output-formats.md#writing-a-report-to-a-file). |
+| `--report-FORMAT=PATH` | Emit an extra report file alongside `--format`. One flag per format: `--report-json`, `--report-junit`, `--report-sarif`, `--report-codeclimate`. CLI overrides config entry by entry. See [Multi-report](../configuration/options.md#multi-report). |
+| `--no-reports` | Ignore the `reports` section from config (CLI `--report-*` flags still apply). |
 | `--fast` | Fast mode — analyze only staged files. See [Execution Modes](../execution-modes.md). |
 | `--fast-branch` | Fast-branch mode — analyze branch diff files. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
 | `--no-ci` | Disable auto-detection of CI annotations. See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |

@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented here.
 
+## [3.3.0] (Unreleased)
+
+### New Features
+
+#### Multi-report ([`reports`](configuration/options.md#multi-report) / `--report-*`)
+
+PHPUnit-style multi-report: a single `flow` (or `job`) run can emit several report files at once instead of being executed once per format. Pipelines that need SARIF (Code Scanning) plus JUnit (test dashboards) plus Code Climate (GitLab MR widgets) no longer have to re-analyse everything 3 times.
+
+- **CLI flags**: `--report-json=PATH`, `--report-junit=PATH`, `--report-sarif=PATH`, `--report-codeclimate=PATH`. Each one writes the corresponding format to the given path. Combine as needed.
+- **Declarative config**: new `reports` map under `flows.options` and per-flow `options`:
+  ```php
+  'options' => ['reports' => ['sarif' => 'reports/qa.sarif', 'junit' => 'reports/junit.xml']]
+  ```
+- **Precedence**: CLI overrides config **format by format**. `--report-sarif=other.sarif` only overrides the SARIF entry; other formats keep config values.
+- **`--no-reports`**: PHPUnit `--no-coverage`-style flag that skips the config `reports` section without cancelling CLI `--report-*` flags. Lets a consumer (an AI tool, an ad-hoc script) read clean JSON from stdout without dropping side-effect files declared by the project's config:
+  ```bash
+  githooks flow qa --format=json --no-reports
+  ```
+- **`--format` is unchanged**: still governs **stdout** the same way as in 3.2. `--format=sarif --report-sarif=foo.sarif` is legal and produces both stdout SARIF and the file.
+- **`conf:check` validation**: rejects unsupported format keys, non-string paths and unwritable target locations; warns when the parent directory does not exist (it gets created on run).
+
+---
+
 ## [3.2.0]
 
 ### New Features

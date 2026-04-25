@@ -110,7 +110,18 @@ class CheckConfigurationFileCommand extends Command
         if ($options->getExecutablePrefix() !== '') {
             $optionRows[] = ['executable-prefix', $options->getExecutablePrefix()];
         }
+        if (!empty($options->getReports())) {
+            foreach ($options->getReports() as $format => $path) {
+                $optionRows[] = ["reports.$format", $path];
+            }
+        }
         $this->table(['Option', 'Value'], $optionRows);
+
+        // Validate reports paths (filesystem-level — structural errors are caught
+        // in OptionsConfiguration::fromArray and surfaced via the validation result).
+        if ($this->validateReportsPaths($options->getReports(), 'flows.options')) {
+            $hasErrors = true;
+        }
 
         // Hooks table
         $hooks = $config->getHooks();
@@ -154,6 +165,16 @@ class CheckConfigurationFileCommand extends Command
             }
             $this->line('');
             $this->table(['Flow', 'Jobs'], $flowRows);
+
+            foreach ($flows as $name => $flow) {
+                $flowOptions = $flow->getOptions();
+                if ($flowOptions === null) {
+                    continue;
+                }
+                if ($this->validateReportsPaths($flowOptions->getReports(), "flows.$name.options")) {
+                    $hasErrors = true;
+                }
+            }
         }
 
         // Jobs table with command and validation status
@@ -235,6 +256,41 @@ class CheckConfigurationFileCommand extends Command
                 $warnings[] = "path '$path' not found";
             }
         }
+    }
+
+    /**
+     * Validate filesystem-level concerns of the `reports` map. Returns true when
+     * an error has been emitted (target path is not writable). Missing parent
+     * directories are flagged as warnings — they get created on run.
+     *
+     * @param array<string, string> $reports
+     */
+    private function validateReportsPaths(array $reports, string $context): bool
+    {
+        $hasError = false;
+        foreach ($reports as $format => $path) {
+            $where = "$context.reports.$format";
+
+            if (file_exists($path) && !is_writable($path)) {
+                $this->printer->resultError("$where: '$path' is not writable.");
+                $hasError = true;
+                continue;
+            }
+
+            $dir = dirname($path);
+            if ($dir === '' || $dir === '.') {
+                continue;
+            }
+            if (!is_dir($dir)) {
+                $this->printer->resultWarning("$where: directory '$dir' does not exist; it will be created on run.");
+                continue;
+            }
+            if (!is_writable($dir)) {
+                $this->printer->resultError("$where: directory '$dir' is not writable.");
+                $hasError = true;
+            }
+        }
+        return $hasError;
     }
 
     /**

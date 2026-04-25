@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
+use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\GitHooks\Output\ResultFormatter;
 
 /**
  * Test double that exposes the private methods of FormatsOutput trait.
@@ -67,8 +69,21 @@ class FormatsOutputCommandDouble
         $this->applyFormat($executor, $plan);
     }
 
-    public function callRenderFormattedResult(FlowResult $result): void
+    public function callRenderFormattedResult(FlowResult $result, ?OptionsConfiguration $options = null): void
     {
-        $this->renderFormattedResult($result);
+        $this->renderFormattedResult($result, $options);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function callCollectReportTargets(?OptionsConfiguration $options): array
+    {
+        return $this->collectReportTargets($options);
+    }
+
+    public function callFormatterFor(string $format): ResultFormatter
+    {
+        return $this->formatterFor($format);
     }
 }

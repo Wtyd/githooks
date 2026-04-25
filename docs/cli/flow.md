@@ -19,6 +19,8 @@ githooks flow <name> [options]
 | `--dry-run` | Show commands without executing. Works with all `--format` options. |
 | `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. See [How-To: Output Formats](../how-to/output-formats.md). |
 | `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. See [Writing a report to a file](../how-to/output-formats.md#writing-a-report-to-a-file). |
+| `--report-FORMAT=PATH` | Emit an extra report file alongside whatever `--format` writes. One flag per format: `--report-json`, `--report-junit`, `--report-sarif`, `--report-codeclimate`. CLI overrides config entry by entry. See [Multi-report](../configuration/options.md#multi-report). |
+| `--no-reports` | Ignore the `reports` section from config (CLI `--report-*` flags still apply). PHPUnit `--no-coverage` style. |
 | `--fast` | Fast mode — accelerable jobs analyze only staged files. See [Execution Modes](../execution-modes.md). |
 | `--fast-branch` | Fast-branch mode — analyze files that differ from the main branch. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
@@ -41,6 +43,10 @@ githooks flow qa --format=junit                     # JUnit XML for test reporti
 githooks flow qa --format=codeclimate               # GitLab Code Quality report, to stdout
 githooks flow qa --format=sarif                     # SARIF 2.1.0, to stdout
 githooks flow qa --format=sarif --output=reports/qa.sarif   # SARIF to a file
+githooks flow qa --report-sarif=reports/qa.sarif --report-junit=reports/junit.xml \
+                                                    # Multi-report: 4 formats in one run
+                 --report-codeclimate=reports/cc.json --report-json=reports/qa.json
+githooks flow qa --format=json --no-reports         # AI/script: JSON to stdout, no side-effect files
 githooks flow qa --fast                             # Only staged files
 githooks flow qa --fast-branch                      # Only branch diff files
 githooks flow qa --monitor                          # Show thread usage report

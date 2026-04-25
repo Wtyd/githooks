@@ -8,7 +8,7 @@
 | **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
 | **v3.2** | Herramientas y Output ✔ | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
 | **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI |
-| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm), flag `--files`/`--files-from`, monitor de rendimiento + time threshold, kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
+| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from`, monitor de rendimiento + time threshold, kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
 
 ---
 
@@ -377,7 +377,7 @@ githooks flows qa ci-tests --processes=4 --fail-fast
 - `FlowExecutor` y `FlowPlan` no cambian: ya trabajan con una lista de jobs + options.
 - `ConfigurationResult` no cambia: ya expone flows y jobs por separado.
 
-### 2. Multi-reporte en una sola ejecución (estilo PHPUnit/Psalm)
+### 2. Multi-reporte en una sola ejecución (estilo PHPUnit/Psalm) ✔
 
 Hoy `--format=FORMAT` acepta un único valor. Si un pipeline necesita SARIF para Code Scanning **y** JSON v2 para un bot **y** JUnit para el dashboard, hay que correr `flow qa` tres veces. Reanalizar todo tres veces es coste real en CI (phpstan + phpunit con coverage no son baratos).
 

@@ -12,6 +12,7 @@ Execution options control how flows run their jobs. They can be set globally (fo
 | `main-branch` | String | Auto-detected | Main branch name for `fast-branch` diff computation. |
 | `fast-branch-fallback` | String | `'full'` | Fallback when `fast-branch` cannot compute the diff (e.g. shallow clone). `'full'` runs with all paths; `'fast'` falls back to staged files only. |
 | `executable-prefix` | String | `''` | Command prefix prepended to all job executables (e.g. `'docker exec -i app'`). |
+| `reports` | Map<string,string> | `[]` | Map of `format => path` to write extra report files alongside `--format`/`--output`. See [Multi-report](#multi-report). |
 
 ## Priority
 
@@ -140,3 +141,68 @@ return [
 ```
 
 See [Configuration File: Local Override](file.md#local-override-githookslocalphp) and [How-To: Docker & Local Override](../how-to/docker-local-override.md).
+
+## Multi-report
+
+The `reports` option emits one or more report files in a single flow run, in the style of PHPUnit's `--log-junit`/`--coverage-html` flags or Psalm's `--report=`. Useful when a CI pipeline needs **SARIF** for GitHub Code Scanning, **JUnit** for the test dashboard and **Code Climate** for GitLab MR widgets — without re-running the analysis three times.
+
+### Declarative configuration
+
+```php
+'flows' => [
+    'qa' => [
+        'jobs' => ['phpstan-src', 'phpcs', 'phpunit'],
+        'options' => [
+            'reports' => [
+                'sarif'       => 'reports/qa.sarif',
+                'junit'       => 'reports/junit.xml',
+                'codeclimate' => 'reports/gl-code-quality.json',
+            ],
+        ],
+    ],
+],
+```
+
+Valid format keys are `json`, `junit`, `sarif`, `codeclimate` (the structured set). Any other key is rejected by `conf:check`. Missing parent directories are created on run.
+
+### CLI flags
+
+The same effect can be obtained per-invocation:
+
+```bash
+githooks flow qa \
+  --report-sarif=reports/qa.sarif \
+  --report-junit=reports/junit.xml \
+  --report-codeclimate=reports/gl-code-quality.json
+```
+
+### Precedence (per format)
+
+CLI wins over config, **format by format**. Given a config that declares SARIF and JUnit, `--report-sarif=other.sarif` overrides only the SARIF entry; the JUnit one keeps the config value.
+
+### Combining `--format` and `--report-*`
+
+`--format=` keeps governing **stdout** exactly as before. The `--report-*` files are always extra targets:
+
+| Invocation | stdout | Files |
+|---|---|---|
+| `flow qa` | text summary | — |
+| `flow qa --format=json` | JSON | — |
+| `flow qa --format=json --output=foo.json` | (silent) | `foo.json` |
+| `flow qa --report-sarif=q.sarif` | text summary | `q.sarif` |
+| `flow qa --format=json --report-sarif=q.sarif --report-junit=q.xml` | JSON | `q.sarif`, `q.xml` |
+| `flow qa --format=sarif --report-sarif=q.sarif` | SARIF | `q.sarif` (same payload twice — different destinations) |
+
+### `--no-reports`
+
+Skips the `reports` section from config without cancelling the CLI `--report-*` flags (PHPUnit `--no-coverage` style). Useful when an external consumer (an AI tool, an ad-hoc script) wants to read JSON cleanly without dropping files declared by the project's config:
+
+```bash
+# Read JSON without writing any report file
+githooks flow qa --format=json --no-reports
+
+# Same, but still write a single SARIF that the tool needs
+githooks flow qa --format=json --no-reports --report-sarif=/tmp/q.sarif
+```
+
+See [How-To: CI/CD](../how-to/ci-cd.md) for end-to-end pipeline recipes.

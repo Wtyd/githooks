@@ -282,4 +282,86 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
         $this->artisan("conf:check --config=$configPath")
             ->assertExitCode(0);
     }
+
+    // =========================================================================
+    // Multi-report (v3.3 ítem 2) — config validation
+    // =========================================================================
+
+    /** @test */
+    function rejects_v3_config_with_invalid_report_format()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'reports' => ['xml' => 'reports/qa.xml'],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(1)
+            ->containsStringInOutput("invalid format 'xml'");
+    }
+
+    /** @test */
+    function rejects_v3_config_when_report_path_is_not_a_string()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'reports' => ['sarif' => 123],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(1)
+            ->containsStringInOutput("'reports.sarif' must be a non-empty string path");
+    }
+
+    /** @test */
+    function warns_when_reports_target_directory_does_not_exist()
+    {
+        $missingDir = getcwd() . '/' . self::TESTS_PATH . '/missing-reports-dir';
+        @rmdir($missingDir);
+
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'reports' => ['sarif' => $missingDir . '/qa.sarif'],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput('does not exist; it will be created on run');
+    }
+
+    /** @test */
+    function accepts_v3_config_with_valid_reports_section()
+    {
+        $reportDir = getcwd() . '/' . self::TESTS_PATH;
+
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'fail-fast' => false,
+                'processes' => 1,
+                'reports' => [
+                    'sarif' => $reportDir . '/qa.sarif',
+                    'junit' => $reportDir . '/junit.xml',
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = $reportDir . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsOutput('The configuration file has the correct format.');
+    }
 }

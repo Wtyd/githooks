@@ -272,4 +272,144 @@ class OptionsConfigurationTest extends TestCase
         $this->assertTrue($overridden->isFailFast());
         $this->assertEquals(4, $overridden->getProcesses());
     }
+
+    // ========================================================================
+    // reports option (multi-report v3.3 — declarative format → path map)
+    // ========================================================================
+
+    /** @test */
+    public function it_defaults_reports_to_empty_array()
+    {
+        $options = new OptionsConfiguration();
+
+        $this->assertSame([], $options->getReports());
+    }
+
+    /** @test */
+    public function it_parses_reports_with_all_four_formats()
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'reports' => [
+                'json'        => 'reports/qa.json',
+                'junit'       => 'reports/junit.xml',
+                'sarif'       => 'reports/qa.sarif',
+                'codeclimate' => 'reports/cc.json',
+            ],
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame([
+            'json'        => 'reports/qa.json',
+            'junit'       => 'reports/junit.xml',
+            'sarif'       => 'reports/qa.sarif',
+            'codeclimate' => 'reports/cc.json',
+        ], $options->getReports());
+    }
+
+    /** @test */
+    public function it_parses_a_subset_of_report_formats()
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'reports' => [
+                'sarif' => 'reports/q.sarif',
+                'junit' => 'reports/j.xml',
+            ],
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(
+            ['sarif' => 'reports/q.sarif', 'junit' => 'reports/j.xml'],
+            $options->getReports()
+        );
+    }
+
+    /** @test */
+    public function it_reports_error_for_invalid_report_format_key()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray([
+            'reports' => ['xml' => 'foo.xml'],
+        ], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString("invalid format 'xml'", $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_reports_error_for_text_format_in_reports()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray([
+            'reports' => ['text' => 'foo.txt'],
+        ], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString("invalid format 'text'", $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_reports_error_for_non_string_report_path()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray([
+            'reports' => ['sarif' => 123],
+        ], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString("'reports.sarif' must be a non-empty string path", $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_reports_error_for_empty_report_path()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray([
+            'reports' => ['sarif' => ''],
+        ], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString("'reports.sarif' must be a non-empty string path", $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_reports_error_when_reports_is_not_an_array()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray(['reports' => 'foo.sarif'], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString("'reports' must be a map", $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function reports_is_not_an_unknown_key()
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray([
+            'reports' => ['sarif' => 'q.sarif'],
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings());
+    }
+
+    /** @test */
+    public function with_overrides_preserves_reports()
+    {
+        $options = new OptionsConfiguration(false, 1, null, 'full', '', ['sarif' => 'q.sarif']);
+        $overridden = $options->withOverrides(true, 4);
+
+        $this->assertSame(['sarif' => 'q.sarif'], $overridden->getReports());
+    }
+
+    /** @test */
+    public function valid_report_formats_constant_exposes_supported_set()
+    {
+        $this->assertSame(
+            ['json', 'junit', 'sarif', 'codeclimate'],
+            OptionsConfiguration::VALID_REPORT_FORMATS
+        );
+    }
 }

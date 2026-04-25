@@ -155,4 +155,22 @@ class JobCommandTest extends SystemTestCase
 
         $this->containsStringInOutput = ['src/Modified.php'];
     }
+
+    /** @test */
+    public function it_writes_a_report_file_via_cli_flag()
+    {
+        $sarifPath = getcwd() . '/' . self::TESTS_PATH . '/job-multireport.sarif';
+        @unlink($sarifPath);
+
+        try {
+            $this->artisan("job phpcs_src --report-sarif=$sarifPath --config=$this->configPath")
+                ->assertExitCode(0);
+
+            $this->assertFileExists($sarifPath);
+            $sarif = json_decode(strval(file_get_contents($sarifPath)), true);
+            $this->assertSame('2.1.0', $sarif['version'] ?? null);
+        } finally {
+            @unlink($sarifPath);
+        }
+    }
 }

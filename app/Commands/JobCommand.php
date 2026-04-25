@@ -24,6 +24,11 @@ class JobCommand extends Command
                             {--ignore-errors-on-exit : Continue even if the job fails}
                             {--format= : Output format (text, json, junit, codeclimate, sarif)}
                             {--output= : Write the structured payload to PATH (default: stdout)}
+                            {--report-json= : Also write a JSON v2 report to PATH}
+                            {--report-junit= : Also write a JUnit XML report to PATH}
+                            {--report-sarif= : Also write a SARIF 2.1.0 report to PATH}
+                            {--report-codeclimate= : Also write a Code Climate JSON report to PATH}
+                            {--no-reports : Ignore the `reports` section from config (--report-* flags still apply)}
                             {--dry-run : Show commands without executing}
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
@@ -102,7 +107,7 @@ class JobCommand extends Command
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
-            $this->renderFormattedResult($result);
+            $this->renderFormattedResult($result, $plan->getOptions());
 
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {

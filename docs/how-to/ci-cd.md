@@ -94,6 +94,57 @@ qa:
     sarif_file: githooks-results.sarif
 ```
 
+## Multi-report (one runner, several artifacts)
+
+When the pipeline needs **SARIF** for Code Scanning, **JUnit** for the test dashboard and **Code Climate** for the GitLab MR widget, run the flow once and emit every format in parallel via the `--report-*` flags:
+
+```yaml
+- run: |
+    vendor/bin/githooks flow qa \
+      --report-sarif=reports/qa.sarif \
+      --report-junit=reports/junit.xml \
+      --report-codeclimate=reports/gl-code-quality.json
+  continue-on-error: true
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: reports/qa.sarif
+- uses: mikepenz/action-junit-report@v4
+  if: always()
+  with:
+    report_paths: reports/junit.xml
+- uses: actions/upload-artifact@v4
+  if: always()
+  with:
+    name: gl-code-quality-report
+    path: reports/gl-code-quality.json
+```
+
+The same setup with declarative config:
+
+```php
+// githooks.php
+'flows' => [
+    'qa' => [
+        'jobs' => ['phpstan-src', 'phpcs', 'phpunit'],
+        'options' => [
+            'reports' => [
+                'sarif'       => 'reports/qa.sarif',
+                'junit'       => 'reports/junit.xml',
+                'codeclimate' => 'reports/gl-code-quality.json',
+            ],
+        ],
+    ],
+],
+```
+
+```yaml
+- run: vendor/bin/githooks flow qa
+  continue-on-error: true
+```
+
+`--report-*` flags override the config entry for the same format; other formats keep the config value. See [Configuration / Options / Multi-report](../configuration/options.md#multi-report) for the full precedence table.
+
 ## Dry-run in CI
 
 Use `--dry-run` to verify what commands would run without executing them:
