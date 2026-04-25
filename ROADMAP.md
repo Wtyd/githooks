@@ -8,7 +8,7 @@
 | **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
 | **v3.2** | Herramientas y Output ✔ | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
 | **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI |
-| **v3.3** | Madurez               | Wizard de instalación, validación commit messages, monitor de rendimiento, flag `--files`, receta config compartida Composer, prohibir espacios en nombres de job, comando `flows` multi-flow, estandarizar claves a kebab-case |
+| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm), flag `--files`/`--files-from`, monitor de rendimiento + time threshold, kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
 
 ---
 
@@ -305,53 +305,22 @@ Queda como no-resuelto un caso marginal: usuario en terminal TTY que quiere `--f
 
 ## v3.3 — Madurez
 
-Objetivo: pulir funcionalidades y diferenciar frente a la competencia.
+Objetivo: pulir el flujo CI (un único `flows` por runner con multi-reporte y `--files`), añadir el primer diferenciador real frente a la competencia (monitor + time threshold) y empezar la deprecation de claves camelCase. Wizard y "prohibir espacios" salen del scope.
 
-### 1. Wizard de instalación
+### 1. Comando `flows` — ejecución combinada de múltiples flows
 
-Evolucionar `conf:init` de un generador de config rápido a un asistente de onboarding completo. Actualmente `conf:init` solo detecta herramientas ya instaladas en `vendor/bin/` y genera un fichero con defaults genéricos. El wizard debe:
-
-- **Ofrecer descargar herramientas** que el usuario quiera pero no tenga instaladas.
-- **Dos métodos de instalación**: Composer (`composer require --dev`) o PHAR (descarga en un directorio dado, por defecto `tools/`).
-- **Guiar sobre buenas prácticas Composer**: herramientas QA en `require-dev`, o `composer.json` separado para evitar conflictos de dependencias.
-- **Configurar cada herramienta paso a paso**: preguntar level de phpstan, standard de phpcs, rules de phpmd, etc. en lugar de poner defaults genéricos.
-- **Explicar al usuario** qué hace cada opción con contexto y tips.
-
-### 2. Validación de commit messages como tipo nativo
-
-Un tipo de job específico que permita validar el mensaje de commit con regex, longitud mínima/máxima y opcionalmente conventional commits como formato predefinido. Hoy se puede hacer con un job `script` en el hook `commit-msg`, pero un tipo nativo abstraería la configuración y sería coherente con la filosofía de GitHooks.
-
-### 3. Monitor de rendimiento
-
-Evolucionar el `--monitor` existente a un reporte de tiempos por job y por flow. Que el equipo pueda ver que phpstan tarda 12 segundos, phpcs tarda 2 y phpunit tarda 45, y así decidir si sacar phpunit del pre-commit al pre-push, o si ajustar el thread budget. Ninguna de las herramientas competidoras ofrece esto. Diferenciador real.
-
-### 4. Flag `--files` para ejecución contra lista explícita
-
-Ejecución de flow o job en modo `--fast` aceptando un argumento `--files` con un array de ficheros contra los que se lanza. El caso de uso principal es CI/CD en ramas de tarea: se le pasan por parámetro los ficheros modificados en el último commit. Otra opción es un flag `--fast-ci` donde GitHooks detecta automáticamente los ficheros del último commit vía comandos git.
-
-### 5. Receta de config compartida vía paquete Composer
-
-Documentar el patrón para empresas con muchos repos que quieran mantener reglas QA centralizadas. No requiere funcionalidad nueva: como la config es PHP, un `require` de un paquete Composer + merge de arrays ya funciona. Solo falta una receta oficial en la documentación que lo explique como patrón recomendado.
-
-### 6. Prohibir espacios en nombres de job
-
-Los nombres de job con espacios (`Phpstan Src`) obligan a entrecomillar en CLI: `githooks job "Phpstan Src"`. Añadir validación que rechace espacios en nombres de job y proponga alternativas (`phpstan_src`, `phpstan-src`). Rediseñar `conf:check` al mismo tiempo para usar el nuevo formato sin tablas (comando en su propia línea, jobs agrupados por flow).
-
-### 7. Comando `flows` — ejecución combinada de múltiples flows
-
-
-Nuevo comando que ejecute varios flows como si fuera uno solo, mergeando sus jobs bajo un único plan de ejecución:
+Nuevo comando que ejecuta varios flows como uno solo, mergeando sus jobs bajo un único `FlowPlan`:
 
 ```bash
-githooks flows qa schedule         # mergea jobs de qa + schedule en un solo plan
-githooks flows qa luz gas --fast   # tres flows combinados en modo fast
+githooks flows qa ci-tests --processes=4
+githooks flows qa schedule --fast
 ```
 
-**Qué resuelve.** Hoy la alternativa es `githooks flow qa && githooks flow schedule`, que los ejecuta en serie, con planes independientes, sin thread budget compartido ni paralelismo cruzado. Con `flows`, todos los jobs entran en un único `FlowPlan`: un solo thread budget, un solo resultado, un solo exit code. Caso de uso típico: CI que lanza todo junto, o un usuario que quiere QA + batería pesada de un golpe.
+**Qué resuelve y por qué entra en 3.3.** El caso de uso central no es "el usuario que quiere ejecutar QA + schedule en local" sino **simplificar el CI**. Hoy `ci.yml` arranca dos pasos (`flow qa` + `flow ci-tests`) que son dos `composer install`, dos arranques de PHP, y dos thread budgets independientes. Con `flows ci-tests qa` un único runner ejecuta todo en un solo plan: thread budget compartido (phpunit + phpstan paralelizando entre sí), un único exit code, un único reporte. Es la pieza que cierra el storytelling **"un único `flows` reemplaza todos los pasos QA del runner CI"**.
 
 **Mecánica de merge de jobs.** Unión ordenada: primero los jobs del primer flow, luego los del segundo, etc. Si un job aparece en más de un flow, se incluye solo la primera ocurrencia (dedup por nombre). Esto es seguro porque las definiciones de los jobs son globales (sección `jobs`) — no hay variación por flow.
 
-**Resolución de opciones discrepantes.** Este es el punto crítico. Las opciones en la arquitectura actual se resuelven así:
+**Resolución de opciones discrepantes.** Las opciones se resuelven hoy así:
 
 ```
 CLI flags → flow.options → flows.options (global) → defaults
@@ -363,16 +332,14 @@ Cuando hay múltiples flows, el nivel `flow.options` puede ser contradictorio. E
 |---|---|---|---|
 | `processes` | 10 (global) | 1 (propio) | Sí: ¿10 o 1? |
 | `fail-fast` | false (global) | true (propio) | Sí: ¿parar o seguir? |
-| `executable-prefix` | (ninguno) | (ninguno) | No en este caso, pero posible |
-| `execution` | null | null | No en este caso, pero posible |
 
-**Regla propuesta:** las opciones del flow combinado se resuelven ignorando las opciones per-flow. El pipeline queda:
+**Regla propuesta:** las opciones del flow combinado **ignoran** las options per-flow. Pipeline:
 
 ```
 CLI flags → flows.options (global) → defaults
 ```
 
-Cuando alguno de los flows tiene options propias que difieren de las globales y el usuario no ha pasado CLI flags, se emite un **warning informativo** que explica qué opciones se aplican y su valor. El objetivo es que el usuario no se sorprenda:
+Cuando algún flow tiene options propias que difieren de las globales y el usuario no ha pasado CLI flags, warning informativo:
 
 ```
 ⚠ Flows 'qa' y 'schedule' tienen opciones distintas. Se aplican las opciones globales:
@@ -380,24 +347,28 @@ Cuando alguno de los flows tiene options propias que difieren de las globales y 
   Usa --processes y --fail-fast para sobrescribir.
 ```
 
-El warning solo aparece cuando hay discrepancia real (al menos un flow tiene options propias que difieren de las globales). Si todos heredan globales o si el usuario pasó CLI flags, no se muestra nada.
-
-**Justificación:** las options per-flow están diseñadas para el contexto de ese flow individual. `schedule` tiene `processes=1` porque sus jobs son pesados y secuenciales por naturaleza (composer update, coverage, infection). `qa` hereda `processes=10` porque sus jobs son ligeros y paralelizables. Intentar mergear estos valores (¿media? ¿máximo? ¿mínimo?) produce un resultado que no tiene sentido para ninguno de los dos. Usar los **defaults globales** como base es predecible y consistente: el usuario ya los eligió pensando en "todo junto", que es exactamente lo que `flows` hace. Y los CLI flags siempre ganan:
+**Justificación:** las options per-flow están diseñadas para el contexto de ese flow individual. `schedule` tiene `processes=1` porque sus jobs son pesados y secuenciales (composer update, coverage, infection). `qa` hereda `processes=10` porque sus jobs son ligeros. Intentar mergear (¿media? ¿máximo?) produce un resultado que no tiene sentido para ninguno. Defaults globales como base es predecible. Y los CLI flags siempre ganan:
 
 ```bash
-githooks flows qa schedule --processes=4 --fail-fast
+githooks flows qa ci-tests --processes=4 --fail-fast
 ```
 
-**Opciones a nivel de job se preservan intactas.** Las claves `execution`, `failFast`, `ignoreErrorsOnExit` y `executable-prefix` de cada job individual no se ven afectadas por el merge de flows — son intrínsecas al job, no al flow.
+**Opciones a nivel de job se preservan intactas.** Las claves `execution`, `failFast`, `ignoreErrorsOnExit` y `executable-prefix` de cada job individual no se ven afectadas — son intrínsecas al job, no al flow.
+
+**Soporte de multi-reporte (ítem 2).** `flows` debe soportar los flags `--report-*` y la sección `reports` en `flows.options` desde el primer momento — el caso CI que justifica este comando depende de poder emitir SARIF/JUnit del run combinado.
+
+**Soporte de `--files` / `--files-from` (ítem 3) y `--fast-branch`.** Aplican a la unión de jobs, no por flow.
 
 **Casos borde:**
 
-1. **Ningún flow tiene options propias** — trivial: se usan globales, como ya ocurre con un flow individual.
-2. **Todos los flows referenciados tienen las mismas options** — se podría usar esa config convergente en lugar de globales. Decisión de diseño: ¿vale la complejidad del check de convergencia? Probablemente no — mantener la regla simple.
-3. **Flow inexistente** — error y abortar, igual que `githooks flow noexiste`.
-4. **Un solo flow** — degrada a `githooks flow X`. Podría ser un alias o redirigir internamente.
-5. **Jobs duplicados entre flows** — primera ocurrencia gana, las siguientes se ignoran silenciosamente. No warning: el usuario sabe que pidió flows con overlap.
-6. **Flags `--exclude-jobs` / `--only-jobs`** — aplican sobre la lista mergeada, no por flow.
+1. **Ningún flow tiene options propias** — trivial: globales.
+2. **Todos los flows convergen en options** — no se chequea, mantenemos la regla simple.
+3. **Flow inexistente** — error y abortar.
+4. **Un solo flow** — degrada a `githooks flow X`.
+5. **Jobs duplicados entre flows** — primera ocurrencia gana, sin warning.
+6. **`--exclude-jobs` / `--only-jobs`** — aplican sobre la lista mergeada, no por flow.
+
+**Documentación**: añadir guía oficial "Recipe: un único `flows` para CI" en `docs/how-to/ci-cd.md` posicionándolo como el patrón recomendado, no como caso secundario.
 
 **Impacto en la arquitectura:**
 
@@ -406,16 +377,518 @@ githooks flows qa schedule --processes=4 --fail-fast
 - `FlowExecutor` y `FlowPlan` no cambian: ya trabajan con una lista de jobs + options.
 - `ConfigurationResult` no cambia: ya expone flows y jobs por separado.
 
-### 8. Estandarizar claves de configuración a kebab-case
+### 2. Multi-reporte en una sola ejecución (estilo PHPUnit/Psalm)
 
+Hoy `--format=FORMAT` acepta un único valor. Si un pipeline necesita SARIF para Code Scanning **y** JSON v2 para un bot **y** JUnit para el dashboard, hay que correr `flow qa` tres veces. Reanalizar todo tres veces es coste real en CI (phpstan + phpunit con coverage no son baratos).
 
-Las claves de job usan camelCase (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) porque vienen de v2. Las claves de options usan kebab-case (`fail-fast`, `main-branch`, `executable-prefix`) porque se crearon en v3. Estandarizar todo a kebab-case con período de deprecation:
+**Estudio rápido de qué hace cada herramienta del ecosistema:**
 
-1. Aceptar ambos formatos (`executablePath` y `executable-path`) con warning de deprecation en v3.x.
-2. `conf:migrate` convierte automáticamente camelCase a kebab-case.
-3. Eliminar soporte camelCase en v4.0.
+| Herramienta | API CLI | API config |
+|---|---|---|
+| **PHPUnit** | `--log-junit X --coverage-html Y --coverage-xml Z --testdox-html W` (un flag por tipo) | `<logging>` con `<log type="..." target="..."/>` repetible en `phpunit.xml` |
+| **Psalm** | `--report=results.json --report=results.xml --report=results.sarif` (mismo flag repetible, formato inferido por extensión) | Sección `<report_format>` en `psalm.xml` |
+| **PHPStan** | `--error-format=junit` (uno solo) | — |
+| **golangci-lint** | `--out-format=text,sarif:report.sarif,checkstyle:cs.xml` (un flag, lista CSV `formato:path`) | `output.formats` en `.golangci.yml` |
 
-Kebab-case es la convención dominante en ficheros de configuración (YAML, CLI flags, Symfony, Laravel).
+**Decisión:** PHPUnit-style con prefijo `--report-X`. Es descubrible (`--help` lista cada formato), no rompe `--format`/`--output`, y convive con la config declarativa.
+
+**API CLI:**
+
+```bash
+# Caso simple (igual que hoy, no cambia)
+githooks flow qa --format=json --output=reports/qa.json
+
+# Multi-report: un flag por formato
+githooks flow qa \
+  --report-sarif=reports/qa.sarif \
+  --report-junit=reports/junit.xml \
+  --report-codeclimate=reports/gl.json
+# Stdout = texto humano (default), porque no hay --format=
+
+# Mezcla: stdout JSON + ficheros adicionales
+githooks flow qa --format=json --report-sarif=reports/qa.sarif
+# Stdout = JSON, fichero SARIF aparte
+```
+
+Naming: prefijo `--report-` siempre. Reserva el namespace para futuros formatos sin colisión.
+
+**API config (declarativa a nivel flow):**
+
+```php
+'qa' => [
+    'jobs' => [...],
+    'options' => [
+        'reports' => [
+            'sarif'       => 'reports/qa.sarif',
+            'junit'       => 'reports/junit.xml',
+            'codeclimate' => 'reports/gl-code-quality.json',
+        ],
+    ],
+],
+```
+
+**Reglas:**
+- CLI gana sobre config (`--report-sarif=otro.sarif` sobrescribe `reports.sarif`).
+- `--format=X --output=Y` sigue funcionando exactamente igual que hoy (equivalente a `--format=X --report-X=Y` con stdout vacío).
+- Si `--format=` no se pasa, stdout es texto humano (dashboard/streaming según contexto).
+- `conf:check` valida que los paths de `reports` son escribibles y avisa si la carpeta no existe.
+
+**Implementación:** los formatos ya están normalizados (`ResultFormatter`). Se introduce una colección `ReportTargets` que itera y escribe N veces el `FlowResult` ya formateado. Coste mínimo, máximo valor.
+
+### 3. Flag `--files` y `--files-from`
+
+Ejecución de flow o job contra una lista explícita de ficheros, sobreescribiendo `--fast` y `--fast-branch`.
+
+**Casos de uso:**
+
+1. **Validación local puntual** — "quiero correr QA solo sobre estos 3 ficheros que he tocado":
+   ```bash
+   githooks flow qa --files=src/User.php,src/Order.php
+   githooks job phpstan-src --files=src/User.php
+   ```
+2. **CI alternativos donde `fast-branch` no funciona bien** — Travis, Circle, Bitbucket Pipelines: checkout shallow, detached HEAD que no resuelve `origin/main`. Hoy `--fast-branch-fallback=full` funciona pero es todo o nada. Con `--files` el CI calcula la lista por su cuenta y se la pasa a GitHooks:
+   ```bash
+   CHANGED_FILES=$(git diff --name-only HEAD~1 | tr '\n' ',')
+   githooks flow qa --files=$CHANGED_FILES
+   ```
+3. **Integraciones externas (IDE on-save, hook custom)**:
+   ```bash
+   githooks job phpstan-src --files=$CURRENT_FILE
+   ```
+
+**Diseño:**
+
+```bash
+--files=path1,path2,path3       # CSV
+--files-from=changed.txt        # Una ruta por línea — útil cuando CSV peta el límite del shell (200+ ficheros)
+```
+
+**Reglas:**
+- `--files` y `--files-from` sobreescriben `--fast` y `--fast-branch` (warning si se mezclan).
+- Para cada job se filtran las rutas que matcheen sus globs/extensiones (igual que `--fast`).
+- Jobs no-accelerable (`phpunit`, `phpcpd`) se ejecutan con sus paths originales — mismo comportamiento que `--fast-branch` actualmente.
+- Rutas inexistentes → warning + skip de ese fichero. Si **todas** son inválidas, el job se skipea con razón explícita.
+
+### 4. Monitor de rendimiento + time threshold
+
+Evolución del `--monitor` actual a un sistema de medición + acción con dos niveles **independientes**:
+
+- **Job-threshold** (`warn-after`/`fail-after` por job): vigila que un job particular no exceda su tiempo. Detecta regresiones locales.
+- **Flow-threshold** (`time-budget` en sub-grupo a nivel flow): vigila la **suma** de duraciones de los jobs ejecutados. Detecta drift acumulado que ningún job individual percibe.
+
+Los dos niveles son sistemas paralelos que no se ven: un job solo declara threshold en el job; un flow solo declara budget en `flow.options` o `flows.options`. No hay cascada heredable.
+
+Diferenciador: ni GrumPHP ni CaptainHook ofrecen este sistema. Es feature visible en cada `flow qa` que se ejecute, sin setup adicional.
+
+#### Configuración
+
+```php
+return [
+    'flows' => [
+        'options' => [
+            'processes' => 10,
+            'fail-fast' => false,
+            // Default global. Aplica a cualquier flow que no lo redefina.
+            'time-budget' => [
+                'warn-after' => 120,    // suma de duraciones, en segundos
+                'fail-after' => 300,
+            ],
+        ],
+        'qa' => [
+            // qa hereda el time-budget global
+            'jobs' => ['phpcs', 'phpstan-src', 'phpunit', ...],
+        ],
+        'pre-commit-light' => [
+            'options' => [
+                // Override granular: este flow tiene presupuesto distinto
+                'time-budget' => [
+                    'warn-after' => 5,
+                    'fail-after' => 15,
+                ],
+            ],
+            'jobs' => ['phpcbf', 'parallel-lint'],
+        ],
+    ],
+
+    'jobs' => [
+        // Job-threshold solo donde tiene sentido vigilar regresión local
+        'phpunit' => [
+            'type' => 'phpunit',
+            'warn-after' => 60,
+            'fail-after' => 180,
+        ],
+        'phpcs' => [
+            'type' => 'phpcs',
+            'warn-after' => 5,    // si tarda >5s algo va mal con la config
+        ],
+        'phpstan-src' => [
+            'type' => 'phpstan',
+            // sin threshold — sin alarma para este job
+        ],
+    ],
+];
+```
+
+`time-budget` puede declarar solo `warn-after`, solo `fail-after`, o ambos. Lo mismo a nivel job.
+
+#### CLI override
+
+```bash
+# Sobrescribir el time-budget del flow (suma)
+githooks flow qa --warn-after=120 --fail-after=600
+
+# Desactivar todo el sistema (job + flow), útil en profiling/CI especial
+githooks flow qa --no-thresholds
+```
+
+Las flags CLI `--warn-after`/`--fail-after` aplican siempre al **flow-level** (sustituyen `time-budget`). No hay flag para sobrescribir job-level — eso es decisión de proyecto, va en config. Si pasas solo `--warn-after`, el `fail-after` de config sigue activo.
+
+`--no-thresholds` desactiva ambos niveles. Si se mezcla con `--warn-after` o `--fail-after`, gana `--no-thresholds` con warning informativo.
+
+#### Comportamiento — matriz de casos
+
+**Por job:**
+
+| Estado job | warn-after | fail-after | Resultado | Exit job |
+|---|---|---|---|---|
+| OK | no cruza | no cruza | ✓ OK | 0 |
+| OK | cruzado | no cruza | ⚠ OK con warning | 0 |
+| OK | cruzado | cruzado | ✗ KO por threshold | 1 |
+| KO real (tool exit≠0) | — | — | ✗ KO real (gana causa real; threshold informativo) | 1 |
+| Skipped | — | — | ⏭ no cuenta para la suma del flow | — |
+
+**Por flow** (suma de duraciones de jobs ejecutados; excluye skipped):
+
+| Suma | warn-after | fail-after | Resultado flow | Exit |
+|---|---|---|---|---|
+| < warn | — | — | ✓ OK | 0 (si todos jobs OK) |
+| warn ≤ S < fail | cruzado | no cruza | ⚠ Flow warning | 0 (si jobs OK) |
+| ≥ fail | cruzado | cruzado | ✗ Flow KO | **1** aunque todos los jobs hayan pasado |
+
+**Combinaciones:**
+
+| Job-state | Flow-state | Exit final | Resumen |
+|---|---|---|---|
+| Todos OK | OK | 0 | Todo verde |
+| Algún job ⚠ | OK | 0 | ⚠ en jobs concretos |
+| Todos OK | ⚠ | 0 | ⚠ solo en línea final |
+| Algún job ⚠ | ⚠ | 0 | ⚠ en jobs y en flow |
+| Algún job ✗ por threshold | OK | 1 | ✗ del job, exit 1 |
+| Algún job ✗ por threshold | ⚠ | 1 | ✗ del job (gana), ⚠ del flow informativo |
+| Algún job ✗ por threshold | ✗ | 1 | ✗ del job + ✗ del flow |
+| Todos OK | ✗ | **1** | Todos los jobs ✓ pero flow rompe budget — caso conceptual clave |
+| Algún job ✗ real | cualquiera | 1 | KO real gana; threshold informativo |
+
+#### Ejemplos de output (texto)
+
+**Job warn-after cruzado, flow OK:**
+
+```
+  --- Phpunit ---
+  ...........  18 / 18 (100%)
+  OK (18 tests, 42 assertions)
+  Phpunit - OK ⚠. Time: 65.2s (warn-after: 60s)
+
+Results: 8/8 passed in 125.4s ⚠ (1 warning)
+```
+
+**Job fail-after cruzado:**
+
+```
+  Phpunit - KO ✗. Time: 195.3s (fail-after: 180s)
+
+Results: 7/8 passed in 256.1s ✗
+✗ Job 'phpunit' exceeded time threshold (took 195.3s, limit 180s)
+```
+
+**Flow fail-after por suma con todos los jobs OK individualmente (caso clave):**
+
+```
+  ...
+  Phpunit - OK. Time: 285.4s
+
+Results: 8/8 passed in 320.1s ✗
+✗ Flow time-budget exceeded: total job time 320.1s, limit 300s
+```
+
+**Job ✗ + flow ⚠:**
+
+```
+  Phpcs - KO ✗. Time: 8.2s (fail-after: 5s)
+  ...
+Results: 7/8 passed in 125.4s ✗
+✗ Job 'phpcs' exceeded time threshold (took 8.2s, limit 5s)
+⚠ Flow time-budget warning: total job time 125.4s exceeded warn-after (120s)
+```
+
+**KO real + threshold cruzado:**
+
+```
+  Phpcs - KO ✗. Time: 8.2s (also: fail-after 5s)
+Results: 7/8 passed in 125.4s ✗
+✗ Job 'phpcs' failed (tool exit code 2)
+   ↳ also exceeded time threshold (took 8.2s, limit 5s)
+```
+
+#### Output JSON v2 — patrón null explícito
+
+Los campos `timeBudget` (root) y `threshold` (por job) **siempre aparecen** con valor `null` cuando no hay configuración. Cuando hay, son objetos completos. Esto evita null-checks de existencia del campo:
+
+```json
+{
+  "version": 2,
+  "flow": "qa",
+  "success": false,
+  "totalTime": 125.4,
+  "executionMode": "full",
+  "passed": 7,
+  "failed": 1,
+  "skipped": 0,
+  "timeBudget": {
+    "warnAfter": 120,
+    "failAfter": 300,
+    "totalJobDuration": 125.4,
+    "warned": true,
+    "failed": false
+  },
+  "jobs": [
+    {
+      "name": "phpcs",
+      "type": "phpcs",
+      "success": false,
+      "exitCode": 0,
+      "duration": 8.2,
+      "threshold": {
+        "warnAfter": null,
+        "failAfter": 5,
+        "warned": false,
+        "failed": true,
+        "reason": "exceeded fail-after"
+      }
+    },
+    {
+      "name": "phpunit",
+      "type": "phpunit",
+      "success": true,
+      "exitCode": 0,
+      "duration": 95.4,
+      "threshold": {
+        "warnAfter": 60,
+        "failAfter": 180,
+        "warned": true,
+        "failed": false,
+        "reason": "exceeded warn-after"
+      }
+    },
+    {
+      "name": "phpstan-src",
+      "type": "phpstan",
+      "success": true,
+      "exitCode": 0,
+      "duration": 12.4,
+      "threshold": null
+    }
+  ]
+}
+```
+
+**Reglas del JSON:**
+
+| Caso | `timeBudget` | `threshold` por job |
+|---|---|---|
+| Sin time-budget configurado a nivel flow | `null` | — |
+| Con time-budget pero suma no cruza | objeto con `warned: false, failed: false` | — |
+| Job sin warn-after ni fail-after | — | `null` |
+| Job con threshold configurado | — | objeto. Sub-campos `warnAfter`/`failAfter` son `null` si solo se configuró uno de los dos |
+| `reason` siempre presente cuando `warned` o `failed` son true | — | `null` en el resto de casos |
+
+Justificación del patrón: contrato estable, el consumidor escribe `if (job.threshold) { … }` y el campo siempre existe. Patrón usado por GraphQL, JSON:API, OpenAPI con `nullable: true`. El sentinel `0 = infinito` se descarta — mezcla valor numérico con semántica especial y reserva un valor del dominio.
+
+Mismo principio en SARIF/Code Climate: el threshold va como propiedad opcional dentro de `properties`, con `null` si no aplica.
+
+#### Validación en `conf:check`
+
+| Caso | Comportamiento |
+|---|---|
+| `warn-after` o `fail-after` no positivo (`-1`, `0`, `'foo'`) | Error: "must be a positive integer" |
+| `warn-after >= fail-after` (a nivel job o flow) | Error: "warn-after must be less than fail-after" |
+| `time-budget` con clave desconocida | Warning: "unknown key in time-budget: 'X'" |
+| Suma de `fail-after` de jobs > `time-budget.fail-after` del flow | Sin warning. Es legítimo (no todos los jobs cruzan a la vez). |
+
+Ejemplo:
+
+```
+$ githooks conf:check
+✗ Configuration errors:
+  • Job 'phpunit': 'warn-after' (60) must be less than 'fail-after' (45)
+
+⚠ Configuration warnings:
+  • Option 'time-budget': unknown key 'warn-affter' (did you mean 'warn-after'?)
+```
+
+#### Casos borde resueltos
+
+| Caso | Decisión |
+|---|---|
+| `--dry-run` | Skip total. No se mide tiempo, no se evalúa threshold. |
+| CLI `--warn-after=X` solo (sin `--fail-after`) | Override solo de `time-budget.warn-after`. El `fail-after` de config sigue activo. |
+| CLI `--no-thresholds` + `--warn-after` simultáneos | `--no-thresholds` gana. Warning: "ignoring --warn-after due to --no-thresholds". |
+| Job con error real (exit≠0) que también cruza `fail-after` | KO real es la causa principal; threshold se anota como información secundaria. Exit 1. |
+| `fail-fast=true` y job rompe `fail-after` | Mismo comportamiento que cualquier KO con fail-fast: aborta el flow, los siguientes jobs no corren. La suma se calcula con lo ejecutado. |
+| Flow con todos los jobs skipped → suma = 0 | OK. `time-budget` no cruza (0 < cualquier threshold positivo). |
+| Multi-flow (`flows qa schedule`) con `time-budget` distinto | Patrón ya acordado: globales ganan + warning informativo. |
+| Job ya marcado KO con duración enorme (timeout interno del tool) | La duración cuenta para la suma. Si el flow tenía `fail-after` cercano puede empujarlo a ✗ también. Coherente: el tiempo se consumió igual. |
+| `time-budget` solo con `warn-after` | Válido. Solo dispara warning. |
+| `time-budget` solo con `fail-after` | Válido. Sin transición intermedia, salta directo a ✗. |
+| Granularidad < 1s | Se mide en milisegundos internamente; threshold es entero en segundos, comparación con float. |
+
+#### Implementación
+
+- `JobConfiguration::fromArray` parsea `warn-after`/`fail-after` como integers positivos. Mismo patrón de validación que el resto.
+- `OptionsConfiguration::fromArray` parsea sub-grupo `time-budget` (nuevo `TimeBudget` value object).
+- `JobResult` ya lleva `duration`. Añadir `thresholdState` (none|warned|failed) y `thresholdReason`.
+- `FlowExecutor` calcula la suma post-hoc y aplica estado al `FlowResult`.
+- `TextOutputHandler`/`StreamingTextOutputHandler` añaden el sufijo coloreado en la línea del job y la línea final del flow.
+- `JsonResultFormatter` emite los campos `timeBudget` y `threshold` siguiendo las reglas del patrón null explícito.
+- Tests: job-warn, job-fail, flow-warn-by-sum, flow-fail-by-sum, todos-OK-flow-fail (caso clave), KO real + threshold (la causa real gana), multi-flow con time-budget divergente.
+
+Coste: ~250 LOC + tests.
+
+### 5. Estandarizar claves de configuración a kebab-case (deprecation paso 1)
+
+Las claves de job usan camelCase (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) porque vienen de v2. Las claves de options usan kebab-case (`fail-fast`, `main-branch`, `executable-prefix`, `error-severity`, `log-junit`...) porque se crearon en v3. Hoy ambos conviven en el mismo fichero — ver `qa/githooks.php` líneas 55-58.
+
+**Plan multi-versión:**
+
+1. **v3.3 (paso 1, único objetivo de este release)**: aceptar ambos formatos. Si llega `executablePath`, parsear igual y emitir warning `Deprecated: 'executablePath' is renamed to 'executable-path'. Will be removed in v4.0.` Tabla de mapping camelCase → kebab-case interna. **No tocar `conf:migrate` aún**: dar un ciclo entero para que la gente vea el warning antes de migrar.
+2. **v3.x posterior**: `conf:migrate` reescribe camelCase a kebab-case automáticamente.
+3. **v4.0**: eliminar soporte camelCase.
+
+**Justificación de empezar ya**: cuanto antes empiece a salir el warning, más tiempo tienen los proyectos consumidores para adaptarse antes del breaking change de v4.0.
+
+**Coste de implementación**: bajo. Un mapping `[camelCase => kebabCase]` aplicado en `JobConfiguration::fromArray()` y `OptionsConfiguration::fromArray()` antes de la validación, más warnings de deprecation. ~50 LOC + tests.
+
+### 6. Validación de commit messages como tipo nativo
+
+Tipo de job nativo `commit-msg` que ejecuta validaciones declarativas sobre el mensaje del commit, leyéndolo de `.git/COMMIT_EDITMSG` (lo que git pasa al hook `commit-msg`).
+
+**Configuración:**
+
+```php
+'jobs' => [
+    'commit-format' => [
+        'type' => 'commit-msg',
+        'rules' => [
+            'min-length' => 10,
+            'max-length' => 100,
+            'pattern' => '/^(feat|fix|test|docs|refactor|chore|ci)(\([a-z-]+\))?: .+/',
+            'pattern-message' => 'Use Conventional Commits: tipo(scope): descripción',
+            'forbid-trailing-period' => true,
+            'subject-case' => 'lowercase',  // 'lowercase' | 'sentence' | null
+        ],
+    ],
+    // O modo "preset":
+    'commit-conventional' => [
+        'type' => 'commit-msg',
+        'preset' => 'conventional-commits',   // pattern + reglas estándar
+    ],
+],
+
+'hooks' => [
+    'commit-msg' => ['commit-format'],
+],
+```
+
+**Reglas mínimas viables:**
+
+| Regla | Significado |
+|---|---|
+| `min-length` / `max-length` | Longitud del subject (primera línea) |
+| `pattern` + `pattern-message` | Regex contra el subject; mensaje custom de error |
+| `forbid-trailing-period` | El subject no termina en `.` |
+| `subject-case` | `lowercase` / `sentence` / `null` |
+| `forbid-empty` | (default true) Rechazar mensaje vacío |
+| `merge-allowed` | (default true) Saltar validación si el commit es un merge |
+
+**Presets**: `conventional-commits` de partida (pattern + tipos estándar + footer `BREAKING CHANGE` permitido). `gitmoji`, `jira-ticket` quedan para futuro si hay demanda.
+
+**Comportamiento:**
+
+- Pasa: exit 0, sin output.
+- Falla: exit 1 con mensaje claro de qué regla rompió y un ejemplo válido.
+- En `--format=json` se incluye el mensaje original y la regla que falló.
+
+**Diferenciador**: hoy se puede hacer con un job `custom` ejecutando un script. El tipo nativo lo hace declarativo, funciona en Windows sin pelearse con bash, se documenta una vez, y refuerza el storytelling "GitHooks gestiona todo el ciclo de git hooks, no solo QA".
+
+**Prioridad**: nice-to-have. Último item en entrar; si el ciclo se alarga, candidato a mover a 3.4.
+
+### 7. Receta de config compartida vía paquete Composer
+
+Caso de uso: una empresa con N microservicios PHP que quiere que todos corran exactamente la misma configuración de phpstan, phpcs, phpmd. Hoy cada repo tiene su propio `qa/githooks.php`, `qa/phpstan.neon`, `qa/phpmd-ruleset.xml`. Si cambias una regla, hay que abrir N PRs.
+
+**Solución sin código nuevo.** Como `githooks.php` es PHP plano, ya se puede hacer:
+
+```bash
+composer require --dev acme/qa-shared
+```
+
+El paquete exporta una config base:
+
+```php
+// vendor/acme/qa-shared/githooks-base.php
+return [
+    'jobs' => [
+        'phpstan-src' => [
+            'type' => 'phpstan',
+            'config' => 'vendor/acme/qa-shared/phpstan.neon',
+            'paths' => ['src'],
+        ],
+        'phpcs' => [...],
+        'phpmd-src' => [...],
+    ],
+];
+```
+
+Y el `githooks.php` del consumidor merge-ea sobre esa base:
+
+```php
+<?php
+
+$base = require __DIR__ . '/vendor/acme/qa-shared/githooks-base.php';
+
+return array_replace_recursive($base, [
+    'hooks' => [
+        'pre-commit' => ['qa'],
+    ],
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan-src', 'phpcs', 'phpmd-src']],
+    ],
+    // Override puntual: este micro tiene tests legacy y baja el level
+    'jobs' => [
+        'phpstan-src' => [
+            'config' => 'qa/phpstan-relaxed.neon',
+        ],
+    ],
+]);
+```
+
+**Qué entra en 3.3 (docs only):**
+
+1. **Página `docs/how-to/shared-config.md`** con el patrón explicado, plantilla del paquete consumible y ejemplo del consumidor.
+2. **Mención en `getting-started.md`** como pattern recomendado para empresas.
+
+**Qué queda fuera (candidato a 3.4)**: comando `conf:init --from=acme/qa-shared` que descargue el paquete y genere el wrapper boilerplate. ~50 LOC. Solo se aborda si la doc genera demanda.
+
+**Estado**: el usuario quiere estudiar más a fondo el caso de uso antes de cerrar el diseño definitivo.
+
+---
+
+## v3.4 (aplazado)
+
+Items que estuvieron en v3.3 y se han movido por scope:
+
+- **Wizard de instalación**: evolucionar `conf:init` a un asistente completo (descarga de tools vía Composer/PHAR, configuración paso a paso, explicaciones contextuales). Es el ítem más grande del lote y el de menor diferencial inmediato — los usuarios actuales ya tienen las tools instaladas.
+- **Prohibir espacios en nombres de job**: descartado. La convención kebab-case ya está documentada y es lo que recomendamos. Bloquear `Phpstan Src` con un error es más ruido que valor — los proyectos legacy con nombres con espacios siguen funcionando.
 
 ---
 
@@ -424,29 +897,6 @@ Kebab-case es la convención dominante en ficheros de configuración (YAML, CLI 
 ### ~~Análisis competitivo~~ ✔
 
 Completado como parte de v3.1. Se creó la página de comparación (`docs/comparison.md`) con tabla de features y guías de migración desde GrumPHP (`docs/migration/from-grumphp.md`) y CaptainHook (`docs/migration/from-captainhook.md`).
-
-### Flag `--also=FORMAT:PATH` para dual output
-
-Hoy `--format=FORMAT` reemplaza el output texto por el estructurado, obligando a elegir una sola cara: o el humano ve el log con colores, o la máquina obtiene un SARIF/JSON/JUnit/CodeClimate. En CI quieres **ambas**: el log legible en Actions para diagnosticar a simple vista, y el SARIF subido a Code Scanning para que las alertas aparezcan inline en el PR.
-
-El workaround actual es correr el flow dos veces (una en texto, otra en el formato estructurado). Cada run vuelve a analizar todo → coste doble en tools como phpstan o phpunit con coverage.
-
-Propuesta: añadir un flag `--also=FORMAT:PATH` que en un único run emita el formato nativo (texto o lo que sea `--format`) a stdout **y además** escriba un segundo payload en otro formato a fichero. Ejemplos:
-
-```bash
-# Texto en log + SARIF para Code Scanning en una sola pasada
-githooks flow qa --also=sarif:reports/qa.sarif
-
-# JSON en stdout + JUnit a fichero para un runner que consume ambos
-githooks flow qa --format=json --also=junit:reports/qa.xml
-
-# Varios formatos adicionales
-githooks flow qa --also=sarif:reports/qa.sarif --also=codeclimate:reports/qa.cc.json
-```
-
-Es más general que un `--also-sarif`: sirve para cualquier formato registrado, compone con `--format` existente, y no rompe el flag actual. Coste de implementación bajo: `FormatsOutput::renderFormattedResult` ya tiene un despachador por formato; sólo hay que invocarlo N veces con los targets declarados en `--also=`.
-
-Encaja con el pendiente "Múltiples reportes simultáneos en una sola ejecución (estilo PHPUnit)" más abajo — conviene fusionar ambas propuestas en un único diseño cuando toque planificarlas.
 
 ### Problema en el contenedor con los hooks
 ```bash 
@@ -482,89 +932,3 @@ Alternativas:
 
 Decisión pendiente: qué balance entre legibilidad por defecto y complejidad de renderizado.
 
-### Múltiples reportes simultáneos en una sola ejecución (estilo PHPUnit)
-
-Hoy `--format=FORMAT` acepta un único valor. Si un pipeline necesita SARIF para GitHub Code Scanning **y** JSON v2 para un bot de Slack **y** JUnit para el widget de "test failures", tiene que correr `githooks flow qa` tres veces — tres veces el coste en CI.
-
-> Punto de partida (resuelto en v3.2 RC): los cuatro formatos estructurados (`json`, `junit`, `codeclimate`, `sarif`) comparten el mismo mecanismo de escritura — stdout por defecto, fichero con `--output=PATH`. Eso elimina la subpregunta sobre cómo conviven `--output` y `--stdout`: ya no hay `--stdout`, y `--output=PATH` es el canal único "a fichero".
-
-Diseño propuesto, inspirado en PHPUnit:
-
-**Flags CLI por reporter**, uno por formato, cada uno apunta a un path:
-
-```bash
-githooks flow qa \
-  --sarif=reports/qa.sarif \
-  --json=reports/qa.json \
-  --junit=reports/junit.xml \
-  --codeclimate=reports/gl-code-quality.json
-```
-
-Cada flag genera un fichero independiente. El stdout sigue siendo humano (texto / dashboard) salvo que se pase `--format=` explícito. Ejecución única, una sola pasada por cada job.
-
-**Configuración declarativa a nivel de flow**, en el `githooks.php`:
-
-```php
-'qa' => [
-    'jobs'    => [...],
-    'options' => ['processes' => 4],
-    'reports' => [
-        'sarif'       => 'reports/qa.sarif',
-        'json'        => 'reports/qa.json',
-        'junit'       => 'reports/junit.xml',
-        'codeclimate' => 'reports/gl-code-quality.json',
-    ],
-],
-```
-
-Los flags CLI ganan sobre la config (`reports[sarif]` lo sobrescribe `--sarif=otro.sarif`). Pensado para: el pipeline declara una vez qué reportes quiere por flow; el usuario ad-hoc puede pedir uno extra desde la CLI.
-
-Puntos abiertos:
-
-1. **Coexistencia con `--format=` y `--output=`**: hoy `--format=X` imprime a stdout y `--output=PATH` redirige a fichero (un único reporte). Con los nuevos flags, ¿qué hace `--format=sarif --sarif=file.sarif`? Opciones: (a) `--format=` y `--output=` quedan para el caso "un solo reporte"; los `--<format>=` son siempre "además, escribir fichero"; (b) prohibir combinar ambos mundos y emitir error si se mezclan con distinto formato.
-2. **Interacción con `conf:check`**: `conf:check` debería validar que las rutas de `reports` son escribibles y advertir si la carpeta no existe.
-3. **Anotaciones CI**: los reports por fichero no desactivan las anotaciones CI por stdout — un pipeline puede tener las dos cosas (inline en PR + artefacto SARIF subido).
-
-Decisión pendiente: ¿adoptamos el patrón PHPUnit o mantenemos el `--format=` + `--output=` único? Sigue siendo la API más disruptiva de los pendientes — conviene evaluar en conjunto con el rework general de output.
-
-### Time threshold por job (performance budget con warning o bloqueo)
-
-Hoy un job que tarda demasiado sigue pasando en verde siempre que su exit code sea 0. No hay forma de detectar regresiones de rendimiento ni de impedir que un `pre-commit` se vuelva lento con el tiempo. Propuesta: configurar un umbral de tiempo por job (o por flow) con dos modos de reacción.
-
-**Diseño A — un umbral + acción**:
-
-```php
-'phpunit_src' => [
-    'type'             => 'phpunit',
-    'paths'            => ['src'],
-    'time-threshold'   => 30,       // segundos
-    'threshold-action' => 'warn',   // 'warn' | 'fail'
-],
-```
-
-**Diseño B — dos umbrales escalonados** (warning + bloqueo):
-
-```php
-'phpunit_src' => [
-    'warn-after' => 30,   // amarillo en el resumen, exit 0
-    'fail-after' => 90,   // rojo/KO, exit 1 aunque el tool devuelva 0
-],
-```
-
-**Comportamiento**:
-- `warn` / `warn-after`: el job pasa en el resumen pero aparece en **amarillo** (mismo código de color que los warnings de validation actuales). Exit code del flow no cambia.
-- `fail` / `fail-after`: el job se marca **KO** en el resumen. El flow devuelve exit 1 aunque la tool haya devuelto 0.
-
-**Casos de uso**:
-- Regresión de rendimiento: phpstan solía tardar 5s, ahora 30s → warning para alertar al equipo sin bloquear todavía.
-- Budget estricto en `pre-commit`: "ningún job debería tardar más de 10s" → `fail`.
-- Time budget total en CI: "si QA tarda más de 5 min algo va mal" → threshold a nivel de flow.
-
-**Relación con v3.3.3 (Monitor de rendimiento)**: este item es el complemento accionable del monitor — no solo reportar tiempos al final, sino alertar o bloquear proactivamente cuando cruzan un umbral. El monitor cuenta, el threshold actúa. Vale la pena diseñar ambos juntos para que compartan la misma infra de medición.
-
-**Puntos abiertos**:
-1. **Default global vs explícito**: ¿un umbral a nivel `options` (global) o `flow` que aplique a todos los jobs, con override por job? ¿O siempre explícito?
-2. **Nivel medido**: ¿tiempo total del job (incluye fast-mode path filtering, setup) o sólo la ejecución del tool?
-3. **Flow-level threshold**: ¿el flow entero debería poder tener también `time-threshold` (suma de todos los jobs)? Útil para "QA ≤ 5min total".
-4. **Interacción con `--dry-run`**: en dry-run no hay tiempo real de ejecución. ¿Se desactiva el check?
-5. **Diferenciador**: ninguno de los competidores (GrumPHP, CaptainHook) lo ofrece. Alineado con la filosofía "diferenciador real" de v3.3.
