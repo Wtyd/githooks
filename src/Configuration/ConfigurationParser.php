@@ -95,6 +95,13 @@ class ConfigurationParser
         // flows don't emit confusing "undefined job" warnings for jobs with type errors.
         $declaredJobNames = is_array($jobsRaw) ? array_keys($jobsRaw) : [];
 
+        // 2b. Validate flat namespace between jobs and flows (CHK-002, CON-009).
+        $declaredFlowNames = array_keys($flowsRaw);
+        $collisions = array_intersect($declaredJobNames, $declaredFlowNames);
+        foreach ($collisions as $clashing) {
+            $result->addError("name '$clashing' is declared as both job and flow.");
+        }
+
         // 3. Parse flows (reference jobs)
         $flows = $this->parseFlows($flowsRaw, $declaredJobNames, $result);
         $availableFlowNames = array_keys($flows);
@@ -244,7 +251,53 @@ class ConfigurationParser
                 $flows[$flowName] = $flow;
             }
         }
+
+        // Second pass: validate meta-flow references against the parsed flow set
+        // (existence, no nesting CON-008, empty/single warnings CHK-003/004).
+        $this->validateMetaFlowReferences($flows, $result);
+
         return $flows;
+    }
+
+    /**
+     * @param array<string, FlowConfiguration> $flows
+     */
+    private function validateMetaFlowReferences(array $flows, ValidationResult $result): void
+    {
+        foreach ($flows as $flow) {
+            if (!$flow->isMetaFlow()) {
+                continue;
+            }
+
+            $references = $flow->getFlowReferences();
+            $name = $flow->getName();
+
+            if ($references === []) {
+                $result->addWarning("meta-flow '$name' has no flows declared.");
+                continue;
+            }
+
+            if (count($references) === 1) {
+                $result->addWarning(
+                    "meta-flow '$name' contains a single flow; "
+                    . "consider declaring options on the flow itself."
+                );
+            }
+
+            foreach ($references as $referenced) {
+                if (!isset($flows[$referenced])) {
+                    $result->addError("meta-flow '$name' references unknown flow '$referenced'.");
+                    continue;
+                }
+
+                if ($flows[$referenced]->isMetaFlow()) {
+                    $result->addError(
+                        "meta-flow '$name' references '$referenced' which is also a meta-flow; "
+                        . "nesting is not supported in v3.3."
+                    );
+                }
+            }
+        }
     }
 
     /**

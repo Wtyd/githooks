@@ -180,4 +180,115 @@ class FlowConfigurationTest extends TestCase
 
         $this->assertEmpty($result->getWarnings());
     }
+
+    // ========================================================================
+    // Meta-flows (v3.3 — xor jobs/flows)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_a_meta_flow_with_flow_references()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('ci-pack', [
+            'flows' => ['qa', 'lint'],
+        ], [], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($flow);
+        $this->assertTrue($flow->isMetaFlow());
+        $this->assertEquals(['qa', 'lint'], $flow->getFlowReferences());
+        $this->assertEquals([], $flow->getJobs());
+    }
+
+    /** @test */
+    public function it_parses_meta_flow_with_options()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('ci-pack', [
+            'flows'   => ['qa', 'lint'],
+            'options' => ['processes' => 4, 'fail-fast' => true],
+        ], [], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertTrue($flow->isMetaFlow());
+        $this->assertNotNull($flow->getOptions());
+        $this->assertEquals(4, $flow->getOptions()->getProcesses());
+        $this->assertTrue($flow->getOptions()->isFailFast());
+    }
+
+    /** @test */
+    public function normal_flow_reports_is_not_a_meta_flow()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('lint', [
+            'jobs' => ['phpcs_src'],
+        ], ['phpcs_src'], $result);
+
+        $this->assertFalse($flow->isMetaFlow());
+        $this->assertEquals([], $flow->getFlowReferences());
+    }
+
+    /** @test */
+    public function it_rejects_flow_with_both_jobs_and_flows()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('mixed', [
+            'jobs'  => ['phpcs_src'],
+            'flows' => ['qa'],
+        ], ['phpcs_src'], $result);
+
+        $this->assertNull($flow);
+        $this->assertErrorEquals(
+            "Flow 'mixed' declares both 'jobs' and 'flows'; pick one.",
+            $result
+        );
+    }
+
+    /** @test */
+    public function it_rejects_flow_with_neither_jobs_nor_flows()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('orphan', [
+            'options' => ['processes' => 4],
+        ], [], $result);
+
+        $this->assertNull($flow);
+        $this->assertErrorEquals("Flow 'orphan' has neither 'jobs' nor 'flows'.", $result);
+    }
+
+    /** @test */
+    public function it_rejects_meta_flow_when_flows_is_not_an_array()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('ci-pack', [
+            'flows' => 'qa,lint',
+        ], [], $result);
+
+        $this->assertNull($flow);
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function it_rejects_meta_flow_when_flow_references_are_not_strings()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('ci-pack', [
+            'flows' => ['qa', 42],
+        ], [], $result);
+
+        $this->assertNull($flow);
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function it_rejects_meta_flow_with_empty_string_reference()
+    {
+        $result = new ValidationResult();
+        $flow = FlowConfiguration::fromArray('ci-pack', [
+            'flows' => ['qa', ''],
+        ], [], $result);
+
+        $this->assertNull($flow);
+        $this->assertTrue($result->hasErrors());
+    }
 }

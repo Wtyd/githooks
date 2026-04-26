@@ -770,6 +770,207 @@ PHP;
         $this->assertSame('8', $job->getConfig()['level'] ?? null, 'level must be inherited from the middle parent');
     }
 
+    // ========================================================================
+    // Meta-flows (v3.3 — declarative composition)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_a_meta_flow_referencing_normal_flows()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'      => ['jobs' => ['phpcs_src']],
+        'lint'    => ['jobs' => ['phpmd_src']],
+        'ci-pack' => [
+            'flows'   => ['qa', 'lint'],
+            'options' => ['processes' => 4, 'fail-fast' => true],
+        ],
+    ],
+    'jobs' => [
+        'phpcs_src' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+        'phpmd_src' => ['type' => 'phpmd', 'paths' => ['src'], 'rules' => 'cleancode'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $meta = $result->getFlow('ci-pack');
+        $this->assertNotNull($meta);
+        $this->assertTrue($meta->isMetaFlow());
+        $this->assertEquals(['qa', 'lint'], $meta->getFlowReferences());
+        $this->assertNotNull($meta->getOptions());
+        $this->assertEquals(4, $meta->getOptions()->getProcesses());
+    }
+
+    /** @test */
+    public function it_reports_error_when_meta_flow_references_unknown_flow()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'      => ['jobs' => ['phpcs_src']],
+        'ci-pack' => ['flows' => ['qa', 'nope']],
+    ],
+    'jobs' => [
+        'phpcs_src' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertContains(
+            "meta-flow 'ci-pack' references unknown flow 'nope'.",
+            $result->getValidation()->getErrors()
+        );
+    }
+
+    /** @test */
+    public function it_reports_error_when_meta_flow_nests_another_meta_flow()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'        => ['jobs' => ['phpcs_src']],
+        'inner'     => ['flows' => ['qa']],
+        'outer'     => ['flows' => ['inner']],
+    ],
+    'jobs' => [
+        'phpcs_src' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertContains(
+            "meta-flow 'outer' references 'inner' which is also a meta-flow; "
+            . "nesting is not supported in v3.3.",
+            $result->getValidation()->getErrors()
+        );
+    }
+
+    /** @test */
+    public function it_reports_error_when_a_name_collides_between_jobs_and_flows()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'dup' => ['jobs' => ['dup']],
+    ],
+    'jobs' => [
+        'dup' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertContains(
+            "name 'dup' is declared as both job and flow.",
+            $result->getValidation()->getErrors()
+        );
+    }
+
+    /** @test */
+    public function it_reports_error_when_flow_declares_both_jobs_and_flows()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'    => ['jobs' => ['phpcs_src']],
+        'mixed' => ['jobs' => ['phpcs_src'], 'flows' => ['qa']],
+    ],
+    'jobs' => [
+        'phpcs_src' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertContains(
+            "Flow 'mixed' declares both 'jobs' and 'flows'; pick one.",
+            $result->getValidation()->getErrors()
+        );
+    }
+
+    /** @test */
+    public function it_emits_warning_when_meta_flow_has_no_flows_declared()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'    => ['jobs' => ['phpcs_src']],
+        'empty' => ['flows' => []],
+    ],
+    'jobs' => [
+        'phpcs_src' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertContains(
+            "meta-flow 'empty' has no flows declared.",
+            $result->getValidation()->getWarnings()
+        );
+    }
+
+    /** @test */
+    public function it_emits_warning_when_meta_flow_contains_a_single_flow()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'    => ['jobs' => ['phpcs_src']],
+        'solo'  => ['flows' => ['qa']],
+    ],
+    'jobs' => [
+        'phpcs_src' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+        $singleWarning = array_filter(
+            $result->getValidation()->getWarnings(),
+            fn($w) => strpos($w, "meta-flow 'solo' contains a single flow") !== false
+        );
+        $this->assertNotEmpty($singleWarning);
+    }
+
     /** @test */
     public function child_keys_override_parent_keys_when_extending()
     {
