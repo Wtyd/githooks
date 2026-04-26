@@ -6,17 +6,20 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
+use Wtyd\GitHooks\Execution\InputFilesResolver;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class JobCommand extends Command
 {
     use FormatsOutput;
+    use ResolvesInputFiles;
 
     protected $signature = 'job
                             {name : The job to execute}
@@ -32,6 +35,9 @@ class JobCommand extends Command
                             {--dry-run : Show commands without executing}
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
+                            {--files= : CSV of files to filter accelerable jobs by (mutually exclusive with --files-from)}
+                            {--files-from= : Path to a manifest file with one path per line (mutually exclusive with --files)}
+                            {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
                             {--config= : Path to configuration file}';
@@ -44,13 +50,20 @@ class JobCommand extends Command
 
     private FlowExecutor $executor;
 
-    public function __construct(ConfigurationParser $parser, FlowPreparer $preparer, FlowExecutor $executor)
-    {
+    private InputFilesResolver $inputFilesResolver;
+
+    public function __construct(
+        ConfigurationParser $parser,
+        FlowPreparer $preparer,
+        FlowExecutor $executor,
+        InputFilesResolver $inputFilesResolver
+    ) {
         parent::__construct();
         $this->ignoreValidationErrors();
         $this->parser = $parser;
         $this->preparer = $preparer;
         $this->executor = $executor;
+        $this->inputFilesResolver = $inputFilesResolver;
     }
 
     public function handle(): int
@@ -97,7 +110,14 @@ class JobCommand extends Command
             $mainBranch = $config->getGlobalOptions()->getMainBranch()
                 ?? $fileUtils->detectMainBranch();
 
-            $context = ExecutionContext::create($fileUtils, $mainBranch);
+            $inputFilesResolution = $this->resolveInputFilesFlags();
+
+            if ($inputFilesResolution !== null) {
+                $context = ExecutionContext::forInputFiles($inputFilesResolution, $fileUtils);
+                $invocationMode = ExecutionMode::FAST;
+            } else {
+                $context = ExecutionContext::create($fileUtils, $mainBranch);
+            }
 
             $cliExtraArgs = $this->getCliExtraArguments();
 

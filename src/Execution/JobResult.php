@@ -31,6 +31,8 @@ class JobResult
 
     private ?string $stdout;
 
+    private ?InputFilesPerJob $inputFiles;
+
     /**
      * @param string[] $paths
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object
@@ -48,7 +50,8 @@ class JobResult
         array $paths = [],
         bool $skipped = false,
         ?string $skipReason = null,
-        ?string $stdout = null
+        ?string $stdout = null,
+        ?InputFilesPerJob $inputFiles = null
     ) {
         $this->jobName = $jobName;
         $this->success = $success;
@@ -62,6 +65,7 @@ class JobResult
         $this->skipped = $skipped;
         $this->skipReason = $skipReason;
         $this->stdout = $stdout;
+        $this->inputFiles = $inputFiles;
     }
 
     /**
@@ -134,5 +138,20 @@ class JobResult
     public function getStdout(): ?string
     {
         return $this->stdout;
+    }
+
+    public function getInputFiles(): ?InputFilesPerJob
+    {
+        return $this->inputFiles;
+    }
+
+    /**
+     * Return a new JobResult with the given inputFiles slice attached.
+     */
+    public function withInputFiles(?InputFilesPerJob $inputFiles): self
+    {
+        $clone = clone $this;
+        $clone->inputFiles = $inputFiles;
+        return $clone;
     }
 }

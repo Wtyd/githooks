@@ -15,6 +15,7 @@ use Wtyd\GitHooks\Utils\GitStagerInterface;
  * Orchestrates flow execution: runs jobs respecting processes limit and fail-fast.
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Orchestrator with sequential+parallel+threading+restaging
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Top-level coordinator: by design touches every Execution and Output collaborator
  */
 class FlowExecutor
 {
@@ -28,6 +29,8 @@ class FlowExecutor
 
     /** @var array<string, int> jobName => estimated threads */
     private array $threadAllocations = [];
+
+    private ?InputFilesResolution $inputFilesContext = null;
 
     public function __construct(OutputHandler $outputHandler, ?GitStagerInterface $gitStager = null)
     {
@@ -62,6 +65,7 @@ class FlowExecutor
         $failFast = $plan->getOptions()->isFailFast();
         $jobs = $plan->getJobs();
         $context = $plan->getContext();
+        $this->inputFilesContext = $plan->getInputFiles();
 
         foreach ($jobs as $job) {
             $this->propagateContext($job, $context);
@@ -73,49 +77,12 @@ class FlowExecutor
             }
         }
 
-        // Thread budget: distribute cores among jobs. Runs before dry-run so the
-        // commands printed reflect the allocations (cores override + reparto).
-        $this->peakEstimatedThreads = 0;
-        $this->threadAllocations = [];
+        $maxProcesses = $this->resolveThreadBudget($jobs, $maxProcesses);
 
-        // Explicit `cores: N` overrides always apply, regardless of parallel mode.
-        foreach ($jobs as $job) {
-            $override = $job->getCoresOverride();
-            if ($override !== null) {
-                $job->applyThreadLimit($override);
-                $this->threadAllocations[$job->getName()] = $override;
-            }
-        }
-
-        if ($maxProcesses > 1 && count($jobs) > 1) {
-            $allocator = new ThreadBudgetAllocator();
-            $budgetPlan = $allocator->allocate($maxProcesses, $jobs);
-
-            foreach ($jobs as $job) {
-                if (isset($this->threadAllocations[$job->getName()])) {
-                    continue;
-                }
-                $allocation = $budgetPlan->getAllocation($job->getName());
-                if ($allocation !== null) {
-                    $job->applyThreadLimit($allocation);
-                    $this->threadAllocations[$job->getName()] = $allocation;
-                }
-            }
-
-            $maxProcesses = $budgetPlan->getMaxParallelJobs();
-        } else {
-            // Sequential: each job uses its capability default or 1 (unless overridden).
-            foreach ($jobs as $job) {
-                if (isset($this->threadAllocations[$job->getName()])) {
-                    continue;
-                }
-                $cap = $job->getThreadCapability();
-                $this->threadAllocations[$job->getName()] = $cap !== null ? $cap->getDefaultThreads() : 1;
-            }
-        }
+        $inputFiles = $this->inputFilesContext;
 
         if ($dryRun) {
-            return $this->executeDryRun($plan->getFlowName(), $jobs, $plan->getExecutionMode());
+            return $this->executeDryRun($plan->getFlowName(), $jobs, $plan->getExecutionMode(), $inputFiles);
         }
 
         // Total = executable jobs + plan-level skipped jobs (fast-mode filtering etc.).
@@ -128,10 +95,16 @@ class FlowExecutor
             $results = $this->executeParallel($jobs, $maxProcesses, $failFast);
         }
 
-        // Include skipped jobs from plan (fast mode filtering)
+        // Include skipped jobs from plan (fast mode filtering / files mode mismatch)
         foreach ($plan->getSkippedJobs() as $name => $info) {
             $this->outputHandler->onJobSkipped($name, $info['reason']);
-            $results[] = JobResult::skipped($name, $info['type'], $info['reason'], $info['paths']);
+            $skippedResult = JobResult::skipped($name, $info['type'], $info['reason'], $info['paths']);
+            if ($inputFiles !== null && ($info['accelerable'] ?? false)) {
+                $skippedResult = $skippedResult->withInputFiles(
+                    new InputFilesPerJob([], $inputFiles->getTotalValid())
+                );
+            }
+            $results[] = $skippedResult;
         }
 
         $this->outputHandler->flush();
@@ -146,15 +119,20 @@ class FlowExecutor
             $totalTime,
             $this->peakEstimatedThreads,
             $budget,
-            $plan->getExecutionMode()
+            $plan->getExecutionMode(),
+            $inputFiles
         );
     }
 
     /**
      * @param JobAbstract[] $jobs
      */
-    private function executeDryRun(string $flowName, array $jobs, string $executionMode): FlowResult
-    {
+    private function executeDryRun(
+        string $flowName,
+        array $jobs,
+        string $executionMode,
+        ?InputFilesResolution $inputFiles
+    ): FlowResult {
         $results = [];
         foreach ($jobs as $job) {
             $command = $job->buildCommand();
@@ -168,11 +146,116 @@ class FlowExecutor
                 $command,
                 $job->getType(),
                 null,
-                $job->getConfiguredPaths()
+                $job->getConfiguredPaths(),
+                false,
+                null,
+                null,
+                $this->buildPerJobInputFiles($job)
             );
         }
-        return new FlowResult($flowName, $results, '0ms', 0, 0, $executionMode);
+        return new FlowResult($flowName, $results, '0ms', 0, 0, $executionMode, $inputFiles);
     }
+
+    /**
+     * Distribute the thread budget across jobs and return the effective max
+     * parallel jobs. Runs before dry-run so printed commands reflect the
+     * allocations (cores override + reparto). Resets internal counters.
+     *
+     * @param JobAbstract[] $jobs
+     */
+    private function resolveThreadBudget(array $jobs, int $maxProcesses): int
+    {
+        $this->peakEstimatedThreads = 0;
+        $this->threadAllocations = [];
+
+        $this->applyExplicitCoresOverrides($jobs);
+
+        if ($maxProcesses > 1 && count($jobs) > 1) {
+            return $this->allocateParallelBudget($jobs, $maxProcesses);
+        }
+
+        $this->fillSequentialAllocations($jobs);
+        return $maxProcesses;
+    }
+
+    /**
+     * Apply explicit `cores: N` overrides — always honoured, regardless of mode.
+     *
+     * @param JobAbstract[] $jobs
+     */
+    private function applyExplicitCoresOverrides(array $jobs): void
+    {
+        foreach ($jobs as $job) {
+            $override = $job->getCoresOverride();
+            if ($override !== null) {
+                $job->applyThreadLimit($override);
+                $this->threadAllocations[$job->getName()] = $override;
+            }
+        }
+    }
+
+    /**
+     * Allocate the parallel thread budget via ThreadBudgetAllocator and
+     * return the effective number of parallel jobs.
+     *
+     * @param JobAbstract[] $jobs
+     */
+    private function allocateParallelBudget(array $jobs, int $maxProcesses): int
+    {
+        $budgetPlan = (new ThreadBudgetAllocator())->allocate($maxProcesses, $jobs);
+
+        foreach ($jobs as $job) {
+            if (isset($this->threadAllocations[$job->getName()])) {
+                continue;
+            }
+            $allocation = $budgetPlan->getAllocation($job->getName());
+            if ($allocation !== null) {
+                $job->applyThreadLimit($allocation);
+                $this->threadAllocations[$job->getName()] = $allocation;
+            }
+        }
+
+        return $budgetPlan->getMaxParallelJobs();
+    }
+
+    /**
+     * Sequential mode allocation — each job uses its capability default
+     * unless an explicit override is already set.
+     *
+     * @param JobAbstract[] $jobs
+     */
+    private function fillSequentialAllocations(array $jobs): void
+    {
+        foreach ($jobs as $job) {
+            if (isset($this->threadAllocations[$job->getName()])) {
+                continue;
+            }
+            $cap = $job->getThreadCapability();
+            $this->threadAllocations[$job->getName()] = $cap !== null ? $cap->getDefaultThreads() : 1;
+        }
+    }
+
+    /**
+     * Build the per-job input-files slice for accelerable jobs only. Returns null
+     * when there is no inputFiles context (regular --fast/--fast-branch/full)
+     * or when the job is non-accelerable (REQ-008/REQ-009).
+     */
+    private function buildPerJobInputFiles(JobAbstract $job): ?InputFilesPerJob
+    {
+        if ($this->inputFilesContext === null) {
+            return null;
+        }
+        if (!$job->isAccelerable()) {
+            return null;
+        }
+        // After FlowPreparer::filterJobForMode(), getConfiguredPaths() returns the
+        // matched subset of input files for this job (or empty if it was skipped).
+        return new InputFilesPerJob(
+            $job->getConfiguredPaths(),
+            $this->inputFilesContext->getTotalValid()
+        );
+    }
+
 
     /**
      * @param JobAbstract[] $jobs
@@ -249,11 +332,14 @@ class FlowExecutor
                     }
                     foreach ($pool->getQueuedJobs() as $skippedJob) {
                         $this->outputHandler->onJobSkipped($skippedJob->getDisplayName(), 'skipped by fail-fast');
-                        $results[] = JobResult::skipped(
-                            $skippedJob->getName(),
-                            $skippedJob->getType(),
-                            'skipped by fail-fast',
-                            $skippedJob->getConfiguredPaths()
+                        $results[] = $this->attachInputFilesIfApplicable(
+                            JobResult::skipped(
+                                $skippedJob->getName(),
+                                $skippedJob->getType(),
+                                'skipped by fail-fast',
+                                $skippedJob->getConfiguredPaths()
+                            ),
+                            $skippedJob
                         );
                     }
                     $pool->clearQueue();
@@ -363,7 +449,8 @@ class FlowExecutor
             $job->getConfiguredPaths(),
             false,
             null,
-            $stdout
+            $stdout,
+            $this->buildPerJobInputFiles($job)
         );
     }
 
@@ -387,15 +474,29 @@ class FlowExecutor
             }
             if ($found) {
                 $this->outputHandler->onJobSkipped($job->getDisplayName(), 'skipped by fail-fast');
-                $skipped[] = JobResult::skipped(
-                    $job->getName(),
-                    $job->getType(),
-                    'skipped by fail-fast',
-                    $job->getConfiguredPaths()
+                $skipped[] = $this->attachInputFilesIfApplicable(
+                    JobResult::skipped(
+                        $job->getName(),
+                        $job->getType(),
+                        'skipped by fail-fast',
+                        $job->getConfiguredPaths()
+                    ),
+                    $job
                 );
             }
         }
         return $skipped;
+    }
+
+    /**
+     * Attach an InputFilesPerJob slice to a JobResult when the executor is in
+     * "files" mode and the job is accelerable. Otherwise returns the result
+     * unchanged.
+     */
+    private function attachInputFilesIfApplicable(JobResult $result, JobAbstract $job): JobResult
+    {
+        $slice = $this->buildPerJobInputFiles($job);
+        return $slice === null ? $result : $result->withInputFiles($slice);
     }
 
     private function formatTime(float $seconds): string

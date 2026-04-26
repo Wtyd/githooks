@@ -251,6 +251,22 @@ abstract class JobAbstract
     }
 
     /**
+     * Whether this job supports fast mode (path filtering with input files).
+     * Explicit `accelerable` in config takes precedence; otherwise uses the
+     * subclass' SUPPORTS_FAST constant. Used by FlowExecutor to attach an
+     * inputFiles slice only on accelerable jobs (REQ-008/REQ-009 of
+     * spec-design-files-flag.md).
+     */
+    public function isAccelerable(): bool
+    {
+        if (array_key_exists('accelerable', $this->args)) {
+            return (bool) $this->args['accelerable'];
+        }
+        $constant = static::class . '::SUPPORTS_FAST';
+        return defined($constant) && (bool) constant($constant);
+    }
+
+    /**
      * Declare threading capability for budget allocation.
      * Override in subclasses that support internal parallelism.
      */

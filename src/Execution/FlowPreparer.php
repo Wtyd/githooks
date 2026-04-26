@@ -67,10 +67,14 @@ class FlowPreparer
             $jobConfig = $this->applyExecutionMode($jobConfig, $flow, $effectiveInvocation, $context, $options, $config);
             if ($jobConfig === null) {
                 // Job was skipped by execution mode filtering — record it
+                $reason = ($context !== null && $context->hasInputFiles())
+                    ? 'no input files match its paths'
+                    : 'no staged files match its paths';
                 $skippedJobs[$jobName] = [
                     'type' => $originalConfig->getType(),
-                    'reason' => 'no staged files match its paths',
+                    'reason' => $reason,
                     'paths' => $originalConfig->getPaths(),
+                    'accelerable' => $originalConfig->isAccelerable($this->jobRegistry),
                 ];
                 continue;
             }
@@ -89,7 +93,8 @@ class FlowPreparer
             $options,
             $context,
             $skippedJobs,
-            $effectiveInvocation ?? ExecutionMode::FULL
+            $effectiveInvocation ?? ExecutionMode::FULL,
+            $context !== null ? $context->getInputFilesResolution() : null
         );
     }
 
@@ -124,7 +129,8 @@ class FlowPreparer
             $options,
             $context,
             [],
-            $effectiveInvocation ?? ExecutionMode::FULL
+            $effectiveInvocation ?? ExecutionMode::FULL,
+            $context !== null ? $context->getInputFilesResolution() : null
         );
     }
 
@@ -224,7 +230,8 @@ class FlowPreparer
 
         if (empty($filteredFiles)) {
             if ($config !== null) {
-                $config->getValidation()->addWarning("Job '$jobName' was skipped: no staged files match its paths.");
+                $reason = $context->hasInputFiles() ? 'no input files match its paths' : 'no staged files match its paths';
+                $config->getValidation()->addWarning("Job '$jobName' was skipped: $reason.");
             }
             return null;
         }

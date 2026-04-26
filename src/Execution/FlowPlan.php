@@ -21,14 +21,17 @@ class FlowPlan
 
     private ?ExecutionContext $context;
 
-    /** @var array<string, array{type: string, reason: string, paths: string[]}> */
+    /** @var array<string, array{type: string, reason: string, paths: string[], accelerable?: bool}> */
     private array $skippedJobs = [];
 
     private string $executionMode;
 
+    private ?InputFilesResolution $inputFiles;
+
     /**
      * @param JobAbstract[] $jobs
-     * @param array<string, array{type: string, reason: string, paths: string[]}> $skippedJobs
+     * @param array<string, array{type: string, reason: string, paths: string[], accelerable?: bool}> $skippedJobs
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Immutable plan aggregator.
      */
     public function __construct(
         string $flowName,
@@ -36,7 +39,8 @@ class FlowPlan
         OptionsConfiguration $options,
         ?ExecutionContext $context = null,
         array $skippedJobs = [],
-        string $executionMode = ExecutionMode::FULL
+        string $executionMode = ExecutionMode::FULL,
+        ?InputFilesResolution $inputFiles = null
     ) {
         $this->flowName = $flowName;
         $this->jobs = $jobs;
@@ -44,6 +48,7 @@ class FlowPlan
         $this->context = $context;
         $this->skippedJobs = $skippedJobs;
         $this->executionMode = $executionMode;
+        $this->inputFiles = $inputFiles;
     }
 
     public function getFlowName(): string
@@ -67,7 +72,7 @@ class FlowPlan
         return $this->context;
     }
 
-    /** @return array<string, array{type: string, reason: string, paths: string[]}> */
+    /** @return array<string, array{type: string, reason: string, paths: string[], accelerable?: bool}> */
     public function getSkippedJobs(): array
     {
         return $this->skippedJobs;
@@ -76,5 +81,10 @@ class FlowPlan
     public function getExecutionMode(): string
     {
         return $this->executionMode;
+    }
+
+    public function getInputFiles(): ?InputFilesResolution
+    {
+        return $this->inputFiles;
     }
 }

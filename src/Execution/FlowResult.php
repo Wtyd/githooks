@@ -19,8 +19,11 @@ class FlowResult
 
     private string $executionMode;
 
+    private ?InputFilesResolution $inputFiles;
+
     /**
      * @param JobResult[] $jobResults
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Immutable result aggregator.
      */
     public function __construct(
         string $flowName,
@@ -28,7 +31,8 @@ class FlowResult
         string $totalTime,
         int $peakEstimatedThreads = 0,
         int $threadBudget = 0,
-        string $executionMode = 'full'
+        string $executionMode = 'full',
+        ?InputFilesResolution $inputFiles = null
     ) {
         $this->flowName = $flowName;
         $this->jobResults = $jobResults;
@@ -36,6 +40,7 @@ class FlowResult
         $this->peakEstimatedThreads = $peakEstimatedThreads;
         $this->threadBudget = $threadBudget;
         $this->executionMode = $executionMode;
+        $this->inputFiles = $inputFiles;
     }
 
     public function getFlowName(): string
@@ -98,5 +103,10 @@ class FlowResult
     public function getSkippedCount(): int
     {
         return count(array_filter($this->jobResults, fn(JobResult $result) => $result->isSkipped()));
+    }
+
+    public function getInputFiles(): ?InputFilesResolution
+    {
+        return $this->inputFiles;
     }
 }

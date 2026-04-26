@@ -10,6 +10,10 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
  * Immutable value object that carries execution context through the pipeline.
  * Supports 3 modes: full, fast (staged files), fast-branch (branch diff + staged).
  * File lists are loaded lazily on first access.
+ *
+ * Files mode (--files / --files-from) reuses this object via forInputFiles():
+ * the resolved list is exposed as if it were "staged", so FlowPreparer's FAST
+ * filter pipeline works unchanged. See spec-design-files-flag.md §7.4.
  */
 class ExecutionContext
 {
@@ -27,6 +31,8 @@ class ExecutionContext
 
     /** @var bool Whether staged files have been loaded (for lazy create() factory) */
     private bool $stagedLoaded;
+
+    private ?InputFilesResolution $inputFiles = null;
 
     /**
      * @param string[] $stagedFiles
@@ -62,9 +68,32 @@ class ExecutionContext
         return $context;
     }
 
+    /**
+     * Build a context backed by a user-provided input files list (--files / --files-from).
+     * The resolved list is served as if it were staged so that FAST-mode filtering
+     * works without changes (spec §7.4, CON-002).
+     */
+    public static function forInputFiles(InputFilesResolution $resolution, FileUtilsInterface $fileUtils): self
+    {
+        $context              = new self(false, $resolution->getValid(), $fileUtils);
+        $context->inputFiles  = $resolution;
+        $context->stagedLoaded = true;
+        return $context;
+    }
+
     public function isFastMode(): bool
     {
         return $this->fastMode;
+    }
+
+    public function hasInputFiles(): bool
+    {
+        return $this->inputFiles !== null;
+    }
+
+    public function getInputFilesResolution(): ?InputFilesResolution
+    {
+        return $this->inputFiles;
     }
 
     /** @return string[] */
