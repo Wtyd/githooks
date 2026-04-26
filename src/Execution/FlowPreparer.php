@@ -99,6 +99,56 @@ class FlowPreparer
     }
 
     /**
+     * Prepare a multi-flow run (githooks flows <a> <b> ...).
+     *
+     * Receives names already validated to exist as either normal flow or meta-flow,
+     * and options already resolved by EffectiveOptionsResolver. Performs meta-flow
+     * expansion + dedup of flow names + dedup of jobs (REQ-003 / spec §4.3) and
+     * delegates the actual job assembly to prepare() via a synthetic aggregate flow.
+     *
+     * @param string[] $argNames Flow/meta-flow names tal cual del CLI (already validated)
+     * @param string $aggregateFlowName Identificador del run según spec §4.4 (e.g. "qa+lint")
+     * @param string[] $excludeJobs
+     * @param string[] $onlyJobs
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors prepare() with the variadic name list and aggregate id
+     */
+    public function prepareMultiple(
+        array $argNames,
+        string $aggregateFlowName,
+        ConfigurationResult $config,
+        OptionsConfiguration $options,
+        ?ExecutionContext $context = null,
+        array $excludeJobs = [],
+        array $onlyJobs = [],
+        ?string $invocationMode = null,
+        string $cliExtraArgs = ''
+    ): FlowPlan {
+        $expandedFlowNames = MultiFlowExpansion::expandFlowNames($argNames, $config);
+        $jobNames = MultiFlowExpansion::mergeFlowJobs($expandedFlowNames, $config);
+
+        $aggregate = new FlowConfiguration(
+            $aggregateFlowName,
+            $jobNames,
+            $options,
+            null
+        );
+
+        $plan = $this->prepare($aggregate, $config, $context, $excludeJobs, $onlyJobs, $invocationMode, $cliExtraArgs);
+
+        return new FlowPlan(
+            $plan->getFlowName(),
+            $plan->getJobs(),
+            $plan->getOptions(),
+            $plan->getContext(),
+            $plan->getSkippedJobs(),
+            $plan->getExecutionMode(),
+            $plan->getInputFiles() ?? null,
+            $expandedFlowNames,
+            $plan->getEffectiveOptions()
+        );
+    }
+
+    /**
      * Prepare a single job for direct execution (githooks job <name>).
      *
      * @param string|null $invocationMode CLI flag execution mode

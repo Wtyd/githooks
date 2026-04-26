@@ -28,9 +28,15 @@ class FlowPlan
 
     private ?InputFilesResolution $inputFiles;
 
+    /** @var string[]|null Normal flow names after meta-flow expansion (null for `flow X` and single-flow degenerate) */
+    private ?array $expandedFlows;
+
+    private ?EffectiveOptionsResolution $effectiveOptions;
+
     /**
      * @param JobAbstract[] $jobs
      * @param array<string, array{type: string, reason: string, paths: string[], accelerable?: bool}> $skippedJobs
+     * @param string[]|null $expandedFlows
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Immutable plan aggregator.
      */
     public function __construct(
@@ -40,7 +46,9 @@ class FlowPlan
         ?ExecutionContext $context = null,
         array $skippedJobs = [],
         string $executionMode = ExecutionMode::FULL,
-        ?InputFilesResolution $inputFiles = null
+        ?InputFilesResolution $inputFiles = null,
+        ?array $expandedFlows = null,
+        ?EffectiveOptionsResolution $effectiveOptions = null
     ) {
         $this->flowName = $flowName;
         $this->jobs = $jobs;
@@ -49,6 +57,8 @@ class FlowPlan
         $this->skippedJobs = $skippedJobs;
         $this->executionMode = $executionMode;
         $this->inputFiles = $inputFiles;
+        $this->expandedFlows = $expandedFlows;
+        $this->effectiveOptions = $effectiveOptions;
     }
 
     public function getFlowName(): string
@@ -86,5 +96,37 @@ class FlowPlan
     public function getInputFiles(): ?InputFilesResolution
     {
         return $this->inputFiles;
+    }
+
+    /**
+     * @return string[]|null Normal flow names after meta-flow expansion;
+     *                      null for `flow X` and `flows X` single-flow degenerate runs.
+     */
+    public function getExpandedFlows(): ?array
+    {
+        return $this->expandedFlows;
+    }
+
+    public function getEffectiveOptions(): ?EffectiveOptionsResolution
+    {
+        return $this->effectiveOptions;
+    }
+
+    /**
+     * Return a clone with the given EffectiveOptionsResolution attached.
+     */
+    public function withEffectiveOptions(EffectiveOptionsResolution $resolution): self
+    {
+        return new self(
+            $this->flowName,
+            $this->jobs,
+            $this->options,
+            $this->context,
+            $this->skippedJobs,
+            $this->executionMode,
+            $this->inputFiles,
+            $this->expandedFlows,
+            $resolution
+        );
     }
 }
