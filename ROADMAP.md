@@ -2,13 +2,13 @@
 
 ## Resumen por versión
 
-| Versión  | Tema                  | Ítems principales                                                                                                                           |
-| -------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| **v3.0** | Release               | Versión final publicada. Arquitectura hooks/flows/jobs, modos fast/fast-branch, conf:init interactivo, output JSON/JUnit, thread budgeting. |
-| **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
-| **v3.2** | Herramientas y Output ✔ | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
-| **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI |
-| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from` ✔, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
+| Versión    | Tema                       | Ítems principales                                                                                                                                                                                                                                                                                    |
+| ---------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **v3.0**   | Release                    | Versión final publicada. Arquitectura hooks/flows/jobs, modos fast/fast-branch, conf:init interactivo, output JSON/JUnit, thread budgeting.                                                                                                                                                          |
+| **v3.1**   | Adopción ✔                 | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                                                                                                                                                                                        |
+| **v3.2**   | Herramientas y Output ✔    | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows                                                                                                                          |
+| **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI                                                                                                                                            |
+| **v3.3**   | Madurez                    | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from` ✔, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
 
 ---
 
@@ -50,17 +50,17 @@ La regla que unifica el diseño: **el formato determina el comportamiento del ou
 
 **Formato texto (default, humano mirando terminal):**
 
-| Escenario | Comportamiento |
-|---|---|
-| Single job (`job X`) | Streaming en vivo vía `process->wait($callback)`. El usuario ve la salida real de la herramienta como en v2. |
-| Flow secuencial (processes=1) | Cada job streameado con cabecera separadora entre jobs. Como `make` o `docker-compose`. |
-| Flow paralelo (processes>1) | Dashboard interactivo con tres estados: ⏺ en cola, ⏳ ejecutando [timer], ✓/✗ terminado. Se actualiza en vivo con ANSI cursor. Output completo solo en error. Al final queda la foto limpia de resultados. En CI (no TTY) fallback a output append-only. |
+| Escenario                     | Comportamiento                                                                                                                                                                                                                                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Single job (`job X`)          | Streaming en vivo vía `process->wait($callback)`. El usuario ve la salida real de la herramienta como en v2.                                                                                                                                            |
+| Flow secuencial (processes=1) | Cada job streameado con cabecera separadora entre jobs. Como `make` o `docker-compose`.                                                                                                                                                                 |
+| Flow paralelo (processes>1)   | Dashboard interactivo con tres estados: ⏺ en cola, ⏳ ejecutando [timer], ✓/✗ terminado. Se actualiza en vivo con ANSI cursor. Output completo solo en error. Al final queda la foto limpia de resultados. En CI (no TTY) fallback a output append-only. |
 
 **Formato estructurado (json, junit — máquina, IA, CI):**
 
-| Escenario | Comportamiento |
-|---|---|
-| Todos | Barra de progreso en **stderr** (no corrompe stdout). Output estructurado completo en **stdout** al final. La IA hace `githooks flow qa --format=json 2>/dev/null` y obtiene JSON limpio. |
+| Escenario | Comportamiento                                                                                                                                                                            |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Todos     | Barra de progreso en **stderr** (no corrompe stdout). Output estructurado completo en **stdout** al final. La IA hace `githooks flow qa --format=json 2>/dev/null` y obtiene JSON limpio. |
 
 La separación stderr/stdout es el patrón Unix estándar: progreso para humanos en stderr, datos para máquinas en stdout.
 
@@ -236,14 +236,14 @@ El CI actual tiene dos workflows que se solapan (`code-analysis.yml` ejecuta `fl
 
 1. **Renombrar jobs de `qa/githooks.php` a kebab-case** (anticipa parte del ítem 6 de v3.3). El resto (`qa/githooks.dist.php`, `.yml`) se ajusta por coherencia con la convención recomendada en docs, no por obligación técnica.
 
-   | Antes | Después |
-   |---|---|
-   | `Phpstan Src` | `phpstan-src` |
-   | `Phpmd Src` | `phpmd-src` |
+   | Antes                                  | Después                                |
+   | -------------------------------------- | -------------------------------------- |
+   | `Phpstan Src`                          | `phpstan-src`                          |
+   | `Phpmd Src`                            | `phpmd-src`                            |
    | `Phpcpd`, `Phpcs`, `Phpcbf`, `Phpunit` | `phpcpd`, `phpcs`, `phpcbf`, `phpunit` |
-   | `Composer Audit/Update/Downgrade` | `composer-audit/update/downgrade` |
-   | `Coverage`, `Infection`, `PhpMetrics` | `coverage`, `infection`, `phpmetrics` |
-   | `psalm_src` | `psalm-src` |
+   | `Composer Audit/Update/Downgrade`      | `composer-audit/update/downgrade`      |
+   | `Coverage`, `Infection`, `PhpMetrics`  | `coverage`, `infection`, `phpmetrics`  |
+   | `psalm_src`                            | `psalm-src`                            |
 
 2. **Añadir `phpunit-git` y `phpunit-windows`** via `extends: phpunit`, sobrescribiendo sólo el argumento `group`. `phpunit.xml` ya excluye por defecto los grupos `release`, `git` y `windows`, así que el `phpunit` base es automáticamente la "suite principal".
 
@@ -328,9 +328,9 @@ CLI flags → flow.options → flows.options (global) → defaults
 
 Cuando hay múltiples flows, el nivel `flow.options` puede ser contradictorio. Ejemplo con la config actual:
 
-| Opción | `qa` | `schedule` | Conflicto |
-|---|---|---|---|
-| `processes` | 10 (global) | 1 (propio) | Sí: ¿10 o 1? |
+| Opción      | `qa`           | `schedule`    | Conflicto            |
+| ----------- | -------------- | ------------- | -------------------- |
+| `processes` | 10 (global)    | 1 (propio)    | Sí: ¿10 o 1?         |
 | `fail-fast` | false (global) | true (propio) | Sí: ¿parar o seguir? |
 
 **Regla propuesta:** las opciones del flow combinado **ignoran** las options per-flow. Pipeline:
@@ -383,12 +383,12 @@ Hoy `--format=FORMAT` acepta un único valor. Si un pipeline necesita SARIF para
 
 **Estudio rápido de qué hace cada herramienta del ecosistema:**
 
-| Herramienta | API CLI | API config |
-|---|---|---|
-| **PHPUnit** | `--log-junit X --coverage-html Y --coverage-xml Z --testdox-html W` (un flag por tipo) | `<logging>` con `<log type="..." target="..."/>` repetible en `phpunit.xml` |
-| **Psalm** | `--report=results.json --report=results.xml --report=results.sarif` (mismo flag repetible, formato inferido por extensión) | Sección `<report_format>` en `psalm.xml` |
-| **PHPStan** | `--error-format=junit` (uno solo) | — |
-| **golangci-lint** | `--out-format=text,sarif:report.sarif,checkstyle:cs.xml` (un flag, lista CSV `formato:path`) | `output.formats` en `.golangci.yml` |
+| Herramienta       | API CLI                                                                                                                    | API config                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| **PHPUnit**       | `--log-junit X --coverage-html Y --coverage-xml Z --testdox-html W` (un flag por tipo)                                     | `<logging>` con `<log type="..." target="..."/>` repetible en `phpunit.xml` |
+| **Psalm**         | `--report=results.json --report=results.xml --report=results.sarif` (mismo flag repetible, formato inferido por extensión) | Sección `<report_format>` en `psalm.xml`                                    |
+| **PHPStan**       | `--error-format=junit` (uno solo)                                                                                          | —                                                                           |
+| **golangci-lint** | `--out-format=text,sarif:report.sarif,checkstyle:cs.xml` (un flag, lista CSV `formato:path`)                               | `output.formats` en `.golangci.yml`                                         |
 
 **Decisión:** PHPUnit-style con prefijo `--report-X`. Es descubrible (`--help` lista cada formato), no rompe `--format`/`--output`, y convive con la config declarativa.
 
@@ -549,35 +549,35 @@ Las flags CLI `--warn-after`/`--fail-after` aplican siempre al **flow-level** (s
 
 **Por job:**
 
-| Estado job | warn-after | fail-after | Resultado | Exit job |
-|---|---|---|---|---|
-| OK | no cruza | no cruza | ✓ OK | 0 |
-| OK | cruzado | no cruza | ⚠ OK con warning | 0 |
-| OK | cruzado | cruzado | ✗ KO por threshold | 1 |
-| KO real (tool exit≠0) | — | — | ✗ KO real (gana causa real; threshold informativo) | 1 |
-| Skipped | — | — | ⏭ no cuenta para la suma del flow | — |
+| Estado job            | warn-after | fail-after | Resultado                                          | Exit job |
+| --------------------- | ---------- | ---------- | -------------------------------------------------- | -------- |
+| OK                    | no cruza   | no cruza   | ✓ OK                                               | 0        |
+| OK                    | cruzado    | no cruza   | ⚠ OK con warning                                   | 0        |
+| OK                    | cruzado    | cruzado    | ✗ KO por threshold                                 | 1        |
+| KO real (tool exit≠0) | —          | —          | ✗ KO real (gana causa real; threshold informativo) | 1        |
+| Skipped               | —          | —          | ⏭ no cuenta para la suma del flow                  | —        |
 
 **Por flow** (suma de duraciones de jobs ejecutados; excluye skipped):
 
-| Suma | warn-after | fail-after | Resultado flow | Exit |
-|---|---|---|---|---|
-| < warn | — | — | ✓ OK | 0 (si todos jobs OK) |
-| warn ≤ S < fail | cruzado | no cruza | ⚠ Flow warning | 0 (si jobs OK) |
-| ≥ fail | cruzado | cruzado | ✗ Flow KO | **1** aunque todos los jobs hayan pasado |
+| Suma            | warn-after | fail-after | Resultado flow | Exit                                     |
+| --------------- | ---------- | ---------- | -------------- | ---------------------------------------- |
+| < warn          | —          | —          | ✓ OK           | 0 (si todos jobs OK)                     |
+| warn ≤ S < fail | cruzado    | no cruza   | ⚠ Flow warning | 0 (si jobs OK)                           |
+| ≥ fail          | cruzado    | cruzado    | ✗ Flow KO      | **1** aunque todos los jobs hayan pasado |
 
 **Combinaciones:**
 
-| Job-state | Flow-state | Exit final | Resumen |
-|---|---|---|---|
-| Todos OK | OK | 0 | Todo verde |
-| Algún job ⚠ | OK | 0 | ⚠ en jobs concretos |
-| Todos OK | ⚠ | 0 | ⚠ solo en línea final |
-| Algún job ⚠ | ⚠ | 0 | ⚠ en jobs y en flow |
-| Algún job ✗ por threshold | OK | 1 | ✗ del job, exit 1 |
-| Algún job ✗ por threshold | ⚠ | 1 | ✗ del job (gana), ⚠ del flow informativo |
-| Algún job ✗ por threshold | ✗ | 1 | ✗ del job + ✗ del flow |
-| Todos OK | ✗ | **1** | Todos los jobs ✓ pero flow rompe budget — caso conceptual clave |
-| Algún job ✗ real | cualquiera | 1 | KO real gana; threshold informativo |
+| Job-state                 | Flow-state | Exit final | Resumen                                                         |
+| ------------------------- | ---------- | ---------- | --------------------------------------------------------------- |
+| Todos OK                  | OK         | 0          | Todo verde                                                      |
+| Algún job ⚠               | OK         | 0          | ⚠ en jobs concretos                                             |
+| Todos OK                  | ⚠          | 0          | ⚠ solo en línea final                                           |
+| Algún job ⚠               | ⚠          | 0          | ⚠ en jobs y en flow                                             |
+| Algún job ✗ por threshold | OK         | 1          | ✗ del job, exit 1                                               |
+| Algún job ✗ por threshold | ⚠          | 1          | ✗ del job (gana), ⚠ del flow informativo                        |
+| Algún job ✗ por threshold | ✗          | 1          | ✗ del job + ✗ del flow                                          |
+| Todos OK                  | ✗          | **1**      | Todos los jobs ✓ pero flow rompe budget — caso conceptual clave |
+| Algún job ✗ real          | cualquiera | 1          | KO real gana; threshold informativo                             |
 
 #### Ejemplos de output (texto)
 
@@ -694,13 +694,13 @@ Los campos `timeBudget` (root) y `threshold` (por job) **siempre aparecen** con 
 
 **Reglas del JSON:**
 
-| Caso | `timeBudget` | `threshold` por job |
-|---|---|---|
-| Sin time-budget configurado a nivel flow | `null` | — |
-| Con time-budget pero suma no cruza | objeto con `warned: false, failed: false` | — |
-| Job sin warn-after ni fail-after | — | `null` |
-| Job con threshold configurado | — | objeto. Sub-campos `warnAfter`/`failAfter` son `null` si solo se configuró uno de los dos |
-| `reason` siempre presente cuando `warned` o `failed` son true | — | `null` en el resto de casos |
+| Caso                                                          | `timeBudget`                              | `threshold` por job                                                                       |
+| ------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Sin time-budget configurado a nivel flow                      | `null`                                    | —                                                                                         |
+| Con time-budget pero suma no cruza                            | objeto con `warned: false, failed: false` | —                                                                                         |
+| Job sin warn-after ni fail-after                              | —                                         | `null`                                                                                    |
+| Job con threshold configurado                                 | —                                         | objeto. Sub-campos `warnAfter`/`failAfter` son `null` si solo se configuró uno de los dos |
+| `reason` siempre presente cuando `warned` o `failed` son true | —                                         | `null` en el resto de casos                                                               |
 
 Justificación del patrón: contrato estable, el consumidor escribe `if (job.threshold) { … }` y el campo siempre existe. Patrón usado por GraphQL, JSON:API, OpenAPI con `nullable: true`. El sentinel `0 = infinito` se descarta — mezcla valor numérico con semántica especial y reserva un valor del dominio.
 
@@ -708,11 +708,11 @@ Mismo principio en SARIF/Code Climate: el threshold va como propiedad opcional d
 
 #### Validación en `conf:check`
 
-| Caso | Comportamiento |
-|---|---|
-| `warn-after` o `fail-after` no positivo (`-1`, `0`, `'foo'`) | Error: "must be a positive integer" |
-| `warn-after >= fail-after` (a nivel job o flow) | Error: "warn-after must be less than fail-after" |
-| `time-budget` con clave desconocida | Warning: "unknown key in time-budget: 'X'" |
+| Caso                                                             | Comportamiento                                                |
+| ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| `warn-after` o `fail-after` no positivo (`-1`, `0`, `'foo'`)     | Error: "must be a positive integer"                           |
+| `warn-after >= fail-after` (a nivel job o flow)                  | Error: "warn-after must be less than fail-after"              |
+| `time-budget` con clave desconocida                              | Warning: "unknown key in time-budget: 'X'"                    |
 | Suma de `fail-after` de jobs > `time-budget.fail-after` del flow | Sin warning. Es legítimo (no todos los jobs cruzan a la vez). |
 
 Ejemplo:
@@ -728,19 +728,19 @@ $ githooks conf:check
 
 #### Casos borde resueltos
 
-| Caso | Decisión |
-|---|---|
-| `--dry-run` | Skip total. No se mide tiempo, no se evalúa threshold. |
-| CLI `--warn-after=X` solo (sin `--fail-after`) | Override solo de `time-budget.warn-after`. El `fail-after` de config sigue activo. |
-| CLI `--no-thresholds` + `--warn-after` simultáneos | `--no-thresholds` gana. Warning: "ignoring --warn-after due to --no-thresholds". |
-| Job con error real (exit≠0) que también cruza `fail-after` | KO real es la causa principal; threshold se anota como información secundaria. Exit 1. |
-| `fail-fast=true` y job rompe `fail-after` | Mismo comportamiento que cualquier KO con fail-fast: aborta el flow, los siguientes jobs no corren. La suma se calcula con lo ejecutado. |
-| Flow con todos los jobs skipped → suma = 0 | OK. `time-budget` no cruza (0 < cualquier threshold positivo). |
-| Multi-flow (`flows qa schedule`) con `time-budget` distinto | Patrón ya acordado: globales ganan + warning informativo. |
+| Caso                                                             | Decisión                                                                                                                                    |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--dry-run`                                                      | Skip total. No se mide tiempo, no se evalúa threshold.                                                                                      |
+| CLI `--warn-after=X` solo (sin `--fail-after`)                   | Override solo de `time-budget.warn-after`. El `fail-after` de config sigue activo.                                                          |
+| CLI `--no-thresholds` + `--warn-after` simultáneos               | `--no-thresholds` gana. Warning: "ignoring --warn-after due to --no-thresholds".                                                            |
+| Job con error real (exit≠0) que también cruza `fail-after`       | KO real es la causa principal; threshold se anota como información secundaria. Exit 1.                                                      |
+| `fail-fast=true` y job rompe `fail-after`                        | Mismo comportamiento que cualquier KO con fail-fast: aborta el flow, los siguientes jobs no corren. La suma se calcula con lo ejecutado.    |
+| Flow con todos los jobs skipped → suma = 0                       | OK. `time-budget` no cruza (0 < cualquier threshold positivo).                                                                              |
+| Multi-flow (`flows qa schedule`) con `time-budget` distinto      | Patrón ya acordado: globales ganan + warning informativo.                                                                                   |
 | Job ya marcado KO con duración enorme (timeout interno del tool) | La duración cuenta para la suma. Si el flow tenía `fail-after` cercano puede empujarlo a ✗ también. Coherente: el tiempo se consumió igual. |
-| `time-budget` solo con `warn-after` | Válido. Solo dispara warning. |
-| `time-budget` solo con `fail-after` | Válido. Sin transición intermedia, salta directo a ✗. |
-| Granularidad < 1s | Se mide en milisegundos internamente; threshold es entero en segundos, comparación con float. |
+| `time-budget` solo con `warn-after`                              | Válido. Solo dispara warning.                                                                                                               |
+| `time-budget` solo con `fail-after`                              | Válido. Sin transición intermedia, salta directo a ✗.                                                                                       |
+| Granularidad < 1s                                                | Se mide en milisegundos internamente; threshold es entero en segundos, comparación con float.                                               |
 
 #### Implementación
 
@@ -817,20 +817,20 @@ No se contempla flag `--memory=X` per-job: igual que `cores`, es decisión decla
 
 Bin-packing 2D estricto (propuesta inicial): un job solo arranca cuando hay simultáneamente cores libres **y** memoria libre suficiente.
 
-| Pool | Cores libres | Memoria libre | ¿Job arranca? |
-|---|---|---|---|
-| Job pide 2 cores + 2048 MB | ≥ 2 | ≥ 2048 | Sí |
-| Job pide 2 cores + 2048 MB | ≥ 2 | < 2048 | No (espera memoria) |
-| Job pide 2 cores + 2048 MB | < 2 | ≥ 2048 | No (espera cores) |
-| Job sin `memory` declarado | suficientes | depende default | Ver discusión 2 |
+| Pool                       | Cores libres | Memoria libre   | ¿Job arranca?       |
+| -------------------------- | ------------ | --------------- | ------------------- |
+| Job pide 2 cores + 2048 MB | ≥ 2          | ≥ 2048          | Sí                  |
+| Job pide 2 cores + 2048 MB | ≥ 2          | < 2048          | No (espera memoria) |
+| Job pide 2 cores + 2048 MB | < 2          | ≥ 2048          | No (espera cores)   |
+| Job sin `memory` declarado | suficientes  | depende default | Ver discusión 2     |
 
 **Auto-detección del techo del runner:**
 
-| Plataforma | Mecanismo | Fallback si falla |
-|---|---|---|
-| Linux | `/proc/meminfo` → `MemTotal` | 4096 MB + warning |
-| macOS | `sysctl hw.memsize` | 4096 MB + warning |
-| Windows | `wmic ComputerSystem get TotalPhysicalMemory` o PowerShell equivalente | 4096 MB + warning |
+| Plataforma | Mecanismo                                                              | Fallback si falla |
+| ---------- | ---------------------------------------------------------------------- | ----------------- |
+| Linux      | `/proc/meminfo` → `MemTotal`                                           | 4096 MB + warning |
+| macOS      | `sysctl hw.memsize`                                                    | 4096 MB + warning |
+| Windows    | `wmic ComputerSystem get TotalPhysicalMemory` o PowerShell equivalente | 4096 MB + warning |
 
 **Sin enforcement**: el motor no aplica `ulimit -v` ni cgroups. Si un job declara `memory: 2048` y consume 4096 en realidad, el OOM lo lanza el sistema operativo como hoy. El presupuesto es **scheduling**, no jaula. Ver discusión 1.
 
@@ -865,11 +865,11 @@ Bin-packing 2D estricto (propuesta inicial): un job solo arranca cuando hay simu
 
 Reglas:
 
-| Caso | `memoryBudget` (root) | `memory` (per-job) |
-|---|---|---|
-| Sin `memory-limit` configurado y ningún job declara `memory` | `null` | `null` en todos |
-| Con `memory-limit` (configurado o auto) | objeto con `limit`, `limitSource`, `peakReserved` | `null` o número según job |
-| `--no-memory-budget` | `null` | se ignoran los `memory` declarados |
+| Caso                                                         | `memoryBudget` (root)                             | `memory` (per-job)                 |
+| ------------------------------------------------------------ | ------------------------------------------------- | ---------------------------------- |
+| Sin `memory-limit` configurado y ningún job declara `memory` | `null`                                            | `null` en todos                    |
+| Con `memory-limit` (configurado o auto)                      | objeto con `limit`, `limitSource`, `peakReserved` | `null` o número según job          |
+| `--no-memory-budget`                                         | `null`                                            | se ignoran los `memory` declarados |
 
 `limitSource`: `"configured"` | `"auto-detected"` | `"cli-override"`.
 
@@ -877,27 +877,27 @@ Reglas:
 
 #### Validación en `conf:check`
 
-| Caso | Comportamiento |
-|---|---|
-| `memory` no entero positivo | Error: "'memory' must be a positive integer (MB)" |
-| `memory > memory-limit` | Error: "job 'X' memory (Y) exceeds runner memory-limit (Z)" — config irresoluble |
-| `memory-limit` no declarado y al menos un job declara `memory` | Info: "memory-limit not configured; using auto-detected value (W MB)" |
-| Auto-detección falla | Warning + fallback informado |
-| Suma de `memory` de jobs > `memory-limit` | Sin warning. Es legítimo: el allocator serializa. |
+| Caso                                                           | Comportamiento                                                                   |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `memory` no entero positivo                                    | Error: "'memory' must be a positive integer (MB)"                                |
+| `memory > memory-limit`                                        | Error: "job 'X' memory (Y) exceeds runner memory-limit (Z)" — config irresoluble |
+| `memory-limit` no declarado y al menos un job declara `memory` | Info: "memory-limit not configured; using auto-detected value (W MB)"            |
+| Auto-detección falla                                           | Warning + fallback informado                                                     |
+| Suma de `memory` de jobs > `memory-limit`                      | Sin warning. Es legítimo: el allocator serializa.                                |
 
 #### Casos borde tentativos
 
-| Caso | Decisión propuesta |
-|---|---|
-| Ningún job declara `memory`, ni hay `memory-limit` | Comportamiento idéntico a hoy. No se aplica gate. |
-| Job con `memory > memory-limit` | Error en `conf:check`. El job nunca podría arrancar. |
-| `--dry-run` | Skip total. No se ejecuta nada, no se evalúa. |
-| `--no-memory-budget` con `memory` en jobs | Warning: "ignoring 'memory' in jobs due to --no-memory-budget". |
-| Self-hosted runner con 64 GB | Auto-detect lo respeta y multiplica el paralelismo posible. |
-| Solo algunos jobs declaran `memory` | Los que declaran respetan gate; los que no se rigen por el default (ver discusión 2). |
-| Job termina antes que sus pares en paralelo | Su memoria reservada se libera de inmediato; el siguiente en cola arranca si entra. |
-| Multi-flow (`flows qa src --memory-limit=X`) | El gate aplica al pool unificado, igual que `processes` y `cores`. |
-| `fail-fast=true` y job ✗ con memoria reservada | La memoria se libera al cancelar; no afecta a la lógica del gate. |
+| Caso                                               | Decisión propuesta                                                                    |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Ningún job declara `memory`, ni hay `memory-limit` | Comportamiento idéntico a hoy. No se aplica gate.                                     |
+| Job con `memory > memory-limit`                    | Error en `conf:check`. El job nunca podría arrancar.                                  |
+| `--dry-run`                                        | Skip total. No se ejecuta nada, no se evalúa.                                         |
+| `--no-memory-budget` con `memory` en jobs          | Warning: "ignoring 'memory' in jobs due to --no-memory-budget".                       |
+| Self-hosted runner con 64 GB                       | Auto-detect lo respeta y multiplica el paralelismo posible.                           |
+| Solo algunos jobs declaran `memory`                | Los que declaran respetan gate; los que no se rigen por el default (ver discusión 2). |
+| Job termina antes que sus pares en paralelo        | Su memoria reservada se libera de inmediato; el siguiente en cola arranca si entra.   |
+| Multi-flow (`flows qa src --memory-limit=X`)       | El gate aplica al pool unificado, igual que `processes` y `cores`.                    |
+| `fail-fast=true` y job ✗ con memoria reservada     | La memoria se libera al cancelar; no afecta a la lógica del gate.                     |
 
 #### Esquema de implementación
 
@@ -995,14 +995,14 @@ Tipo de job nativo `commit-msg` que ejecuta validaciones declarativas sobre el m
 
 **Reglas mínimas viables:**
 
-| Regla | Significado |
-|---|---|
-| `min-length` / `max-length` | Longitud del subject (primera línea) |
-| `pattern` + `pattern-message` | Regex contra el subject; mensaje custom de error |
-| `forbid-trailing-period` | El subject no termina en `.` |
-| `subject-case` | `lowercase` / `sentence` / `null` |
-| `forbid-empty` | (default true) Rechazar mensaje vacío |
-| `merge-allowed` | (default true) Saltar validación si el commit es un merge |
+| Regla                         | Significado                                               |
+| ----------------------------- | --------------------------------------------------------- |
+| `min-length` / `max-length`   | Longitud del subject (primera línea)                      |
+| `pattern` + `pattern-message` | Regex contra el subject; mensaje custom de error          |
+| `forbid-trailing-period`      | El subject no termina en `.`                              |
+| `subject-case`                | `lowercase` / `sentence` / `null`                         |
+| `forbid-empty`                | (default true) Rechazar mensaje vacío                     |
+| `merge-allowed`               | (default true) Saltar validación si el commit es un merge |
 
 **Presets**: `conventional-commits` de partida (pattern + tipos estándar + footer `BREAKING CHANGE` permitido). `gitmoji`, `jira-ticket` quedan para futuro si hay demanda.
 
@@ -1076,6 +1076,9 @@ return array_replace_recursive($base, [
 **Estado**: el usuario quiere estudiar más a fondo el caso de uso antes de cerrar el diseño definitivo.
 
 ---
+
+9. Pruebas Extra
+    Quiero verificar que fast-branch y los budgets funcionan en github actions. Crear una rama, hacer cambios con commits y pushes para verificar que se aplica correctamente. Además verificar en servidores windows.
 
 ## v3.4 (aplazado)
 
