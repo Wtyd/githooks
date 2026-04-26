@@ -49,4 +49,14 @@ interface FileUtilsInterface
      * @return string|null Null if unable to detect.
      */
     public function detectMainBranch(): ?string;
+
+    /**
+     * Recursively list files under $directory, keeping only those whose extension
+     * (without the leading dot) is in $extensions. Returned paths are project-relative
+     * and use forward slashes. Used by --files=<directory> expansion (REQ-013).
+     *
+     * @param string[] $extensions  E.g. ['php', 'phtml']. Empty array = no filter.
+     * @return string[]
+     */
+    public function expandDirectory(string $directory, array $extensions): array;
 }

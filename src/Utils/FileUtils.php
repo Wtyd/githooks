@@ -2,7 +2,11 @@
 
 namespace Wtyd\GitHooks\Utils;
 
+use FilesystemIterator;
 use Illuminate\Support\Facades\Storage;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
 class FileUtils implements FileUtilsInterface
@@ -149,5 +153,38 @@ class FileUtils implements FileUtilsInterface
         }
 
         return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function expandDirectory(string $directory, array $extensions): array
+    {
+        if (!is_dir($directory)) {
+            return [];
+        }
+
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)
+        );
+
+        $hasFilter = !empty($extensions);
+        $extSet = array_flip(array_map('strtolower', $extensions));
+
+        $files = [];
+        /** @var SplFileInfo $entry */
+        foreach ($iterator as $entry) {
+            if (!$entry->isFile()) {
+                continue;
+            }
+            if ($hasFilter && !isset($extSet[strtolower($entry->getExtension())])) {
+                continue;
+            }
+            $files[] = str_replace('\\', '/', $entry->getPathname());
+        }
+
+        sort($files);
+
+        return $files;
     }
 }

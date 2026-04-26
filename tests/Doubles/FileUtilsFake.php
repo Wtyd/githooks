@@ -69,4 +69,34 @@ class FileUtilsFake extends FileUtils
     {
         return $this->detectedMainBranch;
     }
+
+    /** @var array<string, string[]> */
+    protected array $directoryExpansions = [];
+
+    /**
+     * @param string[] $files
+     */
+    public function setDirectoryExpansion(string $directory, array $files): void
+    {
+        $this->directoryExpansions[$directory] = $files;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function expandDirectory(string $directory, array $extensions): array
+    {
+        $files = $this->directoryExpansions[$directory] ?? [];
+
+        if (empty($extensions)) {
+            return $files;
+        }
+
+        $extSet = array_flip(array_map('strtolower', $extensions));
+
+        return array_values(array_filter($files, static function (string $file) use ($extSet): bool {
+            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+            return $ext !== '' && isset($extSet[$ext]);
+        }));
+    }
 }
