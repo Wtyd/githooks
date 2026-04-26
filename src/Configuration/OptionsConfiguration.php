@@ -27,6 +27,9 @@ class OptionsConfiguration
     /** @var array<string, string> Map [format => path] for declarative multi-report. */
     private array $reports;
 
+    /** @var array<string, true> Keys explicitly declared in raw config (used by EffectiveOptionsResolver) */
+    private array $declaredKeys = [];
+
     /**
      * @param array<string, string> $reports Map of report format → output path
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object — boolean is the natural type
@@ -113,7 +116,13 @@ class OptionsConfiguration
             }
         }
 
-        return new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix, $reports);
+        $instance = new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix, $reports);
+        foreach ($knownKeys as $key) {
+            if (array_key_exists($key, $raw)) {
+                $instance->declaredKeys[$key] = true;
+            }
+        }
+        return $instance;
     }
 
     /**
@@ -188,6 +197,15 @@ class OptionsConfiguration
     public static function defaults(): self
     {
         return new self();
+    }
+
+    /**
+     * Whether the given option key was explicitly declared in the raw config.
+     * Returns false for both unknown and absent keys, and for instances built without fromArray().
+     */
+    public function hasKey(string $key): bool
+    {
+        return isset($this->declaredKeys[$key]);
     }
 
     /**
