@@ -8,7 +8,7 @@
 | **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
 | **v3.2** | Herramientas y Output ✔ | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
 | **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI |
-| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from`, monitor de rendimiento + time threshold, kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
+| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from`, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
 
 ---
 
@@ -305,7 +305,7 @@ Queda como no-resuelto un caso marginal: usuario en terminal TTY que quiere `--f
 
 ## v3.3 — Madurez
 
-Objetivo: pulir el flujo CI (un único `flows` por runner con multi-reporte y `--files`), añadir el primer diferenciador real frente a la competencia (monitor + time threshold) y empezar la deprecation de claves camelCase. Wizard y "prohibir espacios" salen del scope.
+Objetivo: pulir el flujo CI (un único `flows` por runner con multi-reporte y `--files`), añadir los primeros diferenciadores reales frente a la competencia (monitor + time threshold, memory budget por job para que la fusión de jobs CI en monolitos no reviente por OOM) y empezar la deprecation de claves camelCase. Wizard y "prohibir espacios" salen del scope.
 
 ### 1. Comando `flows` — ejecución combinada de múltiples flows
 
@@ -754,7 +754,201 @@ $ githooks conf:check
 
 Coste: ~250 LOC + tests.
 
-### 5. Estandarizar claves de configuración a kebab-case (deprecation paso 1)
+### 5. Memory budget por job (`memory: <MB>`)
+
+**Estado**: incluido en v3.3 como complemento del comando `flows` (ítem 1). Diseño con varias decisiones abiertas — ver "Puntos de discusión" al final.
+
+Complementa el thread budget actual (`processes` + `cores`) con un eje paralelo de memoria. Resuelve el caso identificado en la discusión del ítem 1 (multi-flow): cuando se fusionan varios `flow-src-N` en un único runner, la suma de **picos de memoria** en paralelo es la limitación real, no la CPU. Sin un presupuesto de RAM declarativo, el allocator apila phpstan-src-1 + phpstan-src-2 + phpstan-src-3 a la vez, satura los 6-7 GB típicos de un runner GHA y revienta por OOM con stacktrace ilegible.
+
+#### Motivación
+
+El allocator actual reparte solo cores. En proyectos pequeños es suficiente. En monolitos donde phpstan se parte en N subsets para no agotar la RAM, fusionar esos subsets vía `flows ... --processes=8` exige que el allocator entienda **dos recursos a la vez**: si phpstan-src-1 declara `memory: 2048` y el runner tiene 6 GB, no se pueden lanzar 4 subsets juntos aunque sobren cores.
+
+Diferenciador: ni GrumPHP, ni CaptainHook, ni lefthook, ni pre-commit (Yelp), ni golangci-lint exponen un presupuesto declarativo de memoria por job. El equivalente más cercano es el `--memory-limit` de phpstan, pero es per-tool y no participa en scheduling cross-job.
+
+**Caso de uso de cabecera:** monolito PHP con `src/` partido en 4-6 subsets de phpstan + phpmd, hoy distribuidos en 4-6 jobs CI separados (cada uno con su `composer install` de 3 min). Con `flows` (ítem 1) + `cores` (existente) + `memory` (este ítem), todo el QA cabe en un único runner sin sobre-suscribir CPU ni RAM. El ahorro estimado es 12-50 runner-min por PR según tamaño de proyecto.
+
+#### Configuración tentativa
+
+```php
+return [
+    'flows' => [
+        'options' => [
+            'processes'    => 8,
+            'memory-limit' => 6144,   // MB; techo del runner. Auto-detect si se omite.
+        ],
+    ],
+
+    'jobs' => [
+        'phpstan-src-1' => [
+            'type'   => 'phpstan',
+            'paths'  => ['src/Domain'],
+            'cores'  => 2,
+            'memory' => 2048,         // MB de pico esperado
+        ],
+        'phpstan-src-2' => [
+            'type'   => 'phpstan',
+            'paths'  => ['src/Infrastructure'],
+            'cores'  => 2,
+            'memory' => 2048,
+        ],
+        'parallel-lint' => [
+            'type'  => 'parallel-lint',
+            'paths' => ['src'],
+            // sin 'memory' declarado — null
+        ],
+    ],
+];
+```
+
+#### CLI override
+
+```bash
+# Override del techo del runner (útil en CI con runners de tamaño variable)
+githooks flow qa --memory-limit=4096
+
+# Desactivar el gate de memoria (vuelve al comportamiento pre-3.3)
+githooks flow qa --no-memory-budget
+```
+
+No se contempla flag `--memory=X` per-job: igual que `cores`, es decisión declarativa de proyecto. Ver punto de discusión 6.
+
+#### Comportamiento — matriz tentativa
+
+Bin-packing 2D estricto (propuesta inicial): un job solo arranca cuando hay simultáneamente cores libres **y** memoria libre suficiente.
+
+| Pool | Cores libres | Memoria libre | ¿Job arranca? |
+|---|---|---|---|
+| Job pide 2 cores + 2048 MB | ≥ 2 | ≥ 2048 | Sí |
+| Job pide 2 cores + 2048 MB | ≥ 2 | < 2048 | No (espera memoria) |
+| Job pide 2 cores + 2048 MB | < 2 | ≥ 2048 | No (espera cores) |
+| Job sin `memory` declarado | suficientes | depende default | Ver discusión 2 |
+
+**Auto-detección del techo del runner:**
+
+| Plataforma | Mecanismo | Fallback si falla |
+|---|---|---|
+| Linux | `/proc/meminfo` → `MemTotal` | 4096 MB + warning |
+| macOS | `sysctl hw.memsize` | 4096 MB + warning |
+| Windows | `wmic ComputerSystem get TotalPhysicalMemory` o PowerShell equivalente | 4096 MB + warning |
+
+**Sin enforcement**: el motor no aplica `ulimit -v` ni cgroups. Si un job declara `memory: 2048` y consume 4096 en realidad, el OOM lo lanza el sistema operativo como hoy. El presupuesto es **scheduling**, no jaula. Ver discusión 1.
+
+#### JSON output v2 — patrón null explícito
+
+```json
+{
+  "version": 2,
+  "flow": "qa",
+  "success": true,
+  "memoryBudget": {
+    "limit": 6144,
+    "limitSource": "auto-detected",
+    "peakReserved": 4096
+  },
+  "jobs": [
+    {
+      "name": "phpstan-src-1",
+      "type": "phpstan",
+      "memory": 2048,
+      "success": true
+    },
+    {
+      "name": "parallel-lint",
+      "type": "parallel-lint",
+      "memory": null,
+      "success": true
+    }
+  ]
+}
+```
+
+Reglas:
+
+| Caso | `memoryBudget` (root) | `memory` (per-job) |
+|---|---|---|
+| Sin `memory-limit` configurado y ningún job declara `memory` | `null` | `null` en todos |
+| Con `memory-limit` (configurado o auto) | objeto con `limit`, `limitSource`, `peakReserved` | `null` o número según job |
+| `--no-memory-budget` | `null` | se ignoran los `memory` declarados |
+
+`limitSource`: `"configured"` | `"auto-detected"` | `"cli-override"`.
+
+`peakReserved`: pico de memoria reservada simultáneamente durante la ejecución (suma de `memory` de jobs corriendo en paralelo en el momento más cargado).
+
+#### Validación en `conf:check`
+
+| Caso | Comportamiento |
+|---|---|
+| `memory` no entero positivo | Error: "'memory' must be a positive integer (MB)" |
+| `memory > memory-limit` | Error: "job 'X' memory (Y) exceeds runner memory-limit (Z)" — config irresoluble |
+| `memory-limit` no declarado y al menos un job declara `memory` | Info: "memory-limit not configured; using auto-detected value (W MB)" |
+| Auto-detección falla | Warning + fallback informado |
+| Suma de `memory` de jobs > `memory-limit` | Sin warning. Es legítimo: el allocator serializa. |
+
+#### Casos borde tentativos
+
+| Caso | Decisión propuesta |
+|---|---|
+| Ningún job declara `memory`, ni hay `memory-limit` | Comportamiento idéntico a hoy. No se aplica gate. |
+| Job con `memory > memory-limit` | Error en `conf:check`. El job nunca podría arrancar. |
+| `--dry-run` | Skip total. No se ejecuta nada, no se evalúa. |
+| `--no-memory-budget` con `memory` en jobs | Warning: "ignoring 'memory' in jobs due to --no-memory-budget". |
+| Self-hosted runner con 64 GB | Auto-detect lo respeta y multiplica el paralelismo posible. |
+| Solo algunos jobs declaran `memory` | Los que declaran respetan gate; los que no se rigen por el default (ver discusión 2). |
+| Job termina antes que sus pares en paralelo | Su memoria reservada se libera de inmediato; el siguiente en cola arranca si entra. |
+| Multi-flow (`flows qa src --memory-limit=X`) | El gate aplica al pool unificado, igual que `processes` y `cores`. |
+| `fail-fast=true` y job ✗ con memoria reservada | La memoria se libera al cancelar; no afecta a la lógica del gate. |
+
+#### Esquema de implementación
+
+- `JobConfiguration::fromArray` parsea `memory` como int positivo opcional.
+- `OptionsConfiguration::fromArray` parsea `memory-limit`.
+- Definir el flag `--memory-limit` y `--no-memory-budget` en `flow`, `flows` y `job` (mismas tres entradas que `--processes`).
+- Nuevo `MemoryDetector` con implementaciones por plataforma (Linux/macOS/Windows) y fallback informado.
+- El allocator del thread budget (`ThreadBudgetAllocator` o equivalente) se extiende a admisión bidimensional: `cores ≥ jobCores AND memory ≥ jobMemory`.
+- `FlowResult` añade `memoryBudget` con `limit`, `limitSource`, `peakReserved`.
+- `JsonResultFormatter` emite `memoryBudget` y `memory` (per-job) siguiendo el patrón null explícito.
+- `system:info` añade fila "Detected memory: X MB (source: auto-detected | configured)".
+- Tests: jobs con/sin `memory`, gate por memoria, auto-detect en Linux/Windows/macOS, fallback, `--no-memory-budget`, conf:check (errores y warnings), interacción con `cores` (bin-packing 2D), multi-flow con pools unificados.
+
+Coste estimado: ~300 LOC + tests. Más que `time-budget` porque toca el allocator, no solo la observación post-hoc.
+
+#### Puntos de discusión abiertos
+
+1. **Scheduling vs enforcement.** Propuesta: solo scheduling (declarativo, sin `ulimit`/cgroups). Enforcement añade dependencia plataforma + complejidad de debug (procesos matados sin gracia, OOM con stacktrace ilegible). *¿Confirmamos solo scheduling, o se valora un modo opt-in `enforce: true` para Linux con cgroups v2?*
+
+2. **Default para jobs sin `memory` declarado.** Tres alternativas:
+   - `null` → allocator **conservador**: no apila dos `null` juntos (los serializa de a uno con jobs declarados). Mejor por defecto, peor rendimiento.
+   - `0` → trata el job como ligero, libre para apilarse. Riesgo: olvidar declarar y reventar.
+   - Heurística por `type` (phpstan: 2048, phpunit: 1024, parallel-lint: 256, custom: 0...). Mágica, frágil al evolucionar tools.
+
+   Propuesta: `null` conservador. Forzar al usuario a declarar cuando le importe el rendimiento; mientras no lo haga, no apilar ciegamente.
+
+3. **Allocator estricto vs greedy.** Con bin-packing 2D, el orden de admisión importa.
+   - **Estricto**: respeta orden de declaración FIFO, espera ambos recursos. Predecible. Puede infrautilizar CPU si el primer job de la cola necesita mucha memoria.
+   - **Greedy**: prioriza jobs grandes primero, llena huecos con ligeros. Mejor utilización efectiva, complejidad mayor, harder to test.
+
+   Propuesta: estricto en v3.3 (la versión simple ya es diferencial); greedy queda como evolución v3.x si aparece demanda.
+
+4. **`memory-budget` a nivel flow** (paralelo a `time-budget` con `warn-after`/`fail-after`). Detectaría drift acumulado de memoria pico por flow. Pero la "suma de picos paralelos" es difícil de medir post-hoc sin cgroups, y el caso real (proteger el runner) ya lo cubre el gate de scheduling.
+
+   Propuesta: **no** entra en v3.3. Solo gate scheduling. Simetría con `time-budget` queda candidata para v3.4 si aparece demanda.
+
+5. **Soporte Windows.** Auto-detect vía `wmic`/PowerShell con fallback + warning, o exigir `memory-limit` declarado en config para entornos Windows.
+
+   Propuesta: detect con fallback (mejor UX), aceptando que algunas configs raras vayan al fallback. Test específico en CI Windows.
+
+6. **CLI override per-job.** Propuesta: solo `--memory-limit` global y `--no-memory-budget`. No hay flag `--memory=X` para un job concreto — sigue la misma lógica que `cores`. *¿Algún equipo necesita override por job desde CLI para experimentación (ej: ajustar phpstan en un PR concreto)? Si no aparece demanda real, mantener cerrado.*
+
+7. **Interacción con `cores`.** Si un job declara `cores: 4` pero no `memory`, ¿se le asigna `memory` proporcional al ratio core:memory del runner?
+
+   Propuesta: **no**. Son ejes independientes; mezclarlos implícitamente reduce la legibilidad de la config. Si el usuario quiere relacionarlos, lo declara.
+
+8. **¿`memory` heredable desde `flows.options`?** Análogo a cómo `time-budget` se hereda flow→job en el ítem 4. Permitiría declarar un `memory: 2048` por defecto a nivel flow y omitirlo en cada job. Riesgo: oculta el coste real de cada job en su declaración.
+
+   Propuesta: **no** en v3.3. Mantener `memory` como propiedad intrínseca del job (igual que `cores`). Reabrir si la config repetida se vuelve dolor real.
+
+### 6. Estandarizar claves de configuración a kebab-case (deprecation paso 1)
 
 Las claves de job usan camelCase (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) porque vienen de v2. Las claves de options usan kebab-case (`fail-fast`, `main-branch`, `executable-prefix`, `error-severity`, `log-junit`...) porque se crearon en v3. Hoy ambos conviven en el mismo fichero — ver `qa/githooks.php` líneas 55-58.
 
@@ -768,7 +962,7 @@ Las claves de job usan camelCase (`executablePath`, `otherArguments`, `ignoreErr
 
 **Coste de implementación**: bajo. Un mapping `[camelCase => kebabCase]` aplicado en `JobConfiguration::fromArray()` y `OptionsConfiguration::fromArray()` antes de la validación, más warnings de deprecation. ~50 LOC + tests.
 
-### 6. Validación de commit messages como tipo nativo
+### 7. Validación de commit messages como tipo nativo
 
 Tipo de job nativo `commit-msg` que ejecuta validaciones declarativas sobre el mensaje del commit, leyéndolo de `.git/COMMIT_EDITMSG` (lo que git pasa al hook `commit-msg`).
 
@@ -822,7 +1016,7 @@ Tipo de job nativo `commit-msg` que ejecuta validaciones declarativas sobre el m
 
 **Prioridad**: nice-to-have. Último item en entrar; si el ciclo se alarga, candidato a mover a 3.4.
 
-### 7. Receta de config compartida vía paquete Composer
+### 8. Receta de config compartida vía paquete Composer
 
 Caso de uso: una empresa con N microservicios PHP que quiere que todos corran exactamente la misma configuración de phpstan, phpcs, phpmd. Hoy cada repo tiene su propio `qa/githooks.php`, `qa/phpstan.neon`, `qa/phpmd-ruleset.xml`. Si cambias una regla, hay que abrir N PRs.
 
