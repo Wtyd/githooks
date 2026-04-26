@@ -6,6 +6,7 @@ Practical recipes for common scenarios.
 |---|---|
 | [Parallel Execution & Thread Budget](parallel-execution.md) | Speed up QA runs with multiple processes. |
 | [Conditional Hooks](conditional-hooks.md) | Run different tools on different branches or file types. |
+| [`--files` / `--files-from`](files-flag.md) | Run a flow or job on an explicit list of files (IDE, CI without diff, manifest). |
 | [CI/CD Integration](ci-cd.md) | Use GitHooks in GitHub Actions, GitLab CI, etc. |
 | [Frontend Tools](frontend-tools.md) | Run ESLint, Prettier, or other non-PHP tools. |
 | [Job Inheritance](job-inheritance.md) | Share configuration between similar jobs. |

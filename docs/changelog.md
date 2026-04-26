@@ -6,6 +6,18 @@ All notable changes to this project are documented here.
 
 ### New Features
 
+#### Files mode (`--files` / `--files-from` / `--exclude-pattern`)
+
+`flow` and `job` accept three new flags that drive a flow against an **explicit list of files** supplied by the user. Covers IDE on-save (single-file analysis), CIs with shallow checkouts where `--fast-branch` cannot compute a diff, and any external tool that already produced a list of paths.
+
+- **`--files=a,b,c`** — CSV. Paths resolve against CWD; absolute paths are accepted as-is. Directories expand recursively to `.php` / `.phtml`.
+- **`--files-from=PATH`** — manifest with one path per line. Comments (`#`), blanks, CRLF and UTF-8 BOM are tolerated. Use this to bypass the shell `ARG_MAX` limit (`git diff --name-only origin/main...HEAD > /tmp/changed.txt && githooks flow qa --files-from=/tmp/changed.txt`).
+- **`--exclude-pattern=glob1,glob2`** — drop matching paths from the input list (post-expansion). Same glob syntax as hook config (`*`, `**`, `?`). Requires `--files` / `--files-from`.
+- **Behaviour**: accelerable jobs (phpstan, phpcs, phpcbf, phpmd, psalm, parallel-lint, php-cs-fixer, rector, custom with `accelerable: true`) run only on the intersection of input files and their configured `paths`; jobs with no match are skipped with reason `"no input files match its paths"`. Non-accelerable jobs (phpunit, phpcpd, composer-*, script) ignore the list and run with their original `paths`.
+- **JSON v2**: when files mode is active, `executionMode` is `"files"` and a new root `inputFiles` block plus per-job `inputFiles` slice (accelerable jobs only) are emitted. Backward-compatible — fields are absent in the legacy modes.
+- **Mixing**: `--files` / `--files-from` win over `--fast` / `--fast-branch` with a warning. The two file flags are mutually exclusive.
+- **CLI-only**: `conf:check` rejects `files` / `files-from` keys declared in `flow.options` or in a job (volatile by design). See [How-To: --files / --files-from](how-to/files-flag.md).
+
 #### Multi-report ([`reports`](configuration/options.md#multi-report) / `--report-*`)
 
 PHPUnit-style multi-report: a single `flow` (or `job`) run can emit several report files at once instead of being executed once per format. Pipelines that need SARIF (Code Scanning) plus JUnit (test dashboards) plus Code Climate (GitLab MR widgets) no longer have to re-analyse everything 3 times.

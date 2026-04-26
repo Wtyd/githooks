@@ -8,7 +8,7 @@
 | **v3.1** | Adopción ✔            | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                               |
 | **v3.2** | Herramientas y Output ✔ | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows |
 | **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI |
-| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from`, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
+| **v3.3** | Madurez               | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from` ✔, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
 
 ---
 
@@ -435,7 +435,7 @@ Naming: prefijo `--report-` siempre. Reserva el namespace para futuros formatos 
 
 **Implementación:** los formatos ya están normalizados (`ResultFormatter`). Se introduce una colección `ReportTargets` que itera y escribe N veces el `FlowResult` ya formateado. Coste mínimo, máximo valor.
 
-### 3. Flag `--files` y `--files-from`
+### 3. Flag `--files` y `--files-from` ✔
 
 Ejecución de flow o job contra una lista explícita de ficheros, sobreescribiendo `--fast` y `--fast-branch`.
 

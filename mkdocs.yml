@@ -139,6 +139,7 @@ nav:
     - how-to/index.md
     - Parallel Execution & Thread Budget: how-to/parallel-execution.md
     - Conditional Hooks: how-to/conditional-hooks.md
+    - "--files / --files-from": how-to/files-flag.md
     - CI/CD Integration: how-to/ci-cd.md
     - Frontend Tools: how-to/frontend-tools.md
     - Job Inheritance: how-to/job-inheritance.md

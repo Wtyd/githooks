@@ -21,6 +21,9 @@ githooks job <name> [options]
 | `--no-reports` | Ignore the `reports` section from config (CLI `--report-*` flags still apply). |
 | `--fast` | Fast mode — analyze only staged files. See [Execution Modes](../execution-modes.md). |
 | `--fast-branch` | Fast-branch mode — analyze branch diff files. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
+| `--files=a,b,c` | Files mode — explicit list (CSV). Mutually exclusive with `--files-from`. Wins over `--fast`/`--fast-branch`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
+| `--files-from=PATH` | Files mode — read paths from a manifest file (one per line). |
+| `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob. Requires `--files` or `--files-from`. |
 | `--no-ci` | Disable auto-detection of CI annotations. See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--config=PATH` | Path to configuration file. |
@@ -35,6 +38,8 @@ githooks job phpunit_all --format=json    # JSON v2 output to stdout
 githooks job phpstan_src --format=sarif   # SARIF 2.1.0 to stdout
 githooks job phpstan_src --format=sarif --output=reports/phpstan.sarif   # SARIF to a file
 githooks job phpcs_src --fast             # Only staged files
+githooks job phpstan_src --files=src/User.php   # Files mode: single explicit file (IDE on-save)
+githooks job phpstan_src --files-from=changed.txt   # Files mode: read paths from manifest
 githooks job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
 githooks job phpstan_src -- --memory-limit=2G         # Override memory limit
 ```

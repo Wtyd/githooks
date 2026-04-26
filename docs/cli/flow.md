@@ -23,6 +23,9 @@ githooks flow <name> [options]
 | `--no-reports` | Ignore the `reports` section from config (CLI `--report-*` flags still apply). PHPUnit `--no-coverage` style. |
 | `--fast` | Fast mode — accelerable jobs analyze only staged files. See [Execution Modes](../execution-modes.md). |
 | `--fast-branch` | Fast-branch mode — analyze files that differ from the main branch. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
+| `--files=a,b,c` | Files mode — accelerable jobs analyze only the explicit list (CSV). Mutually exclusive with `--files-from`. Wins over `--fast`/`--fast-branch`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
+| `--files-from=PATH` | Files mode — read the list of paths from `PATH` (one per line; `#` comments and blanks ignored; UTF-8 + CRLF tolerated). Use this when the list exceeds the shell `ARG_MAX` or comes from `git diff --name-only`. |
+| `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob (`*`, `**`, `?`). Requires `--files` or `--files-from`. See [How-To: --files / --files-from](../how-to/files-flag.md#exclude-pattern). |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
 | `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
@@ -49,6 +52,10 @@ githooks flow qa --report-sarif=reports/qa.sarif --report-junit=reports/junit.xm
 githooks flow qa --format=json --no-reports         # AI/script: JSON to stdout, no side-effect files
 githooks flow qa --fast                             # Only staged files
 githooks flow qa --fast-branch                      # Only branch diff files
+githooks flow qa --files=src/User.php               # Files mode: explicit single file
+githooks flow qa --files-from=changed.txt           # Files mode: from manifest
+githooks flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'
+                                                    # Drop tests from the manifest
 githooks flow qa --monitor                          # Show thread usage report
 githooks flow qa --no-ci                            # Opt out of CI annotations
 githooks flow qa --config=qa/custom-githooks.php    # Use custom config

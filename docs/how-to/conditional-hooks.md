@@ -70,3 +70,9 @@ All patterns use glob syntax. For file patterns, `*` does not cross directories 
 | `release/*` | `release/v2.0` (branch patterns: `*` crosses `/`) |
 
 See [Configuration: Hooks](../configuration/hooks.md#pattern-syntax) for the full pattern reference.
+
+## Not the same as `--exclude-pattern`
+
+`exclude-files` here is a **gating** condition: the HookRef either runs or doesn't, depending on whether the staged file set matches the patterns.
+
+The `--exclude-pattern` CLI flag (with the same glob syntax) is a **filter** on top of `--files` / `--files-from`: it drops paths from the user-provided input list before per-job filtering. Use `--exclude-pattern` from the command line, `exclude-files` inside `hooks.<event>` config. See [How-To: --files / --files-from](files-flag.md).
