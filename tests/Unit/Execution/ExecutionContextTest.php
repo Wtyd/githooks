@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\GitHooks\Execution\InputFilesResolution;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class ExecutionContextTest extends TestCase
@@ -538,5 +539,80 @@ class ExecutionContextTest extends TestCase
         $filtered = $context->filterFilesForPaths([$realPath]);
 
         $this->assertSame([], $filtered);
+    }
+
+    // ========================================================================
+    // forInputFiles factory (--files / --files-from)
+    // ========================================================================
+
+    /** @test */
+    function forInputFiles_exposes_resolution_and_serves_valid_list_as_staged()
+    {
+        $fileUtils = new FileUtilsFake();
+        $resolution = new InputFilesResolution(
+            InputFilesResolution::SOURCE_CLI,
+            null,
+            ['src/User.php', 'src/Order.php'],
+            [],
+            [],
+            [],
+            2
+        );
+
+        $context = ExecutionContext::forInputFiles($resolution, $fileUtils);
+
+        $this->assertTrue($context->hasInputFiles());
+        $this->assertSame($resolution, $context->getInputFilesResolution());
+        $this->assertSame(['src/User.php', 'src/Order.php'], $context->getStagedFiles());
+    }
+
+    /** @test */
+    function forInputFiles_does_not_set_fast_mode_flag()
+    {
+        $resolution = new InputFilesResolution(
+            InputFilesResolution::SOURCE_CLI,
+            null,
+            ['a.php'],
+            [],
+            [],
+            [],
+            1
+        );
+
+        $context = ExecutionContext::forInputFiles($resolution, new FileUtilsFake());
+
+        $this->assertFalse($context->isFastMode());
+        $this->assertTrue($context->hasInputFiles());
+    }
+
+    /** @test */
+    function forInputFiles_filters_for_fast_mode_using_resolution_list()
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/User.php']);
+
+        $resolution = new InputFilesResolution(
+            InputFilesResolution::SOURCE_CLI,
+            null,
+            ['src/User.php', 'tests/UserTest.php'],
+            [],
+            [],
+            [],
+            2
+        );
+
+        $context = ExecutionContext::forInputFiles($resolution, $fileUtils);
+        $filtered = $context->filterFilesForMode(ExecutionMode::FAST, ['src']);
+
+        $this->assertSame(['src/User.php'], $filtered);
+    }
+
+    /** @test */
+    function default_context_has_no_input_files()
+    {
+        $context = ExecutionContext::default();
+
+        $this->assertFalse($context->hasInputFiles());
+        $this->assertNull($context->getInputFilesResolution());
     }
 }

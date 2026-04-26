@@ -233,6 +233,27 @@ class JobConfigurationTest extends TestCase
         $this->assertStringContainsString('otra clave', $result->getWarnings()[1]);
     }
 
+    /**
+     * @test
+     * Anchors CON-007 of spec-design-files-flag.md: declaring `files` or
+     * `files-from` as a static config key produces a warning. The flags are
+     * exclusively CLI; no implicit acceptance via config.
+     */
+    public function it_warns_when_job_declares_cli_only_files_keys_in_config()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type'        => 'phpstan',
+            'paths'       => ['src'],
+            'files'       => ['src/X.php'],
+            'files-from'  => 'changed.txt',
+        ], $this->registry, $result, new JobRegistry());
+
+        $warnings = implode("\n", $result->getWarnings());
+        $this->assertStringContainsString("unknown key 'files'", $warnings);
+        $this->assertStringContainsString("unknown key 'files-from'", $warnings);
+    }
+
     /** @test */
     public function it_does_not_warn_for_valid_custom_job_keys()
     {
