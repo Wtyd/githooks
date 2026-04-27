@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output;
 
+use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\InputFilesResolution;
 use Wtyd\GitHooks\Execution\JobResult;
@@ -48,6 +49,16 @@ class JsonResultFormatter implements ResultFormatter
             'skipped'       => $result->getSkippedCount(),
         ];
 
+        $expandedFlows = $result->getExpandedFlows();
+        if ($expandedFlows !== null) {
+            $data['flows'] = array_values($expandedFlows);
+        }
+
+        $effectiveOptions = $result->getEffectiveOptions();
+        if ($effectiveOptions !== null) {
+            $data['effectiveOptions'] = $this->buildEffectiveOptionsBlock($effectiveOptions);
+        }
+
         if ($inputFiles !== null) {
             $data['inputFiles'] = $this->buildInputFilesBlock($inputFiles);
         }
@@ -79,6 +90,14 @@ class JsonResultFormatter implements ResultFormatter
         }
 
         return $block;
+    }
+
+    /**
+     * @return array<string, array{value: mixed, source: string}>
+     */
+    private function buildEffectiveOptionsBlock(EffectiveOptionsResolution $resolution): array
+    {
+        return $resolution->getTrace();
     }
 
     private function stripAnsi(string $text): string

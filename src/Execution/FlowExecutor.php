@@ -82,7 +82,14 @@ class FlowExecutor
         $inputFiles = $this->inputFilesContext;
 
         if ($dryRun) {
-            return $this->executeDryRun($plan->getFlowName(), $jobs, $plan->getExecutionMode(), $inputFiles);
+            return $this->executeDryRun(
+                $plan->getFlowName(),
+                $jobs,
+                $plan->getExecutionMode(),
+                $inputFiles,
+                $plan->getExpandedFlows(),
+                $plan->getEffectiveOptions()
+            );
         }
 
         // Total = executable jobs + plan-level skipped jobs (fast-mode filtering etc.).
@@ -120,18 +127,24 @@ class FlowExecutor
             $this->peakEstimatedThreads,
             $budget,
             $plan->getExecutionMode(),
-            $inputFiles
+            $inputFiles,
+            $plan->getExpandedFlows(),
+            $plan->getEffectiveOptions()
         );
     }
 
     /**
      * @param JobAbstract[] $jobs
+     * @param string[]|null $expandedFlows
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the FlowResult constructor for dry-run output.
      */
     private function executeDryRun(
         string $flowName,
         array $jobs,
         string $executionMode,
-        ?InputFilesResolution $inputFiles
+        ?InputFilesResolution $inputFiles,
+        ?array $expandedFlows = null,
+        ?EffectiveOptionsResolution $effectiveOptions = null
     ): FlowResult {
         $results = [];
         foreach ($jobs as $job) {
@@ -153,7 +166,17 @@ class FlowExecutor
                 $this->buildPerJobInputFiles($job)
             );
         }
-        return new FlowResult($flowName, $results, '0ms', 0, 0, $executionMode, $inputFiles);
+        return new FlowResult(
+            $flowName,
+            $results,
+            '0ms',
+            0,
+            0,
+            $executionMode,
+            $inputFiles,
+            $expandedFlows,
+            $effectiveOptions
+        );
     }
 
     /**

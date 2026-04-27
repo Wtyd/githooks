@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
+use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Output\JsonResultFormatter;
@@ -150,5 +153,87 @@ class JsonResultFormatterTest extends UnitTestCase
         $data = json_decode($formatter->format($result), true);
 
         $this->assertArrayHasKey('command', $data['jobs'][0]);
+    }
+
+    // ========================================================================
+    // v3.3 — flows[] root field and effectiveOptions root block
+    // ========================================================================
+
+    /** @test */
+    function flows_field_is_omitted_when_no_expanded_flows()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+        ], '1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayNotHasKey('flows', $data);
+    }
+
+    /** @test */
+    function flows_field_lists_expanded_normal_flows_in_multi_flow_run()
+    {
+        $result = new FlowResult(
+            'qa+lint',
+            [new JobResult('phpcs_src', true, '', '1s')],
+            '1s',
+            0,
+            0,
+            'full',
+            null,
+            ['qa', 'lint']
+        );
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame('qa+lint', $data['flow']);
+        $this->assertSame(['qa', 'lint'], $data['flows']);
+    }
+
+    /** @test */
+    function effective_options_block_is_emitted_when_present()
+    {
+        $resolution = new EffectiveOptionsResolution(
+            new OptionsConfiguration(),
+            ExecutionMode::FULL,
+            [
+                'processes'     => ['value' => 4, 'source' => 'cli'],
+                'failFast'      => ['value' => true, 'source' => 'flows.ci-pack.options'],
+                'executionMode' => ['value' => 'full', 'source' => 'default'],
+            ]
+        );
+
+        $result = new FlowResult(
+            'ci-pack',
+            [new JobResult('phpcs_src', true, '', '1s')],
+            '1s',
+            0,
+            0,
+            'full',
+            null,
+            ['qa', 'lint'],
+            $resolution
+        );
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('effectiveOptions', $data);
+        $this->assertSame(4, $data['effectiveOptions']['processes']['value']);
+        $this->assertSame('cli', $data['effectiveOptions']['processes']['source']);
+        $this->assertSame('flows.ci-pack.options', $data['effectiveOptions']['failFast']['source']);
+        $this->assertSame('default', $data['effectiveOptions']['executionMode']['source']);
+    }
+
+    /** @test */
+    function effective_options_block_is_absent_when_resolution_not_provided()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+        ], '1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayNotHasKey('effectiveOptions', $data);
     }
 }
