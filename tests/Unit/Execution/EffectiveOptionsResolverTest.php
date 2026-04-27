@@ -267,4 +267,110 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertTrue($options->isFailFast());
         $this->assertEquals('main', $options->getMainBranch());
     }
+
+    // ========================================================================
+    // time-budget cascade (v3.3 item 4)
+    // ========================================================================
+
+    /** @test */
+    public function single_time_budget_falls_to_default_when_unset(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertNull($resolution->getOptions()->getTimeBudget());
+        $this->assertNull($resolution->getTrace()['timeBudget']['value']);
+        $this->assertSame('default', $resolution->getTrace()['timeBudget']['source']);
+    }
+
+    /** @test */
+    public function single_time_budget_picks_globals_when_only_globals_declared(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['time-budget' => ['warn-after' => 120, 'fail-after' => 300]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame(120, $resolution->getOptions()->getTimeBudget()->getWarnAfter());
+        $this->assertSame('flows.options', $resolution->getTrace()['timeBudget']['source']);
+    }
+
+    /** @test */
+    public function single_time_budget_flow_options_override_globals(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['time-budget' => ['warn-after' => 120, 'fail-after' => 300]],
+            ['time-budget' => ['warn-after' => 5, 'fail-after' => 15]]
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame(5, $resolution->getOptions()->getTimeBudget()->getWarnAfter());
+        $this->assertSame(15, $resolution->getOptions()->getTimeBudget()->getFailAfter());
+        $this->assertSame('flows.qa.options', $resolution->getTrace()['timeBudget']['source']);
+    }
+
+    /** @test */
+    public function single_cli_warn_and_fail_after_override_config(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['time-budget' => ['warn-after' => 120, 'fail-after' => 300]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null, 60, 600);
+
+        $budget = $resolution->getOptions()->getTimeBudget();
+        $this->assertSame(60, $budget->getWarnAfter());
+        $this->assertSame(600, $budget->getFailAfter());
+        $this->assertSame('cli', $resolution->getTrace()['timeBudget']['source']);
+    }
+
+    /** @test */
+    public function single_cli_warn_after_alone_keeps_config_fail_after(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['time-budget' => ['warn-after' => 120, 'fail-after' => 300]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null, 60);
+
+        $budget = $resolution->getOptions()->getTimeBudget();
+        $this->assertSame(60, $budget->getWarnAfter());
+        $this->assertSame(300, $budget->getFailAfter());
+    }
+
+    /** @test */
+    public function single_no_time_budget_disables_everything(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['time-budget' => ['warn-after' => 120, 'fail-after' => 300]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null, null, null, true);
+
+        $this->assertNull($resolution->getOptions()->getTimeBudget());
+        $this->assertSame('cli', $resolution->getTrace()['timeBudget']['source']);
+        $this->assertNull($resolution->getTrace()['timeBudget']['value']);
+    }
+
+    /** @test */
+    public function multiple_uses_flows_options_time_budget_only(): void
+    {
+        [$config] = $this->buildConfig(
+            ['time-budget' => ['warn-after' => 120, 'fail-after' => 300]],
+            ['time-budget' => ['warn-after' => 5, 'fail-after' => 15]]
+        );
+
+        $resolution = $this->resolver->resolveMultiple($config, null, null, null);
+
+        // resolveMultiple ignores per-flow options (CON-001/002) — globals win.
+        $this->assertSame(120, $resolution->getOptions()->getTimeBudget()->getWarnAfter());
+        $this->assertSame('flows.options', $resolution->getTrace()['timeBudget']['source']);
+    }
 }
