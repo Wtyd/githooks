@@ -8,7 +8,7 @@
 | **v3.1**   | Adopción ✔                 | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                                                                                                                                                                                        |
 | **v3.2**   | Herramientas y Output ✔    | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows                                                                                                                          |
 | **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI                                                                                                                                            |
-| **v3.3**   | Madurez                    | Comando `flows` multi-flow, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from` ✔, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
+| **v3.3**   | Madurez                    | Comando `flows` multi-flow ✔, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from` ✔, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
 
 ---
 
@@ -307,7 +307,7 @@ Queda como no-resuelto un caso marginal: usuario en terminal TTY que quiere `--f
 
 Objetivo: pulir el flujo CI (un único `flows` por runner con multi-reporte y `--files`), añadir los primeros diferenciadores reales frente a la competencia (monitor + time threshold, memory budget por job para que la fusión de jobs CI en monolitos no reviente por OOM) y empezar la deprecation de claves camelCase. Wizard y "prohibir espacios" salen del scope.
 
-### 1. Comando `flows` — ejecución combinada de múltiples flows
+### 1. Comando `flows` — ejecución combinada de múltiples flows ✔
 
 Nuevo comando que ejecuta varios flows como uno solo, mergeando sus jobs bajo un único `FlowPlan`:
 

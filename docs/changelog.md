@@ -6,6 +6,34 @@ All notable changes to this project are documented here.
 
 ### New Features
 
+#### Combined flow runs (`flows` command + meta-flows)
+
+A new `flows` command runs **several flows in a single plan** — one PHP runtime, one shared thread budget, one combined `FlowResult` — replacing the typical "two CI steps that each spin up `composer install`" pattern with a single invocation.
+
+- **Four invocation modes** (auto-detected from the args):
+  - `flows qa` (single normal flow) — equivalent to `flow qa`, identical `FlowResult`.
+  - `flows qa lint` (≥ 2 normal flows) — ad-hoc combination, jobs deduped by first-occurrence order.
+  - `flows ci-pack` (1 meta-flow declared in config) — declarative composition with the meta-flow's own options.
+  - `flows ci-pack deploy` (mixed) — meta-flow + extra flows, where per-flow / per-alias options are deliberately ignored.
+- **Meta-flows in config** ([`flows.<alias>.flows`](configuration/flows.md#meta-flows)): a flow that lists other flows instead of jobs. Declares its own `options` and `reports`. `conf:check` validates the new shape: each `flows.<X>` declares exactly one of `jobs` or `flows`, references must point at existing normal flows (no nesting in v3.3), and the jobs/flows/meta-flows namespace must stay flat.
+- **`flows.options` cascade per key**: `cli > flows.<X>.options > flows.options > default` (single-flow / declarative) collapses to `cli > flows.options > default` for ad-hoc and mixed runs (per-flow/alias options are intentionally ignored — see [why](https://wtyd.github.io/githooks/configuration/flows/#meta-flows)).
+- **REQ-018 warning**: when a flow or alias's `options` block is ignored because of the run mode, `flows` emits a one-line notice naming the ignored sources so the operator knows what is and isn't being applied.
+
+#### Cross-cutting conditions header + `effectiveOptions`
+
+A new conditions header is emitted at the start of every `flow`, `flows` and `job` run to make the active options visible at a glance:
+
+```
+Settings: processes=4 (cli) | fail-fast=true (flows.ci-pack.options) | mode=full (default)
+Flows: qa, lint
+```
+
+- **Channels**: stdout in text mode (default); stderr when a structured format is combined with `--show-progress`. Silent for plain `--format=json|junit|sarif|codeclimate` so stdout payloads stay clean.
+- **JSON v2 contract** (always present in `flow` / `flows` / `job` runs): a new root `effectiveOptions` block listing each option's `value` and `source`. `source` ∈ `{cli, flows.<X>.options, flows.<alias>.options, flows.options, default}`.
+- **`flows[]` root field** (multi-flow only): the list of normal flows actually executed after meta-flow expansion. Absent in `flow X` and single-flow degenerate runs (so existing single-flow consumers ignore it).
+
+Both fields are additive. Consumers that read v2 today keep working unchanged; modern consumers (CI dashboards, AI tools) can now show the precise option resolution without cross-referencing config + CLI.
+
 #### Files mode (`--files` / `--files-from` / `--exclude-pattern`)
 
 `flow` and `job` accept three new flags that drive a flow against an **explicit list of files** supplied by the user. Covers IDE on-save (single-file analysis), CIs with shallow checkouts where `--fast-branch` cannot compute a diff, and any external tool that already produced a list of paths.

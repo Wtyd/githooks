@@ -57,7 +57,12 @@ See [How-To: Output Formats](../how-to/output-formats.md) for the full schema.
 | `0` | Job passed. |
 | `1` | Job failed. |
 
+## Conditions header
+
+`job` prints the same one-line **conditions header** as `flow` / `flows`, with `processes`, `fail-fast`, and `mode` resolved through the `flows.options > default` cascade (per-flow options do not apply to standalone jobs). Its machine-readable counterpart is the [`effectiveOptions`](../how-to/output-formats.md#effective-options-and-conditions-header) block in JSON v2.
+
 ## See also
 
 - [Configuration: Jobs](../configuration/jobs.md)
 - [`githooks flow`](flow.md) — run a group of jobs.
+- [`githooks flows`](flows.md) — run several flows or a meta-flow in a single plan.

@@ -94,8 +94,19 @@ githooks flow qa --format=json --show-progress --output=reports/qa.json
 | `0` | All jobs passed. |
 | `1` | One or more jobs failed. |
 
+## Conditions header
+
+`flow` prints a one-line **conditions header** at the start of every run with the resolved options and their source:
+
+```
+Settings: processes=4 (cli) | fail-fast=false (default) | mode=full (default)
+```
+
+The header writes to stdout in text mode and to stderr when a structured format is combined with `--show-progress`. Its machine-readable counterpart is the [`effectiveOptions`](../how-to/output-formats.md#effective-options-and-conditions-header) block in JSON v2.
+
 ## See also
 
 - [Configuration: Flows](../configuration/flows.md)
 - [Configuration: Options](../configuration/options.md)
+- [`githooks flows`](flows.md) — run several flows or a meta-flow in a single plan.
 - [`githooks job`](job.md) — run a single job.

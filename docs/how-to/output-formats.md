@@ -293,3 +293,33 @@ githooks flow qa --dry-run --format=json   # JSON with .command per job
 ```
 
 In dry-run the `command` field per job is the exact shell command that would have executed, so it can be reused by other tools or documented elsewhere.
+
+## Effective options and conditions header
+
+Every `flow`, `flows` and `job` run prints a one-line **conditions header** at the start so the operator sees with which `processes`, `fail-fast` and `mode` the plan is running, and where each value comes from:
+
+```
+Settings: processes=4 (cli) | fail-fast=true (flows.ci-pack.options) | mode=full (default)
+Flows: qa, lint
+```
+
+- The header writes to **stdout** in text mode (default) and to **stderr** when a structured format is combined with `--show-progress` (so stdout payloads stay clean for piping).
+- The optional `Flows:` line appears in declarative, ad-hoc and mixed multi-flow runs (omitted in `flow X` and `flows X` single-flow degenerate).
+- The same information is exposed in JSON v2 as the `effectiveOptions` root block (always present in `flow` / `flows` / `job` runs, additive to v2):
+
+  ```json
+  {
+    "version": 2,
+    "flow": "ci-pack",
+    "flows": ["qa", "lint"],
+    "effectiveOptions": {
+      "processes":     { "value": 4,    "source": "flows.ci-pack.options" },
+      "failFast":      { "value": true, "source": "flows.ci-pack.options" },
+      "executionMode": { "value": "full", "source": "default" }
+    }
+  }
+  ```
+
+  `source` is one of `cli`, `flows.<X>.options`, `flows.<alias>.options`, `flows.options`, or `default`. In ad-hoc and mixed multi-flow runs the per-flow / per-alias options are deliberately ignored, so `source` is restricted to `{cli, flows.options, default}`.
+
+The `flows[]` root array (also additive) lists the normal flows actually executed after meta-flow expansion when relevant. Existing v2 consumers that ignore both fields keep working unchanged.

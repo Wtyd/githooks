@@ -145,6 +145,46 @@ The same setup with declarative config:
 
 `--report-*` flags override the config entry for the same format; other formats keep the config value. See [Configuration / Options / Multi-report](../configuration/options.md#multi-report) for the full precedence table.
 
+## Recipe: one `flows` for CI
+
+A typical CI used to run two `flow` invocations sequentially — one for QA, one for tests — each paying the `composer install` + PHP startup tax. Replace both with a single `flows` invocation backed by a **meta-flow** declared in config:
+
+```php
+// githooks.php
+'flows' => [
+    'options' => ['processes' => 4],
+
+    'qa'       => ['jobs' => ['phpcs_src', 'phpstan_src', 'phpmd_src']],
+    'ci-tests' => ['jobs' => ['phpunit_all']],
+
+    'ci-pack' => [
+        'flows'   => ['qa', 'ci-tests'],
+        'options' => [
+            'processes' => 4,
+            'fail-fast' => true,
+            'reports'   => ['sarif' => 'reports/qa.sarif', 'junit' => 'reports/junit.xml'],
+        ],
+    ],
+],
+```
+
+```yaml
+# .github/workflows/ci.yml
+- run: vendor/bin/githooks flows ci-pack --show-progress
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: reports/qa.sarif
+- uses: mikepenz/action-junit-report@v4
+  if: always()
+  with:
+    report_paths: reports/junit.xml
+```
+
+Single PHP runtime, single thread budget, single combined `FlowResult`, two artifacts emitted in parallel. The same `githooks flows ci-pack` runs locally for the developer with no flag changes.
+
+Prefer **declarative meta-flows** to ad-hoc `flows qa ci-tests` invocations: the meta-flow lives with the project, exposes its own options, and produces a stable `flow` identifier for dashboards.
+
 ## Dry-run in CI
 
 Use `--dry-run` to verify what commands would run without executing them:
@@ -159,4 +199,6 @@ The JSON output in dry-run mode includes a `command` field for each job, which i
 
 - [Output Formats](output-formats.md) — JSON v2 schema, JUnit, Code Climate, SARIF details.
 - [`githooks flow`](../cli/flow.md) — CLI reference for flags used above.
+- [`githooks flows`](../cli/flows.md) — combined runs and the four invocation modes.
+- [Configuration: Flows — Meta-flows](../configuration/flows.md#meta-flows) — declarative composition rules.
 - [Execution Modes](../execution-modes.md) — `full`, `fast`, `fast-branch`.
