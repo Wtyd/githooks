@@ -17,6 +17,7 @@ use Wtyd\GitHooks\Execution\{
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
@@ -26,6 +27,7 @@ class JobCommand extends Command
     use EmitsConditionsHeader;
     use FormatsOutput;
     use ResolvesInputFiles;
+    use ResolvesTimeBudgetFlags;
 
     protected $signature = 'job
                             {name : The job to execute}
@@ -46,6 +48,9 @@ class JobCommand extends Command
                             {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
+                            {--warn-after= : Warn when this single job exceeds this duration (seconds)}
+                            {--fail-after= : Fail when this single job exceeds this duration (seconds)}
+                            {--no-time-budget : Disable time-budget evaluation for this run}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a single job defined in the configuration file';
@@ -129,11 +134,32 @@ class JobCommand extends Command
 
             $cliFailFast = $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null;
             $cliProcesses = null;
+            $timeBudgetFlags = $this->resolveTimeBudgetFlags();
 
+            // In `job`, --warn-after / --fail-after are job-level (REQ-016): they
+            // override the per-job thresholds of the executed job, not the flow
+            // time-budget. We therefore do NOT propagate them to the resolver.
             $resolver = new EffectiveOptionsResolver();
-            $resolution = $resolver->resolveMultiple($config, $cliFailFast, $cliProcesses, $invocationMode);
+            $resolution = $resolver->resolveMultiple(
+                $config,
+                $cliFailFast,
+                $cliProcesses,
+                $invocationMode,
+                null,
+                null,
+                $timeBudgetFlags['disabled']
+            );
 
             $plan = $this->preparer->prepareSingleJob($jobConfig, $resolution->getOptions(), $context, $invocationMode, $cliExtraArgs);
+
+            if ($timeBudgetFlags['warnAfter'] !== null || $timeBudgetFlags['failAfter'] !== null) {
+                foreach ($plan->getJobs() as $jobAbstract) {
+                    $jobAbstract->applyThresholdOverride(
+                        $timeBudgetFlags['warnAfter'],
+                        $timeBudgetFlags['failAfter']
+                    );
+                }
+            }
 
             $plan = new FlowPlan(
                 $plan->getFlowName(),
@@ -148,6 +174,8 @@ class JobCommand extends Command
             );
 
             $this->applyFormat($this->executor, $plan);
+
+            $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
 
             $this->emitConditionsHeader($resolution, null, $plan->getInputFiles());
 

@@ -8,6 +8,7 @@ use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\EffectiveOptionsResolver;
@@ -24,6 +25,7 @@ class FlowCommand extends Command
     use EmitsConditionsHeader;
     use FormatsOutput;
     use ResolvesInputFiles;
+    use ResolvesTimeBudgetFlags;
 
     protected $signature = 'flow
                             {name : The flow to execute}
@@ -45,6 +47,9 @@ class FlowCommand extends Command
                             {--files-from= : Path to a manifest file with one path per line (mutually exclusive with --files)}
                             {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
                             {--monitor : Show thread usage report after execution}
+                            {--warn-after= : Warn when total job time (seconds) reaches this threshold}
+                            {--fail-after= : Fail when total job time (seconds) reaches this threshold}
+                            {--no-time-budget : Disable time-budget evaluation for this run (per-job and flow)}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
                             {--config= : Path to configuration file}';
@@ -146,9 +151,19 @@ class FlowCommand extends Command
             // CLI options for the per-key effective-options cascade
             $cliFailFast = $this->option('fail-fast') ? true : null;
             $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
+            $timeBudgetFlags = $this->resolveTimeBudgetFlags();
 
             $resolver = new EffectiveOptionsResolver();
-            $resolution = $resolver->resolveSingle($config, $flow, $cliFailFast, $cliProcesses, $invocationMode);
+            $resolution = $resolver->resolveSingle(
+                $config,
+                $flow,
+                $cliFailFast,
+                $cliProcesses,
+                $invocationMode,
+                $timeBudgetFlags['warnAfter'],
+                $timeBudgetFlags['failAfter'],
+                $timeBudgetFlags['disabled']
+            );
 
             $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);
 
@@ -166,6 +181,8 @@ class FlowCommand extends Command
             );
 
             $this->applyFormat($this->executor, $plan);
+
+            $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
 
             $this->emitConditionsHeader($resolution, $plan->getExpandedFlows(), $plan->getInputFiles());
 

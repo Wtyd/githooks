@@ -8,6 +8,7 @@ use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
@@ -37,6 +38,7 @@ class FlowsCommand extends Command
     use EmitsConditionsHeader;
     use FormatsOutput;
     use ResolvesInputFiles;
+    use ResolvesTimeBudgetFlags;
 
     protected $signature = 'flows
                             {names* : One or more flow or meta-flow names}
@@ -59,6 +61,9 @@ class FlowsCommand extends Command
                             {--files-from= : Path to a manifest file with one path per line (mutually exclusive with --files)}
                             {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
                             {--monitor : Show thread usage report after execution}
+                            {--warn-after= : Warn when total job time (seconds) reaches this threshold}
+                            {--fail-after= : Fail when total job time (seconds) reaches this threshold}
+                            {--no-time-budget : Disable time-budget evaluation for this run (per-job and flow)}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY}
                             {--config= : Path to configuration file}';
@@ -146,6 +151,7 @@ class FlowsCommand extends Command
 
             $cliFailFast = $this->option('fail-fast') ? true : null;
             $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
+            $timeBudgetFlags = $this->resolveTimeBudgetFlags();
 
             $resolver = new EffectiveOptionsResolver();
             [$resolution, $isSingleFlow, $isDeclarative] = $this->resolveOptionsForMode(
@@ -154,7 +160,8 @@ class FlowsCommand extends Command
                 $argNames,
                 $cliFailFast,
                 $cliProcesses,
-                $invocationMode
+                $invocationMode,
+                $timeBudgetFlags
             );
 
             $this->emitIgnoredOptionsWarning($argNames, $config, $isSingleFlow, $isDeclarative);
@@ -187,6 +194,8 @@ class FlowsCommand extends Command
             );
 
             $this->applyFormat($this->executor, $plan);
+
+            $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
 
             $this->emitConditionsHeader($resolution, $expandedFlows, $plan->getInputFiles());
 
@@ -259,8 +268,10 @@ class FlowsCommand extends Command
 
     /**
      * @param string[] $argNames
+     * @param array{warnAfter: ?int, failAfter: ?int, disabled: bool} $timeBudgetFlags
      * @return array{0: EffectiveOptionsResolution, 1: bool, 2: bool}
      *         Returns [resolution, isSingleFlow, isDeclarative]
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade inputs explicitly.
      */
     private function resolveOptionsForMode(
         EffectiveOptionsResolver $resolver,
@@ -268,7 +279,8 @@ class FlowsCommand extends Command
         array $argNames,
         ?bool $cliFailFast,
         ?int $cliProcesses,
-        ?string $invocationMode
+        ?string $invocationMode,
+        array $timeBudgetFlags
     ): array {
         $unique = array_values(array_unique($argNames));
 
@@ -277,12 +289,29 @@ class FlowsCommand extends Command
             $isMeta = $flow !== null && $flow->isMetaFlow();
             $isSingleFlow = !$isMeta;
             $isDeclarative = $isMeta;
-            $resolution = $resolver->resolveSingle($config, $flow, $cliFailFast, $cliProcesses, $invocationMode);
+            $resolution = $resolver->resolveSingle(
+                $config,
+                $flow,
+                $cliFailFast,
+                $cliProcesses,
+                $invocationMode,
+                $timeBudgetFlags['warnAfter'],
+                $timeBudgetFlags['failAfter'],
+                $timeBudgetFlags['disabled']
+            );
             return [$resolution, $isSingleFlow, $isDeclarative];
         }
 
         return [
-            $resolver->resolveMultiple($config, $cliFailFast, $cliProcesses, $invocationMode),
+            $resolver->resolveMultiple(
+                $config,
+                $cliFailFast,
+                $cliProcesses,
+                $invocationMode,
+                $timeBudgetFlags['warnAfter'],
+                $timeBudgetFlags['failAfter'],
+                $timeBudgetFlags['disabled']
+            ),
             false,
             false,
         ];
