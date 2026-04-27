@@ -65,6 +65,46 @@ class FlowsCommandTest extends SystemTestCase
     }
 
     /** @test */
+    public function single_flow_degenerate_matches_flow_command_output()
+    {
+        $this->buildMultiFlowFixture();
+
+        $flowOut  = $this->runFlowJson("flow qa --format=json --config=$this->configPath");
+        $flowsOut = $this->runJson("flows qa --format=json --config=$this->configPath");
+
+        // Identifiers, executed jobs, and effectiveOptions must match.
+        $this->assertSame($flowOut['flow'], $flowsOut['flow']);
+        $this->assertSame(
+            array_column($flowOut['jobs'], 'name'),
+            array_column($flowsOut['jobs'], 'name')
+        );
+        $this->assertSame(
+            $flowOut['effectiveOptions'],
+            $flowsOut['effectiveOptions'],
+            'effectiveOptions must be identical across `flow X` and `flows X`'
+        );
+        $this->assertArrayNotHasKey('flows', $flowOut);
+        $this->assertArrayNotHasKey('flows', $flowsOut);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function runFlowJson(string $command): array
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'flowjson_');
+        try {
+            $this->artisan(trim("$command --output=$tmp"));
+            $payload = (string) file_get_contents($tmp);
+            $decoded = json_decode($payload, true);
+            $this->assertIsArray($decoded, "Expected JSON for flow at $tmp, got:\n$payload");
+            return $decoded;
+        } finally {
+            @unlink($tmp);
+        }
+    }
+
+    /** @test */
     public function ad_hoc_mode_concatenates_flow_names_in_identifier()
     {
         $this->buildMultiFlowFixture();
