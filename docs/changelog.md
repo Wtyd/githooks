@@ -63,6 +63,21 @@ PHPUnit-style multi-report: a single `flow` (or `job`) run can emit several repo
 - **`--format` is unchanged**: still governs **stdout** the same way as in 3.2. `--format=sarif --report-sarif=foo.sarif` is legal and produces both stdout SARIF and the file.
 - **`conf:check` validation**: rejects unsupported format keys, non-string paths and unwritable target locations; warns when the parent directory does not exist (it gets created on run).
 
+#### Performance monitor — flow `time-budget` + per-job `warn-after` / `fail-after`
+
+Two parallel, independent systems that watch the temporal health of every QA run:
+
+- **Per-job thresholds** (`jobs.<name>.warn-after` / `fail-after`, seconds): catch local regressions of a specific job. Crossing `warn-after` annotates `⚠`; crossing `fail-after` flips a passing job to KO with exit `1`.
+- **Flow time-budget** (`flows.options.time-budget` or `flows.<name>.options.time-budget`): catch accumulated drift across the whole flow. The post-hoc sum of executed-job durations is compared with `warn-after` / `fail-after` declared at the flow level. **A flow that crosses `fail-after` exits 1 even when every job passed individually** — the conceptual key of the feature.
+- **Independence**: declaring `time-budget` at the flow level does NOT propagate `warn-after` / `fail-after` to individual jobs. The two layers answer different questions ("is this job regressing?" vs. "is the pipeline as a whole regressing?") and remain decoupled.
+- **CLI overrides**: `--warn-after=N`, `--fail-after=N` (flow-level on `flow` / `flows`; job-level on `job` per spec REQ-016). `--no-time-budget` disables both layers for that run; mixing it with `--warn-after` emits a warning on stderr.
+- **JSON v2 (explicit-null pattern)**: a new root `timeBudget` field (object or `null`) and per-job `threshold` field (object or `null`) are always present. Consumers can write `if (job.threshold) { … }` without existence checks. `reason` is a string when warned/failed is `true`, `null` otherwise.
+- **Conditions header**: extended with a `time-budget=...` segment showing the effective values and their origin (`flows.options`, `flows.<X>.options`, `cli`, `default`).
+- **`conf:check` validation**: rejects non-positive integers, `warn-after >= fail-after`, `time-budget` placed inside a job; warns on unknown keys with did-you-mean suggestions.
+- **Differentiator**: GrumPHP, CaptainHook, lefthook, pre-commit (Yelp) and golangci-lint do not expose a declarative time budget at job + aggregate level.
+
+Spec: [spec/spec-design-time-budget-thresholds.md](../spec/spec-design-time-budget-thresholds.md).
+
 ---
 
 ## [3.2.0]
