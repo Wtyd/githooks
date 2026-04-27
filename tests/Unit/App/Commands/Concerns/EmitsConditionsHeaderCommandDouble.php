@@ -12,6 +12,14 @@ use Wtyd\GitHooks\Execution\InputFilesResolution;
  * Test double that exposes the private emitConditionsHeader() of the trait
  * and captures everything the trait writes to text/structured channels.
  *
+ * The fake `getOutput()` deliberately exposes ONLY `getErrorStyle()` (the
+ * public SymfonyStyle API used by the trait) and DOES NOT expose
+ * `getErrorOutput()` (the protected OutputStyle method that triggered the
+ * original bug — it raised "Call to protected method" at runtime). If the
+ * trait ever regresses to calling `getErrorOutput()`, every test that
+ * exercises the structured + show-progress path will fail loudly with
+ * "Call to undefined method", which is the desired guardrail.
+ *
  * @SuppressWarnings(PHPMD)
  */
 class EmitsConditionsHeaderCommandDouble
@@ -45,7 +53,7 @@ class EmitsConditionsHeaderCommandDouble
     public function getOutput(): object
     {
         $errLinesRef = &$this->errLines;
-        $errOutput = new class ($errLinesRef) {
+        $errorStyle = new class ($errLinesRef) {
             /** @var string[] */
             private array $sink;
             public function __construct(array &$sink)
@@ -57,13 +65,14 @@ class EmitsConditionsHeaderCommandDouble
                 $this->sink[] = $message;
             }
         };
-        return new class ($errOutput) {
+        return new class ($errorStyle) {
             private object $err;
             public function __construct(object $err)
             {
                 $this->err = $err;
             }
-            public function getErrorOutput(): object
+            // Public API used by EmitsConditionsHeader after the bugfix.
+            public function getErrorStyle(): object
             {
                 return $this->err;
             }

@@ -202,8 +202,12 @@ trait EmitsConditionsHeader
             return null;
         }
 
+        // Use SymfonyStyle::getErrorStyle() (public) instead of
+        // OutputStyle::getErrorOutput() (protected). The latter is inaccessible
+        // from a closure bound to the command and triggers a fatal at runtime
+        // when --format=<structured> is combined with --show-progress.
         return function (string $line): void {
-            $this->getOutput()->getErrorOutput()->writeln($line);
+            $this->getOutput()->getErrorStyle()->writeln($line);
         };
     }
 }
