@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\GitHooks\Execution\EffectiveOptionsResolver;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowExecutor;
@@ -19,6 +21,7 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class FlowCommand extends Command
 {
+    use EmitsConditionsHeader;
     use FormatsOutput;
     use ResolvesInputFiles;
 
@@ -140,24 +143,31 @@ class FlowCommand extends Command
                 return 1;
             }
 
-            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);
-
-            // CLI options override config values
+            // CLI options for the per-key effective-options cascade
             $cliFailFast = $this->option('fail-fast') ? true : null;
             $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
 
-            if ($cliFailFast !== null || $cliProcesses !== null) {
-                $overriddenOptions = $plan->getOptions()->withOverrides($cliFailFast, $cliProcesses);
-                $plan = new FlowPlan(
-                    $plan->getFlowName(),
-                    $plan->getJobs(),
-                    $overriddenOptions,
-                    $plan->getContext(),
-                    $plan->getSkippedJobs()
-                );
-            }
+            $resolver = new EffectiveOptionsResolver();
+            $resolution = $resolver->resolveSingle($config, $flow, $cliFailFast, $cliProcesses, $invocationMode);
+
+            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);
+
+            // Replace the plan options with the cascade-resolved ones and attach the trace
+            $plan = new FlowPlan(
+                $plan->getFlowName(),
+                $plan->getJobs(),
+                $resolution->getOptions(),
+                $plan->getContext(),
+                $plan->getSkippedJobs(),
+                $plan->getExecutionMode(),
+                $plan->getInputFiles(),
+                $plan->getExpandedFlows(),
+                $resolution
+            );
 
             $this->applyFormat($this->executor, $plan);
+
+            $this->emitConditionsHeader($resolution, $plan->getExpandedFlows(), $plan->getInputFiles());
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 

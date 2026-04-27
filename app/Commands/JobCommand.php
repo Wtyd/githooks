@@ -5,19 +5,25 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\Execution\{
+    EffectiveOptionsResolver,
+    ExecutionContext,
+    ExecutionMode,
+    FlowExecutor,
+    FlowPlan,
+    FlowPreparer,
+    InputFilesResolver
+};
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Execution\InputFilesResolver;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class JobCommand extends Command
 {
+    use EmitsConditionsHeader;
     use FormatsOutput;
     use ResolvesInputFiles;
 
@@ -121,9 +127,29 @@ class JobCommand extends Command
 
             $cliExtraArgs = $this->getCliExtraArguments();
 
-            $plan = $this->preparer->prepareSingleJob($jobConfig, $config->getGlobalOptions(), $context, $invocationMode, $cliExtraArgs);
+            $cliFailFast = $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null;
+            $cliProcesses = null;
+
+            $resolver = new EffectiveOptionsResolver();
+            $resolution = $resolver->resolveMultiple($config, $cliFailFast, $cliProcesses, $invocationMode);
+
+            $plan = $this->preparer->prepareSingleJob($jobConfig, $resolution->getOptions(), $context, $invocationMode, $cliExtraArgs);
+
+            $plan = new FlowPlan(
+                $plan->getFlowName(),
+                $plan->getJobs(),
+                $resolution->getOptions(),
+                $plan->getContext(),
+                $plan->getSkippedJobs(),
+                $plan->getExecutionMode(),
+                $plan->getInputFiles(),
+                $plan->getExpandedFlows(),
+                $resolution
+            );
 
             $this->applyFormat($this->executor, $plan);
+
+            $this->emitConditionsHeader($resolution, null, $plan->getInputFiles());
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
 
