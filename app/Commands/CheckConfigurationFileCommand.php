@@ -156,15 +156,19 @@ class CheckConfigurationFileCommand extends Command
             }
         }
 
-        // Flows table
+        // Flows table — meta-flows are distinguished by a (meta) tag and show their expanded references
         $flows = $config->getFlows();
         if (!empty($flows)) {
             $flowRows = [];
             foreach ($flows as $name => $flow) {
+                if ($flow->isMetaFlow()) {
+                    $flowRows[] = [$name . ' (meta)', '→ ' . implode(', ', $flow->getFlowReferences())];
+                    continue;
+                }
                 $flowRows[] = [$name, implode(', ', $flow->getJobs())];
             }
             $this->line('');
-            $this->table(['Flow', 'Jobs'], $flowRows);
+            $this->table(['Flow', 'Jobs / Flows'], $flowRows);
 
             foreach ($flows as $name => $flow) {
                 $flowOptions = $flow->getOptions();
