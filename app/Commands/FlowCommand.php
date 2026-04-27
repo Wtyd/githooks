@@ -7,7 +7,10 @@ namespace Wtyd\GitHooks\App\Commands;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
@@ -24,7 +27,10 @@ class FlowCommand extends Command
 {
     use EmitsConditionsHeader;
     use FormatsOutput;
+    use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
+    use ResolvesMemoryBudgetFlags;
+    use ResolvesStatsFlag;
     use ResolvesTimeBudgetFlags;
 
     protected $signature = 'flow
@@ -50,6 +56,11 @@ class FlowCommand extends Command
                             {--warn-after= : Warn when total job time (seconds) reaches this threshold}
                             {--fail-after= : Fail when total job time (seconds) reaches this threshold}
                             {--no-time-budget : Disable time-budget evaluation for this run (per-job and flow)}
+                            {--memory-warn-above= : Warn when peak simultaneous RSS (MB) crosses this threshold}
+                            {--memory-fail-above= : Fail when peak simultaneous RSS (MB) crosses this threshold}
+                            {--no-memory-budget : Disable memory-budget evaluation for this run (per-job and flow)}
+                            {--allocator= : Resource admission strategy (fifo|greedy)}
+                            {--stats : Print a final stats table with peak cores/memory per job and emit the stats block in JSON v2}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
                             {--config= : Path to configuration file}';
@@ -152,6 +163,9 @@ class FlowCommand extends Command
             $cliFailFast = $this->option('fail-fast') ? true : null;
             $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
             $timeBudgetFlags = $this->resolveTimeBudgetFlags();
+            $memoryBudgetFlags = $this->resolveMemoryBudgetFlags();
+            $cliAllocator = $this->resolveAllocatorFlag();
+            $cliStats = $this->resolveStatsFlag();
 
             $resolver = new EffectiveOptionsResolver();
             $resolution = $resolver->resolveSingle(
@@ -162,7 +176,12 @@ class FlowCommand extends Command
                 $invocationMode,
                 $timeBudgetFlags['warnAfter'],
                 $timeBudgetFlags['failAfter'],
-                $timeBudgetFlags['disabled']
+                $timeBudgetFlags['disabled'],
+                $memoryBudgetFlags['warnAbove'],
+                $memoryBudgetFlags['failAbove'],
+                $memoryBudgetFlags['disabled'],
+                $cliAllocator,
+                $cliStats
             );
 
             $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);

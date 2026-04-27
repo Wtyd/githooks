@@ -20,6 +20,9 @@ class EmitsConditionsHeaderTest extends TestCase
                 'processes'     => ['value' => 4, 'source' => 'cli'],
                 'failFast'      => ['value' => true, 'source' => 'flows.qa.options'],
                 'executionMode' => ['value' => $modeValue, 'source' => $modeSource],
+                'memoryBudget'  => ['value' => null, 'source' => 'default'],
+                'allocator'     => ['value' => 'fifo', 'source' => 'default'],
+                'stats'         => ['value' => false, 'source' => 'default'],
             ]
         );
     }
@@ -34,7 +37,7 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $this->assertCount(1, $double->lines);
         $this->assertSame(
-            'Settings: processes=4 (cli) | fail-fast=true (flows.qa.options) | mode=full (default) | time-budget=none (default)',
+            'Settings: processes=4 (cli) | fail-fast=true (flows.qa.options) | mode=full (default) | time-budget=none (default) | memory-budget=none (default) | allocator=fifo (default) | stats=false (default)',
             $double->lines[0]
         );
         $this->assertSame([], $double->errLines);
@@ -193,5 +196,111 @@ class EmitsConditionsHeaderTest extends TestCase
             'time-budget=none (default)',
             $double->lines[0]
         );
+    }
+
+    // ========================================================================
+    // memory-budget / allocator / stats segments (v3.3 — gh-48)
+    // ========================================================================
+
+    private function makeResolutionWithMemoryBudget(?array $value, string $source): EffectiveOptionsResolution
+    {
+        return new EffectiveOptionsResolution(
+            new OptionsConfiguration(),
+            'full',
+            [
+                'processes'     => ['value' => 4, 'source' => 'cli'],
+                'failFast'      => ['value' => true, 'source' => 'flows.qa.options'],
+                'executionMode' => ['value' => 'full', 'source' => 'default'],
+                'memoryBudget'  => ['value' => $value, 'source' => $source],
+                'allocator'     => ['value' => 'fifo', 'source' => 'default'],
+                'stats'         => ['value' => false, 'source' => 'default'],
+            ]
+        );
+    }
+
+    /** @test */
+    public function header_shows_memory_budget_with_warn_and_fail_above(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithMemoryBudget(
+            ['warnAbove' => 3500, 'failAbove' => 3900],
+            'flows.options'
+        ));
+
+        $this->assertStringContainsString(
+            'memory-budget=warn-above=3500MB,fail-above=3900MB (flows.options)',
+            $double->lines[0]
+        );
+    }
+
+    /** @test */
+    public function header_shows_memory_budget_with_only_warn_above(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithMemoryBudget(
+            ['warnAbove' => 1500, 'failAbove' => null],
+            'flows.qa.options'
+        ));
+
+        $this->assertStringContainsString(
+            'memory-budget=warn-above=1500MB (flows.qa.options)',
+            $double->lines[0]
+        );
+    }
+
+    /** @test */
+    public function header_shows_memory_disabled_when_cli_no_memory_budget(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithMemoryBudget(null, 'cli'));
+
+        $this->assertStringContainsString(
+            'memory-budget=disabled (cli)',
+            $double->lines[0]
+        );
+    }
+
+    /** @test */
+    public function header_shows_memory_none_when_unconfigured(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithMemoryBudget(null, 'default'));
+
+        $this->assertStringContainsString(
+            'memory-budget=none (default)',
+            $double->lines[0]
+        );
+    }
+
+    /** @test */
+    public function header_shows_allocator_and_stats(): void
+    {
+        $resolution = new EffectiveOptionsResolution(
+            new OptionsConfiguration(),
+            'full',
+            [
+                'processes'     => ['value' => 4, 'source' => 'cli'],
+                'failFast'      => ['value' => true, 'source' => 'flows.qa.options'],
+                'executionMode' => ['value' => 'full', 'source' => 'default'],
+                'memoryBudget'  => ['value' => null, 'source' => 'default'],
+                'allocator'     => ['value' => 'greedy', 'source' => 'cli'],
+                'stats'         => ['value' => true, 'source' => 'cli'],
+            ]
+        );
+
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+        $double->call($resolution);
+
+        $this->assertStringContainsString('allocator=greedy (cli)', $double->lines[0]);
+        $this->assertStringContainsString('stats=true (cli)', $double->lines[0]);
     }
 }

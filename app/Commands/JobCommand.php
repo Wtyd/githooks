@@ -16,7 +16,10 @@ use Wtyd\GitHooks\Execution\{
 };
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
@@ -26,7 +29,10 @@ class JobCommand extends Command
 {
     use EmitsConditionsHeader;
     use FormatsOutput;
+    use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
+    use ResolvesMemoryBudgetFlags;
+    use ResolvesStatsFlag;
     use ResolvesTimeBudgetFlags;
 
     protected $signature = 'job
@@ -51,6 +57,10 @@ class JobCommand extends Command
                             {--warn-after= : Warn when this single job exceeds this duration (seconds)}
                             {--fail-after= : Fail when this single job exceeds this duration (seconds)}
                             {--no-time-budget : Disable time-budget evaluation for this run}
+                            {--memory-warn-above= : Warn when this job RSS (MB) crosses this threshold}
+                            {--memory-fail-above= : Fail when this job RSS (MB) crosses this threshold}
+                            {--no-memory-budget : Disable memory-budget evaluation for this run}
+                            {--stats : Print a final stats table with peak cores/memory and emit the stats block in JSON v2}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a single job defined in the configuration file';
@@ -135,10 +145,14 @@ class JobCommand extends Command
             $cliFailFast = $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null;
             $cliProcesses = null;
             $timeBudgetFlags = $this->resolveTimeBudgetFlags();
+            $memoryBudgetFlags = $this->resolveMemoryBudgetFlags();
+            $cliStats = $this->resolveStatsFlag();
 
-            // In `job`, --warn-after / --fail-after are job-level (REQ-016): they
-            // override the per-job thresholds of the executed job, not the flow
-            // time-budget. We therefore do NOT propagate them to the resolver.
+            // In `job`, --warn-after / --fail-after and --memory-warn-above /
+            // --memory-fail-above are job-level (REQ-016 / REQ-031): they override
+            // the per-job thresholds of the executed job, not the flow budgets.
+            // We therefore do NOT propagate them as budget overrides to the
+            // resolver. They are applied to the JobAbstract instance below.
             $resolver = new EffectiveOptionsResolver();
             $resolution = $resolver->resolveMultiple(
                 $config,
@@ -147,7 +161,12 @@ class JobCommand extends Command
                 $invocationMode,
                 null,
                 null,
-                $timeBudgetFlags['disabled']
+                $timeBudgetFlags['disabled'],
+                null,
+                null,
+                $memoryBudgetFlags['disabled'],
+                null,
+                $cliStats
             );
 
             $plan = $this->preparer->prepareSingleJob($jobConfig, $resolution->getOptions(), $context, $invocationMode, $cliExtraArgs);

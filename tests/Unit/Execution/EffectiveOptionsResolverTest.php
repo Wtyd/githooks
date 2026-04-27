@@ -373,4 +373,227 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertSame(120, $resolution->getOptions()->getTimeBudget()->getWarnAfter());
         $this->assertSame('flows.options', $resolution->getTrace()['timeBudget']['source']);
     }
+
+    // ========================================================================
+    // memory-budget cascade (v3.3 — gh-48)
+    // ========================================================================
+
+    /** @test */
+    public function single_memory_budget_cascades_from_flow_to_global(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['memory-budget' => ['warn-above' => 3500, 'fail-above' => 3900]],
+            ['memory-budget' => ['warn-above' => 800]]
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $budget = $resolution->getOptions()->getMemoryBudget();
+        $this->assertNotNull($budget);
+        $this->assertSame(800, $budget->getWarnAbove());
+        $this->assertSame('flows.qa.options', $resolution->getTrace()['memoryBudget']['source']);
+    }
+
+    /** @test */
+    public function single_memory_budget_falls_back_to_globals(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['memory-budget' => ['warn-above' => 3500]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame(3500, $resolution->getOptions()->getMemoryBudget()->getWarnAbove());
+        $this->assertSame('flows.options', $resolution->getTrace()['memoryBudget']['source']);
+    }
+
+    /** @test */
+    public function single_memory_budget_default_when_undeclared(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertNull($resolution->getOptions()->getMemoryBudget());
+        $this->assertSame('default', $resolution->getTrace()['memoryBudget']['source']);
+        $this->assertNull($resolution->getTrace()['memoryBudget']['value']);
+    }
+
+    /** @test */
+    public function single_cli_memory_warn_above_overrides_config(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['memory-budget' => ['warn-above' => 3500, 'fail-above' => 3900]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle(
+            $config,
+            $flow,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            1500
+        );
+
+        $budget = $resolution->getOptions()->getMemoryBudget();
+        $this->assertSame(1500, $budget->getWarnAbove());
+        $this->assertSame(3900, $budget->getFailAbove(), 'CLI partial override preserves fail-above');
+        $this->assertSame('cli', $resolution->getTrace()['memoryBudget']['source']);
+    }
+
+    /** @test */
+    public function single_cli_no_memory_budget_disables_everything(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['memory-budget' => ['warn-above' => 3500, 'fail-above' => 3900]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle(
+            $config,
+            $flow,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            null,
+            null,
+            true
+        );
+
+        $this->assertNull($resolution->getOptions()->getMemoryBudget());
+        $this->assertSame('cli', $resolution->getTrace()['memoryBudget']['source']);
+        $this->assertNull($resolution->getTrace()['memoryBudget']['value']);
+    }
+
+    /** @test */
+    public function multiple_memory_budget_uses_globals_only(): void
+    {
+        [$config] = $this->buildConfig(
+            ['memory-budget' => ['warn-above' => 3500]],
+            ['memory-budget' => ['warn-above' => 1000]]
+        );
+
+        $resolution = $this->resolver->resolveMultiple($config, null, null, null);
+
+        $this->assertSame(3500, $resolution->getOptions()->getMemoryBudget()->getWarnAbove());
+        $this->assertSame('flows.options', $resolution->getTrace()['memoryBudget']['source']);
+    }
+
+    // ========================================================================
+    // allocator cascade
+    // ========================================================================
+
+    /** @test */
+    public function single_allocator_default_when_undeclared(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame('fifo', $resolution->getOptions()->getAllocator());
+        $this->assertSame('default', $resolution->getTrace()['allocator']['source']);
+    }
+
+    /** @test */
+    public function single_allocator_cascades_from_flow_to_global(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['allocator' => 'fifo'],
+            ['allocator' => 'greedy']
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame('greedy', $resolution->getOptions()->getAllocator());
+        $this->assertSame('flows.qa.options', $resolution->getTrace()['allocator']['source']);
+    }
+
+    /** @test */
+    public function single_cli_allocator_overrides_config(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['allocator' => 'fifo'],
+            ['allocator' => 'fifo']
+        );
+
+        $resolution = $this->resolver->resolveSingle(
+            $config,
+            $flow,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            null,
+            null,
+            false,
+            'greedy'
+        );
+
+        $this->assertSame('greedy', $resolution->getOptions()->getAllocator());
+        $this->assertSame('cli', $resolution->getTrace()['allocator']['source']);
+    }
+
+    // ========================================================================
+    // stats cascade
+    // ========================================================================
+
+    /** @test */
+    public function single_stats_default_when_undeclared(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertFalse($resolution->getOptions()->isStats());
+        $this->assertFalse($resolution->getTrace()['stats']['value']);
+    }
+
+    /** @test */
+    public function single_stats_cascades_from_flow_to_global(): void
+    {
+        [$config, $flow] = $this->buildConfig(
+            ['stats' => false],
+            ['stats' => true]
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertTrue($resolution->getOptions()->isStats());
+        $this->assertSame('flows.qa.options', $resolution->getTrace()['stats']['source']);
+    }
+
+    /** @test */
+    public function single_cli_stats_overrides_config(): void
+    {
+        [$config, $flow] = $this->buildConfig(['stats' => false], null);
+
+        $resolution = $this->resolver->resolveSingle(
+            $config,
+            $flow,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            null,
+            null,
+            false,
+            null,
+            true
+        );
+
+        $this->assertTrue($resolution->getOptions()->isStats());
+        $this->assertSame('cli', $resolution->getTrace()['stats']['source']);
+    }
 }

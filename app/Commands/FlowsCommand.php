@@ -7,7 +7,10 @@ namespace Wtyd\GitHooks\App\Commands;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
@@ -37,7 +40,10 @@ class FlowsCommand extends Command
 {
     use EmitsConditionsHeader;
     use FormatsOutput;
+    use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
+    use ResolvesMemoryBudgetFlags;
+    use ResolvesStatsFlag;
     use ResolvesTimeBudgetFlags;
 
     protected $signature = 'flows
@@ -64,6 +70,11 @@ class FlowsCommand extends Command
                             {--warn-after= : Warn when total job time (seconds) reaches this threshold}
                             {--fail-after= : Fail when total job time (seconds) reaches this threshold}
                             {--no-time-budget : Disable time-budget evaluation for this run (per-job and flow)}
+                            {--memory-warn-above= : Warn when peak simultaneous RSS (MB) crosses this threshold}
+                            {--memory-fail-above= : Fail when peak simultaneous RSS (MB) crosses this threshold}
+                            {--no-memory-budget : Disable memory-budget evaluation for this run (per-job and flow)}
+                            {--allocator= : Resource admission strategy (fifo|greedy)}
+                            {--stats : Print a final stats table with peak cores/memory per job and emit the stats block in JSON v2}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY}
                             {--config= : Path to configuration file}';
@@ -152,6 +163,9 @@ class FlowsCommand extends Command
             $cliFailFast = $this->option('fail-fast') ? true : null;
             $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
             $timeBudgetFlags = $this->resolveTimeBudgetFlags();
+            $memoryBudgetFlags = $this->resolveMemoryBudgetFlags();
+            $cliAllocator = $this->resolveAllocatorFlag();
+            $cliStats = $this->resolveStatsFlag();
 
             $resolver = new EffectiveOptionsResolver();
             [$resolution, $isSingleFlow, $isDeclarative] = $this->resolveOptionsForMode(
@@ -161,7 +175,10 @@ class FlowsCommand extends Command
                 $cliFailFast,
                 $cliProcesses,
                 $invocationMode,
-                $timeBudgetFlags
+                $timeBudgetFlags,
+                $memoryBudgetFlags,
+                $cliAllocator,
+                $cliStats
             );
 
             $this->emitIgnoredOptionsWarning($argNames, $config, $isSingleFlow, $isDeclarative);
@@ -269,6 +286,7 @@ class FlowsCommand extends Command
     /**
      * @param string[] $argNames
      * @param array{warnAfter: ?int, failAfter: ?int, disabled: bool} $timeBudgetFlags
+     * @param array{warnAbove: ?int, failAbove: ?int, disabled: bool} $memoryBudgetFlags
      * @return array{0: EffectiveOptionsResolution, 1: bool, 2: bool}
      *         Returns [resolution, isSingleFlow, isDeclarative]
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade inputs explicitly.
@@ -280,7 +298,10 @@ class FlowsCommand extends Command
         ?bool $cliFailFast,
         ?int $cliProcesses,
         ?string $invocationMode,
-        array $timeBudgetFlags
+        array $timeBudgetFlags,
+        array $memoryBudgetFlags,
+        ?string $cliAllocator,
+        ?bool $cliStats
     ): array {
         $unique = array_values(array_unique($argNames));
 
@@ -297,7 +318,12 @@ class FlowsCommand extends Command
                 $invocationMode,
                 $timeBudgetFlags['warnAfter'],
                 $timeBudgetFlags['failAfter'],
-                $timeBudgetFlags['disabled']
+                $timeBudgetFlags['disabled'],
+                $memoryBudgetFlags['warnAbove'],
+                $memoryBudgetFlags['failAbove'],
+                $memoryBudgetFlags['disabled'],
+                $cliAllocator,
+                $cliStats
             );
             return [$resolution, $isSingleFlow, $isDeclarative];
         }
@@ -310,7 +336,12 @@ class FlowsCommand extends Command
                 $invocationMode,
                 $timeBudgetFlags['warnAfter'],
                 $timeBudgetFlags['failAfter'],
-                $timeBudgetFlags['disabled']
+                $timeBudgetFlags['disabled'],
+                $memoryBudgetFlags['warnAbove'],
+                $memoryBudgetFlags['failAbove'],
+                $memoryBudgetFlags['disabled'],
+                $cliAllocator,
+                $cliStats
             ),
             false,
             false,

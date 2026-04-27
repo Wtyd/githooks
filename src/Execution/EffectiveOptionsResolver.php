@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use Wtyd\GitHooks\Configuration\AllocatorStrategy;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
+use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
 
@@ -21,6 +23,8 @@ use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
  *   are ignored (CON-001/002); cascade collapses to `cli > flows.options > default`.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Coordinates options, flows and execution-mode resolution
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Per-key cascade for every tracked option is the
+ *   intrinsic surface of the resolver; collapsing it would add abstractions without value.
  */
 final class EffectiveOptionsResolver
 {
@@ -30,7 +34,7 @@ final class EffectiveOptionsResolver
 
     /**
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade inputs explicitly.
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoTimeBudget` is a CLI gate, not a polymorphism break.
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoTimeBudget`/`$cliNoMemoryBudget` are CLI gates, not polymorphism breaks.
      */
     public function resolveSingle(
         ConfigurationResult $config,
@@ -40,7 +44,12 @@ final class EffectiveOptionsResolver
         ?string $invocationMode,
         ?int $cliWarnAfter = null,
         ?int $cliFailAfter = null,
-        bool $cliNoTimeBudget = false
+        bool $cliNoTimeBudget = false,
+        ?int $cliMemoryWarnAbove = null,
+        ?int $cliMemoryFailAbove = null,
+        bool $cliNoMemoryBudget = false,
+        ?string $cliAllocator = null,
+        ?bool $cliStats = null
     ): EffectiveOptionsResolution {
         $sourceLabel = "flows.{$flow->getName()}.options";
 
@@ -54,13 +63,18 @@ final class EffectiveOptionsResolver
             $invocationMode,
             $cliWarnAfter,
             $cliFailAfter,
-            $cliNoTimeBudget
+            $cliNoTimeBudget,
+            $cliMemoryWarnAbove,
+            $cliMemoryFailAbove,
+            $cliNoMemoryBudget,
+            $cliAllocator,
+            $cliStats
         );
     }
 
     /**
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade inputs explicitly.
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoTimeBudget` is a CLI gate, not a polymorphism break.
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoTimeBudget`/`$cliNoMemoryBudget` are CLI gates, not polymorphism breaks.
      */
     public function resolveMultiple(
         ConfigurationResult $config,
@@ -69,7 +83,12 @@ final class EffectiveOptionsResolver
         ?string $invocationMode,
         ?int $cliWarnAfter = null,
         ?int $cliFailAfter = null,
-        bool $cliNoTimeBudget = false
+        bool $cliNoTimeBudget = false,
+        ?int $cliMemoryWarnAbove = null,
+        ?int $cliMemoryFailAbove = null,
+        bool $cliNoMemoryBudget = false,
+        ?string $cliAllocator = null,
+        ?bool $cliStats = null
     ): EffectiveOptionsResolution {
         return $this->resolve(
             $config,
@@ -81,7 +100,12 @@ final class EffectiveOptionsResolver
             $invocationMode,
             $cliWarnAfter,
             $cliFailAfter,
-            $cliNoTimeBudget
+            $cliNoTimeBudget,
+            $cliMemoryWarnAbove,
+            $cliMemoryFailAbove,
+            $cliNoMemoryBudget,
+            $cliAllocator,
+            $cliStats
         );
     }
 
@@ -89,7 +113,7 @@ final class EffectiveOptionsResolver
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Parameters mirror the cascade inputs explicitly.
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Cascade evaluates several option keys.
      * @SuppressWarnings(PHPMD.NPathComplexity) Optional keys add independent branches.
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoTimeBudget` is a CLI gate, not a polymorphism break.
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoTimeBudget`/`$cliNoMemoryBudget` are CLI gates, not polymorphism breaks.
      */
     private function resolve(
         ConfigurationResult $config,
@@ -101,10 +125,109 @@ final class EffectiveOptionsResolver
         ?string $invocationMode,
         ?int $cliWarnAfter = null,
         ?int $cliFailAfter = null,
-        bool $cliNoTimeBudget = false
+        bool $cliNoTimeBudget = false,
+        ?int $cliMemoryWarnAbove = null,
+        ?int $cliMemoryFailAbove = null,
+        bool $cliNoMemoryBudget = false,
+        ?string $cliAllocator = null,
+        ?bool $cliStats = null
     ): EffectiveOptionsResolution {
         $globalOptions = $config->getGlobalOptions();
 
+        $core = $this->cascadeCoreOptions(
+            $globalOptions,
+            $flowOptions,
+            $flowSourceLabel,
+            $flowExecution,
+            $cliFailFast,
+            $cliProcesses,
+            $invocationMode
+        );
+
+        [$timeBudget, $timeBudgetSource] = $this->cascadeTimeBudget(
+            $cliWarnAfter,
+            $cliFailAfter,
+            $cliNoTimeBudget,
+            $flowOptions,
+            $flowSourceLabel,
+            $globalOptions
+        );
+
+        [$memoryBudget, $memoryBudgetSource] = $this->cascadeMemoryBudget(
+            $cliMemoryWarnAbove,
+            $cliMemoryFailAbove,
+            $cliNoMemoryBudget,
+            $flowOptions,
+            $flowSourceLabel,
+            $globalOptions
+        );
+
+        [$allocator, $allocatorSource] = $this->cascadeAllocator(
+            $cliAllocator,
+            $flowOptions,
+            $flowSourceLabel,
+            $globalOptions
+        );
+
+        [$stats, $statsSource] = $this->cascadeBool(
+            'stats',
+            $cliStats,
+            $flowOptions,
+            $flowSourceLabel,
+            $globalOptions,
+            fn(OptionsConfiguration $opts) => $opts->isStats()
+        );
+
+        $merged = $this->mergeOptionsBlock(
+            $globalOptions,
+            $flowOptions,
+            $core['failFast'],
+            $core['processes'],
+            $core['mainBranch'],
+            $timeBudget,
+            $memoryBudget,
+            $allocator,
+            $stats
+        );
+
+        $trace = [
+            'processes'     => ['value' => $core['processes'],     'source' => $core['processesSource']],
+            'failFast'      => ['value' => $core['failFast'],      'source' => $core['failFastSource']],
+            'executionMode' => ['value' => $core['executionMode'], 'source' => $core['executionModeSource']],
+            'timeBudget'    => ['value' => $this->traceTimeBudget($timeBudget), 'source' => $timeBudgetSource],
+            'memoryBudget'  => ['value' => $this->traceMemoryBudget($memoryBudget), 'source' => $memoryBudgetSource],
+            'allocator'     => ['value' => $allocator,     'source' => $allocatorSource],
+            'stats'         => ['value' => $stats,         'source' => $statsSource],
+        ];
+
+        if ($core['executionMode'] === ExecutionMode::FAST_BRANCH || $core['mainBranch'] !== null) {
+            $trace['mainBranch'] = ['value' => $core['mainBranch'], 'source' => $core['mainBranchSource']];
+        }
+
+        return new EffectiveOptionsResolution($merged, $core['executionMode'], $trace);
+    }
+
+    /**
+     * Run the cascade for the original v3.0+ options (fail-fast, processes,
+     * executionMode, mainBranch). Returns a struct to keep `resolve()` short.
+     *
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Aggregates the original cascade inputs.
+     * @return array{
+     *   failFast: bool, failFastSource: string,
+     *   processes: int, processesSource: string,
+     *   executionMode: string, executionModeSource: string,
+     *   mainBranch: ?string, mainBranchSource: string
+     * }
+     */
+    private function cascadeCoreOptions(
+        OptionsConfiguration $globalOptions,
+        ?OptionsConfiguration $flowOptions,
+        string $flowSourceLabel,
+        ?string $flowExecution,
+        ?bool $cliFailFast,
+        ?int $cliProcesses,
+        ?string $invocationMode
+    ): array {
         [$failFast, $failFastSource] = $this->cascadeBool(
             'fail-fast',
             $cliFailFast,
@@ -137,36 +260,16 @@ final class EffectiveOptionsResolver
             fn(OptionsConfiguration $opts) => $opts->getMainBranch()
         );
 
-        [$timeBudget, $timeBudgetSource] = $this->cascadeTimeBudget(
-            $cliWarnAfter,
-            $cliFailAfter,
-            $cliNoTimeBudget,
-            $flowOptions,
-            $flowSourceLabel,
-            $globalOptions
-        );
-
-        $merged = $this->mergeOptionsBlock(
-            $globalOptions,
-            $flowOptions,
-            $failFast,
-            $processes,
-            $mainBranch,
-            $timeBudget
-        );
-
-        $trace = [
-            'processes'     => ['value' => $processes,     'source' => $processesSource],
-            'failFast'      => ['value' => $failFast,      'source' => $failFastSource],
-            'executionMode' => ['value' => $executionMode, 'source' => $executionModeSource],
-            'timeBudget'    => ['value' => $this->traceTimeBudget($timeBudget), 'source' => $timeBudgetSource],
+        return [
+            'failFast' => $failFast,
+            'failFastSource' => $failFastSource,
+            'processes' => $processes,
+            'processesSource' => $processesSource,
+            'executionMode' => $executionMode,
+            'executionModeSource' => $executionModeSource,
+            'mainBranch' => $mainBranch,
+            'mainBranchSource' => $mainBranchSource,
         ];
-
-        if ($executionMode === ExecutionMode::FAST_BRANCH || $mainBranch !== null) {
-            $trace['mainBranch'] = ['value' => $mainBranch, 'source' => $mainBranchSource];
-        }
-
-        return new EffectiveOptionsResolution($merged, $executionMode, $trace);
     }
 
     /**
@@ -263,6 +366,112 @@ final class EffectiveOptionsResolver
     }
 
     /**
+     * Cascade for the memory-budget block. Mirrors cascadeTimeBudget:
+     *  - `--no-memory-budget` gates everything.
+     *  - `--memory-warn-above`/`--memory-fail-above` partial overrides keep the
+     *    config layer below for the non-overridden value.
+     *  - Otherwise: flow.options > flows.options > default(null).
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoMemoryBudget` is a CLI gate, not a polymorphism break.
+     * @return array{0: ?MemoryBudgetConfiguration, 1: string}
+     */
+    private function cascadeMemoryBudget(
+        ?int $cliWarnAbove,
+        ?int $cliFailAbove,
+        bool $cliNoMemoryBudget,
+        ?OptionsConfiguration $flowOptions,
+        string $flowSourceLabel,
+        OptionsConfiguration $globalOptions
+    ): array {
+        if ($cliNoMemoryBudget) {
+            return [null, self::SOURCE_CLI];
+        }
+
+        [$configBudget, $configSource] = $this->resolveConfigMemoryBudget(
+            $flowOptions,
+            $flowSourceLabel,
+            $globalOptions
+        );
+
+        if ($cliWarnAbove === null && $cliFailAbove === null) {
+            return [$configBudget, $configSource];
+        }
+
+        return $this->mergeCliMemoryBudget($cliWarnAbove, $cliFailAbove, $configBudget);
+    }
+
+    /**
+     * @return array{0: ?MemoryBudgetConfiguration, 1: string}
+     */
+    private function resolveConfigMemoryBudget(
+        ?OptionsConfiguration $flowOptions,
+        string $flowSourceLabel,
+        OptionsConfiguration $globalOptions
+    ): array {
+        if ($flowOptions !== null && $flowOptions->hasKey(MemoryBudgetConfiguration::KEY)) {
+            return [$flowOptions->getMemoryBudget(), $flowSourceLabel];
+        }
+        if ($globalOptions->hasKey(MemoryBudgetConfiguration::KEY)) {
+            return [$globalOptions->getMemoryBudget(), self::SOURCE_FLOWS_OPTIONS];
+        }
+        return [null, self::SOURCE_DEFAULT];
+    }
+
+    /**
+     * @return array{0: ?MemoryBudgetConfiguration, 1: string}
+     */
+    private function mergeCliMemoryBudget(
+        ?int $cliWarnAbove,
+        ?int $cliFailAbove,
+        ?MemoryBudgetConfiguration $configBudget
+    ): array {
+        $warnAbove = $cliWarnAbove !== null
+            ? $cliWarnAbove
+            : ($configBudget !== null ? $configBudget->getWarnAbove() : null);
+        $failAbove = $cliFailAbove !== null
+            ? $cliFailAbove
+            : ($configBudget !== null ? $configBudget->getFailAbove() : null);
+
+        if ($warnAbove === null && $failAbove === null) {
+            return [null, self::SOURCE_CLI];
+        }
+
+        return [new MemoryBudgetConfiguration($warnAbove, $failAbove), self::SOURCE_CLI];
+    }
+
+    /**
+     * @return array{warnAbove: ?int, failAbove: ?int}|null
+     */
+    private function traceMemoryBudget(?MemoryBudgetConfiguration $budget): ?array
+    {
+        if ($budget === null) {
+            return null;
+        }
+        return ['warnAbove' => $budget->getWarnAbove(), 'failAbove' => $budget->getFailAbove()];
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function cascadeAllocator(
+        ?string $cliAllocator,
+        ?OptionsConfiguration $flowOptions,
+        string $flowSourceLabel,
+        OptionsConfiguration $globalOptions
+    ): array {
+        if ($cliAllocator !== null) {
+            return [$cliAllocator, self::SOURCE_CLI];
+        }
+        if ($flowOptions !== null && $flowOptions->hasKey('allocator')) {
+            return [$flowOptions->getAllocator(), $flowSourceLabel];
+        }
+        if ($globalOptions->hasKey('allocator')) {
+            return [$globalOptions->getAllocator(), self::SOURCE_FLOWS_OPTIONS];
+        }
+        return [AllocatorStrategy::FIFO, self::SOURCE_DEFAULT];
+    }
+
+    /**
      * @return array{0: bool, 1: string}
      */
     private function cascadeBool(
@@ -350,6 +559,7 @@ final class EffectiveOptionsResolver
      * (executable-prefix, fast-branch-fallback, reports).
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade output explicitly.
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Aggregates per-key cascade results.
      */
     private function mergeOptionsBlock(
         OptionsConfiguration $globalOptions,
@@ -357,7 +567,10 @@ final class EffectiveOptionsResolver
         bool $failFast,
         int $processes,
         ?string $mainBranch,
-        ?TimeBudgetConfiguration $timeBudget = null
+        ?TimeBudgetConfiguration $timeBudget = null,
+        ?MemoryBudgetConfiguration $memoryBudget = null,
+        string $allocator = AllocatorStrategy::FIFO,
+        bool $stats = false
     ): OptionsConfiguration {
         $base = $flowOptions ?? $globalOptions;
 
@@ -368,7 +581,10 @@ final class EffectiveOptionsResolver
             $base->getFastBranchFallback(),
             $base->getExecutablePrefix(),
             $base->getReports(),
-            $timeBudget
+            $timeBudget,
+            $memoryBudget,
+            $allocator,
+            $stats
         );
     }
 }

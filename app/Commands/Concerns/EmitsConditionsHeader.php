@@ -64,6 +64,9 @@ trait EmitsConditionsHeader
             $this->formatTraceSegment('fail-fast', $trace['failFast'] ?? null),
             "mode=$modeValue ($modeSource)",
             $this->formatTimeBudgetSegment($trace['timeBudget'] ?? null),
+            $this->formatMemoryBudgetSegment($trace['memoryBudget'] ?? null),
+            $this->formatTraceSegment('allocator', $trace['allocator'] ?? null),
+            $this->formatTraceSegment('stats', $trace['stats'] ?? null),
         ];
 
         $lines = ['Settings: ' . implode(' | ', $segments)];
@@ -113,6 +116,46 @@ trait EmitsConditionsHeader
         }
 
         return 'time-budget=' . $this->stringifyTraceValue($value) . " ($source)";
+    }
+
+    /**
+     * Render the memory-budget cell:
+     *  - missing/default → `memory-budget=none (default)`
+     *  - cli disabled → `memory-budget=disabled (cli)`
+     *  - configured → `memory-budget=warn-above=WMB,fail-above=FMB (origin)`
+     *
+     * @param array{value: mixed, source: string}|null $entry
+     */
+    private function formatMemoryBudgetSegment(?array $entry): string
+    {
+        if ($entry === null) {
+            return 'memory-budget=none (default)';
+        }
+
+        $source = (string) ($entry['source'] ?? 'default');
+        $value = $entry['value'] ?? null;
+
+        if ($value === null) {
+            return $source === 'cli'
+                ? 'memory-budget=disabled (cli)'
+                : "memory-budget=none ($source)";
+        }
+
+        if (is_array($value)) {
+            $parts = [];
+            $warn = $value['warnAbove'] ?? null;
+            $fail = $value['failAbove'] ?? null;
+            if ($warn !== null) {
+                $parts[] = "warn-above={$warn}MB";
+            }
+            if ($fail !== null) {
+                $parts[] = "fail-above={$fail}MB";
+            }
+            $rendered = $parts === [] ? 'none' : implode(',', $parts);
+            return "memory-budget=$rendered ($source)";
+        }
+
+        return 'memory-budget=' . $this->stringifyTraceValue($value) . " ($source)";
     }
 
     /**
