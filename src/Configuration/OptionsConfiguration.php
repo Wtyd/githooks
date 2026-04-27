@@ -6,6 +6,10 @@ namespace Wtyd\GitHooks\Configuration;
 
 use Wtyd\GitHooks\Output\OutputFormats;
 
+/**
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Value object that validates each option key
+ *   independently — the breadth of options is intrinsic to the configuration surface.
+ */
 class OptionsConfiguration
 {
     /**
@@ -29,6 +33,12 @@ class OptionsConfiguration
 
     private ?TimeBudgetConfiguration $timeBudget;
 
+    private ?MemoryBudgetConfiguration $memoryBudget;
+
+    private string $allocator;
+
+    private bool $stats;
+
     /** @var array<string, true> Keys explicitly declared in raw config (used by EffectiveOptionsResolver) */
     private array $declaredKeys = [];
 
@@ -44,7 +54,10 @@ class OptionsConfiguration
         string $fastBranchFallback = 'full',
         string $executablePrefix = '',
         array $reports = [],
-        ?TimeBudgetConfiguration $timeBudget = null
+        ?TimeBudgetConfiguration $timeBudget = null,
+        ?MemoryBudgetConfiguration $memoryBudget = null,
+        string $allocator = AllocatorStrategy::FIFO,
+        bool $stats = false
     ) {
         $this->failFast = $failFast;
         $this->processes = $processes;
@@ -53,6 +66,9 @@ class OptionsConfiguration
         $this->executablePrefix = $executablePrefix;
         $this->reports = $reports;
         $this->timeBudget = $timeBudget;
+        $this->memoryBudget = $memoryBudget;
+        $this->allocator = $allocator;
+        $this->stats = $stats;
     }
 
     /**
@@ -118,20 +134,94 @@ class OptionsConfiguration
             $timeBudget = TimeBudgetConfiguration::fromArray($raw[TimeBudgetConfiguration::KEY], $result);
         }
 
-        $knownKeys = ['fail-fast', 'processes', 'main-branch', 'fast-branch-fallback', 'executable-prefix', 'reports', TimeBudgetConfiguration::KEY];
+        $memoryBudget = self::parseMemoryBudget($raw, $result);
+        $allocator = self::parseAllocator($raw, $result);
+        $stats = self::parseStats($raw, $result);
+
+        $knownKeys = [
+            'fail-fast',
+            'processes',
+            'main-branch',
+            'fast-branch-fallback',
+            'executable-prefix',
+            'reports',
+            TimeBudgetConfiguration::KEY,
+            MemoryBudgetConfiguration::KEY,
+            'allocator',
+            'stats',
+        ];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Unknown option '$key'. It will be ignored.");
             }
         }
 
-        $instance = new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix, $reports, $timeBudget);
+        $instance = new self(
+            $failFast,
+            $processes,
+            $mainBranch,
+            $fastBranchFallback,
+            $executablePrefix,
+            $reports,
+            $timeBudget,
+            $memoryBudget,
+            $allocator,
+            $stats
+        );
         foreach ($knownKeys as $key) {
             if (array_key_exists($key, $raw)) {
                 $instance->declaredKeys[$key] = true;
             }
         }
         return $instance;
+    }
+
+    /**
+     * @param array<string, mixed> $raw
+     */
+    private static function parseMemoryBudget(array $raw, ValidationResult $result): ?MemoryBudgetConfiguration
+    {
+        if (!array_key_exists(MemoryBudgetConfiguration::KEY, $raw)) {
+            return null;
+        }
+        $value = $raw[MemoryBudgetConfiguration::KEY];
+        if ($value === null) {
+            return null;
+        }
+        return MemoryBudgetConfiguration::fromArray($value, $result);
+    }
+
+    /**
+     * @param array<string, mixed> $raw
+     */
+    private static function parseAllocator(array $raw, ValidationResult $result): string
+    {
+        if (!array_key_exists('allocator', $raw)) {
+            return AllocatorStrategy::FIFO;
+        }
+        $value = $raw['allocator'];
+        if (!is_string($value) || !AllocatorStrategy::isValid($value)) {
+            $valid = implode(', ', AllocatorStrategy::ALL);
+            $shown = is_string($value) ? $value : (string) $value;
+            $result->addError("'allocator' must be one of: $valid (got '$shown').");
+            return AllocatorStrategy::FIFO;
+        }
+        return $value;
+    }
+
+    /**
+     * @param array<string, mixed> $raw
+     */
+    private static function parseStats(array $raw, ValidationResult $result): bool
+    {
+        if (!array_key_exists('stats', $raw)) {
+            return false;
+        }
+        if (!is_bool($raw['stats'])) {
+            $result->addError("'stats' must be a boolean value.");
+            return false;
+        }
+        return $raw['stats'];
     }
 
     /**
@@ -208,6 +298,21 @@ class OptionsConfiguration
         return $this->timeBudget;
     }
 
+    public function getMemoryBudget(): ?MemoryBudgetConfiguration
+    {
+        return $this->memoryBudget;
+    }
+
+    public function getAllocator(): string
+    {
+        return $this->allocator;
+    }
+
+    public function isStats(): bool
+    {
+        return $this->stats;
+    }
+
     public static function defaults(): self
     {
         return new self();
@@ -226,13 +331,18 @@ class OptionsConfiguration
      * Return a new instance with CLI overrides applied.
      * Only non-null values override the current config.
      *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) $disableTimeBudget is a flag, not a polymorphism break
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) $disable* are CLI gates, not polymorphism breaks
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Each CLI override matches one declarative option
      */
     public function withOverrides(
         ?bool $failFast,
         ?int $processes,
         ?TimeBudgetConfiguration $timeBudget = null,
-        bool $disableTimeBudget = false
+        bool $disableTimeBudget = false,
+        ?MemoryBudgetConfiguration $memoryBudget = null,
+        bool $disableMemoryBudget = false,
+        ?string $allocator = null,
+        ?bool $stats = null
     ): self {
         return new self(
             $failFast !== null ? $failFast : $this->failFast,
@@ -241,7 +351,10 @@ class OptionsConfiguration
             $this->fastBranchFallback,
             $this->executablePrefix,
             $this->reports,
-            $disableTimeBudget ? null : ($timeBudget ?? $this->timeBudget)
+            $disableTimeBudget ? null : ($timeBudget ?? $this->timeBudget),
+            $disableMemoryBudget ? null : ($memoryBudget ?? $this->memoryBudget),
+            $allocator !== null ? $allocator : $this->allocator,
+            $stats !== null ? $stats : $this->stats
         );
     }
 }

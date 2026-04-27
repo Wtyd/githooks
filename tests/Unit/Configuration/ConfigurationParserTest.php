@@ -1006,4 +1006,130 @@ PHP;
         $this->assertSame(['src'], $child->getPaths(), 'paths inherited from parent');
         $this->assertSame('9', $child->getConfig()['level'] ?? null, 'level overridden by child');
     }
+
+    // ========================================================================
+    // memory cross-validation (v3.3 — gh-48)
+    // ========================================================================
+
+    /** @test */
+    public function it_reports_error_when_job_memory_exceeds_global_memory_budget(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => [
+            'memory-budget' => ['warn-above' => 3000, 'fail-above' => 3500],
+        ],
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'memory' => 5000,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getValidation()->getErrors());
+        $this->assertStringContainsString('phpstan_src', $errorText);
+        $this->assertStringContainsString('memory', $errorText);
+        $this->assertStringContainsString('5000', $errorText);
+        $this->assertStringContainsString('3000', $errorText);
+        $this->assertStringContainsString('could never run', $errorText);
+    }
+
+    /** @test */
+    public function it_reports_error_when_job_memory_exceeds_per_flow_memory_budget(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => [
+            'options' => [
+                'memory-budget' => ['warn-above' => 1000],
+            ],
+            'jobs' => ['phpstan_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'memory' => 2000,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getValidation()->getErrors());
+        $this->assertStringContainsString('phpstan_src', $errorText);
+        $this->assertStringContainsString("flow 'qa'", $errorText);
+        $this->assertStringContainsString('could never run', $errorText);
+    }
+
+    /** @test */
+    public function it_does_not_report_error_when_job_memory_fits_budget(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => [
+            'memory-budget' => ['warn-above' => 3000, 'fail-above' => 3500],
+        ],
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'memory' => 2000,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+    }
+
+    /** @test */
+    public function it_does_not_report_error_when_job_has_memory_but_no_budget_declared(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'memory' => 2000,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getValidation()->getWarnings());
+    }
 }

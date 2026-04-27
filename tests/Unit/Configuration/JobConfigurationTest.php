@@ -823,4 +823,136 @@ class JobConfigurationTest extends TestCase
         $this->assertFalse($result->hasErrors());
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
     }
+
+    // ========================================================================
+    // memory threshold per-job (v3.3 — gh-48)
+    // ========================================================================
+
+    /** @test */
+    public function it_accepts_short_form_memory_as_positive_integer(): void
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_job', [
+            'type'   => 'phpstan',
+            'memory' => 2000,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($job);
+        $threshold = $job->getMemoryThreshold();
+        $this->assertNotNull($threshold);
+        $this->assertSame(2000, $threshold->getWarnAbove());
+        $this->assertTrue($threshold->isShortForm());
+        $this->assertSame(2000, $job->getMemoryReserve());
+        $this->assertTrue($job->hasMemoryThreshold());
+    }
+
+    /** @test */
+    public function it_accepts_extended_form_memory_with_warn_and_fail_above(): void
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpunit_job', [
+            'type'   => 'phpunit',
+            'memory' => ['warn-above' => 1500, 'fail-above' => 2000],
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $threshold = $job->getMemoryThreshold();
+        $this->assertNotNull($threshold);
+        $this->assertSame(1500, $threshold->getWarnAbove());
+        $this->assertSame(2000, $threshold->getFailAbove());
+        $this->assertFalse($threshold->isShortForm());
+        $this->assertNull($job->getMemoryReserve());
+    }
+
+    /** @test */
+    public function it_returns_null_memory_threshold_when_not_declared(): void
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_job', [
+            'type' => 'phpstan',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertNull($job->getMemoryThreshold());
+        $this->assertNull($job->getMemoryReserve());
+        $this->assertFalse($job->hasMemoryThreshold());
+    }
+
+    /** @test */
+    public function it_rejects_zero_memory_short_form(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'   => 'phpstan',
+            'memory' => 0,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('memory', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_rejects_negative_memory_short_form(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'   => 'phpstan',
+            'memory' => -100,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function it_rejects_warn_above_greater_or_equal_to_fail_above_in_memory(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpunit_job', [
+            'type'   => 'phpunit',
+            'memory' => ['warn-above' => 2000, 'fail-above' => 1500],
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString('phpunit_job', $errorText);
+        $this->assertStringContainsString('warn-above', $errorText);
+    }
+
+    /** @test */
+    public function it_rejects_string_memory_value(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'   => 'phpstan',
+            'memory' => '2000',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function memory_key_is_known_for_typed_jobs(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'   => 'phpstan',
+            'memory' => 2000,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
+    }
+
+    /** @test */
+    public function memory_key_is_known_for_custom_jobs(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('lint_js', [
+            'type'   => 'custom',
+            'script' => 'npm run lint',
+            'memory' => 512,
+        ], $this->registry, $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
+    }
 }

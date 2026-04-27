@@ -113,6 +113,11 @@ class ConfigurationParser
             $hooks = HookConfiguration::fromArray($hooksRaw, $availableFlowNames, $declaredJobNames, $result);
         }
 
+        // 4b. Cross-validation: a job's 'memory' reservation cannot exceed any
+        // memory-budget.warn-above (or fail-above when warn is absent) it would
+        // be admitted against — global or per-flow. Such a job could never run.
+        $this->validateMemoryReserves($jobs, $globalOptions, $flows, $result);
+
         // 5. Warn about unknown top-level keys
         $knownKeys = ['hooks', 'flows', 'jobs'];
         foreach (array_keys($raw) as $key) {
@@ -129,6 +134,78 @@ class ConfigurationParser
             $hooks,
             $result
         );
+    }
+
+    /**
+     * Cross-validation of `memory` reservations against `memory-budget` ceilings.
+     * For each job that declares a short-form `memory: <int>`, fail if it
+     * exceeds the global memory-budget reference, or any per-flow memory-budget
+     * reference of a flow that includes the job.
+     *
+     * @param array<string, JobConfiguration> $jobs
+     * @param array<string, FlowConfiguration> $flows
+     */
+    private function validateMemoryReserves(
+        array $jobs,
+        OptionsConfiguration $globalOptions,
+        array $flows,
+        ValidationResult $result
+    ): void {
+        foreach ($jobs as $name => $job) {
+            $reserve = $job->getMemoryReserve();
+            if ($reserve === null) {
+                continue;
+            }
+
+            $this->validateReserveAgainstGlobalBudget($name, $reserve, $globalOptions, $result);
+            $this->validateReserveAgainstFlowBudgets($name, $reserve, $flows, $result);
+        }
+    }
+
+    private function validateReserveAgainstGlobalBudget(
+        string $jobName,
+        int $reserve,
+        OptionsConfiguration $globalOptions,
+        ValidationResult $result
+    ): void {
+        $globalBudget = $globalOptions->getMemoryBudget();
+        if ($globalBudget === null) {
+            return;
+        }
+        $ref = $globalBudget->getBinPackingReference();
+        if ($ref !== null && $reserve > $ref) {
+            $result->addError(
+                "Job '$jobName': 'memory' ($reserve) exceeds memory-budget ($ref) — could never run."
+            );
+        }
+    }
+
+    /**
+     * @param array<string, FlowConfiguration> $flows
+     */
+    private function validateReserveAgainstFlowBudgets(
+        string $jobName,
+        int $reserve,
+        array $flows,
+        ValidationResult $result
+    ): void {
+        foreach ($flows as $flowName => $flow) {
+            if (!in_array($jobName, $flow->getJobs(), true)) {
+                continue;
+            }
+            $flowOptions = $flow->getOptions();
+            $flowBudget = $flowOptions !== null ? $flowOptions->getMemoryBudget() : null;
+            if ($flowBudget === null) {
+                continue;
+            }
+            $ref = $flowBudget->getBinPackingReference();
+            if ($ref !== null && $reserve > $ref) {
+                $result->addError(
+                    "Job '$jobName': 'memory' ($reserve) exceeds memory-budget ($ref) "
+                    . "declared in flow '$flowName' — could never run."
+                );
+            }
+        }
     }
 
     /**

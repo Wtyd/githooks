@@ -96,8 +96,46 @@ class JobConfiguration
 
         self::validateCoresKey($name, $type, $config, $result);
         self::validateThresholdKeys($name, $config, $result);
+        self::validateMemoryKey($name, $config, $result);
 
         return new self($name, $type, $config);
+    }
+
+    /**
+     * Validate the optional `memory` key in two equivalent forms:
+     *
+     *  - Short form (`memory: 2000`): positive integer (MB). Acts as warn-above
+     *    threshold and, when a `memory-budget` exists at flow level, also as
+     *    scheduler reservation.
+     *  - Extended form (`memory: { warn-above: ..., fail-above: ... }`):
+     *    explicit thresholds, no reservation.
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateMemoryKey(string $name, array $config, ValidationResult $result): void
+    {
+        if (!array_key_exists(MemoryThreshold::KEY, $config)) {
+            return;
+        }
+
+        $value = $config[MemoryThreshold::KEY];
+
+        if (is_int($value)) {
+            if ($value < 1) {
+                $result->addError("Job '$name': 'memory' must be a positive integer (MB).");
+            }
+            return;
+        }
+
+        if (is_array($value)) {
+            MemoryThreshold::fromArray($value, $result, $name);
+            return;
+        }
+
+        $result->addError(
+            "Job '$name': 'memory' must be either a positive integer (MB) or an object "
+            . "with 'warn-above'/'fail-above'."
+        );
     }
 
     /**
@@ -204,7 +242,7 @@ class JobConfiguration
 
         $knownKeys = array_merge(
             array_keys($argumentMap),
-            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after']
+            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory']
         );
 
         foreach ($config as $key => $value) {
@@ -285,7 +323,7 @@ class JobConfiguration
      */
     private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
     {
-        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after'];
+        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {
@@ -362,5 +400,45 @@ class JobConfiguration
     public function hasThreshold(): bool
     {
         return $this->getWarnAfter() !== null || $this->getFailAfter() !== null;
+    }
+
+    /**
+     * Resolve the per-job memory threshold from the raw config. Returns null
+     * when 'memory' is absent or the value cannot be parsed as a valid
+     * threshold. Errors are NOT collected here — they are emitted at parse
+     * time by validateMemoryKey().
+     */
+    public function getMemoryThreshold(): ?MemoryThreshold
+    {
+        if (!array_key_exists(MemoryThreshold::KEY, $this->config)) {
+            return null;
+        }
+
+        $value = $this->config[MemoryThreshold::KEY];
+
+        if (is_int($value) && $value > 0) {
+            return MemoryThreshold::fromInt($value);
+        }
+
+        if (is_array($value)) {
+            return MemoryThreshold::fromArray($value, new ValidationResult(), $this->name);
+        }
+
+        return null;
+    }
+
+    /**
+     * Scheduler reservation in MB. Equals the integer value when 'memory' is
+     * declared in short form; null when declared in extended form or absent.
+     */
+    public function getMemoryReserve(): ?int
+    {
+        $threshold = $this->getMemoryThreshold();
+        return $threshold !== null ? $threshold->getReserve() : null;
+    }
+
+    public function hasMemoryThreshold(): bool
+    {
+        return $this->getMemoryThreshold() !== null;
     }
 }

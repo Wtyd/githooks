@@ -115,6 +115,21 @@ class CheckConfigurationFileCommand extends Command
                 $optionRows[] = ["reports.$format", $path];
             }
         }
+        $memoryBudget = $options->getMemoryBudget();
+        if ($memoryBudget !== null) {
+            if ($memoryBudget->getWarnAbove() !== null) {
+                $optionRows[] = ['memory-budget.warn-above', $memoryBudget->getWarnAbove() . ' MB'];
+            }
+            if ($memoryBudget->getFailAbove() !== null) {
+                $optionRows[] = ['memory-budget.fail-above', $memoryBudget->getFailAbove() . ' MB'];
+            }
+        }
+        if ($options->hasKey('allocator')) {
+            $optionRows[] = ['allocator', $options->getAllocator()];
+        }
+        if ($options->hasKey('stats')) {
+            $optionRows[] = ['stats', $options->isStats() ? 'true' : 'false'];
+        }
         $this->table(['Option', 'Value'], $optionRows);
 
         // Validate reports paths (filesystem-level — structural errors are caught

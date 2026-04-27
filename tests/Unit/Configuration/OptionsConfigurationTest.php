@@ -518,4 +518,155 @@ class OptionsConfigurationTest extends TestCase
 
         $this->assertNull($result->getTimeBudget());
     }
+
+    // ========================================================================
+    // memory-budget, allocator and stats options (v3.3 — gh-48)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_memory_budget_with_warn_and_fail_above(): void
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'memory-budget' => ['warn-above' => 3500, 'fail-above' => 3900],
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $budget = $options->getMemoryBudget();
+        $this->assertNotNull($budget);
+        $this->assertSame(3500, $budget->getWarnAbove());
+        $this->assertSame(3900, $budget->getFailAbove());
+    }
+
+    /** @test */
+    public function it_defaults_memory_budget_to_null(): void
+    {
+        $options = new OptionsConfiguration();
+        $this->assertNull($options->getMemoryBudget());
+    }
+
+    /** @test */
+    public function it_parses_allocator_fifo_default(): void
+    {
+        $options = new OptionsConfiguration();
+        $this->assertSame('fifo', $options->getAllocator());
+    }
+
+    /** @test */
+    public function it_parses_allocator_greedy(): void
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['allocator' => 'greedy'], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame('greedy', $options->getAllocator());
+    }
+
+    /** @test */
+    public function it_reports_error_for_invalid_allocator(): void
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray(['allocator' => 'random'], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('allocator', $result->getErrors()[0]);
+        $this->assertStringContainsString('random', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function it_parses_stats_true(): void
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['stats' => true], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertTrue($options->isStats());
+    }
+
+    /** @test */
+    public function it_defaults_stats_to_false(): void
+    {
+        $options = new OptionsConfiguration();
+        $this->assertFalse($options->isStats());
+    }
+
+    /** @test */
+    public function it_reports_error_for_non_boolean_stats(): void
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray(['stats' => 'yes'], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString('stats', $result->getErrors()[0]);
+    }
+
+    /** @test */
+    public function memory_allocator_and_stats_are_not_unknown_keys(): void
+    {
+        $result = new ValidationResult();
+        OptionsConfiguration::fromArray([
+            'memory-budget' => ['warn-above' => 1000],
+            'allocator' => 'fifo',
+            'stats' => false,
+        ], $result);
+
+        $this->assertEmpty($result->getWarnings());
+    }
+
+    /** @test */
+    public function with_overrides_applies_memory_budget(): void
+    {
+        $original = new OptionsConfiguration();
+        $newBudget = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(2000, 3000);
+
+        $overridden = $original->withOverrides(null, null, null, false, $newBudget);
+
+        $this->assertNotNull($overridden->getMemoryBudget());
+        $this->assertSame(2000, $overridden->getMemoryBudget()->getWarnAbove());
+    }
+
+    /** @test */
+    public function with_overrides_disable_memory_budget_clears_it(): void
+    {
+        $original = new OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            [],
+            null,
+            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(2000, 3000)
+        );
+
+        $overridden = $original->withOverrides(null, null, null, false, null, true);
+
+        $this->assertNull($overridden->getMemoryBudget());
+    }
+
+    /** @test */
+    public function with_overrides_applies_allocator_and_stats(): void
+    {
+        $original = new OptionsConfiguration();
+
+        $overridden = $original->withOverrides(null, null, null, false, null, false, 'greedy', true);
+
+        $this->assertSame('greedy', $overridden->getAllocator());
+        $this->assertTrue($overridden->isStats());
+    }
+
+    /** @test */
+    public function declared_keys_track_memory_budget_allocator_and_stats(): void
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray([
+            'memory-budget' => ['warn-above' => 1000],
+            'allocator' => 'greedy',
+            'stats' => true,
+        ], $result);
+
+        $this->assertTrue($options->hasKey('memory-budget'));
+        $this->assertTrue($options->hasKey('allocator'));
+        $this->assertTrue($options->hasKey('stats'));
+    }
 }
