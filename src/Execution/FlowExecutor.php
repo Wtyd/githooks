@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Execution;
 
 use Symfony\Component\Process\Process;
+use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Output\DashboardOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
@@ -24,6 +25,8 @@ class FlowExecutor
     private ?GitStagerInterface $gitStager;
 
     private bool $structuredFormat = false;
+
+    private bool $thresholdsDisabled = false;
 
     private int $peakEstimatedThreads = 0;
 
@@ -51,6 +54,16 @@ class FlowExecutor
     public function setStructuredFormat(bool $structured): void
     {
         $this->structuredFormat = $structured;
+    }
+
+    /**
+     * Disable per-job and flow time-budget evaluation for this execution.
+     * The duration is still measured and emitted; only the WARN/FAIL state
+     * is suppressed. Used by `--no-time-budget` (CLI override).
+     */
+    public function setThresholdsDisabled(bool $disabled): void
+    {
+        $this->thresholdsDisabled = $disabled;
     }
 
     /**
@@ -120,6 +133,8 @@ class FlowExecutor
         $totalTime = number_format($elapsed, 2) . 's';
         $budget = $plan->getOptions()->getProcesses();
 
+        $timeBudgetState = $this->buildTimeBudgetState($plan->getOptions()->getTimeBudget(), $results);
+
         return new FlowResult(
             $plan->getFlowName(),
             $results,
@@ -129,7 +144,8 @@ class FlowExecutor
             $plan->getExecutionMode(),
             $inputFiles,
             $plan->getExpandedFlows(),
-            $plan->getEffectiveOptions()
+            $plan->getEffectiveOptions(),
+            $timeBudgetState
         );
     }
 
@@ -450,6 +466,15 @@ class FlowExecutor
             $this->gitStager->stageTrackedFiles();
         }
 
+        [$thresholdState, $thresholdReason, $warnAfter, $failAfter] = $this->evaluateThreshold($job, $elapsed);
+
+        // Per-job FAIL by threshold flips OK→KO ONLY when the tool itself succeeded;
+        // if the tool already failed (KO real), the threshold is informational and
+        // does not alter success/exitCode (matrix §4.4.1, RAT-006).
+        if ($success && $thresholdState === JobResult::THRESHOLD_FAILED) {
+            $success = false;
+        }
+
         $displayName = $job->getDisplayName();
 
         if ($success) {
@@ -473,8 +498,76 @@ class FlowExecutor
             false,
             null,
             $stdout,
-            $this->buildPerJobInputFiles($job)
+            $this->buildPerJobInputFiles($job),
+            $elapsed,
+            $thresholdState,
+            $thresholdReason,
+            $warnAfter,
+            $failAfter
         );
+    }
+
+    /**
+     * Compare the elapsed duration against the per-job warn-after/fail-after
+     * thresholds and return the resulting state.
+     *
+     * Returns [state, reason, warnAfter, failAfter]. The configured values are
+     * surfaced regardless of the resulting state so the JSON formatter can emit
+     * the threshold object even when neither warn nor fail crossed.
+     *
+     * @return array{0: int, 1: ?string, 2: ?int, 3: ?int}
+     */
+    private function evaluateThreshold(JobAbstract $job, float $elapsed): array
+    {
+        if ($this->thresholdsDisabled) {
+            return [JobResult::THRESHOLD_NONE, null, null, null];
+        }
+
+        $warnAfter = $job->getWarnAfter();
+        $failAfter = $job->getFailAfter();
+
+        if ($warnAfter === null && $failAfter === null) {
+            return [JobResult::THRESHOLD_NONE, null, null, null];
+        }
+
+        if ($failAfter !== null && $elapsed >= $failAfter) {
+            return [JobResult::THRESHOLD_FAILED, JobResult::THRESHOLD_REASON_FAIL, $warnAfter, $failAfter];
+        }
+
+        if ($warnAfter !== null && $elapsed >= $warnAfter) {
+            return [JobResult::THRESHOLD_WARNED, JobResult::THRESHOLD_REASON_WARN, $warnAfter, $failAfter];
+        }
+
+        return [JobResult::THRESHOLD_NONE, null, $warnAfter, $failAfter];
+    }
+
+    /**
+     * Build the post-hoc TimeBudgetState from the configured time-budget and
+     * the executed-jobs duration sum. Returns null when there is no time-budget
+     * configured or thresholds have been disabled for this run.
+     *
+     * @param JobResult[] $results
+     */
+    private function buildTimeBudgetState(?TimeBudgetConfiguration $budget, array $results): ?TimeBudgetState
+    {
+        if ($this->thresholdsDisabled || $budget === null || $budget->isEmpty()) {
+            return null;
+        }
+
+        $sum = 0.0;
+        foreach ($results as $result) {
+            if ($result->isSkipped()) {
+                continue;
+            }
+            $sum += $result->getDurationSeconds();
+        }
+
+        $warnAfter = $budget->getWarnAfter();
+        $failAfter = $budget->getFailAfter();
+        $failed = $failAfter !== null && $sum >= $failAfter;
+        $warned = !$failed && $warnAfter !== null && $sum >= $warnAfter;
+
+        return new TimeBudgetState($warnAfter, $failAfter, $sum, $warned, $failed);
     }
 
     /**
