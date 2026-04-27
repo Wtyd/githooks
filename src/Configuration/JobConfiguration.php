@@ -95,8 +95,56 @@ class JobConfiguration
         }
 
         self::validateCoresKey($name, $type, $config, $result);
+        self::validateThresholdKeys($name, $config, $result);
 
         return new self($name, $type, $config);
+    }
+
+    /**
+     * Validate the optional `warn-after` / `fail-after` per-job thresholds.
+     * Both must be positive integers (seconds); when both are declared,
+     * `warn-after` must be strictly less than `fail-after`.
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateThresholdKeys(string $name, array $config, ValidationResult $result): void
+    {
+        $warnAfter = self::extractPositiveInt($name, 'warn-after', $config, $result);
+        $failAfter = self::extractPositiveInt($name, 'fail-after', $config, $result);
+
+        if ($warnAfter !== null && $failAfter !== null && $warnAfter >= $failAfter) {
+            $result->addError(
+                "Job '$name': 'warn-after' ($warnAfter) must be less than 'fail-after' ($failAfter)."
+            );
+        }
+
+        if (array_key_exists('time-budget', $config)) {
+            $result->addWarning(
+                "Job '$name': key 'time-budget' is not valid in jobs; use 'warn-after'/'fail-after' instead."
+            );
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private static function extractPositiveInt(
+        string $jobName,
+        string $key,
+        array $config,
+        ValidationResult $result
+    ): ?int {
+        if (!array_key_exists($key, $config)) {
+            return null;
+        }
+
+        $value = $config[$key];
+        if (!is_int($value) || $value < 1) {
+            $result->addError("Job '$jobName': '$key' must be a positive integer (seconds).");
+            return null;
+        }
+
+        return $value;
     }
 
     /**
@@ -156,7 +204,7 @@ class JobConfiguration
 
         $knownKeys = array_merge(
             array_keys($argumentMap),
-            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores']
+            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after']
         );
 
         foreach ($config as $key => $value) {
@@ -237,7 +285,7 @@ class JobConfiguration
      */
     private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
     {
-        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores'];
+        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {
@@ -297,5 +345,22 @@ class JobConfiguration
     public function getExecution(): ?string
     {
         return $this->config['execution'] ?? null;
+    }
+
+    public function getWarnAfter(): ?int
+    {
+        $value = $this->config['warn-after'] ?? null;
+        return is_int($value) && $value > 0 ? $value : null;
+    }
+
+    public function getFailAfter(): ?int
+    {
+        $value = $this->config['fail-after'] ?? null;
+        return is_int($value) && $value > 0 ? $value : null;
+    }
+
+    public function hasThreshold(): bool
+    {
+        return $this->getWarnAfter() !== null || $this->getFailAfter() !== null;
     }
 }

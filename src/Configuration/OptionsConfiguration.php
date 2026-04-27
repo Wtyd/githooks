@@ -27,6 +27,8 @@ class OptionsConfiguration
     /** @var array<string, string> Map [format => path] for declarative multi-report. */
     private array $reports;
 
+    private ?TimeBudgetConfiguration $timeBudget;
+
     /** @var array<string, true> Keys explicitly declared in raw config (used by EffectiveOptionsResolver) */
     private array $declaredKeys = [];
 
@@ -41,7 +43,8 @@ class OptionsConfiguration
         ?string $mainBranch = null,
         string $fastBranchFallback = 'full',
         string $executablePrefix = '',
-        array $reports = []
+        array $reports = [],
+        ?TimeBudgetConfiguration $timeBudget = null
     ) {
         $this->failFast = $failFast;
         $this->processes = $processes;
@@ -49,6 +52,7 @@ class OptionsConfiguration
         $this->fastBranchFallback = $fastBranchFallback;
         $this->executablePrefix = $executablePrefix;
         $this->reports = $reports;
+        $this->timeBudget = $timeBudget;
     }
 
     /**
@@ -109,14 +113,19 @@ class OptionsConfiguration
 
         $reports = self::parseReports($raw, $result);
 
-        $knownKeys = ['fail-fast', 'processes', 'main-branch', 'fast-branch-fallback', 'executable-prefix', 'reports'];
+        $timeBudget = null;
+        if (array_key_exists(TimeBudgetConfiguration::KEY, $raw)) {
+            $timeBudget = TimeBudgetConfiguration::fromArray($raw[TimeBudgetConfiguration::KEY], $result);
+        }
+
+        $knownKeys = ['fail-fast', 'processes', 'main-branch', 'fast-branch-fallback', 'executable-prefix', 'reports', TimeBudgetConfiguration::KEY];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Unknown option '$key'. It will be ignored.");
             }
         }
 
-        $instance = new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix, $reports);
+        $instance = new self($failFast, $processes, $mainBranch, $fastBranchFallback, $executablePrefix, $reports, $timeBudget);
         foreach ($knownKeys as $key) {
             if (array_key_exists($key, $raw)) {
                 $instance->declaredKeys[$key] = true;
@@ -194,6 +203,11 @@ class OptionsConfiguration
         return $this->reports;
     }
 
+    public function getTimeBudget(): ?TimeBudgetConfiguration
+    {
+        return $this->timeBudget;
+    }
+
     public static function defaults(): self
     {
         return new self();
@@ -211,16 +225,23 @@ class OptionsConfiguration
     /**
      * Return a new instance with CLI overrides applied.
      * Only non-null values override the current config.
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) $disableTimeBudget is a flag, not a polymorphism break
      */
-    public function withOverrides(?bool $failFast, ?int $processes): self
-    {
+    public function withOverrides(
+        ?bool $failFast,
+        ?int $processes,
+        ?TimeBudgetConfiguration $timeBudget = null,
+        bool $disableTimeBudget = false
+    ): self {
         return new self(
             $failFast !== null ? $failFast : $this->failFast,
             $processes !== null ? $processes : $this->processes,
             $this->mainBranch,
             $this->fastBranchFallback,
             $this->executablePrefix,
-            $this->reports
+            $this->reports,
+            $disableTimeBudget ? null : ($timeBudget ?? $this->timeBudget)
         );
     }
 }

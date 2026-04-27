@@ -693,4 +693,134 @@ class JobConfigurationTest extends TestCase
         }
         return false;
     }
+
+    // ========================================================================
+    // warn-after / fail-after thresholds (v3.3 item 4)
+    // ========================================================================
+
+    /** @test */
+    public function it_parses_warn_after_and_fail_after()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpunit_job', [
+            'type'       => 'phpunit',
+            'warn-after' => 60,
+            'fail-after' => 180,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($job);
+        $this->assertSame(60, $job->getWarnAfter());
+        $this->assertSame(180, $job->getFailAfter());
+        $this->assertTrue($job->hasThreshold());
+    }
+
+    /** @test */
+    public function it_parses_warn_after_alone()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpcs_job', [
+            'type'       => 'phpcs',
+            'warn-after' => 5,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(5, $job->getWarnAfter());
+        $this->assertNull($job->getFailAfter());
+    }
+
+    /** @test */
+    public function it_returns_null_threshold_when_not_declared()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_job', [
+            'type' => 'phpstan',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertNull($job->getWarnAfter());
+        $this->assertNull($job->getFailAfter());
+        $this->assertFalse($job->hasThreshold());
+    }
+
+    /** @test */
+    public function it_rejects_warn_after_greater_or_equal_to_fail_after_in_job()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpunit_job', [
+            'type'       => 'phpunit',
+            'warn-after' => 60,
+            'fail-after' => 45,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString('phpunit_job', $errorText);
+        $this->assertStringContainsString("'warn-after'", $errorText);
+        $this->assertStringContainsString("'fail-after'", $errorText);
+    }
+
+    /** @test */
+    public function it_rejects_zero_warn_after_in_job()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_job', [
+            'type'       => 'phpcs',
+            'warn-after' => 0,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function it_rejects_non_integer_threshold_in_job()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_job', [
+            'type'       => 'phpcs',
+            'warn-after' => 'fast',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function it_warns_when_time_budget_is_declared_in_a_job()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpunit_job', [
+            'type'        => 'phpunit',
+            'time-budget' => ['warn-after' => 60],
+        ], $this->registry, $result, new JobRegistry());
+
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString('time-budget', $warningText);
+    }
+
+    /** @test */
+    public function threshold_keys_are_known_for_typed_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpunit_job', [
+            'type'       => 'phpunit',
+            'warn-after' => 60,
+            'fail-after' => 180,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
+    }
+
+    /** @test */
+    public function threshold_keys_are_known_for_custom_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('lint_js', [
+            'type'       => 'custom',
+            'script'     => 'npm run lint',
+            'warn-after' => 30,
+            'fail-after' => 90,
+        ], $this->registry, $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
+    }
 }

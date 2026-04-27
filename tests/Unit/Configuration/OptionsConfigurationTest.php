@@ -412,4 +412,110 @@ class OptionsConfigurationTest extends TestCase
             OptionsConfiguration::VALID_REPORT_FORMATS
         );
     }
+
+    // ========================================================================
+    // time-budget option (v3.3 item 4 — flow time-budget)
+    // ========================================================================
+
+    /** @test */
+    public function it_defaults_time_budget_to_null(): void
+    {
+        $options = new OptionsConfiguration();
+
+        $this->assertNull($options->getTimeBudget());
+    }
+
+    /** @test */
+    public function it_parses_time_budget_with_warn_and_fail_after(): void
+    {
+        $result = new \Wtyd\GitHooks\Configuration\ValidationResult();
+        $options = \Wtyd\GitHooks\Configuration\OptionsConfiguration::fromArray([
+            'time-budget' => ['warn-after' => 120, 'fail-after' => 300],
+        ], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($options->getTimeBudget());
+        $this->assertSame(120, $options->getTimeBudget()->getWarnAfter());
+        $this->assertSame(300, $options->getTimeBudget()->getFailAfter());
+        $this->assertTrue($options->hasKey('time-budget'));
+    }
+
+    /** @test */
+    public function it_propagates_time_budget_validation_errors(): void
+    {
+        $result = new \Wtyd\GitHooks\Configuration\ValidationResult();
+        \Wtyd\GitHooks\Configuration\OptionsConfiguration::fromArray([
+            'time-budget' => ['warn-after' => 300, 'fail-after' => 120],
+        ], $result);
+
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function time_budget_is_not_an_unknown_key(): void
+    {
+        $result = new \Wtyd\GitHooks\Configuration\ValidationResult();
+        \Wtyd\GitHooks\Configuration\OptionsConfiguration::fromArray([
+            'time-budget' => ['warn-after' => 60],
+        ], $result);
+
+        $this->assertEmpty($result->getWarnings());
+    }
+
+    /** @test */
+    public function with_overrides_replaces_time_budget(): void
+    {
+        $original = new \Wtyd\GitHooks\Configuration\OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            [],
+            new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(120, 300)
+        );
+
+        $override = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(60, 180);
+        $result = $original->withOverrides(null, null, $override);
+
+        $this->assertSame(60, $result->getTimeBudget()->getWarnAfter());
+        $this->assertSame(180, $result->getTimeBudget()->getFailAfter());
+    }
+
+    /** @test */
+    public function with_overrides_keeps_time_budget_when_override_is_null(): void
+    {
+        $original = new \Wtyd\GitHooks\Configuration\OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            [],
+            new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(120, 300)
+        );
+
+        $result = $original->withOverrides(null, null);
+
+        $this->assertNotNull($result->getTimeBudget());
+        $this->assertSame(120, $result->getTimeBudget()->getWarnAfter());
+    }
+
+    /** @test */
+    public function with_overrides_disable_time_budget_clears_it(): void
+    {
+        $original = new \Wtyd\GitHooks\Configuration\OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            [],
+            new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(120, 300)
+        );
+
+        $result = $original->withOverrides(null, null, null, true);
+
+        $this->assertNull($result->getTimeBudget());
+    }
 }
