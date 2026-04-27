@@ -26,6 +26,8 @@ class FlowResult
 
     private ?EffectiveOptionsResolution $effectiveOptions;
 
+    private ?TimeBudgetState $timeBudgetState;
+
     /**
      * @param JobResult[] $jobResults
      * @param string[]|null $expandedFlows
@@ -40,7 +42,8 @@ class FlowResult
         string $executionMode = 'full',
         ?InputFilesResolution $inputFiles = null,
         ?array $expandedFlows = null,
-        ?EffectiveOptionsResolution $effectiveOptions = null
+        ?EffectiveOptionsResolution $effectiveOptions = null,
+        ?TimeBudgetState $timeBudgetState = null
     ) {
         $this->flowName = $flowName;
         $this->jobResults = $jobResults;
@@ -51,6 +54,7 @@ class FlowResult
         $this->inputFiles = $inputFiles;
         $this->expandedFlows = $expandedFlows;
         $this->effectiveOptions = $effectiveOptions;
+        $this->timeBudgetState = $timeBudgetState;
     }
 
     public function getFlowName(): string
@@ -71,6 +75,11 @@ class FlowResult
                 return false;
             }
         }
+
+        if ($this->timeBudgetState !== null && $this->timeBudgetState->isFailed()) {
+            return false;
+        }
+
         return true;
     }
 
@@ -132,5 +141,10 @@ class FlowResult
     public function getEffectiveOptions(): ?EffectiveOptionsResolution
     {
         return $this->effectiveOptions;
+    }
+
+    public function getTimeBudgetState(): ?TimeBudgetState
+    {
+        return $this->timeBudgetState;
     }
 }

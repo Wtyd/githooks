@@ -51,6 +51,10 @@ abstract class JobAbstract
 
     protected ?int $coresOverride = null;
 
+    protected ?int $warnAfter = null;
+
+    protected ?int $failAfter = null;
+
     public function __construct(JobConfiguration $config)
     {
         $this->name = $config->getName();
@@ -63,6 +67,21 @@ abstract class JobAbstract
         $this->failFast = (bool) ($this->args['failFast'] ?? false);
         unset($this->args['failFast']);
         $this->coresOverride = $this->extractCoresOverride();
+        $this->warnAfter = $this->extractPositiveInt('warn-after');
+        $this->failAfter = $this->extractPositiveInt('fail-after');
+    }
+
+    /**
+     * Pop a positive-integer key from $this->args (or null when absent/invalid).
+     */
+    private function extractPositiveInt(string $key): ?int
+    {
+        if (!array_key_exists($key, $this->args)) {
+            return null;
+        }
+        $value = $this->args[$key];
+        unset($this->args[$key]);
+        return is_int($value) && $value >= 1 ? $value : null;
     }
 
     /**
@@ -284,6 +303,26 @@ abstract class JobAbstract
     public function getCoresOverride(): ?int
     {
         return $this->coresOverride;
+    }
+
+    public function getWarnAfter(): ?int
+    {
+        return $this->warnAfter;
+    }
+
+    public function getFailAfter(): ?int
+    {
+        return $this->failAfter;
+    }
+
+    /**
+     * Override the configured per-job thresholds (used by `githooks job` CLI flags).
+     * `null` clears the threshold; positive integer sets it.
+     */
+    public function applyThresholdOverride(?int $warnAfter, ?int $failAfter): void
+    {
+        $this->warnAfter = $warnAfter;
+        $this->failAfter = $failAfter;
     }
 
     /**

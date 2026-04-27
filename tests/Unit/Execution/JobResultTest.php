@@ -123,4 +123,67 @@ class JobResultTest extends TestCase
         $this->assertSame('', $result->getStdout());
         $this->assertNotNull($result->getStdout());
     }
+
+    // ========================================================================
+    // Threshold metadata (v3.3 item 4 — per-job time thresholds)
+    // ========================================================================
+
+    /** @test */
+    public function threshold_defaults_are_none(): void
+    {
+        $result = new JobResult('phpcs_src', true, '', '50ms');
+
+        $this->assertSame(0.0, $result->getDurationSeconds());
+        $this->assertSame(JobResult::THRESHOLD_NONE, $result->getThresholdState());
+        $this->assertNull($result->getThresholdReason());
+        $this->assertNull($result->getConfiguredWarnAfter());
+        $this->assertNull($result->getConfiguredFailAfter());
+        $this->assertFalse($result->hasThreshold());
+        $this->assertFalse($result->isThresholdWarned());
+        $this->assertFalse($result->isThresholdFailed());
+    }
+
+    /** @test */
+    public function threshold_metadata_round_trips(): void
+    {
+        $result = new JobResult(
+            'phpunit',
+            true,
+            '',
+            '95.4s',
+            false,
+            null,
+            'phpunit',
+            0,
+            [],
+            false,
+            null,
+            null,
+            null,
+            95.4,
+            JobResult::THRESHOLD_WARNED,
+            JobResult::THRESHOLD_REASON_WARN,
+            60,
+            180
+        );
+
+        $this->assertSame(95.4, $result->getDurationSeconds());
+        $this->assertTrue($result->isThresholdWarned());
+        $this->assertFalse($result->isThresholdFailed());
+        $this->assertSame(JobResult::THRESHOLD_REASON_WARN, $result->getThresholdReason());
+        $this->assertSame(60, $result->getConfiguredWarnAfter());
+        $this->assertSame(180, $result->getConfiguredFailAfter());
+        $this->assertTrue($result->hasThreshold());
+    }
+
+    /** @test */
+    public function with_threshold_clones_without_mutating_original(): void
+    {
+        $original = new JobResult('phpcs', false, '', '8.2s');
+        $clone = $original->withThreshold(JobResult::THRESHOLD_FAILED, JobResult::THRESHOLD_REASON_FAIL);
+
+        $this->assertSame(JobResult::THRESHOLD_NONE, $original->getThresholdState());
+        $this->assertSame(JobResult::THRESHOLD_FAILED, $clone->getThresholdState());
+        $this->assertSame(JobResult::THRESHOLD_REASON_FAIL, $clone->getThresholdReason());
+    }
 }

@@ -50,4 +50,60 @@ class FlowResultTest extends TestCase
 
         $this->assertEquals(0, $result->getSkippedCount());
     }
+
+    // ========================================================================
+    // Time-budget state (v3.3 item 4 — flow-level threshold)
+    // ========================================================================
+
+    /** @test */
+    public function time_budget_state_defaults_to_null(): void
+    {
+        $result = new FlowResult('qa', [new JobResult('phpcs', true, '', '1s')], '1s');
+
+        $this->assertNull($result->getTimeBudgetState());
+    }
+
+    /** @test */
+    public function flow_is_failed_when_time_budget_failed_even_if_all_jobs_pass(): void
+    {
+        $state = new \Wtyd\GitHooks\Execution\TimeBudgetState(120, 300, 320.1, true, true);
+        $result = new FlowResult(
+            'qa',
+            [
+                new JobResult('phpcs', true, '', '1s'),
+                new JobResult('phpunit', true, '', '300s'),
+            ],
+            '320s',
+            0,
+            0,
+            'full',
+            null,
+            null,
+            null,
+            $state
+        );
+
+        $this->assertFalse($result->isSuccess());
+        $this->assertSame($state, $result->getTimeBudgetState());
+    }
+
+    /** @test */
+    public function flow_is_success_when_time_budget_only_warned(): void
+    {
+        $state = new \Wtyd\GitHooks\Execution\TimeBudgetState(120, 300, 125.4, true, false);
+        $result = new FlowResult(
+            'qa',
+            [new JobResult('phpunit', true, '', '125s')],
+            '125s',
+            0,
+            0,
+            'full',
+            null,
+            null,
+            null,
+            $state
+        );
+
+        $this->assertTrue($result->isSuccess());
+    }
 }
