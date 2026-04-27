@@ -152,9 +152,9 @@ trait FormatsOutput
         $tbState = $result->getTimeBudgetState();
         $suffix = '';
         if (!$result->isSuccess()) {
-            $suffix = ' ✗';
+            $suffix = ' <fg=red>✗</>';
         } elseif ($tbState !== null && $tbState->isWarned()) {
-            $suffix = ' ⚠ (1 warning)';
+            $suffix = ' <fg=yellow>⚠ (1 warning)</>';
         } elseif ($result->isSuccess()) {
             $suffix = ' ✔️';
         }
@@ -170,11 +170,11 @@ trait FormatsOutput
         if ($tbState !== null && $tbState->isFailed()) {
             $limit = $tbState->getFailAfter();
             $sum = number_format($tbState->getTotalJobDuration(), 1);
-            $this->line("✗ Flow time-budget exceeded: total job time {$sum}s, limit {$limit}s");
+            $this->line("<fg=red>✗ Flow time-budget exceeded: total job time {$sum}s, limit {$limit}s</>");
         } elseif ($tbState !== null && $tbState->isWarned()) {
             $limit = $tbState->getWarnAfter();
             $sum = number_format($tbState->getTotalJobDuration(), 1);
-            $this->line("⚠ Flow time-budget warning: total job time {$sum}s exceeded warn-after ({$limit}s)");
+            $this->line("<fg=yellow>⚠ Flow time-budget warning: total job time {$sum}s exceeded warn-after ({$limit}s)</>");
         }
     }
 
@@ -192,12 +192,13 @@ trait FormatsOutput
 
         // Real KO with secondary threshold annotation: indented secondary line.
         if (!$jobResult->isSuccess() && $jobResult->getExitCode() !== null && $jobResult->getExitCode() !== 0) {
-            $this->line("   ↳ also exceeded time threshold (took {$duration}s, $kind {$limit}s)");
+            $this->line("   <fg=yellow>↳ also exceeded time threshold (took {$duration}s, $kind {$limit}s)</>");
             return;
         }
 
+        $color = $isFailed ? 'red' : 'yellow';
         $icon = $isFailed ? '✗' : '⚠';
-        $this->line("$icon Job '$name' exceeded time threshold (took {$duration}s, $kind {$limit}s)");
+        $this->line("<fg=$color>$icon Job '$name' exceeded time threshold (took {$duration}s, $kind {$limit}s)</>");
     }
 
     /**

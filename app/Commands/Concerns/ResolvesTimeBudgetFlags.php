@@ -29,7 +29,6 @@ trait ResolvesTimeBudgetFlags
         $failAfter = $this->parseSecondsOption('fail-after');
 
         if ($disabled && ($warnAfter !== null || $failAfter !== null)) {
-            $stderr = $this->getOutput()->getErrorOutput();
             $hint = [];
             if ($warnAfter !== null) {
                 $hint[] = '--warn-after';
@@ -37,7 +36,7 @@ trait ResolvesTimeBudgetFlags
             if ($failAfter !== null) {
                 $hint[] = '--fail-after';
             }
-            $stderr->writeln('Warning: ignoring ' . implode('/', $hint) . ' due to --no-time-budget.');
+            $this->writeStderrWarning('ignoring ' . implode('/', $hint) . ' due to --no-time-budget.');
             $warnAfter = null;
             $failAfter = null;
         }
@@ -59,11 +58,19 @@ trait ResolvesTimeBudgetFlags
             return null;
         }
         if (!ctype_digit((string) $raw) || (int) $raw < 1) {
-            $this->getOutput()->getErrorOutput()->writeln(
-                "Warning: --$name expects a positive integer (seconds); got '$raw'. Ignoring."
-            );
+            $this->writeStderrWarning("--$name expects a positive integer (seconds); got '$raw'. Ignoring.");
             return null;
         }
         return (int) $raw;
+    }
+
+    /**
+     * Emit a colored "Warning: ..." line on stderr. Uses SymfonyStyle::getErrorStyle()
+     * (public) instead of OutputStyle::getErrorOutput() (protected).
+     */
+    private function writeStderrWarning(string $message): void
+    {
+        $errorStyle = $this->getOutput()->getErrorStyle();
+        $errorStyle->writeln("<comment>Warning:</comment> $message");
     }
 }
