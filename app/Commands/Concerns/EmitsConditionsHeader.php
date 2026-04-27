@@ -63,6 +63,7 @@ trait EmitsConditionsHeader
             $this->formatTraceSegment('processes', $trace['processes'] ?? null),
             $this->formatTraceSegment('fail-fast', $trace['failFast'] ?? null),
             "mode=$modeValue ($modeSource)",
+            $this->formatTimeBudgetSegment($trace['timeBudget'] ?? null),
         ];
 
         $lines = ['Settings: ' . implode(' | ', $segments)];
@@ -72,6 +73,46 @@ trait EmitsConditionsHeader
         }
 
         return $lines;
+    }
+
+    /**
+     * Render the time-budget cell:
+     *  - missing/default → `time-budget=none (default)`
+     *  - cli disabled → `time-budget=disabled (cli)`
+     *  - configured → `time-budget=warn-after=Ws,fail-after=Fs (origin)`
+     *
+     * @param array{value: mixed, source: string}|null $entry
+     */
+    private function formatTimeBudgetSegment(?array $entry): string
+    {
+        if ($entry === null) {
+            return 'time-budget=none (default)';
+        }
+
+        $source = (string) ($entry['source'] ?? 'default');
+        $value = $entry['value'] ?? null;
+
+        if ($value === null) {
+            return $source === 'cli'
+                ? 'time-budget=disabled (cli)'
+                : "time-budget=none ($source)";
+        }
+
+        if (is_array($value)) {
+            $parts = [];
+            $warn = $value['warnAfter'] ?? null;
+            $fail = $value['failAfter'] ?? null;
+            if ($warn !== null) {
+                $parts[] = "warn-after={$warn}s";
+            }
+            if ($fail !== null) {
+                $parts[] = "fail-after={$fail}s";
+            }
+            $rendered = $parts === [] ? 'none' : implode(',', $parts);
+            return "time-budget=$rendered ($source)";
+        }
+
+        return 'time-budget=' . $this->stringifyTraceValue($value) . " ($source)";
     }
 
     /**

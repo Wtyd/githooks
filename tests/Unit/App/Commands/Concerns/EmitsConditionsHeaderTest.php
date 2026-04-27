@@ -34,7 +34,7 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $this->assertCount(1, $double->lines);
         $this->assertSame(
-            'Settings: processes=4 (cli) | fail-fast=true (flows.qa.options) | mode=full (default)',
+            'Settings: processes=4 (cli) | fail-fast=true (flows.qa.options) | mode=full (default) | time-budget=none (default)',
             $double->lines[0]
         );
         $this->assertSame([], $double->errLines);
@@ -113,5 +113,85 @@ class EmitsConditionsHeaderTest extends TestCase
         $double->call($this->makeResolution());
 
         $this->assertCount(1, $double->lines);
+    }
+
+    // ========================================================================
+    // time-budget segment (v3.3 item 4)
+    // ========================================================================
+
+    private function makeResolutionWithTimeBudget(?array $value, string $source): EffectiveOptionsResolution
+    {
+        return new EffectiveOptionsResolution(
+            new OptionsConfiguration(),
+            'full',
+            [
+                'processes'     => ['value' => 4, 'source' => 'cli'],
+                'failFast'      => ['value' => true, 'source' => 'flows.qa.options'],
+                'executionMode' => ['value' => 'full', 'source' => 'default'],
+                'timeBudget'    => ['value' => $value, 'source' => $source],
+            ]
+        );
+    }
+
+    /** @test */
+    public function header_shows_time_budget_with_warn_and_fail_after(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithTimeBudget(
+            ['warnAfter' => 120, 'failAfter' => 300],
+            'flows.options'
+        ));
+
+        $this->assertStringContainsString(
+            'time-budget=warn-after=120s,fail-after=300s (flows.options)',
+            $double->lines[0]
+        );
+    }
+
+    /** @test */
+    public function header_shows_time_budget_with_only_warn_after(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithTimeBudget(
+            ['warnAfter' => 60, 'failAfter' => null],
+            'flows.qa.options'
+        ));
+
+        $this->assertStringContainsString(
+            'time-budget=warn-after=60s (flows.qa.options)',
+            $double->lines[0]
+        );
+    }
+
+    /** @test */
+    public function header_shows_disabled_when_cli_no_time_budget(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithTimeBudget(null, 'cli'));
+
+        $this->assertStringContainsString(
+            'time-budget=disabled (cli)',
+            $double->lines[0]
+        );
+    }
+
+    /** @test */
+    public function header_shows_none_when_unconfigured(): void
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolutionWithTimeBudget(null, 'default'));
+
+        $this->assertStringContainsString(
+            'time-budget=none (default)',
+            $double->lines[0]
+        );
     }
 }

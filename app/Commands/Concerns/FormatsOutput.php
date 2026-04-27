@@ -127,22 +127,77 @@ trait FormatsOutput
         if (in_array($format, OutputFormats::STRUCTURED, true)) {
             $this->writeStructuredPayload($this->formatterFor($format)->format($result));
         } elseif ($format === '' || $format === 'text') {
-            $total = count($result->getJobResults());
-            $passed = $result->getPassedCount();
-            $time = $result->getTotalTime();
-            $this->line("Results: $passed/$total passed in $time" . ($result->isSuccess() ? ' ✔️' : ''));
+            $this->renderTextSummary($result);
         } else {
             // Unknown format slipped through (e.g. raw test double bypassing applyFormat).
-            $total = count($result->getJobResults());
-            $passed = $result->getPassedCount();
-            $time = $result->getTotalTime();
-            $this->line("Results: $passed/$total passed in $time" . ($result->isSuccess() ? ' ✔️' : ''));
+            $this->renderTextSummary($result);
         }
 
         $targets = $this->collectReportTargets($options);
         foreach ($targets as $reportFormat => $path) {
             $this->writeReportFile($reportFormat, $path, $result);
         }
+    }
+
+    /**
+     * Render the human-readable summary (`Results: P/N passed in T`) plus the
+     * per-job and flow-level threshold explanation lines (REQ-018..REQ-020).
+     */
+    private function renderTextSummary(FlowResult $result): void
+    {
+        $total = count($result->getJobResults());
+        $passed = $result->getPassedCount();
+        $time = $result->getTotalTime();
+
+        $tbState = $result->getTimeBudgetState();
+        $suffix = '';
+        if (!$result->isSuccess()) {
+            $suffix = ' ✗';
+        } elseif ($tbState !== null && $tbState->isWarned()) {
+            $suffix = ' ⚠ (1 warning)';
+        } elseif ($result->isSuccess()) {
+            $suffix = ' ✔️';
+        }
+
+        $this->line("Results: $passed/$total passed in $time$suffix");
+
+        // Per-job threshold notices, ordered by appearance.
+        foreach ($result->getJobResults() as $jobResult) {
+            $this->emitJobThresholdNotice($jobResult);
+        }
+
+        // Flow-level time-budget notice (last so it summarises).
+        if ($tbState !== null && $tbState->isFailed()) {
+            $limit = $tbState->getFailAfter();
+            $sum = number_format($tbState->getTotalJobDuration(), 1);
+            $this->line("✗ Flow time-budget exceeded: total job time {$sum}s, limit {$limit}s");
+        } elseif ($tbState !== null && $tbState->isWarned()) {
+            $limit = $tbState->getWarnAfter();
+            $sum = number_format($tbState->getTotalJobDuration(), 1);
+            $this->line("⚠ Flow time-budget warning: total job time {$sum}s exceeded warn-after ({$limit}s)");
+        }
+    }
+
+    private function emitJobThresholdNotice(\Wtyd\GitHooks\Execution\JobResult $jobResult): void
+    {
+        if ($jobResult->getThresholdState() === \Wtyd\GitHooks\Execution\JobResult::THRESHOLD_NONE) {
+            return;
+        }
+
+        $name = $jobResult->getJobName();
+        $duration = number_format($jobResult->getDurationSeconds(), 1);
+        $isFailed = $jobResult->isThresholdFailed();
+        $limit = $isFailed ? $jobResult->getConfiguredFailAfter() : $jobResult->getConfiguredWarnAfter();
+        $kind = $isFailed ? 'fail-after' : 'warn-after';
+
+        // Real KO with secondary threshold annotation: indented secondary line.
+        if (!$jobResult->isSuccess() && $jobResult->getExitCode() !== null && $jobResult->getExitCode() !== 0) {
+            $this->line("   ↳ also exceeded time threshold (took {$duration}s, $kind {$limit}s)");
+            return;
+        }
+
+        $icon = $isFailed ? '✗' : '⚠';
+        $this->line("$icon Job '$name' exceeded time threshold (took {$duration}s, $kind {$limit}s)");
     }
 
     /**

@@ -8,6 +8,7 @@ use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\InputFilesResolution;
 use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\GitHooks\Execution\TimeBudgetState;
 
 class JsonResultFormatter implements ResultFormatter
 {
@@ -19,6 +20,7 @@ class JsonResultFormatter implements ResultFormatter
                 'type'        => $job->getType(),
                 'success'     => $job->isSuccess(),
                 'time'        => $job->getExecutionTime(),
+                'duration'    => $job->getDurationSeconds(),
                 'exitCode'    => $job->getExitCode(),
                 'output'      => $this->stripAnsi($job->getOutput()),
                 'fixApplied'  => $job->isFixApplied(),
@@ -26,6 +28,7 @@ class JsonResultFormatter implements ResultFormatter
                 'paths'       => $job->getPaths(),
                 'skipped'     => $job->isSkipped(),
                 'skipReason'  => $job->getSkipReason(),
+                'threshold'   => $this->buildThresholdBlock($job),
             ];
 
             $perJob = $job->getInputFiles();
@@ -47,6 +50,7 @@ class JsonResultFormatter implements ResultFormatter
             'passed'        => $result->getPassedCount(),
             'failed'        => $result->getFailedCount(),
             'skipped'       => $result->getSkippedCount(),
+            'timeBudget'    => $this->buildTimeBudgetBlock($result->getTimeBudgetState()),
         ];
 
         $expandedFlows = $result->getExpandedFlows();
@@ -98,6 +102,55 @@ class JsonResultFormatter implements ResultFormatter
     private function buildEffectiveOptionsBlock(EffectiveOptionsResolution $resolution): array
     {
         return $resolution->getTrace();
+    }
+
+    /**
+     * Build the per-job `threshold` block under the explicit-null pattern (CON-005):
+     *  - null when no warn-after / fail-after configured for the job.
+     *  - object with `warnAfter`, `failAfter`, `warned`, `failed`, `reason` otherwise.
+     *    `reason` is a string when warned/failed is true, null when both are false.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildThresholdBlock(JobResult $job): ?array
+    {
+        if (!$job->hasThreshold()) {
+            return null;
+        }
+
+        $state = $job->getThresholdState();
+        $warned = $state === JobResult::THRESHOLD_WARNED;
+        $failed = $state === JobResult::THRESHOLD_FAILED;
+
+        return [
+            'warnAfter' => $job->getConfiguredWarnAfter(),
+            'failAfter' => $job->getConfiguredFailAfter(),
+            'warned'    => $warned,
+            'failed'    => $failed,
+            'reason'    => $job->getThresholdReason(),
+        ];
+    }
+
+    /**
+     * Build the root `timeBudget` block under the explicit-null pattern (CON-005):
+     *  - null when no time-budget configured for the flow (or thresholds disabled).
+     *  - object with `warnAfter`, `failAfter`, `totalJobDuration`, `warned`, `failed` otherwise.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildTimeBudgetBlock(?TimeBudgetState $state): ?array
+    {
+        if ($state === null) {
+            return null;
+        }
+
+        return [
+            'warnAfter'        => $state->getWarnAfter(),
+            'failAfter'        => $state->getFailAfter(),
+            'totalJobDuration' => $state->getTotalJobDuration(),
+            'warned'           => $state->isWarned(),
+            'failed'           => $state->isFailed(),
+        ];
     }
 
     private function stripAnsi(string $text): string

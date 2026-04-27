@@ -236,4 +236,140 @@ class JsonResultFormatterTest extends UnitTestCase
 
         $this->assertArrayNotHasKey('effectiveOptions', $data);
     }
+
+    // ========================================================================
+    // time-budget + threshold (v3.3 item 4 — explicit null pattern)
+    // ========================================================================
+
+    /** @test */
+    function time_budget_root_field_is_null_when_state_absent(): void
+    {
+        $result = new FlowResult('qa', [new JobResult('a', true, '', '1s')], '1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('timeBudget', $data);
+        $this->assertNull($data['timeBudget']);
+    }
+
+    /** @test */
+    function time_budget_root_field_is_object_when_state_present(): void
+    {
+        $state = new \Wtyd\GitHooks\Execution\TimeBudgetState(120, 300, 125.4, true, false);
+        $result = new FlowResult('qa', [new JobResult('a', true, '', '125s')], '125s', 0, 0, 'full', null, null, null, $state);
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame([
+            'warnAfter' => 120,
+            'failAfter' => 300,
+            'totalJobDuration' => 125.4,
+            'warned' => true,
+            'failed' => false,
+        ], $data['timeBudget']);
+    }
+
+    /** @test */
+    function per_job_threshold_field_is_null_when_unconfigured(): void
+    {
+        $result = new FlowResult('qa', [new JobResult('a', true, '', '1s')], '1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('threshold', $data['jobs'][0]);
+        $this->assertNull($data['jobs'][0]['threshold']);
+    }
+
+    /** @test */
+    function per_job_threshold_field_is_object_when_configured(): void
+    {
+        $jobResult = new JobResult(
+            'phpunit',
+            true,
+            '',
+            '95s',
+            false,
+            null,
+            'phpunit',
+            0,
+            [],
+            false,
+            null,
+            null,
+            null,
+            95.4,
+            JobResult::THRESHOLD_WARNED,
+            JobResult::THRESHOLD_REASON_WARN,
+            60,
+            180
+        );
+        $result = new FlowResult('qa', [$jobResult], '95s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame([
+            'warnAfter' => 60,
+            'failAfter' => 180,
+            'warned' => true,
+            'failed' => false,
+            'reason' => 'exceeded warn-after',
+        ], $data['jobs'][0]['threshold']);
+    }
+
+    /** @test */
+    function threshold_warnAfter_is_null_when_only_failAfter_configured(): void
+    {
+        $jobResult = new JobResult(
+            'phpcs',
+            false,
+            '',
+            '8s',
+            false,
+            null,
+            'phpcs',
+            0,
+            [],
+            false,
+            null,
+            null,
+            null,
+            8.2,
+            JobResult::THRESHOLD_FAILED,
+            JobResult::THRESHOLD_REASON_FAIL,
+            null,
+            5
+        );
+        $result = new FlowResult('qa', [$jobResult], '8s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertNull($data['jobs'][0]['threshold']['warnAfter']);
+        $this->assertSame(5, $data['jobs'][0]['threshold']['failAfter']);
+    }
+
+    /** @test */
+    function job_duration_seconds_is_emitted_in_top_level_field(): void
+    {
+        $jobResult = new JobResult(
+            'phpunit',
+            true,
+            '',
+            '95.4s',
+            false,
+            null,
+            'phpunit',
+            0,
+            [],
+            false,
+            null,
+            null,
+            null,
+            95.4
+        );
+        $result = new FlowResult('qa', [$jobResult], '95s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame(95.4, $data['jobs'][0]['duration']);
+    }
 }
