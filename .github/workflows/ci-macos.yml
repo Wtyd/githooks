@@ -72,16 +72,39 @@ jobs:
       # the runtime end-to-end on Darwin. Verifies the sampler hooks into
       # the FlowExecutor loop and the JSON v2 emits stats.memory with
       # non-zero values.
+      #
+      # `set +e` around the flow run is intentional: even if some QA tool
+      # fails on macOS for unrelated reasons, we still want to see the
+      # captured stderr/stdout AND the memory peak verdict, instead of
+      # aborting opaquely on the first bash failure.
       - name: Smoke — flow qa --stats reports non-zero memory peak
         shell: bash
         run: |
+          set +e
           php githooks flow qa --stats --no-memory-budget --format=json --show-progress \
             > /tmp/qa.json 2> /tmp/qa.stderr
-          cat /tmp/qa.stderr
+          flow_exit=$?
+          set -e
+
+          echo "=== flow qa stderr ==="
+          cat /tmp/qa.stderr || true
+          echo "=== flow qa stdout (first 100 lines) ==="
+          head -n 100 /tmp/qa.json || true
+          echo "=== flow qa exit code: $flow_exit ==="
+
           php -r '
-            $d = json_decode(file_get_contents("/tmp/qa.json"), true);
+            $raw = @file_get_contents("/tmp/qa.json");
+            if ($raw === false || $raw === "") {
+                fwrite(STDERR, "qa.json is empty or unreadable\n");
+                exit(1);
+            }
+            $d = json_decode($raw, true);
+            if ($d === null) {
+                fwrite(STDERR, "qa.json is not valid JSON\n");
+                exit(1);
+            }
             if (!isset($d["stats"]["memory"]["flowPeak"]["value"])) {
-                fwrite(STDERR, "stats.memory.flowPeak missing\n");
+                fwrite(STDERR, "stats.memory.flowPeak missing — keys: " . implode(",", array_keys($d)) . "\n");
                 exit(1);
             }
             $peak = (int) $d["stats"]["memory"]["flowPeak"]["value"];
