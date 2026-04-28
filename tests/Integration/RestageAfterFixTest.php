@@ -79,8 +79,8 @@ class RestageAfterFixTest extends SystemTestCase
         // 5. Execute FlowExecutor with GitStager — phpcbf job that exits 1 (= fix applied)
         $executor = new FlowExecutor(new NullOutputHandler(), new GitStager());
         $job = new PhpcbfJob(new JobConfiguration('phpcbf_test', 'phpcbf', [
-            'executablePath' => '/bin/sh -c',
-            'otherArguments' => '"exit 1"',
+            'executable-path' => '/bin/sh -c',
+            'other-arguments' => '"exit 1"',
         ]));
 
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
