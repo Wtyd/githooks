@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Execution;
 
 use Symfony\Component\Process\Process;
+use Wtyd\GitHooks\Configuration\AllocatorStrategy;
+use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
+use Wtyd\GitHooks\Execution\Admission\AdmissionStrategy;
+use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
+use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Output\DashboardOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
@@ -112,7 +117,7 @@ class FlowExecutor
         if ($maxProcesses <= 1 || count($jobs) <= 1) {
             $results = $this->executeSequential($jobs, $failFast);
         } else {
-            $results = $this->executeParallel($jobs, $maxProcesses, $failFast);
+            $results = $this->executeParallel($jobs, $maxProcesses, $failFast, $plan->getOptions());
         }
 
         // Include skipped jobs from plan (fast mode filtering / files mode mismatch)
@@ -332,10 +337,61 @@ class FlowExecutor
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates pool + dashboard + fail-fast
      * @SuppressWarnings(PHPMD.NPathComplexity) Dashboard tick + pool fill + fail-fast paths
      */
-    private function executeParallel(array $jobs, int $maxProcesses, bool $failFast): array
+    /**
+     * Build a ProcessPool wired with the right admission strategy and 2D
+     * tracker according to the resolved OptionsConfiguration. Activates 2D
+     * bin-packing only when the flow declares a memory-budget AND at least
+     * one job has a short-form `memory:` reservation (REQ-009 / REQ-020).
+     *
+     * @param JobAbstract[] $jobs
+     */
+    private function buildProcessPool(int $maxProcesses, array $jobs, OptionsConfiguration $options): ProcessPool
+    {
+        $coresByJob = [];
+        $memoryReserveByJob = [];
+        $hasReservation = false;
+        foreach ($jobs as $job) {
+            $coresByJob[$job->getName()] = $this->threadAllocations[$job->getName()] ?? 1;
+            $reserve = $job->getMemoryReserve();
+            $memoryReserveByJob[$job->getName()] = $reserve;
+            if ($reserve !== null) {
+                $hasReservation = true;
+            }
+        }
+
+        $strategy = $this->resolveAdmissionStrategy($options);
+        $memoryBudgetMb = null;
+        $budget = $options->getMemoryBudget();
+        if ($budget !== null && $hasReservation) {
+            $memoryBudgetMb = $budget->getBinPackingReference();
+        }
+
+        return new ProcessPool(
+            $maxProcesses,
+            $strategy,
+            $memoryBudgetMb,
+            $coresByJob,
+            $memoryReserveByJob
+        );
+    }
+
+    private function resolveAdmissionStrategy(OptionsConfiguration $options): AdmissionStrategy
+    {
+        return $options->getAllocator() === AllocatorStrategy::GREEDY
+            ? new GreedyAdmission()
+            : new FifoAdmission();
+    }
+
+    /**
+     * @param JobAbstract[] $jobs
+     * @return JobResult[]
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates pool + dashboard + fail-fast
+     * @SuppressWarnings(PHPMD.NPathComplexity) Dashboard tick + pool fill + fail-fast paths
+     */
+    private function executeParallel(array $jobs, int $maxProcesses, bool $failFast, OptionsConfiguration $options): array
     {
         $results = [];
-        $pool = new ProcessPool($maxProcesses);
+        $pool = $this->buildProcessPool($maxProcesses, $jobs, $options);
         $pool->enqueue($jobs);
         $failFastTriggered = false;
         $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;

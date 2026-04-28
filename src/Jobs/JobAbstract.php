@@ -55,6 +55,8 @@ abstract class JobAbstract
 
     protected ?int $failAfter = null;
 
+    protected ?int $memoryReserve = null;
+
     public function __construct(JobConfiguration $config)
     {
         $this->name = $config->getName();
@@ -69,6 +71,8 @@ abstract class JobAbstract
         $this->coresOverride = $this->extractCoresOverride();
         $this->warnAfter = $this->extractPositiveInt('warn-after');
         $this->failAfter = $this->extractPositiveInt('fail-after');
+        $this->memoryReserve = $config->getMemoryReserve();
+        unset($this->args['memory']);
     }
 
     /**
@@ -303,6 +307,16 @@ abstract class JobAbstract
     public function getCoresOverride(): ?int
     {
         return $this->coresOverride;
+    }
+
+    /**
+     * Memory the job declares as scheduler reservation in MB. Equals the
+     * integer value when 'memory' is declared in short form; null when
+     * declared in extended form (thresholds only) or absent.
+     */
+    public function getMemoryReserve(): ?int
+    {
+        return $this->memoryReserve;
     }
 
     public function getWarnAfter(): ?int

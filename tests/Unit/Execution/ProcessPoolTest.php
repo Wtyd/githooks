@@ -6,6 +6,8 @@ namespace Tests\Unit\Execution;
 
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
+use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
 use Wtyd\GitHooks\Execution\ProcessPool;
 use Wtyd\GitHooks\Jobs\CustomJob;
 
@@ -237,9 +239,121 @@ class ProcessPoolTest extends TestCase
         $pool->terminateAll();
     }
 
+    /** @test */
+    function fifo_strategy_blocks_when_head_does_not_fit_memory_budget()
+    {
+        $heavy = $this->makeJobWithMemory('heavy', 'sleep 0.5', 2000);
+        $light = $this->makeJobWithMemory('light', 'sleep 0.5', 100);
+
+        $pool = new ProcessPool(
+            10,
+            new FifoAdmission(),
+            500, // budget too small for heavy
+            ['heavy' => 1, 'light' => 1],
+            ['heavy' => 2000, 'light' => 100]
+        );
+        $pool->enqueue([$heavy, $light]);
+
+        $started = $pool->fillPool();
+
+        $this->assertSame([], array_keys($started), 'FIFO must block the queue when head does not fit');
+        $this->assertCount(2, $pool->getQueuedJobs());
+    }
+
+    /** @test */
+    function greedy_strategy_skips_blocked_head_and_admits_smaller_jobs()
+    {
+        $heavy = $this->makeJobWithMemory('heavy', 'sleep 0.5', 2000);
+        $light = $this->makeJobWithMemory('light', 'sleep 0.5', 100);
+
+        $pool = new ProcessPool(
+            10,
+            new GreedyAdmission(),
+            500,
+            ['heavy' => 1, 'light' => 1],
+            ['heavy' => 2000, 'light' => 100]
+        );
+        $pool->enqueue([$heavy, $light]);
+
+        $started = $pool->fillPool();
+
+        $this->assertArrayHasKey('light', $started);
+        $this->assertArrayNotHasKey('heavy', $started);
+
+        $pool->terminateAll();
+    }
+
+    /** @test */
+    function memory_reserve_is_released_when_a_job_completes()
+    {
+        $first = $this->makeJobWithMemory('first', 'true', 400);
+        $second = $this->makeJobWithMemory('second', 'sleep 0.5', 400);
+        $third = $this->makeJobWithMemory('third', 'sleep 0.5', 400);
+
+        $pool = new ProcessPool(
+            10,
+            new FifoAdmission(),
+            800,
+            ['first' => 1, 'second' => 1, 'third' => 1],
+            ['first' => 400, 'second' => 400, 'third' => 400]
+        );
+        $pool->enqueue([$first, $second, $third]);
+
+        $startedRound1 = $pool->fillPool();
+        $this->assertSame(['first', 'second'], array_keys($startedRound1));
+        // 800 reservados — third no puede arrancar todavía.
+        $startedRound1b = $pool->fillPool();
+        $this->assertSame([], array_keys($startedRound1b));
+
+        // Esperar a que first termine y soltar su reserva.
+        $this->waitForJob($pool, 'first');
+        $pool->pollCompleted();
+
+        $startedRound2 = $pool->fillPool();
+        $this->assertArrayHasKey('third', $startedRound2);
+
+        $pool->terminateAll();
+    }
+
+    /** @test */
+    function getRunningPids_returns_pids_of_running_processes_only()
+    {
+        $pool = new ProcessPool(2);
+        $pool->enqueue([$this->makeJob('alpha', 'sleep 0.5')]);
+        $pool->fillPool();
+
+        $pids = $pool->getRunningPids();
+
+        $this->assertArrayHasKey('alpha', $pids);
+        $this->assertGreaterThan(0, $pids['alpha']);
+
+        $pool->terminateAll();
+    }
+
     private function makeJob(string $name, string $script): CustomJob
     {
         return new CustomJob(new JobConfiguration($name, 'custom', ['script' => $script]));
+    }
+
+    private function makeJobWithMemory(string $name, string $script, int $memoryMb): CustomJob
+    {
+        return new CustomJob(new JobConfiguration($name, 'custom', [
+            'script' => $script,
+            'memory' => $memoryMb,
+        ]));
+    }
+
+    private function waitForJob(ProcessPool $pool, string $name): void
+    {
+        $deadline = microtime(true) + 2.0;
+        while (microtime(true) < $deadline) {
+            foreach ($pool->getRunning() as $jobName => $entry) {
+                if ($jobName === $name && !$entry['process']->isRunning()) {
+                    return;
+                }
+            }
+            usleep(20_000);
+        }
     }
 
     private function waitForFastJob(ProcessPool $pool): void
