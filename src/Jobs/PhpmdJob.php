@@ -84,8 +84,8 @@ class PhpmdJob extends JobAbstract
             }
         }
 
-        if (!empty($this->args['otherArguments'])) {
-            $command .= ' ' . $this->args['otherArguments'];
+        if (!empty($this->args['other-arguments'])) {
+            $command .= ' ' . $this->args['other-arguments'];
         }
 
         if ($this->cliExtraArguments !== '') {

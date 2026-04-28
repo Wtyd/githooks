@@ -23,6 +23,18 @@ class JobConfiguration
         'paratest'      => 'processes',
     ];
 
+    /**
+     * Map of legacy camelCase keys (deprecated since v3.3, removed in v4.0)
+     * to their canonical kebab-case form. Closed list — extending requires
+     * a new spec and bumping the deprecation cycle.
+     */
+    private const DEPRECATED_KEY_MAP = [
+        'executablePath'     => 'executable-path',
+        'otherArguments'     => 'other-arguments',
+        'ignoreErrorsOnExit' => 'ignore-errors-on-exit',
+        'failFast'           => 'fail-fast',
+    ];
+
     private string $name;
 
     private string $type;
@@ -73,8 +85,14 @@ class JobConfiguration
             return null;
         }
 
-        if ($type === 'custom' && !array_key_exists('script', $raw) && !array_key_exists('executablePath', $raw)) {
-            $result->addError("Job '$name': custom jobs require a 'script' or 'executablePath' key.");
+        $normalized = self::normalizeDeprecatedKeys($name, $raw, $result);
+        if ($normalized === null) {
+            return null;
+        }
+        $raw = $normalized;
+
+        if ($type === 'custom' && !array_key_exists('script', $raw) && !array_key_exists('executable-path', $raw)) {
+            $result->addError("Job '$name': custom jobs require a 'script' or 'executable-path' key.");
             return null;
         }
 
@@ -99,6 +117,47 @@ class JobConfiguration
         self::validateMemoryKey($name, $config, $result);
 
         return new self($name, $type, $config);
+    }
+
+    /**
+     * Detect and normalize the four legacy camelCase keys (executablePath,
+     * otherArguments, ignoreErrorsOnExit, failFast) to their kebab-case canonical
+     * form. Each conversion records a structured Deprecation that the JSON v2
+     * (and SARIF) output exposes; the user-facing warning string is emitted
+     * automatically by ValidationResult::addDeprecation().
+     *
+     * Returns the normalized array, or null if the same key was declared in
+     * both forms simultaneously (an error condition that aborts the job —
+     * the user must pick one and remove the other).
+     *
+     * @param array<string, mixed> $raw
+     * @return array<string, mixed>|null
+     */
+    private static function normalizeDeprecatedKeys(string $name, array $raw, ValidationResult $result): ?array
+    {
+        $hasConflict = false;
+
+        foreach (self::DEPRECATED_KEY_MAP as $oldKey => $newKey) {
+            $hasOld = array_key_exists($oldKey, $raw);
+            $hasNew = array_key_exists($newKey, $raw);
+
+            if ($hasOld && $hasNew) {
+                $result->addError(
+                    "Job '$name': conflicting keys '$oldKey' and '$newKey'. "
+                    . "Use only one (kebab-case form is canonical)."
+                );
+                $hasConflict = true;
+                continue;
+            }
+
+            if ($hasOld) {
+                $result->addDeprecation(new Deprecation($name, $oldKey, $newKey));
+                $raw[$newKey] = $raw[$oldKey];
+                unset($raw[$oldKey]);
+            }
+        }
+
+        return $hasConflict ? null : $raw;
     }
 
     /**
@@ -242,7 +301,7 @@ class JobConfiguration
 
         $knownKeys = array_merge(
             array_keys($argumentMap),
-            ['executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory']
+            ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory']
         );
 
         foreach ($config as $key => $value) {
@@ -323,7 +382,7 @@ class JobConfiguration
      */
     private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
     {
-        $knownKeys = ['script', 'executablePath', 'otherArguments', 'ignoreErrorsOnExit', 'failFast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
+        $knownKeys = ['script', 'executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {

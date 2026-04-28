@@ -57,7 +57,7 @@ class ParatestJobTest extends TestCase
     public function apply_thread_limit_propagates_value_into_command()
     {
         $job = new ParatestJob(new JobConfiguration('paratest_all', 'paratest', [
-            'executablePath' => 'vendor/bin/paratest',
+            'executable-path' => 'vendor/bin/paratest',
         ]));
 
         $job->applyThreadLimit(8);
@@ -69,7 +69,7 @@ class ParatestJobTest extends TestCase
     public function apply_thread_limit_overrides_existing_processes_value()
     {
         $job = new ParatestJob(new JobConfiguration('paratest_all', 'paratest', [
-            'executablePath' => 'vendor/bin/paratest',
+            'executable-path' => 'vendor/bin/paratest',
             'processes'      => 2,
         ]));
 
@@ -85,7 +85,7 @@ class ParatestJobTest extends TestCase
     public function inherits_phpunit_argument_map_for_filter_and_configuration()
     {
         $job = new ParatestJob(new JobConfiguration('paratest_all', 'paratest', [
-            'executablePath' => 'vendor/bin/paratest',
+            'executable-path' => 'vendor/bin/paratest',
             'configuration'  => 'phpunit.xml',
             'filter'         => 'testFoo',
         ]));

@@ -24,7 +24,7 @@ class FlowExecutorRestageTest extends TestCase
 
         // phpcbf with exit 1 = fix applied. Use a script that exits with 1.
         $job = new PhpcbfJob(new JobConfiguration('phpcbf_test', 'phpcbf', [
-            'executablePath' => 'exit 1 && echo',
+            'executable-path' => 'exit 1 && echo',
             'paths' => ['/dev/null'],
         ]));
 
@@ -57,7 +57,7 @@ class FlowExecutorRestageTest extends TestCase
         $executor = new FlowExecutor(new NullOutputHandler(), null);
 
         $job = new PhpcbfJob(new JobConfiguration('phpcbf_test', 'phpcbf', [
-            'executablePath' => 'exit 1 && echo',
+            'executable-path' => 'exit 1 && echo',
             'paths' => ['/dev/null'],
         ]));
 

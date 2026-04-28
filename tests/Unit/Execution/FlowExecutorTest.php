@@ -187,7 +187,7 @@ class FlowExecutorTest extends TestCase
         // CustomJob with ignoreErrorsOnExit — use a config with the flag
         $job = new CustomJob(new JobConfiguration('ignore', 'custom', [
             'script' => 'exit 1',
-            'ignoreErrorsOnExit' => true,
+            'ignore-errors-on-exit' => true,
         ]));
 
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
@@ -640,7 +640,7 @@ class FlowExecutorTest extends TestCase
         $executor = new FlowExecutor(new NullOutputHandler());
 
         $phpcs = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src'],
             'cores'          => 2,
         ]));
@@ -661,7 +661,7 @@ class FlowExecutorTest extends TestCase
         $executor = new FlowExecutor(new NullOutputHandler());
 
         $paratest = new ParatestJob(new JobConfiguration('paratest_all', 'paratest', [
-            'executablePath' => 'vendor/bin/paratest',
+            'executable-path' => 'vendor/bin/paratest',
             'configuration'  => 'phpunit.xml',
             'cores'          => 4,
         ]));
@@ -684,12 +684,12 @@ class FlowExecutorTest extends TestCase
         // Without cores, the reparto would split the budget among phpcs and paratest.
         // With cores declared, each job gets its own fixed amount.
         $phpcs = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src'],
             'cores'          => 2,
         ]));
         $paratest = new ParatestJob(new JobConfiguration('paratest_all', 'paratest', [
-            'executablePath' => 'vendor/bin/paratest',
+            'executable-path' => 'vendor/bin/paratest',
             'configuration'  => 'phpunit.xml',
             'cores'          => 4,
         ]));

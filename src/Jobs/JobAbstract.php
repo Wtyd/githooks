@@ -65,12 +65,12 @@ abstract class JobAbstract
         $this->name = $config->getName();
         $this->type = $config->getType();
         $this->args = $config->getConfig();
-        $this->executable = $this->args['executablePath'] ?? $this->resolveExecutable();
-        unset($this->args['executablePath']);
-        $this->ignoreErrorsOnExit = (bool) ($this->args['ignoreErrorsOnExit'] ?? false);
-        unset($this->args['ignoreErrorsOnExit']);
-        $this->failFast = (bool) ($this->args['failFast'] ?? false);
-        unset($this->args['failFast']);
+        $this->executable = $this->args['executable-path'] ?? $this->resolveExecutable();
+        unset($this->args['executable-path']);
+        $this->ignoreErrorsOnExit = (bool) ($this->args['ignore-errors-on-exit'] ?? false);
+        unset($this->args['ignore-errors-on-exit']);
+        $this->failFast = (bool) ($this->args['fail-fast'] ?? false);
+        unset($this->args['fail-fast']);
         $this->coresOverride = $this->extractCoresOverride();
         $this->warnAfter = $this->extractPositiveInt('warn-after');
         $this->failAfter = $this->extractPositiveInt('fail-after');
@@ -189,8 +189,8 @@ abstract class JobAbstract
             }
         }
 
-        if (!empty($this->args['otherArguments'])) {
-            $parts[] = $this->args['otherArguments'];
+        if (!empty($this->args['other-arguments'])) {
+            $parts[] = $this->args['other-arguments'];
         }
 
         if ($this->cliExtraArguments !== '') {

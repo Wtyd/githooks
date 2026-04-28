@@ -48,8 +48,8 @@ class CustomJob extends JobAbstract
             $parts = [$base];
             $parts[] = is_array($paths) ? implode(' ', $paths) : $paths;
 
-            if (!empty($this->args['otherArguments'])) {
-                $parts[] = $this->args['otherArguments'];
+            if (!empty($this->args['other-arguments'])) {
+                $parts[] = $this->args['other-arguments'];
             }
 
             if ($this->cliExtraArguments !== '') {

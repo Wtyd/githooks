@@ -21,13 +21,13 @@ class RectorJobTest extends TestCase
     public function rector_builds_correct_command_with_all_arguments()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
-            'executablePath'  => 'vendor/bin/rector',
+            'executable-path'  => 'vendor/bin/rector',
             'config'          => 'rector.php',
             'dry-run'         => true,
             'clear-cache'     => true,
             'no-progress-bar' => true,
             'paths'           => ['src'],
-            'otherArguments'  => '--ansi',
+            'other-arguments'  => '--ansi',
         ]));
 
         $command = $job->buildCommand();
@@ -57,7 +57,7 @@ class RectorJobTest extends TestCase
     public function rector_includes_dry_run_and_clear_cache_flags()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
-            'executablePath' => 'vendor/bin/rector',
+            'executable-path' => 'vendor/bin/rector',
             'dry-run'        => true,
             'clear-cache'    => true,
             'paths'          => ['src'],
@@ -73,7 +73,7 @@ class RectorJobTest extends TestCase
     public function rector_runs_against_several_paths()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
-            'executablePath' => 'vendor/bin/rector',
+            'executable-path' => 'vendor/bin/rector',
             'paths'          => ['src', 'app'],
         ]));
 
@@ -84,7 +84,7 @@ class RectorJobTest extends TestCase
     public function rector_ignores_unexpected_arguments()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
-            'executablePath'     => 'vendor/bin/rector',
+            'executable-path'     => 'vendor/bin/rector',
             'paths'              => ['src'],
             'unexpected_arg'     => 'value',
             'another_bad_key'    => true,
@@ -158,7 +158,7 @@ class RectorJobTest extends TestCase
     public function rector_with_executable_prefix()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
-            'executablePath' => 'vendor/bin/rector',
+            'executable-path' => 'vendor/bin/rector',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -170,7 +170,7 @@ class RectorJobTest extends TestCase
     public function rector_with_cli_extra_arguments()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
-            'executablePath' => 'vendor/bin/rector',
+            'executable-path' => 'vendor/bin/rector',
             'paths'          => ['src'],
         ]));
         $job->applyCliExtraArguments('--debug');

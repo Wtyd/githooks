@@ -22,7 +22,7 @@ class PathHandlingTest extends TestCase
     public function phpstan_handles_backslash_paths_in_config()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'config'         => 'qa\\phpstan.neon',
             'paths'          => ['src\\Models'],
         ]));
@@ -37,7 +37,7 @@ class PathHandlingTest extends TestCase
     public function phpcs_handles_backslash_in_paths()
     {
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src\\Controllers', 'app\\Http'],
         ]));
 
@@ -50,7 +50,7 @@ class PathHandlingTest extends TestCase
     public function php_cs_fixer_handles_windows_config_path()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer', 'php-cs-fixer', [
-            'executablePath' => 'vendor\\bin\\php-cs-fixer',
+            'executable-path' => 'vendor\\bin\\php-cs-fixer',
             'config'         => 'C:\\project\\.php-cs-fixer.dist.php',
             'paths'          => ['src'],
         ]));
@@ -65,7 +65,7 @@ class PathHandlingTest extends TestCase
     public function rector_handles_windows_config_path()
     {
         $job = new RectorJob(new JobConfiguration('rector', 'rector', [
-            'executablePath' => 'vendor\\bin\\rector',
+            'executable-path' => 'vendor\\bin\\rector',
             'config'         => 'C:\\project\\rector.php',
             'paths'          => ['src\\Domain'],
         ]));

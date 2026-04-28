@@ -720,11 +720,11 @@ class FlowPreparerTest extends TestCase
     {
         $jobs = [
             'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
-                'executablePath' => 'vendor/bin/phpstan',
+                'executable-path' => 'vendor/bin/phpstan',
                 'paths' => ['src'],
             ]),
             'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', [
-                'executablePath' => 'vendor/bin/phpcs',
+                'executable-path' => 'vendor/bin/phpcs',
                 'paths' => ['src'],
             ]),
         ];
@@ -753,7 +753,7 @@ class FlowPreparerTest extends TestCase
     {
         $jobs = [
             'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
-                'executablePath' => 'vendor/bin/phpstan',
+                'executable-path' => 'vendor/bin/phpstan',
                 'paths' => ['src'],
             ]),
         ];
@@ -781,7 +781,7 @@ class FlowPreparerTest extends TestCase
     {
         $jobs = [
             'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
-                'executablePath' => 'vendor/bin/phpstan',
+                'executable-path' => 'vendor/bin/phpstan',
                 'paths' => ['src'],
             ]),
         ];
@@ -807,7 +807,7 @@ class FlowPreparerTest extends TestCase
     {
         $jobs = [
             'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
-                'executablePath' => 'vendor/bin/phpstan',
+                'executable-path' => 'vendor/bin/phpstan',
                 'paths' => ['src'],
             ]),
             'lint_js' => new JobConfiguration('lint_js', 'custom', [
@@ -842,12 +842,12 @@ class FlowPreparerTest extends TestCase
     {
         $jobs = [
             'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
-                'executablePath' => 'vendor/bin/phpstan',
+                'executable-path' => 'vendor/bin/phpstan',
                 'paths' => ['src'],
                 'executable-prefix' => null,
             ]),
             'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', [
-                'executablePath' => 'vendor/bin/phpcs',
+                'executable-path' => 'vendor/bin/phpcs',
                 'paths' => ['src'],
             ]),
         ];
@@ -877,7 +877,7 @@ class FlowPreparerTest extends TestCase
     public function it_applies_executable_prefix_to_single_job()
     {
         $jobConfig = new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths' => ['src'],
         ]);
 
@@ -896,11 +896,11 @@ class FlowPreparerTest extends TestCase
     {
         $jobs = [
             'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
-                'executablePath' => 'vendor/bin/phpstan',
+                'executable-path' => 'vendor/bin/phpstan',
                 'paths' => ['src'],
             ]),
             'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', [
-                'executablePath' => 'vendor/bin/phpcs',
+                'executable-path' => 'vendor/bin/phpcs',
                 'paths' => ['src'],
             ]),
         ];
@@ -927,7 +927,7 @@ class FlowPreparerTest extends TestCase
     public function it_passes_cli_extra_args_to_single_job()
     {
         $jobConfig = new JobConfiguration('phpunit_all', 'phpunit', [
-            'executablePath' => 'vendor/bin/phpunit',
+            'executable-path' => 'vendor/bin/phpunit',
         ]);
 
         $plan = $this->preparer->prepareSingleJob($jobConfig, new OptionsConfiguration(), null, null, '--filter=testFoo');
@@ -941,7 +941,7 @@ class FlowPreparerTest extends TestCase
     {
         $jobs = [
             'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
-                'executablePath' => 'vendor/bin/phpstan',
+                'executable-path' => 'vendor/bin/phpstan',
                 'paths' => ['src'],
             ]),
         ];

@@ -86,7 +86,7 @@ class JobConfigurationTest extends TestCase
 
         $this->assertNull($job);
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString("'script' or 'executablePath' key", $result->getErrors()[0]);
+        $this->assertStringContainsString("'script' or 'executable-path' key", $result->getErrors()[0]);
     }
 
     /** @test */
@@ -261,8 +261,8 @@ class JobConfigurationTest extends TestCase
         JobConfiguration::fromArray('audit', [
             'type' => 'custom',
             'script' => 'composer audit',
-            'ignoreErrorsOnExit' => true,
-            'failFast' => false,
+            'ignore-errors-on-exit' => true,
+            'fail-fast' => false,
         ], $this->registry, $result);
 
         $this->assertEmpty($result->getWarnings());

@@ -57,7 +57,7 @@ class PhpmdJobTest extends TestCase
         // becomes `&&`, which would leak default flags. Ensure that an "empty args" command
         // never emits any ARGUMENT_MAP flag.
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
         ]));
 
@@ -82,7 +82,7 @@ class PhpmdJobTest extends TestCase
     public function command_skips_flags_whose_value_is_empty_string()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
             'cache-file'     => '',
             'suffixes'       => '',
@@ -101,7 +101,7 @@ class PhpmdJobTest extends TestCase
         // flags in ARGUMENT_MAP never appear. exclude is the FIRST key, so it being
         // absent + cache-file present proves that iteration continues past the skip.
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
             'cache-file'     => '.mycache',
             'suffixes'       => 'php,inc',
@@ -120,7 +120,7 @@ class PhpmdJobTest extends TestCase
         // Mutant L91 NotIdentical→Identical: `$this->cliExtraArguments !== ''` inverted,
         // causing the extra-args branch to run with an empty string → trailing space.
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
         ]));
 
@@ -140,7 +140,7 @@ class PhpmdJobTest extends TestCase
     public function command_with_boolean_flag_keeps_everything_before_the_flag()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
             'cache'          => true,
         ]));
@@ -160,7 +160,7 @@ class PhpmdJobTest extends TestCase
     public function command_with_cli_extra_arguments_appends_them_with_single_space()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
         ]));
         $job->applyCliExtraArguments('--reportfile=reports/phpmd.txt');
@@ -176,7 +176,7 @@ class PhpmdJobTest extends TestCase
     public function command_uses_positional_order_executable_paths_format_rules()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src', 'app'],
             'rules'          => 'qa/phpmd.xml',
         ]));
@@ -190,7 +190,7 @@ class PhpmdJobTest extends TestCase
     public function apply_structured_output_format_switches_format_to_json()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
         ]));
 
@@ -207,7 +207,7 @@ class PhpmdJobTest extends TestCase
     public function exclude_flag_emits_space_separated_csv_in_quotes()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
             'exclude'        => ['vendor', 'tools'],
         ]));
@@ -219,7 +219,7 @@ class PhpmdJobTest extends TestCase
     public function boolean_cache_flag_appears_without_value_when_true()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/phpmd',
+            'executable-path' => 'tools/phpmd',
             'paths'          => ['src'],
             'cache'          => true,
         ]));

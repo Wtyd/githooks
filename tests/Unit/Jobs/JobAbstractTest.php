@@ -109,7 +109,7 @@ class JobAbstractTest extends TestCase
     public function executable_prefix_joins_with_single_space_before_executable()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -121,7 +121,7 @@ class JobAbstractTest extends TestCase
     public function cli_extra_arguments_append_with_leading_space()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths'          => ['src'],
         ]));
         $job->applyCliExtraArguments('--memory-limit=2G');
@@ -145,7 +145,7 @@ class JobAbstractTest extends TestCase
     public function get_thread_capability_defaults_to_null_on_base_class()
     {
         // ScriptJob inherits JobAbstract::getThreadCapability() default (null).
-        $job = new \Wtyd\GitHooks\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executablePath' => 'echo']));
+        $job = new \Wtyd\GitHooks\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executable-path' => 'echo']));
 
         $this->assertNull($job->getThreadCapability());
     }
@@ -153,7 +153,7 @@ class JobAbstractTest extends TestCase
     /** @test */
     public function supports_structured_output_defaults_to_false_on_base_class()
     {
-        $job = new \Wtyd\GitHooks\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executablePath' => 'echo']));
+        $job = new \Wtyd\GitHooks\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executable-path' => 'echo']));
 
         $this->assertFalse($job->supportsStructuredOutput());
         $this->assertFalse($job->applyStructuredOutputFormat());

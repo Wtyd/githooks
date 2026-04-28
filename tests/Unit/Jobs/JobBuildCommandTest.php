@@ -26,13 +26,13 @@ class JobBuildCommandTest extends TestCase
     public function phpstan_builds_correct_command()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'config'         => 'qa/phpstan.neon',
             'level'          => '8',
             'memory-limit'   => '1G',
             'no-progress'    => true,
             'paths'          => ['src'],
-            'otherArguments' => '--ansi',
+            'other-arguments' => '--ansi',
         ]));
 
         $command = $job->buildCommand();
@@ -63,7 +63,7 @@ class JobBuildCommandTest extends TestCase
     public function phpmd_builds_correct_positional_command()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'tools/php74/phpmd',
+            'executable-path' => 'tools/php74/phpmd',
             'paths'          => ['src'],
             'rules'          => 'qa/phpmd-ruleset.xml',
             'exclude'        => ['vendor'],
@@ -80,13 +80,13 @@ class JobBuildCommandTest extends TestCase
     public function phpcs_builds_correct_command()
     {
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath'   => 'tools/php74/phpcs',
+            'executable-path'   => 'tools/php74/phpcs',
             'standard'         => 'PSR12',
             'ignore'           => ['vendor', 'tools'],
             'error-severity'   => '1',
             'warning-severity' => '6',
             'paths'            => ['src'],
-            'otherArguments'   => '--report=summary',
+            'other-arguments'   => '--report=summary',
         ]));
 
         $command = $job->buildCommand();
@@ -140,7 +140,7 @@ class JobBuildCommandTest extends TestCase
             'group'         => 'unit',
             'exclude-group' => 'slow',
             'log-junit'     => 'junit.xml',
-            'otherArguments' => '--colors=always',
+            'other-arguments' => '--colors=always',
         ]));
 
         $command = $job->buildCommand();
@@ -159,7 +159,7 @@ class JobBuildCommandTest extends TestCase
         $job = new ParallelLintJob(new JobConfiguration('lint', 'parallel-lint', [
             'paths'   => ['./'],
             'exclude' => ['vendor', 'tools'],
-            'otherArguments' => '--colors',
+            'other-arguments' => '--colors',
         ]));
 
         $command = $job->buildCommand();
@@ -190,8 +190,8 @@ class JobBuildCommandTest extends TestCase
     public function script_job_uses_executable_path()
     {
         $job = new ScriptJob(new JobConfiguration('my_script', 'script', [
-            'executablePath' => 'vendor/bin/my-tool',
-            'otherArguments' => '--verbose',
+            'executable-path' => 'vendor/bin/my-tool',
+            'other-arguments' => '--verbose',
         ]));
 
         $this->assertEquals('vendor/bin/my-tool --verbose', $job->buildCommand());
@@ -211,8 +211,8 @@ class JobBuildCommandTest extends TestCase
     public function job_exposes_ignore_errors_and_fail_fast()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'ignoreErrorsOnExit' => true,
-            'failFast'           => true,
+            'ignore-errors-on-exit' => true,
+            'fail-fast'           => true,
             'paths'              => ['src'],
         ]));
 
@@ -248,9 +248,9 @@ class JobBuildCommandTest extends TestCase
     public function custom_job_with_paths_builds_structured_command()
     {
         $job = new CustomJob(new JobConfiguration('eslint_src', 'custom', [
-            'executablePath' => 'eslint',
+            'executable-path' => 'eslint',
             'paths' => ['src'],
-            'otherArguments' => '--fix',
+            'other-arguments' => '--fix',
         ]));
 
         $this->assertEquals('eslint src --fix', $job->buildCommand());
@@ -260,9 +260,9 @@ class JobBuildCommandTest extends TestCase
     public function custom_job_with_paths_and_filtered_files()
     {
         $job = new CustomJob(new JobConfiguration('eslint_src', 'custom', [
-            'executablePath' => 'eslint',
+            'executable-path' => 'eslint',
             'paths' => ['src/Foo.php', 'src/Bar.php'],
-            'otherArguments' => '--fix',
+            'other-arguments' => '--fix',
         ]));
 
         $this->assertEquals('eslint src/Foo.php src/Bar.php --fix', $job->buildCommand());
@@ -326,7 +326,7 @@ class JobBuildCommandTest extends TestCase
         $this->assertFalse($phpstanDisabled->isAccelerable($registry));
 
         $customEnabled = new JobConfiguration('lint', 'custom', [
-            'executablePath' => 'eslint',
+            'executable-path' => 'eslint',
             'paths' => ['src'],
             'accelerable' => true,
         ]);
@@ -352,7 +352,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_phpstan_command()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -364,7 +364,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_phpcs_command()
     {
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -376,7 +376,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_phpcbf_command()
     {
         $job = new PhpcbfJob(new JobConfiguration('phpcbf_src', 'phpcbf', [
-            'executablePath' => 'vendor/bin/phpcbf',
+            'executable-path' => 'vendor/bin/phpcbf',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -388,7 +388,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_phpmd_command()
     {
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
-            'executablePath' => 'vendor/bin/phpmd',
+            'executable-path' => 'vendor/bin/phpmd',
             'paths'          => ['src'],
             'rules'          => 'cleancode',
         ]));
@@ -401,7 +401,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_phpunit_command()
     {
         $job = new PhpunitJob(new JobConfiguration('phpunit', 'phpunit', [
-            'executablePath' => 'vendor/bin/phpunit',
+            'executable-path' => 'vendor/bin/phpunit',
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
 
@@ -412,7 +412,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_psalm_command()
     {
         $job = new PsalmJob(new JobConfiguration('psalm_src', 'psalm', [
-            'executablePath' => 'vendor/bin/psalm',
+            'executable-path' => 'vendor/bin/psalm',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('sail exec app');
@@ -424,7 +424,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_parallel_lint_command()
     {
         $job = new ParallelLintJob(new JobConfiguration('lint', 'parallel-lint', [
-            'executablePath' => 'vendor/bin/parallel-lint',
+            'executable-path' => 'vendor/bin/parallel-lint',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -436,7 +436,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_phpcpd_command()
     {
         $job = new PhpcpdJob(new JobConfiguration('cpd', 'phpcpd', [
-            'executablePath' => 'vendor/bin/phpcpd',
+            'executable-path' => 'vendor/bin/phpcpd',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -448,8 +448,8 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_script_job_command()
     {
         $job = new ScriptJob(new JobConfiguration('my_script', 'script', [
-            'executablePath' => 'vendor/bin/my-tool',
-            'otherArguments' => '--verbose',
+            'executable-path' => 'vendor/bin/my-tool',
+            'other-arguments' => '--verbose',
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
 
@@ -460,9 +460,9 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_custom_job_structured_mode()
     {
         $job = new CustomJob(new JobConfiguration('eslint_src', 'custom', [
-            'executablePath' => 'eslint',
+            'executable-path' => 'eslint',
             'paths'          => ['src'],
-            'otherArguments' => '--fix',
+            'other-arguments' => '--fix',
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
 
@@ -484,7 +484,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_php_cs_fixer_command()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'executable-path' => 'vendor/bin/php-cs-fixer',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -496,7 +496,7 @@ class JobBuildCommandTest extends TestCase
     public function executable_prefix_is_prepended_to_rector_command()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
-            'executablePath' => 'vendor/bin/rector',
+            'executable-path' => 'vendor/bin/rector',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -508,7 +508,7 @@ class JobBuildCommandTest extends TestCase
     public function empty_executable_prefix_does_not_alter_command()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths'          => ['src'],
         ]));
 
@@ -526,7 +526,7 @@ class JobBuildCommandTest extends TestCase
     public function cli_extra_arguments_are_appended_to_command()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths'          => ['src'],
         ]));
         $job->applyCliExtraArguments('--memory-limit=2G');
@@ -541,8 +541,8 @@ class JobBuildCommandTest extends TestCase
     public function cli_extra_arguments_are_placed_after_other_arguments()
     {
         $job = new PhpunitJob(new JobConfiguration('phpunit', 'phpunit', [
-            'executablePath'  => 'vendor/bin/phpunit',
-            'otherArguments'  => '--colors=always',
+            'executable-path'  => 'vendor/bin/phpunit',
+            'other-arguments'  => '--colors=always',
         ]));
         $job->applyCliExtraArguments('--filter=testFoo');
 
@@ -560,7 +560,7 @@ class JobBuildCommandTest extends TestCase
     public function cli_extra_arguments_with_multiple_args()
     {
         $job = new PhpunitJob(new JobConfiguration('phpunit', 'phpunit', [
-            'executablePath' => 'vendor/bin/phpunit',
+            'executable-path' => 'vendor/bin/phpunit',
         ]));
         $job->applyCliExtraArguments('--filter=testFoo --testdox');
 
@@ -574,7 +574,7 @@ class JobBuildCommandTest extends TestCase
     public function empty_cli_extra_arguments_do_not_alter_command()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths'          => ['src'],
         ]));
 
@@ -599,9 +599,9 @@ class JobBuildCommandTest extends TestCase
     public function cli_extra_arguments_work_with_custom_job_structured_mode()
     {
         $job = new CustomJob(new JobConfiguration('eslint', 'custom', [
-            'executablePath' => 'eslint',
+            'executable-path' => 'eslint',
             'paths'          => ['src'],
-            'otherArguments' => '--fix',
+            'other-arguments' => '--fix',
         ]));
         $job->applyCliExtraArguments('--max-warnings=0');
 
@@ -615,7 +615,7 @@ class JobBuildCommandTest extends TestCase
     public function cli_extra_arguments_combine_with_executable_prefix()
     {
         $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
-            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');

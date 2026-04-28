@@ -80,7 +80,7 @@ class PhpcsJobTest extends TestCase
     public function apply_thread_limit_propagates_value_into_command()
     {
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src'],
         ]));
 
@@ -93,7 +93,7 @@ class PhpcsJobTest extends TestCase
     public function apply_thread_limit_overrides_existing_parallel_value()
     {
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src'],
             'parallel'       => 8,
         ]));
@@ -118,7 +118,7 @@ class PhpcsJobTest extends TestCase
     public function apply_structured_output_format_sets_report_to_json()
     {
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src'],
         ]));
 
@@ -134,7 +134,7 @@ class PhpcsJobTest extends TestCase
         // Guards that buildCommand() doesn't produce trailing spaces when optional
         // fields are absent (protects against PhpmdJob:91 style mutants on siblings).
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'executablePath' => 'vendor/bin/phpcs',
+            'executable-path' => 'vendor/bin/phpcs',
             'paths'          => ['src', 'app'],
         ]));
 

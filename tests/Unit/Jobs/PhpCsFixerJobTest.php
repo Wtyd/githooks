@@ -21,7 +21,7 @@ class PhpCsFixerJobTest extends TestCase
     public function php_cs_fixer_builds_correct_command_with_all_arguments()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'executable-path' => 'vendor/bin/php-cs-fixer',
             'config'         => '.php-cs-fixer.dist.php',
             'rules'          => '@PSR12',
             'dry-run'        => true,
@@ -30,7 +30,7 @@ class PhpCsFixerJobTest extends TestCase
             'using-cache'    => 'no',
             'cache-file'     => '.cache/fixer',
             'paths'          => ['src'],
-            'otherArguments' => '--ansi',
+            'other-arguments' => '--ansi',
         ]));
 
         $command = $job->buildCommand();
@@ -63,7 +63,7 @@ class PhpCsFixerJobTest extends TestCase
     public function php_cs_fixer_includes_dry_run_flag()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'executable-path' => 'vendor/bin/php-cs-fixer',
             'dry-run'        => true,
             'paths'          => ['src'],
         ]));
@@ -75,7 +75,7 @@ class PhpCsFixerJobTest extends TestCase
     public function php_cs_fixer_includes_using_cache_and_cache_file()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'executable-path' => 'vendor/bin/php-cs-fixer',
             'using-cache'    => 'no',
             'cache-file'     => '.php-cs-fixer.cache',
             'paths'          => ['src'],
@@ -91,7 +91,7 @@ class PhpCsFixerJobTest extends TestCase
     public function php_cs_fixer_runs_against_several_paths()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'executable-path' => 'vendor/bin/php-cs-fixer',
             'paths'          => ['src', 'app'],
         ]));
 
@@ -102,7 +102,7 @@ class PhpCsFixerJobTest extends TestCase
     public function php_cs_fixer_ignores_unexpected_arguments()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath'     => 'vendor/bin/php-cs-fixer',
+            'executable-path'     => 'vendor/bin/php-cs-fixer',
             'paths'              => ['src'],
             'unexpected_arg'     => 'value',
             'another_bad_key'    => true,
@@ -177,7 +177,7 @@ class PhpCsFixerJobTest extends TestCase
     public function php_cs_fixer_with_executable_prefix()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'executable-path' => 'vendor/bin/php-cs-fixer',
             'paths'          => ['src'],
         ]));
         $job->applyExecutablePrefix('docker exec -i app');
@@ -189,7 +189,7 @@ class PhpCsFixerJobTest extends TestCase
     public function php_cs_fixer_with_cli_extra_arguments()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
-            'executablePath' => 'vendor/bin/php-cs-fixer',
+            'executable-path' => 'vendor/bin/php-cs-fixer',
             'paths'          => ['src'],
         ]));
         $job->applyCliExtraArguments('--show-progress=dots');
