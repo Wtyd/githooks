@@ -13,6 +13,10 @@ return [
             // phpcs, psalm) spawn their own worker processes internally, so actual OS
             // processes may be higher than this value. Keep low on machines with few cores.
             'processes' => 10,
+            'memory-budget' => [
+                'warn-above' => 600,
+                // 'fail-above' => 8,
+            ],
         ],
         'qa' => [
             'jobs' => [

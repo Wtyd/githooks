@@ -68,4 +68,35 @@ class LinuxRssSamplerTest extends TestCase
         $this->assertTrue($sampler->isAvailable());
         $this->assertSame('', $sampler->getUnavailableReason());
     }
+
+    /**
+     * @test
+     * Regression: the sampler used to read only the root PID, which under
+     * Symfony's `Process::fromShellCommandLine()` is the shell wrapper —
+     * a few MB. The actual analyzer (php phpstan, php phpunit) is a child
+     * process and only contributes when the tree is summed.
+     */
+    public function it_sums_rss_across_the_process_tree(): void
+    {
+        // Spawn a shell that forks a PHP child holding a measurable buffer.
+        // The shell itself is ~1-2 MB; the php child should add ≥ ~20 MB.
+        $cmd = 'sh -c "php -r \'\\$a=str_repeat(chr(65),1024*1024*30); usleep(800000);\' & wait"';
+        $proc = \Symfony\Component\Process\Process::fromShellCommandLine($cmd);
+        $proc->start();
+
+        // Give the fork a moment to allocate before sampling.
+        usleep(300000);
+
+        $sampler = new LinuxRssSampler();
+        $samples = $sampler->sample(['child' => $proc->getPid()]);
+
+        $proc->wait();
+
+        $this->assertArrayHasKey('child', $samples);
+        $this->assertGreaterThan(
+            10,
+            $samples['child'],
+            'Tree sum should reflect the child PHP buffer, not just the shell.'
+        );
+    }
 }
