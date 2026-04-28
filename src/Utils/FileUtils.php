@@ -68,7 +68,8 @@ class FileUtils implements FileUtilsInterface
     public function getCurrentBranch(): string
     {
         $output = [];
-        exec('git rev-parse --abbrev-ref HEAD 2>/dev/null', $output);
+        $silent = Platform::stderrRedirect();
+        exec("git rev-parse --abbrev-ref HEAD $silent", $output);
         return $output[0] ?? '';
     }
 
@@ -78,23 +79,29 @@ class FileUtils implements FileUtilsInterface
      */
     public function getBranchDiffFiles(string $mainBranch): ?array
     {
+        // Use the platform-portable null device so stderr is silenced on
+        // Windows too — `2>/dev/null` is bash-only and on cmd.exe it tries
+        // to create a literal `dev\null` file relative to the cwd, which
+        // either fails or pollutes the working tree.
+        $silent = Platform::stderrRedirect();
+
         // Try to find the merge-base
         $baseCommit = [];
         $returnCode = 0;
-        exec("git merge-base origin/$mainBranch HEAD 2>/dev/null", $baseCommit, $returnCode);
+        exec("git merge-base origin/$mainBranch HEAD $silent", $baseCommit, $returnCode);
 
         if ($returnCode !== 0 || empty($baseCommit)) {
             // Try fetching the branch first (CI environments with shallow clones)
             $fetchOutput = [];
-            exec("git fetch origin $mainBranch --depth=1 2>/dev/null", $fetchOutput);
+            exec("git fetch origin $mainBranch --depth=1 $silent", $fetchOutput);
 
             // Retry merge-base
             $baseCommit = [];
-            exec("git merge-base origin/$mainBranch HEAD 2>/dev/null", $baseCommit, $returnCode);
+            exec("git merge-base origin/$mainBranch HEAD $silent", $baseCommit, $returnCode);
 
             if ($returnCode !== 0 || empty($baseCommit)) {
                 // Last attempt: try without origin/ prefix (local branch)
-                exec("git merge-base $mainBranch HEAD 2>/dev/null", $baseCommit, $returnCode);
+                exec("git merge-base $mainBranch HEAD $silent", $baseCommit, $returnCode);
 
                 if ($returnCode !== 0 || empty($baseCommit)) {
                     return null;
@@ -103,7 +110,7 @@ class FileUtils implements FileUtilsInterface
         }
 
         $diffFiles = [];
-        exec("git diff --name-only --diff-filter=ACMR {$baseCommit[0]}...HEAD 2>/dev/null", $diffFiles, $returnCode);
+        exec("git diff --name-only --diff-filter=ACMR {$baseCommit[0]}...HEAD $silent", $diffFiles, $returnCode);
 
         if ($returnCode !== 0) {
             return null;
@@ -134,8 +141,9 @@ class FileUtils implements FileUtilsInterface
         }
 
         // 2. git symbolic-ref (local, no network)
+        $silent = Platform::stderrRedirect();
         $output = [];
-        exec('git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null', $output);
+        exec("git symbolic-ref refs/remotes/origin/HEAD $silent", $output);
         if (!empty($output[0])) {
             // Output is like "refs/remotes/origin/master"
             $parts = explode('/', $output[0]);
@@ -146,7 +154,7 @@ class FileUtils implements FileUtilsInterface
         foreach (['master', 'main'] as $candidate) {
             $refs = [];
             $returnCode = 0;
-            exec("git show-ref --verify refs/heads/$candidate 2>/dev/null", $refs, $returnCode);
+            exec("git show-ref --verify refs/heads/$candidate $silent", $refs, $returnCode);
             if ($returnCode === 0) {
                 return $candidate;
             }
