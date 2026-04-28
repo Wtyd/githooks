@@ -90,7 +90,11 @@
                         }
                     ]
                 }
-            ]
+            ],
+            "properties": {
+                "warnings": [],
+                "deprecations": []
+            }
         },
         {
             "tool": {

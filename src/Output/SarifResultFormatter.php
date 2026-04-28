@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output;
 
+use Wtyd\GitHooks\Configuration\Deprecation;
+use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
 use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
@@ -79,6 +81,8 @@ class SarifResultFormatter implements ResultFormatter
             ];
         }
 
+        $runs[0]['properties'] = $this->buildPropertiesBlock($result->getConfigValidation());
+
         $sarif = [
             '$schema' => self::SCHEMA,
             'version' => '2.1.0',
@@ -146,6 +150,33 @@ class SarifResultFormatter implements ResultFormatter
             'tool'    => ['driver' => $driver],
             'results' => $results,
         ];
+    }
+
+    /**
+     * Always-present `properties` block under runs[0] with `warnings` and
+     * `deprecations` from the parsing-time ValidationResult. Empty arrays when
+     * no validation attached. SARIF 2.1.0 admits arbitrary properties at the
+     * run level (`run.properties` is `propertyBag`).
+     *
+     * @return array{warnings: string[], deprecations: array<int, array<string, string>>}
+     */
+    private function buildPropertiesBlock(?ValidationResult $validation): array
+    {
+        if ($validation === null) {
+            return ['warnings' => [], 'deprecations' => []];
+        }
+
+        $warnings = array_values(array_filter(
+            $validation->getWarnings(),
+            fn (string $warning): bool => strpos($warning, 'skipped') === false
+        ));
+
+        $deprecations = array_map(
+            fn (Deprecation $deprecation): array => $deprecation->toArray(),
+            $validation->getDeprecations()
+        );
+
+        return ['warnings' => $warnings, 'deprecations' => $deprecations];
     }
 
     private function mapLevel(string $severity): string

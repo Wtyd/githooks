@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\Memory\MemoryStats;
 
 class FlowResult
@@ -33,6 +34,8 @@ class FlowResult
     private ?MemoryBudgetState $memoryBudgetState = null;
 
     private ?MemoryStats $memoryStats = null;
+
+    private ?ValidationResult $configValidation = null;
 
     /**
      * @param JobResult[] $jobResults
@@ -176,5 +179,20 @@ class FlowResult
     public function setMemoryStats(?MemoryStats $stats): void
     {
         $this->memoryStats = $stats;
+    }
+
+    /**
+     * Attach the parsing-time ValidationResult so structured output formatters
+     * (JSON v2, SARIF) can serialize warnings and deprecations alongside the
+     * execution data. Null until the command opts in by calling this setter.
+     */
+    public function setConfigValidation(ValidationResult $validation): void
+    {
+        $this->configValidation = $validation;
+    }
+
+    public function getConfigValidation(): ?ValidationResult
+    {
+        return $this->configValidation;
     }
 }

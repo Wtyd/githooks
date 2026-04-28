@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
@@ -39,6 +40,7 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
 class FlowsCommand extends Command
 {
     use EmitsConditionsHeader;
+    use EmitsConfigWarnings;
     use FormatsOutput;
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
@@ -218,13 +220,9 @@ class FlowsCommand extends Command
             $this->emitConditionsHeader($resolution, $expandedFlows, $plan->getInputFiles());
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
+            $result->setConfigValidation($config->getValidation());
 
-            foreach ($config->getValidation()->getWarnings() as $warning) {
-                if (strpos($warning, 'skipped') !== false) {
-                    continue;
-                }
-                $this->warn($warning);
-            }
+            $this->emitConfigWarnings($config->getValidation());
 
             $this->renderFormattedResult($result, $plan->getOptions());
 

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
+use Wtyd\GitHooks\Configuration\Deprecation;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowResult;
@@ -525,5 +527,71 @@ class JsonResultFormatterTest extends UnitTestCase
 
         $this->assertFalse($data['jobs'][0]['success']);
         $this->assertSame('flow memory-budget exceeded', $data['jobs'][0]['killedReason']);
+    }
+
+    // ========================================================================
+    // v3.3 — kebab-case warnings + deprecations[]
+    // ========================================================================
+
+    /** @test */
+    function warnings_and_deprecations_are_always_present_as_arrays(): void
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+        ], '1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('warnings', $data);
+        $this->assertArrayHasKey('deprecations', $data);
+        $this->assertSame([], $data['warnings']);
+        $this->assertSame([], $data['deprecations']);
+    }
+
+    /** @test */
+    function deprecations_block_serializes_records_when_validation_attached(): void
+    {
+        $validation = new ValidationResult();
+        $validation->addDeprecation(new Deprecation('phpstan-src', 'executablePath', 'executable-path'));
+        $validation->addDeprecation(new Deprecation('phpcs', 'failFast', 'fail-fast'));
+        $validation->addWarning('Some non-deprecation parsing warning.');
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+        ], '1s');
+        $result->setConfigValidation($validation);
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertCount(2, $data['deprecations']);
+        $this->assertSame('phpstan-src', $data['deprecations'][0]['job']);
+        $this->assertSame('executablePath', $data['deprecations'][0]['oldKey']);
+        $this->assertSame('executable-path', $data['deprecations'][0]['newKey']);
+        $this->assertSame('v4.0', $data['deprecations'][0]['removalVersion']);
+        $this->assertSame('config-key-rename', $data['deprecations'][0]['kind']);
+
+        $this->assertCount(3, $data['warnings']);
+        $this->assertContains(
+            "Deprecated: 'executablePath' is renamed to 'executable-path'. Will be removed in v4.0.",
+            $data['warnings']
+        );
+        $this->assertContains('Some non-deprecation parsing warning.', $data['warnings']);
+    }
+
+    /** @test */
+    function warnings_block_filters_skipped_lines(): void
+    {
+        $validation = new ValidationResult();
+        $validation->addWarning('Job foo skipped because no staged files match.');
+        $validation->addWarning('Real parsing warning.');
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s'),
+        ], '1s');
+        $result->setConfigValidation($validation);
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame(['Real parsing warning.'], $data['warnings']);
     }
 }

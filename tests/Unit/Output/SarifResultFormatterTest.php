@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use PHPUnit\Framework\TestCase;
+use Wtyd\GitHooks\Configuration\Deprecation;
+use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Output\SarifResultFormatter;
@@ -322,6 +324,44 @@ class SarifResultFormatterTest extends TestCase
         $this->assertSame(
             'src/Relative.php',
             $data['runs'][0]['results'][0]['locations'][0]['physicalLocation']['artifactLocation']['uri']
+        );
+    }
+
+    /** @test */
+    function properties_block_always_present_with_empty_arrays_when_no_validation()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s', false, null, 'phpstan', 0, [], false, null, ''),
+        ], '1s');
+
+        $data = json_decode((new SarifResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('properties', $data['runs'][0]);
+        $this->assertSame([], $data['runs'][0]['properties']['warnings']);
+        $this->assertSame([], $data['runs'][0]['properties']['deprecations']);
+    }
+
+    /** @test */
+    function properties_block_serializes_deprecations_when_validation_attached()
+    {
+        $validation = new ValidationResult();
+        $validation->addDeprecation(new Deprecation('phpstan-src', 'failFast', 'fail-fast'));
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, '', '1s', false, null, 'phpstan', 0, [], false, null, ''),
+        ], '1s');
+        $result->setConfigValidation($validation);
+
+        $data = json_decode((new SarifResultFormatter())->format($result), true);
+
+        $properties = $data['runs'][0]['properties'];
+        $this->assertCount(1, $properties['deprecations']);
+        $this->assertSame('phpstan-src', $properties['deprecations'][0]['job']);
+        $this->assertSame('failFast', $properties['deprecations'][0]['oldKey']);
+        $this->assertSame('fail-fast', $properties['deprecations'][0]['newKey']);
+        $this->assertContains(
+            "Deprecated: 'failFast' is renamed to 'fail-fast'. Will be removed in v4.0.",
+            $properties['warnings']
         );
     }
 }

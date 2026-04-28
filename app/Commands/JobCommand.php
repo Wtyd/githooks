@@ -15,6 +15,7 @@ use Wtyd\GitHooks\Execution\{
     InputFilesResolver
 };
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
@@ -28,6 +29,7 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
 class JobCommand extends Command
 {
     use EmitsConditionsHeader;
+    use EmitsConfigWarnings;
     use FormatsOutput;
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
@@ -200,6 +202,9 @@ class JobCommand extends Command
             $this->emitConditionsHeader($resolution, null, $plan->getInputFiles());
 
             $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
+            $result->setConfigValidation($config->getValidation());
+
+            $this->emitConfigWarnings($config->getValidation());
 
             $this->renderFormattedResult($result, $plan->getOptions());
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output;
 
+use Wtyd\GitHooks\Configuration\Deprecation;
+use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\InputFilesResolution;
@@ -74,6 +76,10 @@ class JsonResultFormatter implements ResultFormatter
         if ($inputFiles !== null) {
             $data['inputFiles'] = $this->buildInputFilesBlock($inputFiles);
         }
+
+        $validation = $result->getConfigValidation();
+        $data['warnings']     = $this->buildWarningsBlock($validation);
+        $data['deprecations'] = $this->buildDeprecationsBlock($validation);
 
         $data['jobs'] = array_values($jobs);
 
@@ -263,5 +269,43 @@ class JsonResultFormatter implements ResultFormatter
             $list[] = ['name' => $name, 'value' => $value];
         }
         return $list;
+    }
+
+    /**
+     * Always-present `warnings` block under the explicit-null pattern: empty
+     * array when no validation attached, full string list otherwise. Skipped-job
+     * warnings are filtered to match the stderr behaviour (already surfaced by
+     * the output handler — listing them again would duplicate noise).
+     *
+     * @return string[]
+     */
+    private function buildWarningsBlock(?ValidationResult $validation): array
+    {
+        if ($validation === null) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $validation->getWarnings(),
+            fn (string $warning): bool => strpos($warning, 'skipped') === false
+        ));
+    }
+
+    /**
+     * Always-present `deprecations` block under the explicit-null pattern:
+     * empty array when no validation attached, full structured records otherwise.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function buildDeprecationsBlock(?ValidationResult $validation): array
+    {
+        if ($validation === null) {
+            return [];
+        }
+
+        return array_map(
+            fn (Deprecation $deprecation): array => $deprecation->toArray(),
+            $validation->getDeprecations()
+        );
     }
 }
