@@ -39,10 +39,14 @@ final class MemoryStats
     /** @var string[] job names in flight when the cores peak occurred */
     private array $coresPeakJobs;
 
+    /** @var array<string, int> jobName → allocated cores in this run */
+    private array $coresAllocations;
+
     /**
      * @param array<string, int> $memoryPeakAttribution
      * @param array<string, int> $jobPeaks
      * @param string[]           $coresPeakJobs
+     * @param array<string, int> $coresAllocations
      */
     public function __construct(
         bool $samplerActive,
@@ -53,7 +57,8 @@ final class MemoryStats
         int $coresLimit,
         int $coresPeak,
         float $coresPeakAtSecond,
-        array $coresPeakJobs
+        array $coresPeakJobs,
+        array $coresAllocations = []
     ) {
         $this->samplerActive = $samplerActive;
         $this->memoryPeak = $memoryPeak;
@@ -64,6 +69,7 @@ final class MemoryStats
         $this->coresPeak = $coresPeak;
         $this->coresPeakAtSecond = $coresPeakAtSecond;
         $this->coresPeakJobs = $coresPeakJobs;
+        $this->coresAllocations = $coresAllocations;
     }
 
     public function isSamplerActive(): bool
@@ -117,5 +123,16 @@ final class MemoryStats
     public function getCoresPeakJobs(): array
     {
         return $this->coresPeakJobs;
+    }
+
+    public function getJobCores(string $jobName): ?int
+    {
+        return $this->coresAllocations[$jobName] ?? null;
+    }
+
+    /** @return array<string, int> */
+    public function getCoresAllocations(): array
+    {
+        return $this->coresAllocations;
     }
 }

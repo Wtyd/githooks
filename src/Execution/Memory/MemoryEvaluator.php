@@ -131,7 +131,10 @@ final class MemoryEvaluator
         );
     }
 
-    public function buildStats(): MemoryStats
+    /**
+     * @param array<string, int> $coresAllocations jobName → cores from ThreadBudgetAllocator
+     */
+    public function buildStats(array $coresAllocations = []): MemoryStats
     {
         return new MemoryStats(
             $this->samplerActive,
@@ -142,7 +145,8 @@ final class MemoryEvaluator
             $this->coresLimit,
             $this->coresPeak,
             $this->coresPeakAtSecond,
-            $this->coresPeakJobs
+            $this->coresPeakJobs,
+            $coresAllocations
         );
     }
 }

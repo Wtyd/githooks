@@ -150,10 +150,11 @@ trait FormatsOutput
         $time = $result->getTotalTime();
 
         $tbState = $result->getTimeBudgetState();
+        $mbState = $result->getMemoryBudgetState();
         $suffix = '';
         if (!$result->isSuccess()) {
             $suffix = ' <fg=red>✗</>';
-        } elseif ($tbState !== null && $tbState->isWarned()) {
+        } elseif (($tbState !== null && $tbState->isWarned()) || ($mbState !== null && $mbState->isWarned())) {
             $suffix = ' <fg=yellow>⚠ (1 warning)</>';
         } elseif ($result->isSuccess()) {
             $suffix = ' ✔️';
@@ -164,6 +165,7 @@ trait FormatsOutput
         // Per-job threshold notices, ordered by appearance.
         foreach ($result->getJobResults() as $jobResult) {
             $this->emitJobThresholdNotice($jobResult);
+            $this->emitJobMemoryNotice($jobResult);
         }
 
         // Flow-level time-budget notice (last so it summarises).
@@ -175,6 +177,51 @@ trait FormatsOutput
             $limit = $tbState->getWarnAfter();
             $sum = number_format($tbState->getTotalJobDuration(), 1);
             $this->line("<fg=yellow>⚠ Flow time-budget warning: total job time {$sum}s exceeded warn-after ({$limit}s)</>");
+        }
+
+        $this->emitFlowMemoryBudgetNotice($mbState);
+
+        if ($result->getMemoryStats() !== null) {
+            (new \Wtyd\GitHooks\Output\StatsTableRenderer())
+                ->render($this->getOutput(), $result);
+        }
+    }
+
+    private function emitJobMemoryNotice(\Wtyd\GitHooks\Execution\JobResult $jobResult): void
+    {
+        if ($jobResult->getMemoryThresholdState() === \Wtyd\GitHooks\Execution\JobResult::MEMORY_THRESHOLD_NONE) {
+            return;
+        }
+
+        $name = $jobResult->getJobName();
+        $peak = $jobResult->getMemoryPeak();
+        $isFailed = $jobResult->isMemoryFailed();
+        $limit = $isFailed ? $jobResult->getConfiguredMemoryFail() : $jobResult->getConfiguredMemoryWarn();
+        $kind = $isFailed ? 'fail-above' : 'warn-above';
+
+        if (!$jobResult->isSuccess() && $jobResult->getExitCode() !== null && $jobResult->getExitCode() !== 0) {
+            $this->line("   <fg=yellow>↳ also exceeded memory threshold (peak {$peak} MB, $kind {$limit} MB)</>");
+            return;
+        }
+
+        $color = $isFailed ? 'red' : 'yellow';
+        $icon = $isFailed ? '✗' : '⚠';
+        $this->line("<fg=$color>$icon Job '$name' exceeded memory threshold (peak {$peak} MB, $kind {$limit} MB)</>");
+    }
+
+    private function emitFlowMemoryBudgetNotice(?\Wtyd\GitHooks\Execution\MemoryBudgetState $state): void
+    {
+        if ($state === null) {
+            return;
+        }
+        if ($state->isFailed()) {
+            $limit = $state->getFailAbove();
+            $peak = $state->getPeakObserved();
+            $this->line("<fg=red>✗ Flow memory-budget exceeded: peak {$peak} MB, limit {$limit} MB</>");
+        } elseif ($state->isWarned()) {
+            $limit = $state->getWarnAbove();
+            $peak = $state->getPeakObserved();
+            $this->line("<fg=yellow>⚠ Flow memory-budget warning: peak {$peak} MB exceeded warn-above ({$limit} MB)</>");
         }
     }
 

@@ -210,7 +210,7 @@ final class FlowMemoryHandler
         }
 
         if ($this->options->isStats()) {
-            $flowResult->setMemoryStats($this->evaluator->buildStats());
+            $flowResult->setMemoryStats($this->evaluator->buildStats($this->threadAllocations));
         }
     }
 }
