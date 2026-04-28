@@ -372,4 +372,158 @@ class JsonResultFormatterTest extends UnitTestCase
 
         $this->assertSame(95.4, $data['jobs'][0]['duration']);
     }
+
+    // ========================================================================
+    // v3.3 — memory budget + stats (REQ-038..REQ-041)
+    // ========================================================================
+
+    /** @test */
+    function memory_blocks_are_null_when_no_budget_or_stats(): void
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('phpcs', true, '', '1s'),
+        ], '1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('memoryBudget', $data);
+        $this->assertNull($data['memoryBudget']);
+        $this->assertArrayHasKey('stats', $data);
+        $this->assertNull($data['stats']);
+        $this->assertNull($data['jobs'][0]['memoryReserved']);
+        $this->assertNull($data['jobs'][0]['memoryPeak']);
+        $this->assertNull($data['jobs'][0]['memoryThreshold']);
+        $this->assertNull($data['jobs'][0]['killedReason']);
+    }
+
+    /** @test */
+    function memory_budget_block_serializes_state_when_attached(): void
+    {
+        $state = new \Wtyd\GitHooks\Execution\MemoryBudgetState(
+            3500,
+            3900,
+            3460,
+            8.2,
+            ['phpstan' => 1825, 'phpunit' => 1240],
+            false,
+            false
+        );
+        $result = new FlowResult('qa', [
+            new JobResult('phpcs', true, '', '1s'),
+        ], '1s');
+        $result->setMemoryBudgetState($state);
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame(3500, $data['memoryBudget']['warnAbove']);
+        $this->assertSame(3900, $data['memoryBudget']['failAbove']);
+        $this->assertSame(3460, $data['memoryBudget']['peakObserved']);
+        $this->assertSame(8.2, $data['memoryBudget']['peakAtSecond']);
+        $this->assertSame(
+            [
+                ['name' => 'phpstan', 'value' => 1825],
+                ['name' => 'phpunit', 'value' => 1240],
+            ],
+            $data['memoryBudget']['peakAttribution']
+        );
+        $this->assertFalse($data['memoryBudget']['warned']);
+        $this->assertFalse($data['memoryBudget']['failed']);
+    }
+
+    /** @test */
+    function stats_block_emits_cores_always_and_memory_only_when_sampler_active(): void
+    {
+        $stats = new \Wtyd\GitHooks\Execution\Memory\MemoryStats(
+            true,
+            3460,
+            8.2,
+            ['phpstan' => 1825, 'phpunit' => 1240],
+            ['phpstan' => 1825, 'phpunit' => 1240, 'phpcs' => 245],
+            10,
+            8,
+            4.5,
+            ['phpstan', 'phpunit', 'phpcs', 'phpmd-src']
+        );
+        $result = new FlowResult('qa', [
+            new JobResult('phpcs', true, '', '1s'),
+        ], '1s');
+        $result->setMemoryStats($stats);
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame(10, $data['stats']['cores']['limit']);
+        $this->assertSame(8, $data['stats']['cores']['flowPeak']['value']);
+        $this->assertSame(4.5, $data['stats']['cores']['flowPeak']['atSecond']);
+        $this->assertSame(['phpstan', 'phpunit', 'phpcs', 'phpmd-src'], $data['stats']['cores']['flowPeak']['jobsInFlight']);
+
+        $this->assertSame(3460, $data['stats']['memory']['flowPeak']['value']);
+        $this->assertSame(8.2, $data['stats']['memory']['flowPeak']['atSecond']);
+        $this->assertSame(
+            [
+                ['name' => 'phpstan', 'value' => 1825],
+                ['name' => 'phpunit', 'value' => 1240],
+            ],
+            $data['stats']['memory']['flowPeak']['jobsInFlight']
+        );
+    }
+
+    /** @test */
+    function stats_block_omits_memory_subblock_when_sampler_inactive(): void
+    {
+        $stats = new \Wtyd\GitHooks\Execution\Memory\MemoryStats(
+            false,
+            0,
+            0.0,
+            [],
+            [],
+            6,
+            3,
+            1.0,
+            ['a', 'b', 'c']
+        );
+        $result = new FlowResult('qa', [
+            new JobResult('phpcs', true, '', '1s'),
+        ], '1s');
+        $result->setMemoryStats($stats);
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('cores', $data['stats']);
+        $this->assertArrayNotHasKey('memory', $data['stats']);
+    }
+
+    /** @test */
+    function per_job_memory_threshold_is_emitted_under_explicit_null_pattern(): void
+    {
+        $job = (new JobResult('phpunit', true, '', '4.1s'))
+            ->withMemoryPeak(1240)
+            ->withMemoryReserved(2000)
+            ->withMemoryThreshold(JobResult::MEMORY_THRESHOLD_WARNED, JobResult::MEMORY_REASON_WARN, 1500, 2000);
+
+        $result = new FlowResult('qa', [$job], '4.1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame(1240, $data['jobs'][0]['memoryPeak']);
+        $this->assertSame(2000, $data['jobs'][0]['memoryReserved']);
+        $this->assertSame(1500, $data['jobs'][0]['memoryThreshold']['warnAbove']);
+        $this->assertSame(2000, $data['jobs'][0]['memoryThreshold']['failAbove']);
+        $this->assertTrue($data['jobs'][0]['memoryThreshold']['warned']);
+        $this->assertFalse($data['jobs'][0]['memoryThreshold']['failed']);
+        $this->assertSame('exceeded warn-above', $data['jobs'][0]['memoryThreshold']['reason']);
+    }
+
+    /** @test */
+    function killed_reason_is_emitted_when_job_was_terminated_by_budget(): void
+    {
+        $job = (new JobResult('phpunit', true, '', '2.5s'))
+            ->withKilled('flow memory-budget exceeded');
+
+        $result = new FlowResult('qa', [$job], '2.5s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertFalse($data['jobs'][0]['success']);
+        $this->assertSame('flow memory-budget exceeded', $data['jobs'][0]['killedReason']);
+    }
 }

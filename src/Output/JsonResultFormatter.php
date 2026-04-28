@@ -8,6 +8,8 @@ use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\InputFilesResolution;
 use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\GitHooks\Execution\Memory\MemoryStats;
+use Wtyd\GitHooks\Execution\MemoryBudgetState;
 use Wtyd\GitHooks\Execution\TimeBudgetState;
 
 class JsonResultFormatter implements ResultFormatter
@@ -16,19 +18,23 @@ class JsonResultFormatter implements ResultFormatter
     {
         $jobs = array_map(function (JobResult $job): array {
             $entry = [
-                'name'        => $job->getJobName(),
-                'type'        => $job->getType(),
-                'success'     => $job->isSuccess(),
-                'time'        => $job->getExecutionTime(),
-                'duration'    => $job->getDurationSeconds(),
-                'exitCode'    => $job->getExitCode(),
-                'output'      => $this->stripAnsi($job->getOutput()),
-                'fixApplied'  => $job->isFixApplied(),
-                'command'     => $job->getCommand(),
-                'paths'       => $job->getPaths(),
-                'skipped'     => $job->isSkipped(),
-                'skipReason'  => $job->getSkipReason(),
-                'threshold'   => $this->buildThresholdBlock($job),
+                'name'              => $job->getJobName(),
+                'type'              => $job->getType(),
+                'success'           => $job->isSuccess(),
+                'time'              => $job->getExecutionTime(),
+                'duration'          => $job->getDurationSeconds(),
+                'exitCode'          => $job->getExitCode(),
+                'output'            => $this->stripAnsi($job->getOutput()),
+                'fixApplied'        => $job->isFixApplied(),
+                'command'           => $job->getCommand(),
+                'paths'             => $job->getPaths(),
+                'skipped'           => $job->isSkipped(),
+                'skipReason'        => $job->getSkipReason(),
+                'threshold'         => $this->buildThresholdBlock($job),
+                'memoryReserved'    => $job->getMemoryReserved(),
+                'memoryPeak'        => $job->getMemoryPeak(),
+                'memoryThreshold'   => $this->buildMemoryThresholdBlock($job),
+                'killedReason'      => $job->getKilledReason(),
             ];
 
             $perJob = $job->getInputFiles();
@@ -51,6 +57,8 @@ class JsonResultFormatter implements ResultFormatter
             'failed'        => $result->getFailedCount(),
             'skipped'       => $result->getSkippedCount(),
             'timeBudget'    => $this->buildTimeBudgetBlock($result->getTimeBudgetState()),
+            'memoryBudget'  => $this->buildMemoryBudgetBlock($result->getMemoryBudgetState()),
+            'stats'         => $this->buildStatsBlock($result->getMemoryStats()),
         ];
 
         $expandedFlows = $result->getExpandedFlows();
@@ -156,5 +164,104 @@ class JsonResultFormatter implements ResultFormatter
     private function stripAnsi(string $text): string
     {
         return (string) preg_replace('/\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07)|\r/', '', $text);
+    }
+
+    /**
+     * Build the per-job `memoryThreshold` block under the explicit-null pattern (REQ-041):
+     *  - null when no memory threshold was declared.
+     *  - object with warnAbove/failAbove/warned/failed/reason otherwise.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildMemoryThresholdBlock(JobResult $job): ?array
+    {
+        if (!$job->hasMemoryThreshold()) {
+            return null;
+        }
+
+        return [
+            'warnAbove' => $job->getConfiguredMemoryWarn(),
+            'failAbove' => $job->getConfiguredMemoryFail(),
+            'warned'    => $job->isMemoryWarned(),
+            'failed'    => $job->isMemoryFailed(),
+            'reason'    => $job->getMemoryThresholdReason(),
+        ];
+    }
+
+    /**
+     * Build the root `memoryBudget` block under the explicit-null pattern (REQ-039).
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildMemoryBudgetBlock(?MemoryBudgetState $state): ?array
+    {
+        if ($state === null) {
+            return null;
+        }
+
+        return [
+            'warnAbove'        => $state->getWarnAbove(),
+            'failAbove'        => $state->getFailAbove(),
+            'peakObserved'     => $state->getPeakObserved(),
+            'peakAtSecond'     => $state->getPeakAtSecond(),
+            'peakAttribution'  => $this->serializeAttribution($state->getPeakAttribution()),
+            'warned'           => $state->isWarned(),
+            'failed'           => $state->isFailed(),
+        ];
+    }
+
+    /**
+     * Build the root `stats` block (REQ-040). Sub-block `cores` is always
+     * emitted when stats are active because it is deterministic from the
+     * schedule; sub-block `memory` is emitted only when the sampler
+     * actually produced data.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildStatsBlock(?MemoryStats $stats): ?array
+    {
+        if ($stats === null) {
+            return null;
+        }
+
+        $block = [
+            'cores' => [
+                'limit'    => $stats->getCoresLimit(),
+                'flowPeak' => [
+                    'value'        => $stats->getCoresPeak(),
+                    'atSecond'     => $stats->getCoresPeakAtSecond(),
+                    'jobsInFlight' => $stats->getCoresPeakJobs(),
+                ],
+            ],
+        ];
+
+        if ($stats->isSamplerActive()) {
+            $block['memory'] = [
+                'flowPeak' => [
+                    'value'        => $stats->getMemoryPeak(),
+                    'atSecond'     => $stats->getMemoryPeakAtSecond(),
+                    'jobsInFlight' => $this->serializeAttribution($stats->getMemoryPeakAttribution()),
+                ],
+            ];
+        }
+
+        return $block;
+    }
+
+    /**
+     * Serialize a jobName→value map into a list of {name,value} objects so
+     * JSON consumers see a stable shape regardless of how PHP renders an
+     * empty associative array.
+     *
+     * @param array<string, int> $attribution
+     * @return array<int, array{name: string, value: int}>
+     */
+    private function serializeAttribution(array $attribution): array
+    {
+        $list = [];
+        foreach ($attribution as $name => $value) {
+            $list[] = ['name' => $name, 'value' => $value];
+        }
+        return $list;
     }
 }
