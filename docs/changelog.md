@@ -97,6 +97,26 @@ GitHooks now declaratively watches RSS consumption per job and across the whole 
 
 Spec: [spec/spec-design-memory-budget.md](../spec/spec-design-memory-budget.md).
 
+### Deprecations
+
+#### kebab-case keys for `jobs.<name>` (step 1 of 3)
+
+The four legacy camelCase keys inherited from v2 inside `jobs.<name>` are deprecated in favour of their kebab-case counterparts. Both forms keep working in v3.3.x; the camelCase forms will be **removed in v4.0**.
+
+| camelCase (deprecated) | kebab-case (canonical) |
+|---|---|
+| `executablePath` | `executable-path` |
+| `otherArguments` | `other-arguments` |
+| `ignoreErrorsOnExit` | `ignore-errors-on-exit` |
+| `failFast` | `fail-fast` |
+
+- **Runtime warning**: every command that loads the config (`flow`, `flows`, `job`, `conf:check`, `system:info`) emits a `Deprecated: 'X' is renamed to 'Y'. Will be removed in v4.0.` line on stderr per camelCase key found.
+- **Structured output**: a new root-level `deprecations[]` block in JSON v2 (and `runs[0].properties.deprecations` in SARIF) lists each detection as `{job, oldKey, newKey, removalVersion, kind}`. As a side-effect, the JSON v2 also gains a root `warnings[]` field (always present, empty when no warnings) — useful for CI dashboards and AI consumers.
+- **Conflict**: declaring both forms for the same key in the same job aborts that job with an error (`conflicting keys '...' and '...'`). Pick one.
+- **Out of scope for v3.3**: `conf:migrate` is **not** updated yet — that is step 2 of the deprecation plan, in a later v3.x. The camelCase removal itself is step 3, in v4.0.
+
+Migration guide: [Migration → v3.3 deprecations](migration/v33-deprecations.md). Spec: [spec/spec-design-kebab-case-keys-deprecation.md](../spec/spec-design-kebab-case-keys-deprecation.md).
+
 ---
 
 ## [3.2.0]

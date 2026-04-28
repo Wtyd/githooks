@@ -39,11 +39,11 @@ The following keywords are available for all job types (except `custom`, which h
 | Keyword | Type | Description |
 |---|---|---|
 | `type` | String | Determines the tool and accepted keywords. **Mandatory.** |
-| `executablePath` | String | Path to the tool binary. If omitted, auto-detects `vendor/bin/{tool}`, then falls back to system PATH. |
+| `executable-path` | String | Path to the tool binary. If omitted, auto-detects `vendor/bin/{tool}`, then falls back to system PATH. |
 | `paths` | Array | Directories or files to analyze. |
-| `otherArguments` | String | Extra CLI flags not natively supported by GitHooks. |
-| `ignoreErrorsOnExit` | Boolean | Job returns exit 0 even with problems. Default `false`. |
-| `failFast` | Boolean | Stop remaining jobs in the flow if this one fails. Default `false`. |
+| `other-arguments` | String | Extra CLI flags not natively supported by GitHooks. |
+| `ignore-errors-on-exit` | Boolean | Job returns exit 0 even with problems. Default `false`. |
+| `fail-fast` | Boolean | Stop remaining jobs in the flow if this one fails. Default `false`. |
 | `accelerable` | Boolean | Override `--fast` behavior. Default depends on type. |
 | `execution` | String | Per-job execution mode override: `full`, `fast`, or `fast-branch`. |
 | `executable-prefix` | String | Per-job prefix override. Set to `null` or `''` to opt out of the global prefix. |
@@ -51,6 +51,9 @@ The following keywords are available for all job types (except `custom`, which h
 
 !!! tip
     Missing keys can cause the job to fail at runtime. For example, a `phpcs` job without `standard` may fail if no standard is configured in the tool's own config file.
+
+!!! warning "Deprecated camelCase keys"
+    The keys `executablePath`, `otherArguments`, `ignoreErrorsOnExit` and `failFast` (camelCase, inherited from v2) are still accepted in v3.3 with a deprecation warning, but they will be removed in **v4.0**. Use the kebab-case form shown in the table above. See [Migration: v3.3 deprecations](../migration/v33-deprecations.md).
 
 ## Reserving cores explicitly (`cores`)
 
