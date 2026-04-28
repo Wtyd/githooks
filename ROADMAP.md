@@ -8,7 +8,7 @@
 | **v3.1**   | Adopción ✔                 | Documentación externa, override local + Docker, argumentos extra por CLI para jobs, comparación + migraciones                                                                                                                                                                                        |
 | **v3.2**   | Herramientas y Output ✔    | PHP CS Fixer nativo, Rector nativo, rediseño output (streaming + dashboard paralelo), output CI nativo, formatos Code Climate y SARIF, revisión JSON para IA, tests Windows                                                                                                                          |
 | **Fase 0** | Consolidación QA pre-3.3.0 | Reestructuración CI (flows + herencia + kebab-case + contrato SARIF), cobertura y verificaciones post-3.2, colisión `-v`, silenciar progreso stderr en CI                                                                                                                                            |
-| **v3.3**   | Madurez                    | Comando `flows` multi-flow ✔, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from` ✔, monitor de rendimiento + time threshold, memory budget por job (diseño abierto), kebab-case (deprecation paso 1), validación commit messages (nativo), receta config compartida Composer (docs) |
+| **v3.3**   | Madurez                    | Comando `flows` multi-flow ✔, multi-reporte (estilo PHPUnit/Psalm) ✔, flag `--files`/`--files-from` ✔, monitor de rendimiento + time threshold ✔, memory budget por job ✔, kebab-case (deprecation paso 1) ✔, pruebas extra (fast-branch + budgets en GHA + Windows), refuerzo cobertura (Infection + coverage), acelerar suite (paratest + speedtrap) |
 
 ---
 
@@ -469,7 +469,7 @@ Ejecución de flow o job contra una lista explícita de ficheros, sobreescribien
 - Jobs no-accelerable (`phpunit`, `phpcpd`) se ejecutan con sus paths originales — mismo comportamiento que `--fast-branch` actualmente.
 - Rutas inexistentes → warning + skip de ese fichero. Si **todas** son inválidas, el job se skipea con razón explícita.
 
-### 4. Monitor de rendimiento + time threshold
+### 4. Monitor de rendimiento + time threshold ✔
 
 Evolución del `--monitor` actual a un sistema de medición + acción con dos niveles **independientes**:
 
@@ -754,7 +754,7 @@ $ githooks conf:check
 
 Coste: ~250 LOC + tests.
 
-### 5. Memory budget por job (`memory: <MB>`)
+### 5. Memory budget por job (`memory: <MB>`) ✔
 
 **Estado**: incluido en v3.3 como complemento del comando `flows` (ítem 1). Diseño con varias decisiones abiertas — ver "Puntos de discusión" al final.
 
@@ -948,7 +948,7 @@ Coste estimado: ~300 LOC + tests. Más que `time-budget` porque toca el allocato
 
    Propuesta: **no** en v3.3. Mantener `memory` como propiedad intrínseca del job (igual que `cores`). Reabrir si la config repetida se vuelve dolor real.
 
-### 6. Estandarizar claves de configuración a kebab-case (deprecation paso 1)
+### 6. Estandarizar claves de configuración a kebab-case (deprecation paso 1) ✔
 
 Las claves de job usan camelCase (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) porque vienen de v2. Las claves de options usan kebab-case (`fail-fast`, `main-branch`, `executable-prefix`, `error-severity`, `log-junit`...) porque se crearon en v3. Hoy ambos conviven en el mismo fichero — ver `qa/githooks.php` líneas 55-58.
 
@@ -962,128 +962,42 @@ Las claves de job usan camelCase (`executablePath`, `otherArguments`, `ignoreErr
 
 **Coste de implementación**: bajo. Un mapping `[camelCase => kebabCase]` aplicado en `JobConfiguration::fromArray()` y `OptionsConfiguration::fromArray()` antes de la validación, más warnings de deprecation. ~50 LOC + tests.
 
-### 7. Validación de commit messages como tipo nativo
+### 7. Pruebas Extra
 
-Tipo de job nativo `commit-msg` que ejecuta validaciones declarativas sobre el mensaje del commit, leyéndolo de `.git/COMMIT_EDITMSG` (lo que git pasa al hook `commit-msg`).
+Verificar que fast-branch y los budgets funcionan en GitHub Actions. Crear una rama, hacer cambios con commits y pushes para verificar que se aplica correctamente. Además verificar en servidores windows.
 
-**Configuración:**
+### 8. Refuerzo de cobertura a partir de informes Infection y coverage
 
-```php
-'jobs' => [
-    'commit-format' => [
-        'type' => 'commit-msg',
-        'rules' => [
-            'min-length' => 10,
-            'max-length' => 100,
-            'pattern' => '/^(feat|fix|test|docs|refactor|chore|ci)(\([a-z-]+\))?: .+/',
-            'pattern-message' => 'Use Conventional Commits: tipo(scope): descripción',
-            'forbid-trailing-period' => true,
-            'subject-case' => 'lowercase',  // 'lowercase' | 'sentence' | null
-        ],
-    ],
-    // O modo "preset":
-    'commit-conventional' => [
-        'type' => 'commit-msg',
-        'preset' => 'conventional-commits',   // pattern + reglas estándar
-    ],
-],
+El usuario genera manualmente los informes de Infection (mutation testing) y de coverage (líneas/branches), y los pasa al asistente. A partir de los informes:
 
-'hooks' => [
-    'commit-msg' => ['commit-format'],
-],
-```
+- **Identificar mutants escaped** y módulos con menor MSI; clasificarlos (real / cobertura débil / equivalente / cosmético) usando la skill `mutation-analyzer`.
+- **Identificar gaps de coverage**: ficheros y líneas críticas no cubiertos, especialmente tras los cambios masivos de v3.3 (admission, memory, time-budget, formatters, kebab-case parser).
+- **Plan priorizado** de tests nuevos, agrupado por módulo y con coste estimado.
+- **Ejecución incremental**: tests añadidos en commits separados con tipo `test(<modulo>)`, regenerar informes, iterar hasta el umbral acordado.
 
-**Reglas mínimas viables:**
+**Umbral objetivo**: alinear con tier 1 ya cerrado del proyecto (Infection MSI ~97 %, coverage ≥ 95 % en módulos modificados). Los módulos prioritarios saldrán de los propios informes — no se prefijan a priori.
 
-| Regla                         | Significado                                               |
-| ----------------------------- | --------------------------------------------------------- |
-| `min-length` / `max-length`   | Longitud del subject (primera línea)                      |
-| `pattern` + `pattern-message` | Regex contra el subject; mensaje custom de error          |
-| `forbid-trailing-period`      | El subject no termina en `.`                              |
-| `subject-case`                | `lowercase` / `sentence` / `null`                         |
-| `forbid-empty`                | (default true) Rechazar mensaje vacío                     |
-| `merge-allowed`               | (default true) Saltar validación si el commit es un merge |
+**Coste estimado**: variable según el resultado de los informes. Tarea iterativa.
 
-**Presets**: `conventional-commits` de partida (pattern + tipos estándar + footer `BREAKING CHANGE` permitido). `gitmoji`, `jira-ticket` quedan para futuro si hay demanda.
+### 9. Acelerar la suite de tests del propio proyecto
 
-**Comportamiento:**
+Los tests de GitHooks empiezan a ser lentos a medida que la suite crece (v3.3 ha añadido muchos tests de execution/output/admission). Dos intervenciones complementarias:
 
-- Pasa: exit 0, sin output.
-- Falla: exit 1 con mensaje claro de qué regla rompió y un ejemplo válido.
-- En `--format=json` se incluye el mensaje original y la regla que falló.
+- **Integrar `paratest`** como ejecutor alternativo de la suite. Ya existe el job nativo `paratest` desde v3.x, pero hay que cablearlo para los tests del propio proyecto (un nuevo job `paratest_self` o variante del flow `ci-tests`).
+- **Integrar `johnkary/phpunit-speedtrap`** como listener de PHPUnit. Reporta los N tests más lentos al final de la suite, lo que permite identificar candidatos a refactor. Configuración via `phpunit.xml.dist` con el extension/listener registrado.
 
-**Diferenciador**: hoy se puede hacer con un job `custom` ejecutando un script. El tipo nativo lo hace declarativo, funciona en Windows sin pelearse con bash, se documenta una vez, y refuerza el storytelling "GitHooks gestiona todo el ciclo de git hooks, no solo QA".
+**Decisiones a cerrar al implementar**:
+- ¿Paratest sustituye a phpunit en CI o convive como flow alternativo (`ci-tests-fast` vs `ci-tests`)?
+- Umbral de speedtrap (`slowThreshold` en ms) y `reportLength` (cuántos tests slow listar).
+- Si los tests con `@group git` o `@group release` son seguros con paratest (paralelización vs side-effects en filesystem real).
 
-**Prioridad**: nice-to-have. Último item en entrar; si el ciclo se alarga, candidato a mover a 3.4.
-
-### 8. Receta de config compartida vía paquete Composer
-
-Caso de uso: una empresa con N microservicios PHP que quiere que todos corran exactamente la misma configuración de phpstan, phpcs, phpmd. Hoy cada repo tiene su propio `qa/githooks.php`, `qa/phpstan.neon`, `qa/phpmd-ruleset.xml`. Si cambias una regla, hay que abrir N PRs.
-
-**Solución sin código nuevo.** Como `githooks.php` es PHP plano, ya se puede hacer:
-
-```bash
-composer require --dev acme/qa-shared
-```
-
-El paquete exporta una config base:
-
-```php
-// vendor/acme/qa-shared/githooks-base.php
-return [
-    'jobs' => [
-        'phpstan-src' => [
-            'type' => 'phpstan',
-            'config' => 'vendor/acme/qa-shared/phpstan.neon',
-            'paths' => ['src'],
-        ],
-        'phpcs' => [...],
-        'phpmd-src' => [...],
-    ],
-];
-```
-
-Y el `githooks.php` del consumidor merge-ea sobre esa base:
-
-```php
-<?php
-
-$base = require __DIR__ . '/vendor/acme/qa-shared/githooks-base.php';
-
-return array_replace_recursive($base, [
-    'hooks' => [
-        'pre-commit' => ['qa'],
-    ],
-    'flows' => [
-        'qa' => ['jobs' => ['phpstan-src', 'phpcs', 'phpmd-src']],
-    ],
-    // Override puntual: este micro tiene tests legacy y baja el level
-    'jobs' => [
-        'phpstan-src' => [
-            'config' => 'qa/phpstan-relaxed.neon',
-        ],
-    ],
-]);
-```
-
-**Qué entra en 3.3 (docs only):**
-
-1. **Página `docs/how-to/shared-config.md`** con el patrón explicado, plantilla del paquete consumible y ejemplo del consumidor.
-2. **Mención en `getting-started.md`** como pattern recomendado para empresas.
-
-**Qué queda fuera (candidato a 3.4)**: comando `conf:init --from=acme/qa-shared` que descargue el paquete y genere el wrapper boilerplate. ~50 LOC. Solo se aborda si la doc genera demanda.
-
-**Estado**: el usuario quiere estudiar más a fondo el caso de uso antes de cerrar el diseño definitivo.
-
----
-
-9. Pruebas Extra
-    Quiero verificar que fast-branch y los budgets funcionan en github actions. Crear una rama, hacer cambios con commits y pushes para verificar que se aplica correctamente. Además verificar en servidores windows.
+**Coste estimado**: bajo. Configuración + ajustes en `phpunit.xml.dist` + posible sub-flow nuevo. Las optimizaciones de tests individuales (refactor de tests slow detectados por speedtrap) son trabajo posterior que sale del informe del listener.
 
 ## v3.4 (aplazado)
 
 Items que estuvieron en v3.3 y se han movido por scope:
 
+- **Validación de commit messages como tipo nativo (`commit-msg`)**: tipo de job nativo que valida el subject del commit con reglas declarativas (`min-length`, `max-length`, `pattern`, `forbid-trailing-period`, `subject-case`, `forbid-empty`, `merge-allowed`) y preset `conventional-commits`. Se cablea al hook git `commit-msg`. Movido el 2026-04-28: a nivel funcional v3.3 ya cumple el objetivo del usuario (multi-flow + multi-reporte + budgets); commit-msg pasa a "nice-to-have" sin urgencia. **Spec de diseño ya redactada** en `spec/spec-design-commit-message-validation.md` (~620 líneas, 17 AC, 34 REQ): cuando se reabra, la implementación arranca directa de ahí.
 - **Wizard de instalación**: evolucionar `conf:init` a un asistente completo (descarga de tools vía Composer/PHAR, configuración paso a paso, explicaciones contextuales). Es el ítem más grande del lote y el de menor diferencial inmediato — los usuarios actuales ya tienen las tools instaladas.
 - **Prohibir espacios en nombres de job**: descartado. La convención kebab-case ya está documentada y es lo que recomendamos. Bloquear `Phpstan Src` con un error es más ruido que valor — los proyectos legacy con nombres con espacios siguen funcionando.
 
@@ -1116,6 +1030,14 @@ Esto es porque al destruirse el contenedor la variable core.path se resetea.
 ### ~~Silenciar el progreso en stderr cuando hay formato estructurado en CI~~
 
 Movido a **Fase 0, ítem 0.6**.
+
+### Receta de config compartida vía paquete Composer
+
+Movido aquí desde v3.3 el 2026-04-28. Motivo: el caso de uso del ROADMAP (empresa con N microservicios que comparten config QA vía dependencia Composer) **no está confirmado por ningún consumidor real**. El propio caso del autor del proyecto resulta no encajar — comparten un framework por **fork**, no por dependencia, y el patrón de `array_replace_recursive` sobre un paquete vendoreado no aplica al modelo fork.
+
+Reabrir cuando aparezca un consumidor real en el modelo "framework como dependencia Composer + N proyectos consumidores" que pida soporte oficial. Hasta entonces, el patrón ya funciona hoy en PHP plano (`require` + `array_replace_recursive`) sin necesidad de página de docs ni tests dedicados; quien lo necesite lo descubre en 5 minutos.
+
+Diseño previo (v1.0, 2026-04-28) preservado en el historial git por si se reabre. Texto original contemplaba: docs only en v3.3 (página `docs/how-to/shared-config.md`, mención en `getting-started.md`, plantilla del paquete consumible y ejemplo del consumidor); comando `conf:init --from=acme/qa-shared` aplazado a v3.4.
 
 ### Line-wrap en `conf:check` para comandos largos en lugar de truncar con `…`
 
