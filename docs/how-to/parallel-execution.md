@@ -150,9 +150,16 @@ The strategy applies in both 1D mode (cores only) and 2D mode. See
 [Memory budget](../configuration/options.md#memory-budget-memory-budget)
 for the full configuration reference.
 
-### Linux-only sampler in v3.3
+### Platform support
 
-The RSS sampler reads `/proc/<PID>/status`. On macOS and Windows the
-runtime emits one stderr warning and disables thresholds — `--stats`
-still reports the cores axis (deterministic from the schedule).
-Cross-platform sampling is reserved for v3.4 if demand appears.
+| Platform | Sampler | Notes |
+|---|---|---|
+| Linux | `/proc/<PID>/status` walked across the process tree | Native, lowest overhead. |
+| macOS | `ps -o pid=,ppid=,rss= -ax` once per sample | Single subprocess invocation per tick (~ms). |
+| Windows | not available in v3.3 | Runtime emits one stderr warning and disables thresholds. The 2D allocator still schedules using declared `memory:` reservations and `--stats` still reports cores. Sampler is reserved for a future iteration. |
+
+In every platform the RSS values reported reflect the **entire process
+tree** rooted at the job's PID — Symfony spawns commands under a shell
+wrapper, and the heavy analyzers (php phpstan, php phpunit) run as
+child processes whose memory must be summed for the figure to make
+sense.

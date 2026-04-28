@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Execution\Memory;
 
 /**
- * Selects the appropriate RSS sampler for the current platform. Returns a
- * LinuxRssSampler when /proc is mounted on a Linux host; a NullRssSampler
- * with a human-readable reason on every other platform (macOS, Windows,
- * Linux without /proc).
+ * Selects the appropriate RSS sampler for the current platform: Linux
+ * (/proc), macOS (ps tree walk) and a NullRssSampler with a human-readable
+ * reason on every other platform.
  *
  * The OS detection is overridable via constructor arguments to keep the
  * class testable without spinning up containers.
@@ -27,18 +26,16 @@ final class MemorySamplerFactory
 
     public function create(): MemorySampler
     {
-        if ($this->osFamily !== 'Linux') {
-            $reason = sprintf(
-                'RSS sampling not available on %s (only Linux /proc is supported in v3.3)',
-                $this->osFamily
-            );
-            return new NullRssSampler($reason);
+        if ($this->osFamily === 'Linux') {
+            return $this->hasProc
+                ? new LinuxRssSampler()
+                : new NullRssSampler('RSS sampling not available: /proc not mounted');
         }
 
-        if (!$this->hasProc) {
-            return new NullRssSampler('RSS sampling not available: /proc not mounted on this host');
+        if ($this->osFamily === 'Darwin') {
+            return new MacOsRssSampler();
         }
 
-        return new LinuxRssSampler();
+        return new NullRssSampler('RSS sampling not available on ' . $this->osFamily);
     }
 }

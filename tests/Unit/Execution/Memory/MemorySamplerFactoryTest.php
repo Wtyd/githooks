@@ -6,6 +6,7 @@ namespace Tests\Unit\Execution\Memory;
 
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
+use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
 use Wtyd\GitHooks\Execution\Memory\MemorySamplerFactory;
 use Wtyd\GitHooks\Execution\Memory\NullRssSampler;
 
@@ -23,27 +24,25 @@ class MemorySamplerFactoryTest extends TestCase
     }
 
     /** @test */
-    public function it_returns_null_sampler_with_reason_on_macos(): void
+    public function it_returns_macos_sampler_on_darwin(): void
     {
-        $factory = new MemorySamplerFactory('Darwin', true);
+        $factory = new MemorySamplerFactory('Darwin', false);
 
         $sampler = $factory->create();
 
-        $this->assertInstanceOf(NullRssSampler::class, $sampler);
-        $this->assertFalse($sampler->isAvailable());
-        $this->assertStringContainsString('Darwin', $sampler->getUnavailableReason());
-        $this->assertStringContainsString('Linux /proc', $sampler->getUnavailableReason());
+        $this->assertInstanceOf(MacOsRssSampler::class, $sampler);
+        $this->assertTrue($sampler->isAvailable());
     }
 
     /** @test */
-    public function it_returns_null_sampler_with_reason_on_windows(): void
+    public function it_returns_null_sampler_with_short_reason_on_windows(): void
     {
         $factory = new MemorySamplerFactory('Windows', false);
 
         $sampler = $factory->create();
 
         $this->assertInstanceOf(NullRssSampler::class, $sampler);
-        $this->assertStringContainsString('Windows', $sampler->getUnavailableReason());
+        $this->assertSame('RSS sampling not available on Windows', $sampler->getUnavailableReason());
     }
 
     /** @test */
@@ -54,6 +53,6 @@ class MemorySamplerFactoryTest extends TestCase
         $sampler = $factory->create();
 
         $this->assertInstanceOf(NullRssSampler::class, $sampler);
-        $this->assertStringContainsString('/proc not mounted', $sampler->getUnavailableReason());
+        $this->assertSame('RSS sampling not available: /proc not mounted', $sampler->getUnavailableReason());
     }
 }

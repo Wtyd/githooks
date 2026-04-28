@@ -96,7 +96,7 @@ and `parallel: 4` on a phpcs job), `cores` wins at runtime and
 ## Per-job memory threshold (`memory`)
 
 Each job can declare a memory threshold that the runtime watches via RSS
-sampling (Linux only in v3.3; macOS and Windows degrade gracefully with
+sampling (Linux and macOS in v3.3; Windows degrades gracefully with
 a stderr warning). The key has two equivalent forms:
 
 ```php

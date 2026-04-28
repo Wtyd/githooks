@@ -245,9 +245,11 @@ CLI overrides: `--memory-warn-above=N`, `--memory-fail-above=N`,
 `--no-memory-budget`. The last disables both the per-job and flow-level
 evaluation for that run.
 
-**Linux-only sampler in v3.3.** macOS and Windows degrade gracefully:
-the runtime emits one stderr warning (`⚠ Memory budget disabled: ...`)
-and disables thresholds; `--stats` still reports cores info.
+**Linux and macOS in v3.3.** Windows degrades gracefully: the runtime
+emits one stderr warning (`⚠ Memory budget disabled: RSS sampling not
+available on Windows`) and disables thresholds. The 2D allocator still
+schedules using the declared `memory:` reservations, and `--stats`
+still reports cores info.
 
 ## Allocator strategy (`allocator`)
 
