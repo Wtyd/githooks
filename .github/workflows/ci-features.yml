@@ -1,0 +1,89 @@
+name: CI Features (cross-OS E2E)
+# End-to-end verification of fast-branch + budgets (time + memory) on real
+# GitHub Actions runners across Linux/Windows/macOS. Driven by the system
+# tests under tests/System/CiFeatures (`@group ci-features`).
+#
+# These tests invoke the real `php githooks` binary as a subprocess, so
+# child process durations, RSS sampling and `git` actually run — no mocks.
+#
+# Trigger policy:
+#   - Iteration phase: push to gh-50-ci-features (the task branch).
+#   - Once cross-OS green, the trigger should switch to push:[rc**] so
+#     each release candidate runs the full E2E matrix once.
+#   - workflow_dispatch is always available for ad-hoc runs.
+#
+# Cost note: macOS minutes on GHA are ~10× the price of Linux. The matrix
+# pins macOS to PHP 8.5 only; Linux/Windows cover 7.4 and 8.5 (the build
+# tier boundary).
+on:
+  push:
+    branches:
+      - gh-50-ci-features
+  workflow_dispatch:
+
+jobs:
+  ci-features:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            php: '7.4'
+            label: 'CI Features (Linux PHP 7.4)'
+          - os: ubuntu-latest
+            php: '8.5'
+            label: 'CI Features (Linux PHP 8.5)'
+          - os: windows-latest
+            php: '7.4'
+            label: 'CI Features (Windows PHP 7.4)'
+          - os: windows-latest
+            php: '8.5'
+            label: 'CI Features (Windows PHP 8.5)'
+          - os: macos-latest
+            php: '8.5'
+            label: 'CI Features (macOS PHP 8.5)'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # FastBranchTest creates its own throw-away repo in /tmp, so the
+          # depth of this checkout does not matter — keep it shallow to
+          # save runner seconds.
+          fetch-depth: 1
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ':opcache, fileinfo'
+          ini-values: 'post_max_size=256M'
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.php }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Install dependencies (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          chmod -R +x tools/*
+          tools/composer install --prefer-dist --no-progress
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run @group ci-features tests
+        run: php vendor/bin/phpunit --group ci-features --no-coverage
