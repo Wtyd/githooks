@@ -1,0 +1,95 @@
+name: CI macOS
+# Targeted macOS workflow: runs only when a PR or push touches the
+# memory-sampler runtime, since macOS minutes on GitHub-hosted runners
+# are ~10× the price of Linux ones. The path filter keeps the cost ≈ 0
+# for the typical PR while still catching regressions in the sampler.
+#
+# Linux/Windows coverage stays in ci.yml. The release workflow has its
+# own macOS leg (release.yml, test_rc matrix) for the per-rc smoke
+# against the compiled .phar.
+on:
+  push:
+    branches-ignore: [ rc** ]
+    paths:
+      - 'src/Execution/Memory/**'
+      - 'src/Execution/FlowMemoryHandler.php'
+      - 'tests/Unit/Execution/Memory/**'
+      - '.github/workflows/ci-macos.yml'
+  pull_request:
+    branches-ignore: [ master ]
+    paths:
+      - 'src/Execution/Memory/**'
+      - 'src/Execution/FlowMemoryHandler.php'
+      - 'tests/Unit/Execution/Memory/**'
+      - '.github/workflows/ci-macos.yml'
+
+jobs:
+  macos:
+    name: macOS sampler (PHP ${{ matrix.php }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['7.4', '8.5']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: ':opcache, fileinfo'
+          ini-values: 'post_max_size=256M'
+          coverage: none
+
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-${{ matrix.php }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: |
+            ${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          chmod -R +x tools/*
+          tools/composer install --prefer-dist --no-progress
+
+      # Real ps invocation against a live PHP child — proves the macOS
+      # parser handles the actual `ps -o pid=,ppid=,rss= -ax` output.
+      - name: Run @group macos integration tests
+        run: php vendor/bin/phpunit --group macos
+
+      # Smoke: a full `flow qa` with --stats and budget disabled exercises
+      # the runtime end-to-end on Darwin. Verifies the sampler hooks into
+      # the FlowExecutor loop and the JSON v2 emits stats.memory with
+      # non-zero values.
+      - name: Smoke — flow qa --stats reports non-zero memory peak
+        shell: bash
+        run: |
+          php githooks flow qa --stats --no-memory-budget --format=json --show-progress \
+            > /tmp/qa.json 2> /tmp/qa.stderr
+          cat /tmp/qa.stderr
+          php -r '
+            $d = json_decode(file_get_contents("/tmp/qa.json"), true);
+            if (!isset($d["stats"]["memory"]["flowPeak"]["value"])) {
+                fwrite(STDERR, "stats.memory.flowPeak missing\n");
+                exit(1);
+            }
+            $peak = (int) $d["stats"]["memory"]["flowPeak"]["value"];
+            fwrite(STDERR, "macOS memory peak observed: {$peak} MB\n");
+            // Anything > 1 MB proves the tree-walk picked up the PHP
+            // children — a shell wrapper alone is ~1 MB.
+            if ($peak < 5) {
+                fwrite(STDERR, "Peak too low (< 5 MB) — sampler likely missed the tree.\n");
+                exit(1);
+            }
+          '
