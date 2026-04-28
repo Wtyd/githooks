@@ -202,6 +202,7 @@ class FlowCommand extends Command
             $this->applyFormat($this->executor, $plan);
 
             $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
+            $this->executor->setMemoryBudgetDisabled($memoryBudgetFlags['disabled']);
 
             $this->emitConditionsHeader($resolution, $plan->getExpandedFlows(), $plan->getInputFiles());
 

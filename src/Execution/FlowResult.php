@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use Wtyd\GitHooks\Execution\Memory\MemoryStats;
+
 class FlowResult
 {
     private string $flowName;
@@ -27,6 +29,10 @@ class FlowResult
     private ?EffectiveOptionsResolution $effectiveOptions;
 
     private ?TimeBudgetState $timeBudgetState;
+
+    private ?MemoryBudgetState $memoryBudgetState = null;
+
+    private ?MemoryStats $memoryStats = null;
 
     /**
      * @param JobResult[] $jobResults
@@ -74,6 +80,10 @@ class FlowResult
             if (!$result->isSuccess()) {
                 return false;
             }
+        }
+
+        if ($this->memoryBudgetState !== null && $this->memoryBudgetState->isFailed()) {
+            return false;
         }
 
         if ($this->timeBudgetState !== null && $this->timeBudgetState->isFailed()) {
@@ -146,5 +156,25 @@ class FlowResult
     public function getTimeBudgetState(): ?TimeBudgetState
     {
         return $this->timeBudgetState;
+    }
+
+    public function getMemoryBudgetState(): ?MemoryBudgetState
+    {
+        return $this->memoryBudgetState;
+    }
+
+    public function setMemoryBudgetState(?MemoryBudgetState $state): void
+    {
+        $this->memoryBudgetState = $state;
+    }
+
+    public function getMemoryStats(): ?MemoryStats
+    {
+        return $this->memoryStats;
+    }
+
+    public function setMemoryStats(?MemoryStats $stats): void
+    {
+        $this->memoryStats = $stats;
     }
 }

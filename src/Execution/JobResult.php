@@ -21,6 +21,16 @@ class JobResult
 
     public const THRESHOLD_REASON_FAIL = 'exceeded fail-after';
 
+    public const MEMORY_THRESHOLD_NONE = 0;
+
+    public const MEMORY_THRESHOLD_WARNED = 1;
+
+    public const MEMORY_THRESHOLD_FAILED = 2;
+
+    public const MEMORY_REASON_WARN = 'exceeded warn-above';
+
+    public const MEMORY_REASON_FAIL = 'exceeded fail-above';
+
     private string $jobName;
 
     private bool $success;
@@ -57,6 +67,20 @@ class JobResult
     private ?int $configuredWarnAfter;
 
     private ?int $configuredFailAfter;
+
+    private ?int $memoryPeak = null;
+
+    private int $memoryThresholdState = self::MEMORY_THRESHOLD_NONE;
+
+    private ?string $memoryThresholdReason = null;
+
+    private ?int $configuredMemoryWarn = null;
+
+    private ?int $configuredMemoryFail = null;
+
+    private ?int $memoryReserved = null;
+
+    private ?string $killedReason = null;
 
     /**
      * @param string[] $paths
@@ -240,6 +264,88 @@ class JobResult
         $clone = clone $this;
         $clone->thresholdState = $state;
         $clone->thresholdReason = $reason;
+        return $clone;
+    }
+
+    public function getMemoryPeak(): ?int
+    {
+        return $this->memoryPeak;
+    }
+
+    public function withMemoryPeak(?int $peak): self
+    {
+        $clone = clone $this;
+        $clone->memoryPeak = $peak;
+        return $clone;
+    }
+
+    public function getMemoryThresholdState(): int
+    {
+        return $this->memoryThresholdState;
+    }
+
+    public function getMemoryThresholdReason(): ?string
+    {
+        return $this->memoryThresholdReason;
+    }
+
+    public function getConfiguredMemoryWarn(): ?int
+    {
+        return $this->configuredMemoryWarn;
+    }
+
+    public function getConfiguredMemoryFail(): ?int
+    {
+        return $this->configuredMemoryFail;
+    }
+
+    public function hasMemoryThreshold(): bool
+    {
+        return $this->configuredMemoryWarn !== null || $this->configuredMemoryFail !== null;
+    }
+
+    public function isMemoryWarned(): bool
+    {
+        return $this->memoryThresholdState === self::MEMORY_THRESHOLD_WARNED;
+    }
+
+    public function isMemoryFailed(): bool
+    {
+        return $this->memoryThresholdState === self::MEMORY_THRESHOLD_FAILED;
+    }
+
+    public function withMemoryThreshold(int $state, ?string $reason, ?int $warnAbove, ?int $failAbove): self
+    {
+        $clone = clone $this;
+        $clone->memoryThresholdState = $state;
+        $clone->memoryThresholdReason = $reason;
+        $clone->configuredMemoryWarn = $warnAbove;
+        $clone->configuredMemoryFail = $failAbove;
+        return $clone;
+    }
+
+    public function getMemoryReserved(): ?int
+    {
+        return $this->memoryReserved;
+    }
+
+    public function withMemoryReserved(?int $reserved): self
+    {
+        $clone = clone $this;
+        $clone->memoryReserved = $reserved;
+        return $clone;
+    }
+
+    public function getKilledReason(): ?string
+    {
+        return $this->killedReason;
+    }
+
+    public function withKilled(string $reason): self
+    {
+        $clone = clone $this;
+        $clone->success = false;
+        $clone->killedReason = $reason;
         return $clone;
     }
 }

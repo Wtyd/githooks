@@ -33,12 +33,16 @@ class FlowExecutor
 
     private bool $thresholdsDisabled = false;
 
+    private bool $memoryBudgetDisabled = false;
+
     private int $peakEstimatedThreads = 0;
 
     /** @var array<string, int> jobName => estimated threads */
     private array $threadAllocations = [];
 
     private ?InputFilesResolution $inputFilesContext = null;
+
+    private ?FlowMemoryHandler $memoryHandler = null;
 
     public function __construct(OutputHandler $outputHandler, ?GitStagerInterface $gitStager = null)
     {
@@ -72,6 +76,17 @@ class FlowExecutor
     }
 
     /**
+     * Disable per-job and flow memory-budget evaluation for this execution.
+     * The sampler still runs when --stats is on so the cores axis (and the
+     * memory axis if available) is reported, but no thresholds fire and
+     * no jobs are killed. Used by `--no-memory-budget` (CLI override).
+     */
+    public function setMemoryBudgetDisabled(bool $disabled): void
+    {
+        $this->memoryBudgetDisabled = $disabled;
+    }
+
+    /**
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates thread budget + sequential/parallel dispatch
      * @SuppressWarnings(PHPMD.NPathComplexity) Structured format + thread budget + sequential/parallel paths
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) dry-run is a simple mode toggle, not an SRP violation
@@ -79,6 +94,7 @@ class FlowExecutor
     public function execute(FlowPlan $plan, bool $dryRun = false): FlowResult
     {
         $start = microtime(true);
+        $this->memoryHandler = null;
         $maxProcesses = $plan->getOptions()->getProcesses();
         $failFast = $plan->getOptions()->isFailFast();
         $jobs = $plan->getJobs();
@@ -114,10 +130,10 @@ class FlowExecutor
         // Both contribute events to the handler, so the denominator must cover both.
         $this->outputHandler->onFlowStart(count($jobs) + count($plan->getSkippedJobs()));
 
-        if ($maxProcesses <= 1 || count($jobs) <= 1) {
+        if (($maxProcesses <= 1 || count($jobs) <= 1) && !$this->shouldSampleMemory($jobs, $plan->getOptions())) {
             $results = $this->executeSequential($jobs, $failFast);
         } else {
-            $results = $this->executeParallel($jobs, $maxProcesses, $failFast, $plan->getOptions());
+            $results = $this->executeParallel($jobs, max(1, $maxProcesses), $failFast, $plan->getOptions());
         }
 
         // Include skipped jobs from plan (fast mode filtering / files mode mismatch)
@@ -140,7 +156,11 @@ class FlowExecutor
 
         $timeBudgetState = $this->buildTimeBudgetState($plan->getOptions()->getTimeBudget(), $results);
 
-        return new FlowResult(
+        if ($this->memoryHandler !== null) {
+            $results = $this->memoryHandler->enrichResults($results, $plan->getJobs());
+        }
+
+        $flowResult = new FlowResult(
             $plan->getFlowName(),
             $results,
             $totalTime,
@@ -152,6 +172,11 @@ class FlowExecutor
             $plan->getEffectiveOptions(),
             $timeBudgetState
         );
+        if ($this->memoryHandler !== null) {
+            $this->memoryHandler->attachStats($flowResult);
+        }
+
+        return $flowResult;
     }
 
     /**
@@ -383,6 +408,29 @@ class FlowExecutor
     }
 
     /**
+     * Whether the memory sampler must run for this execution (REQ-022).
+     * Forces parallel mode even when there is only one job: the parallel
+     * loop is the only path that ticks the sampler.
+     *
+     * @param JobAbstract[] $jobs
+     */
+    private function shouldSampleMemory(array $jobs, OptionsConfiguration $options): bool
+    {
+        if ($options->isStats()) {
+            return true;
+        }
+        if (!$this->memoryBudgetDisabled && $options->getMemoryBudget() !== null) {
+            return true;
+        }
+        foreach ($jobs as $job) {
+            if ($job->getMemoryReserve() !== null || $job->getMemoryThreshold() !== null) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * @param JobAbstract[] $jobs
      * @return JobResult[]
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates pool + dashboard + fail-fast
@@ -396,6 +444,16 @@ class FlowExecutor
         $failFastTriggered = false;
         $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;
         $lastTick = microtime(true);
+        $lastMemorySample = microtime(true);
+
+        $memoryHandler = new FlowMemoryHandler(
+            $options,
+            $this->memoryBudgetDisabled,
+            microtime(true),
+            $this->threadAllocations
+        );
+        $memoryHandler->setup($jobs);
+        $this->memoryHandler = $memoryHandler;
 
         // Register all job names for dashboard display
         if ($dashboard !== null) {
@@ -442,18 +500,62 @@ class FlowExecutor
                 }
             }
 
+            if ($memoryHandler->shouldKill()) {
+                $this->triggerMemoryBudgetKill($pool, $results);
+                break;
+            }
+
             if ($pool->hasRunning()) {
-                // Update dashboard timer at ~200ms intervals
                 $now = microtime(true);
                 if ($dashboard !== null && ($now - $lastTick) >= 0.2) {
                     $dashboard->tick();
                     $lastTick = $now;
                 }
+                if ($memoryHandler->isActive() && ($now - $lastMemorySample) >= 1.0) {
+                    $memoryHandler->tick($pool->getRunning());
+                    $lastMemorySample = $now;
+                }
                 usleep(10000);
             }
         }
 
+        if ($memoryHandler->isActive()) {
+            $memoryHandler->tick($pool->getRunning());
+        }
+
         return $results;
+    }
+
+    /**
+     * Terminate jobs in flight and mark them as killed-by-budget; skip the
+     * remaining queue with the same reason (REQ-013).
+     *
+     * @param JobResult[] $results passed by reference; appended to.
+     */
+    private function triggerMemoryBudgetKill(ProcessPool $pool, array &$results): void
+    {
+        fwrite(STDERR, '✗ Flow memory-budget exceeded — terminating jobs in flight' . PHP_EOL);
+
+        foreach ($pool->terminateAll() as $entry) {
+            $results[] = $this->collectResult($entry)
+                ->withKilled('flow memory-budget exceeded');
+        }
+        foreach ($pool->getQueuedJobs() as $skippedJob) {
+            $this->outputHandler->onJobSkipped(
+                $skippedJob->getDisplayName(),
+                'flow memory-budget exceeded'
+            );
+            $results[] = $this->attachInputFilesIfApplicable(
+                JobResult::skipped(
+                    $skippedJob->getName(),
+                    $skippedJob->getType(),
+                    'flow memory-budget exceeded',
+                    $skippedJob->getConfiguredPaths()
+                ),
+                $skippedJob
+            );
+        }
+        $pool->clearQueue();
     }
 
     private function propagateContext(JobAbstract $job, ?ExecutionContext $context): void

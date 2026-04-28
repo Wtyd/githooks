@@ -195,6 +195,7 @@ class JobCommand extends Command
             $this->applyFormat($this->executor, $plan);
 
             $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
+            $this->executor->setMemoryBudgetDisabled($memoryBudgetFlags['disabled']);
 
             $this->emitConditionsHeader($resolution, null, $plan->getInputFiles());
 

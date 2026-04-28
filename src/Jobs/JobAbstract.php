@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Jobs;
 
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Configuration\MemoryThreshold;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\ThreadCapability;
 
@@ -57,6 +58,8 @@ abstract class JobAbstract
 
     protected ?int $memoryReserve = null;
 
+    protected ?MemoryThreshold $memoryThreshold = null;
+
     public function __construct(JobConfiguration $config)
     {
         $this->name = $config->getName();
@@ -72,6 +75,7 @@ abstract class JobAbstract
         $this->warnAfter = $this->extractPositiveInt('warn-after');
         $this->failAfter = $this->extractPositiveInt('fail-after');
         $this->memoryReserve = $config->getMemoryReserve();
+        $this->memoryThreshold = $config->getMemoryThreshold();
         unset($this->args['memory']);
     }
 
@@ -317,6 +321,16 @@ abstract class JobAbstract
     public function getMemoryReserve(): ?int
     {
         return $this->memoryReserve;
+    }
+
+    /**
+     * Per-job memory threshold (warn-above / fail-above) declared in
+     * jobs.<name>.memory. Null when not declared. The MemoryEvaluator uses
+     * this to compute MEMORY_THRESHOLD_WARNED / FAILED on the JobResult.
+     */
+    public function getMemoryThreshold(): ?MemoryThreshold
+    {
+        return $this->memoryThreshold;
     }
 
     public function getWarnAfter(): ?int
