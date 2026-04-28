@@ -97,3 +97,62 @@ Shows detected CPU count and current `processes` configuration. Warns if `proces
 - Start with `processes` equal to your CPU core count.
 - PHPStan worker count is configured in the `.neon` file (`maximumNumberOfProcesses`), not via GitHooks. It is accounted for in the budget but not adjustable at runtime.
 - Use `--monitor` to verify that the budget is being distributed as expected.
+
+## Memory budget and 2D scheduling
+
+When `processes` alone is not enough — typical of monolith QA where
+`phpstan` and `phpunit` can together breach a 6 GB CI runner — declare
+a flow `memory-budget` and per-job `memory` reservations. The allocator
+then admits jobs by **both** axes (cores AND memory), so two heavy
+analyzers do not start simultaneously even when cores are free.
+
+```php
+'flows' => [
+    'options' => [
+        'processes'     => 10,
+        'memory-budget' => ['warn-above' => 5500, 'fail-above' => 6000],
+        'allocator'     => 'greedy',
+    ],
+    'qa' => ['jobs' => ['phpstan-src', 'phpunit', 'phpcs', 'phpmd-src']],
+],
+'jobs' => [
+    'phpstan-src' => ['type' => 'phpstan', 'cores' => 2, 'memory' => 2000],
+    'phpunit'     => ['type' => 'phpunit', 'cores' => 4, 'memory' => 1500],
+    'phpcs'       => ['type' => 'phpcs',   'cores' => 1, 'memory' => 256],
+    'phpmd-src'   => ['type' => 'phpmd',   'cores' => 2, 'memory' => 800],
+],
+```
+
+When the simultaneous RSS sum crosses `fail-above`, the runtime kills
+the jobs in flight (`process->stop`) and skips the queued ones. The
+flow exits `1` even if every individual job had passed up to that
+point — that is the conceptual key of the feature.
+
+### Calibrating with `--stats`
+
+Run any flow with `--stats` first **without** thresholds to discover real
+peaks. The canonical 5-column table prints after the `Results:` line:
+
+```bash
+githooks flow qa --stats
+```
+
+Then declare conservative `warn-above`/`fail-above` based on the table.
+
+### FIFO vs greedy
+
+| Strategy | When to pick |
+|---|---|
+| `fifo` (default) | Predictable order. Use it when CI parity matters or when most jobs are similar in cost. |
+| `greedy` | A heavy job declared late blocks lighter ones in FIFO; greedy lets them slip in while the heavy one waits for resources. |
+
+The strategy applies in both 1D mode (cores only) and 2D mode. See
+[Memory budget](../configuration/options.md#memory-budget-memory-budget)
+for the full configuration reference.
+
+### Linux-only sampler in v3.3
+
+The RSS sampler reads `/proc/<PID>/status`. On macOS and Windows the
+runtime emits one stderr warning and disables thresholds — `--stats`
+still reports the cores axis (deterministic from the schedule).
+Cross-platform sampling is reserved for v3.4 if demand appears.

@@ -93,6 +93,57 @@ If both `cores` and the tool's native thread flag are set (e.g. `cores: 2`
 and `parallel: 4` on a phpcs job), `cores` wins at runtime and
 [`conf:check`](../cli/conf-check.md) emits a warning.
 
+## Per-job memory threshold (`memory`)
+
+Each job can declare a memory threshold that the runtime watches via RSS
+sampling (Linux only in v3.3; macOS and Windows degrade gracefully with
+a stderr warning). The key has two equivalent forms:
+
+```php
+'jobs' => [
+    // Short form: integer (MB). Acts as both warn-above threshold AND
+    // scheduler reservation when a flow `memory-budget` is declared.
+    'phpstan-src' => [
+        'type'   => 'phpstan',
+        'cores'  => 2,
+        'memory' => 2000,
+    ],
+
+    // Extended form: object. Threshold-only — does NOT reserve at the
+    // scheduler. Use this when you want a hard `fail-above` cap or to
+    // declare warn-above only, without participating in 2D bin-packing.
+    'phpunit' => [
+        'type'   => 'phpunit',
+        'cores'  => 4,
+        'memory' => [
+            'warn-above' => 1500,
+            'fail-above' => 2000,
+        ],
+    ],
+
+    // Extended form with only warn-above (no fail).
+    'phpcs' => [
+        'type'   => 'phpcs',
+        'memory' => ['warn-above' => 256],
+    ],
+],
+```
+
+**Behaviour:**
+
+- Crossing `warn-above` adds a `⚠` annotation to the job; the flow exits
+  `0` (the job still passes).
+- Crossing `fail-above` flips the job to KO with exit `1`, even when the
+  tool itself returned `0`. A KO-real job (tool exit ≠ 0) that also
+  crossed memory still reports KO-real as the primary cause; the
+  threshold is annotated as a secondary line.
+- Skipped jobs (no staged files, fast-mode filtering) do not contribute
+  to the simultaneous flow peak nor evaluate thresholds.
+
+**Calibration tip:** run with `--stats` once **without** thresholds to
+discover real peaks, then declare conservative `warn-above`/`fail-above`
+based on the table.
+
 ## Job inheritance (`extends`)
 
 A job can inherit configuration from another job using the `extends` key. The child inherits all keys from the parent and can override any of them:

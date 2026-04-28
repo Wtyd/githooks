@@ -206,3 +206,107 @@ githooks flow qa --format=json --no-reports --report-sarif=/tmp/q.sarif
 ```
 
 See [How-To: CI/CD](../how-to/ci-cd.md) for end-to-end pipeline recipes.
+
+## Memory budget (`memory-budget`)
+
+Watches the **simultaneous** RSS sum across all jobs in flight against
+declared `warn-above` / `fail-above` thresholds (MB). Independent of
+per-job `memory` thresholds — they answer different questions ("is this
+job leaking?" vs. "is the runner about to OOM?").
+
+```php
+'flows' => [
+    'options' => [
+        'processes'     => 10,
+        // Default global. Inherited by any flow that does not redefine it.
+        'memory-budget' => [
+            'warn-above' => 5500,
+            'fail-above' => 6000,
+        ],
+    ],
+    'pre-commit-light' => [
+        'options' => [
+            // Per-flow override.
+            'memory-budget' => ['warn-above' => 800],
+        ],
+        'jobs' => ['phpcbf', 'parallel-lint'],
+    ],
+],
+```
+
+**Behaviour when crossed:**
+
+| Threshold | Action |
+|---|---|
+| `warn-above` | `⚠` annotation, exit `0` |
+| `fail-above` | **Kills jobs in flight** (`process->stop`), skips queued jobs with reason `"flow memory-budget exceeded"`, exit `1` even if every job had passed |
+
+CLI overrides: `--memory-warn-above=N`, `--memory-fail-above=N`,
+`--no-memory-budget`. The last disables both the per-job and flow-level
+evaluation for that run.
+
+**Linux-only sampler in v3.3.** macOS and Windows degrade gracefully:
+the runtime emits one stderr warning (`⚠ Memory budget disabled: ...`)
+and disables thresholds; `--stats` still reports cores info.
+
+## Allocator strategy (`allocator`)
+
+Controls admission order when the pool fills. Two values:
+
+| Value | Behaviour |
+|---|---|
+| `fifo` (default) | Strict declaration order. If the head of the queue does not fit (cores or memory), the entire queue waits — predictable for CI parity. |
+| `greedy` | First-fit scan over the entire queue. Picks the first job that fits the current resources. Cannot starve (the queue is closed and finite). |
+
+```php
+'flows' => [
+    'options' => ['allocator' => 'greedy'],
+    'qa' => [
+        'options' => ['allocator' => 'fifo'], // per-flow override
+        'jobs'    => [...],
+    ],
+],
+```
+
+CLI override: `--allocator=fifo|greedy`.
+
+The strategy applies to both 1D mode (cores only) and 2D mode (cores +
+memory). 2D mode activates only when both a `memory-budget` is declared
+and at least one job has a short-form `memory:` reservation.
+
+## Stats (`stats`)
+
+Activates RSS sampling and emits the canonical `--stats` summary table
+plus the `stats` block in JSON v2. Independent of thresholds — useful
+for calibration runs (declare nothing; observe peaks; then set
+`memory-budget` and `memory:` with knowledge).
+
+```php
+'flows' => [
+    'options' => ['stats' => true],
+],
+```
+
+CLI override: `--stats` (always wins).
+
+Sample output:
+
+```
+Results: 5/5 passed in 21.6s ✔
+
++----------------+--------+--------+------------+-------------+
+| Job            | Status | Time   | Peak Cores | Peak Memory |
++----------------+--------+--------+------------+-------------+
+| phpstan-src    | OK     | 8.2s   | 2          | 1850 MB     |
+| ...            |        |        |            |             |
++----------------+--------+--------+------------+-------------+
+| TOTAL (flow)   | 5/5 ✔  | 21.6s  | 8/10       | 5410 MB     |
++----------------+--------+--------+------------+-------------+
+
+Memory peak at 12.3s: phpstan-src 1880 + phpunit 1240 + ...
+Cores peak at 12.3s:  phpstan-src + phpunit + ...
+```
+
+The `cores` sub-block of the JSON `stats` block is emitted always when
+stats are active (deterministic from the schedule); the `memory` sub-block
+is emitted only when the sampler actually produced data.

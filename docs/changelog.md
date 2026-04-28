@@ -78,6 +78,25 @@ Two parallel, independent systems that watch the temporal health of every QA run
 
 Spec: [spec/spec-design-time-budget-thresholds.md](../spec/spec-design-time-budget-thresholds.md).
 
+#### Memory budget + 2D allocator + RSS sampler (Linux)
+
+GitHooks now declaratively watches RSS consumption per job and across the whole flow, schedules admissions in 2D (cores + memory) when both axes are constrained, and surfaces peaks in a canonical `--stats` table — none of GrumPHP, CaptainHook, lefthook, pre-commit or golangci-lint expose this combination.
+
+- **Per-job memory threshold** (`jobs.<name>.memory`): two equivalent forms.
+  - Short form `memory: 2000` (MB) — single warn threshold AND scheduler reservation when a flow `memory-budget` is declared.
+  - Extended form `memory: { warn-above: 1500, fail-above: 2000 }` — explicit thresholds, no reservation.
+  - Crossing `warn-above` annotates `⚠`; crossing `fail-above` flips the job to KO with exit `1` even when the tool itself returned `0`.
+- **Flow `memory-budget`** (`flows.options.memory-budget` or per-flow): observational watchdog over the simultaneous RSS sum across jobs in flight. Crossing `fail-above` **kills jobs in flight** (`process->stop(0)`) and skips the queued ones with reason `"flow memory-budget exceeded"`. The flow exits 1 even if every individual job had passed (the conceptual key of the feature).
+- **2D allocator** (`flows.options.allocator: fifo|greedy`): when a `memory-budget` is declared **and** at least one job has a short-form `memory:` reservation, the pool admits jobs only when both cores and memory fit. FIFO blocks the entire queue when the head does not fit; greedy scans for the first fitting job (REQ-019). 1D mode (cores only) is preserved when either side of the precondition is missing.
+- **RSS sampler**: Linux-first via `/proc/<PID>/status` (VmRSS), polled every 1 second while jobs are in flight. macOS and Windows degrade gracefully — a one-line warning on stderr disables thresholds; `--stats` still emits the cores axis (deterministic from the schedule).
+- **`--stats` table**: 5-column summary (Job / Status / Time / Peak Cores / Peak Memory) with a TOTAL row + temporal attribution lines `Memory peak at Xs: jobA Pmb + jobB Pmb...` and `Cores peak at Xs:  jobA + jobB...`. Active when `--stats` (CLI) or `stats: true` (config).
+- **CLI overrides**: `--memory-warn-above=N`, `--memory-fail-above=N`, `--no-memory-budget`, `--allocator=fifo|greedy`, `--stats`. Apply flow-level except in `githooks job` where they apply to the single job.
+- **JSON v2**: new root-level `memoryBudget` and `stats` blocks (always present under the explicit-null pattern), per-job `memoryReserved`, `memoryPeak`, `memoryThreshold` and `killedReason`. SARIF / JUnit / Code Climate are unchanged in this iteration (REQ-042).
+- **Conditions header**: extended with `memory-budget=warn-above=WMB,fail-above=FMB (origin)`, `allocator=fifo|greedy (origin)` and `stats=true|false (origin)` segments alongside `time-budget`.
+- **`conf:check` validation**: positive-integer guards, warn/fail ordering, `memory > memory-budget.warn-above` (could-never-run), unknown allocator values, `memory-budget` typo suggestions.
+
+Spec: [spec/spec-design-memory-budget.md](../spec/spec-design-memory-budget.md).
+
 ---
 
 ## [3.2.0]
