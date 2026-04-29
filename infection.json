@@ -50,6 +50,7 @@
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::210",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::buildAdmissionContext::152",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::111",
+                "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::44",
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::49"
             ]
         },
@@ -69,7 +70,8 @@
                 "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::102",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::111",
-                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::112"
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::112",
+                "Wtyd\\GitHooks\\Execution\\EffectiveOptionsResolver::cascadeInt::517"
             ]
         },
         "CastBool": {
@@ -104,7 +106,9 @@
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::64",
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::75",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::132",
-                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::143"
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::143",
+                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::211",
+                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::222"
             ]
         },
         "SharedCaseRemoval": {
@@ -124,7 +128,8 @@
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
-                "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94"
+                "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
+                "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::45"
             ]
         },
         "MethodCallRemoval": {
@@ -245,6 +250,11 @@
         "ElseIfNegation": {
             "ignore": [
                 "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::__construct::35"
+            ]
+        },
+        "LogicalOr": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::47"
             ]
         }
     }
