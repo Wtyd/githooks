@@ -167,4 +167,61 @@ class JobAbstractTest extends TestCase
         $this->assertFalse($job->isFixApplied(0));
         $this->assertFalse($job->isFixApplied(1));
     }
+
+    // ========================================================================
+    // Mutation testing reinforcements (cluster F)
+    // ========================================================================
+
+    /** @test */
+    public function extract_positive_int_returns_null_for_string_value()
+    {
+        // Kills LogicalAnd `&&` -> `||` mutant on
+        // `is_int($value) && $value >= 1` at line 92. With `||`, a
+        // string like '5' would pass `>= 1` (PHP coercion) and return
+        // the string — but the function is typed `?int`, so under
+        // strict_types it would TypeError.
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths' => ['src'],
+            'warn-after' => '5',
+        ]));
+
+        $this->assertNull($job->getWarnAfter());
+    }
+
+    /** @test */
+    public function extract_positive_int_accepts_value_at_minimum_boundary()
+    {
+        // Pin the boundary `>= 1` (line 92): exactly 1 must be accepted.
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths' => ['src'],
+            'warn-after' => 1,
+        ]));
+
+        $this->assertSame(1, $job->getWarnAfter());
+    }
+
+    /** @test */
+    public function extract_cores_override_returns_null_for_string_value()
+    {
+        // Kills LogicalAnd `&&` -> `||` mutant on
+        // `is_int($cores) && $cores >= 1` at line 106.
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths' => ['src'],
+            'cores' => '4',
+        ]));
+
+        $this->assertNull($job->getCoresOverride());
+    }
+
+    /** @test */
+    public function extract_cores_override_accepts_value_at_minimum_boundary()
+    {
+        // Kills GreaterThanOrEqualTo `>=` -> `>` boundary at line 106.
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths' => ['src'],
+            'cores' => 1,
+        ]));
+
+        $this->assertSame(1, $job->getCoresOverride());
+    }
 }
