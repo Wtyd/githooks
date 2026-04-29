@@ -284,6 +284,54 @@ class PhpmdOutputParserTest extends TestCase
      * Defensive: if a future phpmd release (or a merged stderr stream) prefixes
      * a human preamble to the JSON, the parser must still surface the violations.
      */
+    function make_relative_strips_trailing_slashes_from_cwd_prefix()
+    {
+        // Kills UnwrapRtrim on line 75: the function MUST tolerate
+        // a CWD value with trailing slashes (some shell setups expose
+        // it that way). Without rtrim, the assembled prefix would have
+        // double-slashes and strpos() === 0 would never match — the
+        // path would be returned in absolute form instead of relative.
+        $reflection = new \ReflectionMethod(PhpmdOutputParser::class, 'makeRelative');
+        $reflection->setAccessible(true);
+
+        $relative = $reflection->invoke(
+            $this->parser,
+            '/home/user/project/src/X.php',
+            '/home/user/project//'
+        );
+
+        $this->assertSame('src/X.php', $relative);
+    }
+
+    /** @test */
+    function it_coerces_string_end_line_to_int_when_present_in_violation()
+    {
+        // Kills CastInt on line 54: with strict_types=1 a non-cast
+        // string endLine would TypeError when passed to CodeIssue's
+        // `?int $endLine` parameter. The cast keeps the parser tolerant
+        // to JSON shapes that quote numeric values.
+        $json = json_encode([
+            'files' => [[
+                'file' => 'src/A.php',
+                'violations' => [[
+                    'beginLine' => 4,
+                    'endLine' => '7', // intentional string
+                    'description' => 'x',
+                    'rule' => 'r',
+                    'priority' => 3,
+                ]
+                ],
+            ]
+            ],
+        ]);
+
+        $issues = $this->parser->parse($json, 'phpmd');
+
+        $this->assertCount(1, $issues);
+        $this->assertSame(7, $issues[0]->getEndLine());
+    }
+
+    /** @test */
     function it_tolerates_a_human_preamble_before_the_json_document()
     {
         $preamble = "PHPMD report\n----\nStarting analysis...\n";

@@ -202,4 +202,61 @@ class CodeClimateResultFormatterTest extends TestCase
         $this->assertSame('major', $data[0]['severity']);
         $this->assertSame('minor', $data[1]['severity']);
     }
+
+    // ========================================================================
+    // Mutation testing reinforcements (cluster E)
+    // ========================================================================
+
+    /** @test */
+    function it_skips_jobs_whose_tool_type_has_no_registered_parser()
+    {
+        // Kills Continue_ at line 39 in CodeClimateResultFormatter:
+        // when getParser() returns null for an unknown type, the
+        // formatter must skip the job — without the continue, the
+        // function would call parse() on a null object and crash.
+        $result = new FlowResult('qa', [
+            new JobResult('custom_unknown', false, 'output', '1s', false, null, 'unknown_tool', 1, [], false, null, '{"some":"data"}'),
+        ], '1s');
+
+        $formatter = new CodeClimateResultFormatter();
+        $json = $formatter->format($result);
+        $data = json_decode($json, true);
+
+        $this->assertSame([], $data);
+    }
+
+    /** @test */
+    function output_uses_pretty_printed_json_with_unescaped_unicode_and_slashes()
+    {
+        // Kills BitwiseOr mutants at line 57 on the JSON encoding flags.
+        // JSON_PRETTY_PRINT introduces newlines + indentation;
+        // JSON_UNESCAPED_SLASHES keeps `/` literal in paths;
+        // JSON_UNESCAPED_UNICODE keeps non-ASCII characters readable.
+        // Removing any flag changes the byte sequence and a strict
+        // assertion catches it.
+        $phpstanStdout = json_encode([
+            'files' => [
+                'src/usuário.php' => [
+                    'messages' => [['message' => 'msg', 'line' => 1]],
+                ],
+            ],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan', false, '', '1s', false, null, 'phpstan', 1, [], false, null, $phpstanStdout),
+        ], '1s');
+
+        $json = (new CodeClimateResultFormatter())->format($result);
+
+        // PRETTY_PRINT: there must be newlines and indentation.
+        $this->assertStringContainsString("\n", $json);
+        $this->assertStringContainsString('    "', $json);
+
+        // UNESCAPED_SLASHES: paths keep their literal '/'.
+        $this->assertStringContainsString('src/usuário.php', $json);
+        $this->assertStringNotContainsString('src\\/usuário.php', $json);
+
+        // UNESCAPED_UNICODE: the 'á' must NOT be encoded as á.
+        $this->assertStringNotContainsString('\\u00e1', $json);
+    }
 }

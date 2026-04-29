@@ -172,4 +172,20 @@ class ParallelLintOutputParserTest extends TestCase
         $this->assertCount(1, $issues);
         $this->assertSame('src/X.php', $issues[0]->getFile());
     }
+
+    /** @test */
+    function make_relative_strips_trailing_slashes_from_cwd_prefix()
+    {
+        // Kills UnwrapRtrim on line 54.
+        $reflection = new \ReflectionMethod(ParallelLintOutputParser::class, 'makeRelative');
+        $reflection->setAccessible(true);
+
+        $relative = $reflection->invoke(
+            $this->parser,
+            '/home/user/project/src/X.php',
+            '/home/user/project//'
+        );
+
+        $this->assertSame('src/X.php', $relative);
+    }
 }

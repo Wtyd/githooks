@@ -364,4 +364,25 @@ class SarifResultFormatterTest extends TestCase
             $properties['warnings']
         );
     }
+
+    /** @test */
+    function output_uses_pretty_printed_json_with_unescaped_unicode_and_slashes()
+    {
+        // Kills BitwiseOr mutant on the JSON encoding flags at line 92.
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan', true, '', '1s', false, null, 'phpstan', 0, [], false, null, ''),
+        ], '1s');
+
+        $json = (new SarifResultFormatter())->format($result);
+
+        // PRETTY_PRINT: newline + indentation must be present.
+        $this->assertStringContainsString("\n", $json);
+        $this->assertStringContainsString('    "', $json);
+        // UNESCAPED_SLASHES: schema URL is a long path with slashes.
+        $this->assertStringContainsString(
+            'https://raw.githubusercontent.com/oasis-tcs/sarif-spec',
+            $json
+        );
+        $this->assertStringNotContainsString('https:\\/\\/raw.githubusercontent.com', $json);
+    }
 }

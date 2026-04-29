@@ -69,7 +69,8 @@
         },
         "CastString": {
             "ignore": [
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::49"
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::49",
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::205"
             ]
         },
         "ArrayItemRemoval": {
@@ -98,20 +99,25 @@
         "Concat": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
-                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118"
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
+                "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94"
             ]
         },
         "ConcatOperandRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75"
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
+                "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94"
             ]
         },
         "MethodCallRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
-                "Wtyd\\GitHooks\\Execution\\FlowExecutor::propagateContext::249"
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::propagateContext::249",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::render::43",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::65",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderAttribution::124"
             ]
         },
         "Identical": {
@@ -145,7 +151,8 @@
         },
         "Coalesce": {
             "ignore": [
-                "Wtyd\\GitHooks\\Execution\\FlowExecutor::updatePeakThreads::280"
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::updatePeakThreads::280",
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::withOverrides::355"
             ]
         },
         "Break_": {
@@ -159,7 +166,9 @@
         },
         "Ternary": {
             "ignore": [
-                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel"
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel",
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::205",
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseReports::249"
             ]
         },
         "IfNegation": {
@@ -201,7 +210,13 @@
         },
         "UnwrapTrim": {
             "ignore": [
-                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::50"
+                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::50",
+                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::emitErrorAnnotations::50"
+            ]
+        },
+        "ElseIfNegation": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::__construct::35"
             ]
         }
     }

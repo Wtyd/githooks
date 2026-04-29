@@ -183,4 +183,63 @@ class JunitResultFormatterTest extends UnitTestCase
         $testcase = $dom->getElementsByTagName('testcase')->item(0);
         $this->assertSame('', $testcase->getAttribute('classname'));
     }
+
+    // ========================================================================
+    // Mutation testing reinforcements (cluster E)
+    // ========================================================================
+
+    /** @test */
+    function testsuite_element_carries_a_time_attribute_in_seconds()
+    {
+        // Kills MethodCallRemoval on `$testsuite->setAttribute('time', ...)`
+        // at line 24: without the call, the testsuite element would lack
+        // the time attribute entirely.
+        $result = new FlowResult('qa', [
+            new JobResult('a', true, '', '1.50s'),
+        ], '2.00s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $testsuite = $dom->getElementsByTagName('testsuite')->item(0);
+        $this->assertTrue($testsuite->hasAttribute('time'));
+        $this->assertSame('2.00', $testsuite->getAttribute('time'));
+    }
+
+    /** @test */
+    function parse_seconds_anchors_at_both_ends_for_minute_format()
+    {
+        // Kills PregMatchRemoveCaret and PregMatchRemoveDollar on the
+        // minute-format regex `/^(\d+)m\s*(\d+)s$/` at line 73. With the
+        // caret removed, "garbage 2m 30s" would match and return 150;
+        // with the dollar removed, "2m 30s extra" would match and
+        // return 150. Both cases must fall through to the `return $time`
+        // fallback (line 76) and surface the unparsed string.
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'parseSeconds');
+        $reflection->setAccessible(true);
+        $formatter = new JunitResultFormatter();
+
+        // Anchored input (the happy path) parses to 150 seconds.
+        $this->assertSame('150', $reflection->invoke($formatter, '2m 30s'));
+
+        // Inputs with extra prefix or suffix must NOT match.
+        $this->assertSame('garbage 2m 30s', $reflection->invoke($formatter, 'garbage 2m 30s'));
+        $this->assertSame('2m 30s extra', $reflection->invoke($formatter, '2m 30s extra'));
+    }
+
+    /** @test */
+    function parse_seconds_handles_each_format_branch()
+    {
+        // Pin the three format branches (ms / s / m+s) so a parser
+        // regression in any one of them is caught.
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'parseSeconds');
+        $reflection->setAccessible(true);
+        $formatter = new JunitResultFormatter();
+
+        $this->assertSame('0.250', $reflection->invoke($formatter, '250ms'));
+        $this->assertSame('1.50', $reflection->invoke($formatter, '1.50s'));
+        $this->assertSame('150', $reflection->invoke($formatter, '2m 30s'));
+        $this->assertSame('60', $reflection->invoke($formatter, '1m 0s'));
+    }
 }
