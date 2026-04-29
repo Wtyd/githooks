@@ -289,6 +289,90 @@ PS;
         $this->assertSame(17, $samples['root']);
     }
 
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 88: cuando el rootPid de
+     * un job no aparece en el listado de `ps`, real continúa con el
+     * siguiente job; mutado aborta y deja sin muestrear el resto.
+     */
+    public function missing_root_pid_does_not_abort_sampling_of_remaining_jobs(): void
+    {
+        $listing = <<<PS
+  200   1   2048
+PS;
+        $sampler = $this->fakeSamplerWith($listing);
+
+        $samples = $sampler->sample(['gone' => 999, 'alive' => 200]);
+
+        $this->assertArrayNotHasKey('gone', $samples);
+        $this->assertArrayHasKey('alive', $samples);
+        $this->assertSame(2, $samples['alive']);
+    }
+
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 109: una línea malformada
+     * en el listado debe saltarse, no abortar el parseo de las posteriores.
+     */
+    public function malformed_listing_line_does_not_abort_parsing_of_remaining_lines(): void
+    {
+        $listing = "this line is garbage\n  100   1   1024\n";
+        $sampler = $this->fakeSamplerWith($listing);
+
+        $samples = $sampler->sample(['root' => 100]);
+
+        $this->assertSame(1, $samples['root']);
+    }
+
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 141: cuando un hijo ya
+     * está visitado, real continúa con los siguientes hijos; mutado aborta
+     * el foreach. Setup: 100 → [200, 300]. 300 lista hijos [200, 500] —
+     * 200 ya visitado, 500 nuevo.
+     */
+    public function visited_skip_does_not_abort_iteration_over_remaining_children(): void
+    {
+        $listing = <<<PS
+  100   1     1024
+  200   100   2048
+  300   100   4096
+  500   300   8192
+PS;
+        // Para forzar que 300 también "vea" a 200 como hijo, sintetizamos el
+        // árbol parseando mediante una subclase: la forma natural via `ps`
+        // no admite parents múltiples, así que sobreescribimos parseListing
+        // para inyectar el adjacency list deseado.
+        $sampler = new class extends MacOsRssSampler {
+            protected function runProcessListing(): ?string
+            {
+                return '';
+            }
+
+            protected function parseListing(string $listing): array
+            {
+                return [
+                    'procs' => [
+                        100 => ['ppid' => 1,   'rss' => 1024],
+                        200 => ['ppid' => 100, 'rss' => 2048],
+                        300 => ['ppid' => 100, 'rss' => 4096],
+                        500 => ['ppid' => 300, 'rss' => 8192],
+                    ],
+                    'children' => [
+                        100 => [200, 300],
+                        300 => [200, 500],
+                    ],
+                ];
+            }
+        };
+
+        $samples = $sampler->sample(['root' => 100]);
+
+        // Real:  (1024 + 2048 + 4096 + 8192) / 1024 = 15
+        // Mut (break al ver 200 ya visitado): (1024 + 2048 + 4096) / 1024 = 7
+        $this->assertSame(15, $samples['root']);
+    }
+
     private function fakeSamplerWith(?string $listing): MacOsRssSampler
     {
         return new class ($listing) extends MacOsRssSampler {

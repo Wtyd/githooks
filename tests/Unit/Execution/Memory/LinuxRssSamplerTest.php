@@ -344,6 +344,36 @@ class LinuxRssSamplerTest extends TestCase
         $this->assertSame(9, $samples['diamond']);
     }
 
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 73: cuando un hijo ya está
+     * visitado, real lo salta y sigue con los siguientes hijos del mismo
+     * padre; mutado aborta el foreach y se pierde un hijo nuevo.
+     *
+     * Setup: 100 tiene hijos [200, 300]. 300 tiene hijos [200, 500] — 200
+     * ya está visitado al procesar 300, pero 500 es nuevo. Real suma 500;
+     * mutado lo omite.
+     */
+    public function visited_skip_does_not_abort_iteration_over_remaining_children(): void
+    {
+        $sampler = $this->fakeSamplerWith([
+            '/proc/100/status'            => $this->statusWithRss(1024),
+            '/proc/100/task/100/children' => '200 300',
+            '/proc/200/status'            => $this->statusWithRss(2048),
+            '/proc/200/task/200/children' => '',
+            '/proc/300/status'            => $this->statusWithRss(4096),
+            '/proc/300/task/300/children' => '200 500',
+            '/proc/500/status'            => $this->statusWithRss(8192),
+            '/proc/500/task/500/children' => '',
+        ]);
+
+        $samples = $sampler->sample(['root' => 100]);
+
+        // Real:  (1024 + 2048 + 4096 + 8192) / 1024 = 15
+        // Mut:   (1024 + 2048 + 4096) / 1024        = 7
+        $this->assertSame(15, $samples['root']);
+    }
+
     // ========================================================================
     // Helpers
     // ========================================================================
