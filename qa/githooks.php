@@ -140,7 +140,7 @@ return [
         'coverage' => [
             'type' => 'phpunit',
             'executable-path' => 'vendor/bin/phpunit',
-            'executable-prefix' => 'php8.5 -d xdebug.mode=coverage',
+            'executable-prefix' => 'PHPUNIT_SPEEDTRAP=disabled php8.5 -d xdebug.mode=coverage',
             'other-arguments' => '--coverage-html reports/coverage/coverage-html --coverage-xml reports/coverage/coverage-xml --log-junit reports/coverage/junit.xml --testdox-html reports/coverage/documentation.html',
         ],
         'infection' => [

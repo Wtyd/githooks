@@ -11,6 +11,7 @@ class PreBuildCommand extends Command
         'brianium/paratest',
         'fakerphp/faker',
         'friendsofphp/php-cs-fixer',
+        'johnkary/phpunit-speedtrap',
         'mikey179/vfsstream',
         'mockery/mockery',
         'php-mock/php-mock',
