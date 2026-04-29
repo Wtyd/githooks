@@ -186,4 +186,105 @@ class JobResultTest extends TestCase
         $this->assertSame(JobResult::THRESHOLD_FAILED, $clone->getThresholdState());
         $this->assertSame(JobResult::THRESHOLD_REASON_FAIL, $clone->getThresholdReason());
     }
+
+    /**
+     * @test
+     * Mata el mutante CloneRemoval en línea 277 (`withMemoryPeak`): si el
+     * `clone` desaparece, el original también queda mutado.
+     */
+    public function with_memory_peak_clones_without_mutating_original(): void
+    {
+        $original = new JobResult('phpcs', true, '', '50ms');
+        $clone = $original->withMemoryPeak(512);
+
+        $this->assertNull($original->getMemoryPeak());
+        $this->assertSame(512, $clone->getMemoryPeak());
+        $this->assertNotSame($original, $clone);
+    }
+
+    /**
+     * @test
+     * Mata el mutante CloneRemoval en línea 319 (`withMemoryThreshold`).
+     */
+    public function with_memory_threshold_clones_without_mutating_original(): void
+    {
+        $original = new JobResult('phpunit', true, '', '1.0s');
+        $clone = $original->withMemoryThreshold(
+            JobResult::MEMORY_THRESHOLD_WARNED,
+            'warn',
+            512,
+            1024
+        );
+
+        $this->assertSame(JobResult::MEMORY_THRESHOLD_NONE, $original->getMemoryThresholdState());
+        $this->assertNull($original->getConfiguredMemoryWarn());
+        $this->assertNull($original->getConfiguredMemoryFail());
+        $this->assertSame(JobResult::MEMORY_THRESHOLD_WARNED, $clone->getMemoryThresholdState());
+        $this->assertSame(512, $clone->getConfiguredMemoryWarn());
+        $this->assertSame(1024, $clone->getConfiguredMemoryFail());
+        $this->assertNotSame($original, $clone);
+    }
+
+    /**
+     * @test
+     * Mata el mutante CloneRemoval en línea 334 (`withMemoryReserved`).
+     */
+    public function with_memory_reserved_clones_without_mutating_original(): void
+    {
+        $original = new JobResult('phpunit', true, '', '1.0s');
+        $clone = $original->withMemoryReserved(2048);
+
+        $this->assertNull($original->getMemoryReserved());
+        $this->assertSame(2048, $clone->getMemoryReserved());
+        $this->assertNotSame($original, $clone);
+    }
+
+    /**
+     * @test
+     * Mata el mutante CloneRemoval en línea 346 (`withKilled`).
+     */
+    public function with_killed_clones_without_mutating_original(): void
+    {
+        $original = new JobResult('phpunit', true, '', '1.0s');
+        $clone = $original->withKilled('memory budget exceeded');
+
+        $this->assertTrue($original->isSuccess());
+        $this->assertNull($original->getKilledReason());
+        $this->assertFalse($clone->isSuccess());
+        $this->assertSame('memory budget exceeded', $clone->getKilledReason());
+        $this->assertNotSame($original, $clone);
+    }
+
+    /**
+     * @test
+     * Mata el mutante LogicalOr en línea 304: la rama OR debe ser true cuando
+     * solo `warn` está configurado. Mutado a AND devolvería false.
+     */
+    public function has_memory_threshold_returns_true_when_only_warn_is_configured(): void
+    {
+        $result = (new JobResult('phpunit', true, '', '1.0s'))
+            ->withMemoryThreshold(JobResult::MEMORY_THRESHOLD_NONE, null, 512, null);
+
+        $this->assertTrue($result->hasMemoryThreshold());
+    }
+
+    /**
+     * @test
+     * Mata la otra rama del OR en línea 304: solo `fail` configurado.
+     */
+    public function has_memory_threshold_returns_true_when_only_fail_is_configured(): void
+    {
+        $result = (new JobResult('phpunit', true, '', '1.0s'))
+            ->withMemoryThreshold(JobResult::MEMORY_THRESHOLD_NONE, null, null, 1024);
+
+        $this->assertTrue($result->hasMemoryThreshold());
+    }
+
+    /** @test */
+    public function has_memory_threshold_returns_false_when_both_are_null(): void
+    {
+        $result = new JobResult('phpunit', true, '', '1.0s');
+
+        $this->assertFalse($result->hasMemoryThreshold());
+    }
 }

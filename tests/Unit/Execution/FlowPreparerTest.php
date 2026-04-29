@@ -118,6 +118,105 @@ class FlowPreparerTest extends TestCase
         $this->assertCount(1, $plan->getJobs());
     }
 
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 63: si un jobName no
+     * existe en la config, real (`continue`) sigue procesando los siguientes
+     * y mutado (`break`) corta el loop. Con el missing al principio del
+     * flow, real produce 1 job y mutado produce 0.
+     */
+    public function missing_job_does_not_abort_subsequent_jobs()
+    {
+        $jobs = [
+            'phpcs_src' => new JobConfiguration('phpcs_src', 'phpcs', ['paths' => ['src']]),
+        ];
+
+        $flow = new FlowConfiguration('lint', ['nonexistent', 'phpcs_src']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['lint' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertCount(1, $plan->getJobs());
+        $this->assertInstanceOf(PhpcsJob::class, $plan->getJobs()[0]);
+    }
+
+    /**
+     * @test
+     * Mata el mutante ArrayItem en línea 77: el `=>` del literal de
+     * `$skippedJobs` se cambia a `>`. Sin la clave `accelerable`, el array
+     * tendría el elemento como índice 0 y no como clave nominal.
+     */
+    public function skipped_job_record_includes_accelerable_key()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpstan_src']);
+        $validation = new ValidationResult();
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['tests/FooTest.php']);
+
+        $context = ExecutionContext::forFastMode($fileUtils);
+        $plan = $this->preparer->prepare($flow, $config, $context);
+
+        $skipped = $plan->getSkippedJobs();
+        $this->assertArrayHasKey('phpstan_src', $skipped);
+        $this->assertArrayHasKey('accelerable', $skipped['phpstan_src']);
+        $this->assertTrue($skipped['phpstan_src']['accelerable']);
+        $this->assertSame('phpstan', $skipped['phpstan_src']['type']);
+        $this->assertSame(['src'], $skipped['phpstan_src']['paths']);
+    }
+
+    /**
+     * @test
+     * Mata el mutante Coalesce en línea 182: `$effectiveInvocation ??
+     * ExecutionMode::FULL` se intercambia a `ExecutionMode::FULL ??
+     * $effectiveInvocation`. La mutada siempre devuelve FULL ignorando el
+     * modo invocado, así que un FAST explícito acaba reportado como FULL.
+     */
+    public function plan_preserves_explicit_invocation_mode()
+    {
+        $jobs = [
+            'phpunit_tests' => new JobConfiguration('phpunit_tests', 'phpunit', [
+                'configuration' => 'phpunit.xml',
+            ]),
+        ];
+
+        $flow = new FlowConfiguration('qa', ['phpunit_tests']);
+
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            $jobs,
+            ['qa' => $flow],
+            null,
+            new ValidationResult()
+        );
+
+        $plan = $this->preparer->prepare($flow, $config, null, [], [], ExecutionMode::FAST);
+
+        $this->assertSame(ExecutionMode::FAST, $plan->getExecutionMode());
+    }
+
     /** @test */
     public function it_excludes_jobs_by_name()
     {

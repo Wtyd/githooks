@@ -315,4 +315,49 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
 
         $this->assertSame(2, $plan->getAllocation('phpstan_like'));
     }
+
+    /**
+     * @test
+     * Mata el mutante Assignment en línea 37: `$fixedCost += $override` →
+     * `$fixedCost = $override`. Con 2 jobs `cores: N`, el real acumula
+     * (3+3=6) y el mutado solo conserva el último (3). La diferencia se
+     * propaga al threadable: 12-6=6 vs 12-3=9.
+     */
+    function multiple_cores_override_jobs_accumulate_in_fixed_cost()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('first_pinned', null, 3),
+            $this->makeJob('second_pinned', null, 3),
+            $this->makeJob('threadable', new ThreadCapability('parallel', 8)),
+        ];
+
+        $plan = $allocator->allocate(12, $jobs);
+
+        $this->assertSame(3, $plan->getAllocation('first_pinned'));
+        $this->assertSame(3, $plan->getAllocation('second_pinned'));
+        $this->assertSame(6, $plan->getAllocation('threadable'));
+    }
+
+    /**
+     * @test
+     * Mata el mutante Assignment en línea 49: `$fixedCost +=
+     * $capability->getDefaultThreads()` → `=`. Con 2 jobs uncontrollable,
+     * el real acumula (3+3=6); el mutado se queda con el último (3).
+     */
+    function multiple_uncontrollable_jobs_accumulate_in_fixed_cost()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('phpstan_a', new ThreadCapability('_internal', 3, 1, false)),
+            $this->makeJob('phpstan_b', new ThreadCapability('_internal', 3, 1, false)),
+            $this->makeJob('phpcs', new ThreadCapability('parallel', 8)),
+        ];
+
+        $plan = $allocator->allocate(12, $jobs);
+
+        $this->assertSame(3, $plan->getAllocation('phpstan_a'));
+        $this->assertSame(3, $plan->getAllocation('phpstan_b'));
+        $this->assertSame(6, $plan->getAllocation('phpcs'));
+    }
 }

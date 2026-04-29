@@ -330,6 +330,139 @@ class ProcessPoolTest extends TestCase
         $pool->terminateAll();
     }
 
+    /**
+     * @test
+     * Mata el mutante ArrayOneItem en `getRunningPids` línea 269: si la mutación
+     * trunca el array a un solo elemento, el assertCount(2) detecta la pérdida
+     * del segundo PID.
+     */
+    function getRunningPids_returns_every_pid_when_multiple_processes_are_running()
+    {
+        $pool = new ProcessPool(3);
+        $pool->enqueue([
+            $this->makeJob('alpha', 'sleep 0.5'),
+            $this->makeJob('beta', 'sleep 0.5'),
+            $this->makeJob('gamma', 'sleep 0.5'),
+        ]);
+        $pool->fillPool();
+
+        $pids = $pool->getRunningPids();
+
+        $this->assertCount(3, $pids);
+        $this->assertSame(['alpha', 'beta', 'gamma'], array_keys($pids));
+        $this->assertGreaterThan(0, $pids['alpha']);
+        $this->assertGreaterThan(0, $pids['beta']);
+        $this->assertGreaterThan(0, $pids['gamma']);
+        $this->assertNotSame($pids['alpha'], $pids['beta']);
+        $this->assertNotSame($pids['beta'], $pids['gamma']);
+
+        $pool->terminateAll();
+    }
+
+    /**
+     * @test
+     * Mata el mutante IncrementInteger en `buildAdmissionContext` línea 152:
+     * `max(0, ...)` → `max(1, ...)`. Cuando el presupuesto está exactamente
+     * agotado, real devuelve memoryFree=0 y bloquea el job de 1MB; mutado
+     * devuelve memoryFree=1 y lo admite.
+     */
+    function memory_admission_blocks_when_budget_is_fully_used()
+    {
+        $heavy = $this->makeJobWithMemory('heavy', 'sleep 1', 200);
+        $tiny = $this->makeJobWithMemory('tiny', 'sleep 1', 1);
+
+        $pool = new ProcessPool(
+            10,
+            new FifoAdmission(),
+            200,
+            ['heavy' => 1, 'tiny' => 1],
+            ['heavy' => 200, 'tiny' => 1]
+        );
+        $pool->enqueue([$heavy]);
+        $pool->fillPool();
+
+        $pool->enqueue([$tiny]);
+        $started = $pool->fillPool();
+
+        $this->assertSame([], array_keys($started));
+        $this->assertSame(['tiny'], array_map(
+            fn($j) => $j->getName(),
+            $pool->getQueuedJobs()
+        ));
+
+        $pool->terminateAll();
+    }
+
+    /**
+     * @test
+     * Mata el mutante DecrementInteger en `releaseReservation` línea 191:
+     * `(int) (...['reserve'] ?? 0)` → `... ?? -1`. Si liberamos un job que NO
+     * está en `memoryReserveByJob`, el real resta 0 (deja `memoryReservedInUse`
+     * en 0) y el mutado resta -1 (lo sube a 1), bloqueando un job que necesita
+     * el budget completo.
+     */
+    function memory_release_uses_zero_default_for_jobs_not_in_reservation_map()
+    {
+        $unreserved = $this->makeJob('unreserved', 'true');
+        $reserved = $this->makeJob('reserved', 'sleep 1');
+
+        $pool = new ProcessPool(
+            10,
+            new FifoAdmission(),
+            200,
+            ['unreserved' => 1, 'reserved' => 1],
+            ['reserved' => 200]
+        );
+        $pool->enqueue([$unreserved]);
+        $pool->fillPool();
+
+        $this->waitForJob($pool, 'unreserved');
+        $pool->pollCompleted();
+
+        $pool->enqueue([$reserved]);
+        $started = $pool->fillPool();
+
+        $this->assertArrayHasKey('reserved', $started);
+
+        $pool->terminateAll();
+    }
+
+    /**
+     * @test
+     * Mata el mutante DecrementInteger en `terminateAll` línea 211:
+     * `$this->memoryReservedInUse = 0` → `= -1`. Tras terminar, el contador debe
+     * quedar exactamente en 0 — un -1 hace que el siguiente cálculo de
+     * memoryFree devuelva `budget+1` y admita un job extra.
+     */
+    function terminateAll_resets_memory_accounting_to_exactly_zero()
+    {
+        $heavy = $this->makeJobWithMemory('heavy', 'sleep 5', 200);
+        $big = $this->makeJobWithMemory('big', 'sleep 1', 200);
+        $small = $this->makeJobWithMemory('small', 'sleep 1', 1);
+
+        $pool = new ProcessPool(
+            10,
+            new FifoAdmission(),
+            200,
+            ['heavy' => 1, 'big' => 1, 'small' => 1],
+            ['heavy' => 200, 'big' => 200, 'small' => 1]
+        );
+        $pool->enqueue([$heavy]);
+        $pool->fillPool();
+        $pool->terminateAll();
+
+        $pool->enqueue([$big, $small]);
+        $started = $pool->fillPool();
+
+        $this->assertSame(['big'], array_keys($started));
+        $this->assertSame(['small'], array_map(
+            fn($j) => $j->getName(),
+            $pool->getQueuedJobs()
+        ));
+
+        $pool->terminateAll();
+    }
+
     private function makeJob(string $name, string $script): CustomJob
     {
         return new CustomJob(new JobConfiguration($name, 'custom', ['script' => $script]));
