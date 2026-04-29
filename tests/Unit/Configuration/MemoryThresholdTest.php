@@ -85,9 +85,45 @@ class MemoryThresholdTest extends TestCase
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
-        $this->assertStringContainsString('phpstan', $errorText);
-        $this->assertStringContainsString('warn-above', $errorText);
-        $this->assertStringContainsString('fail-above', $errorText);
+        $this->assertStringContainsString("Job 'phpstan'", $errorText);
+        $this->assertStringContainsString("'warn-above'", $errorText);
+        $this->assertStringContainsString("'fail-above'", $errorText);
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(2000)', $errorText);
+        $this->assertStringContainsString('(1500)', $errorText);
+        $this->assertStringContainsString("in 'memory'", $errorText);
+    }
+
+    /** @test */
+    public function from_array_rejects_warn_above_equal_to_fail_above_at_boundary(): void
+    {
+        $result = new ValidationResult();
+        MemoryThreshold::fromArray(
+            ['warn-above' => 1500, 'fail-above' => 1500],
+            $result,
+            'phpstan'
+        );
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(1500)', $errorText);
+    }
+
+    /** @test */
+    public function from_array_accepts_warn_above_one_less_than_fail_above_boundary(): void
+    {
+        $result = new ValidationResult();
+        $threshold = MemoryThreshold::fromArray(
+            ['warn-above' => 1499, 'fail-above' => 1500],
+            $result,
+            'phpstan'
+        );
+
+        $this->assertNotNull($threshold);
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(1499, $threshold->getWarnAbove());
+        $this->assertSame(1500, $threshold->getFailAbove());
     }
 
     /** @test */
@@ -98,7 +134,23 @@ class MemoryThresholdTest extends TestCase
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString("Job 'phpstan'", $errorText);
+        $this->assertStringContainsString("'warn-above'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
         $this->assertStringContainsString('MB', $errorText);
+        $this->assertStringContainsString("in 'memory'", $errorText);
+    }
+
+    /** @test */
+    public function from_array_accepts_value_of_exactly_one_at_minimum_boundary(): void
+    {
+        // Kills LessThan / LessThanOrEqualTo mutants on `$value < 1` validator.
+        $result = new ValidationResult();
+        $threshold = MemoryThreshold::fromArray(['warn-above' => 1], $result, 'phpstan');
+
+        $this->assertNotNull($threshold);
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(1, $threshold->getWarnAbove());
     }
 
     /** @test */
@@ -108,6 +160,8 @@ class MemoryThresholdTest extends TestCase
         MemoryThreshold::fromArray(['warn-above' => '2000'], $result, 'phpstan');
 
         $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString('positive integer', $errorText);
     }
 
     /** @test */
@@ -122,9 +176,29 @@ class MemoryThresholdTest extends TestCase
 
         $this->assertFalse($result->hasErrors());
         $warningText = implode(' ', $result->getWarnings());
-        $this->assertStringContainsString('phpstan', $warningText);
-        $this->assertStringContainsString('warn-aboce', $warningText);
-        $this->assertStringContainsString('warn-above', $warningText);
+        $this->assertStringContainsString("Job 'phpstan'", $warningText);
+        $this->assertStringContainsString('unknown key', $warningText);
+        $this->assertStringContainsString("'warn-aboce'", $warningText);
+        $this->assertStringContainsString("in 'memory'", $warningText);
+        $this->assertStringContainsString('did you mean', $warningText);
+        $this->assertStringContainsString("'warn-above'", $warningText);
+    }
+
+    /** @test */
+    public function from_array_warns_about_unknown_keys_without_suggestion_when_too_distant(): void
+    {
+        // Kills LessThanOrEqualTo / LessThan / LogicalAnd mutants on the
+        // suggestKey distance threshold (`$bestDistance <= 3`).
+        $result = new ValidationResult();
+        MemoryThreshold::fromArray(
+            ['warn-above' => 1500, 'totally-unrelated-key' => 2000],
+            $result,
+            'phpstan'
+        );
+
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString("'totally-unrelated-key'", $warningText);
+        $this->assertStringNotContainsString('did you mean', $warningText);
     }
 
     /** @test */

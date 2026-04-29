@@ -18,7 +18,9 @@ class MemoryBudgetConfigurationTest extends TestCase
 
         $this->assertNull($vo);
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('memory-budget', $result->getErrors()[0]);
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'memory-budget'", $errorText);
+        $this->assertStringContainsString('must be an associative array', $errorText);
     }
 
     /** @test */
@@ -74,8 +76,11 @@ class MemoryBudgetConfigurationTest extends TestCase
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
-        $this->assertStringContainsString('warn-above', $errorText);
-        $this->assertStringContainsString('fail-above', $errorText);
+        $this->assertStringContainsString("'warn-above'", $errorText);
+        $this->assertStringContainsString("'fail-above'", $errorText);
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(4000)', $errorText);
+        $this->assertStringContainsString('(3000)', $errorText);
     }
 
     /** @test */
@@ -85,6 +90,23 @@ class MemoryBudgetConfigurationTest extends TestCase
         MemoryBudgetConfiguration::fromArray(['warn-above' => 3000, 'fail-above' => 3000], $result);
 
         $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(3000)', $errorText);
+    }
+
+    /** @test */
+    public function it_accepts_warn_above_one_less_than_fail_above_at_boundary(): void
+    {
+        // Kills GreaterThanOrEqualTo / LessThan boundary mutants on the
+        // `warnAbove >= failAbove` validator.
+        $result = new ValidationResult();
+        $vo = MemoryBudgetConfiguration::fromArray(['warn-above' => 2999, 'fail-above' => 3000], $result);
+
+        $this->assertNotNull($vo);
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(2999, $vo->getWarnAbove());
+        $this->assertSame(3000, $vo->getFailAbove());
     }
 
     /** @test */
@@ -94,8 +116,22 @@ class MemoryBudgetConfigurationTest extends TestCase
         MemoryBudgetConfiguration::fromArray(['warn-above' => 0], $result);
 
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString("'warn-above'", $result->getErrors()[0]);
-        $this->assertStringContainsString('MB', $result->getErrors()[0]);
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'warn-above'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
+        $this->assertStringContainsString('MB', $errorText);
+    }
+
+    /** @test */
+    public function it_accepts_value_of_exactly_one_at_minimum_boundary(): void
+    {
+        // Kills LessThan / LessThanOrEqualTo mutants on `$value < 1` validator.
+        $result = new ValidationResult();
+        $vo = MemoryBudgetConfiguration::fromArray(['warn-above' => 1], $result);
+
+        $this->assertNotNull($vo);
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(1, $vo->getWarnAbove());
     }
 
     /** @test */
@@ -105,6 +141,9 @@ class MemoryBudgetConfigurationTest extends TestCase
         MemoryBudgetConfiguration::fromArray(['fail-above' => -100], $result);
 
         $this->assertTrue($result->hasErrors());
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'fail-above'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
     }
 
     /** @test */
@@ -134,8 +173,27 @@ class MemoryBudgetConfigurationTest extends TestCase
         $this->assertFalse($result->hasErrors());
         $this->assertNotEmpty($result->getWarnings());
         $warningText = implode(' ', $result->getWarnings());
-        $this->assertStringContainsString('warn-aboce', $warningText);
-        $this->assertStringContainsString('warn-above', $warningText);
+        $this->assertStringContainsString('Unknown key', $warningText);
+        $this->assertStringContainsString("'warn-aboce'", $warningText);
+        $this->assertStringContainsString("'memory-budget'", $warningText);
+        $this->assertStringContainsString('did you mean', $warningText);
+        $this->assertStringContainsString("'warn-above'", $warningText);
+    }
+
+    /** @test */
+    public function it_warns_about_unknown_keys_without_suggestion_when_too_distant(): void
+    {
+        // Kills LessThanOrEqualTo / LessThan / LogicalAnd mutants on the
+        // suggestKey distance threshold (`$bestDistance <= 3`).
+        $result = new ValidationResult();
+        MemoryBudgetConfiguration::fromArray(
+            ['warn-above' => 2000, 'totally-unrelated' => 'foo'],
+            $result
+        );
+
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString("'totally-unrelated'", $warningText);
+        $this->assertStringNotContainsString('did you mean', $warningText);
     }
 
     /** @test */
@@ -157,5 +215,41 @@ class MemoryBudgetConfigurationTest extends TestCase
     {
         $vo = new MemoryBudgetConfiguration(null, null);
         $this->assertNull($vo->getBinPackingReference());
+    }
+
+    /** @test */
+    public function is_empty_returns_true_when_both_thresholds_are_null(): void
+    {
+        // Kills LogicalAnd / Identical mutants on `warnAbove === null && failAbove === null`.
+        $vo = new MemoryBudgetConfiguration(null, null);
+        $this->assertTrue($vo->isEmpty());
+    }
+
+    /** @test */
+    public function is_empty_returns_false_when_only_warn_above_is_set(): void
+    {
+        // Kills LogicalAnd `&&` -> `||` mutant: with `||` the function would
+        // return true here because failAbove is null.
+        $vo = new MemoryBudgetConfiguration(2000, null);
+        $this->assertFalse($vo->isEmpty());
+    }
+
+    /** @test */
+    public function is_empty_returns_false_when_only_fail_above_is_set(): void
+    {
+        // Mirror of the previous: with `||` mutant, true would be returned
+        // because warnAbove is null.
+        $vo = new MemoryBudgetConfiguration(null, 3000);
+        $this->assertFalse($vo->isEmpty());
+    }
+
+    /** @test */
+    public function is_empty_returns_false_when_both_thresholds_are_set(): void
+    {
+        // Kills Identical `===` -> `!==` mutants: with `!==`, the test
+        // `null !== null` returns false and isEmpty returns false; here
+        // we force the original branch with neither null.
+        $vo = new MemoryBudgetConfiguration(2000, 3000);
+        $this->assertFalse($vo->isEmpty());
     }
 }

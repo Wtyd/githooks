@@ -18,7 +18,9 @@ class TimeBudgetConfigurationTest extends TestCase
 
         $this->assertNull($vo);
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('time-budget', $result->getErrors()[0]);
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'time-budget'", $errorText);
+        $this->assertStringContainsString('must be an associative array', $errorText);
     }
 
     /** @test */
@@ -74,8 +76,11 @@ class TimeBudgetConfigurationTest extends TestCase
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
-        $this->assertStringContainsString('warn-after', $errorText);
-        $this->assertStringContainsString('fail-after', $errorText);
+        $this->assertStringContainsString("'warn-after'", $errorText);
+        $this->assertStringContainsString("'fail-after'", $errorText);
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(300)', $errorText);
+        $this->assertStringContainsString('(120)', $errorText);
     }
 
     /** @test */
@@ -85,6 +90,23 @@ class TimeBudgetConfigurationTest extends TestCase
         TimeBudgetConfiguration::fromArray(['warn-after' => 120, 'fail-after' => 120], $result);
 
         $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(120)', $errorText);
+    }
+
+    /** @test */
+    public function it_accepts_warn_after_one_less_than_fail_after_at_boundary(): void
+    {
+        // Kills GreaterThanOrEqualTo / LessThan boundary mutants on the
+        // `warnAfter >= failAfter` validator.
+        $result = new ValidationResult();
+        $vo = TimeBudgetConfiguration::fromArray(['warn-after' => 119, 'fail-after' => 120], $result);
+
+        $this->assertNotNull($vo);
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(119, $vo->getWarnAfter());
+        $this->assertSame(120, $vo->getFailAfter());
     }
 
     /** @test */
@@ -94,7 +116,21 @@ class TimeBudgetConfigurationTest extends TestCase
         TimeBudgetConfiguration::fromArray(['warn-after' => 0], $result);
 
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString("'warn-after'", $result->getErrors()[0]);
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'warn-after'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
+    }
+
+    /** @test */
+    public function it_accepts_value_of_exactly_one_at_minimum_boundary(): void
+    {
+        // Kills LessThan / LessThanOrEqualTo mutants on `$value < 1` validator.
+        $result = new ValidationResult();
+        $vo = TimeBudgetConfiguration::fromArray(['warn-after' => 1], $result);
+
+        $this->assertNotNull($vo);
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame(1, $vo->getWarnAfter());
     }
 
     /** @test */
@@ -104,6 +140,9 @@ class TimeBudgetConfigurationTest extends TestCase
         TimeBudgetConfiguration::fromArray(['fail-after' => -5], $result);
 
         $this->assertTrue($result->hasErrors());
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'fail-after'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
     }
 
     /** @test */
@@ -133,8 +172,11 @@ class TimeBudgetConfigurationTest extends TestCase
         $this->assertFalse($result->hasErrors());
         $this->assertNotEmpty($result->getWarnings());
         $warningText = implode(' ', $result->getWarnings());
-        $this->assertStringContainsString('warn-affter', $warningText);
-        $this->assertStringContainsString('warn-after', $warningText);
+        $this->assertStringContainsString('Unknown key', $warningText);
+        $this->assertStringContainsString("'warn-affter'", $warningText);
+        $this->assertStringContainsString("'time-budget'", $warningText);
+        $this->assertStringContainsString('did you mean', $warningText);
+        $this->assertStringContainsString("'warn-after'", $warningText);
     }
 
     /** @test */
@@ -144,7 +186,8 @@ class TimeBudgetConfigurationTest extends TestCase
         TimeBudgetConfiguration::fromArray(['warn-after' => 60, 'unrelated-key' => 'foo'], $result);
 
         $warningText = implode(' ', $result->getWarnings());
-        $this->assertStringContainsString('unrelated-key', $warningText);
+        $this->assertStringContainsString("'unrelated-key'", $warningText);
+        $this->assertStringContainsString("'time-budget'", $warningText);
         $this->assertStringNotContainsString('did you mean', $warningText);
     }
 }
