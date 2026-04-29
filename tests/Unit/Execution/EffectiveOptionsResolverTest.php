@@ -596,4 +596,77 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertTrue($resolution->getOptions()->isStats());
         $this->assertSame('cli', $resolution->getTrace()['stats']['source']);
     }
+
+    // ========================================================================
+    // Mutation testing reinforcements (cluster D)
+    // ========================================================================
+
+    /** @test */
+    public function trace_time_budget_value_exposes_both_warn_after_and_fail_after_keys(): void
+    {
+        // Kills ArrayItem / ArrayItemRemoval mutants on traceTimeBudget()
+        // at line 365: removing either entry would break consumers that
+        // read $trace['timeBudget']['value']['warnAfter'].
+        [$config, $flow] = $this->buildConfig(
+            ['time-budget' => ['warn-after' => 90, 'fail-after' => 240]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+        $value = $resolution->getTrace()['timeBudget']['value'];
+
+        $this->assertIsArray($value);
+        $this->assertArrayHasKey('warnAfter', $value);
+        $this->assertArrayHasKey('failAfter', $value);
+        $this->assertSame(90, $value['warnAfter']);
+        $this->assertSame(240, $value['failAfter']);
+    }
+
+    /** @test */
+    public function trace_memory_budget_value_exposes_both_warn_above_and_fail_above_keys(): void
+    {
+        // Kills ArrayItem / ArrayItemRemoval mutants on traceMemoryBudget()
+        // at line 450 — same pattern as the time-budget trace.
+        [$config, $flow] = $this->buildConfig(
+            ['memory-budget' => ['warn-above' => 1500, 'fail-above' => 2500]],
+            null
+        );
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+        $value = $resolution->getTrace()['memoryBudget']['value'];
+
+        $this->assertIsArray($value);
+        $this->assertArrayHasKey('warnAbove', $value);
+        $this->assertArrayHasKey('failAbove', $value);
+        $this->assertSame(1500, $value['warnAbove']);
+        $this->assertSame(2500, $value['failAbove']);
+    }
+
+    /** @test */
+    public function processes_trace_value_is_strict_int_not_coerced_string(): void
+    {
+        // Kills CastInt mutants on lines 512 and 517 in cascadeInt:
+        // assert with strict assertSame() so a non-int (e.g. string '8'
+        // or float 8.0) value would fail the equality check.
+        [$config, $flow] = $this->buildConfig(['processes' => 8], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+        $value = $resolution->getTrace()['processes']['value'];
+
+        $this->assertSame(8, $value);
+        $this->assertIsInt($value);
+    }
+
+    /** @test */
+    public function fail_fast_trace_value_is_strict_bool_not_coerced(): void
+    {
+        // Kills CastBool mutant on line 489 in cascadeBool.
+        [$config, $flow] = $this->buildConfig(['fail-fast' => true], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+        $value = $resolution->getTrace()['failFast']['value'];
+
+        $this->assertTrue($value);
+        $this->assertIsBool($value);
+    }
 }

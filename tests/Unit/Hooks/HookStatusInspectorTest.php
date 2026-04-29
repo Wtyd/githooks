@@ -158,6 +158,21 @@ class HookStatusInspectorTest extends TestCase
     }
 
     /** @test */
+    function it_trims_whitespace_from_hooks_path_value()
+    {
+        // Kills UnwrapTrim mutant on `return trim($output[0])` at line 51.
+        // Setting the git config value with surrounding whitespace
+        // exercises the trim path; without trim the leading/trailing
+        // spaces would end up in the path and the equality check would
+        // fail.
+        $this->gitConfig('core.hooksPath', '  .githooks  ');
+
+        $report = (new HookStatusInspector($this->tempDir))->inspect($this->buildConfig([]));
+
+        $this->assertSame('.githooks', $report->getHooksPathValue());
+    }
+
+    /** @test */
     function it_reports_both_synced_and_orphan_events_together()
     {
         $this->installHookFile('pre-commit', 0755);

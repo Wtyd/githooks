@@ -287,4 +287,42 @@ class InputFilesResolverTest extends TestCase
         $this->assertSame(1, $resolution->getTotalProvided());
         $this->assertCount(1, $resolution->getValid());
     }
+
+    // ========================================================================
+    // Mutation testing reinforcements (cluster D)
+    // ========================================================================
+
+    /** @test */
+    public function manifest_without_bom_reports_bom_detected_false(): void
+    {
+        // Kills FalseValue mutant on `$bomDetected = false;` at line 158:
+        // mutating to `true` would falsely flag BOM presence on a
+        // perfectly clean manifest.
+        $manifestPath = $this->tmpDir . '/clean.txt';
+        $a = $this->makeFile('a.php');
+        file_put_contents($manifestPath, "$a\n");
+
+        $resolution = $this->resolver->resolve(null, $manifestPath, null, $this->tmpDir);
+
+        $this->assertFalse($resolution->isBomDetected());
+    }
+
+    /** @test */
+    public function windows_drive_letter_paths_are_recognised_as_absolute(): void
+    {
+        // Kills the LogicalAndSingleSubExprNegation mutant on the
+        // ctype_alpha guard in isAbsolute() at line 302: "9:/" must NOT
+        // be absolute (digit start), "C:/" must be (alpha start). With
+        // the negation, the comparison flips.
+        $reflection = new \ReflectionMethod(
+            \Wtyd\GitHooks\Execution\InputFilesResolver::class,
+            'isAbsolute'
+        );
+        $reflection->setAccessible(true);
+
+        $this->assertTrue($reflection->invoke($this->resolver, 'C:/test'));
+        $this->assertTrue($reflection->invoke($this->resolver, 'C:\\test'));
+        $this->assertFalse($reflection->invoke($this->resolver, '9:/test'));
+        $this->assertFalse($reflection->invoke($this->resolver, ':/test'));
+    }
 }

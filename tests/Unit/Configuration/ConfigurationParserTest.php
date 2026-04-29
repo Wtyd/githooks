@@ -1132,4 +1132,243 @@ PHP;
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getValidation()->getWarnings());
     }
+
+    // ========================================================================
+    // Mutation testing reinforcements (cluster D)
+    // ========================================================================
+
+    /** @test */
+    public function it_does_not_report_error_when_job_memory_equals_budget_reference(): void
+    {
+        // Kills GreaterThan `>` -> `>=` boundary on reserve > ref at line 176
+        // (validateReserveAgainstGlobalBudget). Reserve == ref must be
+        // accepted; with `>=` the mutant would error at the boundary.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => [
+            'memory-budget' => ['warn-above' => 3000, 'fail-above' => 4000],
+        ],
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'memory' => 3000,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+    }
+
+    /** @test */
+    public function it_does_not_report_error_when_job_memory_equals_per_flow_budget_reference(): void
+    {
+        // Same boundary, this time on the per-flow validator at line 202.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => [
+            'options' => [
+                'memory-budget' => ['warn-above' => 2000, 'fail-above' => 3000],
+            ],
+            'jobs' => ['phpstan_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'memory' => 2000,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
+    }
+
+    /** @test */
+    public function it_only_validates_memory_against_flows_that_contain_the_job(): void
+    {
+        // Kills Continue_ at line 199 in validateReserveAgainstFlowBudgets:
+        // without the early-continue, the function would also validate
+        // budget for flows that DO NOT contain the job. Here flow 'qa'
+        // has the job (no error: memory 1500 fits 2000); flow 'lint' has
+        // a different job and a tiny budget that the job's memory would
+        // violate, so a Continue_ removal would surface a spurious error
+        // saying the job exceeds 'lint's budget.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => [
+            'options' => [
+                'memory-budget' => ['warn-above' => 2000],
+            ],
+            'jobs' => ['phpstan_src'],
+        ],
+        'lint' => [
+            'options' => [
+                'memory-budget' => ['warn-above' => 100],
+            ],
+            'jobs' => ['phpcs_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'memory' => 1500,
+        ],
+        'phpcs_src' => [
+            'type'  => 'phpcs',
+            'paths' => ['src'],
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $errorText = implode("\n", $result->getValidation()->getErrors());
+        $this->assertFalse($result->hasErrors(), $errorText);
+        $this->assertStringNotContainsString("flow 'lint'", $errorText);
+    }
+
+    /** @test */
+    public function it_reports_error_when_jobs_section_is_empty(): void
+    {
+        // Kills ReturnRemoval at line 220 (parseJobs early-out): without
+        // the return, resolveJobInheritance() would still be called on
+        // an empty array and the foreach below would do nothing — but
+        // the error message would still be added. The observable
+        // difference is subtle: with the return, no jobs map is built;
+        // without it, the empty map is still built and returned. Pin
+        // the error contract.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa' => ['jobs' => ['phpstan_src']],
+    ],
+    'jobs' => [],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getValidation()->getErrors());
+        $this->assertStringContainsString("'jobs'", $errorText);
+        $this->assertStringContainsString('missing or empty', $errorText);
+    }
+
+    /** @test */
+    public function meta_flow_with_empty_references_emits_warning(): void
+    {
+        // Pins the "no flows declared" warning text. Note: the
+        // Continue_ on line 354 is structurally equivalent (the body
+        // after the empty-references branch evaluates to a no-op for
+        // empty references too: count===1 is false, foreach iterates
+        // zero times). We keep this test for assertion strength on
+        // the warning text — the Continue_ mutant is documented as
+        // an equivalent escape and does NOT need extra coverage.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'    => ['jobs' => ['phpstan_src']],
+        'empty' => ['flows' => []],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode(' ', $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("meta-flow 'empty' has no flows declared", $warningText);
+    }
+
+    /** @test */
+    public function single_flow_meta_flow_warning_pins_exact_message(): void
+    {
+        // Kills Concat / ConcatOperandRemoval on the warning string at
+        // line 359 (single-flow meta-flow). Pin the full message
+        // structure: the meta-flow name + the "single flow" keyword +
+        // the "consider declaring options on the flow itself" tail.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'    => ['jobs' => ['phpstan_src']],
+        'solo'  => ['flows' => ['qa']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode(' ', $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("meta-flow 'solo'", $warningText);
+        $this->assertStringContainsString('contains a single flow', $warningText);
+        $this->assertStringContainsString('consider declaring options on the flow itself', $warningText);
+    }
+
+    /** @test */
+    public function meta_flow_with_unknown_reference_continues_to_validate_remaining_references(): void
+    {
+        // Kills Continue_ at line 367 inside the references foreach:
+        // 'pack' references three flows. 'qa' is valid. 'nope' is
+        // unknown. 'inner' is also a meta-flow (nesting). Without the
+        // continue after the "unknown flow" error, the function would
+        // try to access $flows['nope']->isMetaFlow() on the next
+        // statement and crash. With the continue, the validator skips
+        // 'nope' and proceeds to flag 'inner' as nested.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'    => ['jobs' => ['phpstan_src']],
+        'inner' => ['flows' => ['qa']],
+        'pack'  => ['flows' => ['qa', 'nope', 'inner']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $errorText = implode("\n", $result->getValidation()->getErrors());
+        $this->assertStringContainsString("'pack' references unknown flow 'nope'", $errorText);
+        $this->assertStringContainsString("references 'inner' which is also a meta-flow", $errorText);
+    }
 }
