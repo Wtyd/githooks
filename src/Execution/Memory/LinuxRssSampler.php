@@ -15,7 +15,7 @@ namespace Wtyd\GitHooks\Execution\Memory;
  * Tree walk uses /proc/<PID>/task/<PID>/children (Linux 3.5+), which is
  * O(descendants) per sample — much cheaper than scanning /proc.
  */
-final class LinuxRssSampler implements MemorySampler
+class LinuxRssSampler implements MemorySampler
 {
     private const MAX_TREE_DEPTH = 16;
 
@@ -96,7 +96,7 @@ final class LinuxRssSampler implements MemorySampler
      */
     private function readVmRssKb(int $pid): ?int
     {
-        $contents = self::safeRead("/proc/{$pid}/status");
+        $contents = $this->readProcFile("/proc/{$pid}/status");
         if ($contents === null) {
             return null;
         }
@@ -115,7 +115,7 @@ final class LinuxRssSampler implements MemorySampler
      */
     private function readChildren(int $pid): array
     {
-        $contents = self::safeRead("/proc/{$pid}/task/{$pid}/children");
+        $contents = $this->readProcFile("/proc/{$pid}/task/{$pid}/children");
         if ($contents === null || $contents === '') {
             return [];
         }
@@ -150,9 +150,13 @@ final class LinuxRssSampler implements MemorySampler
      * PHPMD's ErrorControlOperator rule is correct in general but not for
      * race-prone reads against procfs that we explicitly want to swallow.
      *
+     * Protected (non-static) seam: tests subclass LinuxRssSampler to feed
+     * synthetic /proc content through this method without spawning real
+     * subprocesses. Mirrors the override pattern of MacOsRssSampler.
+     *
      * @SuppressWarnings(PHPMD.ErrorControlOperator)
      */
-    private static function safeRead(string $path): ?string
+    protected function readProcFile(string $path): ?string
     {
         try {
             $contents = @file_get_contents($path);

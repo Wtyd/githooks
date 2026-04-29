@@ -44,6 +44,9 @@ class FlowExecutor
 
     private ?FlowMemoryHandler $memoryHandler = null;
 
+    /** @var (callable():float)|null */
+    private $clockOverride = null;
+
     public function __construct(OutputHandler $outputHandler, ?GitStagerInterface $gitStager = null)
     {
         $this->outputHandler = $outputHandler;
@@ -93,7 +96,7 @@ class FlowExecutor
      */
     public function execute(FlowPlan $plan, bool $dryRun = false): FlowResult
     {
-        $start = microtime(true);
+        $start = $this->now();
         $this->memoryHandler = null;
         $maxProcesses = $plan->getOptions()->getProcesses();
         $failFast = $plan->getOptions()->isFailFast();
@@ -150,7 +153,7 @@ class FlowExecutor
 
         $this->outputHandler->flush();
 
-        $elapsed = microtime(true) - $start;
+        $elapsed = $this->now() - $start;
         $totalTime = number_format($elapsed, 2) . 's';
         $budget = $plan->getOptions()->getProcesses();
 
@@ -443,13 +446,13 @@ class FlowExecutor
         $pool->enqueue($jobs);
         $failFastTriggered = false;
         $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;
-        $lastTick = microtime(true);
-        $lastMemorySample = microtime(true);
+        $lastTick = $this->now();
+        $lastMemorySample = $this->now();
 
         $memoryHandler = new FlowMemoryHandler(
             $options,
             $this->memoryBudgetDisabled,
-            microtime(true),
+            $this->now(),
             $this->threadAllocations
         );
         $memoryHandler->setup($jobs);
@@ -506,7 +509,7 @@ class FlowExecutor
             }
 
             if ($pool->hasRunning()) {
-                $now = microtime(true);
+                $now = $this->now();
                 if ($dashboard !== null && ($now - $lastTick) >= 0.2) {
                     $dashboard->tick();
                     $lastTick = $now;
@@ -568,7 +571,7 @@ class FlowExecutor
     private function runJob(JobAbstract $job): JobResult
     {
         $command = $job->buildCommand();
-        $start = microtime(true);
+        $start = $this->now();
 
         $this->outputHandler->onJobStart($job->getDisplayName());
 
@@ -607,7 +610,7 @@ class FlowExecutor
 
     private function buildResult(JobAbstract $job, Process $process, float $start): JobResult
     {
-        $elapsed = microtime(true) - $start;
+        $elapsed = $this->now() - $start;
         $time = $this->formatTime($elapsed);
         $exitCode = $process->getExitCode() ?? 1;
         $stdout = $process->getOutput();
@@ -784,5 +787,25 @@ class FlowExecutor
         $minutes = floor($seconds / 60);
         $secs = (int) ($seconds - ($minutes * 60));
         return "{$minutes}m {$secs}s";
+    }
+
+    /**
+     * Single source of wallclock time for this executor. Production goes
+     * straight to microtime(true); test subclasses inject a closure via
+     * setClock() to drive elapsed durations deterministically without
+     * spawning sleep subprocesses.
+     */
+    protected function now(): float
+    {
+        return $this->clockOverride !== null ? ($this->clockOverride)() : microtime(true);
+    }
+
+    /**
+     * Test seam: replace the wallclock with a closure. Each call to now()
+     * delegates to the closure. Production never calls this method.
+     */
+    protected function setClock(callable $clock): void
+    {
+        $this->clockOverride = $clock;
     }
 }

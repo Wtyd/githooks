@@ -17,8 +17,13 @@ use Wtyd\GitHooks\Output\NullOutputHandler;
 /**
  * Tests covering v3.3 item 4: per-job thresholds and flow time-budget.
  *
- * Uses CustomJob with `sleep` scripts to drive real elapsed time. Each test
- * runs in 0–2s so the suite stays under its current budget.
+ * Drives elapsed time through a closure-clock injected into FlowExecutor
+ * via the protected setClock() seam. Scripts use `'true'` (or `'false'`
+ * for failing jobs) so subprocesses run instantly; the perceived duration
+ * comes from the canned tick sequence.
+ *
+ * The end-to-end path (real Symfony Process + real microtime) is covered
+ * by FlowExecutorTimeBudgetIntegrationTest under @group integration.
  */
 class FlowExecutorTimeBudgetTest extends TestCase
 {
@@ -44,13 +49,14 @@ class FlowExecutorTimeBudgetTest extends TestCase
     public function job_marks_warned_when_warn_after_crossed(): void
     {
         $job = new CustomJob(new JobConfiguration('slow', 'custom', [
-            'script'     => 'sleep 1',
+            'script'     => 'true',
             'warn-after' => 1,
             'fail-after' => 5,
         ]));
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
 
-        $result = (new FlowExecutor(new NullOutputHandler()))->execute($plan);
+        $executor = $this->executorWithClock([1000.0, 1000.0, 1001.5, 1001.5]);
+        $result = $executor->execute($plan);
         $jobResult = $result->getJobResults()[0];
 
         $this->assertSame(JobResult::THRESHOLD_WARNED, $jobResult->getThresholdState());
@@ -64,12 +70,13 @@ class FlowExecutorTimeBudgetTest extends TestCase
     public function job_marks_failed_and_flips_to_ko_when_fail_after_crossed(): void
     {
         $job = new CustomJob(new JobConfiguration('slow', 'custom', [
-            'script'     => 'sleep 1',
+            'script'     => 'true',
             'fail-after' => 1,
         ]));
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
 
-        $result = (new FlowExecutor(new NullOutputHandler()))->execute($plan);
+        $executor = $this->executorWithClock([1000.0, 1000.0, 1001.5, 1001.5]);
+        $result = $executor->execute($plan);
         $jobResult = $result->getJobResults()[0];
 
         $this->assertSame(JobResult::THRESHOLD_FAILED, $jobResult->getThresholdState());
@@ -81,12 +88,13 @@ class FlowExecutorTimeBudgetTest extends TestCase
     public function real_ko_keeps_primary_cause_when_threshold_also_crosses(): void
     {
         $job = new CustomJob(new JobConfiguration('failing', 'custom', [
-            'script'     => 'sleep 1 && false',
+            'script'     => 'false',
             'fail-after' => 1,
         ]));
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
 
-        $result = (new FlowExecutor(new NullOutputHandler()))->execute($plan);
+        $executor = $this->executorWithClock([1000.0, 1000.0, 1001.5, 1001.5]);
+        $result = $executor->execute($plan);
         $jobResult = $result->getJobResults()[0];
 
         // Real KO: tool exited non-zero. Threshold annotated but NOT the cause.
@@ -98,11 +106,11 @@ class FlowExecutorTimeBudgetTest extends TestCase
     /** @test */
     public function thresholds_disabled_short_circuits_evaluation(): void
     {
-        $executor = new FlowExecutor(new NullOutputHandler());
+        $executor = $this->executorWithClock([1000.0, 1000.0, 1001.5, 1001.5]);
         $executor->setThresholdsDisabled(true);
 
         $job = new CustomJob(new JobConfiguration('slow', 'custom', [
-            'script'     => 'sleep 1',
+            'script'     => 'true',
             'fail-after' => 1,
         ]));
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
@@ -143,10 +151,11 @@ class FlowExecutorTimeBudgetTest extends TestCase
             new TimeBudgetConfiguration(null, 1)
         );
 
-        $job = new CustomJob(new JobConfiguration('slow', 'custom', ['script' => 'sleep 1']));
+        $job = new CustomJob(new JobConfiguration('slow', 'custom', ['script' => 'true']));
         $plan = new FlowPlan('test', [$job], $options);
 
-        $result = (new FlowExecutor(new NullOutputHandler()))->execute($plan);
+        $executor = $this->executorWithClock([1000.0, 1000.0, 1001.5, 1001.5]);
+        $result = $executor->execute($plan);
 
         $this->assertNotNull($result->getTimeBudgetState());
         $this->assertTrue($result->getTimeBudgetState()->isFailed());
@@ -167,10 +176,11 @@ class FlowExecutorTimeBudgetTest extends TestCase
             new TimeBudgetConfiguration(1, null)
         );
 
-        $job = new CustomJob(new JobConfiguration('slow', 'custom', ['script' => 'sleep 1']));
+        $job = new CustomJob(new JobConfiguration('slow', 'custom', ['script' => 'true']));
         $plan = new FlowPlan('test', [$job], $options);
 
-        $result = (new FlowExecutor(new NullOutputHandler()))->execute($plan);
+        $executor = $this->executorWithClock([1000.0, 1000.0, 1001.5, 1001.5]);
+        $result = $executor->execute($plan);
 
         $this->assertTrue($result->getTimeBudgetState()->isWarned());
         $this->assertFalse($result->getTimeBudgetState()->isFailed());
@@ -204,5 +214,57 @@ class FlowExecutorTimeBudgetTest extends TestCase
         $this->assertNotNull($result->getTimeBudgetState());
         // Only the executed job duration contributes; skipped jobs are excluded.
         $this->assertLessThan(1.0, $result->getTimeBudgetState()->getTotalJobDuration());
+    }
+
+    // ========================================================================
+    // Clock seam regression test
+    // ========================================================================
+
+    /**
+     * @test
+     * Guards against a future commit accidentally re-introducing
+     * microtime(true) inside FlowExecutor's sequential path. With a
+     * stuck-at-zero clock, the only way to observe a non-zero elapsed
+     * is for production to bypass now() — that breaks the assertion.
+     */
+    public function flow_executor_uses_only_the_injected_clock(): void
+    {
+        $job = new CustomJob(new JobConfiguration('a', 'custom', ['script' => 'true']));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
+
+        // Stuck clock: every now() call returns 0.0.
+        $executor = $this->executorWithClock([0.0, 0.0, 0.0, 0.0]);
+        $result = $executor->execute($plan);
+
+        $this->assertSame(0.0, $result->getJobResults()[0]->getDurationSeconds());
+    }
+
+    // ========================================================================
+    // Helpers
+    // ========================================================================
+
+    /**
+     * Build a FlowExecutor whose now() returns each tick in order. The
+     * closure throws LogicException when the array is exhausted, so any
+     * unexpected extra now() call surfaces as a loud test failure.
+     *
+     * @param float[] $ticks
+     */
+    private function executorWithClock(array $ticks): FlowExecutor
+    {
+        $idx = 0;
+        $executor = new class (new NullOutputHandler()) extends FlowExecutor {
+            public function publicSetClock(callable $clock): void
+            {
+                $this->setClock($clock);
+            }
+        };
+        $executor->publicSetClock(function () use (&$ticks, &$idx) {
+            if (!isset($ticks[$idx])) {
+                throw new \LogicException("Clock exhausted at call #{$idx} (provided " . count($ticks) . ' ticks)');
+            }
+            return $ticks[$idx++];
+        });
+        return $executor;
     }
 }

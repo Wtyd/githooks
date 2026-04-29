@@ -17,6 +17,7 @@
             <group>git</group> <!-- Test that Fast Mode catches the diff files of git -->
             <group>windows</group> <!-- Test that routes from githooks.yml are adapt for Windows -->
             <group>ci-features</group> <!-- E2E verification of fast-branch + budgets on real GHA runners cross-OS -->
+            <group>integration</group> <!-- Real-SUT coverage for seams whose unit tests run with synthetic doubles -->
         </exclude>
     </groups>
     <coverage processUncoveredFiles="true">

@@ -49,6 +49,7 @@ return [
                 'phpunit',
                 'phpunit-git',
                 'phpunit-windows',
+                'phpunit-integration',
             ],
         ],
     ],
@@ -117,6 +118,10 @@ return [
             // not a relative path, so composer's unix-style script is not resolved.
             // Prefixing with `php` makes the interpreter run the script explicitly.
             'executable-prefix' => 'php',
+        ],
+        'phpunit-integration' => [
+            'extends' => 'phpunit',
+            'group' => 'integration',
         ],
         'psalm-src' => [
             'type' => 'psalm',
