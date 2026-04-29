@@ -49,6 +49,7 @@
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::210",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::buildAdmissionContext::152",
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::111",
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::49"
             ]
         },
@@ -66,7 +67,9 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22",
                 "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42",
-                "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::102"
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::102",
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::111",
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::112"
             ]
         },
         "CastBool": {
@@ -85,7 +88,8 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\Platform::normalizePath",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::finishExecution::106",
-                "Wtyd\\GitHooks\\Tools\\Process\\ProcessExecutionFactory\\ProcessExecutionFactoryFake"
+                "Wtyd\\GitHooks\\Tools\\Process\\ProcessExecutionFactory\\ProcessExecutionFactoryFake",
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::115"
             ]
         },
         "UnwrapArrayValues": {
@@ -96,7 +100,11 @@
         "TrueValue": {
             "ignore": [
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::migrate",
-                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::220"
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::220",
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::64",
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::75",
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::132",
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::143"
             ]
         },
         "SharedCaseRemoval": {
@@ -156,7 +164,8 @@
                 "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::278",
                 "Wtyd\\GitHooks\\Jobs\\JobAbstract::isEmpty::293",
                 "Wtyd\\GitHooks\\Hooks\\PatternMatcher::fileMatchesPattern::91",
-                "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::85"
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::85",
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::120"
             ]
         },
         "Coalesce": {
@@ -173,6 +182,13 @@
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::91",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::101",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::228"
+            ]
+        },
+        "Continue_": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::69",
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::125",
+                "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::137"
             ]
         },
         "Ternary": {
@@ -222,7 +238,8 @@
         "UnwrapTrim": {
             "ignore": [
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::50",
-                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::emitErrorAnnotations::50"
+                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::emitErrorAnnotations::50",
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::123"
             ]
         },
         "ElseIfNegation": {
