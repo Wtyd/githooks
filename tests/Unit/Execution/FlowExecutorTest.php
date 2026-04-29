@@ -49,6 +49,11 @@ class FlowExecutorTest extends TestCase
             $this->assertTrue($jr->isSuccess());
             $this->assertSame('0ms', $jr->getExecutionTime());
             $this->assertNotNull($jr->getCommand());
+            // Kills FalseValue mutant on the dry-run JobResult fixApplied
+            // flag: dry-run never modifies the working tree, so isFixApplied
+            // must be false regardless of the underlying job type.
+            $this->assertFalse($jr->isFixApplied());
+            $this->assertFalse($jr->isSkipped());
         }
     }
 
@@ -154,6 +159,46 @@ class FlowExecutorTest extends TestCase
 
         $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 1));
         $executor->execute($plan);
+    }
+
+    /** @test */
+    public function sequential_fail_fast_only_reports_jobs_after_failure_when_failure_is_in_the_middle()
+    {
+        // Kills FalseValue mutant on `$found = false;` initialisation in
+        // reportSkipped: with `$found = true;` the loop would also report
+        // jobs BEFORE the failed one as skipped. The asymmetric layout
+        // [ok, fail, third] forces that branch.
+        $skippedJobs = [];
+        $handler = $this->createMock(OutputHandler::class);
+        $handler->method('onJobSkipped')
+            ->willReturnCallback(function (string $name, string $reason) use (&$skippedJobs): void {
+                $skippedJobs[] = $name;
+            });
+
+        $executor = new FlowExecutor($handler);
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('ok', 'custom', ['script' => 'echo ok'])),
+            new CustomJob(new JobConfiguration('fail', 'custom', ['script' => 'exit 1'])),
+            new CustomJob(new JobConfiguration('third', 'custom', ['script' => 'echo never'])),
+        ];
+
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 1));
+        $result = $executor->execute($plan);
+
+        // Only the third job (after the failure) must be reported as skipped.
+        $this->assertSame(['third'], $skippedJobs);
+
+        $resultsByName = [];
+        foreach ($result->getJobResults() as $jr) {
+            $resultsByName[$jr->getJobName()] = $jr;
+        }
+        $this->assertArrayHasKey('ok', $resultsByName);
+        $this->assertArrayHasKey('fail', $resultsByName);
+        $this->assertArrayHasKey('third', $resultsByName);
+        $this->assertFalse($resultsByName['ok']->isSkipped(), 'pre-failure job must not be skipped');
+        $this->assertFalse($resultsByName['fail']->isSkipped(), 'failed job is failure, not skip');
+        $this->assertTrue($resultsByName['third']->isSkipped(), 'post-failure job must be skipped');
     }
 
     /** @test */
