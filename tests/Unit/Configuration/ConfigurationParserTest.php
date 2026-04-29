@@ -1248,6 +1248,111 @@ PHP;
         $this->assertStringNotContainsString("flow 'lint'", $errorText);
     }
 
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 194: el primer flow no
+     * contiene el job, el segundo sí y tiene un budget que el job excede.
+     * Real salta el primero y reporta el error del segundo; mutado aborta
+     * el foreach y el error nunca se reporta.
+     */
+    public function validate_continues_after_flow_without_the_job(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'unrelated' => [
+            'jobs' => ['phpcs_src'],
+        ],
+        'qa' => [
+            'options' => ['memory-budget' => ['warn-above' => 50]],
+            'jobs' => ['phpstan_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'memory' => 100],
+        'phpcs_src'   => ['type' => 'phpcs', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $errorText = implode("\n", $result->getValidation()->getErrors());
+        $this->assertTrue($result->hasErrors(), 'expected error from flow qa');
+        $this->assertStringContainsString("flow 'qa'", $errorText);
+    }
+
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 199: primer flow tiene el
+     * job pero sin budget; segundo lo tiene y el budget queda corto. Real
+     * salta el primero y reporta el error del segundo; mutado aborta.
+     */
+    public function validate_continues_after_flow_with_no_memory_budget(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'no_budget' => [
+            'jobs' => ['phpstan_src'],
+        ],
+        'tight' => [
+            'options' => ['memory-budget' => ['warn-above' => 50]],
+            'jobs' => ['phpstan_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'memory' => 100],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $errorText = implode("\n", $result->getValidation()->getErrors());
+        $this->assertTrue($result->hasErrors(), 'expected error from flow tight');
+        $this->assertStringContainsString("flow 'tight'", $errorText);
+    }
+
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 354: meta-flow vacío
+     * seguido de un meta-flow con referencia desconocida. Real avisa del
+     * primero y luego marca como error la referencia inválida del segundo;
+     * mutado aborta el foreach tras el primer warning.
+     */
+    public function meta_flow_validation_continues_after_empty_meta_flow(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'qa'    => ['jobs' => ['phpstan_src']],
+        'empty' => ['flows' => []],
+        'bad'   => ['flows' => ['nonexistent_flow']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode(' ', $result->getValidation()->getWarnings());
+        $errorText   = implode(' ', $result->getValidation()->getErrors());
+        $this->assertStringContainsString("meta-flow 'empty' has no flows declared", $warningText);
+        $this->assertStringContainsString("meta-flow 'bad' references unknown flow 'nonexistent_flow'", $errorText);
+    }
+
     /** @test */
     public function it_reports_error_when_jobs_section_is_empty(): void
     {

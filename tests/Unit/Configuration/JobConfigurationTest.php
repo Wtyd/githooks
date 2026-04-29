@@ -1021,6 +1021,32 @@ class JobConfigurationTest extends TestCase
         );
     }
 
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 150 (`normalizeDeprecatedKeys`):
+     * con un conflict en el primer par y una deprecación legítima en otro
+     * par posterior, real reporta ambos (error + deprecation); mutado
+     * abortaría el foreach y no añadiría la deprecación del segundo par.
+     */
+    public function conflict_in_first_deprecated_pair_does_not_abort_processing_of_remaining_pairs(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'            => 'phpstan',
+            // Conflicto: par 1 ('executablePath' vs 'executable-path').
+            'executablePath'  => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
+            // Deprecación legítima: par 4 ('failFast' sin 'fail-fast').
+            'failFast'        => true,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+        $deprecations = $result->getDeprecations();
+        $this->assertCount(1, $deprecations);
+        $this->assertSame('failFast', $deprecations[0]->getOldKey());
+        $this->assertSame('fail-fast', $deprecations[0]->getNewKey());
+    }
+
     /** @test */
     public function it_accepts_short_form_memory_value_of_exactly_one(): void
     {

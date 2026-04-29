@@ -344,6 +344,43 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertSame(300, $budget->getFailAfter());
     }
 
+    /**
+     * @test
+     * Mata mutantes Identical y LogicalAnd en línea 348 (`mergeCliTimeBudget`).
+     * Setup: solo CLI warn-after, sin fail-after, sin config. Real construye
+     * un budget con warn=60/fail=null; mutados retornarían null.
+     */
+    public function single_cli_warn_after_only_with_no_config_builds_partial_budget(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null, 60);
+
+        $budget = $resolution->getOptions()->getTimeBudget();
+        $this->assertNotNull($budget);
+        $this->assertSame(60, $budget->getWarnAfter());
+        $this->assertNull($budget->getFailAfter());
+        $this->assertSame('cli', $resolution->getTrace()['timeBudget']['source']);
+    }
+
+    /**
+     * @test
+     * Mata las mutaciones espejo en línea 348: solo CLI fail-after, sin warn,
+     * sin config. Real construye warn=null/fail=600.
+     */
+    public function single_cli_fail_after_only_with_no_config_builds_partial_budget(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null, null, 600);
+
+        $budget = $resolution->getOptions()->getTimeBudget();
+        $this->assertNotNull($budget);
+        $this->assertNull($budget->getWarnAfter());
+        $this->assertSame(600, $budget->getFailAfter());
+        $this->assertSame('cli', $resolution->getTrace()['timeBudget']['source']);
+    }
+
     /** @test */
     public function single_no_time_budget_disables_everything(): void
     {
@@ -418,6 +455,64 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertNull($resolution->getOptions()->getMemoryBudget());
         $this->assertSame('default', $resolution->getTrace()['memoryBudget']['source']);
         $this->assertNull($resolution->getTrace()['memoryBudget']['value']);
+    }
+
+    /**
+     * @test
+     * Mata mutantes Identical y LogicalAnd en línea 435 (`mergeCliMemoryBudget`).
+     * Setup: solo CLI warn-above, sin fail-above, sin config. Real construye
+     * budget con warn=1500/fail=null; mutados retornarían null.
+     */
+    public function single_cli_memory_warn_above_only_with_no_config_builds_partial_budget(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle(
+            $config,
+            $flow,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            1500
+        );
+
+        $budget = $resolution->getOptions()->getMemoryBudget();
+        $this->assertNotNull($budget);
+        $this->assertSame(1500, $budget->getWarnAbove());
+        $this->assertNull($budget->getFailAbove());
+        $this->assertSame('cli', $resolution->getTrace()['memoryBudget']['source']);
+    }
+
+    /**
+     * @test
+     * Mata las mutaciones espejo en línea 435: solo CLI fail-above, sin warn,
+     * sin config.
+     */
+    public function single_cli_memory_fail_above_only_with_no_config_builds_partial_budget(): void
+    {
+        [$config, $flow] = $this->buildConfig([], null);
+
+        $resolution = $this->resolver->resolveSingle(
+            $config,
+            $flow,
+            null,
+            null,
+            null,
+            null,
+            null,
+            false,
+            null,
+            2500
+        );
+
+        $budget = $resolution->getOptions()->getMemoryBudget();
+        $this->assertNotNull($budget);
+        $this->assertNull($budget->getWarnAbove());
+        $this->assertSame(2500, $budget->getFailAbove());
+        $this->assertSame('cli', $resolution->getTrace()['memoryBudget']['source']);
     }
 
     /** @test */

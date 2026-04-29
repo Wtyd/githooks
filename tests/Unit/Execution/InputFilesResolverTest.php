@@ -70,6 +70,44 @@ class InputFilesResolverTest extends TestCase
         $this->assertEmpty($resolution->getInvalid());
     }
 
+    /**
+     * @test
+     * Mata el mutante Continue_ → Break_ en línea 136 (`parseCsv`): un
+     * duplicado en medio de la lista no debe abortar el parseo de los
+     * elementos posteriores.
+     */
+    public function csv_dedupe_does_not_abort_processing_of_remaining_items(): void
+    {
+        $a = $this->makeFile('a.php');
+        $b = $this->makeFile('b.php');
+
+        // Orden: a, a (duplicado), b — el duplicado es el segundo, b es nuevo.
+        $resolution = $this->resolver->resolve("$a , $a , $b", null, null, $this->tmpDir);
+
+        $valid = $resolution->getValid();
+        $this->assertCount(2, $valid);
+        $this->assertContains($a, $valid);
+        $this->assertContains($b, $valid);
+    }
+
+    /**
+     * @test
+     * Mata el mutante UnwrapTrim en línea 121 (`normaliseScalar`): si el
+     * trim desaparece, la ruta del manifest llega con espacios y el
+     * fichero no se encuentra. Real lee el manifest y procesa su contenido.
+     */
+    public function manifest_path_with_surrounding_whitespace_is_trimmed(): void
+    {
+        $a = $this->makeFile('a.php');
+        $manifest = $this->tmpDir . '/list.txt';
+        file_put_contents($manifest, "$a\n");
+
+        $resolution = $this->resolver->resolve(null, "  $manifest  ", null, $this->tmpDir);
+
+        $this->assertCount(1, $resolution->getValid());
+        $this->assertSame($manifest, $resolution->getSourcePath());
+    }
+
     /** @test */
     public function relative_paths_resolve_against_cwd(): void
     {
@@ -90,6 +128,24 @@ class InputFilesResolverTest extends TestCase
         $resolution = $this->resolver->resolve($abs, null, null, '/never/used');
 
         $this->assertCount(1, $resolution->getValid());
+    }
+
+    /**
+     * @test
+     * Mata el mutante ReturnRemoval en línea 241 (`shapeForUser`): cuando la
+     * ruta original es absoluta y CWD es el directorio padre, real devuelve
+     * la ruta absoluta tal cual; mutado cae al stripping relativo y devuelve
+     * solo el nombre del fichero.
+     */
+    public function absolute_paths_inside_cwd_keep_their_absolute_form(): void
+    {
+        $abs = $this->makeFile('foo.php');
+
+        $resolution = $this->resolver->resolve($abs, null, null, $this->tmpDir);
+
+        $valid = $resolution->getValid();
+        $this->assertCount(1, $valid);
+        $this->assertSame($abs, $valid[0]);
     }
 
     /** @test */
