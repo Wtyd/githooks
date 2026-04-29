@@ -566,11 +566,35 @@ class OptionsConfigurationTest extends TestCase
     public function it_reports_error_for_invalid_allocator(): void
     {
         $result = new ValidationResult();
-        OptionsConfiguration::fromArray(['allocator' => 'random'], $result);
+        $options = OptionsConfiguration::fromArray(['allocator' => 'random'], $result);
 
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('allocator', $result->getErrors()[0]);
-        $this->assertStringContainsString('random', $result->getErrors()[0]);
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'allocator'", $errorText);
+        $this->assertStringContainsString('must be one of', $errorText);
+        $this->assertStringContainsString('fifo', $errorText);
+        $this->assertStringContainsString('greedy', $errorText);
+        $this->assertStringContainsString("got 'random'", $errorText);
+        // Kills the ReturnRemoval mutant on `return FIFO;` after error:
+        // without the early return, the invalid value would propagate.
+        $this->assertSame('fifo', $options->getAllocator());
+    }
+
+    /** @test */
+    public function it_reports_error_for_non_string_allocator_with_value_in_message(): void
+    {
+        // Kills the Ternary swap and CastString removal mutants on
+        // `$shown = is_string($value) ? $value : (string) $value`:
+        // without the cast, non-string values would not appear in the
+        // error message (or would error trying to interpolate).
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['allocator' => 123], $result);
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'allocator'", $errorText);
+        $this->assertStringContainsString("got '123'", $errorText);
+        $this->assertSame('fifo', $options->getAllocator());
     }
 
     /** @test */
@@ -594,10 +618,16 @@ class OptionsConfigurationTest extends TestCase
     public function it_reports_error_for_non_boolean_stats(): void
     {
         $result = new ValidationResult();
-        OptionsConfiguration::fromArray(['stats' => 'yes'], $result);
+        $options = OptionsConfiguration::fromArray(['stats' => 'yes'], $result);
 
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('stats', $result->getErrors()[0]);
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'stats'", $errorText);
+        $this->assertStringContainsString('must be a boolean', $errorText);
+        // Kills the FalseValue mutant on `return false;` after invalid
+        // stats: without the explicit false, the truthy default would
+        // enable stats even on invalid input.
+        $this->assertFalse($options->isStats());
     }
 
     /** @test */
@@ -623,6 +653,31 @@ class OptionsConfigurationTest extends TestCase
 
         $this->assertNotNull($overridden->getMemoryBudget());
         $this->assertSame(2000, $overridden->getMemoryBudget()->getWarnAbove());
+    }
+
+    /** @test */
+    public function with_overrides_preserves_existing_memory_budget_when_no_new_value_given(): void
+    {
+        // Kills the Coalesce mutant on `($memoryBudget ?? $this->memoryBudget)`:
+        // dropping either operand would either lose the override or lose
+        // the fallback to the existing value.
+        $existing = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(1500, 2500);
+        $original = new OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            [],
+            null,
+            $existing
+        );
+
+        $overridden = $original->withOverrides(null, null, null, false, null, false);
+
+        $this->assertNotNull($overridden->getMemoryBudget());
+        $this->assertSame(1500, $overridden->getMemoryBudget()->getWarnAbove());
+        $this->assertSame(2500, $overridden->getMemoryBudget()->getFailAbove());
     }
 
     /** @test */

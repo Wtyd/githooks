@@ -558,15 +558,10 @@ class JobConfigurationTest extends TestCase
             'cores' => 0,
         ], $this->registry, $result, new JobRegistry());
 
-        $warnings = $result->getWarnings();
-        $found = false;
-        foreach ($warnings as $w) {
-            if (strpos($w, "'cores' must be a positive integer") !== false) {
-                $found = true;
-                break;
-            }
-        }
-        $this->assertTrue($found, 'expected cores-must-be-positive warning');
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString("Job 'phpcs_src'", $warningText);
+        $this->assertStringContainsString("'cores'", $warningText);
+        $this->assertStringContainsString('must be a positive integer', $warningText);
     }
 
     /** @test */
@@ -601,15 +596,11 @@ class JobConfigurationTest extends TestCase
             'cores'    => 2,
         ], $this->registry, $result, new JobRegistry());
 
-        $warnings = $result->getWarnings();
-        $found = false;
-        foreach ($warnings as $w) {
-            if (strpos($w, "'cores' overrides 'parallel'") !== false) {
-                $found = true;
-                break;
-            }
-        }
-        $this->assertTrue($found, 'expected conflict warning between cores and parallel');
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString("Job 'phpcs_src'", $warningText);
+        $this->assertStringContainsString("'cores' overrides 'parallel'", $warningText);
+        $this->assertStringContainsString('cores=2', $warningText);
+        $this->assertStringContainsString('parallel=8', $warningText);
     }
 
     /** @test */
@@ -754,9 +745,12 @@ class JobConfigurationTest extends TestCase
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
-        $this->assertStringContainsString('phpunit_job', $errorText);
+        $this->assertStringContainsString("Job 'phpunit_job'", $errorText);
         $this->assertStringContainsString("'warn-after'", $errorText);
         $this->assertStringContainsString("'fail-after'", $errorText);
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(60)', $errorText);
+        $this->assertStringContainsString('(45)', $errorText);
     }
 
     /** @test */
@@ -769,6 +763,11 @@ class JobConfigurationTest extends TestCase
         ], $this->registry, $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("Job 'phpcs_job'", $errorText);
+        $this->assertStringContainsString("'warn-after'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
+        $this->assertStringContainsString('seconds', $errorText);
     }
 
     /** @test */
@@ -781,6 +780,9 @@ class JobConfigurationTest extends TestCase
         ], $this->registry, $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'warn-after'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
     }
 
     /** @test */
@@ -793,7 +795,10 @@ class JobConfigurationTest extends TestCase
         ], $this->registry, $result, new JobRegistry());
 
         $warningText = implode(' ', $result->getWarnings());
-        $this->assertStringContainsString('time-budget', $warningText);
+        $this->assertStringContainsString("Job 'phpunit_job'", $warningText);
+        $this->assertStringContainsString("'time-budget'", $warningText);
+        $this->assertStringContainsString('not valid in jobs', $warningText);
+        $this->assertStringContainsString("'warn-after'/'fail-after'", $warningText);
     }
 
     /** @test */
@@ -888,7 +893,11 @@ class JobConfigurationTest extends TestCase
         ], $this->registry, $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('memory', $result->getErrors()[0]);
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("Job 'phpstan_job'", $errorText);
+        $this->assertStringContainsString("'memory'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
+        $this->assertStringContainsString('MB', $errorText);
     }
 
     /** @test */
@@ -901,6 +910,9 @@ class JobConfigurationTest extends TestCase
         ], $this->registry, $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("'memory'", $errorText);
+        $this->assertStringContainsString('positive integer', $errorText);
     }
 
     /** @test */
@@ -914,8 +926,13 @@ class JobConfigurationTest extends TestCase
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
-        $this->assertStringContainsString('phpunit_job', $errorText);
-        $this->assertStringContainsString('warn-above', $errorText);
+        $this->assertStringContainsString("Job 'phpunit_job'", $errorText);
+        $this->assertStringContainsString("'warn-above'", $errorText);
+        $this->assertStringContainsString("'fail-above'", $errorText);
+        $this->assertStringContainsString('must be less than', $errorText);
+        $this->assertStringContainsString('(2000)', $errorText);
+        $this->assertStringContainsString('(1500)', $errorText);
+        $this->assertStringContainsString("in 'memory'", $errorText);
     }
 
     /** @test */
@@ -928,6 +945,11 @@ class JobConfigurationTest extends TestCase
         ], $this->registry, $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
+        $errorText = $result->getErrors()[0];
+        $this->assertStringContainsString("Job 'phpstan_job'", $errorText);
+        $this->assertStringContainsString("'memory'", $errorText);
+        $this->assertStringContainsString('must be either a positive integer (MB) or an object', $errorText);
+        $this->assertStringContainsString("'warn-above'/'fail-above'", $errorText);
     }
 
     /** @test */
@@ -954,5 +976,211 @@ class JobConfigurationTest extends TestCase
 
         $this->assertFalse($result->hasErrors());
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
+    }
+
+    // ========================================================================
+    // Mutation testing reinforcements: boundaries, getters, conflict logic
+    // ========================================================================
+
+    /** @test */
+    public function it_records_conflict_error_with_full_message_for_deprecated_and_kebab_keys(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'           => 'phpstan',
+            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString("Job 'phpstan_job'", $errorText);
+        $this->assertStringContainsString('conflicting keys', $errorText);
+        $this->assertStringContainsString("'executablePath'", $errorText);
+        $this->assertStringContainsString("'executable-path'", $errorText);
+        $this->assertStringContainsString('Use only one', $errorText);
+        $this->assertStringContainsString('kebab-case', $errorText);
+    }
+
+    /** @test */
+    public function it_does_not_record_deprecation_when_conflict_detected(): void
+    {
+        // Kills the Continue_ mutant in normalizeDeprecatedKeys: without
+        // continue, the function would fall through to the deprecation
+        // recording branch even though it already raised a conflict error.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'           => 'phpstan',
+            'executablePath' => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertEmpty(
+            $result->getDeprecations(),
+            'no deprecation should be recorded when the conflict is reported'
+        );
+    }
+
+    /** @test */
+    public function it_accepts_short_form_memory_value_of_exactly_one(): void
+    {
+        // Kills LessThan boundary on `$value < 1` short-form memory validator.
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpstan_job', [
+            'type'   => 'phpstan',
+            'memory' => 1,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($job);
+        $threshold = $job->getMemoryThreshold();
+        $this->assertNotNull($threshold);
+        $this->assertSame(1, $threshold->getWarnAbove());
+    }
+
+    /** @test */
+    public function it_accepts_warn_after_value_of_exactly_one(): void
+    {
+        // Kills LessThan boundary on `$value < 1` in extractPositiveInt for
+        // warn-after / fail-after.
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpcs_job', [
+            'type'       => 'phpcs',
+            'warn-after' => 1,
+            'fail-after' => 2,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertNotNull($job);
+        $this->assertSame(1, $job->getWarnAfter());
+        $this->assertSame(2, $job->getFailAfter());
+    }
+
+    /** @test */
+    public function it_accepts_cores_value_of_exactly_one(): void
+    {
+        // Kills LessThan boundary on `$cores < 1` in validateCoresKey.
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('phpcs_job', [
+            'type'  => 'phpcs',
+            'paths' => ['src'],
+            'cores' => 1,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings(), 'cores=1 must not warn');
+        $this->assertNotNull($job);
+        $this->assertSame(1, $job->getConfig()['cores']);
+    }
+
+    /** @test */
+    public function it_does_not_emit_cores_override_warning_when_cores_invalid(): void
+    {
+        // Kills the ReturnRemoval mutant in validateCoresKey: without the
+        // early return after the "must be a positive integer" warning, the
+        // function would fall through to the THREAD_ARG_KEYS check and
+        // emit a SECOND, spurious "cores overrides parallel" warning even
+        // though the cores value is invalid.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_job', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => 8,
+            'cores'    => 0,
+        ], $this->registry, $result, new JobRegistry());
+
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString('positive integer', $warningText);
+        $this->assertStringNotContainsString('overrides', $warningText);
+    }
+
+    /** @test */
+    public function get_warn_after_returns_null_when_stored_value_is_zero(): void
+    {
+        // Kills `$value > 0` GreaterThan + LogicalAnd mutants in getWarnAfter().
+        // Bypasses fromArray so the invalid value lands in the config.
+        $job = new JobConfiguration('phpcs_job', 'phpcs', ['warn-after' => 0]);
+
+        $this->assertNull($job->getWarnAfter());
+    }
+
+    /** @test */
+    public function get_warn_after_returns_value_one_when_stored_at_boundary(): void
+    {
+        $job = new JobConfiguration('phpcs_job', 'phpcs', ['warn-after' => 1]);
+
+        $this->assertSame(1, $job->getWarnAfter());
+    }
+
+    /** @test */
+    public function get_warn_after_returns_null_for_negative_stored_value(): void
+    {
+        $job = new JobConfiguration('phpcs_job', 'phpcs', ['warn-after' => -5]);
+
+        $this->assertNull($job->getWarnAfter());
+    }
+
+    /** @test */
+    public function get_fail_after_returns_null_when_stored_value_is_zero(): void
+    {
+        // Kills `$value > 0` GreaterThan + LogicalAnd mutants in getFailAfter().
+        $job = new JobConfiguration('phpcs_job', 'phpcs', ['fail-after' => 0]);
+
+        $this->assertNull($job->getFailAfter());
+    }
+
+    /** @test */
+    public function get_fail_after_returns_value_one_when_stored_at_boundary(): void
+    {
+        $job = new JobConfiguration('phpcs_job', 'phpcs', ['fail-after' => 1]);
+
+        $this->assertSame(1, $job->getFailAfter());
+    }
+
+    /** @test */
+    public function has_threshold_returns_true_when_only_warn_after_is_set(): void
+    {
+        // Kills LogicalOr `||` -> `&&` mutant in hasThreshold(): with `&&`
+        // a single-threshold config would return false.
+        $job = new JobConfiguration('phpcs_job', 'phpcs', ['warn-after' => 60]);
+
+        $this->assertTrue($job->hasThreshold());
+    }
+
+    /** @test */
+    public function has_threshold_returns_true_when_only_fail_after_is_set(): void
+    {
+        $job = new JobConfiguration('phpcs_job', 'phpcs', ['fail-after' => 180]);
+
+        $this->assertTrue($job->hasThreshold());
+    }
+
+    /** @test */
+    public function has_threshold_returns_false_when_neither_is_set(): void
+    {
+        $job = new JobConfiguration('phpcs_job', 'phpcs', []);
+
+        $this->assertFalse($job->hasThreshold());
+    }
+
+    /** @test */
+    public function get_memory_threshold_returns_null_for_zero_short_form_in_config(): void
+    {
+        // Kills `$value > 0` GreaterThan in getMemoryThreshold() short-form
+        // resolution. Bypasses fromArray so the invalid value lands raw.
+        $job = new JobConfiguration('phpstan_job', 'phpstan', ['memory' => 0]);
+
+        $this->assertNull($job->getMemoryThreshold());
+    }
+
+    /** @test */
+    public function get_memory_threshold_returns_short_form_for_value_one_in_config(): void
+    {
+        $job = new JobConfiguration('phpstan_job', 'phpstan', ['memory' => 1]);
+
+        $threshold = $job->getMemoryThreshold();
+        $this->assertNotNull($threshold);
+        $this->assertSame(1, $threshold->getWarnAbove());
+        $this->assertTrue($threshold->isShortForm());
     }
 }
