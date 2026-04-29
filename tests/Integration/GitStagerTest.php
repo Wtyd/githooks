@@ -2,73 +2,68 @@
 
 namespace Tests\Integration;
 
-use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
+use Tests\Utils\Traits\GitSandboxTrait;
 use Wtyd\GitHooks\Utils\GitStager;
 
 /**
- * Tests GitStager with real git operations.
- * Before executing this test suite after any changes, you must commit these changes.
+ * Tests GitStager against a sandboxed git repo created in /tmp. The
+ * project's real working tree is never touched — see GitSandboxTrait
+ * for the isolation model.
+ *
  * @group git
  */
 class GitStagerTest extends SystemTestCase
 {
-    protected static $gitFilesPathTest = __DIR__ . '/../../' . SystemTestCase::TESTS_PATH . '/gitTests';
+    use GitSandboxTrait;
 
-    /** @var string */
-    protected $headBeforeTest;
+    /** @var string Absolute path inside the sandbox. */
+    protected $gitFilesPathTest;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Ensure clean git state before each test
-        shell_exec('git reset --hard HEAD 2>/dev/null');
+        $this->setUpGitSandbox();
 
-        // Git identity needed for commits in CI runners
-        shell_exec('git config user.email "test@test.com" 2>/dev/null');
-        shell_exec('git config user.name "Test" 2>/dev/null');
-
-        mkdir(self::$gitFilesPathTest);
-
-        $this->headBeforeTest = trim(shell_exec('git rev-parse HEAD'));
+        $this->gitFilesPathTest = $this->sandboxDir
+            . DIRECTORY_SEPARATOR
+            . SystemTestCase::TESTS_PATH
+            . DIRECTORY_SEPARATOR
+            . 'gitTests';
+        mkdir($this->gitFilesPathTest, 0755, true);
     }
 
     protected function tearDown(): void
     {
-        $currentHead = trim(shell_exec('git rev-parse HEAD'));
-        if ($currentHead !== $this->headBeforeTest) {
-            shell_exec('git reset --hard ' . $this->headBeforeTest);
-        } else {
-            shell_exec('git reset --hard HEAD 2>/dev/null');
-        }
+        $this->tearDownGitSandbox();
 
         parent::tearDown();
     }
 
     /** @test */
-    function it_restages_renamed_file_without_errors_when_original_is_deleted()
+    public function it_restages_renamed_file_without_errors_when_original_is_deleted()
     {
-        $originalPath = self::$gitFilesPathTest . '/Original.php';
-        $renamedPath = self::$gitFilesPathTest . '/Renamed.php';
+        $originalPath = $this->gitFilesPathTest . '/Original.php';
+        $renamedPath = $this->gitFilesPathTest . '/Renamed.php';
         file_put_contents($originalPath, "<?php\nclass Original {}\n");
 
-        shell_exec('git add -f ' . $originalPath);
-        shell_exec('git commit -m "temp: add file for restage test"');
+        shell_exec('git add -f ' . escapeshellarg($originalPath));
+        shell_exec('git commit --quiet -m "temp: add file for restage test"');
 
         // Rename the file and then modify it (simulating phpcbf fix after rename)
-        shell_exec('git mv -f ' . $originalPath . ' ' . $renamedPath);
+        shell_exec('git mv -f ' . escapeshellarg($originalPath) . ' ' . escapeshellarg($renamedPath));
         file_put_contents($renamedPath, "<?php\n\nclass Renamed\n{\n}\n");
 
         // Verify: rename is staged, content modification is unstaged
-        $unstaged = trim(shell_exec('git diff --name-only'));
+        $unstaged = trim((string) shell_exec('git diff --name-only'));
         $this->assertNotEmpty($unstaged, 'Modified renamed file should appear in unstaged changes');
 
         $gitStager = new GitStager();
         $gitStager->stageTrackedFiles();
 
         // After restage: the content modification should now be staged, nothing unstaged
-        $unstagedAfter = trim(shell_exec('git diff --name-only'));
+        $unstagedAfter = trim((string) shell_exec('git diff --name-only'));
         $this->assertEmpty($unstagedAfter, 'No unstaged changes should remain after stageTrackedFiles');
     }
 }

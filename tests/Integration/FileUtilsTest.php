@@ -6,57 +6,57 @@ use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
+use Tests\Utils\Traits\GitSandboxTrait;
 
 /**
- * Before executing this test suite after any changes, you must commit these changes
+ * Tests FileUtils against a sandboxed git repo created in /tmp. The
+ * project's real working tree is never touched — see GitSandboxTrait
+ * for the isolation model.
+ *
  * @group git
  */
 class FileUtilsTest extends SystemTestCase
 {
-    protected static $gitFilesPathTest = __DIR__ . '/../../' . SystemTestCase::TESTS_PATH . '/gitTests';
+    use GitSandboxTrait;
 
-    /** @var string */
-    protected $headBeforeTest;
+    /** @var string Absolute path inside the sandbox. */
+    protected $gitFilesPathTest;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Ensure clean git state before each test
-        shell_exec('git reset --hard HEAD 2>/dev/null');
+        $this->setUpGitSandbox();
 
-        // Git identity needed for commits in CI runners
-        shell_exec('git config user.email "test@test.com" 2>/dev/null');
-        shell_exec('git config user.name "Test" 2>/dev/null');
-
-        mkdir(self::$gitFilesPathTest);
+        // Path layout intentionally keeps a `testsDir/gitTests` segment so the
+        // existing deletePathPrefix() helper keeps producing the same relative
+        // paths used in the assertions.
+        $this->gitFilesPathTest = $this->sandboxDir
+            . DIRECTORY_SEPARATOR
+            . SystemTestCase::TESTS_PATH
+            . DIRECTORY_SEPARATOR
+            . 'gitTests';
+        mkdir($this->gitFilesPathTest, 0755, true);
 
         $this->app->bind(FileUtilsInterface::class, FileUtils::class);
-
-        $this->headBeforeTest = trim(shell_exec('git rev-parse HEAD'));
     }
 
     protected function tearDown(): void
     {
-        $currentHead = trim(shell_exec('git rev-parse HEAD'));
-        if ($currentHead !== $this->headBeforeTest) {
-            shell_exec('git reset --hard ' . $this->headBeforeTest);
-        } else {
-            shell_exec('git reset --hard HEAD 2>/dev/null');
-        }
+        $this->tearDownGitSandbox();
 
         parent::tearDown();
     }
 
     /** @test */
-    function it_retrieve_modified_files()
+    public function it_retrieve_modified_files()
     {
         $fileBuilder = new PhpFileBuilder('NewFile');
 
-        $filename = self::$gitFilesPathTest . '/NewFile.php';
+        $filename = $this->gitFilesPathTest . '/NewFile.php';
         file_put_contents($filename, $fileBuilder->build());
 
-        shell_exec('git add -f ' . $filename);
+        shell_exec('git add -f ' . escapeshellarg($filename));
 
         $gitFiles = $this->app->make(FileUtils::class);
 
@@ -66,7 +66,7 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /** @test */
-    function it_retrieve_an_empty_array_when_there_are_no_modified_files()
+    public function it_retrieve_an_empty_array_when_there_are_no_modified_files()
     {
         $gitFiles = $this->app->make(FileUtils::class);
 
@@ -76,11 +76,11 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /** @test */
-    function it_retrieve_an_empty_array_when_the_modified_files_there_are_no_added_to_the_git_stage()
+    public function it_retrieve_an_empty_array_when_the_modified_files_there_are_no_added_to_the_git_stage()
     {
         $fileBuilder = new PhpFileBuilder('NewFile');
 
-        file_put_contents(self::$gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
+        file_put_contents($this->gitFilesPathTest . '/NewFile.php', $fileBuilder->build());
 
         $gitFiles = $this->app->make(FileUtils::class);
 
@@ -90,16 +90,16 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /** @test */
-    function it_excludes_deleted_file_from_modified_files()
+    public function it_excludes_deleted_file_from_modified_files()
     {
         $fileBuilder = new PhpFileBuilder('ToDelete');
-        $filename = self::$gitFilesPathTest . '/ToDelete.php';
+        $filename = $this->gitFilesPathTest . '/ToDelete.php';
         file_put_contents($filename, $fileBuilder->build());
 
-        shell_exec('git add -f ' . $filename);
-        shell_exec('git commit -m "temp: add file for deletion test"');
+        shell_exec('git add -f ' . escapeshellarg($filename));
+        shell_exec('git commit --quiet -m "temp: add file for deletion test"');
 
-        shell_exec('git rm ' . $filename);
+        shell_exec('git rm ' . escapeshellarg($filename) . ' 2>/dev/null');
 
         $gitFiles = $this->app->make(FileUtils::class);
         $modifiedFiles = $gitFiles->getModifiedFiles();
@@ -108,17 +108,17 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /** @test */
-    function it_includes_renamed_file_in_modified_files()
+    public function it_includes_renamed_file_in_modified_files()
     {
         $fileBuilder = new PhpFileBuilder('Original');
-        $originalPath = self::$gitFilesPathTest . '/Original.php';
-        $renamedPath = self::$gitFilesPathTest . '/Renamed.php';
+        $originalPath = $this->gitFilesPathTest . '/Original.php';
+        $renamedPath = $this->gitFilesPathTest . '/Renamed.php';
         file_put_contents($originalPath, $fileBuilder->build());
 
-        shell_exec('git add -f ' . $originalPath);
-        shell_exec('git commit -m "temp: add file for rename test"');
+        shell_exec('git add -f ' . escapeshellarg($originalPath));
+        shell_exec('git commit --quiet -m "temp: add file for rename test"');
 
-        shell_exec('git mv -f ' . $originalPath . ' ' . $renamedPath);
+        shell_exec('git mv -f ' . escapeshellarg($originalPath) . ' ' . escapeshellarg($renamedPath));
 
         $gitFiles = $this->app->make(FileUtils::class);
         $modifiedFiles = $gitFiles->getModifiedFiles();
@@ -127,9 +127,9 @@ class FileUtilsTest extends SystemTestCase
     }
 
     /**
-     * @param string $path Absolute path. For example: /var/www/html/githooks/tests/NewFile.php
+     * @param string $path Absolute path inside the sandbox. For example: /tmp/githooks-sandbox-XXXX/testsDir/gitTests/NewFile.php
      *
-     * @return string Only the relative path of the file to root project. For example: tests/NewFile.php
+     * @return string Path relative to repo root. For example: testsDir/gitTests/NewFile.php
      */
     public function deletePathPrefix(string $path): string
     {
