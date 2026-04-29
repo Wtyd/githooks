@@ -25,9 +25,10 @@
                 "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeDryRun::150",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::23",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::64",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::47",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::54",
-                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::106"
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204"
             ]
         },
         "DecrementInteger": {
@@ -39,10 +40,15 @@
                 "Wtyd\\GitHooks\\Execution\\ThreadCapability::__construct::21",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::51",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::54",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::57",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::61",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::64",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::239",
                 "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch::144",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
-                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::106",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::210",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::buildAdmissionContext::152",
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::49"
             ]
         },
@@ -59,7 +65,8 @@
         "CastInt": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22",
-                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42"
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::42",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::102"
             ]
         },
         "CastBool": {
@@ -69,6 +76,7 @@
         },
         "CastString": {
             "ignore": [
+                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::46",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::49",
                 "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::205"
             ]
@@ -145,8 +153,10 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\ExecutionContext::filterFilesForMode::99",
                 "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::208",
+                "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::278",
                 "Wtyd\\GitHooks\\Jobs\\JobAbstract::isEmpty::293",
-                "Wtyd\\GitHooks\\Hooks\\PatternMatcher::fileMatchesPattern::91"
+                "Wtyd\\GitHooks\\Hooks\\PatternMatcher::fileMatchesPattern::91",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::85"
             ]
         },
         "Coalesce": {
@@ -161,6 +171,7 @@
                 "Wtyd\\GitHooks\\Hooks\\PatternMatcher::matchesFiles::64",
                 "Wtyd\\GitHooks\\Hooks\\PatternMatcher::matchesFiles::74",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::91",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::101",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::228"
             ]
         },
