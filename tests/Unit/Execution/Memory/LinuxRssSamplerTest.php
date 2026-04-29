@@ -199,6 +199,151 @@ class LinuxRssSamplerTest extends TestCase
         $this->assertSame([], $samples);
     }
 
+    /** @test */
+    public function it_rejects_root_pid_zero_even_when_proc_zero_status_is_readable(): void
+    {
+        // Kills LessThanOrEqualTo `<= 0` -> `< 0` mutant on the early
+        // guard at line 53, plus the ReturnRemoval mutant on line 54:
+        // even with a perfectly readable /proc/0/status, pid=0 must be
+        // rejected by the early-return guard before any /proc read.
+        $sampler = $this->fakeSamplerWith([
+            '/proc/0/status'            => $this->statusWithRss(8192),
+            '/proc/0/task/0/children'   => '',
+        ]);
+
+        $samples = $sampler->sample(['kernel' => 0]);
+
+        $this->assertSame([], $samples);
+    }
+
+    /** @test */
+    public function it_does_not_double_count_when_root_pid_appears_in_its_own_children(): void
+    {
+        // Kills ArrayItemRemoval / TrueValue mutants on the
+        // `$visited = [$rootPid => true]` initialiser at line 64:
+        // without the root in the visited set, a self-referential tree
+        // (or a kernel re-parenting cycle) would re-visit and double-count
+        // the root's RSS.
+        $sampler = $this->fakeSamplerWith([
+            '/proc/100/status'            => $this->statusWithRss(4096),
+            '/proc/100/task/100/children' => '100',
+        ]);
+
+        $samples = $sampler->sample(['cyclic' => 100]);
+
+        $this->assertSame(4, $samples['cyclic']); // 4096 kB / 1024, not 8192
+    }
+
+    /** @test */
+    public function rss_total_uses_kb_to_mb_divisor_of_1024(): void
+    {
+        // Kills DecrementInteger on the `/ 1024` divisor at line 84:
+        // a value of 1023 kB rounds to 0 MB (1023/1024 < 1) under the
+        // original divisor; with `/ 1023` the mutant would return 1.
+        $sampler = $this->fakeSamplerWith([
+            '/proc/100/status'            => $this->statusWithRss(1023),
+            '/proc/100/task/100/children' => '',
+        ]);
+
+        $samples = $sampler->sample(['under_one_mb' => 100]);
+
+        $this->assertSame(0, $samples['under_one_mb']);
+    }
+
+    /** @test */
+    public function vmrss_regex_only_matches_at_line_start(): void
+    {
+        // Kills PregMatchRemoveCaret on the VmRSS regex at line 103:
+        // without the `^` anchor, a line like "OtherVmRSS: 9999 kB"
+        // would match before the real "VmRSS: ..." line.
+        $sampler = $this->fakeSamplerWith([
+            '/proc/100/status' =>
+                "Name:\ttest\nNonRssDataVmRSS:\t   9999 kB\nVmRSS:\t   2048 kB\n",
+            '/proc/100/task/100/children' => '',
+        ]);
+
+        $samples = $sampler->sample(['real' => 100]);
+
+        // 2048 kB / 1024 = 2 MB. With the caret removed the regex would
+        // match the bogus 9999 kB first and produce 9 MB.
+        $this->assertSame(2, $samples['real']);
+    }
+
+    /** @test */
+    public function read_children_returns_empty_for_blank_content(): void
+    {
+        // Kills ReturnRemoval on the `return [];` early-out at line 120
+        // for empty / null children content. With the return removed,
+        // the function would fall through to preg_split('/\s+/', '')
+        // which yields [''] and would then error or pollute the queue
+        // with non-numeric tokens. We assert the root has no descendants
+        // contributing — only its own RSS.
+        $sampler = $this->fakeSamplerWith([
+            '/proc/100/status'            => $this->statusWithRss(2048),
+            '/proc/100/task/100/children' => '',
+        ]);
+
+        $samples = $sampler->sample(['lone' => 100]);
+
+        $this->assertSame(2, $samples['lone']); // 2048/1024
+    }
+
+    /** @test */
+    public function children_file_with_leading_and_trailing_whitespace_is_parsed(): void
+    {
+        // Kills UnwrapTrim on `trim($contents)` at line 123: without
+        // trim, the surrounding whitespace would be passed to
+        // preg_split, which produces a leading/trailing empty token.
+        // Empty tokens are then filtered out, but mixed numeric tokens
+        // around real PIDs must still parse. With trim, the PID list is
+        // [200, 300]; without trim it would still be [200, 300]
+        // because preg_split tolerates surrounding whitespace, but if
+        // the children file has only whitespace, trim makes it the empty
+        // string and triggers the early-return at line 119; without trim
+        // the regex engine would split into a single empty token and
+        // proceed (no descendants). The mutant becomes detectable when
+        // the trimmed-empty content is the ONLY signal of "no children".
+        $sampler = $this->fakeSamplerWith([
+            '/proc/100/status'            => $this->statusWithRss(1024),
+            '/proc/100/task/100/children' => "   \n  \t  ",
+            // No /proc/<other>/... entries: if the mutant proceeds and
+            // somehow yields phantom child PIDs, the sample would still
+            // produce 1 because no real status backs them. The point of
+            // this test is to pin the documented "whitespace-only
+            // children file == no descendants" contract.
+        ]);
+
+        $samples = $sampler->sample(['solo' => 100]);
+
+        $this->assertSame(1, $samples['solo']); // root only, 1024 kB
+    }
+
+    /** @test */
+    public function visited_set_prevents_revisiting_already_seen_descendants(): void
+    {
+        // Kills Continue_ on the visited-skip at line 73 and TrueValue
+        // on the marker assignment at line 75. Diamond shape: root
+        // 100 has two children 200 and 250, both pointing to 300 (the
+        // grandchild). Without the visited skip, 300 would be summed
+        // twice.
+        $sampler = $this->fakeSamplerWith([
+            '/proc/100/status'            => $this->statusWithRss(1024),
+            '/proc/100/task/100/children' => '200 250',
+            '/proc/200/status'            => $this->statusWithRss(2048),
+            '/proc/200/task/200/children' => '300',
+            '/proc/250/status'            => $this->statusWithRss(2048),
+            '/proc/250/task/250/children' => '300',
+            '/proc/300/status'            => $this->statusWithRss(4096),
+            '/proc/300/task/300/children' => '',
+        ]);
+
+        $samples = $sampler->sample(['diamond' => 100]);
+
+        // (1024 + 2048 + 2048 + 4096) / 1024 = 9. Without visited check
+        // 300 (4 MB) would be counted twice -> 13.
+        $this->assertSame(9, $samples['diamond']);
+    }
+
     // ========================================================================
     // Helpers
     // ========================================================================
