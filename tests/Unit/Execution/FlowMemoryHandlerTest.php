@@ -121,8 +121,12 @@ class FlowMemoryHandlerTest extends TestCase
 
         $warnings = $handler->__capturedWarnings;
         $this->assertCount(1, $warnings);
-        $this->assertStringContainsString('Memory budget disabled', $warnings[0]);
-        $this->assertStringContainsString('platform unsupported (test)', $warnings[0]);
+        // Pin exact message ordering to kill Concat reorder mutants on
+        // line 85 (the prefix MUST come before the reason).
+        $this->assertSame(
+            '⚠ Memory budget disabled: platform unsupported (test)',
+            $warnings[0]
+        );
     }
 
     /** @test */
@@ -187,6 +191,111 @@ class FlowMemoryHandlerTest extends TestCase
         $this->assertSame(['ready' => 101], $sampler->calls[0]);
     }
 
+    /**
+     * @test
+     * Mata el mutante LogicalAnd → LogicalOr en línea 133: cuando el sampler
+     * no está disponible, real salta la rama de muestreo; mutado entraría
+     * (porque sampler !== null sigue siendo true) e invocaría sample().
+     */
+    public function tick_does_not_invoke_sampler_when_sampler_is_unavailable(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 9999]], false, 'unsupported');
+        $options = $this->options(new MemoryBudgetConfiguration(800, 1500));
+        $handler = $this->buildHandlerWithSampler($options, $sampler);
+
+        $handler->setup([$this->jobWithoutMemory('phpcs')]);
+        $handler->tick(['phpunit' => $this->runningEntry(101)]);
+
+        $this->assertSame([], $sampler->calls);
+    }
+
+    /**
+     * @test
+     * Mata el mutante Minus → Plus en línea 131 sobre `microtime(true) -
+     * $flowStartTime`. Con `+` el `peakAtSecond` saldría como una suma
+     * absoluta (~3.5e18s); con `-` queda en valor relativo (~0..1s en
+     * tests rápidos).
+     */
+    public function tick_records_peak_at_second_relative_to_flow_start(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 1000]]);
+        $options = $this->options(new MemoryBudgetConfiguration(800, 1500));
+        $handler = $this->buildHandlerWithSampler($options, $sampler);
+
+        $handler->setup([$this->jobWithoutMemory('phpcs')]);
+        $handler->tick(['phpunit' => $this->runningEntry(101)]);
+
+        $flowResult = $this->makeFlowResult();
+        $handler->attachStats($flowResult);
+
+        $peakAt = $flowResult->getMemoryBudgetState()->getPeakAtSecond();
+        $this->assertGreaterThanOrEqual(0.0, $peakAt);
+        $this->assertLessThan(60.0, $peakAt, 'peakAtSecond must be relative seconds, not absolute microtime');
+    }
+
+    /**
+     * @test
+     * Mata varios mutantes en línea 147 (`$coresInUse += $threadAllocations
+     * [name] ?? 1`): IncrementInteger ?? 2, DecrementInteger ?? 0, Coalesce
+     * left/right swap, Assignment += → =, PlusEqual += → -=. Con dos jobs
+     * con costes distintos en threadAllocations, real suma 3+5=8; los
+     * mutantes producen 5, 0, 1, 5 (último valor), o un negativo.
+     *
+     * Mata también la línea 145 ($coresInUse=0 → -1) y la 146 (Foreach_→[])
+     * que dejarían el contador en -1 / 0.
+     *
+     * Mata la línea 149 MethodCallRemoval (recordCoresSample) y
+     * UnwrapArrayKeys (running array completo) verificando coresPeakJobs.
+     */
+    public function tick_records_cores_in_use_summing_thread_allocations_per_job(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 100, 'phpstan' => 100]]);
+        $options = $this->options(null, true);
+        $handler = $this->buildHandlerWithThreadAllocations(
+            $options,
+            $sampler,
+            ['phpunit' => 3, 'phpstan' => 5]
+        );
+
+        $handler->setup([$this->jobWithoutMemory('phpunit')]);
+        $handler->tick([
+            'phpunit' => $this->runningEntry(101),
+            'phpstan' => $this->runningEntry(202),
+        ]);
+
+        $flowResult = $this->makeFlowResult();
+        $handler->attachStats($flowResult);
+
+        $stats = $flowResult->getMemoryStats();
+        $this->assertNotNull($stats);
+        $this->assertSame(8, $stats->getCoresPeak(), 'coresPeak = 3 + 5 (sum of thread allocations)');
+        $this->assertSame(['phpunit', 'phpstan'], $stats->getCoresPeakJobs());
+    }
+
+    /**
+     * @test
+     * Mata específicamente IncrementInteger en línea 147 (`?? 1` → `?? 2`):
+     * un job que NO está en threadAllocations debe contar como 1 core, no 2.
+     */
+    public function tick_uses_default_one_core_for_jobs_not_in_thread_allocations(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 100]]);
+        $options = $this->options(null, true);
+        $handler = $this->buildHandlerWithThreadAllocations(
+            $options,
+            $sampler,
+            [] // map vacío: el job 'phpunit' usa el fallback
+        );
+
+        $handler->setup([$this->jobWithoutMemory('phpunit')]);
+        $handler->tick(['phpunit' => $this->runningEntry(101)]);
+
+        $flowResult = $this->makeFlowResult();
+        $handler->attachStats($flowResult);
+
+        $this->assertSame(1, $flowResult->getMemoryStats()->getCoresPeak());
+    }
+
     // ========================================================================
     // shouldKill()
     // ========================================================================
@@ -241,15 +350,59 @@ class FlowMemoryHandlerTest extends TestCase
     // enrichResults()
     // ========================================================================
 
-    /** @test */
+    /**
+     * @test
+     * Mata el mutante ReturnRemoval en línea 168: el early return cuando
+     * evaluator es null debe respetar el contrato "no tocar los results".
+     * Sin él, jobs con memoryReserve declarado contaminarían el resultado
+     * con `withMemoryReserved`. Pasamos un job CON reserve para hacer la
+     * diferencia observable.
+     */
     public function enrich_results_returns_input_unchanged_when_handler_inactive(): void
     {
         $handler = $this->buildHandler($this->options());
         $original = new JobResult('phpcs', true, '', '50ms');
+        $jobWithReserve = $this->jobWithReserve('phpcs', 256);
 
-        $enriched = $handler->enrichResults([$original], []);
+        $enriched = $handler->enrichResults([$original], [$jobWithReserve]);
 
         $this->assertSame([$original], $enriched);
+        $this->assertNull($enriched[0]->getMemoryReserved());
+    }
+
+    /**
+     * @test
+     * Mata el mutante ArrayOneItem en línea 180 (`return $enriched`): si la
+     * lista se trunca al primer elemento, se pierden los resultados de los
+     * demás jobs.
+     */
+    public function enrich_results_returns_every_enriched_result_when_active(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 700, 'phpstan' => 300]]);
+        $options = $this->options(new MemoryBudgetConfiguration(800, 1500));
+        $handler = $this->buildHandlerWithSampler($options, $sampler);
+
+        $jobs = [
+            $this->jobWithMemory('phpunit', 512, MemoryThreshold::fromInt(600)),
+            $this->jobWithMemory('phpstan', 256, null),
+        ];
+        $handler->setup($jobs);
+        $handler->tick([
+            'phpunit' => $this->runningEntry(101),
+            'phpstan' => $this->runningEntry(202),
+        ]);
+
+        $results = [
+            new JobResult('phpunit', true, '', '50ms'),
+            new JobResult('phpstan', true, '', '20ms'),
+        ];
+        $enriched = $handler->enrichResults($results, $jobs);
+
+        $this->assertCount(2, $enriched);
+        $this->assertSame('phpunit', $enriched[0]->getJobName());
+        $this->assertSame('phpstan', $enriched[1]->getJobName());
+        $this->assertSame(512, $enriched[0]->getMemoryReserved());
+        $this->assertSame(256, $enriched[1]->getMemoryReserved());
     }
 
     /** @test */
@@ -437,18 +590,34 @@ class FlowMemoryHandlerTest extends TestCase
         MemorySampler $sampler,
         bool $disabled = false
     ): FlowMemoryHandler {
-        return new class ($options, $disabled, $sampler) extends FlowMemoryHandler {
+        return $this->buildHandlerWithThreadAllocations($options, $sampler, [], $disabled);
+    }
+
+    /**
+     * @param array<string, int> $threadAllocations
+     */
+    private function buildHandlerWithThreadAllocations(
+        OptionsConfiguration $options,
+        MemorySampler $sampler,
+        array $threadAllocations,
+        bool $disabled = false
+    ): FlowMemoryHandler {
+        return new class ($options, $disabled, $sampler, $threadAllocations) extends FlowMemoryHandler {
             private MemorySampler $injected;
 
             /** @var string[] */
             public array $__capturedWarnings = [];
 
+            /**
+             * @param array<string, int> $threadAllocations
+             */
             public function __construct(
                 OptionsConfiguration $options,
                 bool $disabled,
-                MemorySampler $sampler
+                MemorySampler $sampler,
+                array $threadAllocations
             ) {
-                parent::__construct($options, $disabled, microtime(true), []);
+                parent::__construct($options, $disabled, microtime(true), $threadAllocations);
                 $this->injected = $sampler;
             }
 

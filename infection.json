@@ -186,7 +186,8 @@
                 "Wtyd\\GitHooks\\Hooks\\PatternMatcher::matchesFiles::74",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::91",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::101",
-                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::228"
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::228",
+                "Wtyd\\GitHooks\\Execution\\FlowMemoryHandler::setup::71"
             ]
         },
         "Continue_": {
