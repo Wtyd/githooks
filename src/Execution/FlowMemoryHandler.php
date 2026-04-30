@@ -23,7 +23,7 @@ use Wtyd\GitHooks\Jobs\JobAbstract;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Touches every piece of the memory feature.
  */
-final class FlowMemoryHandler
+class FlowMemoryHandler
 {
     private OptionsConfiguration $options;
 
@@ -79,11 +79,10 @@ final class FlowMemoryHandler
             return false;
         }
 
-        $sampler = (new MemorySamplerFactory())->create();
+        $sampler = $this->buildSampler();
         if (!$sampler->isAvailable() && $thresholdsRequested) {
-            fwrite(
-                STDERR,
-                '⚠ Memory budget disabled: ' . $sampler->getUnavailableReason() . PHP_EOL
+            $this->emitWarning(
+                '⚠ Memory budget disabled: ' . $sampler->getUnavailableReason()
             );
         }
 
@@ -93,6 +92,26 @@ final class FlowMemoryHandler
             $this->options->getProcesses()
         );
         return true;
+    }
+
+    /**
+     * Seam for tests: production builds a real sampler via the factory; tests
+     * subclass and inject a fake to exercise the handler without touching
+     * /proc or shelling out to `ps`.
+     */
+    protected function buildSampler(): MemorySampler
+    {
+        return (new MemorySamplerFactory())->create();
+    }
+
+    /**
+     * Seam for tests: production writes to STDERR; tests override to capture
+     * the one-time degradation warning emitted when the sampler is
+     * unavailable but thresholds were declared (REQ-038).
+     */
+    protected function emitWarning(string $message): void
+    {
+        fwrite(STDERR, $message . PHP_EOL);
     }
 
     public function isActive(): bool
