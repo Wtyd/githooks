@@ -98,7 +98,8 @@ class FlowExecutor
     {
         $start = $this->now();
         $this->memoryHandler = null;
-        $maxProcesses = $plan->getOptions()->getProcesses();
+        $coresBudget = $plan->getOptions()->getProcesses();
+        $maxProcesses = $coresBudget;
         $failFast = $plan->getOptions()->isFailFast();
         $jobs = $plan->getJobs();
         $context = $plan->getContext();
@@ -114,6 +115,10 @@ class FlowExecutor
             }
         }
 
+        // After resolveThreadBudget, $maxProcesses becomes the slot limit
+        // (max parallel jobs from the budget plan). $coresBudget keeps the
+        // original total cores so admission can check uncontrollable jobs
+        // whose per-job cost may exceed the slot limit.
         $maxProcesses = $this->resolveThreadBudget($jobs, $maxProcesses);
 
         $inputFiles = $this->inputFilesContext;
@@ -136,7 +141,7 @@ class FlowExecutor
         if (($maxProcesses <= 1 || count($jobs) <= 1) && !$this->shouldSampleMemory($jobs, $plan->getOptions())) {
             $results = $this->executeSequential($jobs, $failFast);
         } else {
-            $results = $this->executeParallel($jobs, max(1, $maxProcesses), $failFast, $plan->getOptions());
+            $results = $this->executeParallel($jobs, max(1, $maxProcesses), $coresBudget, $failFast, $plan->getOptions());
         }
 
         // Include skipped jobs from plan (fast mode filtering / files mode mismatch)
@@ -373,7 +378,7 @@ class FlowExecutor
      *
      * @param JobAbstract[] $jobs
      */
-    private function buildProcessPool(int $maxProcesses, array $jobs, OptionsConfiguration $options): ProcessPool
+    private function buildProcessPool(int $maxProcesses, int $coresBudget, array $jobs, OptionsConfiguration $options): ProcessPool
     {
         $coresByJob = [];
         $memoryReserveByJob = [];
@@ -399,7 +404,8 @@ class FlowExecutor
             $strategy,
             $memoryBudgetMb,
             $coresByJob,
-            $memoryReserveByJob
+            $memoryReserveByJob,
+            $coresBudget
         );
     }
 
@@ -439,10 +445,10 @@ class FlowExecutor
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates pool + dashboard + fail-fast
      * @SuppressWarnings(PHPMD.NPathComplexity) Dashboard tick + pool fill + fail-fast paths
      */
-    private function executeParallel(array $jobs, int $maxProcesses, bool $failFast, OptionsConfiguration $options): array
+    private function executeParallel(array $jobs, int $maxProcesses, int $coresBudget, bool $failFast, OptionsConfiguration $options): array
     {
         $results = [];
-        $pool = $this->buildProcessPool($maxProcesses, $jobs, $options);
+        $pool = $this->buildProcessPool($maxProcesses, $coresBudget, $jobs, $options);
         $pool->enqueue($jobs);
         $failFastTriggered = false;
         $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;

@@ -463,6 +463,52 @@ class ProcessPoolTest extends TestCase
         $pool->terminateAll();
     }
 
+    /**
+     * @test
+     * Regression: when an uncontrollable job (e.g. PHPStan) reserves more cores
+     * than the slot limit (maxParallelJobs), admission must still pick it once
+     * previous jobs free their cores. Before the coresBudget split, $coresLimit
+     * defaulted to $maxProcesses (the slot count), so $coresFree could never
+     * reach the cost of a heavy uncontrollable job and FifoAdmission spun forever.
+     *
+     * Scenario: budget=4 cores total, maxParallel=2 slots, queue holds two
+     * 1-core jobs and one 4-core job (uncontrollable). The two cheap jobs
+     * fill the slots first; once they finish the heavy one MUST be admitted
+     * (4 ≤ 4), not blocked by the slot count of 2.
+     */
+    function admission_uses_cores_budget_not_slot_limit_for_heavy_uncontrollable_jobs()
+    {
+        $cheapA = $this->makeJob('cheapA', 'true');
+        $cheapB = $this->makeJob('cheapB', 'true');
+        $heavy  = $this->makeJob('heavy', 'sleep 0.1');
+
+        $pool = new ProcessPool(
+            2,                      // maxParallel slots
+            new FifoAdmission(),
+            null,                   // no memory budget
+            ['cheapA' => 1, 'cheapB' => 1, 'heavy' => 4],
+            [],
+            4                       // coresBudget — total cores available
+        );
+        $pool->enqueue([$cheapA, $cheapB, $heavy]);
+
+        // Tick 1: cheapA + cheapB fill both slots (2 cores in use).
+        $round1 = $pool->fillPool();
+        $this->assertSame(['cheapA', 'cheapB'], array_keys($round1));
+
+        // Wait for both 'true' jobs to exit and reclaim their cores.
+        $this->waitForJob($pool, 'cheapA');
+        $this->waitForJob($pool, 'cheapB');
+        $pool->pollCompleted();
+
+        // Tick 2: heavy has cores=4, coresFree must be 4 (full budget),
+        // not 2 (slot count). Without the fix, fits() returns false forever.
+        $round2 = $pool->fillPool();
+        $this->assertArrayHasKey('heavy', $round2, 'Heavy uncontrollable job must be admitted under coresBudget=4');
+
+        $pool->terminateAll();
+    }
+
     private function makeJob(string $name, string $script): CustomJob
     {
         return new CustomJob(new JobConfiguration($name, 'custom', ['script' => $script]));

@@ -21,6 +21,8 @@ class ProcessPool
 {
     private int $maxProcesses;
 
+    private int $coresBudget;
+
     private ?AdmissionStrategy $strategy;
 
     private ?int $memoryBudget;
@@ -42,6 +44,15 @@ class ProcessPool
     private int $memoryReservedInUse = 0;
 
     /**
+     * @param int $maxProcesses Slot limit: how many jobs may run in parallel.
+     *                          Typically `ThreadBudgetPlan::getMaxParallelJobs()`.
+     * @param int|null $coresBudget Total cores available for admission. Defaults
+     *                              to $maxProcesses for back-compat, but callers
+     *                              that derived $maxProcesses from a budget plan
+     *                              MUST pass the original budget here — otherwise
+     *                              an uncontrollable job whose cores cost exceeds
+     *                              the slot limit would never fit and FifoAdmission
+     *                              would spin forever.
      * @param array<string, int>  $coresByJob
      * @param array<string, ?int> $memoryReserveByJob
      */
@@ -50,9 +61,11 @@ class ProcessPool
         ?AdmissionStrategy $strategy = null,
         ?int $memoryBudget = null,
         array $coresByJob = [],
-        array $memoryReserveByJob = []
+        array $memoryReserveByJob = [],
+        ?int $coresBudget = null
     ) {
         $this->maxProcesses = max(1, $maxProcesses);
+        $this->coresBudget = max(1, $coresBudget ?? $this->maxProcesses);
         $this->strategy = $strategy;
         $this->memoryBudget = $memoryBudget;
         $this->coresByJob = $coresByJob;
@@ -143,9 +156,13 @@ class ProcessPool
 
     private function buildAdmissionContext(): AdmissionContext
     {
-        $coresLimit = $this->maxProcesses;
+        // coresLimit is the ABSOLUTE cores budget, not the slot limit.
+        // Using $this->maxProcesses here would deadlock when a single
+        // uncontrollable job (e.g. PHPStan with defaultThreads=4) reserves
+        // more cores than the slot count: $coresFree could never reach the
+        // job's cost, and FifoAdmission would spin forever.
+        $coresLimit = $this->coresBudget;
         $coresFree = max(0, $coresLimit - $this->coresInUse);
-        $coresFree = min($coresFree, $coresLimit - count($this->running));
 
         $memoryFree = null;
         if ($this->memoryBudget !== null) {

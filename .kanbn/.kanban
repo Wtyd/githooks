@@ -83,15 +83,6 @@
           "comments": []
         },
         {
-          "id": "4ae31bc5-bfd2-44eb-ab6f-24a71deff5ee",
-          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
-          "title": "[CRIT] BUG-2 — Cuelgue con --stats + config camelCase",
-          "description": "**Test**: V33-111 · **Reproducción**: 100 %.\n\n`flow qa --stats --config=githooks-v33-camelcase.php` cuelga tras ejecutar el primer job (`phpcs_src OK 51ms`) y nunca avanza. Sin `--stats` el mismo config corre en 0.6 s.\n\n```bash\ntimeout 15 php8.4 vendor/bin/githooks flow qa --stats \\\n  --config=config/v3.3/githooks-v33-camelcase.php\n# → RC=124, solo aparece phpcs_src - OK. Time: 51ms y nada más\n```\n\n## Criterio de cierre\n- `flow qa --stats` con config camelCase completa todos los jobs.\n- Test V33-111 pasa.\n- Verificar que el sampler/`--stats` no interactúa mal con la traducción camelCase→kebab-case.\n\nFuente: Bugs.md líneas 44-55.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "5afb20b3-4b3d-4de8-8ecd-08bf9c448ea4",
           "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
           "title": "[CRIT] BUG-3 — Cuelgue con memory-budget en flows.options",
@@ -141,22 +132,31 @@
     {
       "id": "2c5a0b65-e90c-404e-975a-611ee6907151",
       "title": "Doing",
+      "cards": []
+    },
+    {
+      "id": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+      "title": "Done",
       "cards": [
         {
           "id": "3c5c384b-d839-4716-b041-6eb0e5155ada",
-          "listId": "2c5a0b65-e90c-404e-975a-611ee6907151",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[CRIT] BUG-1 — Cuelgue con meta-flow + --processes>=3",
-          "description": "**Test**: V33-014 · **Reproducción**: 100 % en este entorno.\n\n`flows ci-pack --processes=4` (o `=8`) cuelga indefinidamente: no produce output, no hace timeout interno, consume CPU al 99 %.\n\n```bash\ntimeout 30 php8.4 vendor/bin/githooks flows ci-pack --processes=4 \\\n  --format=json --config=config/v3.3/githooks-v33-meta-flow.php\n# → RC=124 (timeout), stdout vacío, stderr vacío\n```\n\n**Workaround**: usar `--processes<=2` con meta-flows.\n\n**Nota**: `flow qa --processes=8` (single-flow, sin meta) **sí funciona** — el bug es específico de meta-flows.\n\n## Criterio de cierre\n- `flows ci-pack --processes=4` y `=8` completan sin cuelgue.\n- Test V33-014 pasa.\n- Posible fix relacionado con BUG-4 (detección errónea de CPUs).\n\nFuente: Bugs.md líneas 29-42.",
+          "description": "**Test**: V33-014 · **Reproducción**: 100 % en este entorno.\n\n**Diagnóstico final** (revisado): el bug NO era específico de meta-flows. `flow qa --processes=8` con un job uncontrollable (PHPStan) también colgaba. La causa raíz es que `ProcessPool::buildAdmissionContext` usaba `$this->maxProcesses` (el slot count derivado de `getMaxParallelJobs()`) como `coresLimit`. Cuando un job uncontrollable reservaba más cores que el slot count, `coresFree` jamás alcanzaba la cantidad necesaria y `FifoAdmission` rechazaba al head para siempre → spin loop al 100 % CPU.\n\n## Fix\n- `ProcessPool::__construct` recibe ahora un parámetro adicional `coresBudget` (total cores) además de `maxProcesses` (slot count).\n- `buildAdmissionContext()` usa `$this->coresBudget` como `coresLimit`.\n- `FlowExecutor::execute` guarda el budget original antes de que `resolveThreadBudget` lo sobreescriba con el slot count y lo pasa al pool.\n- Test de regresión `admission_uses_cores_budget_not_slot_limit_for_heavy_uncontrollable_jobs` en `ProcessPoolTest`.\n\n## Verificación\n- `flows ci-pack --processes=4` completa en 0.70s ✓\n- `flow qa --processes=8` completa en 0.57s ✓\n- Test V33-014 pasa ✓\n- Suite completa: 2068/2068 ✓\n- QA completo: 8/8 ✓\n\nFuente: Bugs.md líneas 29-42.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "4ae31bc5-bfd2-44eb-ab6f-24a71deff5ee",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[CRIT] BUG-2 — Cuelgue con --stats + config camelCase",
+          "description": "**Test**: V33-111 · **Reproducción**: 100 %.\n\n**Causa raíz**: la misma que BUG-1. Con `--stats`, `shouldSampleMemory()` devuelve `true` y se entra a `executeParallel` aunque el flow tenga 1-2 jobs. `phpstan_src` declara `controllable=false` con `defaultThreads=4`; con `processes=2` el budget plan asigna `cores=min(4,2)=2` y `maxParallel=1`. Resultado: pool con `maxProcesses=1` y `coresByJob['phpstan']=2` → admission jamás admitía phpstan tras completar el primer job → cuelgue.\n\n## Fix\nResuelto por el mismo cambio de BUG-1 (`coresBudget` decoupling en `ProcessPool` + `FlowExecutor`).\n\n## Verificación\n- `flow qa --stats --config=githooks-v33-camelcase.php` completa en 0.62s con tabla de stats ✓\n- Test V33-111 pasa ✓\n\nFuente: Bugs.md líneas 44-55.",
           "labels": [],
           "checkboxes": [],
           "comments": []
         }
       ]
-    },
-    {
-      "id": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
-      "title": "Done",
-      "cards": []
     }
   ],
   "archive": {
