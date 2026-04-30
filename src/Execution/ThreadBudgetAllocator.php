@@ -34,8 +34,11 @@ class ThreadBudgetAllocator
                 // Explicit 'cores: N' — pin the allocation. If the capability is
                 // controllable, FlowExecutor's applyThreadLimit() will propagate
                 // this value to the tool's native flag.
-                $fixedCost += $override;
-                $allocations[$job->getName()] = $override;
+                // Clamp to budget so admission can never reject the head forever
+                // (FifoAdmission deadlocks if cores > budget).
+                $cores = min($override, $budget);
+                $fixedCost += $cores;
+                $allocations[$job->getName()] = $cores;
                 continue;
             }
 
@@ -45,10 +48,15 @@ class ThreadBudgetAllocator
                 $fixedCost++;
                 $allocations[$job->getName()] = 1;
             } elseif (!$capability->isControllable()) {
-                // Has threads but we can't limit them (e.g. PHPStan)
-                $fixedCost += $capability->getDefaultThreads();
+                // Has threads but we can't limit them (e.g. PHPStan).
+                // Clamp the recorded cost to the total budget: the tool will
+                // still spawn its N internal workers (applyThreadLimit is a
+                // no-op here), but the pool's accounting cannot reserve more
+                // than exists, otherwise FifoAdmission rejects forever.
+                $cores = min($capability->getDefaultThreads(), $budget);
+                $fixedCost += $cores;
                 $uncontrollable[] = $job->getName();
-                $allocations[$job->getName()] = $capability->getDefaultThreads();
+                $allocations[$job->getName()] = $cores;
             } else {
                 $threadableJobs[] = $job;
             }
@@ -62,7 +70,9 @@ class ThreadBudgetAllocator
             foreach ($threadableJobs as $job) {
                 $capability = $job->getThreadCapability();
                 $min = $capability !== null ? $capability->getMinimumThreads() : 1;
-                $allocations[$job->getName()] = max($min, $threadsPerJob);
+                // Clamp to budget: a capability declaring minimum > budget would
+                // otherwise produce an allocation FifoAdmission can never satisfy.
+                $allocations[$job->getName()] = min(max($min, $threadsPerJob), $budget);
             }
         } else {
             // No budget left — each threadable job gets minimum (1)
@@ -75,7 +85,7 @@ class ThreadBudgetAllocator
         // Each running job uses its allocated threads
         $maxParallel = $this->calculateMaxParallel($budget, $allocations, $jobs);
 
-        return new ThreadBudgetPlan($maxParallel, $allocations, $uncontrollable);
+        return new ThreadBudgetPlan($budget, $maxParallel, $allocations, $uncontrollable);
     }
 
     /**

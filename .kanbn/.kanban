@@ -1,0 +1,175 @@
+{
+  "lists": [
+    {
+      "id": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+      "title": "Backlog",
+      "cards": [
+        {
+          "id": "061b9936-9c69-40de-bf6b-9782f30fdf7f",
+          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+          "title": "[MED] BUG-8 — --exclude-pattern que elimina todo da exit 1",
+          "description": "**Test**: V33-038\n\n`flow qa --files=src/clean --exclude-pattern='**/*.php'` (todo excluido) sale con **exit 1** y mensaje `--exclude-pattern eliminated all input files`.\n\nEl catálogo espera **exit 0 con jobs skipped**.\n\n## Criterio de cierre\n- Exit code 0 cuando todos los inputs quedan excluidos.\n- Jobs marcados como `skipped` con `skipReason` claro.\n- Mensaje informativo (si se mantiene) va a stderr, no contamina stdout en `--format=json`.\n\nFuente: Bugs.md líneas 122-126.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "ec00318c-4225-47f3-a66e-f1f359ea835b",
+          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+          "title": "[MED] BUG-9 — conf:check no rechaza files / files-from en config",
+          "description": "**Tests**: V33-043, V33-044\n\n`conf:check` con `files` en `flow.options` o `files-from` en un job solo emite warning y sale con **exit 0**:\n- `Unknown option 'files'. It will be ignored.`\n- `unknown key 'files-from' for type 'phpstan'`\n\nEl catálogo dice que estas keys son **CLI-only** y deben dar **exit 1**.\n\n## Criterio de cierre\n- `conf:check` devuelve exit 1 cuando aparece `files` en `flow.options`.\n- `conf:check` devuelve exit 1 cuando aparece `files-from` en cualquier job.\n- Mensaje de error explicativo (CLI-only, no permitidas en config).\n\nFuente: Bugs.md líneas 128-132.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "de209e2e-9db5-486d-8866-a9b32c587741",
+          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+          "title": "[MED] BUG-10 — conf:check no rechaza time-budget dentro de un job",
+          "description": "**Test**: V33-071\n\n`conf:check` con `time-budget: {...}` en `jobs.<name>` solo emite warning y sale con **exit 0**.\n\nEl catálogo espera **exit 1** (\"time-budget no permitido en jobs; usar `warn-after`/`fail-after`\").\n\n**Nota positiva**: el warning ya sugiere la alternativa correcta (`use 'warn-after'/'fail-after' instead`). Solo falta promover el warning a error.\n\n## Criterio de cierre\n- `conf:check` devuelve exit 1 cuando aparece `time-budget` dentro de un job.\n- Mensaje conserva la sugerencia actual (`use 'warn-after'/'fail-after' instead`).\n\nFuente: Bugs.md líneas 134-139.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "d2eda46c-baa1-4feb-80cf-3021d6127bc6",
+          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+          "title": "[BAJA] BUG-11 — Sugerencia did-you-mean no implementada",
+          "description": "**Test**: V33-092\n\nTypo `memry-budget` (en vez de `memory-budget`) solo da `Unknown option 'memry-budget'. It will be ignored.`.\n\nEl catálogo describe una sugerencia tipo \"did-you-mean\" que no existe.\n\n## Criterio de cierre\n- Para keys desconocidas con distancia ≤ 2 a una key conocida, emitir sugerencia: `Did you mean 'memory-budget'?`.\n- Cubrir tanto opciones de flow/job como keys de tools.\n\nFuente: Bugs.md líneas 141-145.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "95f75696-7043-433b-89d1-e8e709adf7cc",
+          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+          "title": "[BAJA] BUG-12 — Deprecation warnings en stdout en lugar de stderr",
+          "description": "**Tests**: V33-095, V33-096, V33-097, V33-098\n\n`conf:check` con keys camelCase emite las líneas `Deprecated: 'X' is renamed to 'Y'. Will be removed in v4.0.` por **stdout**.\n\nEl catálogo las espera en stderr.\n\n**Nota**: la funcionalidad es correcta — semánticas idénticas, `deprecations[]` en JSON, `properties.deprecations` en SARIF. Solo está mal el canal del mensaje humano.\n\n## Criterio de cierre\n- Mensajes `Deprecated: ...` salen por stderr.\n- stdout queda limpio en `--format=json/junit/sarif`.\n- Tests de los 4 casos camelCase pasan en stderr.\n\nFuente: Bugs.md líneas 147-152.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "660470aa-a26a-4ca5-8542-1036dd31c93d",
+          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+          "title": "[BAJA] BUG-13 — removalVersion con prefijo v",
+          "description": "**Test**: V33-100\n\n`deprecations[].removalVersion` se serializa como `\"v4.0\"`; el catálogo lo describe como `\"4.0\"` (sin prefijo).\n\nTrivial pero rompe consumidores que comparen contra la string esperada.\n\n## Criterio de cierre\n- `removalVersion` sale como `\"4.0\"` (sin prefijo `v`) en JSON.\n- Mismo formato en SARIF (`properties.deprecations[].removalVersion`).\n\nFuente: Bugs.md líneas 154-158.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "774adee3-9ea0-44da-af54-c1ed426eaea9",
+          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
+          "title": "[BAJA] BUG-14 — Warning REQ-018 en stdout (text mode)",
+          "description": "**Test**: V33-004\n\n`flows ci-pack qa` (mixto meta + flow ad-hoc) emite el warning `Options declared in 'ci-pack' are ignored in multi-flow runs.` por **stdout**.\n\nDebería ir a stderr para no contaminar pipelines que capturen stdout.\n\n## Criterio de cierre\n- Warning REQ-018 sale por stderr.\n- stdout sigue limpio en `--format=json` (cubierto en BUG-5 más amplio).\n\nFuente: Bugs.md líneas 160-164.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+      "title": "To Do",
+      "cards": [
+        {
+          "id": "20679207-b636-4222-937f-f53115060c5c",
+          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+          "title": "Prueba",
+          "description": "",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "4ae31bc5-bfd2-44eb-ab6f-24a71deff5ee",
+          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+          "title": "[CRIT] BUG-2 — Cuelgue con --stats + config camelCase",
+          "description": "**Test**: V33-111 · **Reproducción**: 100 %.\n\n`flow qa --stats --config=githooks-v33-camelcase.php` cuelga tras ejecutar el primer job (`phpcs_src OK 51ms`) y nunca avanza. Sin `--stats` el mismo config corre en 0.6 s.\n\n```bash\ntimeout 15 php8.4 vendor/bin/githooks flow qa --stats \\\n  --config=config/v3.3/githooks-v33-camelcase.php\n# → RC=124, solo aparece phpcs_src - OK. Time: 51ms y nada más\n```\n\n## Criterio de cierre\n- `flow qa --stats` con config camelCase completa todos los jobs.\n- Test V33-111 pasa.\n- Verificar que el sampler/`--stats` no interactúa mal con la traducción camelCase→kebab-case.\n\nFuente: Bugs.md líneas 44-55.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "5afb20b3-4b3d-4de8-8ecd-08bf9c448ea4",
+          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+          "title": "[CRIT] BUG-3 — Cuelgue con memory-budget en flows.options",
+          "description": "**Test**: V33-109 (combo time+memory) y configs custom con solo `memory-budget`.\n\nConfigs con `memory-budget` en `flows.options` cuelgan el flow incluso con un solo job y `--processes=1`.\n\n```php\n// /tmp/cfg.php\nreturn [\n  'flows' => [\n    'options' => ['processes' => 2, 'memory-budget' => ['warn-above' => 1500, 'fail-above' => 4096]],\n    'qa' => ['jobs' => ['phpstan_src']],\n  ],\n  'jobs' => [\n    'phpstan_src' => ['type' => 'phpstan', 'level' => 0, 'paths' => ['src/clean']],\n  ],\n];\n```\n\n```bash\ntimeout 15 php8.4 vendor/bin/githooks flow qa --format=json --config=/tmp/cfg.php\n# → RC=124\n```\n\n**Nota**: el config oficial `githooks-v33-memory-budget.php` (que añade `allocator: fifo`, `stats: true` y `memory: N` en cada job) **sí funciona**. Algún elemento de esa config completa evita el deadlock.\n\n## Criterio de cierre\n- Config minimal con solo `memory-budget` corre sin cuelgue.\n- Identificar qué combinación de `allocator`/`stats`/`memory` per-job evita el deadlock y arreglar la raíz.\n- Test V33-109 pasa.\n\nFuente: Bugs.md líneas 57-79.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "29ca5144-a506-4512-ad96-4a980410c15d",
+          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+          "title": "[ALTA] BUG-4 — system:info reporta CPUs sin respetar cgroups",
+          "description": "`php8.4 vendor/bin/githooks system:info` reporta `Available CPUs: 20 (detected)` cuando el contenedor está limitado a **8** (`docker-compose.yml: cpu_count: 8`).\n\n**Causa raíz probable** de los cuelgues por sobre-reserva en thread budget / `FifoAdmission` (BUGs 1, 2, 3).\n\n**Fix sugerido**: leer `/sys/fs/cgroup/cpu.max` (cgroup v2) o `/sys/fs/cgroup/cpu/cpu.cfs_quota_us` + `cpu.cfs_period_us` (v1) además de `nproc()`.\n\n## Criterio de cierre\n- `system:info` respeta el límite del cgroup en entorno containerizado.\n- Soporte cgroup v1 y v2.\n- Caso sin límite (host real): mantener `nproc()` actual.\n- Idealmente desbloquea o reduce los BUGs 1-3.\n\nFuente: Bugs.md líneas 81-86.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "0dc44e23-e239-49fe-b630-53a7aba59615",
+          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+          "title": "[ALTA] BUG-5 — Mensajes informativos contaminan stdout en --format=json",
+          "description": "**Tests afectados**: V33-034, V33-038, V33-041, V33-042, V33-055\n\nVarios mensajes que deberían ir a stderr salen por stdout, rompiendo el contrato \"stdout limpio para parseo JSON\".\n\nMensajes confirmados que contaminan stdout:\n- `--files-from: UTF-8 BOM detected and stripped`\n- `--exclude-pattern eliminated all input files`\n- `--files takes precedence over --fast (--fast ignored)`\n- `--files takes precedence over --fast-branch (--fast-branch ignored)`\n- `Report written to: <path>`\n\n**Impacto**: cualquier integración CI que parsee stdout con `jq` o `python -c \"import json; json.load(...)\"` falla.\n\n## Criterio de cierre\n- Los 5 mensajes anteriores salen por stderr cuando `--format=json/junit/sarif/codeclimate`.\n- Auditar el resto de notices del CLI por la misma regla.\n- stdout siempre parseable como JSON puro en modos estructurados.\n\nFuente: Bugs.md líneas 88-99.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "a04b8216-3736-431d-b745-92f4f6442fc9",
+          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+          "title": "[ALTA] BUG-6 — memoryThreshold per-job no se popula en JSON",
+          "description": "**Tests**: V33-072, V33-073\n\nAunque la config declare `memory: 200` (short form) o `memory: {warn-above: 100, fail-above: 8000}` (extended), el JSON de salida muestra `\"memoryThreshold\": null` para todos los jobs.\n\nObservado:\n```\nparallel_lint:  reserved=200  threshold=None  peak=None\nphpcs_src:      reserved=None threshold=None peak=None  // extended form ignorado\nphpstan_src:    reserved=300  threshold=None peak=None\n```\n\nSolo `memoryReserved` se popula bien para short form.\n\n## Criterio de cierre\n- `memoryThreshold` populado en JSON para short form.\n- Extended form `{warn-above, fail-above}` parseado y reflejado en `memoryThreshold` y `memoryReserved`.\n- Tests V33-072 y V33-073 pasan.\n\nFuente: Bugs.md líneas 101-112.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "10c6bc4d-f21e-42bd-80e6-037388a49b15",
+          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
+          "title": "[ALTA] BUG-7 — Sampler RSS no funciona en Linux",
+          "description": "**Tests**: V33-085, V33-088, V33-093\n\n`peakObserved=0`, `peakAtSecond=0`, `peakAttribution=[]` siempre — incluso con `--stats` y en Linux real (kernel 6.18). La tabla de `--stats` muestra `Peak Memory: -` por job y `TOTAL: 0 MB`.\n\n**Impacto**: toda la columna \"Peak Memory\" del dashboard `--stats` y los campos `memoryPeak` / `peakObserved` del JSON son inutilizables.\n\n**Nota**: `/proc/self/status` y `/proc/<pid>/status` están disponibles en este entorno; el muestreo no se está activando o no se está acumulando.\n\n## Criterio de cierre\n- `peakObserved` poblado con un valor > 0 cuando hay procesos hijos en ejecución.\n- `peakAtSecond` y `peakAttribution` poblados.\n- Dashboard `--stats` muestra Peak Memory por job y TOTAL real.\n- Verificar lectura correcta de `/proc/<pid>/status` (campo `VmRSS`).\n\nFuente: Bugs.md líneas 114-120.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "2c5a0b65-e90c-404e-975a-611ee6907151",
+      "title": "Doing",
+      "cards": [
+        {
+          "id": "3c5c384b-d839-4716-b041-6eb0e5155ada",
+          "listId": "2c5a0b65-e90c-404e-975a-611ee6907151",
+          "title": "[CRIT] BUG-1 — Cuelgue con meta-flow + --processes>=3",
+          "description": "**Test**: V33-014 · **Reproducción**: 100 % en este entorno.\n\n`flows ci-pack --processes=4` (o `=8`) cuelga indefinidamente: no produce output, no hace timeout interno, consume CPU al 99 %.\n\n```bash\ntimeout 30 php8.4 vendor/bin/githooks flows ci-pack --processes=4 \\\n  --format=json --config=config/v3.3/githooks-v33-meta-flow.php\n# → RC=124 (timeout), stdout vacío, stderr vacío\n```\n\n**Workaround**: usar `--processes<=2` con meta-flows.\n\n**Nota**: `flow qa --processes=8` (single-flow, sin meta) **sí funciona** — el bug es específico de meta-flows.\n\n## Criterio de cierre\n- `flows ci-pack --processes=4` y `=8` completan sin cuelgue.\n- Test V33-014 pasa.\n- Posible fix relacionado con BUG-4 (detección errónea de CPUs).\n\nFuente: Bugs.md líneas 29-42.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        }
+      ]
+    },
+    {
+      "id": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+      "title": "Done",
+      "cards": []
+    }
+  ],
+  "archive": {
+    "lists": [],
+    "cards": []
+  },
+  "settings": {
+    "labels": [
+      {
+        "id": "a4f628f9-64dd-4507-8031-a4a8ccc46ce6",
+        "title": "bug",
+        "color": "#eb5a46"
+      }
+    ]
+  }
+}

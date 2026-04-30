@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
+use LogicException;
 use Mockery;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
+use Wtyd\GitHooks\Execution\ThreadBudgetPlan;
 use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 
@@ -179,11 +181,51 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
 
         $plan = $allocator->allocate(5, $jobs);
 
-        // Both are uncontrollable, fixed cost = 10 > budget = 5
-        // maxParallel should still be >= 1
+        // phpstan default 4 ≤ budget 5 → unchanged.
+        // psalm default 6 > budget 5 → clamped to 5 so the pool can ever admit it
+        // (without the clamp, FifoAdmission would reject psalm forever and the
+        // flow loop would spin without progress).
         $this->assertSame(4, $plan->getAllocation('phpstan'));
-        $this->assertSame(6, $plan->getAllocation('psalm'));
+        $this->assertSame(5, $plan->getAllocation('psalm'));
         $this->assertGreaterThanOrEqual(1, $plan->getMaxParallelJobs());
+    }
+
+    /** @test */
+    function uncontrollable_default_clamped_when_exceeds_budget()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('parallel_lint', new ThreadCapability('jobs', 1)),
+            $this->makeJob('phpcs_src', new ThreadCapability('parallel', 1)),
+            $this->makeJob('phpstan_src', new ThreadCapability('_internal', 4, 1, false)),
+        ];
+
+        $plan = $allocator->allocate(2, $jobs);
+
+        // Without the clamp phpstan_src=4 with budget=2 leaves FifoAdmission
+        // permanently rejecting the queue head (cores 4 > free max 2) and
+        // FlowExecutor spins without progress.
+        $this->assertSame(2, $plan->getAllocation('phpstan_src'));
+        $this->assertGreaterThanOrEqual(1, $plan->getMaxParallelJobs());
+    }
+
+    /** @test */
+    function explicit_cores_override_clamped_to_budget()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob(
+                'phpstan_src',
+                new ThreadCapability('_internal', 1, 1, true),
+                8
+            ),
+        ];
+
+        $plan = $allocator->allocate(4, $jobs);
+
+        // cores: 8 declared but budget = 4 → clamp prevents FifoAdmission
+        // from rejecting the only job indefinitely.
+        $this->assertSame(4, $plan->getAllocation('phpstan_src'));
     }
 
     /** @test */
@@ -212,10 +254,26 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
             $this->makeJob('special', new ThreadCapability('parallel', 8, 3)),
         ];
 
-        // Budget = 2, but minimum = 3 → should still get 3 (max(min, threadsPerJob))
+        // Budget = 4, minimum = 3, threadsPerJob = floor(4/1) = 4 → max(3,4)=4. Fits.
+        $plan = $allocator->allocate(4, $jobs);
+
+        $this->assertSame(4, $plan->getAllocation('special'));
+    }
+
+    /** @test */
+    function threadable_minimum_clamped_when_exceeds_budget()
+    {
+        $allocator = new ThreadBudgetAllocator();
+        $jobs = [
+            $this->makeJob('special', new ThreadCapability('parallel', 8, 3)),
+        ];
+
+        // Budget = 2, minimum = 3 → without clamp, allocation = 3. FifoAdmission
+        // would reject 3 cores against a 2-core budget forever, deadlocking the
+        // executor. The clamp caps the allocation at the budget.
         $plan = $allocator->allocate(2, $jobs);
 
-        $this->assertSame(3, $plan->getAllocation('special'));
+        $this->assertSame(2, $plan->getAllocation('special'));
     }
 
     /** @test */
@@ -359,5 +417,123 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
         $this->assertSame(3, $plan->getAllocation('phpstan_a'));
         $this->assertSame(3, $plan->getAllocation('phpstan_b'));
         $this->assertSame(6, $plan->getAllocation('phpcs'));
+    }
+
+    // ========================================================================
+    // Family invariant: no per-job allocation may ever exceed the budget.
+    // FifoAdmission rejects forever any job with cores > free_max, which in the
+    // limit case (cores > budget) means the queue head can never be admitted
+    // and FlowExecutor deadlocks. The ThreadBudgetPlan constructor already
+    // throws LogicException on violations; these tests cover every code path
+    // where an oversized allocation could leak (override, uncontrollable
+    // default, threadable minimum, and combinations).
+    // ========================================================================
+
+    /**
+     * @test
+     * @dataProvider oversizedAllocationFamily
+     * @param array<int, array{0:string, 1:?ThreadCapability, 2:?int}> $jobSpecs
+     */
+    function no_per_job_allocation_ever_exceeds_budget(int $budget, array $jobSpecs)
+    {
+        $jobs = [];
+        foreach ($jobSpecs as [$name, $capability, $coresOverride]) {
+            $jobs[] = $this->makeJob($name, $capability, $coresOverride);
+        }
+
+        $plan = (new ThreadBudgetAllocator())->allocate($budget, $jobs);
+
+        // Invariant guaranteed by ThreadBudgetPlan; assert it explicitly so a
+        // failure reports the offending job instead of just throwing.
+        foreach ($plan->getAllocations() as $name => $cores) {
+            $this->assertLessThanOrEqual(
+                $budget,
+                $cores,
+                "Job '$name' allocated $cores cores against budget $budget — FifoAdmission would deadlock"
+            );
+            $this->assertGreaterThanOrEqual(1, $cores, "Job '$name' allocated $cores cores (must be ≥ 1)");
+        }
+        $this->assertGreaterThanOrEqual(1, $plan->getMaxParallelJobs());
+    }
+
+    /** @return iterable<string, array{0:int, 1:array<int, array{0:string, 1:?ThreadCapability, 2:?int}>}> */
+    public function oversizedAllocationFamily(): iterable
+    {
+        yield 'cores override > budget, single job' => [
+            2,
+            [['only', null, 8]],
+        ];
+
+        yield 'cores override > budget, multiple jobs' => [
+            2,
+            [['a', null, 4], ['b', null, 6]],
+        ];
+
+        yield 'uncontrollable default > budget, single job' => [
+            2,
+            [['phpstan', new ThreadCapability('_internal', 8, 1, false), null]],
+        ];
+
+        yield 'uncontrollable default > budget, multiple jobs' => [
+            2,
+            [
+                ['phpstan', new ThreadCapability('_internal', 8, 1, false), null],
+                ['psalm',   new ThreadCapability('_internal', 6, 1, false), null],
+            ],
+        ];
+
+        yield 'threadable minimum > budget' => [
+            2,
+            [['special', new ThreadCapability('parallel', 8, 5), null]],
+        ];
+
+        yield 'budget = 1 with oversized override' => [
+            1,
+            [['only', null, 16]],
+        ];
+
+        yield 'budget = 1 with oversized uncontrollable default' => [
+            1,
+            [['phpstan', new ThreadCapability('_internal', 4, 1, false), null]],
+        ];
+
+        yield 'budget = 1 with oversized threadable minimum' => [
+            1,
+            [['special', new ThreadCapability('parallel', 8, 4), null]],
+        ];
+
+        yield 'mixed: override + uncontrollable + threadable, all > budget' => [
+            2,
+            [
+                ['override',       null,                                              5],
+                ['uncontrollable', new ThreadCapability('_internal', 6, 1, false),    null],
+                ['threadable',    new ThreadCapability('parallel', 8, 4),             null],
+            ],
+        ];
+
+        yield 'cores override exactly equals budget' => [
+            4,
+            [['only', null, 4]],
+        ];
+
+        yield 'sanity: override well below budget is not clamped' => [
+            16,
+            [['only', null, 2]],
+        ];
+    }
+
+    /**
+     * @test
+     * Direct safety net — if any future producer skips the clamp, the plan
+     * constructor itself must refuse to build. This pins the contract so a
+     * regression is reported with a precise diagnostic instead of as a
+     * 100%-CPU deadlock several layers below.
+     */
+    function plan_constructor_rejects_oversized_allocation()
+    {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageMatches('/invariant violated.*allocated 4 cores.*budget is 2/');
+
+        new ThreadBudgetPlan(2, 1, ['offending_job' => 4], []);
     }
 }

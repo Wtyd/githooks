@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use LogicException;
+
 /**
  * Result of thread budget allocation: how many jobs to run in parallel
  * and how many threads each job should use.
@@ -21,9 +23,29 @@ class ThreadBudgetPlan
     /**
      * @param array<string, int> $allocations
      * @param string[] $uncontrollableJobs
+     * @throws LogicException  If any allocation exceeds the budget. FifoAdmission
+     *                         would reject such a job forever (cores > free_max
+     *                         is unsatisfiable) and the executor would deadlock.
+     *                         Producers must clamp before constructing the plan.
      */
-    public function __construct(int $maxParallelJobs, array $allocations, array $uncontrollableJobs = [])
-    {
+    public function __construct(
+        int $budget,
+        int $maxParallelJobs,
+        array $allocations,
+        array $uncontrollableJobs = []
+    ) {
+        foreach ($allocations as $jobName => $cores) {
+            if ($cores > $budget) {
+                throw new LogicException(sprintf(
+                    "ThreadBudgetPlan invariant violated: job '%s' allocated %d cores "
+                        . "but total budget is %d. FifoAdmission would reject the job forever; "
+                        . "the producer must clamp allocations to the budget.",
+                    $jobName,
+                    $cores,
+                    $budget
+                ));
+            }
+        }
         $this->maxParallelJobs = $maxParallelJobs;
         $this->allocations = $allocations;
         $this->uncontrollableJobs = $uncontrollableJobs;

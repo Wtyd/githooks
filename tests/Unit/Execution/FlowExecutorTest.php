@@ -11,6 +11,7 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
+use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\ParatestJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
@@ -316,6 +317,63 @@ class FlowExecutorTest extends TestCase
 
         $this->assertTrue($result->isSuccess());
         $this->assertCount(3, $result->getJobResults());
+    }
+
+    /**
+     * Regression: with processes=2 and a queued job declaring 4 uncontrollable
+     * cores, the pre-3.3.1 allocator recorded coresByJob=4. FifoAdmission then
+     * rejected the head forever (4 > 2 free) and FlowExecutor span at 100% CPU.
+     * The clamp in ThreadBudgetAllocator caps the cost at the budget so the job
+     * is admitted alone once the previous slots free.
+     *
+     * @test
+     */
+    public function parallel_does_not_deadlock_when_uncontrollable_default_exceeds_budget()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $heavy = new class (new JobConfiguration('heavy', 'custom', ['script' => 'echo heavy'])) extends CustomJob {
+            public function getThreadCapability(): ?ThreadCapability
+            {
+                return new ThreadCapability('_internal', 4, 1, false);
+            }
+        };
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('light_a', 'custom', ['script' => 'echo a'])),
+            new CustomJob(new JobConfiguration('light_b', 'custom', ['script' => 'echo b'])),
+            $heavy,
+        ];
+
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(false, 2));
+
+        // Belt-and-suspenders: if the deadlock returns this alarm fires
+        // before PHPUnit's wall-clock budget. The previous bug span at 100% CPU
+        // inside a no-usleep branch (running=[] && queue!=[]) so the signal
+        // would only be processed if async dispatch is enabled.
+        $async = function_exists('pcntl_async_signals') ? pcntl_async_signals(true) : false;
+        if (function_exists('pcntl_alarm')) {
+            pcntl_signal(SIGALRM, function () {
+                $this->fail('FlowExecutor deadlocked: head job with cores > budget was never admitted');
+            });
+            pcntl_alarm(15);
+        }
+
+        try {
+            $result = $executor->execute($plan);
+        } finally {
+            if (function_exists('pcntl_alarm')) {
+                pcntl_alarm(0);
+            }
+            if (function_exists('pcntl_async_signals')) {
+                pcntl_async_signals($async);
+            }
+        }
+
+        $this->assertCount(3, $result->getJobResults());
+        $names = array_map(fn($r) => $r->getJobName(), $result->getJobResults());
+        $this->assertContains('heavy', $names);
+        $this->assertTrue($result->isSuccess());
     }
 
     // ========================================================================

@@ -171,6 +171,7 @@ The output behaviour now depends on the format and the execution context. The un
 
 ### Bug Fixes
 - Fix skipped job warnings not showing orange color in terminal output.
+- Fix parallel execution deadlock when a job's reserved cores exceeded the total `processes` budget. The thread allocator now clamps both explicit `cores: N` overrides and uncontrollable tools' default workers (e.g. PHPStan reading 4 from `.neon` while `processes: 2`) to the budget, so `FifoAdmission` can always admit the queue head instead of rejecting it forever and spinning the executor at 100% CPU.
 
 ---
 
