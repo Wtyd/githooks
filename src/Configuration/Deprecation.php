@@ -29,7 +29,7 @@ final class Deprecation
         string $job,
         string $oldKey,
         string $newKey,
-        string $removalVersion = 'v4.0',
+        string $removalVersion = '4.0',
         string $kind = self::KIND_CONFIG_KEY_RENAME
     ) {
         $this->job = $job;
@@ -70,7 +70,7 @@ final class Deprecation
      */
     public function getWarningMessage(): string
     {
-        return "Deprecated: '{$this->oldKey}' is renamed to '{$this->newKey}'. Will be removed in {$this->removalVersion}.";
+        return "Deprecated: '{$this->oldKey}' is renamed to '{$this->newKey}'. Will be removed in v{$this->removalVersion}.";
     }
 
     /**

@@ -47,7 +47,7 @@ class JobConfigurationDeprecationTest extends TestCase
         $this->assertSame('phpstan-src', $deprecations[0]->getJob());
         $this->assertSame($oldKey, $deprecations[0]->getOldKey());
         $this->assertSame($newKey, $deprecations[0]->getNewKey());
-        $this->assertSame('v4.0', $deprecations[0]->getRemovalVersion());
+        $this->assertSame('4.0', $deprecations[0]->getRemovalVersion());
         $this->assertSame(Deprecation::KIND_CONFIG_KEY_RENAME, $deprecations[0]->getKind());
 
         $expectedWarning = "Deprecated: '$oldKey' is renamed to '$newKey'. Will be removed in v4.0.";

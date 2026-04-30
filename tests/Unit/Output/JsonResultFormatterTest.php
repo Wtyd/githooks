@@ -567,7 +567,7 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertSame('phpstan-src', $data['deprecations'][0]['job']);
         $this->assertSame('executablePath', $data['deprecations'][0]['oldKey']);
         $this->assertSame('executable-path', $data['deprecations'][0]['newKey']);
-        $this->assertSame('v4.0', $data['deprecations'][0]['removalVersion']);
+        $this->assertSame('4.0', $data['deprecations'][0]['removalVersion']);
         $this->assertSame('config-key-rename', $data['deprecations'][0]['kind']);
 
         $this->assertCount(3, $data['warnings']);
