@@ -384,7 +384,16 @@ class FlowExecutor
         $memoryReserveByJob = [];
         $hasReservation = false;
         foreach ($jobs as $job) {
-            $coresByJob[$job->getName()] = $this->threadAllocations[$job->getName()] ?? 1;
+            // Clamp the per-job cores cost to the absolute budget. Without this
+            // clamp, fillSequentialAllocations (taken when count(jobs) === 1 or
+            // budget === 1) writes the capability's defaultThreads verbatim —
+            // e.g. PHPStan's 4 — which can exceed the budget and deadlock
+            // FifoAdmission whenever shouldSampleMemory() forces executeParallel
+            // (REQ-022: memory-budget declared, --stats, or per-job memory).
+            // ThreadBudgetAllocator already clamps in the parallel path; this
+            // mirrors that invariant for the sequential allocations path.
+            $allocation = $this->threadAllocations[$job->getName()] ?? 1;
+            $coresByJob[$job->getName()] = max(1, min($allocation, $coresBudget));
             $reserve = $job->getMemoryReserve();
             $memoryReserveByJob[$job->getName()] = $reserve;
             if ($reserve !== null) {

@@ -83,15 +83,6 @@
           "comments": []
         },
         {
-          "id": "5afb20b3-4b3d-4de8-8ecd-08bf9c448ea4",
-          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
-          "title": "[CRIT] BUG-3 — Cuelgue con memory-budget en flows.options",
-          "description": "**Test**: V33-109 (combo time+memory) y configs custom con solo `memory-budget`.\n\nConfigs con `memory-budget` en `flows.options` cuelgan el flow incluso con un solo job y `--processes=1`.\n\n```php\n// /tmp/cfg.php\nreturn [\n  'flows' => [\n    'options' => ['processes' => 2, 'memory-budget' => ['warn-above' => 1500, 'fail-above' => 4096]],\n    'qa' => ['jobs' => ['phpstan_src']],\n  ],\n  'jobs' => [\n    'phpstan_src' => ['type' => 'phpstan', 'level' => 0, 'paths' => ['src/clean']],\n  ],\n];\n```\n\n```bash\ntimeout 15 php8.4 vendor/bin/githooks flow qa --format=json --config=/tmp/cfg.php\n# → RC=124\n```\n\n**Nota**: el config oficial `githooks-v33-memory-budget.php` (que añade `allocator: fifo`, `stats: true` y `memory: N` en cada job) **sí funciona**. Algún elemento de esa config completa evita el deadlock.\n\n## Criterio de cierre\n- Config minimal con solo `memory-budget` corre sin cuelgue.\n- Identificar qué combinación de `allocator`/`stats`/`memory` per-job evita el deadlock y arreglar la raíz.\n- Test V33-109 pasa.\n\nFuente: Bugs.md líneas 57-79.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "29ca5144-a506-4512-ad96-4a980410c15d",
           "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
           "title": "[ALTA] BUG-4 — system:info reporta CPUs sin respetar cgroups",
@@ -143,6 +134,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[CRIT] BUG-1 — Cuelgue con meta-flow + --processes>=3",
           "description": "**Test**: V33-014 · **Reproducción**: 100 % en este entorno.\n\n**Diagnóstico final** (revisado): el bug NO era específico de meta-flows. `flow qa --processes=8` con un job uncontrollable (PHPStan) también colgaba. La causa raíz es que `ProcessPool::buildAdmissionContext` usaba `$this->maxProcesses` (el slot count derivado de `getMaxParallelJobs()`) como `coresLimit`. Cuando un job uncontrollable reservaba más cores que el slot count, `coresFree` jamás alcanzaba la cantidad necesaria y `FifoAdmission` rechazaba al head para siempre → spin loop al 100 % CPU.\n\n## Fix\n- `ProcessPool::__construct` recibe ahora un parámetro adicional `coresBudget` (total cores) además de `maxProcesses` (slot count).\n- `buildAdmissionContext()` usa `$this->coresBudget` como `coresLimit`.\n- `FlowExecutor::execute` guarda el budget original antes de que `resolveThreadBudget` lo sobreescriba con el slot count y lo pasa al pool.\n- Test de regresión `admission_uses_cores_budget_not_slot_limit_for_heavy_uncontrollable_jobs` en `ProcessPoolTest`.\n\n## Verificación\n- `flows ci-pack --processes=4` completa en 0.70s ✓\n- `flow qa --processes=8` completa en 0.57s ✓\n- Test V33-014 pasa ✓\n- Suite completa: 2068/2068 ✓\n- QA completo: 8/8 ✓\n\nFuente: Bugs.md líneas 29-42.",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "5afb20b3-4b3d-4de8-8ecd-08bf9c448ea4",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[CRIT] BUG-3 — Cuelgue con memory-budget en flows.options",
+          "description": "**Test**: V33-109 (combo time+memory) y configs custom con solo `memory-budget`.\n\n**Causa raíz**: misma familia que BUG-1/BUG-2 (allocation > budget → FifoAdmission deadlock) pero por una ruta distinta no cubierta en el fix anterior.\n\nEn `FlowExecutor::resolveThreadBudget`, cuando `count($jobs) === 1` o `$processes <= 1`, NO se llama a `ThreadBudgetAllocator::allocate` (que clampa) — se va a `fillSequentialAllocations` que asigna `capability->getDefaultThreads()` puro, sin clamp al budget. PHPStan tiene `defaultThreads = 4`. Con `processes = 2` → `threadAllocations[phpstan] = 4`. Sin `shouldSampleMemory` esto era inocuo (el flow iba a `executeSequential` sin admission). Pero `memory-budget` declarado en `flows.options` activa `shouldSampleMemory()` → forza `executeParallel` → `buildProcessPool` recibe `coresByJob[phpstan] = 4` con `coresBudget = 2` → spin loop al 100 % CPU.\n\n## Fix\nClamp en `FlowExecutor::buildProcessPool`: `coresByJob[name] = max(1, min($threadAllocations[$name] ?? 1, $coresBudget))`. Garantiza el invariante `coresByJob ≤ coresBudget` en cualquier ruta del scheduler, independientemente de cómo se calcularan las allocations. Test de regresión `parallel_single_job_with_stats_does_not_deadlock_when_default_threads_exceed_budget` en `FlowExecutorTest`.\n\n## Verificación\n- Config minimal (memory-budget + 1 phpstan, sin per-job memory) corre en 0.62 s ✓\n- V33-109 (combo time+memory) corre en 0.61 s ✓\n- Suite completa: 2069/2069 ✓\n- QA completo: 8/8 ✓\n\nFuente: Bugs.md líneas 57-79.",
           "labels": [],
           "checkboxes": [],
           "comments": []

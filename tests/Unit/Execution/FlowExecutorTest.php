@@ -376,6 +376,69 @@ class FlowExecutorTest extends TestCase
         $this->assertTrue($result->isSuccess());
     }
 
+    /**
+     * Regression: a single-job flow normally goes to executeSequential, but
+     * shouldSampleMemory() forces executeParallel when memory-budget, --stats
+     * or per-job memory thresholds are declared. In that path,
+     * fillSequentialAllocations recorded the capability's defaultThreads
+     * verbatim — bypassing ThreadBudgetAllocator's clamp — so a phpstan-like
+     * job (defaultThreads=4) with processes=2 and stats enabled produced
+     * coresByJob=4 against a coresBudget=2, deadlocking FifoAdmission.
+     * The clamp in buildProcessPool guarantees coresByJob ≤ coresBudget for
+     * every code path that ends up in executeParallel.
+     *
+     * @test
+     */
+    public function parallel_single_job_with_stats_does_not_deadlock_when_default_threads_exceed_budget()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $heavy = new class (new JobConfiguration('heavy', 'custom', ['script' => 'echo heavy'])) extends CustomJob {
+            public function getThreadCapability(): ?ThreadCapability
+            {
+                return new ThreadCapability('_internal', 4, 1, false);
+            }
+        };
+
+        // stats=true → shouldSampleMemory() returns true → executeParallel
+        // even with a single job. processes=2 < default_threads=4.
+        $options = new OptionsConfiguration(
+            false,    // failFast
+            2,        // processes (cores budget)
+            null,     // mainBranch
+            'full',   // fastBranchFallback
+            '',       // executablePrefix
+            [],       // reports
+            null,     // timeBudget
+            null,     // memoryBudget
+            'fifo',   // allocator
+            true      // stats
+        );
+        $plan = new FlowPlan('test', [$heavy], $options);
+
+        $async = function_exists('pcntl_async_signals') ? pcntl_async_signals(true) : false;
+        if (function_exists('pcntl_alarm')) {
+            pcntl_signal(SIGALRM, function () {
+                $this->fail('FlowExecutor deadlocked: single job with default_threads > budget was never admitted under stats=true');
+            });
+            pcntl_alarm(15);
+        }
+
+        try {
+            $result = $executor->execute($plan);
+        } finally {
+            if (function_exists('pcntl_alarm')) {
+                pcntl_alarm(0);
+            }
+            if (function_exists('pcntl_async_signals')) {
+                pcntl_async_signals($async);
+            }
+        }
+
+        $this->assertCount(1, $result->getJobResults());
+        $this->assertTrue($result->getJobResults()[0]->isSuccess());
+    }
+
     // ========================================================================
     // Peak threads tracking
     // ========================================================================
