@@ -41,15 +41,6 @@
           "comments": []
         },
         {
-          "id": "95f75696-7043-433b-89d1-e8e709adf7cc",
-          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
-          "title": "[BAJA] BUG-12 — Deprecation warnings en stdout en lugar de stderr",
-          "description": "**Tests**: V33-095, V33-096, V33-097, V33-098\n\n`conf:check` con keys camelCase emite las líneas `Deprecated: 'X' is renamed to 'Y'. Will be removed in v4.0.` por **stdout**.\n\nEl catálogo las espera en stderr.\n\n**Nota**: la funcionalidad es correcta — semánticas idénticas, `deprecations[]` en JSON, `properties.deprecations` en SARIF. Solo está mal el canal del mensaje humano.\n\n## Criterio de cierre\n- Mensajes `Deprecated: ...` salen por stderr.\n- stdout queda limpio en `--format=json/junit/sarif`.\n- Tests de los 4 casos camelCase pasan en stderr.\n\nFuente: Bugs.md líneas 147-152.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "774adee3-9ea0-44da-af54-c1ed426eaea9",
           "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
           "title": "[BAJA] BUG-14 — Warning REQ-018 en stdout (text mode)",
@@ -152,6 +143,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[BAJA] BUG-13 — removalVersion con prefijo v",
           "description": "**Test**: V33-100\n\n`deprecations[].removalVersion` se serializa como `\"v4.0\"`; el catálogo lo describe como `\"4.0\"` (sin prefijo).\n\n## Fix\n- Default del constructor de `Deprecation` cambiado de `'v4.0'` a `'4.0'`.\n- El template del `getWarningMessage()` ahora añade el prefijo `v` para mantener el formato humano (`Will be removed in v4.0.`).\n- Tests actualizados:\n  - `JobConfigurationDeprecationTest`: `assertSame('4.0', $deprecations[0]->getRemovalVersion())`.\n  - `JsonResultFormatterTest`: `assertSame('4.0', $data['deprecations'][0]['removalVersion'])`.\n  - El mensaje humano sigue verificándose con `v4.0` (test `Will be removed in v4.0.` se mantiene).\n\n## Verificación\n- 15 tests afectados pasan (`JobConfigurationDeprecationTest`, `JsonResultFormatterTest`, `SarifResultFormatterTest`).\n- No quedan literales `'v4.0'` en `src/` ni en `tests/`.\n\nFuente: Bugs.md líneas 154-158.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "95f75696-7043-433b-89d1-e8e709adf7cc",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[BAJA] BUG-12 — Deprecation warnings en stdout en lugar de stderr",
+          "description": "**Tests**: V33-095, V33-096, V33-097, V33-098\n\n`conf:check` con keys camelCase emitía las líneas `Deprecated: 'X' is renamed to 'Y'. Will be removed in v4.0.` por **stdout**, contaminando pipelines que parsean la salida del comando.\n\n## Fix\n- Nuevo método `Printer::deprecationWarning(string $message)` que escribe a `STDERR` con el mismo formato visual que `resultWarning` (icono `⚠️ ` + amarillo).\n- `CheckConfigurationFileCommand`: itera primero `getDeprecations()` y los emite por stderr; luego itera `getWarnings()` excluyendo los mensajes ya emitidos como deprecation (mantiene la lista de duplicados con `isset` sobre un array indexado por mensaje, O(1)).\n- `ValidationResult` no se toca: deprecations[] sigue duplicando en warnings[] para que el JSON/SARIF formatter conserve los mensajes humanos en `warnings[]` además del bloque estructurado `deprecations[]`.\n\n## Verificación\n- `conf:check --config=githooks-v33-camelcase.php`: las 4 líneas `Deprecated: ...` aparecen en stderr; stdout sin mención de \"deprecat\".\n- 19 tests de `CheckConfigurationFileCommandTest` pasan sin cambios (no chequeaban el canal de salida).\n\nFuente: Bugs.md líneas 147-152.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []

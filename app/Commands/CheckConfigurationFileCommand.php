@@ -220,8 +220,19 @@ class CheckConfigurationFileCommand extends Command
             $this->table(['Job', 'Command', 'Status'], $jobRows);
         }
 
-        // Warnings
+        // Deprecations to stderr (non-payload), normal warnings to stdout.
+        // Both share the warnings[] list inside ValidationResult so JSON/SARIF
+        // consumers don't lose information; here we route by source.
+        $deprecationMessages = [];
+        foreach ($config->getValidation()->getDeprecations() as $deprecation) {
+            $message = $deprecation->getWarningMessage();
+            $deprecationMessages[$message] = true;
+            $this->printer->deprecationWarning($message);
+        }
         foreach ($config->getValidation()->getWarnings() as $warning) {
+            if (isset($deprecationMessages[$warning])) {
+                continue;
+            }
             $this->printer->resultWarning($warning);
         }
 
