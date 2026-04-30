@@ -131,17 +131,15 @@ jobs:
     - name: Testing the Aplication
       shell: bash
       run: |
-        # macOS currently surfaces 14 false-positive failures in the general
-        # `--group release` suite (custom-job exit codes report KO for
-        # /bin/true). Until the platform-specific regression is diagnosed,
-        # macOS runs only the trimmed `release-macos` group, which boots
-        # the .phar and dumps full diagnostics on the few cases that are
-        # still expected to pass on Darwin. See tests/System/Release/MacOsReleaseTest.php.
+        echo -e "\e[42m\e[30m**** Release Test Suite ****\033[0m"
+        # macos-latest reports `sh: /bin/true: No such file or directory` on
+        # custom jobs that invoke /bin/true by absolute path; the fixtures were
+        # migrated to bare `true` so the cross-OS suite is uniform. Darwin runs
+        # both groups: --group release for parity, plus --group release-macos
+        # for the per-platform regression net (see MacOsReleaseTest).
         if [[ "${{ runner.os }}" == "macOS" ]]; then
-          echo -e "\e[42m\e[30m**** Release Test Suite (macOS subset) ****\033[0m"
-          vendor/bin/phpunit --group release-macos
+          vendor/bin/phpunit --group release,release-macos
         else
-          echo -e "\e[42m\e[30m**** Release Test Suite ****\033[0m"
           vendor/bin/phpunit --group release
         fi
 

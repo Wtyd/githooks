@@ -68,7 +68,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['pass_job', 'excluded_job']]])
             ->setV3Jobs([
-                'pass_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'pass_job' => ['type' => 'custom', 'script' => 'true'],
                 'excluded_job' => ['type' => 'custom', 'script' => '/bin/false'],
             ])
             ->buildInFileSystem();
@@ -86,9 +86,9 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['ok_first', 'fail_mid', 'should_skip']]])
             ->setV3Jobs([
-                'ok_first' => ['type' => 'custom', 'script' => '/bin/true'],
+                'ok_first' => ['type' => 'custom', 'script' => 'true'],
                 'fail_mid' => ['type' => 'custom', 'script' => '/bin/false'],
-                'should_skip' => ['type' => 'custom', 'script' => '/bin/true'],
+                'should_skip' => ['type' => 'custom', 'script' => 'true'],
             ])
             ->buildInFileSystem();
 
@@ -105,8 +105,8 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['job1', 'job2']]])
             ->setV3Jobs([
-                'job1' => ['type' => 'custom', 'script' => '/bin/true'],
-                'job2' => ['type' => 'custom', 'script' => '/bin/true'],
+                'job1' => ['type' => 'custom', 'script' => 'true'],
+                'job2' => ['type' => 'custom', 'script' => 'true'],
             ])
             ->buildInFileSystem();
 
@@ -266,7 +266,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['pass_job', 'fail_job']]])
             ->setV3Jobs([
-                'pass_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'pass_job' => ['type' => 'custom', 'script' => 'true'],
                 'fail_job' => ['type' => 'custom', 'script' => '/bin/false'],
             ])
             ->buildInFileSystem();
@@ -284,7 +284,7 @@ class FlowCommandTest extends SystemTestCase
             ->setV3Jobs([
                 'phpstan_src' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/true',
+                    'executablePath' => 'true',
                     'paths' => ['src'],
                     'accelerable' => true,
                 ],
@@ -307,7 +307,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
             ->setV3Jobs([
-                'phpstan_src' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+                'phpstan_src' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->buildInFileSystem();
 
@@ -330,7 +330,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
             ->setV3Jobs([
-                'phpstan_src' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+                'phpstan_src' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->buildInFileSystem();
 
@@ -354,7 +354,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
             ->setV3Jobs([
-                'phpstan_src' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+                'phpstan_src' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->buildInFileSystem();
 
@@ -426,7 +426,7 @@ class FlowCommandTest extends SystemTestCase
                     ],
                 ],
             ])
-            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => '/bin/true']])
+            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => 'true']])
             ->buildInFileSystem();
 
         try {
@@ -459,7 +459,7 @@ class FlowCommandTest extends SystemTestCase
                     ],
                 ],
             ])
-            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => '/bin/true']])
+            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => 'true']])
             ->buildInFileSystem();
 
         try {

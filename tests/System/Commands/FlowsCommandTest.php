@@ -35,10 +35,10 @@ class FlowsCommandTest extends SystemTestCase
                 ],
             ])
             ->setV3Jobs([
-                'job_a' => ['type' => 'custom', 'script' => '/bin/true'],
-                'job_b' => ['type' => 'custom', 'script' => '/bin/true'],
-                'job_c' => ['type' => 'custom', 'script' => '/bin/true'],
-                'job_d' => ['type' => 'custom', 'script' => '/bin/true'],
+                'job_a' => ['type' => 'custom', 'script' => 'true'],
+                'job_b' => ['type' => 'custom', 'script' => 'true'],
+                'job_c' => ['type' => 'custom', 'script' => 'true'],
+                'job_d' => ['type' => 'custom', 'script' => 'true'],
             ])
             ->buildInFileSystem();
     }

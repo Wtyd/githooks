@@ -39,7 +39,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
             ->setV3Jobs([
-                'ok_job' => ['type' => 'custom', 'script' => '/bin/true', 'paths' => ['src']],
+                'ok_job' => ['type' => 'custom', 'script' => 'true', 'paths' => ['src']],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -76,7 +76,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
             ->setV3Jobs([
-                'ok_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'ok_job' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -97,7 +97,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
             ->setV3Jobs([
-                'ok_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'ok_job' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -121,7 +121,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
             ->setV3Jobs([
-                'ok_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'ok_job' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -144,7 +144,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
             ->setV3Jobs([
-                'ok_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'ok_job' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -168,7 +168,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
             ->setV3Jobs([
-                'ok_job' => ['type' => 'custom', 'script' => '/bin/true'],
+                'ok_job' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -299,7 +299,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
     {
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
-            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => '/bin/true']]);
+            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => 'true']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $cmd = "$this->githooks flow qa --format=json --config=$this->configPath 2>/dev/null";
@@ -396,7 +396,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job', 'fail_job', 'never_job']]])
             ->setV3Jobs([
-                'ok_job'    => ['type' => 'custom', 'script' => '/bin/true'],
+                'ok_job'    => ['type' => 'custom', 'script' => 'true'],
                 'fail_job'  => ['type' => 'custom', 'script' => 'exit 1'],
                 'never_job' => ['type' => 'custom', 'script' => 'echo never'],
             ]);
@@ -451,7 +451,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
     {
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
-            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => '/bin/true']]);
+            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => 'true']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $stderrPath = self::TESTS_PATH . '/stderr.log';
@@ -471,7 +471,7 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
     {
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
-            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => '/bin/true']]);
+            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => 'true']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $targets = [
@@ -596,9 +596,9 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['a', 'b', 'c']]])
             ->setV3Jobs([
-                'a' => ['type' => 'custom', 'script' => '/bin/true'],
-                'b' => ['type' => 'custom', 'script' => '/bin/true'],
-                'c' => ['type' => 'custom', 'script' => '/bin/true'],
+                'a' => ['type' => 'custom', 'script' => 'true'],
+                'b' => ['type' => 'custom', 'script' => 'true'],
+                'c' => ['type' => 'custom', 'script' => 'true'],
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 

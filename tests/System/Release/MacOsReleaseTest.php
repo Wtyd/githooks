@@ -7,23 +7,21 @@ namespace Tests\System\Release;
 use Tests\ReleaseTestCase;
 
 /**
- * macOS-only release tests for the compiled .phar. The general release
- * suite (`@group release`) currently surfaces 14 false-positive failures
- * on macOS-latest because of an exit-code regression in custom jobs that
- * is platform-specific. Until that is diagnosed and fixed, the macOS
- * runner runs only this trimmed suite, which:
+ * macOS-only release tests for the compiled .phar.
  *
- *   1. Verifies the .phar boots and answers basic introspection commands.
- *   2. Runs the smallest possible end-to-end flow and dumps every piece
- *      of state on failure (exit code, stdout, stderr and the parsed
- *      JSON job exitCode) so the next CI failure is self-diagnosing.
- *   3. Exercises parallel-mode (--processes=2) with the same diagnostic
- *      payload, since a few of the failing tests only show the regression
- *      under the parallel path.
+ * The general @group release suite runs cross-OS via the matrix in
+ * release.yml; this trimmed group is a regression net specifically for
+ * Darwin: it boots the .phar, runs the smallest possible end-to-end
+ * sequential and parallel flows, and dumps stdout/stderr/parsed JSON
+ * onto stderr if any of them fail so the next CI run is self-diagnosing
+ * without a second pass.
  *
- * The tests are tagged `@group release-macos` and are also skipped when
- * the runner is not Darwin so they remain harmless when invoked locally
- * on Linux during ordinary development.
+ * History: this group was introduced when macos-latest started reporting
+ * exit 127 ("sh: /bin/true: No such file or directory") for custom jobs
+ * that invoked `/bin/true` by absolute path. The fixture scripts were
+ * migrated to bare `true` (shell built-in / PATH lookup) which works on
+ * every supported runner; these tests stay as a permanent guard against
+ * future Darwin-only regressions in the same code paths.
  *
  * @group release-macos
  */
@@ -46,14 +44,11 @@ class MacOsReleaseTest extends ReleaseTestCase
     /**
      * @test
      * Smoke: the compiled .phar boots on macOS and answers the three
-     * stateless introspection commands without touching any flow code
-     * path. If this fails, the build itself is broken on Darwin and any
-     * other diagnostic is moot.
+     * stateless introspection commands. If this fails, the build is
+     * broken at the binary level and any other diagnostic is moot.
      */
     public function phar_boots_and_responds_to_introspection_commands_on_macos(): void
     {
-        $version = (int) shell_exec("$this->githooks --version");
-        // --version exit code is 0; we just want a non-empty string back.
         $versionStr = (string) shell_exec("$this->githooks --version 2>&1");
         $this->assertNotSame('', trim($versionStr), '--version produced empty output');
         $this->assertStringContainsString('GitHooks', $versionStr);
@@ -67,13 +62,12 @@ class MacOsReleaseTest extends ReleaseTestCase
 
     /**
      * @test
-     * Sequential flow with a single custom job that runs `/bin/true`. The
+     * Sequential flow with a single custom job that runs `true`. The
      * expected exit code is 0; any deviation prints the full diagnostic
      * payload (stdout, stderr, parsed JSON, the per-job exitCode) into
-     * stderr so the CI run is self-explanatory. This is the macOS
-     * counterpart of FlowReleaseTest::it_executes_flow_with_all_jobs_passing.
+     * stderr so the CI run is self-explanatory.
      */
-    public function sequential_flow_with_bin_true_exits_zero_on_macos(): void
+    public function sequential_flow_with_true_script_exits_zero_on_macos(): void
     {
         file_put_contents(
             $this->configPath,
@@ -97,7 +91,7 @@ class MacOsReleaseTest extends ReleaseTestCase
             $this->dumpDiagnostic('sequential', $exitCode, $stdout, $stderr);
         }
 
-        $this->assertSame(0, $exitCode, 'sequential /bin/true must exit 0 on macOS');
+        $this->assertSame(0, $exitCode, "sequential 'true' script must exit 0 on macOS");
 
         $decoded = json_decode($stdout, true);
         $this->assertIsArray($decoded, 'stdout was not parseable JSON: ' . $stdout);
@@ -114,20 +108,20 @@ class MacOsReleaseTest extends ReleaseTestCase
 
     /**
      * @test
-     * Parallel flow with three custom jobs running `/bin/true` under
+     * Parallel flow with three custom jobs running `true` under
      * --processes=2. Same diagnostic strategy as the sequential test;
-     * targets the path covered by V32FeaturesReleaseTest::dashboard_*
-     * and the FlowReleaseTest cases that go through `executeParallel()`.
+     * targets the executeParallel() path that drives the dashboard, the
+     * memory handler instantiation and the pool admission cycle.
      */
-    public function parallel_flow_with_bin_true_exits_zero_on_macos(): void
+    public function parallel_flow_with_true_script_exits_zero_on_macos(): void
     {
         $this->configurationFileBuilder
             ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 2])
             ->setV3Flows(['qa' => ['jobs' => ['a', 'b', 'c']]])
             ->setV3Jobs([
-                'a' => ['type' => 'custom', 'script' => '/bin/true'],
-                'b' => ['type' => 'custom', 'script' => '/bin/true'],
-                'c' => ['type' => 'custom', 'script' => '/bin/true'],
+                'a' => ['type' => 'custom', 'script' => 'true'],
+                'b' => ['type' => 'custom', 'script' => 'true'],
+                'c' => ['type' => 'custom', 'script' => 'true'],
             ]);
         file_put_contents(
             $this->configPath,
@@ -149,7 +143,7 @@ class MacOsReleaseTest extends ReleaseTestCase
             $this->dumpDiagnostic('parallel', $exitCode, $stdout, $stderr);
         }
 
-        $this->assertSame(0, $exitCode, 'parallel /bin/true must exit 0 on macOS');
+        $this->assertSame(0, $exitCode, "parallel 'true' script must exit 0 on macOS");
 
         $decoded = json_decode($stdout, true);
         $this->assertIsArray($decoded);

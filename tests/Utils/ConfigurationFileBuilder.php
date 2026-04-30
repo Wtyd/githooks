@@ -491,11 +491,11 @@ class ConfigurationFileBuilder
         $this->v3Jobs = [
             'phpcs_src' => [
                 'type' => 'custom',
-                'script' => '/bin/true',
+                'script' => 'true',
             ],
             'phpstan_src' => [
                 'type' => 'custom',
-                'script' => '/bin/true',
+                'script' => 'true',
             ],
         ];
 

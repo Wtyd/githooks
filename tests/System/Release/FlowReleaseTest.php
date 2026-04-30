@@ -76,7 +76,7 @@ class FlowReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
             ->setV3Jobs([
-                'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_job' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -155,7 +155,9 @@ class FlowReleaseTest extends ReleaseTestCase
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
-        $this->assertStringContainsString('/bin/true', $output);
+        // 5-space indent matches the dry-run renderer; tighter than a bare
+        // 'true' substring (which can appear in headers like fail-fast=true).
+        $this->assertStringContainsString("     true\n", $output);
         $this->assertStringContainsString('0ms', $output);
     }
 
@@ -166,8 +168,8 @@ class FlowReleaseTest extends ReleaseTestCase
             ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 2])
             ->setV3Flows(['qa' => ['jobs' => ['job_a', 'job_b']]])
             ->setV3Jobs([
-                'job_a' => ['type' => 'custom', 'script' => '/bin/true'],
-                'job_b' => ['type' => 'custom', 'script' => '/bin/true'],
+                'job_a' => ['type' => 'custom', 'script' => 'true'],
+                'job_b' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -184,8 +186,8 @@ class FlowReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['job_a', 'job_b']]])
             ->setV3Jobs([
-                'job_a' => ['type' => 'custom', 'script' => '/bin/true'],
-                'job_b' => ['type' => 'custom', 'script' => '/bin/true'],
+                'job_a' => ['type' => 'custom', 'script' => 'true'],
+                'job_b' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -318,7 +320,7 @@ class FlowReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['check']]])
             ->setV3Jobs([
-                'check' => ['type' => 'custom', 'script' => '/bin/true'],
+                'check' => ['type' => 'custom', 'script' => 'true'],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -337,7 +339,7 @@ class FlowReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'lint_job' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/true',
+                    'executablePath' => 'true',
                     'paths' => ['nonexistent_test_path_xyz'],
                     'accelerable' => true,
                 ],

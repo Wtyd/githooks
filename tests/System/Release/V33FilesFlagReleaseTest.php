@@ -30,7 +30,7 @@ class V33FilesFlagReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'lint_src' => [
                     'type'        => 'custom',
-                    'script'      => '/bin/true',
+                    'script'      => 'true',
                     'paths'       => [self::TESTS_PATH . '/src'],
                     'accelerable' => true,
                 ],

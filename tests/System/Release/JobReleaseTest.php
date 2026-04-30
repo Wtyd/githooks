@@ -42,7 +42,11 @@ class JobReleaseTest extends ReleaseTestCase
         passthru("$this->githooks job phpcs_src --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString('/bin/true', $this->getActualOutput());
+        // The dry-run renderer indents the command with 5 leading spaces; the
+        // exact match keeps the assert tight enough to discriminate the
+        // generated `true` script from any other 'true' substring that may
+        // appear in headers / settings (e.g. fail-fast=true).
+        $this->assertStringContainsString("     true\n", $this->getActualOutput());
     }
 
     /** @test */
@@ -64,7 +68,7 @@ class JobReleaseTest extends ReleaseTestCase
     {
         $this->configurationFileBuilder
             ->setV3Jobs([
-                'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_job' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]]);
 
@@ -81,7 +85,7 @@ class JobReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
             ->setV3Jobs([
-                'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_job' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
