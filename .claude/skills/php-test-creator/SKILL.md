@@ -43,6 +43,143 @@ Si aparece un fichero con el nombre pero **con distinta capitalización** (`PhpS
 
 Aplicar las cuatro listas de comprobación siguientes al código que se va a testear. No escribir el fichero de tests hasta haber enumerado los casos.
 
+## Diseño de tests por factores (estrategia)
+
+**Esto va primero. Antes de elegir asserts, antes de pensar en mocks, antes de escribir el método de test.**
+
+Los tests "un escenario, un test" dejan clases de entrada adversarias sin cubrir. La cobertura de líneas y la MSI de Infection pueden ser altísimas mientras un invariante crítico se viola en una ruta jamás testeada con valores patógenos. Caso real en este repo: el invariante `coresByJob[job] ≤ coresBudget` se rompió por **tres rutas** distintas en commits sucesivos (BUG-1, BUG-2, BUG-3) porque ningún test usaba `cost > budget` — todos usaban `coresByJob[*] = 1`.
+
+La técnica es de los años 70. Aplicarla en este orden:
+
+### 1. Identificar factores
+
+Un **factor** es una variable de entrada o estado cuyo cambio puede producir un output observable distinto. NO es un dato de prueba; es una dimensión del input space.
+
+Pregúntate: para cada bifurcación del código (`if`, `??`, `?:`, ternario, guard, `match`/`switch`), ¿qué variable está siendo comparada y contra qué? Cada lado de la comparación puede ser un factor. Cada flag CLI que cambia un branch es un factor. Cada interacción `A vs B` (`cost vs budget`, `peak vs threshold`, `cwd vs path-pattern`) es un factor.
+
+### 2. Enumerar clases de equivalencia por factor
+
+Para cada factor, partir el dominio en clases tales que cualquier valor de la misma clase produce el mismo comportamiento. Las clases típicas:
+
+- **Comparaciones** (`a vs b`): `<`, `==`, `>` (3 clases mínimo).
+- **Cardinales**: `0`, `1`, `>1` (porque `foreach` con 1 elemento no detecta `continue→break`).
+- **Nulables**: `null`, `valor presente`.
+- **Flags / enums**: cada valor del enum es su propia clase.
+- **Strings**: `""`, `"contenido normal"`, `"con caracteres especiales/whitespace/CRLF/BOM"` cuando el código parsea texto.
+
+### 3. Análisis de Valores Límite (AVL) por clase
+
+Para cada clase, los valores que más mutantes matan están en la **frontera** entre clases:
+
+- Comparación `cost ≤ budget`: probar `cost = budget - 1`, `cost = budget`, `cost = budget + 1`.
+- `count > 0`: probar `0`, `1`.
+- `length >= MIN`: probar `MIN - 1`, `MIN`, `MIN + 1`.
+
+Una clase no testeada con su frontera es una invitación a que un mutante `<` → `<=` escape.
+
+### 4. Decision table o pairwise
+
+**Cuando los factores son ≤ 3**, escribe la decision table completa. Cada fila es una combinación; cada columna es un factor; la última columna es el output esperado. El `@dataProvider` materializa la tabla.
+
+Ejemplo real (`AdmissionContext::fits()`):
+
+| `cost ≤ coresFree` | `memoryFree === null` | `mem ≤ memoryFree` | `fits()` |
+|---|---|---|---|
+| F | * | * | F |
+| T | T | * | T |
+| T | F | F | F |
+| T | F | T | T |
+
+Cuatro filas. Tres asserts cada una. 12 asserts cubren el invariante para siempre.
+
+**Cuando los factores son > 3**, el producto cartesiano explota. Aplicar **pairwise (all-pairs)**: cubrir todas las **parejas** de valores en lugar de todas las combinaciones. Reduce 648 → ~20-25 casos garantizando que cada par aparece junto en ≥ 1 test.
+
+Generador recomendado (offline, sin instalar nada nuevo): tabla manual usando el algoritmo IPOG. Si la matriz es grande, [PICT de Microsoft](https://github.com/microsoft/pict) genera pairwise desde un fichero de modelo. Documentar el modelo en `tests/Unit/<Component>/factors.md` para que el siguiente que toque el componente herede la tabla.
+
+### 5. Materializar como `@dataProvider`
+
+Cada fila de la tabla → entrada del provider. Nombrar claves del provider con la clase que prueban (`'cost > budget'`, `'cost == budget'`), no con el escenario (`'phpstan with processes 2'`). Así el test dice qué clase cubre.
+
+```php
+/**
+ * @test
+ * @dataProvider admissionFitsCases
+ */
+function admission_fits_respects_decision_table($coresFree, $cost, $memFree, $memReserve, bool $expected)
+{
+    $ctx = new AdmissionContext($coresFree, $memFree, ['j' => $cost], ['j' => $memReserve]);
+    $job = $this->makeJob('j');
+    $this->assertSame($expected, $ctx->fits($job));
+}
+
+public function admissionFitsCases(): array
+{
+    return [
+        // coresFree, cost, memFree, memReserve, expected
+        'cost > coresFree (cores axis blocks)'              => [2, 4, null, 0, false],
+        'cost == coresFree (boundary, fits)'                => [2, 2, null, 0, true],
+        'cost < coresFree (cores axis fits, 1D)'            => [4, 2, null, 0, true],
+        'memory unavailable, cost ok (1D mode)'             => [4, 1, null, 999, true],
+        'memory available, mem > memFree (memory blocks)'   => [4, 1, 100, 200, false],
+        'memory available, mem == memFree (boundary, fits)' => [4, 1, 200, 200, true],
+        'memory available, mem < memFree (fits)'            => [4, 1, 200, 100, true],
+    ];
+}
+```
+
+### 6. Plantilla obligatoria a rellenar antes de tocar el código
+
+```
+COMPONENTE: <Class::method>
+INVARIANTE(S): <expresión booleana que el método garantiza>
+
+| Factor | Clases de equivalencia | Valores AVL |
+|---|---|---|
+| <factor 1> | <c1>, <c2>, <c3> | <v1>, <v2>, <v3> |
+| <factor 2> | ... | ... |
+
+DECISION TABLE / PAIRWISE:
+| <factor 1> | <factor 2> | ... | <output> |
+|---|---|---|---|
+...
+
+CLASE PATÓGENA IDENTIFICADA: <la fila que rompe el invariante si no hay clamp/guard>
+COBERTURA EN TESTS EXISTENTES: <qué filas ya están testeadas, cuáles no>
+```
+
+### Anti-patrón: "valor inocuo común"
+
+`coresByJob[*] = 1` en 24 tests del proyecto. Cuando un parámetro toma el **mismo valor "fácil"** en todas las filas del provider, ese parámetro **no está siendo testeado** — está fijado. Su clase patógena no aparece. La presencia del parámetro es decorativa.
+
+Señales de alarma:
+
+- El parámetro aparece en la firma pero todos los tests le pasan el mismo valor.
+- Los providers nombran sus filas por escenario (`'three jobs config'`) en lugar de por clase (`'cost > budget'`).
+- Cobertura de líneas alta + ningún test con `>`, `>=`, `==` en la frontera del parámetro.
+
+### Cuándo aplicar este capítulo
+
+Obligatorio cuando el componente bajo test:
+
+- Tiene varios factores interactuando (≥ 2 ramas con condiciones que cruzan variables distintas).
+- Es un **scheduler / admission / queue** (concurrencia).
+- Es un **parser / validador / resolver** con guards compuestos (`!is_array || !isset || ...`).
+- Es un **matcher** de patrones contra contexto (paths, branches, flags).
+- Es un **merger de options** con orígenes múltiples (CLI, config, defaults, per-flow, per-job).
+
+Para getters triviales y data classes pasivas, basta con el flujo "Paso 2" estándar.
+
+### Componentes en este repo con tabla de factores documentada
+
+A medida que se rellenen, listar aquí. La tabla viene en `tests/Unit/<Path>/factors.md`:
+
+- **`tests/Unit/Execution/factors.md`** — admission, scheduler, thread budget allocator. (Pendiente — añadir cuando se toque cada componente.)
+- **`tests/Unit/Configuration/factors.md`** — parsers de config, validadores. (Pendiente.)
+- **`tests/Unit/Execution/factors-input-files.md`** — resolver `--files`/`--files-from`/`--exclude-pattern`/`--fast`. (Pendiente.)
+- **`tests/Unit/Hooks/factors-conditions.md`** — matcher de `only-on`/`exclude-on`/`only-files`/`exclude-files`. (Pendiente.)
+
+Cualquier bug crítico (CRIT/ALTA) que se cierre tocando uno de estos componentes debe rellenar el `factors.md` correspondiente en el mismo commit. El siguiente que toque el componente hereda la tabla y la extiende, no la reinventa.
+
 ## Principios de asserts fuertes
 
 Un test que ejecuta código sin asserts discriminativos es casi equivalente a no tenerlo: el código queda cubierto en líneas pero no en comportamiento.
@@ -414,6 +551,16 @@ Los ejemplos completos con imports y estructura están en las referencias:
 Leer la referencia antes de escribir el primer test del tipo correspondiente.
 
 ## Checklist de verificación (usar al final)
+
+### Diseño por factores (CRÍTICO si el componente lo requiere — ver "Cuándo aplicar")
+- [ ] Tabla de factores rellenada **antes** de escribir el primer test (no a posteriori)
+- [ ] Cada factor tiene clases de equivalencia explícitas
+- [ ] Valores AVL en cada frontera de comparación (`<`, `<=`, `==`, `>=`, `>`)
+- [ ] Decision table completa (factores ≤ 3) o pairwise (factores > 3)
+- [ ] **Clase patógena del invariante** identificada y cubierta — la fila que rompe el contrato si falta el clamp/guard
+- [ ] `@dataProvider` materializa la tabla; claves nombradas por **clase**, no por escenario
+- [ ] Sin "valor inocuo común" en parámetros del provider (mismo valor en todas las filas = parámetro no testeado)
+- [ ] `factors.md` actualizado en el directorio del componente
 
 ### Estructura
 - [ ] Tests en directorio correcto (`tests/Unit/`, `tests/System/Commands/`, etc.)

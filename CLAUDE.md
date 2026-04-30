@@ -14,20 +14,24 @@ Responde siempre en castellano (español de España).
 
 1. **Verificar rama:** Asegúrate de estar en una rama de tarea con formato `gh-{ID}` (ej: `gh-42`). Si estás en `master`, pregunta al usuario antes de continuar.
 2. **Leer antes de escribir:** No propongas cambios en código que no hayas leído.
+3. **Tabla de factores (estrategia de tests):** Si la tarea toca un componente con varios factores interactuando — scheduler/admission, parsers de config con guards compuestos, resolvers de input files, matchers de condiciones, validadores, mergers de options — redacta la tabla de factores **antes** de escribir código o tests. Identifica factores con poder de cambiar el output, sus clases de equivalencia, valores en frontera (AVL), y la decision table o el pairwise mínimo. Sin esto, los tests acaban siendo "un escenario, un test" y dejan clases adversarias sin cubrir. Ver `.claude/skills/php-test-creator/SKILL.md` capítulo **"Diseño de tests por factores"**.
 
 ### Tareas grandes (nueva feature, nueva tool, refactor)
 
 1. **Analizar** — Leer los ficheros involucrados, identificar qué tipo de tarea es y qué skills aplican.
-2. **Resolver dudas** — Si hay cualquier ambigüedad sobre el alcance, los casos de uso o el comportamiento esperado, preguntar al usuario **antes** de entrar en modo plan. No asumir.
-3. **Planificar** — Entrar en modo plan (`/plan`). El plan debe incluir un apartado **"Qué y por qué"** que explique qué se va a hacer y la justificación de cada decisión relevante. Listar ficheros a crear/modificar, explicar enfoque y trade-offs. No escribir código.
-4. **Validar** — Esperar confirmación del usuario antes de ejecutar.
-5. **Ejecutar** — Implementar paso a paso, siguiendo la skill correspondiente.
-6. **Verificar** — Ejecutar los checks automáticamente (ver sección "Verificación").
-7. **Reportar** — Resumen de ficheros creados/modificados y estado de los checks.
+2. **Tabla de factores** — Si el cambio toca un componente listado en el punto 3 de "Antes de empezar", redactar la tabla antes del plan. Incluirla literalmente en el documento de plan.
+3. **Resolver dudas** — Si hay cualquier ambigüedad sobre el alcance, los casos de uso o el comportamiento esperado, preguntar al usuario **antes** de entrar en modo plan. No asumir.
+4. **Planificar** — Entrar en modo plan (`/plan`). El plan debe incluir un apartado **"Qué y por qué"** que explique qué se va a hacer y la justificación de cada decisión relevante. Listar ficheros a crear/modificar, explicar enfoque y trade-offs. No escribir código.
+5. **Validar** — Esperar confirmación del usuario antes de ejecutar.
+6. **Ejecutar** — Implementar paso a paso, siguiendo la skill correspondiente.
+7. **Verificar** — Ejecutar los checks automáticamente (ver sección "Verificación").
+8. **Reportar** — Resumen de ficheros creados/modificados y estado de los checks.
 
 ### Tareas pequeñas (bug fix, cambio menor)
 
-Analizar → Ejecutar → Verificar. Sin modo plan ni validación previa.
+Analizar → (Tabla de factores si aplica) → Ejecutar → Verificar. Sin modo plan ni validación previa.
+
+**Bug fix con tabla de factores obligatoria** cuando el bug es del tipo "deadlock / race / interacción de flags / guard que no protege todos los caminos". En esos casos, el test que cierra el bug debe ser un `@dataProvider` que cubra **toda la decision table** o el pairwise del componente, no solo el escenario que lo disparó. Tests "un escenario, un fix" en estos componentes son la causa probada de que el mismo invariante se re-rompa por otra ruta semanas después.
 
 ### Verificación (siempre, al terminar)
 
@@ -35,10 +39,11 @@ El orden de verificación depende del contexto:
 
 | Contexto | Orden |
 |---|---|
-| **Feature nueva** | Código → QA sobre `src/` → Tests → QA completo |
-| **Añadir tests** | Tests hasta que pasen → QA completo al final |
-| **Bug fix** | Fix → Test que reproduzca → QA completo |
-| **Refactor** | QA + Tests antes (baseline) → Refactor → QA + Tests después |
+| **Feature nueva** | Tabla de factores → Código → QA sobre `src/` → Tests parametrizados que cubren la tabla → QA completo |
+| **Añadir tests** | Tabla de factores del componente → Tests hasta que pasen → QA completo al final |
+| **Bug fix simple** | Fix → Test que reproduzca → QA completo |
+| **Bug fix de invariante / interacción** (deadlock, race, guard, flags combinados) | Tabla de factores con la clase patógena → Test parametrizado que cubre la tabla → Fix → QA completo |
+| **Refactor** | Tabla de factores del componente → QA + Tests antes (baseline) → Refactor → QA + Tests después |
 
 ```bash
 # Tests (usar php7.4 por defecto)
