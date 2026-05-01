@@ -235,11 +235,12 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     * Anchors CON-007 of spec-design-files-flag.md: declaring `files` or
-     * `files-from` as a static config key produces a warning. The flags are
-     * exclusively CLI; no implicit acceptance via config.
+     * Anchors CON-007 of spec-design-files-flag.md (revised by BUG-9):
+     * declaring `files`, `files-from` or `exclude-pattern` as a static job
+     * key is a hard error, not a warning. The flags are exclusively CLI
+     * and baking volatile input into a job is treated as a misconfiguration.
      */
-    public function it_warns_when_job_declares_cli_only_files_keys_in_config()
+    public function it_errors_when_job_declares_cli_only_files_keys_in_config()
     {
         $result = new ValidationResult();
         JobConfiguration::fromArray('phpstan_src', [
@@ -249,9 +250,10 @@ class JobConfigurationTest extends TestCase
             'files-from'  => 'changed.txt',
         ], $this->registry, $result, new JobRegistry());
 
-        $warnings = implode("\n", $result->getWarnings());
-        $this->assertStringContainsString("unknown key 'files'", $warnings);
-        $this->assertStringContainsString("unknown key 'files-from'", $warnings);
+        $this->assertTrue($result->hasErrors());
+        $errors = implode("\n", $result->getErrors());
+        $this->assertStringContainsString("Job 'phpstan_src': key 'files' is CLI-only", $errors);
+        $this->assertStringContainsString("Job 'phpstan_src': key 'files-from' is CLI-only", $errors);
     }
 
     /** @test */

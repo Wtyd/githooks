@@ -150,7 +150,19 @@ class OptionsConfiguration
             'allocator',
             'stats',
         ];
+        // CLI-only keys: their presence in flow.options is a hard error.
+        // 'files' / 'files-from' / 'exclude-pattern' are runtime selection
+        // flags driven by --files / --files-from / --exclude-pattern; declaring
+        // them in config would baking volatile input into the persistent flow.
+        $cliOnlyKeys = ['files', 'files-from', 'exclude-pattern'];
         foreach (array_keys($raw) as $key) {
+            if (in_array($key, $cliOnlyKeys, true)) {
+                $result->addError(
+                    "Option '$key' is CLI-only and cannot be declared in flow.options. "
+                    . "Use --$key on the command line instead."
+                );
+                continue;
+            }
             if (!in_array($key, $knownKeys, true)) {
                 $result->addWarning("Unknown option '$key'. It will be ignored.");
             }

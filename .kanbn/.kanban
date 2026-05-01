@@ -5,15 +5,6 @@
       "title": "Backlog",
       "cards": [
         {
-          "id": "ec00318c-4225-47f3-a66e-f1f359ea835b",
-          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
-          "title": "[MED] BUG-9 — conf:check no rechaza files / files-from en config",
-          "description": "**Tests**: V33-043, V33-044\n\n`conf:check` con `files` en `flow.options` o `files-from` en un job solo emite warning y sale con **exit 0**:\n- `Unknown option 'files'. It will be ignored.`\n- `unknown key 'files-from' for type 'phpstan'`\n\nEl catálogo dice que estas keys son **CLI-only** y deben dar **exit 1**.\n\n## Criterio de cierre\n- `conf:check` devuelve exit 1 cuando aparece `files` en `flow.options`.\n- `conf:check` devuelve exit 1 cuando aparece `files-from` en cualquier job.\n- Mensaje de error explicativo (CLI-only, no permitidas en config).\n\nFuente: Bugs.md líneas 128-132.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "de209e2e-9db5-486d-8866-a9b32c587741",
           "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
           "title": "[MED] BUG-10 — conf:check no rechaza time-budget dentro de un job",
@@ -152,6 +143,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[MED] BUG-8 — --exclude-pattern que elimina todo da exit 1",
           "description": "**Test**: V33-038\n\n`flow qa --files=src/clean --exclude-pattern='**/*.php'` (todo excluido) salía con **exit 1** y mensaje `--exclude-pattern eliminated all input files`. El catálogo espera **exit 0 con jobs skipped**.\n\n## Tabla de factores\n\n| Factor | Clases | Comportamiento esperado |\n|---|---|---|\n| Lista tras exclude | `>0`, `==0` | `>0`: ejecuta normal · `==0`: jobs accelerable skipped |\n| Hay accelerables en flow | sí, no | irrelevante |\n| Hay non-accelerables en flow | sí, no | non-accelerables corren con paths originales |\n| Exit | 0 si nada falla | 1 si algún non-accelerable falla |\n\nClase patógena anterior: `lista tras exclude == 0` lanzaba excepción → exit 1 sistemático, sin posibilidad de continuar.\n\n## Fix\n- `InputFilesResolver::resolve()`: eliminado el `throw InputFilesException::excludeEliminatedAll()`. Ahora devuelve la `InputFilesResolution` con `kept=[]` (ya soportado por la clase).\n- `FlowPreparer::filterJobForMode()` ya skipea jobs accelerable con reason `no input files match its paths` cuando la lista efectiva está vacía (lógica preexistente, V33-032).\n- `InputFilesException::excludeEliminatedAll()` se mantiene en la API por compatibilidad pero deja de tener callers en `src/`.\n- Test `exclude_pattern_eliminating_all_throws` reemplazado por `exclude_pattern_eliminating_all_returns_empty_resolution` que verifica el nuevo contrato.\n\n## Verificación\n- Flow con solo accelerables (parallel_lint + phpcs) y `--exclude-pattern='**/*.php'`: `RC=0`, ambos `skipped=true reason=\"no input files match its paths\"`, payload JSON limpio.\n- Flow con accelerables + non-accelerables: accelerables skipped, non-accelerables corren normal; exit code refleja el resultado de los non-accelerables.\n- 24 tests de `InputFilesResolverTest` pasan.\n\nFuente: Bugs.md líneas 122-126.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "ec00318c-4225-47f3-a66e-f1f359ea835b",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[MED] BUG-9 — conf:check no rechaza files / files-from en config",
+          "description": "**Tests**: V33-043, V33-044\n\n`conf:check` con `files`, `files-from` o `exclude-pattern` declarados en `flow.options` o dentro de un job emitía solo warnings (`Unknown option 'files'. It will be ignored.` / `unknown key 'files-from' for type 'phpstan'`) y exit 0. El catálogo dice que estas keys son **CLI-only** y deben dar **exit 1**.\n\n## Tabla de factores\n\n| Factor | Clases | Comportamiento esperado |\n|---|---|---|\n| Ubicación de la key | `flow.options`, `jobs.<X>`, top-level | Las dos primeras: error |\n| Key | `files`, `files-from`, `exclude-pattern`, otra desconocida | Las 3 CLI-only: error; otras: warning |\n| Exit | 1 si error, 0 si solo warnings | — |\n\n## Fix\n- `OptionsConfiguration::fromArray()`: nuevo loop que detecta `files` / `files-from` / `exclude-pattern` y llama `addError(...)` con un mensaje que sugiere usar `--<key>` en CLI.\n- `JobConfiguration::fromArray()`: idem para los mismos 3 keys dentro de un job.\n- Test `it_warns_when_job_declares_cli_only_files_keys_in_config` reemplazado por `it_errors_when_job_declares_cli_only_files_keys_in_config` que verifica el nuevo contrato (`hasErrors() === true`, mensaje en `getErrors()`).\n\n## Verificación\n- `conf:check --config=githooks-v33-files-in-config.php`: RC=1, dos errores explícitos sobre `files` y `files-from`.\n- 334 tests Configuration pasan.\n\nFuente: Bugs.md líneas 128-132.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []
