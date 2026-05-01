@@ -462,7 +462,6 @@ class FlowExecutor
         $failFastTriggered = false;
         $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;
         $lastTick = $this->now();
-        $lastMemorySample = $this->now();
 
         $memoryHandler = new FlowMemoryHandler(
             $options,
@@ -538,11 +537,9 @@ class FlowExecutor
                     $dashboard->tick();
                     $lastTick = $now;
                 }
-                // Memory sampling moved to the top of the iteration (above
+                // Memory sampling lives at the top of the iteration (above
                 // pollCompleted) so jobs finishing within a single tick still
-                // get sampled; the variable is left as a no-op anchor for
-                // backward source-compatibility of the surrounding control flow.
-                $lastMemorySample = $now;
+                // get sampled before being polled out of `running`.
                 usleep(10000);
             }
         }

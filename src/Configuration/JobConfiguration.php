@@ -310,21 +310,7 @@ class JobConfiguration
             ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory', 'time-budget']
         );
 
-        // CLI-only keys must not appear inside a job (volatile by design).
-        $cliOnlyKeys = ['files', 'files-from', 'exclude-pattern'];
-        foreach ($config as $key => $value) {
-            if (in_array($key, $cliOnlyKeys, true)) {
-                $result->addError(
-                    "Job '$name': key '$key' is CLI-only and cannot be declared in jobs. "
-                    . "Use --$key on the command line instead."
-                );
-                continue;
-            }
-            if (!in_array($key, $knownKeys, true)) {
-                $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
-                $result->addWarning("Job '$name': unknown key '$key' for type '$type'.{$suggestion}");
-            }
-        }
+        self::reportUnknownAndCliOnlyJobKeys($name, $type, $config, $knownKeys, $result);
 
         foreach ($argumentMap as $key => $spec) {
             if (!array_key_exists($key, $config)) {
@@ -404,6 +390,38 @@ class JobConfiguration
             if (!in_array($key, $knownKeys, true)) {
                 $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
                 $result->addWarning("Job '$name': unknown key '$key' for type 'custom'.{$suggestion}");
+            }
+        }
+    }
+
+    /**
+     * Report unknown job keys (with did-you-mean suggestion) and CLI-only
+     * keys (`files`, `files-from`, `exclude-pattern`) as hard errors.
+     * Extracted from validateArguments() to keep its NPath complexity
+     * below the project threshold.
+     *
+     * @param array<string, mixed> $config
+     * @param string[] $knownKeys
+     */
+    private static function reportUnknownAndCliOnlyJobKeys(
+        string $name,
+        string $type,
+        array $config,
+        array $knownKeys,
+        ValidationResult $result
+    ): void {
+        $cliOnlyKeys = ['files', 'files-from', 'exclude-pattern'];
+        foreach (array_keys($config) as $key) {
+            if (in_array($key, $cliOnlyKeys, true)) {
+                $result->addError(
+                    "Job '$name': key '$key' is CLI-only and cannot be declared in jobs. "
+                    . "Use --$key on the command line instead."
+                );
+                continue;
+            }
+            if (!in_array($key, $knownKeys, true)) {
+                $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
+                $result->addWarning("Job '$name': unknown key '$key' for type '$type'.{$suggestion}");
             }
         }
     }

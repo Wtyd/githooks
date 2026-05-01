@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Utils;
 
+/**
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Coheres CPU detection across
+ *   Windows/Unix/macOS plus cgroup v1+v2 quota and cpuset limits; splitting
+ *   into multiple classes would only spread the same concern.
+ */
 class CpuDetector
 {
     public function detect(): int
@@ -96,51 +101,70 @@ class CpuDetector
     protected function readCgroupCpuLimit(): ?int
     {
         $limits = [];
+        $quotaLimit = $this->readCgroupQuotaLimit();
+        if ($quotaLimit !== null) {
+            $limits[] = $quotaLimit;
+        }
+        $cpusetLimit = $this->readCpusetLimit();
+        if ($cpusetLimit !== null) {
+            $limits[] = $cpusetLimit;
+        }
+        return $limits === [] ? null : min($limits);
+    }
 
-        // cgroup v2 — cpu.max
-        $v2 = $this->readFileContents('/sys/fs/cgroup/cpu.max');
-        if ($v2 !== null) {
-            $trimmed = trim($v2);
-            if ($trimmed !== '' && strpos($trimmed, 'max') !== 0) {
-                $parts = preg_split('/\s+/', $trimmed);
-                if (is_array($parts) && count($parts) >= 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
-                    $quota = (int) $parts[0];
-                    $period = (int) $parts[1];
-                    if ($quota > 0 && $period > 0) {
-                        $limits[] = (int) ceil($quota / $period);
-                    }
-                }
+    /**
+     * cgroup v2 (`cpu.max` = "<quota> <period>" or "max …") with v1 fallback
+     * (`cfs_quota_us` + `cfs_period_us`, -1 = unlimited). Returns ceil(quota/period)
+     * in whole CPUs, or null when there is no quota in force.
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Two parsing paths (v2/v1)
+     *   each guarded against missing files, garbage and signed values.
+     */
+    protected function readCgroupQuotaLimit(): ?int
+    {
+        $cpuMax = $this->readFileContents('/sys/fs/cgroup/cpu.max');
+        if ($cpuMax !== null) {
+            $trimmed = trim($cpuMax);
+            if ($trimmed === '' || strpos($trimmed, 'max') === 0) {
+                return null;
             }
-        } else {
-            // cgroup v1 — cfs_quota_us / cfs_period_us
-            $quotaRaw = $this->readFileContents('/sys/fs/cgroup/cpu/cpu.cfs_quota_us');
-            $periodRaw = $this->readFileContents('/sys/fs/cgroup/cpu/cpu.cfs_period_us');
-            if ($quotaRaw !== null && $periodRaw !== null) {
-                $quota = (int) trim($quotaRaw);
-                $period = (int) trim($periodRaw);
-                if ($quota > 0 && $period > 0) {
-                    $limits[] = (int) ceil($quota / $period);
-                }
+            $parts = preg_split('/\s+/', $trimmed) ?: [];
+            if (count($parts) < 2 || !is_numeric($parts[0]) || !is_numeric($parts[1])) {
+                return null;
             }
+            return $this->divideQuota((int) $parts[0], (int) $parts[1]);
         }
 
-        // cpuset — count of CPUs the container is pinned to. Same parsing
-        // for cgroup v2 (`/sys/fs/cgroup/cpuset.cpus.effective`) and v1
-        // (`/sys/fs/cgroup/cpuset/cpuset.cpus`); the effective file wins
-        // because it reflects what the kernel actually allows.
-        $cpusetRaw = $this->readFileContents('/sys/fs/cgroup/cpuset.cpus.effective')
-            ?? $this->readFileContents('/sys/fs/cgroup/cpuset/cpuset.cpus');
-        if ($cpusetRaw !== null) {
-            $count = $this->countCpusetEntries(trim($cpusetRaw));
-            if ($count > 0) {
-                $limits[] = $count;
-            }
-        }
-
-        if ($limits === []) {
+        $quotaRaw = $this->readFileContents('/sys/fs/cgroup/cpu/cpu.cfs_quota_us');
+        $periodRaw = $this->readFileContents('/sys/fs/cgroup/cpu/cpu.cfs_period_us');
+        if ($quotaRaw === null || $periodRaw === null) {
             return null;
         }
-        return min($limits);
+        return $this->divideQuota((int) trim($quotaRaw), (int) trim($periodRaw));
+    }
+
+    /**
+     * cpuset effective count (cgroup v2 `cpuset.cpus.effective`, v1 fallback).
+     * Returns the number of CPUs the container is pinned to, or null when
+     * neither file is available or the list parses as empty.
+     */
+    protected function readCpusetLimit(): ?int
+    {
+        $cpusetRaw = $this->readFileContents('/sys/fs/cgroup/cpuset.cpus.effective')
+            ?? $this->readFileContents('/sys/fs/cgroup/cpuset/cpuset.cpus');
+        if ($cpusetRaw === null) {
+            return null;
+        }
+        $count = $this->countCpusetEntries(trim($cpusetRaw));
+        return $count > 0 ? $count : null;
+    }
+
+    private function divideQuota(int $quota, int $period): ?int
+    {
+        if ($quota <= 0 || $period <= 0) {
+            return null;
+        }
+        return (int) ceil($quota / $period);
     }
 
     /**
@@ -154,22 +178,24 @@ class CpuDetector
         }
         $count = 0;
         foreach (explode(',', $cpuset) as $segment) {
-            $segment = trim($segment);
-            if ($segment === '') {
-                continue;
-            }
-            if (strpos($segment, '-') !== false) {
-                [$lo, $hi] = explode('-', $segment, 2);
-                if (is_numeric($lo) && is_numeric($hi) && (int) $hi >= (int) $lo) {
-                    $count += ((int) $hi - (int) $lo) + 1;
-                }
-                continue;
-            }
-            if (is_numeric($segment)) {
-                $count++;
-            }
+            $count += $this->countCpusetSegment(trim($segment));
         }
         return $count;
+    }
+
+    private function countCpusetSegment(string $segment): int
+    {
+        if ($segment === '') {
+            return 0;
+        }
+        if (strpos($segment, '-') !== false) {
+            [$rangeStart, $rangeEnd] = explode('-', $segment, 2);
+            if (is_numeric($rangeStart) && is_numeric($rangeEnd) && (int) $rangeEnd >= (int) $rangeStart) {
+                return ((int) $rangeEnd - (int) $rangeStart) + 1;
+            }
+            return 0;
+        }
+        return is_numeric($segment) ? 1 : 0;
     }
 
     /**
@@ -181,7 +207,14 @@ class CpuDetector
         if (!is_readable($path)) {
             return null;
         }
-        $content = @file_get_contents($path);
+        try {
+            $content = file_get_contents($path);
+        } catch (\Throwable $error) {
+            // /sys/fs/cgroup files can vanish or flip readability between the
+            // is_readable() check and the read; a strict error handler would
+            // upgrade the warning to an exception, which we swallow here.
+            return null;
+        }
         return $content === false ? null : $content;
     }
 

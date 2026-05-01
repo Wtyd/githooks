@@ -139,22 +139,41 @@ class OptionsConfiguration
         $allocator = self::parseAllocator($raw, $result);
         $stats = self::parseStats($raw, $result);
 
-        $knownKeys = [
-            'fail-fast',
-            'processes',
-            'main-branch',
-            'fast-branch-fallback',
-            'executable-prefix',
-            'reports',
-            TimeBudgetConfiguration::KEY,
-            MemoryBudgetConfiguration::KEY,
-            'allocator',
-            'stats',
-        ];
-        // CLI-only keys: their presence in flow.options is a hard error.
-        // 'files' / 'files-from' / 'exclude-pattern' are runtime selection
-        // flags driven by --files / --files-from / --exclude-pattern; declaring
-        // them in config would baking volatile input into the persistent flow.
+        self::reportUnknownAndCliOnlyKeys($raw, $result);
+
+        $instance = new self(
+            $failFast,
+            $processes,
+            $mainBranch,
+            $fastBranchFallback,
+            $executablePrefix,
+            $reports,
+            $timeBudget,
+            $memoryBudget,
+            $allocator,
+            $stats
+        );
+        foreach (self::knownTopLevelKeys() as $key) {
+            if (array_key_exists($key, $raw)) {
+                $instance->declaredKeys[$key] = true;
+            }
+        }
+        return $instance;
+    }
+
+    /**
+     * Report unknown options as warnings (with did-you-mean suggestion) and
+     * CLI-only keys as hard errors. Extracted from `fromArray()` to keep that
+     * method below the 100-line / NPath threshold.
+     *
+     * @param array<string, mixed> $raw
+     */
+    private static function reportUnknownAndCliOnlyKeys(array $raw, ValidationResult $result): void
+    {
+        $knownKeys = self::knownTopLevelKeys();
+        // CLI-only keys (`files`, `files-from`, `exclude-pattern`) are runtime
+        // selection flags driven by --files / --files-from / --exclude-pattern;
+        // declaring them in config bakes volatile input into a persistent flow.
         $cliOnlyKeys = ['files', 'files-from', 'exclude-pattern'];
         foreach (array_keys($raw) as $key) {
             if (in_array($key, $cliOnlyKeys, true)) {
@@ -169,25 +188,29 @@ class OptionsConfiguration
                 $result->addWarning("Unknown option '$key'. It will be ignored.{$suggestion}");
             }
         }
+    }
 
-        $instance = new self(
-            $failFast,
-            $processes,
-            $mainBranch,
-            $fastBranchFallback,
-            $executablePrefix,
-            $reports,
-            $timeBudget,
-            $memoryBudget,
-            $allocator,
-            $stats
-        );
-        foreach ($knownKeys as $key) {
-            if (array_key_exists($key, $raw)) {
-                $instance->declaredKeys[$key] = true;
-            }
-        }
-        return $instance;
+    /**
+     * Canonical list of accepted keys at the flow.options level. Used both by
+     * the unknown-key validator and by the declaredKeys tracker so the source
+     * of truth lives in a single place.
+     *
+     * @return string[]
+     */
+    private static function knownTopLevelKeys(): array
+    {
+        return [
+            'fail-fast',
+            'processes',
+            'main-branch',
+            'fast-branch-fallback',
+            'executable-prefix',
+            'reports',
+            TimeBudgetConfiguration::KEY,
+            MemoryBudgetConfiguration::KEY,
+            'allocator',
+            'stats',
+        ];
     }
 
     /**

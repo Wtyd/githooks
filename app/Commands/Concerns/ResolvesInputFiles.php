@@ -15,18 +15,16 @@ use Wtyd\GitHooks\Execution\InputFilesResolver;
  * warnings (BOM, invalid paths, mixed flags), and (optionally) printing the
  * "Mode: files (N input files…)" header in text format.
  *
- * @property InputFilesResolver $inputFilesResolver  Provided by the consumer
- *           command via constructor injection.
- */
-/**
  * Consumer Commands MUST also `use EmitsStderr;` so the trait's calls to
  * `$this->emitStderr(...)` resolve. We don't `use EmitsStderr` here to avoid
  * the diamond-collision PHP raises when a Command also uses FormatsOutput
  * (which would also bring its own copy of the trait).
+ *
+ * @property InputFilesResolver $inputFilesResolver  Provided by the consumer
+ *           command via constructor injection.
  */
 trait ResolvesInputFiles
 {
-
     /**
      * Returns null when none of the input-files flags are present. Otherwise
      * returns the resolved object after emitting any informational warnings.

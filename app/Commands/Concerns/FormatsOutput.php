@@ -25,8 +25,7 @@ use Wtyd\GitHooks\Utils\Printer;
 
 /**
  * Shared logic for commands that support --format and multi-report --report-* flags.
- */
-/**
+ *
  * Consumer Commands MUST also `use EmitsStderr;` so the trait's call to
  * `$this->emitStderr(...)` resolves. We don't `use EmitsStderr` here to
  * avoid the diamond-collision PHP raises when a Command also uses
@@ -34,7 +33,6 @@ use Wtyd\GitHooks\Utils\Printer;
  */
 trait FormatsOutput
 {
-
     /**
      * Select the output handler based on format and execution context.
      *
