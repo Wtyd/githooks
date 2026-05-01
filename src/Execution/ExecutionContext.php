@@ -34,6 +34,8 @@ class ExecutionContext
 
     private ?InputFilesResolution $inputFiles = null;
 
+    private ?string $cwd = null;
+
     /**
      * @param string[] $stagedFiles
      */
@@ -44,6 +46,18 @@ class ExecutionContext
         $this->fileUtils = $fileUtils;
         $this->mainBranch = null;
         $this->stagedLoaded = true;
+    }
+
+    /**
+     * Override the CWD used to fold absolute input-file paths into CWD-relative
+     * form before matching against job.paths. Production callers should not need
+     * this; tests use it to make the path normalisation deterministic.
+     */
+    public function withCwd(string $cwd): self
+    {
+        $clone      = clone $this;
+        $clone->cwd = $cwd;
+        return $clone;
     }
 
     public static function default(): self
@@ -211,16 +225,53 @@ class ExecutionContext
     /** @param string[] $paths */
     private function fileIsInPaths(string $file, array $paths): bool
     {
+        $normalised = $this->normaliseToCwdRelative($file);
+
         foreach ($paths as $path) {
-            if ($this->fileUtils !== null && is_file($path) && $this->fileUtils->isSameFile($file, $path)) {
+            if ($this->fileUtils !== null && is_file($path) && $this->fileUtils->isSameFile($normalised, $path)) {
                 return true;
             }
 
-            if ($this->fileUtils !== null && $this->fileUtils->directoryContainsFile($path, $file)) {
+            if ($this->fileUtils !== null && $this->fileUtils->directoryContainsFile($path, $normalised)) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * V33-029: --files acepta rutas absolutas, pero job.paths siempre es
+     * relativo al CWD; sin esta normalización el matcher (string-equals)
+     * falla en silencio y el job se skipea con `matched=[]`.
+     * Ver tests/Unit/Execution/factors-input-files.md.
+     */
+    private function normaliseToCwdRelative(string $file): string
+    {
+        if (!$this->isAbsolutePath($file)) {
+            return $file;
+        }
+        $cwd = $this->cwd ?? (string) getcwd();
+        if ($cwd === '') {
+            return $file;
+        }
+        $cwdNormalised  = rtrim(str_replace('\\', '/', $cwd), '/') . '/';
+        $fileNormalised = str_replace('\\', '/', $file);
+        if (strncmp($fileNormalised, $cwdNormalised, strlen($cwdNormalised)) === 0) {
+            return substr($fileNormalised, strlen($cwdNormalised));
+        }
+        return $file;
+    }
+
+    private function isAbsolutePath(string $path): bool
+    {
+        if ($path === '') {
+            return false;
+        }
+        if ($path[0] === '/' || $path[0] === '\\') {
+            return true;
+        }
+        // Windows drive letter (C:\..)
+        return strlen($path) >= 3 && ctype_alpha($path[0]) && $path[1] === ':' && ($path[2] === '/' || $path[2] === '\\');
     }
 }

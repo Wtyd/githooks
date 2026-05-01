@@ -615,4 +615,75 @@ class ExecutionContextTest extends TestCase
         $this->assertFalse($context->hasInputFiles());
         $this->assertNull($context->getInputFilesResolution());
     }
+
+    // ========================================================================
+    // V33-029: absolute --files paths must match job.paths (relative)
+    // Tabla en tests/Unit/Execution/factors-input-files.md
+    // ========================================================================
+
+    /**
+     * @test
+     * @dataProvider absoluteAndRelativeInputFilesCases
+     */
+    function fileIsInPaths_normalises_absolute_paths_within_cwd(
+        string $inputFile,
+        array $jobPaths,
+        array $filesInDir,
+        array $expected
+    ): void {
+        $cwd = '/var/www/html3';
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles([$inputFile]);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories($filesInDir);
+
+        $context = ExecutionContext::forFastMode($fileUtils)->withCwd($cwd);
+
+        $this->assertSame($expected, $context->filterFilesForPaths($jobPaths));
+    }
+
+    public function absoluteAndRelativeInputFilesCases(): array
+    {
+        return [
+            'rel file in dir-prefix path (control)' => [
+                'src/Foo.php',
+                ['src'],
+                ['src/Foo.php'],
+                ['src/Foo.php'],
+            ],
+            'abs file under CWD in dir-prefix path (V33-029 patogen)' => [
+                '/var/www/html3/src/Foo.php',
+                ['src'],
+                ['src/Foo.php'],
+                ['/var/www/html3/src/Foo.php'],
+            ],
+            'rel file outside dir-prefix path (control negative)' => [
+                'tests/Bar.php',
+                ['src'],
+                ['src/Foo.php'],
+                [],
+            ],
+            'abs file under CWD but outside job paths' => [
+                '/var/www/html3/tests/Bar.php',
+                ['src'],
+                ['src/Foo.php'],
+                [],
+            ],
+            'abs file outside CWD never matches a relative job path' => [
+                '/other/place/Foo.php',
+                ['src'],
+                ['src/Foo.php'],
+                [],
+            ],
+        ];
+    }
+
+    /** @test */
+    function withCwd_returns_clone_without_mutating_the_original_context()
+    {
+        $original = ExecutionContext::default();
+
+        $derived = $original->withCwd('/some/cwd');
+
+        $this->assertNotSame($original, $derived);
+    }
 }
