@@ -7,6 +7,7 @@ namespace Wtyd\GitHooks\App\Commands;
 use LaravelZero\Framework\Commands\Command;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
@@ -15,6 +16,8 @@ use Wtyd\GitHooks\Jobs\JobRegistry;
 
 class CacheClearCommand extends Command
 {
+    use EmitsStderr;
+
     protected $signature = 'cache:clear
                             {names?* : Job or flow names to clear (all if omitted)}
                             {--config= : Path to configuration file}';
@@ -69,7 +72,7 @@ class CacheClearCommand extends Command
             return $hasErrors ? 1 : 0;
         } catch (GitHooksExceptionInterface $e) {
             // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
-            fwrite(STDERR, $e->getMessage() . "\n");
+            $this->emitStderr($e->getMessage());
             return 1;
         }
     }

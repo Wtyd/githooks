@@ -16,6 +16,7 @@ use Wtyd\GitHooks\Execution\{
 };
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
@@ -30,6 +31,7 @@ class JobCommand extends Command
 {
     use EmitsConditionsHeader;
     use EmitsConfigWarnings;
+    use EmitsStderr;
     use FormatsOutput;
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
@@ -211,7 +213,7 @@ class JobCommand extends Command
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {
             // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
-            fwrite(STDERR, $e->getMessage() . "\n");
+            $this->emitStderr($e->getMessage());
             return 1;
         }
     }

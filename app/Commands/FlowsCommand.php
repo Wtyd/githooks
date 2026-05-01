@@ -7,6 +7,7 @@ namespace Wtyd\GitHooks\App\Commands;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
@@ -41,6 +42,7 @@ class FlowsCommand extends Command
 {
     use EmitsConditionsHeader;
     use EmitsConfigWarnings;
+    use EmitsStderr;
     use FormatsOutput;
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
@@ -233,7 +235,7 @@ class FlowsCommand extends Command
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {
             // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
-            fwrite(STDERR, $e->getMessage() . "\n");
+            $this->emitStderr($e->getMessage());
             return 1;
         }
     }
@@ -375,10 +377,9 @@ class FlowsCommand extends Command
 
         // REQ-018 advisory: route to stderr so pipelines capturing stdout
         // (CI, --format=json, scripted tooling) don't pick up the message.
-        fwrite(
-            STDERR,
+        $this->emitStderr(
             "⚠️  Options declared in '" . implode("', '", $ignored) . "' are ignored in multi-flow runs."
-            . "\n  Effective options come from flows.options + CLI; see header below.\n"
+            . "\n  Effective options come from flows.options + CLI; see header below."
         );
     }
 

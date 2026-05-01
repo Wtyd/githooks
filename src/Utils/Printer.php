@@ -21,17 +21,6 @@ class Printer
         $this->warning($message);
     }
 
-    /**
-     * Deprecation notices go to STDERR so consumers parsing stdout (CI pipes,
-     * --format=json/junit/sarif/codeclimate, scripted tooling) don't pick up
-     * the human-facing message. Structured payloads expose the same data via
-     * the `deprecations[]` block; this method is purely for the operator
-     * looking at the terminal.
-     */
-    public function deprecationWarning(string $message): void
-    {
-        fwrite(STDERR, "⚠️ \e[43m\e[30m{$message}\033[0m\n");
-    }
     public function resultError(string $message): void
     {
         echo "❌ ";

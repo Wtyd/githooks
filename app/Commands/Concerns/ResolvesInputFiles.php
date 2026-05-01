@@ -18,8 +18,15 @@ use Wtyd\GitHooks\Execution\InputFilesResolver;
  * @property InputFilesResolver $inputFilesResolver  Provided by the consumer
  *           command via constructor injection.
  */
+/**
+ * Consumer Commands MUST also `use EmitsStderr;` so the trait's calls to
+ * `$this->emitStderr(...)` resolve. We don't `use EmitsStderr` here to avoid
+ * the diamond-collision PHP raises when a Command also uses FormatsOutput
+ * (which would also bring its own copy of the trait).
+ */
 trait ResolvesInputFiles
 {
+
     /**
      * Returns null when none of the input-files flags are present. Otherwise
      * returns the resolved object after emitting any informational warnings.
@@ -52,16 +59,16 @@ trait ResolvesInputFiles
         // Advisories about input files go to STDERR so --format=json/junit/sarif/codeclimate
         // stdout stays a clean, parseable payload (BUG-5).
         foreach ($resolution->getInvalid() as $invalid) {
-            fwrite(STDERR, "⚠️  file '$invalid' does not exist, skipping\n");
+            $this->emitStderr("⚠️  file '$invalid' does not exist, skipping");
         }
         if ($resolution->isBomDetected()) {
-            fwrite(STDERR, "⚠️  --files-from: UTF-8 BOM detected and stripped\n");
+            $this->emitStderr('⚠️  --files-from: UTF-8 BOM detected and stripped');
         }
 
         if ($this->option('fast') || $this->option('fast-branch')) {
             $other   = $this->option('fast') ? '--fast' : '--fast-branch';
             $primary = is_string($files) && $files !== '' ? '--files' : '--files-from';
-            fwrite(STDERR, "⚠️  $primary takes precedence over $other ($other ignored)\n");
+            $this->emitStderr("⚠️  $primary takes precedence over $other ($other ignored)");
         }
 
         if ($printModeHeader && (strval($this->option('format')) === '' || $this->option('format') === null)) {

@@ -26,8 +26,15 @@ use Wtyd\GitHooks\Utils\Printer;
 /**
  * Shared logic for commands that support --format and multi-report --report-* flags.
  */
+/**
+ * Consumer Commands MUST also `use EmitsStderr;` so the trait's call to
+ * `$this->emitStderr(...)` resolves. We don't `use EmitsStderr` here to
+ * avoid the diamond-collision PHP raises when a Command also uses
+ * ResolvesInputFiles (which would also bring its own copy of the trait).
+ */
 trait FormatsOutput
 {
+
     /**
      * Select the output handler based on format and execution context.
      *
@@ -342,7 +349,7 @@ trait FormatsOutput
      */
     protected function emitReportWrittenNotice(string $path): void
     {
-        fwrite(STDERR, "Report written to: $path\n");
+        $this->emitStderr("Report written to: $path");
     }
 
     /**

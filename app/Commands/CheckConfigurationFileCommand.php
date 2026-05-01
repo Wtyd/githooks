@@ -3,6 +3,7 @@
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Jobs\JobRegistry;
@@ -19,6 +20,8 @@ use Wtyd\GitHooks\Utils\Printer;
 
 class CheckConfigurationFileCommand extends Command
 {
+    use EmitsStderr;
+
     protected $signature = 'conf:check  {--config= : Path to configuration file}';
     protected $description = 'Check that the configuration file exists and that it is in the proper format.';
 
@@ -227,7 +230,7 @@ class CheckConfigurationFileCommand extends Command
         foreach ($config->getValidation()->getDeprecations() as $deprecation) {
             $message = $deprecation->getWarningMessage();
             $deprecationMessages[$message] = true;
-            $this->printer->deprecationWarning($message);
+            $this->emitStderr("⚠️  $message");
         }
         foreach ($config->getValidation()->getWarnings() as $warning) {
             if (isset($deprecationMessages[$warning])) {
