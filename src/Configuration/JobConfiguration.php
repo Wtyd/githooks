@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
+use Wtyd\GitHooks\Configuration\KeySuggestion;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
@@ -320,7 +321,8 @@ class JobConfiguration
                 continue;
             }
             if (!in_array($key, $knownKeys, true)) {
-                $result->addWarning("Job '$name': unknown key '$key' for type '$type'.");
+                $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
+                $result->addWarning("Job '$name': unknown key '$key' for type '$type'.{$suggestion}");
             }
         }
 
@@ -400,7 +402,8 @@ class JobConfiguration
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {
-                $result->addWarning("Job '$name': unknown key '$key' for type 'custom'.");
+                $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
+                $result->addWarning("Job '$name': unknown key '$key' for type 'custom'.{$suggestion}");
             }
         }
     }

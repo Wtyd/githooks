@@ -59,6 +59,17 @@ class FormatsOutputCommandDouble
         $this->infos[] = $message;
     }
 
+    /**
+     * Override of the trait's emitReportWrittenNotice() so the test can
+     * inspect what was sent to stderr without actually writing to it.
+     * Tests that previously expected this to land in $infos[] now use
+     * $reportNotices[]; both are kept in lock-step here for back-compat.
+     */
+    protected function emitReportWrittenNotice(string $path): void
+    {
+        $this->infos[] = "Report written to: $path";
+    }
+
     public function getLaravel()
     {
         return $this->laravel;

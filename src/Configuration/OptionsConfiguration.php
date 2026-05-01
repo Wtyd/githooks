@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
+use Wtyd\GitHooks\Configuration\KeySuggestion;
 use Wtyd\GitHooks\Output\OutputFormats;
 
 /**
@@ -164,7 +165,8 @@ class OptionsConfiguration
                 continue;
             }
             if (!in_array($key, $knownKeys, true)) {
-                $result->addWarning("Unknown option '$key'. It will be ignored.");
+                $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
+                $result->addWarning("Unknown option '$key'. It will be ignored.{$suggestion}");
             }
         }
 

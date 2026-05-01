@@ -3,17 +3,7 @@
     {
       "id": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
       "title": "Backlog",
-      "cards": [
-        {
-          "id": "d2eda46c-baa1-4feb-80cf-3021d6127bc6",
-          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
-          "title": "[BAJA] BUG-11 — Sugerencia did-you-mean no implementada",
-          "description": "**Test**: V33-092\n\nTypo `memry-budget` (en vez de `memory-budget`) solo da `Unknown option 'memry-budget'. It will be ignored.`.\n\nEl catálogo describe una sugerencia tipo \"did-you-mean\" que no existe.\n\n## Criterio de cierre\n- Para keys desconocidas con distancia ≤ 2 a una key conocida, emitir sugerencia: `Did you mean 'memory-budget'?`.\n- Cubrir tanto opciones de flow/job como keys de tools.\n\nFuente: Bugs.md líneas 141-145.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        }
-      ]
+      "cards": []
     },
     {
       "id": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
@@ -152,6 +142,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[MED] BUG-10 — conf:check no rechaza time-budget dentro de un job",
           "description": "**Test**: V33-071\n\n`conf:check` con `time-budget: {...}` declarado dentro de un job emitía solo un warning (`Job 'X': key 'time-budget' is not valid in jobs; use 'warn-after'/'fail-after' instead.`) y exit 0. El catálogo espera **exit 1**.\n\n## Fix\n- `JobConfiguration::validateTimeBudgetKeys()`: el `addWarning(...)` para `time-budget` dentro de un job se convierte en `addError(...)`. La sugerencia `'use warn-after/fail-after instead'` se mantiene en el mensaje.\n- `JobConfiguration::knownKeys` añade `'time-budget'` para que el bucle de unknown keys no emita un warning duplicado encima del error.\n- Test `it_warns_when_time_budget_is_declared_in_a_job` renombrado a `it_errors_when_time_budget_is_declared_in_a_job` y actualizado a `hasErrors()` + lectura de `getErrors()`.\n\n## Verificación\n- `conf:check --config=<job-with-time-budget>`: RC=1, solo el error (sin warning duplicado).\n- 334 tests Configuration pasan.\n\nFuente: Bugs.md líneas 134-139.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "d2eda46c-baa1-4feb-80cf-3021d6127bc6",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[BAJA] BUG-11 — Sugerencia did-you-mean no implementada",
+          "description": "**Test**: V33-092\n\nTypos como `memry-budget` en flow.options o `failast` en un job emitían solo `Unknown option 'X'. It will be ignored.` sin sugerencia. El catálogo describe una sugerencia tipo `Did you mean 'memory-budget'?` que no existía.\n\n## Tabla de factores\n\n| Factor | Clases | Decisión |\n|---|---|---|\n| Distancia Levenshtein | 0 (igual), 1, 2, ≥3 | suggest si 1-2; sin suggest si 0 o ≥3 |\n| Lista known | vacía, single, multi | sin suggest si vacía; pick closest si multi |\n| Unknown | \"\" (vacío), real | sin suggest si vacío |\n\nBoundaries: distance == 2 (admitido), distance == 3 (rechazado).\n\n## Fix\n- Nuevo helper `Wtyd\\GitHooks\\Configuration\\KeySuggestion::suggestionFor(string $unknown, array $known)` que devuelve `\" Did you mean 'X'?\"` o `''`.\n- 4 sitios actualizados:\n  - `OptionsConfiguration::fromArray` (unknown option en `flow.options`).\n  - `JobConfiguration::fromArray` (unknown key for type específico).\n  - `JobConfiguration::validateCustomJobKeys` (unknown key for type 'custom').\n  - `ConfigurationParser::fromArray` (unknown top-level key).\n- Test parametrizado `KeySuggestionTest::suggestion_respects_decision_table` con 8 filas que cubren todas las clases.\n\n## Verificación\n- `conf:check` con `memry-budget` en config muestra `Unknown option 'memry-budget'. It will be ignored. Did you mean 'memory-budget'?`.\n- 2077 tests de la suite pasan (incluido el nuevo `KeySuggestionTest`).\n\nFuente: Bugs.md líneas 141-145.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []

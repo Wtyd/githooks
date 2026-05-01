@@ -7,6 +7,7 @@ namespace Wtyd\GitHooks\Configuration;
 use InvalidArgumentException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
+use Wtyd\GitHooks\Configuration\KeySuggestion;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
 use Wtyd\GitHooks\Jobs\JobRegistry;
@@ -122,7 +123,8 @@ class ConfigurationParser
         $knownKeys = ['hooks', 'flows', 'jobs'];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
-                $result->addWarning("Unknown top-level key '$key'. It will be ignored.");
+                $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
+                $result->addWarning("Unknown top-level key '$key'. It will be ignored.{$suggestion}");
             }
         }
 

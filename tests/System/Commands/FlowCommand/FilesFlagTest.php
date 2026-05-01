@@ -70,14 +70,17 @@ class FilesFlagTest extends SystemTestCase
         $this->containsStringInOutput = ['--exclude-pattern requires --files or --files-from'];
     }
 
-    /** @test */
-    public function exits_with_error_when_exclude_pattern_eliminates_all(): void
+    /**
+     * @test
+     * BUG-8: when --exclude-pattern empties the list the flow no longer aborts
+     * with exit 1. Accelerable jobs are skipped with reason "no input files
+     * match its paths" and the run exits 0 if nothing else fails.
+     */
+    public function skips_accelerable_jobs_and_exits_zero_when_exclude_pattern_eliminates_all(): void
     {
         $this->artisan(
             "flow qa --files=" . self::TESTS_PATH . "/src/User.php --exclude-pattern='**/*.php' --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ['eliminated all input files'];
+        )->assertExitCode(0);
     }
 
     /** @test */
