@@ -787,8 +787,13 @@ class JobConfigurationTest extends TestCase
         $this->assertStringContainsString('positive integer', $errorText);
     }
 
-    /** @test */
-    public function it_warns_when_time_budget_is_declared_in_a_job()
+    /**
+     * @test
+     * BUG-10: time-budget inside a job is now a hard error (was a warning).
+     * conf:check exits 1 and the suggestion to use warn-after/fail-after stays
+     * in the message.
+     */
+    public function it_errors_when_time_budget_is_declared_in_a_job()
     {
         $result = new ValidationResult();
         JobConfiguration::fromArray('phpunit_job', [
@@ -796,11 +801,12 @@ class JobConfigurationTest extends TestCase
             'time-budget' => ['warn-after' => 60],
         ], $this->registry, $result, new JobRegistry());
 
-        $warningText = implode(' ', $result->getWarnings());
-        $this->assertStringContainsString("Job 'phpunit_job'", $warningText);
-        $this->assertStringContainsString("'time-budget'", $warningText);
-        $this->assertStringContainsString('not valid in jobs', $warningText);
-        $this->assertStringContainsString("'warn-after'/'fail-after'", $warningText);
+        $this->assertTrue($result->hasErrors());
+        $errorText = implode(' ', $result->getErrors());
+        $this->assertStringContainsString("Job 'phpunit_job'", $errorText);
+        $this->assertStringContainsString("'time-budget'", $errorText);
+        $this->assertStringContainsString('not valid in jobs', $errorText);
+        $this->assertStringContainsString("'warn-after'/'fail-after'", $errorText);
     }
 
     /** @test */

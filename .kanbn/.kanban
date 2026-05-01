@@ -5,15 +5,6 @@
       "title": "Backlog",
       "cards": [
         {
-          "id": "de209e2e-9db5-486d-8866-a9b32c587741",
-          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
-          "title": "[MED] BUG-10 — conf:check no rechaza time-budget dentro de un job",
-          "description": "**Test**: V33-071\n\n`conf:check` con `time-budget: {...}` en `jobs.<name>` solo emite warning y sale con **exit 0**.\n\nEl catálogo espera **exit 1** (\"time-budget no permitido en jobs; usar `warn-after`/`fail-after`\").\n\n**Nota positiva**: el warning ya sugiere la alternativa correcta (`use 'warn-after'/'fail-after' instead`). Solo falta promover el warning a error.\n\n## Criterio de cierre\n- `conf:check` devuelve exit 1 cuando aparece `time-budget` dentro de un job.\n- Mensaje conserva la sugerencia actual (`use 'warn-after'/'fail-after' instead`).\n\nFuente: Bugs.md líneas 134-139.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "d2eda46c-baa1-4feb-80cf-3021d6127bc6",
           "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
           "title": "[BAJA] BUG-11 — Sugerencia did-you-mean no implementada",
@@ -152,6 +143,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[MED] BUG-9 — conf:check no rechaza files / files-from en config",
           "description": "**Tests**: V33-043, V33-044\n\n`conf:check` con `files`, `files-from` o `exclude-pattern` declarados en `flow.options` o dentro de un job emitía solo warnings (`Unknown option 'files'. It will be ignored.` / `unknown key 'files-from' for type 'phpstan'`) y exit 0. El catálogo dice que estas keys son **CLI-only** y deben dar **exit 1**.\n\n## Tabla de factores\n\n| Factor | Clases | Comportamiento esperado |\n|---|---|---|\n| Ubicación de la key | `flow.options`, `jobs.<X>`, top-level | Las dos primeras: error |\n| Key | `files`, `files-from`, `exclude-pattern`, otra desconocida | Las 3 CLI-only: error; otras: warning |\n| Exit | 1 si error, 0 si solo warnings | — |\n\n## Fix\n- `OptionsConfiguration::fromArray()`: nuevo loop que detecta `files` / `files-from` / `exclude-pattern` y llama `addError(...)` con un mensaje que sugiere usar `--<key>` en CLI.\n- `JobConfiguration::fromArray()`: idem para los mismos 3 keys dentro de un job.\n- Test `it_warns_when_job_declares_cli_only_files_keys_in_config` reemplazado por `it_errors_when_job_declares_cli_only_files_keys_in_config` que verifica el nuevo contrato (`hasErrors() === true`, mensaje en `getErrors()`).\n\n## Verificación\n- `conf:check --config=githooks-v33-files-in-config.php`: RC=1, dos errores explícitos sobre `files` y `files-from`.\n- 334 tests Configuration pasan.\n\nFuente: Bugs.md líneas 128-132.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "de209e2e-9db5-486d-8866-a9b32c587741",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[MED] BUG-10 — conf:check no rechaza time-budget dentro de un job",
+          "description": "**Test**: V33-071\n\n`conf:check` con `time-budget: {...}` declarado dentro de un job emitía solo un warning (`Job 'X': key 'time-budget' is not valid in jobs; use 'warn-after'/'fail-after' instead.`) y exit 0. El catálogo espera **exit 1**.\n\n## Fix\n- `JobConfiguration::validateTimeBudgetKeys()`: el `addWarning(...)` para `time-budget` dentro de un job se convierte en `addError(...)`. La sugerencia `'use warn-after/fail-after instead'` se mantiene en el mensaje.\n- `JobConfiguration::knownKeys` añade `'time-budget'` para que el bucle de unknown keys no emita un warning duplicado encima del error.\n- Test `it_warns_when_time_budget_is_declared_in_a_job` renombrado a `it_errors_when_time_budget_is_declared_in_a_job` y actualizado a `hasErrors()` + lectura de `getErrors()`.\n\n## Verificación\n- `conf:check --config=<job-with-time-budget>`: RC=1, solo el error (sin warning duplicado).\n- 334 tests Configuration pasan.\n\nFuente: Bugs.md líneas 134-139.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []

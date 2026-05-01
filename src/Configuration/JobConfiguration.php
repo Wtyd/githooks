@@ -216,7 +216,9 @@ class JobConfiguration
         }
 
         if (array_key_exists('time-budget', $config)) {
-            $result->addWarning(
+            // BUG-10: hard error so conf:check exits 1. The suggestion stays
+            // so the user knows the canonical alternative.
+            $result->addError(
                 "Job '$name': key 'time-budget' is not valid in jobs; use 'warn-after'/'fail-after' instead."
             );
         }
@@ -301,7 +303,10 @@ class JobConfiguration
 
         $knownKeys = array_merge(
             array_keys($argumentMap),
-            ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory']
+            // 'time-budget' is recognised so the unknown-key loop doesn't emit a
+            // duplicate warning; the dedicated check in validateTimeBudgetKeys()
+            // already rejects it as an error (BUG-10).
+            ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory', 'time-budget']
         );
 
         // CLI-only keys must not appear inside a job (volatile by design).
