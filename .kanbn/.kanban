@@ -5,15 +5,6 @@
       "title": "Backlog",
       "cards": [
         {
-          "id": "061b9936-9c69-40de-bf6b-9782f30fdf7f",
-          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
-          "title": "[MED] BUG-8 — --exclude-pattern que elimina todo da exit 1",
-          "description": "**Test**: V33-038\n\n`flow qa --files=src/clean --exclude-pattern='**/*.php'` (todo excluido) sale con **exit 1** y mensaje `--exclude-pattern eliminated all input files`.\n\nEl catálogo espera **exit 0 con jobs skipped**.\n\n## Criterio de cierre\n- Exit code 0 cuando todos los inputs quedan excluidos.\n- Jobs marcados como `skipped` con `skipReason` claro.\n- Mensaje informativo (si se mantiene) va a stderr, no contamina stdout en `--format=json`.\n\nFuente: Bugs.md líneas 122-126.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "ec00318c-4225-47f3-a66e-f1f359ea835b",
           "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
           "title": "[MED] BUG-9 — conf:check no rechaza files / files-from en config",
@@ -152,6 +143,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[ALTA] BUG-5 — Mensajes informativos contaminan stdout en --format=json",
           "description": "**Tests afectados**: V33-034, V33-038, V33-041, V33-042, V33-055\n\nMensajes informativos (advisories y errores) salían por **stdout**, contaminando el payload cuando `--format=json/junit/sarif/codeclimate`. Cualquier consumidor que parsee stdout (`jq`, `python -c \"import json; json.load(...)\"`) recibía texto + JSON juntos y fallaba.\n\n## Tabla de factores\n\n| Factor | Clases | Decisión |\n|---|---|---|\n| Tipo de mensaje | informativo (BOM, override, written, file-skip), error fatal (excepción) | todo a STDERR |\n| Formato output | text, json, junit, sarif, codeclimate | irrelevante: regla uniforme |\n| Canal esperado | stdout (payload), stderr (advisory/error) | ningún advisory toca stdout |\n\n## Mensajes redirigidos a STDERR\n1. `--files-from: UTF-8 BOM detected and stripped` — `ResolvesInputFiles::resolveInputFilesFlags`\n2. `--exclude-pattern eliminated all input files` — `InputFilesException` capturada por los catch handlers de los 4 comandos\n3. `--files takes precedence over --fast (--fast ignored)` — `ResolvesInputFiles::resolveInputFilesFlags`\n4. `--files takes precedence over --fast-branch (--fast-branch ignored)` — mismo path que (3)\n5. `Report written to: <path>` — `FormatsOutput::writeReportFile` y `FormatsOutput::writeStructuredPayload` (2 ocurrencias)\n\nAdicional fuera del catálogo pero misma causa raíz:\n6. `file 'X' does not exist, skipping` — `ResolvesInputFiles::resolveInputFilesFlags`\n7. Errores de `GitHooksExceptionInterface` capturados en los 4 commands (FlowCommand, FlowsCommand, JobCommand, CacheClearCommand) — antes iban por `$this->error()` (stdout rojo), ahora por `fwrite(STDERR, ...)`.\n\n## Fix\n- `ResolvesInputFiles.php`: 3 `$this->warn(...)` → `fwrite(STDERR, \"⚠️  ...\\n\")`.\n- `FormatsOutput.php`: 2 `$this->info(\"Report written to: ...\")` → `fwrite(STDERR, ...)`.\n- 4 catch handlers (`FlowCommand`, `FlowsCommand`, `JobCommand`, `CacheClearCommand`): `$this->error($e->getMessage())` → `fwrite(STDERR, ...)`.\n\n## Verificación end-to-end\n- M1 BOM: stdout JSON parseable, mensaje en stderr.\n- M2 exclude-eliminated: stdout vacío (RC=1), error en stderr.\n- M3/M4 files vs fast: stdout JSON parseable, warning en stderr.\n- M5 Report written: stdout JSON parseable, fichero creado, mensaje en stderr.\n- 265 tests system pasan (3 skipped por motivos previos).\n\nFuente: Bugs.md líneas 88-99.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "061b9936-9c69-40de-bf6b-9782f30fdf7f",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[MED] BUG-8 — --exclude-pattern que elimina todo da exit 1",
+          "description": "**Test**: V33-038\n\n`flow qa --files=src/clean --exclude-pattern='**/*.php'` (todo excluido) salía con **exit 1** y mensaje `--exclude-pattern eliminated all input files`. El catálogo espera **exit 0 con jobs skipped**.\n\n## Tabla de factores\n\n| Factor | Clases | Comportamiento esperado |\n|---|---|---|\n| Lista tras exclude | `>0`, `==0` | `>0`: ejecuta normal · `==0`: jobs accelerable skipped |\n| Hay accelerables en flow | sí, no | irrelevante |\n| Hay non-accelerables en flow | sí, no | non-accelerables corren con paths originales |\n| Exit | 0 si nada falla | 1 si algún non-accelerable falla |\n\nClase patógena anterior: `lista tras exclude == 0` lanzaba excepción → exit 1 sistemático, sin posibilidad de continuar.\n\n## Fix\n- `InputFilesResolver::resolve()`: eliminado el `throw InputFilesException::excludeEliminatedAll()`. Ahora devuelve la `InputFilesResolution` con `kept=[]` (ya soportado por la clase).\n- `FlowPreparer::filterJobForMode()` ya skipea jobs accelerable con reason `no input files match its paths` cuando la lista efectiva está vacía (lógica preexistente, V33-032).\n- `InputFilesException::excludeEliminatedAll()` se mantiene en la API por compatibilidad pero deja de tener callers en `src/`.\n- Test `exclude_pattern_eliminating_all_throws` reemplazado por `exclude_pattern_eliminating_all_returns_empty_resolution` que verifica el nuevo contrato.\n\n## Verificación\n- Flow con solo accelerables (parallel_lint + phpcs) y `--exclude-pattern='**/*.php'`: `RC=0`, ambos `skipped=true reason=\"no input files match its paths\"`, payload JSON limpio.\n- Flow con accelerables + non-accelerables: accelerables skipped, non-accelerables corren normal; exit code refleja el resultado de los non-accelerables.\n- 24 tests de `InputFilesResolverTest` pasan.\n\nFuente: Bugs.md líneas 122-126.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []

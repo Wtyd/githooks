@@ -278,15 +278,24 @@ class InputFilesResolverTest extends TestCase
         $this->assertTrue($resolution->hasExcludePatterns());
     }
 
-    /** @test */
-    public function exclude_pattern_eliminating_all_throws(): void
+    /**
+     * @test
+     * BUG-8: when --exclude-pattern empties the input list, the resolver no
+     * longer throws. It returns a resolution with valid=[] so accelerable jobs
+     * get skipped downstream with reason "no input files match its paths"
+     * and the flow exits 0 when nothing fails.
+     */
+    public function exclude_pattern_eliminating_all_returns_empty_resolution(): void
     {
         $this->makeFile('src/User.php');
 
-        $this->expectException(InputFilesException::class);
-        $this->expectExceptionMessage('--exclude-pattern eliminated all input files');
+        $resolution = $this->resolver->resolve('src', null, 'src/**', $this->tmpDir);
 
-        $this->resolver->resolve('src', null, 'src/**', $this->tmpDir);
+        $this->assertSame([], $resolution->getValid());
+        $this->assertSame(1, $resolution->getTotalProvided());
+        $this->assertSame(0, $resolution->getTotalAfterExclude());
+        $this->assertCount(1, $resolution->getExcluded());
+        $this->assertTrue($resolution->hasExcludePatterns());
     }
 
     /** @test */

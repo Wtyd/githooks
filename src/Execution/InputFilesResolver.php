@@ -97,9 +97,11 @@ class InputFilesResolver
 
         [$kept, $excluded] = $this->applyExcludePatterns($expanded, $excludePatterns);
 
-        if (!empty($excludePatterns) && empty($kept)) {
-            throw InputFilesException::excludeEliminatedAll();
-        }
+        // BUG-8: if --exclude-pattern empties the list, return a resolution
+        // with kept=[] instead of throwing. Accelerable jobs get skipped
+        // downstream by FlowPreparer::filterJobForMode() with reason "no
+        // input files match its paths"; non-accelerable jobs run with
+        // their configured paths. The flow exits 0 when nothing fails.
 
         return new InputFilesResolution(
             $source,
