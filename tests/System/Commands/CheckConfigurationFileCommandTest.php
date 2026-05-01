@@ -364,4 +364,83 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(0)
             ->expectsOutput('The configuration file has the correct format.');
     }
+
+    // =========================================================================
+    // Meta-flow shape errors must propagate exit code 1.
+    //
+    // Decision table — adversarial classes of an invalid v3.3 flows section:
+    //   A. nesting               (meta-flow → meta-flow)
+    //   B. mixed declaration     (single flow declares both 'jobs' and 'flows')
+    //   C. dangling reference    (meta-flow → non-existent flow)
+    //   D. namespace collision   (same name used for a job and a flow)
+    //
+    // Contract: each adversary must produce the matching error text AND exit 1
+    // — the error must NOT be silently downgraded to a warning that lets CI pass.
+    // Regression test for QA-VAL bugs V33-008..011.
+    // =========================================================================
+
+    public function metaFlowShapeAdversariesProvider(): array
+    {
+        $jobs = [
+            'lint' => ['type' => 'parallel-lint', 'paths' => ['src']],
+        ];
+
+        return [
+            'A. meta-flow nesting' => [
+                'flows' => [
+                    'qa'    => ['jobs' => ['lint']],
+                    'inner' => ['flows' => ['qa']],
+                    'outer' => ['flows' => ['inner']],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "meta-flow 'outer' references 'inner' which is also a meta-flow",
+            ],
+            'B. flow declares both jobs and flows' => [
+                'flows' => [
+                    'qa'     => ['jobs' => ['lint']],
+                    'broken' => ['jobs' => ['lint'], 'flows' => ['qa']],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'broken' declares both 'jobs' and 'flows'",
+            ],
+            'C. meta-flow references unknown flow' => [
+                'flows' => [
+                    'qa'    => ['jobs' => ['lint']],
+                    'ghost' => ['flows' => ['qa', 'noexiste']],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "meta-flow 'ghost' references unknown flow 'noexiste'",
+            ],
+            'D. name used as both job and flow' => [
+                'flows' => [
+                    'qa' => ['jobs' => ['lint']],
+                ],
+                'jobs' => [
+                    'qa'   => ['type' => 'parallel-lint', 'paths' => ['src']],
+                    'lint' => ['type' => 'parallel-lint', 'paths' => ['src']],
+                ],
+                'expectedError' => "name 'qa' is declared as both job and flow",
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider metaFlowShapeAdversariesProvider
+     */
+    function rejects_v3_config_with_invalid_meta_flow_shape(array $flows, array $jobs, string $expectedError)
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows($flows)
+            ->setV3Jobs($jobs)
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(1)
+            ->expectsOutput('The configuration file has some errors')
+            ->containsStringInOutput($expectedError);
+    }
 }
