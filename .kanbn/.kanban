@@ -28,15 +28,6 @@
           "comments": []
         },
         {
-          "id": "a04b8216-3736-431d-b745-92f4f6442fc9",
-          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
-          "title": "[ALTA] BUG-6 — memoryThreshold per-job no se popula en JSON",
-          "description": "**Tests**: V33-072, V33-073\n\nAunque la config declare `memory: 200` (short form) o `memory: {warn-above: 100, fail-above: 8000}` (extended), el JSON de salida muestra `\"memoryThreshold\": null` para todos los jobs.\n\nObservado:\n```\nparallel_lint:  reserved=200  threshold=None  peak=None\nphpcs_src:      reserved=None threshold=None peak=None  // extended form ignorado\nphpstan_src:    reserved=300  threshold=None peak=None\n```\n\nSolo `memoryReserved` se popula bien para short form.\n\n## Criterio de cierre\n- `memoryThreshold` populado en JSON para short form.\n- Extended form `{warn-above, fail-above}` parseado y reflejado en `memoryThreshold` y `memoryReserved`.\n- Tests V33-072 y V33-073 pasan.\n\nFuente: Bugs.md líneas 101-112.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "10c6bc4d-f21e-42bd-80e6-037388a49b15",
           "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
           "title": "[ALTA] BUG-7 — Sampler RSS no funciona en Linux",
@@ -151,6 +142,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[BAJA] BUG-11 — Sugerencia did-you-mean no implementada",
           "description": "**Test**: V33-092\n\nTypos como `memry-budget` en flow.options o `failast` en un job emitían solo `Unknown option 'X'. It will be ignored.` sin sugerencia. El catálogo describe una sugerencia tipo `Did you mean 'memory-budget'?` que no existía.\n\n## Tabla de factores\n\n| Factor | Clases | Decisión |\n|---|---|---|\n| Distancia Levenshtein | 0 (igual), 1, 2, ≥3 | suggest si 1-2; sin suggest si 0 o ≥3 |\n| Lista known | vacía, single, multi | sin suggest si vacía; pick closest si multi |\n| Unknown | \"\" (vacío), real | sin suggest si vacío |\n\nBoundaries: distance == 2 (admitido), distance == 3 (rechazado).\n\n## Fix\n- Nuevo helper `Wtyd\\GitHooks\\Configuration\\KeySuggestion::suggestionFor(string $unknown, array $known)` que devuelve `\" Did you mean 'X'?\"` o `''`.\n- 4 sitios actualizados:\n  - `OptionsConfiguration::fromArray` (unknown option en `flow.options`).\n  - `JobConfiguration::fromArray` (unknown key for type específico).\n  - `JobConfiguration::validateCustomJobKeys` (unknown key for type 'custom').\n  - `ConfigurationParser::fromArray` (unknown top-level key).\n- Test parametrizado `KeySuggestionTest::suggestion_respects_decision_table` con 8 filas que cubren todas las clases.\n\n## Verificación\n- `conf:check` con `memry-budget` en config muestra `Unknown option 'memry-budget'. It will be ignored. Did you mean 'memory-budget'?`.\n- 2077 tests de la suite pasan (incluido el nuevo `KeySuggestionTest`).\n\nFuente: Bugs.md líneas 141-145.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "a04b8216-3736-431d-b745-92f4f6442fc9",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[ALTA] BUG-6 — memoryThreshold per-job no se popula en JSON",
+          "description": "**Tests**: V33-072, V33-073\n\n`memoryThreshold` per-job aparecía como `null` en el JSON aunque la config declarase `memory: 200` (short) o `memory: {warn-above: 100, fail-above: 8000}` (extended). Solo `memoryReserved` se populaba (y solo en short form).\n\n## Causa raíz\n\n`FlowMemoryHandler::enrichSingle()` solo poblaba el threshold cuando se cumplía:\n\n```php\nif (!$this->disabled && $threshold !== null && $peak !== null) { ... }\n```\n\nCuando el sampler estaba inactivo o el job era demasiado rápido para muestrear, `$peak === null` y el campo se quedaba sin poblar. Pero `warnAbove` / `failAbove` son **datos de configuración**, no medidos: deben surfacearse aunque no haya peak — el cliente JSON necesita conocer el umbral declarado para correlacionar resultados de runs distintos.\n\n## Fix\n- En `FlowMemoryHandler::enrichSingle()`, el guard se relaja a `if (!$this->disabled && $threshold !== null)`. Cuando hay peak, evaluamos `state` y `reason`; cuando no, ambos quedan en `MEMORY_THRESHOLD_NONE` / `null`. `warnAbove` y `failAbove` se serializan en cualquier caso.\n\n## Verificación\n- `flow qa --format=json --config=githooks-v33-memory-budget.php`:\n  - `parallel_lint` (`memory: 200` short): `reserved=200, threshold.warnAbove=200, threshold.failAbove=null`.\n  - `phpcs_src` (`memory: {warn-above: 100, fail-above: 8000}` extended): `reserved=null, threshold.warnAbove=100, threshold.failAbove=8000`.\n  - `phpstan_src` (`memory: 300` short): `reserved=300, threshold.warnAbove=300, threshold.failAbove=null`.\n- 427 tests Execution pasan.\n\nFuente: Bugs.md líneas 101-112.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []

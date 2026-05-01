@@ -203,11 +203,22 @@ class FlowMemoryHandler
         }
 
         $threshold = $job->getMemoryThreshold();
-        if (!$this->disabled && $threshold !== null && $peak !== null) {
-            $eval = MemoryThresholdEvaluator::evaluate($peak, $threshold);
+        if (!$this->disabled && $threshold !== null) {
+            // Populate warnAbove/failAbove unconditionally — they reflect the
+            // configured contract and must surface in JSON/SARIF even when no
+            // peak was observed (sampler unavailable, job too short to sample).
+            // The state/reason of the crossing depends on the peak; without
+            // peak, leave them as MEMORY_THRESHOLD_NONE / null (BUG-6).
+            $state = JobResult::MEMORY_THRESHOLD_NONE;
+            $reason = null;
+            if ($peak !== null) {
+                $eval = MemoryThresholdEvaluator::evaluate($peak, $threshold);
+                $state = $eval['state'];
+                $reason = $eval['reason'];
+            }
             $result = $result->withMemoryThreshold(
-                $eval['state'],
-                $eval['reason'],
+                $state,
+                $reason,
                 $threshold->getWarnAbove(),
                 $threshold->getFailAbove()
             );
