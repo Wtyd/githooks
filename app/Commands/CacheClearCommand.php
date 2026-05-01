@@ -68,7 +68,8 @@ class CacheClearCommand extends Command
 
             return $hasErrors ? 1 : 0;
         } catch (GitHooksExceptionInterface $e) {
-            $this->error($e->getMessage());
+            // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
+            fwrite(STDERR, $e->getMessage() . "\n");
             return 1;
         }
     }

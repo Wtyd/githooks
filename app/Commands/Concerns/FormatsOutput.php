@@ -292,7 +292,8 @@ trait FormatsOutput
     {
         $content = $this->formatterFor($format)->format($result);
         $this->writeContentToFile($content, $path);
-        $this->info("Report written to: $path");
+        // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
+        fwrite(STDERR, "Report written to: $path\n");
     }
 
     /**
@@ -332,7 +333,8 @@ trait FormatsOutput
 
         $path = strval($customOutput);
         $this->writeContentToFile($content, $path);
-        $this->info("Report written to: $path");
+        // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
+        fwrite(STDERR, "Report written to: $path\n");
     }
 
     /**

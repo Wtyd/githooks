@@ -65,15 +65,6 @@
           "comments": []
         },
         {
-          "id": "0dc44e23-e239-49fe-b630-53a7aba59615",
-          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
-          "title": "[ALTA] BUG-5 — Mensajes informativos contaminan stdout en --format=json",
-          "description": "**Tests afectados**: V33-034, V33-038, V33-041, V33-042, V33-055\n\nVarios mensajes que deberían ir a stderr salen por stdout, rompiendo el contrato \"stdout limpio para parseo JSON\".\n\nMensajes confirmados que contaminan stdout:\n- `--files-from: UTF-8 BOM detected and stripped`\n- `--exclude-pattern eliminated all input files`\n- `--files takes precedence over --fast (--fast ignored)`\n- `--files takes precedence over --fast-branch (--fast-branch ignored)`\n- `Report written to: <path>`\n\n**Impacto**: cualquier integración CI que parsee stdout con `jq` o `python -c \"import json; json.load(...)\"` falla.\n\n## Criterio de cierre\n- Los 5 mensajes anteriores salen por stderr cuando `--format=json/junit/sarif/codeclimate`.\n- Auditar el resto de notices del CLI por la misma regla.\n- stdout siempre parseable como JSON puro en modos estructurados.\n\nFuente: Bugs.md líneas 88-99.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "a04b8216-3736-431d-b745-92f4f6442fc9",
           "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
           "title": "[ALTA] BUG-6 — memoryThreshold per-job no se popula en JSON",
@@ -152,6 +143,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[BAJA] BUG-14 — Warning REQ-018 en stdout (text mode)",
           "description": "**Test**: V33-004\n\n`flows ci-pack qa` (mixto meta-flow + flow ad-hoc) emitía el warning REQ-018 `Options declared in 'ci-pack' are ignored in multi-flow runs.` por **stdout**, contaminando pipelines que capturan stdout en text mode.\n\n## Fix\n- `FlowsCommand::emitIgnoredOptionsWarning()` reemplaza `$this->warn(...)` por `fwrite(STDERR, ...)` con icono `⚠️ ` para preservar la indicación visual.\n- No se usa `$this->output->getErrorOutput()` porque el método está protegido en `Illuminate\\Console\\OutputStyle` (extiende SymfonyStyle); `fwrite(STDERR)` es más simple y consistente con `Printer::deprecationWarning()` introducido para BUG-12.\n\n## Verificación\n- `flows ci-pack qa --config=meta-flow.php`: warning solo en stderr; stdout no menciona REQ-018.\n- 11 tests existentes de `FlowsCommand` pasan (el warning sigue saliendo, ahora por stderr donde phpunit lo deja pasar).\n\nFuente: Bugs.md líneas 160-164.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "0dc44e23-e239-49fe-b630-53a7aba59615",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[ALTA] BUG-5 — Mensajes informativos contaminan stdout en --format=json",
+          "description": "**Tests afectados**: V33-034, V33-038, V33-041, V33-042, V33-055\n\nMensajes informativos (advisories y errores) salían por **stdout**, contaminando el payload cuando `--format=json/junit/sarif/codeclimate`. Cualquier consumidor que parsee stdout (`jq`, `python -c \"import json; json.load(...)\"`) recibía texto + JSON juntos y fallaba.\n\n## Tabla de factores\n\n| Factor | Clases | Decisión |\n|---|---|---|\n| Tipo de mensaje | informativo (BOM, override, written, file-skip), error fatal (excepción) | todo a STDERR |\n| Formato output | text, json, junit, sarif, codeclimate | irrelevante: regla uniforme |\n| Canal esperado | stdout (payload), stderr (advisory/error) | ningún advisory toca stdout |\n\n## Mensajes redirigidos a STDERR\n1. `--files-from: UTF-8 BOM detected and stripped` — `ResolvesInputFiles::resolveInputFilesFlags`\n2. `--exclude-pattern eliminated all input files` — `InputFilesException` capturada por los catch handlers de los 4 comandos\n3. `--files takes precedence over --fast (--fast ignored)` — `ResolvesInputFiles::resolveInputFilesFlags`\n4. `--files takes precedence over --fast-branch (--fast-branch ignored)` — mismo path que (3)\n5. `Report written to: <path>` — `FormatsOutput::writeReportFile` y `FormatsOutput::writeStructuredPayload` (2 ocurrencias)\n\nAdicional fuera del catálogo pero misma causa raíz:\n6. `file 'X' does not exist, skipping` — `ResolvesInputFiles::resolveInputFilesFlags`\n7. Errores de `GitHooksExceptionInterface` capturados en los 4 commands (FlowCommand, FlowsCommand, JobCommand, CacheClearCommand) — antes iban por `$this->error()` (stdout rojo), ahora por `fwrite(STDERR, ...)`.\n\n## Fix\n- `ResolvesInputFiles.php`: 3 `$this->warn(...)` → `fwrite(STDERR, \"⚠️  ...\\n\")`.\n- `FormatsOutput.php`: 2 `$this->info(\"Report written to: ...\")` → `fwrite(STDERR, ...)`.\n- 4 catch handlers (`FlowCommand`, `FlowsCommand`, `JobCommand`, `CacheClearCommand`): `$this->error($e->getMessage())` → `fwrite(STDERR, ...)`.\n\n## Verificación end-to-end\n- M1 BOM: stdout JSON parseable, mensaje en stderr.\n- M2 exclude-eliminated: stdout vacío (RC=1), error en stderr.\n- M3/M4 files vs fast: stdout JSON parseable, warning en stderr.\n- M5 Report written: stdout JSON parseable, fichero creado, mensaje en stderr.\n- 265 tests system pasan (3 skipped por motivos previos).\n\nFuente: Bugs.md líneas 88-99.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []

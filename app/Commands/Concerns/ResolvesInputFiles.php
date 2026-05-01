@@ -49,17 +49,19 @@ trait ResolvesInputFiles
             (string) getcwd()
         );
 
+        // Advisories about input files go to STDERR so --format=json/junit/sarif/codeclimate
+        // stdout stays a clean, parseable payload (BUG-5).
         foreach ($resolution->getInvalid() as $invalid) {
-            $this->warn("file '$invalid' does not exist, skipping");
+            fwrite(STDERR, "⚠️  file '$invalid' does not exist, skipping\n");
         }
         if ($resolution->isBomDetected()) {
-            $this->warn('--files-from: UTF-8 BOM detected and stripped');
+            fwrite(STDERR, "⚠️  --files-from: UTF-8 BOM detected and stripped\n");
         }
 
         if ($this->option('fast') || $this->option('fast-branch')) {
             $other   = $this->option('fast') ? '--fast' : '--fast-branch';
             $primary = is_string($files) && $files !== '' ? '--files' : '--files-from';
-            $this->warn("$primary takes precedence over $other ($other ignored)");
+            fwrite(STDERR, "⚠️  $primary takes precedence over $other ($other ignored)\n");
         }
 
         if ($printModeHeader && (strval($this->option('format')) === '' || $this->option('format') === null)) {

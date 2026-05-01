@@ -232,7 +232,8 @@ class FlowsCommand extends Command
 
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {
-            $this->error($e->getMessage());
+            // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
+            fwrite(STDERR, $e->getMessage() . "\n");
             return 1;
         }
     }
