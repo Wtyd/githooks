@@ -51,7 +51,8 @@
       "Bash(php7.4 -l:*)",
       "Bash(php7.4 githooks conf:check:*)",
       "Bash(php8.1 vendor/bin/phpunit:*)",
-      "Bash(php8.5 vendor/bin/phpunit:*)"
+      "Bash(php8.5 vendor/bin/phpunit:*)",
+      "Bash(git check-ignore *)"
     ]
   }
 }
