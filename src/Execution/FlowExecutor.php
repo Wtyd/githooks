@@ -492,6 +492,15 @@ class FlowExecutor
                 }
             }
 
+            // Sample memory BEFORE pollCompleted so jobs that finish during
+            // this iteration still contribute at least one /proc read while
+            // they are alive. Without this, jobs shorter than the throttle
+            // window (~1s) reported peak=0 because no tick fired during their
+            // lifetime (BUG-7).
+            if ($memoryHandler->isActive() && $pool->hasRunning()) {
+                $memoryHandler->tick($pool->getRunning());
+            }
+
             foreach ($pool->pollCompleted() as $entry) {
                 $result = $this->collectResult($entry);
                 $results[] = $result;
@@ -529,10 +538,11 @@ class FlowExecutor
                     $dashboard->tick();
                     $lastTick = $now;
                 }
-                if ($memoryHandler->isActive() && ($now - $lastMemorySample) >= 1.0) {
-                    $memoryHandler->tick($pool->getRunning());
-                    $lastMemorySample = $now;
-                }
+                // Memory sampling moved to the top of the iteration (above
+                // pollCompleted) so jobs finishing within a single tick still
+                // get sampled; the variable is left as a no-op anchor for
+                // backward source-compatibility of the surrounding control flow.
+                $lastMemorySample = $now;
                 usleep(10000);
             }
         }
