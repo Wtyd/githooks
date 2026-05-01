@@ -372,9 +372,12 @@ class FlowsCommand extends Command
             return;
         }
 
-        $this->warn(
-            "Options declared in '" . implode("', '", $ignored) . "' are ignored in multi-flow runs."
-            . "\n  Effective options come from flows.options + CLI; see header below."
+        // REQ-018 advisory: route to stderr so pipelines capturing stdout
+        // (CI, --format=json, scripted tooling) don't pick up the message.
+        fwrite(
+            STDERR,
+            "⚠️  Options declared in '" . implode("', '", $ignored) . "' are ignored in multi-flow runs."
+            . "\n  Effective options come from flows.options + CLI; see header below.\n"
         );
     }
 

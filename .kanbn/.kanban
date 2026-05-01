@@ -39,15 +39,6 @@
           "labels": [],
           "checkboxes": [],
           "comments": []
-        },
-        {
-          "id": "774adee3-9ea0-44da-af54-c1ed426eaea9",
-          "listId": "e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d",
-          "title": "[BAJA] BUG-14 — Warning REQ-018 en stdout (text mode)",
-          "description": "**Test**: V33-004\n\n`flows ci-pack qa` (mixto meta + flow ad-hoc) emite el warning `Options declared in 'ci-pack' are ignored in multi-flow runs.` por **stdout**.\n\nDebería ir a stderr para no contaminar pipelines que capturen stdout.\n\n## Criterio de cierre\n- Warning REQ-018 sale por stderr.\n- stdout sigue limpio en `--format=json` (cubierto en BUG-5 más amplio).\n\nFuente: Bugs.md líneas 160-164.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
         }
       ]
     },
@@ -152,6 +143,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[BAJA] BUG-12 — Deprecation warnings en stdout en lugar de stderr",
           "description": "**Tests**: V33-095, V33-096, V33-097, V33-098\n\n`conf:check` con keys camelCase emitía las líneas `Deprecated: 'X' is renamed to 'Y'. Will be removed in v4.0.` por **stdout**, contaminando pipelines que parsean la salida del comando.\n\n## Fix\n- Nuevo método `Printer::deprecationWarning(string $message)` que escribe a `STDERR` con el mismo formato visual que `resultWarning` (icono `⚠️ ` + amarillo).\n- `CheckConfigurationFileCommand`: itera primero `getDeprecations()` y los emite por stderr; luego itera `getWarnings()` excluyendo los mensajes ya emitidos como deprecation (mantiene la lista de duplicados con `isset` sobre un array indexado por mensaje, O(1)).\n- `ValidationResult` no se toca: deprecations[] sigue duplicando en warnings[] para que el JSON/SARIF formatter conserve los mensajes humanos en `warnings[]` además del bloque estructurado `deprecations[]`.\n\n## Verificación\n- `conf:check --config=githooks-v33-camelcase.php`: las 4 líneas `Deprecated: ...` aparecen en stderr; stdout sin mención de \"deprecat\".\n- 19 tests de `CheckConfigurationFileCommandTest` pasan sin cambios (no chequeaban el canal de salida).\n\nFuente: Bugs.md líneas 147-152.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "774adee3-9ea0-44da-af54-c1ed426eaea9",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[BAJA] BUG-14 — Warning REQ-018 en stdout (text mode)",
+          "description": "**Test**: V33-004\n\n`flows ci-pack qa` (mixto meta-flow + flow ad-hoc) emitía el warning REQ-018 `Options declared in 'ci-pack' are ignored in multi-flow runs.` por **stdout**, contaminando pipelines que capturan stdout en text mode.\n\n## Fix\n- `FlowsCommand::emitIgnoredOptionsWarning()` reemplaza `$this->warn(...)` por `fwrite(STDERR, ...)` con icono `⚠️ ` para preservar la indicación visual.\n- No se usa `$this->output->getErrorOutput()` porque el método está protegido en `Illuminate\\Console\\OutputStyle` (extiende SymfonyStyle); `fwrite(STDERR)` es más simple y consistente con `Printer::deprecationWarning()` introducido para BUG-12.\n\n## Verificación\n- `flows ci-pack qa --config=meta-flow.php`: warning solo en stderr; stdout no menciona REQ-018.\n- 11 tests existentes de `FlowsCommand` pasan (el warning sigue saliendo, ahora por stderr donde phpunit lo deja pasar).\n\nFuente: Bugs.md líneas 160-164.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []
