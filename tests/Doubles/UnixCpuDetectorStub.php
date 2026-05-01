@@ -21,16 +21,22 @@ class UnixCpuDetectorStub extends CpuDetector
 
     private int $procCpuinfoCount;
 
+    /** @var array<string, ?string> path => contents (null when "unreadable") */
+    private array $fileResponses;
+
     /** @var string[] */
     public array $executed = [];
 
     /**
      * @param array<string, array{output: array<int,string>, exit: int}> $execResponses
+     * @param array<string, ?string> $fileResponses path => contents (null = unreadable).
+     *        Anything not listed is reported as unreadable.
      */
-    public function __construct(array $execResponses, int $procCpuinfoCount = 0)
+    public function __construct(array $execResponses, int $procCpuinfoCount = 0, array $fileResponses = [])
     {
         $this->execResponses = $execResponses;
         $this->procCpuinfoCount = $procCpuinfoCount;
+        $this->fileResponses = $fileResponses;
     }
 
     protected function isWindows(): bool
@@ -53,5 +59,13 @@ class UnixCpuDetectorStub extends CpuDetector
     protected function readProcCpuinfoCount(): int
     {
         return $this->procCpuinfoCount;
+    }
+
+    protected function readFileContents(string $path): ?string
+    {
+        if (!array_key_exists($path, $this->fileResponses)) {
+            return null;
+        }
+        return $this->fileResponses[$path];
     }
 }

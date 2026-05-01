@@ -19,15 +19,6 @@
           "comments": []
         },
         {
-          "id": "29ca5144-a506-4512-ad96-4a980410c15d",
-          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
-          "title": "[ALTA] BUG-4 — system:info reporta CPUs sin respetar cgroups",
-          "description": "`php8.4 vendor/bin/githooks system:info` reporta `Available CPUs: 20 (detected)` cuando el contenedor está limitado a **8** (`docker-compose.yml: cpu_count: 8`).\n\n**Causa raíz probable** de los cuelgues por sobre-reserva en thread budget / `FifoAdmission` (BUGs 1, 2, 3).\n\n**Fix sugerido**: leer `/sys/fs/cgroup/cpu.max` (cgroup v2) o `/sys/fs/cgroup/cpu/cpu.cfs_quota_us` + `cpu.cfs_period_us` (v1) además de `nproc()`.\n\n## Criterio de cierre\n- `system:info` respeta el límite del cgroup en entorno containerizado.\n- Soporte cgroup v1 y v2.\n- Caso sin límite (host real): mantener `nproc()` actual.\n- Idealmente desbloquea o reduce los BUGs 1-3.\n\nFuente: Bugs.md líneas 81-86.",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        },
-        {
           "id": "10c6bc4d-f21e-42bd-80e6-037388a49b15",
           "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
           "title": "[ALTA] BUG-7 — Sampler RSS no funciona en Linux",
@@ -151,6 +142,15 @@
           "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
           "title": "[ALTA] BUG-6 — memoryThreshold per-job no se popula en JSON",
           "description": "**Tests**: V33-072, V33-073\n\n`memoryThreshold` per-job aparecía como `null` en el JSON aunque la config declarase `memory: 200` (short) o `memory: {warn-above: 100, fail-above: 8000}` (extended). Solo `memoryReserved` se populaba (y solo en short form).\n\n## Causa raíz\n\n`FlowMemoryHandler::enrichSingle()` solo poblaba el threshold cuando se cumplía:\n\n```php\nif (!$this->disabled && $threshold !== null && $peak !== null) { ... }\n```\n\nCuando el sampler estaba inactivo o el job era demasiado rápido para muestrear, `$peak === null` y el campo se quedaba sin poblar. Pero `warnAbove` / `failAbove` son **datos de configuración**, no medidos: deben surfacearse aunque no haya peak — el cliente JSON necesita conocer el umbral declarado para correlacionar resultados de runs distintos.\n\n## Fix\n- En `FlowMemoryHandler::enrichSingle()`, el guard se relaja a `if (!$this->disabled && $threshold !== null)`. Cuando hay peak, evaluamos `state` y `reason`; cuando no, ambos quedan en `MEMORY_THRESHOLD_NONE` / `null`. `warnAbove` y `failAbove` se serializan en cualquier caso.\n\n## Verificación\n- `flow qa --format=json --config=githooks-v33-memory-budget.php`:\n  - `parallel_lint` (`memory: 200` short): `reserved=200, threshold.warnAbove=200, threshold.failAbove=null`.\n  - `phpcs_src` (`memory: {warn-above: 100, fail-above: 8000}` extended): `reserved=null, threshold.warnAbove=100, threshold.failAbove=8000`.\n  - `phpstan_src` (`memory: 300` short): `reserved=300, threshold.warnAbove=300, threshold.failAbove=null`.\n- 427 tests Execution pasan.\n\nFuente: Bugs.md líneas 101-112.\n",
+          "labels": [],
+          "checkboxes": [],
+          "comments": []
+        },
+        {
+          "id": "29ca5144-a506-4512-ad96-4a980410c15d",
+          "listId": "edf13be7-1921-4f0e-bec7-0aff2d14f25b",
+          "title": "[ALTA] BUG-4 — system:info reporta CPUs sin respetar cgroups",
+          "description": "**Tests**: V33-058 (system:info)\n\n`php githooks system:info` reportaba `Available CPUs: <nproc>` ignorando los límites del cgroup en entornos containerizados (Docker `cpu_count`, Kubernetes pod limits, ECS/Fargate). Esto era la causa raíz probable de los cuelgues por sobre-reserva (BUG-1/2/3): el thread budget calculaba presupuesto contra los CPUs del host, no contra lo que realmente le habían asignado al proceso.\n\n## Tabla de factores\n\n| Factor | Clases | Decisión |\n|---|---|---|\n| nproc | N (host CPUs) | base sin clamp |\n| cgroup v2 cpu.max | absent, \"max …\", \"<quota> <period>\" | absent / \"max\" → no clamp; quota → ceil(quota/period) |\n| cgroup v1 cfs_quota_us | absent, -1, positive | -1 → no clamp; positive → ceil(quota/period) |\n| cgroup v2 cpuset.cpus.effective | absent, \"0-N\", \"a,b,c\", mixed | absent → no clamp; lista → contar CPUs |\n| cgroup v1 cpuset/cpuset.cpus | absent, lista | fallback cuando no hay v2 |\n\nBoundary AVL: quota igual a `period * nproc` (clamp invisible), quota fraccional (\"250000 100000\" → ceil(2.5) = 3).\n\n## Fix\n- `CpuDetector::detectUnix()`: tras obtener `nproc` o el conteo de `/proc/cpuinfo`, pasa por `clampToCgroupLimit()`.\n- `clampToCgroupLimit()`: combina los límites de `cpu.max` (v2) o `cfs_quota_us`/`cfs_period_us` (v1) y `cpuset.cpus.effective` (v2) o `cpuset/cpuset.cpus` (v1). Devuelve el mínimo de todos ellos clampado contra `nproc`.\n- `countCpusetEntries()`: parser para listas tipo `\"0-3,5,8-11\"` (contiguo + suelto + sets disjuntos).\n- Métodos `readFileContents()` y `readCgroupCpuLimit()` extraídos como `protected` para que el stub de tests los pueda override sin tocar `/sys/fs/cgroup` real.\n\n## Tests\n- `CpuDetectorCgroupTest`: 14 filas con decision table — sin cgroup, v2 sin límite (`max`), v2 con quota, v2 boundary (quota = nproc * period), v2 fractional (ceil), v1 unlimited (`-1`), v1 con quota, v2 takes precedence over v1, garbage fallback, cpuset v2 contiguo, cpuset v2 mixto, cpuset v2 limita por debajo de cpu.max, cpuset v1 legacy.\n- `UnixCpuDetectorStub` extendido con `fileResponses` para inyectar respuestas de filesystem por path.\n\n## Verificación\n- 14/14 tests pasan.\n- En el contenedor de desarrollo `cat /sys/fs/cgroup/cpu.max` da `max 100000` y `cpuset.cpus.effective` da `0-19`: no hay quota efectivo, por tanto `system:info` sigue reportando 20 CPUs (correcto). El fix se valida en CI runners reales con quota o cpuset, donde el clamp surface el límite. Los tests unitarios cubren ambos casos.\n\nFuente: Bugs.md líneas 81-86.\n",
           "labels": [],
           "checkboxes": [],
           "comments": []
