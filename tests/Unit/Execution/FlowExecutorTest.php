@@ -439,6 +439,111 @@ class FlowExecutorTest extends TestCase
         $this->assertTrue($result->getJobResults()[0]->isSuccess());
     }
 
+    /**
+     * Regression: BUG-002 — `--memory-warn-above=N` (or `memory-budget.warn-above`)
+     * with N < max(jobs.memory) deadlocked the FlowExecutor. The bin-packing
+     * reference (warn-above preferred, fail-above otherwise — see
+     * MemoryBudgetConfiguration::getBinPackingReference) was used as a hard
+     * admission ceiling, so a single job declaring `memory: 300` against a
+     * warn-above of 200 never satisfied AdmissionContext::fits() and
+     * FifoAdmission span at 100% CPU forever (the executeParallel loop only
+     * sleeps when `hasRunning()` — with running=[] and queue!=[] it busy-waits).
+     *
+     * The fix mirrors the cores clamp in buildProcessPool: memory reservations
+     * are clamped to memoryBudgetMb so a single oversized job is admitted alone
+     * (consuming the full budget) and finishes the flow.
+     *
+     * Decision table — warn-above as bin-packing reference, processes=2:
+     *   C  head_below_budget       head=100              budget=200  → admit
+     *   D  head_at_boundary        head=200              budget=200  → admit
+     *   E  head_above_budget       head=300              budget=200  → BUG: deadlock
+     *   F  pair_fits_combined      head=100, tail=50     budget=200  → admit both
+     *   H  head_above_with_tail    head=300, tail=50     budget=200  → BUG: deadlock
+     *
+     * @test
+     * @dataProvider memoryAdmissionScenarios
+     *
+     * @param int[] $memoryReserves
+     */
+    public function parallel_does_not_deadlock_when_memory_reserve_exceeds_warn_above(
+        string $caseLabel,
+        int $warnAbove,
+        array $memoryReserves
+    ): void {
+        $jobs = [];
+        foreach ($memoryReserves as $idx => $memMb) {
+            $jobs[] = new CustomJob(new JobConfiguration(
+                'job_' . $idx,
+                'custom',
+                ['script' => 'echo j' . $idx, 'memory' => $memMb]
+            ));
+        }
+
+        $options = new OptionsConfiguration(
+            false,                                                                    // failFast
+            2,                                                                        // processes
+            null,                                                                     // mainBranch
+            'full',                                                                   // fastBranchFallback
+            '',                                                                       // executablePrefix
+            [],                                                                       // reports
+            null,                                                                     // timeBudget
+            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration($warnAbove, null), // memoryBudget
+            'fifo',                                                                   // allocator
+            false                                                                     // stats
+        );
+        $plan = new FlowPlan('test', $jobs, $options);
+
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        // Belt-and-suspenders: when running=[] && queue!=[], the executeParallel
+        // loop spins at 100% CPU without usleep, so PHPUnit's wall-clock budget
+        // is the only thing that catches the deadlock. SIGALRM kills the spin
+        // sooner with a clear failure message.
+        $async = function_exists('pcntl_async_signals') ? pcntl_async_signals(true) : false;
+        if (function_exists('pcntl_alarm')) {
+            pcntl_signal(SIGALRM, function () use ($caseLabel) {
+                $this->fail(
+                    "FlowExecutor deadlocked on case '{$caseLabel}': "
+                    . 'warn-above < max(jobs.memory) was treated as a hard admission ceiling'
+                );
+            });
+            pcntl_alarm(15);
+        }
+
+        try {
+            $result = $executor->execute($plan);
+        } finally {
+            if (function_exists('pcntl_alarm')) {
+                pcntl_alarm(0);
+            }
+            if (function_exists('pcntl_async_signals')) {
+                pcntl_async_signals($async);
+            }
+        }
+
+        $this->assertCount(count($memoryReserves), $result->getJobResults());
+        foreach ($result->getJobResults() as $jr) {
+            $this->assertTrue(
+                $jr->isSuccess(),
+                sprintf('Job %s should have succeeded on case %s', $jr->getJobName(), $caseLabel)
+            );
+        }
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: int, 2: int[]}>
+     */
+    public function memoryAdmissionScenarios(): array
+    {
+        return [
+            'C: head below budget'           => ['C', 200, [100]],
+            'D: head at boundary'            => ['D', 200, [200]],
+            'E: head above budget (BUG-002)' => ['E', 200, [300]],
+            'F: pair fits combined'          => ['F', 200, [100, 50]],
+            'H: head above with tail (BUG)'  => ['H', 200, [300, 50]],
+        ];
+    }
+
     // ========================================================================
     // Peak threads tracking
     // ========================================================================

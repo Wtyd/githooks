@@ -408,6 +408,23 @@ class FlowExecutor
             $memoryBudgetMb = $budget->getBinPackingReference();
         }
 
+        // Clamp per-job memory reservations to the bin-packing reference. Mirrors
+        // the cores clamp above: without this, a single job whose declared
+        // `memory: N` exceeds `memory-budget.warn-above` (or `--memory-warn-above`
+        // from CLI) would never satisfy AdmissionContext::fits(), leaving
+        // FifoAdmission to spin at 100% CPU forever (BUG-002 — the executeParallel
+        // loop only sleeps when `hasRunning()` is true). The reported
+        // `memoryReserved` in JobResult still reflects the unclamped value
+        // (FlowMemoryHandler::enrichSingle reads JobAbstract::getMemoryReserve()
+        // directly), so user-facing accounting is unaffected.
+        if ($memoryBudgetMb !== null) {
+            foreach ($memoryReserveByJob as $name => $reserve) {
+                if ($reserve !== null && $reserve > $memoryBudgetMb) {
+                    $memoryReserveByJob[$name] = $memoryBudgetMb;
+                }
+            }
+        }
+
         return new ProcessPool(
             $maxProcesses,
             $strategy,
