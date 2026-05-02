@@ -132,6 +132,22 @@ Recordatorio corto de las 5 categorías (para orquestar y consolidar):
 - **COSMÉTICO** — Decoración ANSI, contadores de reporting: descartar.
 - **AMBIGUO** — No hay evidencia suficiente para decidir tras verificar. El orquestador (no el subagente) re-inspecciona y resuelve. Mejor ambiguo que mal clasificado.
 
+### Contratos locales vs. cruzados (importante)
+
+Infection detecta contratos **locales** — los que viven dentro de un método o componente. No detecta contratos **cruzados**, donde el componente A produce un valor que B debe propagar a Y.
+
+Ejemplo real (BUG-001, fix `b9f5ff8`): `FlowMemoryHandler::enrichSingle()` setea correctamente `memoryThresholdState = FAILED` en el `JobResult`. `MemoryThresholdEvaluator::evaluate()` calcula correctamente el state. Cada uno con cobertura local y mutantes muertos. Pero el contrato cruzado "cuando state == FAILED, `success` debe propagar a `false`" no estaba codificado en ningún test, y ningún mutante en aislamiento podía revelarlo: mutar `withMemoryThreshold` para no tocar `success` es **legítimo** porque ese método no es responsable de `success` — la responsabilidad vive en el coordinador (`FlowMemoryHandler`), pero el coordinador tampoco lo verificaba. El bug vivió bajo MSI 97 % y >90 % cobertura durante toda la v3.3 RC.
+
+**Implicación para la clasificación:** ante un mutante que parece EQUIVALENTE genuino (el componente no toca un campo X y el mutante mantiene esa no-acción), preguntarse:
+
+> ¿Este componente colabora con otro? ¿Hay test del coordinador que verifique el contrato agregado (X visible al consumidor final)?
+
+Si la respuesta es "no", **el mutante no es EQUIVALENTE — es un síntoma de agujero macro**. Promover a una sub-categoría:
+
+- **CRUZADO** — Mutante localmente equivalente que oculta un contrato cruzado no verificado. Acción: test al **nivel del coordinador** (no del componente mutado), o test integration que verifique el efecto end-to-end.
+
+CRUZADO no infla las métricas de Infection (el mutante seguirá vivo o lo mata el test del coordinador). Pero codifica el contrato real. Es el caso donde "la métrica engaña": Infection no puede señalarlo, sólo puede señalar el síntoma.
+
 ## Flujo de análisis
 
 ### Paso 1 — Resumen y perfil (los tres ficheros de texto)
@@ -164,6 +180,7 @@ Recordatorio corto de las 5 categorías (para orquestar y consolidar):
    - `Read` el código fuente con contexto (±10 líneas por mutante).
    - `Glob` y `Read` el test directo (`tests/Unit/<subruta>/<Class>Test.php`).
    - Clasificar cada mutant con **evidencia citada**: qué test lo cubre (MEDIA), qué línea/método lo cubre por rama (EQUIV), qué hace decorativo el cambio (COSM).
+   - **Antes de cerrar como EQUIVALENTE**: preguntarse si el componente colabora con otro y si el contrato agregado está verificado en algún test del coordinador. Si no → CRUZADO (test al nivel del coordinador, no del componente mutado).
 4. Acumular clasificaciones y pasar al siguiente módulo.
 
 Esta es la ruta preferente aunque el log tenga 200+ mutants. Mantener un módulo en contexto a la vez evita silos y permite correlaciones cross-módulo (ej. patrones Windows/Darwin compartidos entre `CpuDetector` y `Platform`).
@@ -204,6 +221,9 @@ Tabla por fichero:línea / Mutator / Problema / Acción
 
 ## Prioridad MEDIA (cobertura débil)
 Tabla similar
+
+## Contratos cruzados a verificar (CRUZADO)
+Mutantes localmente equivalentes que ocultan un contrato no codificado entre componentes. Tabla: fichero:línea / contrato cruzado sospechoso / coordinador donde añadir el test / cómo verificarlo (test unit del coordinador o test integration end-to-end).
 
 ## No accionable (equivalentes / cosméticos)
 Lista resumida agrupada por tipo, con evidencia (test que lo cubre o razón de rama inalcanzable)
@@ -260,6 +280,8 @@ El log principal (`reports/infection/infection.log`) se genera automáticamente 
 - **No convertir pistas en veredictos.** Una pista del orquestador ("X tiene ramas Windows inalcanzables") no es un veredicto — es una tarea de verificación. El clasificador debe buscar el stub o test de esa rama antes de aplicar la pista.
 - **Nunca hacer `Read` sobre `mutation-report.html`.** Es HTML con CSS/JS embebido de 5-10 MB pensado para navegador humano; en contexto LLM rompe el límite de mensaje sin aportar nada sobre los tres ficheros de texto. Si el usuario lo menciona o adjunta, recordarle que la fuente correcta es `infection.log` + `infection-summary.log` + `per-mutator.md`.
 - **No mezclar fixes de código con tests en el mismo commit.** Los bugs latentes detectados merecen PR propio.
+- **No "tapar mutantes" con tests del nivel equivocado.** Si para matar un mutante escribes un test que asserta el detalle de implementación que el mutante toca (en vez del contrato observable), el mutante muere pero el contrato sigue sin verificarse. Y si el código actual está mal, congelas el comportamiento incorrecto: el siguiente que toque el componente no podrá arreglarlo sin "romper tu test". Pregunta de control antes de escribir el test: *si el contrato cambiase mañana, ¿este test fallaría por la razón correcta?*. Si la respuesta es no, estás midiendo la implementación, no el contrato.
+- **No asumir que MSI alto = contratos completos.** MSI cubre contratos LOCALES. Contratos cruzados entre componentes (productor/consumidor) no aparecen en Infection — el mutante en el productor que "no toca el campo X" es legítimamente equivalente cuando el productor no es responsable de X. Para esos contratos hay que añadir tests al **coordinador** o tests integration end-to-end. Ver "Contratos locales vs. cruzados" arriba.
 
 ## Checklist de verificación
 
@@ -272,7 +294,8 @@ Antes de reportar:
 - [ ] Clasificado **cada** mutant escaped; la suma de categorías cuadra con total escaped
 - [ ] AMBIGUOS resueltos por el orquestador (re-inspección manual) — no quedar ambiguos en el informe final
 - [ ] Toda EQUIV/COSM con evidencia citada (método de test o razón concreta)
-- [ ] Cada ALTA tiene una sugerencia concreta de test
+- [ ] Para cada EQUIV: ¿el componente colabora con otro y existe test del coordinador que verifique el contrato cruzado? Si no → CRUZADO en lugar de EQUIV
+- [ ] Cada ALTA tiene una sugerencia concreta de test (al nivel del contrato observable, no al de la línea mutada)
 - [ ] Mutants agrupados por fichero, no por orden del log
 - [ ] Plan de acción priorizado por ROI, no por orden de aparición
 - [ ] Sección "Candidatos a fixes de código" presente (o declarada vacía explícitamente)
