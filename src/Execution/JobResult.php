@@ -324,6 +324,19 @@ class JobResult
         return $clone;
     }
 
+    /**
+     * Flip success OK→KO because the per-job memory threshold crossed fail-above.
+     * Mirrors the time-budget contract from FlowExecutor (RAT-006): the flip
+     * applies only when the tool itself passed; pre-existing failures are
+     * preserved by the caller.
+     */
+    public function withFailureByMemoryThreshold(): self
+    {
+        $clone = clone $this;
+        $clone->success = false;
+        return $clone;
+    }
+
     public function getMemoryReserved(): ?int
     {
         return $this->memoryReserved;

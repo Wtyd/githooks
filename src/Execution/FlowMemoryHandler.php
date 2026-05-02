@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use Wtyd\GitHooks\Configuration\MemoryThreshold;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\Memory\MemoryEvaluator;
 use Wtyd\GitHooks\Execution\Memory\MemorySample;
@@ -204,24 +205,40 @@ class FlowMemoryHandler
 
         $threshold = $job->getMemoryThreshold();
         if (!$this->disabled && $threshold !== null) {
-            // Populate warnAbove/failAbove unconditionally — they reflect the
-            // configured contract and must surface in JSON/SARIF even when no
-            // peak was observed (sampler unavailable, job too short to sample).
-            // The state/reason of the crossing depends on the peak; without
-            // peak, leave them as MEMORY_THRESHOLD_NONE / null (BUG-6).
-            $state = JobResult::MEMORY_THRESHOLD_NONE;
-            $reason = null;
-            if ($peak !== null) {
-                $eval = MemoryThresholdEvaluator::evaluate($peak, $threshold);
-                $state = $eval['state'];
-                $reason = $eval['reason'];
-            }
-            $result = $result->withMemoryThreshold(
-                $state,
-                $reason,
-                $threshold->getWarnAbove(),
-                $threshold->getFailAbove()
-            );
+            $result = $this->applyThreshold($result, $threshold, $peak);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Populate `memoryThreshold` on the result and flip success OK→KO when the
+     * peak crossed `fail-above` and the tool itself had passed. Symmetric with
+     * the time-budget contract from FlowExecutor (RAT-006 mirror for memory).
+     *
+     * warnAbove/failAbove surface unconditionally — they reflect the configured
+     * contract and must appear in JSON/SARIF even when no peak was observed
+     * (sampler unavailable, job too short to sample); state/reason stay NONE
+     * in that case (BUG-6).
+     */
+    private function applyThreshold(JobResult $result, MemoryThreshold $threshold, ?int $peak): JobResult
+    {
+        $state = JobResult::MEMORY_THRESHOLD_NONE;
+        $reason = null;
+        if ($peak !== null) {
+            $eval = MemoryThresholdEvaluator::evaluate($peak, $threshold);
+            $state = $eval['state'];
+            $reason = $eval['reason'];
+        }
+        $result = $result->withMemoryThreshold(
+            $state,
+            $reason,
+            $threshold->getWarnAbove(),
+            $threshold->getFailAbove()
+        );
+
+        if ($state === JobResult::MEMORY_THRESHOLD_FAILED && $result->isSuccess()) {
+            $result = $result->withFailureByMemoryThreshold();
         }
 
         return $result;

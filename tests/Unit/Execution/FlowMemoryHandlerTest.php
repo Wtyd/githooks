@@ -467,6 +467,106 @@ class FlowMemoryHandlerTest extends TestCase
         $this->assertNull($enriched[0]->getMemoryReserved());
     }
 
+    /**
+     * @test
+     * Per-job FAIL by memory threshold flips OK→KO when the tool itself passed,
+     * symmetric with the time-budget contract enforced in FlowExecutor (RAT-006
+     * mirror for memory).
+     */
+    public function enrich_results_marks_job_failed_when_peak_crosses_fail_above_per_job(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 2200]]);
+        $options = $this->options();
+        $handler = $this->buildHandlerWithSampler($options, $sampler);
+
+        $threshold = MemoryThreshold::fromArray(
+            ['warn-above' => 1000, 'fail-above' => 2000],
+            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            'phpunit'
+        );
+        $job = $this->jobWithMemory('phpunit', null, $threshold);
+        $handler->setup([$job]);
+        $handler->tick(['phpunit' => $this->runningEntry(101)]);
+
+        $result = new JobResult('phpunit', true, '', '50ms');
+        $enriched = $handler->enrichResults([$result], [$job]);
+
+        $this->assertTrue(
+            $enriched[0]->isMemoryFailed(),
+            'peak 2200 > fail-above 2000 must mark the threshold state as failed'
+        );
+        $this->assertFalse(
+            $enriched[0]->isSuccess(),
+            'per-job fail-above crossed: success must flip OK→KO'
+        );
+    }
+
+    /**
+     * @test
+     * Crossing only `warn-above` is informational and must NOT flip success.
+     * This is the boundary that distinguishes warn from fail per-job.
+     */
+    public function enrich_results_keeps_job_passing_when_peak_only_crosses_warn_above(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 1500]]);
+        $options = $this->options();
+        $handler = $this->buildHandlerWithSampler($options, $sampler);
+
+        $threshold = MemoryThreshold::fromArray(
+            ['warn-above' => 1000, 'fail-above' => 2000],
+            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            'phpunit'
+        );
+        $job = $this->jobWithMemory('phpunit', null, $threshold);
+        $handler->setup([$job]);
+        $handler->tick(['phpunit' => $this->runningEntry(101)]);
+
+        $result = new JobResult('phpunit', true, '', '50ms');
+        $enriched = $handler->enrichResults([$result], [$job]);
+
+        $this->assertTrue(
+            $enriched[0]->isMemoryWarned(),
+            'peak 1500 between warn 1000 and fail 2000 must mark warned'
+        );
+        $this->assertTrue(
+            $enriched[0]->isSuccess(),
+            'warn-above alone is informational — must not flip success'
+        );
+    }
+
+    /**
+     * @test
+     * When the tool already failed, a memory threshold crossing is informational
+     * only — success stays false but the original failure mode (exitCode/output)
+     * is preserved. Mirrors RAT-006 from time-budget for symmetry.
+     */
+    public function enrich_results_preserves_existing_failure_when_threshold_also_fails(): void
+    {
+        $sampler = new FakeMemorySampler([['phpunit' => 2500]]);
+        $options = $this->options();
+        $handler = $this->buildHandlerWithSampler($options, $sampler);
+
+        $threshold = MemoryThreshold::fromArray(
+            ['warn-above' => 1000, 'fail-above' => 2000],
+            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            'phpunit'
+        );
+        $job = $this->jobWithMemory('phpunit', null, $threshold);
+        $handler->setup([$job]);
+        $handler->tick(['phpunit' => $this->runningEntry(101)]);
+
+        // Tool already failed (success=false). Memory threshold also crosses.
+        $result = new JobResult('phpunit', false, 'tool error', '50ms');
+        $enriched = $handler->enrichResults([$result], [$job]);
+
+        $this->assertFalse($enriched[0]->isSuccess(), 'pre-existing failure must remain false');
+        $this->assertTrue(
+            $enriched[0]->isMemoryFailed(),
+            'memory threshold state must still surface for reporting'
+        );
+        $this->assertSame('tool error', $enriched[0]->getOutput(), 'original output preserved');
+    }
+
     // ========================================================================
     // attachStats()
     // ========================================================================
