@@ -509,6 +509,123 @@ class ProcessPoolTest extends TestCase
         $pool->terminateAll();
     }
 
+    /**
+     * @test
+     * Kills ProcessPool:165 Minus `coresLimit - coresInUse` -> `+`. The
+     * existing tests cover the no-jobs-running case (inUse=0, where `-`
+     * and `+` agree) and the saturation case where the slot count, not
+     * coresFree, is what blocks. This case forces a head where the
+     * remaining cores after admitting the first job decide the outcome.
+     *
+     * Setup: maxParallel=2 slots, coresBudget=4, queue [j1(cores=2),
+     * big(cores=3)]. Tick 1 admits j1; tick 2 inspects big.
+     *   Original: coresFree = 4 - 2 = 2 → big(3) does NOT fit → idle.
+     *   Mutant:   coresFree = 4 + 2 = 6 → big(3) fits → admitted.
+     */
+    function admission_uses_subtraction_for_cores_free()
+    {
+        $j1 = $this->makeJob('j1', 'sleep 1');
+        $big = $this->makeJob('big', 'sleep 1');
+
+        $pool = new ProcessPool(
+            2,
+            new FifoAdmission(),
+            null,
+            ['j1' => 2, 'big' => 3],
+            [],
+            4
+        );
+        $pool->enqueue([$j1, $big]);
+
+        $started = $pool->fillPool();
+
+        $this->assertSame(['j1'], array_keys($started), 'Only j1 should be admitted; big needs 3 cores but only 2 are free under subtraction');
+        $this->assertSame(['big'], array_map(fn($j) => $j->getName(), $pool->getQueuedJobs()));
+
+        $pool->terminateAll();
+    }
+
+    /**
+     * @test
+     * Kills ProcessPool:227 DecrementInteger `coresInUse = 0` -> `-1` in
+     * terminateAll(). After terminateAll the pool must report a CLEAN
+     * snapshot (cores fully released). The mutant leaves an off-by-one
+     * underflow that lets a job with cores > budget be admitted in the
+     * next round.
+     *
+     * Setup: pool with coresBudget=2 admits a 2-core job, then terminates
+     * everything. A subsequent enqueue of a 3-core job (coresByJob=3,
+     * intentionally over budget — production clamps elsewhere, the pool
+     * itself does not validate) must NOT be admitted because 3 > 2.
+     *   Original: inUse = 0  → free = 2 - 0 = 2  → big(3) > 2 → no fit.
+     *   Mutant:   inUse = -1 → free = 2 - (-1) = 3 → big(3) ≤ 3 → admitted.
+     */
+    function terminate_all_resets_cores_in_use_to_zero()
+    {
+        $j1 = $this->makeJob('j1', 'sleep 1');
+        $big = $this->makeJob('big', 'sleep 0.1');
+
+        $pool = new ProcessPool(
+            2,
+            new FifoAdmission(),
+            null,
+            ['j1' => 2, 'big' => 3],
+            [],
+            2
+        );
+        $pool->enqueue([$j1]);
+        $pool->fillPool();
+        $pool->terminateAll();
+
+        $pool->enqueue([$big]);
+        $started = $pool->fillPool();
+
+        $this->assertEmpty(
+            $started,
+            'After terminateAll, big (cores=3) must NOT fit within coresBudget=2; '
+                . 'a non-zero coresInUse residual would silently raise the effective budget'
+        );
+
+        $pool->terminateAll();
+    }
+
+    /**
+     * @test
+     * Kills ProcessPool:68 IncrementInteger `max(1, $coresBudget ?? maxProcesses)`
+     * -> `max(2, ...)`. The constructor floor on coresBudget guards against
+     * misconfigured budgets (zero or negative). The mutant raises the floor
+     * to 2, which silently doubles the effective budget when the caller
+     * passes 1 — letting a 2-core job through what was meant to be a single
+     * core sandbox.
+     *
+     * Setup: pool with both maxProcesses=1 AND coresBudget=1, queue with a
+     * 2-core job. Original blocks; mutant admits.
+     */
+    function cores_budget_floor_is_one_not_two()
+    {
+        $heavy = $this->makeJob('heavy', 'sleep 1');
+
+        $pool = new ProcessPool(
+            1,
+            new FifoAdmission(),
+            null,
+            ['heavy' => 2],
+            [],
+            1
+        );
+        $pool->enqueue([$heavy]);
+
+        $started = $pool->fillPool();
+
+        $this->assertEmpty(
+            $started,
+            'A 2-core job must NOT be admitted when coresBudget=1; '
+                . 'a floor of 2 in the constructor would silently raise the budget'
+        );
+
+        $pool->terminateAll();
+    }
+
     private function makeJob(string $name, string $script): CustomJob
     {
         return new CustomJob(new JobConfiguration($name, 'custom', ['script' => $script]));
