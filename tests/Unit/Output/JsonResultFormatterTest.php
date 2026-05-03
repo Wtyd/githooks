@@ -594,4 +594,35 @@ class JsonResultFormatterTest extends UnitTestCase
 
         $this->assertSame(['Real parsing warning.'], $data['warnings']);
     }
+
+    /**
+     * @test
+     * Kills JsonResultFormatter:84 UnwrapArrayValues (`array_values($jobs)` →
+     * `$jobs`). When `getJobResults()` returns an array with non-contiguous
+     * keys (e.g. tail jobs filtered out earlier), `array_map` preserves those
+     * keys and `json_encode` would emit `"jobs": {"5": {...}}` (object),
+     * breaking every JSON consumer that expects a plain list. Existing tests
+     * use densely-packed arrays where the mutation is invisible because PHP's
+     * `[0=>x, 1=>y]` already encodes as a list.
+     */
+    function jobs_block_is_a_plain_list_even_when_underlying_array_has_gaps(): void
+    {
+        $job0 = new JobResult('phpstan_src', true, '', '1s');
+        $job1 = new JobResult('phpcs_all', true, '', '500ms');
+        // FlowResult stores the array verbatim; non-contiguous keys are what
+        // caller code can produce after array_filter / unset operations.
+        $jobsWithGaps = [5 => $job0, 7 => $job1];
+
+        $result = new FlowResult('qa', $jobsWithGaps, '1.5s');
+        $json = (new JsonResultFormatter())->format($result);
+        $data = json_decode($json, true);
+
+        $this->assertSame(
+            [0, 1],
+            array_keys($data['jobs']),
+            "data['jobs'] must be a plain list with sequential keys, not an object with the original gapped indices"
+        );
+        $this->assertSame('phpstan_src', $data['jobs'][0]['name']);
+        $this->assertSame('phpcs_all', $data['jobs'][1]['name']);
+    }
 }
