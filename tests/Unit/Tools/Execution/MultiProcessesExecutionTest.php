@@ -474,23 +474,20 @@ class MultiProcessesExecutionTest extends UnitTestCase
     /**
      * Run-loop liveness invariant: under any combination of success / failure /
      * timeout / fail-fast / ignore-errors flags, MultiProcessesExecution::runProcesses()
-     * MUST terminate within a bounded number of iterations. The previous tests
-     * assert the OUTCOME (errors collected, skipped tools, etc.) but none of
-     * them have an iteration cap — a mutation that removes addProcessToQueue,
-     * flips hasPendingWork, or breaks the catch blocks lets the do-while spin
-     * forever, and the test suite would hang up to PHPUnit's wall-clock budget
-     * (>120s under Infection — already reported as timed-out mutants on lines
-     * 38-41 and 131-134 of the production class).
+     * MUST terminate within a bounded number of iterations. None of the previous
+     * outcome-asserting tests guard against a divergent loop — a mutation that
+     * removes addProcessToQueue, flips hasPendingWork, or breaks the catch
+     * blocks lets the do-while spin forever (>120s under Infection, reported
+     * as timed-out mutants on lines 38-41 and 131-134 of the production class).
      *
-     * SIGALRM is NOT a viable guard here because the inner `catch (Throwable)`
-     * on line 51 of runProcesses() catches the AssertionFailedError thrown by
-     * `$this->fail()` and the loop just keeps spinning. Instead we override
-     * `hasPendingWork()` (the do-while condition, evaluated OUTSIDE the inner
-     * try/catch) and throw an `\Error` once iterations exceed a sane cap.
-     * The error escapes to the outer `catch (Throwable)` on line 55, which
-     * registers it as a 'General' error in the returned Errors. The test then
-     * asserts the 'General' key is absent — present means the cap was hit and
-     * the run loop did not converge.
+     * The cap lives in MultiProcessesExecutionFake::hasPendingWork() so EVERY
+     * test in this file inherits it implicitly. Without that, this single
+     * adversarial test would still time out alongside the others when run
+     * against a divergent mutant — Infection kills the entire PHPUnit process
+     * on the first hang, ignoring any test that would have failed cleanly.
+     * With the cap on the Fake, divergent mutants surface as a 'General' error
+     * inside the returned Errors object (see the Fake's docblock for why);
+     * this test asserts the absence of that key.
      *
      * @test
      * @dataProvider adversarialRunLoopScenarios
@@ -519,22 +516,7 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
 
         $printerMock = Mock::spy(Printer::class);
-        $multiProcessExecution = new class ($printerMock, new GitStagerFake()) extends MultiProcessesExecutionFake {
-            /** @var int Iterations of the do-while in runProcesses() observed by hasPendingWork */
-            public int $iterations = 0;
-            public int $iterationCap = 200;
-
-            protected function hasPendingWork(int $totalProcesses): bool
-            {
-                if (++$this->iterations > $this->iterationCap) {
-                    throw new \Error(
-                        "MultiProcessesExecution::runProcesses() did not converge after {$this->iterations} iterations — "
-                            . 'check addProcessToQueue, finishExecution and the catch blocks for guard regressions.'
-                    );
-                }
-                return parent::hasPendingWork($totalProcesses);
-            }
-        };
+        $multiProcessExecution = new MultiProcessesExecutionFake($printerMock, new GitStagerFake());
 
         if (!empty($config['failedTools'])) {
             $multiProcessExecution->failedToolsByFoundedErrors($config['failedTools']);
