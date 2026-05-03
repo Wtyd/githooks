@@ -1049,4 +1049,175 @@ class FlowExecutorTest extends TestCase
 
         $this->assertSame('fast', $result->getExecutionMode());
     }
+
+    // ========================================================================
+    // Tier 2 mutation kills — coordinator contracts
+    // ========================================================================
+
+    /**
+     * Kills FlowExecutor:530 MethodCallRemoval on `outputHandler->onJobSkipped`
+     * in the PARALLEL fail-fast branch. The existing
+     * `parallel_fail_fast_reports_skipped_jobs_with_exact_reason` runs with
+     * processes=1 → falls into executeSequential and never touches line 530.
+     * This case forces processes=2 with one in-flight slow job and one queued
+     * job so the foreach over `getQueuedJobs()` is the only path that emits
+     * the skipped event.
+     *
+     * @test
+     */
+    public function parallel_fail_fast_notifies_outputHandler_for_each_queued_job()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $jobs = [
+            new CustomJob(new JobConfiguration('fail_first', 'custom', ['script' => 'exit 1'])),
+            new CustomJob(new JobConfiguration('slow_inflight', 'custom', ['script' => 'sleep 5'])),
+            new CustomJob(new JobConfiguration('queued', 'custom', ['script' => 'echo q'])),
+        ];
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 2));
+
+        $executor->execute($plan);
+
+        $skippedNames = array_map(fn(array $entry) => $entry['job'], $spy->skippedJobs);
+        $this->assertContains(
+            'queued',
+            $skippedNames,
+            'The queued job must produce an onJobSkipped event in the parallel fail-fast loop'
+        );
+        foreach ($spy->skippedJobs as $entry) {
+            if ($entry['job'] === 'queued') {
+                $this->assertSame('skipped by fail-fast', $entry['reason']);
+            }
+        }
+    }
+
+    /**
+     * Cross-component contract (CRUZADO): when a flow declares `memory-budget`
+     * AND a job declares `memory:`, the FlowResult must surface
+     * memoryBudgetState and the JobResult must surface memoryReserved.
+     *
+     * Kills:
+     *  - FlowExecutor:489 MethodCallRemoval `$memoryHandler->setup($jobs)` —
+     *    without setup, evaluator stays null, isActive() false, enrichSingle
+     *    short-circuits before withMemoryReserved() and the FlowResult never
+     *    gets memoryBudgetState set.
+     *  - FlowExecutor:565 MethodCallRemoval final `$memoryHandler->tick(...)` —
+     *    similar cross-cut: without the tick, getMemoryStats reports an empty
+     *    snapshot.
+     *
+     * @test
+     */
+    public function flow_with_memory_budget_enriches_jobResult_with_memoryReserved_and_flow_state()
+    {
+        $job = new CustomJob(new JobConfiguration(
+            'measured',
+            'custom',
+            ['script' => 'sleep 0.1', 'memory' => 100]
+        ));
+
+        $options = new OptionsConfiguration(
+            false,                                                                    // failFast
+            1,                                                                        // processes
+            null,                                                                     // mainBranch
+            'full',                                                                   // fastBranchFallback
+            '',                                                                       // executablePrefix
+            [],                                                                       // reports
+            null,                                                                     // timeBudget
+            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(500, null),    // memoryBudget
+            'fifo',                                                                   // allocator
+            true                                                                      // stats — forces parallel + sampler
+        );
+        $plan = new FlowPlan('test', [$job], $options);
+
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $result = $executor->execute($plan);
+
+        $jobResult = $result->getJobResults()[0];
+        $this->assertSame(
+            100,
+            $jobResult->getMemoryReserved(),
+            'JobResult must carry the declared memoryReserved when memory-budget is active'
+        );
+        $this->assertNotNull(
+            $result->getMemoryBudgetState(),
+            'FlowResult must carry memoryBudgetState when memory-budget is configured'
+        );
+        $this->assertNotNull(
+            $result->getMemoryStats(),
+            'FlowResult must carry memoryStats when --stats is enabled'
+        );
+    }
+
+    /**
+     * Kills FlowExecutor:400 TrueValue (`$hasReservation = true → false`) and
+     * FlowExecutor:422 LogicalAnd (`&&` → `||`) on the memory-clamp guard.
+     *
+     * Both mutations are observable through `peakEstimatedThreads`:
+     *  - With $hasReservation forced to false, memoryBudgetMb stays null, the
+     *    pool runs in 1D, and two `memory: 300` jobs run concurrently against
+     *    a budget of 100 → peak=2 instead of 1.
+     *  - With the clamp guard flipped to `||`, jobs whose `memory <= budget`
+     *    get clamped TO budget anyway, consuming the whole budget alone —
+     *    two `memory: 50` jobs against budget 100 then run sequentially
+     *    (peak=1) instead of concurrently (peak=2).
+     *
+     * Decision table (processes=2, allocator=fifo, --stats=true):
+     *   over_budget  : memory=[300,300], budget=100 → expected peak=1 (clamp serializes)
+     *   under_budget : memory=[ 50, 50], budget=100 → expected peak=2 (no clamp, both fit)
+     *
+     * @test
+     * @dataProvider memoryClampPeakScenarios
+     *
+     * @param int[] $memoryReserves
+     */
+    public function parallel_peak_threads_reflects_memory_budget_clamp(
+        string $caseLabel,
+        int $warnAbove,
+        array $memoryReserves,
+        int $expectedPeak
+    ): void {
+        $jobs = [];
+        foreach ($memoryReserves as $idx => $memMb) {
+            $jobs[] = new CustomJob(new JobConfiguration(
+                'job_' . $idx,
+                'custom',
+                ['script' => 'sleep 0.2', 'memory' => $memMb]
+            ));
+        }
+
+        $options = new OptionsConfiguration(
+            false,
+            2,
+            null,
+            'full',
+            '',
+            [],
+            null,
+            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration($warnAbove, null),
+            'fifo',
+            false
+        );
+        $plan = new FlowPlan('test', $jobs, $options);
+
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $result = $executor->execute($plan);
+
+        $this->assertSame(
+            $expectedPeak,
+            $result->getPeakEstimatedThreads(),
+            sprintf('Case %s: expected peak=%d', $caseLabel, $expectedPeak)
+        );
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: int, 2: int[], 3: int}>
+     */
+    public function memoryClampPeakScenarios(): array
+    {
+        return [
+            'over_budget — clamp serializes'  => ['over_budget',  100, [300, 300], 1],
+            'under_budget — both fit, no clamp' => ['under_budget', 100, [50, 50],   2],
+        ];
+    }
 }
