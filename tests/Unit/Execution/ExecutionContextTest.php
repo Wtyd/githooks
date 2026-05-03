@@ -332,6 +332,31 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
+     * Kills ExecutionContext:168 TrueValue (`$this->stagedLoaded = true → false`)
+     * inside ensureStagedLoaded(). The previous test only invokes
+     * filterFilesForPaths once and Mockery's `->once()` constraint cannot
+     * tell apart 1 call from 0 — both pass with a stuck loader. The
+     * mutation only manifests on the SECOND call: with `stagedLoaded=false`
+     * the loader runs again every time and getModifiedFiles is hit twice.
+     */
+    function ensure_staged_loaded_caches_after_first_call()
+    {
+        $fileUtils = Mockery::mock(FileUtilsInterface::class);
+        // ->once() now genuinely fails the mutant: the second filter call
+        // would re-enter the if-block and fire getModifiedFiles a second time.
+        $fileUtils->shouldReceive('getModifiedFiles')->once()->andReturn(['src/Foo.php']);
+        $fileUtils->shouldReceive('directoryContainsFile')->andReturn(true);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+        $context->filterFilesForPaths(['src']);
+        $context->filterFilesForPaths(['src']);
+
+        // Mockery verifies the ->once() expectation in tearDown.
+        $this->assertTrue(true);
+    }
+
+    /**
+     * @test
      * Kills L142 ReturnRemoval after the cache hit branch: once the branch
      * diff has been successfully loaded, subsequent calls must NOT re-invoke
      * FileUtils::getBranchDiffFiles. `->once()` is the expectation that
