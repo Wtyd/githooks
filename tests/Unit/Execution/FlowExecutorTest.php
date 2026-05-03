@@ -1220,4 +1220,118 @@ class FlowExecutorTest extends TestCase
             'under_budget — both fit, no clamp' => ['under_budget', 100, [50, 50],   2],
         ];
     }
+
+    /**
+     * Decision table for FlowExecutor::shouldSampleMemory(). The method is
+     * private, so we observe its effect: when it returns true, FlowExecutor
+     * forces executeParallel (instantiating FlowMemoryHandler) even with a
+     * single job and processes=1; when false, it falls through to
+     * executeSequential (memoryHandler stays null → no stats / no per-job
+     * memory enrichment).
+     *
+     * Kills:
+     *  - FlowExecutor:455 TrueValue (stats branch `return true → false`):
+     *    when --stats is on, dropping the return makes the method fall through
+     *    to the budget check (null here), then the per-job loop (null), then
+     *    `return false` → sequential → memoryStats stays null on the result.
+     *  - FlowExecutor:455 ReturnRemoval (same branch, missing return → null):
+     *    null is falsy, identical observable effect.
+     *  - FlowExecutor:458 TrueValue and ReturnRemoval (memory-budget branch):
+     *    same shape — flipping the return drops the flow into sequential mode
+     *    and memoryBudgetState never gets attached.
+     *
+     * Decision table (1 job, processes=1, fail-fast=false):
+     *
+     *   case          | stats | memBudget | jobMem | observable
+     *   stats_only    | true  | null      | null   | flowResult.memoryStats != null
+     *   budget_only   | false | (500,nil) | null   | flowResult.memoryBudgetState != null
+     *   jobmem_only   | false | null      | 100    | jobResult.memoryReserved == 100
+     *   none          | false | null      | null   | both null (sequential, no handler)
+     *
+     * @test
+     * @dataProvider shouldSampleMemoryScenarios
+     */
+    public function shouldSampleMemory_observable_effect(
+        string $caseLabel,
+        bool $stats,
+        ?\Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration $memoryBudget,
+        ?int $jobMemory,
+        bool $expectMemoryStats,
+        bool $expectMemoryBudgetState,
+        ?int $expectJobMemoryReserved
+    ): void {
+        $args = ['script' => 'sleep 0.1'];
+        if ($jobMemory !== null) {
+            $args['memory'] = $jobMemory;
+        }
+        $job = new CustomJob(new JobConfiguration('only', 'custom', $args));
+
+        $options = new OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            [],
+            null,
+            $memoryBudget,
+            'fifo',
+            $stats
+        );
+        $plan = new FlowPlan('test', [$job], $options);
+
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $result = $executor->execute($plan);
+
+        if ($expectMemoryStats) {
+            $this->assertNotNull(
+                $result->getMemoryStats(),
+                "Case {$caseLabel}: shouldSampleMemory must force parallel and populate memoryStats"
+            );
+        } else {
+            $this->assertNull(
+                $result->getMemoryStats(),
+                "Case {$caseLabel}: with no --stats / budget / job memory, memoryStats must stay null"
+            );
+        }
+
+        if ($expectMemoryBudgetState) {
+            $this->assertNotNull(
+                $result->getMemoryBudgetState(),
+                "Case {$caseLabel}: memoryBudgetState must be attached when memory-budget is configured"
+            );
+        } else {
+            $this->assertNull(
+                $result->getMemoryBudgetState(),
+                "Case {$caseLabel}: memoryBudgetState must stay null without memory-budget"
+            );
+        }
+
+        $jobResult = $result->getJobResults()[0];
+        if ($expectJobMemoryReserved !== null) {
+            $this->assertSame(
+                $expectJobMemoryReserved,
+                $jobResult->getMemoryReserved(),
+                "Case {$caseLabel}: jobResult.memoryReserved must surface the declared `memory:` value"
+            );
+        } else {
+            $this->assertNull(
+                $jobResult->getMemoryReserved(),
+                "Case {$caseLabel}: jobResult.memoryReserved must stay null without `memory:`"
+            );
+        }
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: bool, 2: ?\Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration, 3: ?int, 4: bool, 5: bool, 6: ?int}>
+     */
+    public function shouldSampleMemoryScenarios(): array
+    {
+        return [
+            'stats_only'    => ['stats_only',  true,  null,                                                                          null, true,  false, null],
+            'budget_only'   => ['budget_only', false, new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(500, null), null, false, true,  null],
+            'jobmem_only'   => ['jobmem_only', false, null,                                                                          100,  false, false, 100],
+            'none'          => ['none',        false, null,                                                                          null, false, false, null],
+        ];
+    }
 }
