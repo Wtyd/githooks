@@ -1334,4 +1334,88 @@ class FlowExecutorTest extends TestCase
             'none'          => ['none',        false, null,                                                                          null, false, false, null],
         ];
     }
+
+    /**
+     * Cross-component contract (CRUZADO) — FlowExecutor:440 Ternary swap on
+     * `resolveAdmissionStrategy()` (`GREEDY ? new GreedyAdmission() : new FifoAdmission()`
+     * → operands swapped). The mutant pairs each allocator with the wrong
+     * strategy, but the existing direct strategy tests (FifoAdmissionTest,
+     * GreedyAdmissionTest) cannot detect it because they instantiate the
+     * strategies directly — never going through FlowExecutor.
+     *
+     * The observable difference lives in admission order under memory pressure:
+     * with a queue [BIG(80), MED(80), SMALL(20)] against memoryBudget=100 and
+     * BIG already running, FifoAdmission only inspects the head (MED) and
+     * blocks; GreedyAdmission scans the whole queue and admits SMALL alongside
+     * BIG. That changes the COMPLETION ORDER, which is what we assert.
+     *
+     * Timing model (sleeps chosen so the in-flight phase is observable):
+     *   FIFO   : t=0 admit BIG; head MED blocks; t=0.4 BIG done, MED admit;
+     *            t=0.45 MED done, SMALL admit; t=0.5 SMALL done.
+     *            Completion order → [BIG, MED, SMALL].
+     *   GREEDY : t=0 admit BIG; MED blocked but SMALL fits → admit SMALL;
+     *            t=0.05 SMALL done; t=0.4 BIG done, MED admit; t=0.45 MED done.
+     *            Completion order → [SMALL, BIG, MED].
+     *
+     * @test
+     * @dataProvider allocatorStrategyScenarios
+     *
+     * @param string $allocator             AllocatorStrategy literal: 'fifo' | 'greedy'.
+     * @param string $expectedFirstFinished Job name expected at the head of getJobResults().
+     *
+     * @group slow
+     */
+    public function flow_executor_wires_allocator_to_admission_strategy(
+        string $allocator,
+        string $expectedFirstFinished
+    ): void {
+        $jobs = [
+            new CustomJob(new JobConfiguration('big', 'custom', ['script' => 'sleep 0.4', 'memory' => 80])),
+            new CustomJob(new JobConfiguration('med', 'custom', ['script' => 'sleep 0.05', 'memory' => 80])),
+            new CustomJob(new JobConfiguration('small', 'custom', ['script' => 'sleep 0.05', 'memory' => 20])),
+        ];
+
+        $options = new OptionsConfiguration(
+            false,                                                                    // failFast
+            2,                                                                        // processes (slot count)
+            null,
+            'full',
+            '',
+            [],
+            null,
+            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(100, null),    // budget tight enough to bottleneck
+            $allocator,                                                               // fifo | greedy
+            false
+        );
+        $plan = new FlowPlan('test', $jobs, $options);
+
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $result = $executor->execute($plan);
+
+        $names = array_map(fn($r) => $r->getJobName(), $result->getJobResults());
+        $this->assertSame(
+            $expectedFirstFinished,
+            $names[0],
+            sprintf(
+                'Allocator %s: first job to finish must be %s (got [%s]). FlowExecutor:440 Ternary swap '
+                    . 'pairs the allocator label with the wrong AdmissionStrategy, flipping the order.',
+                $allocator,
+                $expectedFirstFinished,
+                implode(', ', $names)
+            )
+        );
+    }
+
+    /**
+     * Data provider for flow_executor_wires_allocator_to_admission_strategy.
+     *
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public function allocatorStrategyScenarios(): array
+    {
+        return [
+            'fifo blocks behind big head'   => ['fifo',   'big'],
+            'greedy skips to small'         => ['greedy', 'small'],
+        ];
+    }
 }
