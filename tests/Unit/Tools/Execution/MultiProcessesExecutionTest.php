@@ -470,4 +470,123 @@ class MultiProcessesExecutionTest extends UnitTestCase
         $printerMock->shouldNotHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpstan')));
         $printerMock->shouldNotHaveReceived()->resultSuccess(\Mockery::pattern($this->messageRegExp('phpmd')));
     }
+
+    /**
+     * Run-loop liveness invariant: under any combination of success / failure /
+     * timeout / fail-fast / ignore-errors flags, MultiProcessesExecution::runProcesses()
+     * MUST terminate within a bounded number of iterations. The previous tests
+     * assert the OUTCOME (errors collected, skipped tools, etc.) but none of
+     * them have an iteration cap — a mutation that removes addProcessToQueue,
+     * flips hasPendingWork, or breaks the catch blocks lets the do-while spin
+     * forever, and the test suite would hang up to PHPUnit's wall-clock budget
+     * (>120s under Infection — already reported as timed-out mutants on lines
+     * 38-41 and 131-134 of the production class).
+     *
+     * SIGALRM is NOT a viable guard here because the inner `catch (Throwable)`
+     * on line 51 of runProcesses() catches the AssertionFailedError thrown by
+     * `$this->fail()` and the loop just keeps spinning. Instead we override
+     * `hasPendingWork()` (the do-while condition, evaluated OUTSIDE the inner
+     * try/catch) and throw an `\Error` once iterations exceed a sane cap.
+     * The error escapes to the outer `catch (Throwable)` on line 55, which
+     * registers it as a 'General' error in the returned Errors. The test then
+     * asserts the 'General' key is absent — present means the cap was hit and
+     * the run loop did not converge.
+     *
+     * @test
+     * @dataProvider adversarialRunLoopScenarios
+     *
+     * @param string $scenario Human label for the assertion message
+     * @param array<string,mixed> $config How to configure MultiProcessesExecutionFake
+     */
+    function run_loop_terminates_under_adversarial_inputs(string $scenario, array $config)
+    {
+        $builder = $this->configurationFileBuilder;
+        if (isset($config['failFastTool'])) {
+            // Mirror the existing fail-fast test setup: a 3-tool subset where
+            // changeToolOption('parallel-lint', ['failFast' => true]) is known
+            // to round-trip through the builder. Other tools (e.g. phpcs)
+            // require otherArguments to be set explicitly via the changeToolOption
+            // path and the builder doesn't fill that default.
+            $builder = $builder
+                ->setTools(['parallel-lint', 'phpstan', 'phpmd'])
+                ->changeToolOption($config['failFastTool'], ['failFast' => true]);
+        }
+        $configurationFile = new ConfigurationFile(
+            $builder->buildArray(),
+            self::ALL_TOOLS,
+            new ToolRegistry()
+        );
+        $tools = $this->toolsFactory->__invoke($configurationFile->getToolsConfiguration());
+
+        $printerMock = Mock::spy(Printer::class);
+        $multiProcessExecution = new class ($printerMock, new GitStagerFake()) extends MultiProcessesExecutionFake {
+            /** @var int Iterations of the do-while in runProcesses() observed by hasPendingWork */
+            public int $iterations = 0;
+            public int $iterationCap = 200;
+
+            protected function hasPendingWork(int $totalProcesses): bool
+            {
+                if (++$this->iterations > $this->iterationCap) {
+                    throw new \Error(
+                        "MultiProcessesExecution::runProcesses() did not converge after {$this->iterations} iterations — "
+                            . 'check addProcessToQueue, finishExecution and the catch blocks for guard regressions.'
+                    );
+                }
+                return parent::hasPendingWork($totalProcesses);
+            }
+        };
+
+        if (!empty($config['failedTools'])) {
+            $multiProcessExecution->failedToolsByFoundedErrors($config['failedTools']);
+        }
+        if (!empty($config['exceptionTools'])) {
+            $multiProcessExecution->failedToolsByException($config['exceptionTools']);
+        }
+        if (!empty($config['timeoutTools'])) {
+            $multiProcessExecution->setToolsWithTimeout($config['timeoutTools']);
+        }
+
+        $errors = $multiProcessExecution->execute($tools, $configurationFile->getProcesses());
+
+        $this->assertArrayNotHasKey(
+            'General',
+            $errors->getErrors(),
+            "Case '{$scenario}': runProcesses() loop did not converge within {$multiProcessExecution->iterationCap} iterations. "
+                . "The error was caught by the outer Throwable handler on line 55."
+        );
+        $this->assertLessThanOrEqual(
+            $multiProcessExecution->iterationCap,
+            $multiProcessExecution->iterations,
+            "Case '{$scenario}': loop spent {$multiProcessExecution->iterations} iterations (cap: {$multiProcessExecution->iterationCap})"
+        );
+    }
+
+    /**
+     * Adversarial inputs covering the run-loop's decision surface:
+     *  - all-success: control case, the loop must complete with no incidents.
+     *  - one-fails: a failed tool puts a process in runnedProcesses but the
+     *    other ones must keep being polled until they all finish.
+     *  - one-throws: ProcessFailedException reaches the inner catch which
+     *    MUST advance numberOfRunnedProcesses (regression candidate for the
+     *    CatchBlockRemoval mutation on line 38).
+     *  - one-times-out: ProcessTimedOutException must move the offending tool
+     *    out of runningProcesses; otherwise hasPendingWork never converges.
+     *  - fail-fast-after-failure: failFastTriggered short-circuits queueing
+     *    and hasPendingWork must fall through to false once running is empty.
+     *  - all-fail-no-fail-fast: the loop must keep flushing every running
+     *    process until counts converge even when none of them succeed.
+     *
+     * @return array<string, array{0: string, 1: array<string,mixed>}>
+     */
+    public function adversarialRunLoopScenarios(): array
+    {
+        return [
+            'all_succeed'            => ['all_succeed',            []],
+            'one_fails'              => ['one_fails',              ['failedTools' => ['phpcs']]],
+            'one_throws_exception'   => ['one_throws_exception',   ['exceptionTools' => ['phpcs']]],
+            'one_times_out'          => ['one_times_out',          ['timeoutTools' => ['phpcs']]],
+            'fail_fast_triggered'    => ['fail_fast_triggered',    ['failedTools' => ['parallel-lint'], 'failFastTool' => 'parallel-lint']],
+            'all_fail_no_fail_fast'  => ['all_fail_no_fail_fast',  ['failedTools' => ['phpcs', 'phpcbf', 'phpmd', 'phpcpd', 'parallel-lint', 'phpstan']]],
+        ];
+    }
 }
