@@ -680,6 +680,47 @@ class OptionsConfigurationTest extends TestCase
         $this->assertSame(2500, $overridden->getMemoryBudget()->getFailAbove());
     }
 
+    /**
+     * @test
+     * Kills OptionsConfiguration:392 Coalesce swap
+     * (`$memoryBudget ?? $this->memoryBudget` → `$this->memoryBudget ?? $memoryBudget`).
+     *
+     * The two existing tests (existing-only and override-only) cannot detect
+     * this mutation: when one operand is null, both `null ?? X` and `X ?? null`
+     * resolve to the same X. Only when BOTH operands are non-null do the
+     * expressions disagree — original returns the OVERRIDE (CLI/flow wins
+     * over global), mutant returns the EXISTING (current swallows the
+     * override and the cascade silently loses CLI flags).
+     */
+    public function with_overrides_memory_budget_override_wins_over_existing(): void
+    {
+        $existing = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(1500, 2500);
+        $override = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(800, 1200);
+        $original = new OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            [],
+            null,
+            $existing
+        );
+
+        $overridden = $original->withOverrides(null, null, null, false, $override);
+
+        $this->assertSame(
+            800,
+            $overridden->getMemoryBudget()->getWarnAbove(),
+            'Override warn-above must win over the existing value (CLI > global cascade)'
+        );
+        $this->assertSame(
+            1200,
+            $overridden->getMemoryBudget()->getFailAbove(),
+            'Override fail-above must win over the existing value'
+        );
+    }
+
     /** @test */
     public function with_overrides_disable_memory_budget_clears_it(): void
     {
