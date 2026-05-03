@@ -39,13 +39,31 @@ Infection escribe en `reports/infection/`. **Usa sólo los tres ficheros de text
 
 **Flujo de lectura:**
 
-1. `Read reports/infection/infection-summary.log` → conocer volumen.
-2. `Read reports/infection/per-mutator.md` → ver qué tipos de mutator dominan (orienta la priorización).
-3. `Grep` sobre `reports/infection/infection.log` para extraer los mutants de un módulo/fichero concreto con su número de línea en el log:
-   ```
-   Grep pattern:"^\d+\) /abs/path/src/Modulo/" path:"reports/infection/infection.log" output_mode:"content" -n:true
-   ```
-4. `Read reports/infection/infection.log` con `offset`/`limit` sobre los rangos que te interesen.
+Usar **siempre** el script `scripts/infection-stats.php` para los conteos y el perfilado por fichero/mutator. Está pensado para reemplazar pipelines `grep | awk` / `grep | sed` ad-hoc que rompen permisos y son frágiles. Sólo recurrir a `Grep` + `Read` cuando se quiera leer el diff completo de un mutant concreto.
+
+```bash
+# 1. Volumen + MSI (primer vistazo)
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --summary
+
+# 2. Mutators dominantes con escapes (orienta priorización)
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --by-mutator --escaped-only
+
+# 3. Ficheros con más escapes (orienta orden de análisis)
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --by-file --top=15
+
+# 4. Lista detallada de mutants de un fichero (con la línea del log para abrirla con Read)
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php
+
+# 5. Lo mismo pero para timeouts
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php --section=timeout
+```
+
+`--filter` imprime una línea por mutant con `L<n>` (línea del log), índice, path, mutator, ID. Usa el `L<n>` como `offset` para leer el diff con `Read`:
+
+```
+L552  43) /var/www/html1/src/Execution/FlowExecutor.php:286  Continue_  f4ef6cc1...
+   → Read reports/infection/infection.log offset=552 limit=15
+```
 
 **Nunca usar** `Read` sobre `mutation-report.html` — romperá el límite de mensaje y no añade información sobre los `.log`/`.md`. Si el usuario lo adjunta, recordárselo y pedir que aporte el `infection.log` o que re-ejecute Infection acotado (ver abajo).
 
@@ -152,21 +170,29 @@ CRUZADO no infla las métricas de Infection (el mutante seguirá vivo o lo mata 
 
 ### Paso 1 — Resumen y perfil (los tres ficheros de texto)
 
-1. **Volumen total** — `Read reports/infection/infection-summary.log` (siempre pequeño, no necesita offset/limit):
+Ejecutar el script `scripts/infection-stats.php` para los tres conteos básicos. Sustituye lo que antes eran 3 invocaciones de `Grep`/`Read` con post-proceso manual:
 
-   ```
-   Total / Killed / Escaped / Timeouts / MSI
-   ```
+```bash
+# Volumen total + MSI
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --summary
 
-2. **Mutators dominantes** — `Read reports/infection/per-mutator.md`. Identifica patrones: si `LogicalOr` concentra 40 escapes, sabes que hay un patrón de guards defensivos repetido.
+# Mutators dominantes con escapes
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --by-mutator --escaped-only
 
-3. **Ficheros afectados** — sobre `infection.log`:
+# Ficheros con más escapes (orienta orden de análisis)
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --by-file --top=15
+```
 
-   ```
-   Grep pattern:"^\d+\) /var/www/html[0-9]*/src/" path:"reports/infection/infection.log" output_mode:"content" -n:true
-   ```
+Cuando se quiera bajar al detalle de un módulo concreto:
 
-   Devuelve `línea_log:índice) path:línea Mutator`. Guardar los rangos de líneas del log por módulo para agentes paralelos.
+```bash
+# Lista de mutants en un fichero (con la L<n> que apunta a la línea del log)
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php
+# Para timeouts:
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php --section=timeout
+```
+
+Y luego `Read reports/infection/infection.log offset=L<n> limit=15` para inspeccionar el diff exacto. **No** componer `grep | sed`/`awk` ad-hoc — rompe permisos y es frágil.
 
 **Nunca abrir `mutation-report.html`**: es HTML de 5-10 MB con CSS/JS embebidos; rompe el límite de mensaje y no aporta sobre los `.log`/`.md`.
 
