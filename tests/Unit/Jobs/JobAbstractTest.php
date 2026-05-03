@@ -6,6 +6,7 @@ namespace Tests\Unit\Jobs;
 
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 
@@ -223,5 +224,64 @@ class JobAbstractTest extends TestCase
         ]));
 
         $this->assertSame(1, $job->getCoresOverride());
+    }
+
+    /**
+     * @test
+     * Kills JobAbstract:292 ConcatOperandRemoval (`static::class . '::SUPPORTS_FAST'`
+     * → `static::class`) and JobAbstract:293 LogicalAndSingleSubExprNegation
+     * (`defined($constant) && (bool) constant($constant)` → `!defined($constant)
+     * && (bool) constant($constant)`).
+     *
+     * The instance method `JobAbstract::isAccelerable()` is otherwise covered
+     * only via JobRegistry, which uses a different code path
+     * (`defined("$class::SUPPORTS_FAST") && $class::SUPPORTS_FAST`) and never
+     * triggers the runtime concat / late-static binding inside the abstract.
+     *
+     * With M292 the constant name becomes the class FQN, defined() returns
+     * false (classes aren't constants), and isAccelerable returns false even
+     * for a SUPPORTS_FAST=true subclass. With M293 the negation flips the
+     * defined() guard to true only when the constant is MISSING — also
+     * dropping the result to false for SUPPORTS_FAST=true subclasses.
+     */
+    public function isAccelerable_resolves_supports_fast_constant_on_subclass()
+    {
+        $accelerable = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths' => ['src'],
+        ]));
+        $nonAccelerable = new CustomJob(new JobConfiguration('script_only', 'custom', [
+            'script' => 'echo hi',
+        ]));
+
+        $this->assertTrue(
+            $accelerable->isAccelerable(),
+            'PhpstanJob::SUPPORTS_FAST=true must surface through isAccelerable()'
+        );
+        $this->assertFalse(
+            $nonAccelerable->isAccelerable(),
+            'CustomJob::SUPPORTS_FAST=false must surface as not accelerable'
+        );
+    }
+
+    /**
+     * @test
+     * Kills the explicit `accelerable` argument override path. The args-based
+     * branch short-circuits the constant lookup, so the test must drive both
+     * directions on a class whose SUPPORTS_FAST const says the OPPOSITE — the
+     * arg has to actually win.
+     */
+    public function isAccelerable_explicit_arg_overrides_supports_fast_constant()
+    {
+        $forcedOff = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths'       => ['src'],
+            'accelerable' => false,
+        ]));
+        $forcedOn = new CustomJob(new JobConfiguration('forced', 'custom', [
+            'script'      => 'echo hi',
+            'accelerable' => true,
+        ]));
+
+        $this->assertFalse($forcedOff->isAccelerable(), 'accelerable=false must override SUPPORTS_FAST=true');
+        $this->assertTrue($forcedOn->isAccelerable(), 'accelerable=true must override SUPPORTS_FAST=false');
     }
 }
