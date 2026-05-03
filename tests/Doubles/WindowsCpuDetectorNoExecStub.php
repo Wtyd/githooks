@@ -7,7 +7,11 @@ namespace Tests\Doubles;
 use Wtyd\GitHooks\Utils\CpuDetector;
 
 /**
- * Stub that forces Windows path and only checks env (no exec calls).
+ * Forces the Windows detection path and stubs `execCommand` so the wmic fallback
+ * always reports failure (exitCode=127). Tests using this stub exercise the
+ * REAL `CpuDetector::detectWindows()` body — so mutations on lines 27, 34, 35
+ * and 44 are observable. The previous implementation duplicated detectWindows()
+ * here, which masked all those mutants from Infection.
  */
 class WindowsCpuDetectorNoExecStub extends CpuDetector
 {
@@ -16,13 +20,9 @@ class WindowsCpuDetectorNoExecStub extends CpuDetector
         return true;
     }
 
-    protected function detectWindows(): int
+    protected function execCommand(string $command, array &$output, int &$exitCode): void
     {
-        $env = getenv('NUMBER_OF_PROCESSORS');
-        if ($env !== false && (int) $env > 0) {
-            return (int) $env;
-        }
-
-        return 1;
+        $output = [];
+        $exitCode = 127;
     }
 }
