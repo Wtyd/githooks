@@ -190,4 +190,45 @@ class TimeBudgetConfigurationTest extends TestCase
         $this->assertStringContainsString("'time-budget'", $warningText);
         $this->assertStringNotContainsString('did you mean', $warningText);
     }
+
+    /**
+     * @test
+     * Kills TimeBudgetConfiguration:104 LessThan `<` -> `<=` on the
+     * suggestKey() helper. The needle 'vain-after' is at exact distance 2
+     * from BOTH known keys, so iteration order decides the winner:
+     * original picks 'warn-after' (first), mutant picks 'fail-after' (last).
+     */
+    public function unknown_key_at_distance_tie_suggests_first_match(): void
+    {
+        $result = new ValidationResult();
+        TimeBudgetConfiguration::fromArray(
+            ['warn-after' => 60, 'vain-after' => 120],
+            $result
+        );
+
+        $warnings = $result->getWarnings();
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString("did you mean 'warn-after'", $warnings[0]);
+        $this->assertStringNotContainsString("'fail-after'", $warnings[0]);
+    }
+
+    /**
+     * @test
+     * Kills TimeBudgetConfiguration:109 LessThanOrEqualTo `<=3` -> `<3`
+     * on suggestKey()'s final threshold. 'warningafter' is at exact
+     * distance 3 from 'warn-after'. With `<=3` the suggestion fires;
+     * with `<3` it does not.
+     */
+    public function unknown_key_at_distance_3_boundary_still_suggests(): void
+    {
+        $result = new ValidationResult();
+        TimeBudgetConfiguration::fromArray(
+            ['warn-after' => 60, 'warningafter' => 120],
+            $result
+        );
+
+        $warnings = $result->getWarnings();
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString("did you mean 'warn-after'", $warnings[0]);
+    }
 }

@@ -252,4 +252,48 @@ class MemoryBudgetConfigurationTest extends TestCase
         $vo = new MemoryBudgetConfiguration(2000, 3000);
         $this->assertFalse($vo->isEmpty());
     }
+
+    /**
+     * @test
+     * Kills MemoryBudgetConfiguration:103 LessThan `<` -> `<=` on the
+     * suggestKey() helper. The needle 'vain-above' is at exact distance 2
+     * from BOTH known keys, so the iteration order decides the winner:
+     * original picks 'warn-above' (first match wins), mutant picks
+     * 'fail-above' (last match wins on `<=`). No previous test forces a
+     * tie within the suggestion threshold.
+     */
+    public function unknown_key_at_distance_tie_suggests_first_match(): void
+    {
+        $result = new ValidationResult();
+        MemoryBudgetConfiguration::fromArray(
+            ['warn-above' => 100, 'vain-above' => 200],
+            $result
+        );
+
+        $warnings = $result->getWarnings();
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString("did you mean 'warn-above'", $warnings[0]);
+        $this->assertStringNotContainsString("'fail-above'", $warnings[0]);
+    }
+
+    /**
+     * @test
+     * Kills MemoryBudgetConfiguration:108 LessThanOrEqualTo `<=3` -> `<3`
+     * on suggestKey()'s final threshold. The needle 'warningabove' is at
+     * exact distance 3 from 'warn-above'. With `<=3` the suggestion fires;
+     * with `<3` it does not. Previous tests use needles at distance 1 or
+     * ≥13, neither of which exposes the boundary mutation.
+     */
+    public function unknown_key_at_distance_3_boundary_still_suggests(): void
+    {
+        $result = new ValidationResult();
+        MemoryBudgetConfiguration::fromArray(
+            ['warn-above' => 100, 'warningabove' => 200],
+            $result
+        );
+
+        $warnings = $result->getWarnings();
+        $this->assertCount(1, $warnings);
+        $this->assertStringContainsString("did you mean 'warn-above'", $warnings[0]);
+    }
 }

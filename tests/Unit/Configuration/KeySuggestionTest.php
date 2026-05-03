@@ -47,6 +47,19 @@ class KeySuggestionTest extends TestCase
             "empty known"                        => ['fail-fast', [], ''],
             // Completely unrelated string.
             "unrelated unknown, no suggestion"   => ['xyz', ['memory-budget', 'time-budget', 'processes'], ''],
+            // Empty unknown WITH a short candidate within MAX_DISTANCE — kills the
+            // LogicalOr→And mutation (line 25) and the matching ReturnRemoval
+            // (line 26): the existing "empty unknown" case uses 'fail-fast' (length 9)
+            // so levenshtein('', 'fail-fast')=9 > MAX_DISTANCE and the mutant still
+            // returns '' through the bestDistance check. With known=['x'],
+            // levenshtein('', 'x')=1 ≤ MAX_DISTANCE, so the mutant falls through
+            // and emits a (wrong) suggestion.
+            "empty unknown with short known"     => ['', ['x'], ''],
+            // Two candidates at distance=1 — kills the LessThan→LessThanOrEqual
+            // mutation (line 33). Original picks the FIRST match in tie; mutant
+            // picks the LAST. The two candidates differ in a single character so
+            // the difference is unambiguous.
+            "tie at distance=1, first wins"      => ['foonar', ['foobar', 'foozar'], " Did you mean 'foobar'?"],
         ];
     }
 }
