@@ -277,6 +277,56 @@ class FormatsOutputTraitTest extends TestCase
     }
 
     /** @test */
+    public function render_text_summary_emits_gitlab_section_wrapping_when_env_is_detected()
+    {
+        putenv('GITLAB_CI=true');
+
+        $double = $this->makeDouble(['format' => 'text']);
+
+        ob_start();
+        $double->callRenderFormattedResult($this->buildResult());
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString(
+            'section_start:',
+            $output,
+            'Summary must open a GitLab collapsible section'
+        );
+        $this->assertStringContainsString('githooks_summary[collapsed=false]', $output);
+        $this->assertStringContainsString('Summary', $output);
+        $this->assertStringContainsString('section_end:', $output);
+        $this->assertStringContainsString('githooks_summary', substr($output, (int) strpos($output, 'section_end:')));
+    }
+
+    /** @test */
+    public function render_text_summary_does_not_emit_section_outside_gitlab()
+    {
+        // No GITLAB_CI env: setUp() unset it.
+        $double = $this->makeDouble(['format' => 'text']);
+
+        ob_start();
+        $double->callRenderFormattedResult($this->buildResult());
+        $output = ob_get_clean();
+
+        $this->assertStringNotContainsString('section_start:', $output);
+        $this->assertStringNotContainsString('githooks_summary', $output);
+    }
+
+    /** @test */
+    public function render_text_summary_skips_gitlab_section_when_no_ci_flag_is_set()
+    {
+        putenv('GITLAB_CI=true');
+
+        $double = $this->makeDouble(['format' => 'text', 'no-ci' => true]);
+
+        ob_start();
+        $double->callRenderFormattedResult($this->buildResult());
+        $output = ob_get_clean();
+
+        $this->assertStringNotContainsString('section_start:', $output);
+    }
+
+    /** @test */
     public function no_ci_option_disables_ci_decorator_wrapping()
     {
         putenv('GITHUB_ACTIONS=true');
