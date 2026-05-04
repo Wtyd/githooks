@@ -34,6 +34,14 @@ class FormatsOutputCommandDouble
 
     public $laravel;
 
+    /** @var \Symfony\Component\Console\Output\OutputInterface|null */
+    public $symfonyOutput = null;
+
+    public function getOutput()
+    {
+        return $this->symfonyOutput;
+    }
+
     public function option(string $name = null)
     {
         return $this->options[$name] ?? null;

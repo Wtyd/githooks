@@ -277,6 +277,63 @@ class FormatsOutputTraitTest extends TestCase
     }
 
     /** @test */
+    public function apply_format_forces_ansi_decoration_when_running_under_gitlab_ci()
+    {
+        putenv('GITLAB_CI=true');
+
+        $double = $this->makeDouble(['format' => 'text']);
+        $double->symfonyOutput = new \Symfony\Component\Console\Output\BufferedOutput();
+        $this->assertFalse($double->symfonyOutput->isDecorated(), 'baseline: BufferedOutput is undecorated');
+
+        $double->callApplyFormat($this->makeExecutor(), $this->makePlan(1, 1));
+
+        $this->assertTrue(
+            $double->symfonyOutput->isDecorated(),
+            'GitLab CI must force decoration so <fg=red>...</> tags become ANSI escapes'
+        );
+    }
+
+    /** @test */
+    public function apply_format_forces_ansi_decoration_when_running_under_github_actions()
+    {
+        putenv('GITHUB_ACTIONS=true');
+
+        $double = $this->makeDouble(['format' => 'text']);
+        $double->symfonyOutput = new \Symfony\Component\Console\Output\BufferedOutput();
+
+        $double->callApplyFormat($this->makeExecutor(), $this->makePlan(1, 1));
+
+        $this->assertTrue($double->symfonyOutput->isDecorated());
+    }
+
+    /** @test */
+    public function apply_format_does_not_force_decoration_outside_ci()
+    {
+        $double = $this->makeDouble(['format' => 'text']);
+        $double->symfonyOutput = new \Symfony\Component\Console\Output\BufferedOutput();
+
+        $double->callApplyFormat($this->makeExecutor(), $this->makePlan(1, 1));
+
+        $this->assertFalse(
+            $double->symfonyOutput->isDecorated(),
+            'Off-CI we must respect the existing decoration policy'
+        );
+    }
+
+    /** @test */
+    public function apply_format_does_not_force_decoration_when_no_ci_flag_is_set()
+    {
+        putenv('GITLAB_CI=true');
+
+        $double = $this->makeDouble(['format' => 'text', 'no-ci' => true]);
+        $double->symfonyOutput = new \Symfony\Component\Console\Output\BufferedOutput();
+
+        $double->callApplyFormat($this->makeExecutor(), $this->makePlan(1, 1));
+
+        $this->assertFalse($double->symfonyOutput->isDecorated());
+    }
+
+    /** @test */
     public function render_text_summary_emits_gitlab_section_wrapping_when_env_is_detected()
     {
         putenv('GITLAB_CI=true');
