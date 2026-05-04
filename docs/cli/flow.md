@@ -96,10 +96,17 @@ githooks flow qa --format=json --show-progress --output=reports/qa.json
 
 ## Conditions header
 
-`flow` prints a one-line **conditions header** at the start of every run with the resolved options and their source:
+`flow` prints a **conditions header** at the start of every run with the resolved options and their source — one row per option, aligned, source omitted when it comes from `default`:
 
 ```
-Settings: processes=4 (cli) | fail-fast=false (default) | mode=full (default)
+Settings:
+  processes     = 4    (cli)
+  fail-fast     = false
+  mode          = full
+  time-budget   = none
+  memory-budget = none
+  allocator     = fifo
+  stats         = false
 ```
 
 The header writes to stdout in text mode and to stderr when a structured format is combined with `--show-progress`. Its machine-readable counterpart is the [`effectiveOptions`](../how-to/output-formats.md#effective-options-and-conditions-header) block in JSON v2.

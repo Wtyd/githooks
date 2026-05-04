@@ -27,20 +27,109 @@ class EmitsConditionsHeaderTest extends TestCase
         );
     }
 
+    /**
+     * Assert there is exactly one header line matching `<label> = <value>`
+     * (with any padding) and, when $source is non-null and not 'default',
+     * a trailing `(<source>)` parenthesis.
+     *
+     * @param string[] $lines
+     */
+    private function assertHeaderRow(array $lines, string $label, string $value, ?string $source = null): void
+    {
+        $regex = '/^\s*'
+            . preg_quote($label, '/')
+            . '\s*=\s*'
+            . preg_quote($value, '/');
+        if ($source !== null && $source !== 'default') {
+            $regex .= '\s+\(' . preg_quote($source, '/') . '\)';
+        }
+        $regex .= '\s*$/m';
+
+        $this->assertMatchesRegularExpression(
+            $regex,
+            implode("\n", $lines),
+            "Expected header row '$label = $value" . ($source !== null && $source !== 'default' ? " ($source)" : '') . "'"
+        );
+    }
+
+    /**
+     * Assert the row for $label does NOT include a `(source)` parenthesis
+     * (i.e. source was 'default' and was correctly omitted).
+     *
+     * @param string[] $lines
+     */
+    private function assertHeaderRowHasNoSource(array $lines, string $label): void
+    {
+        $regex = '/^\s*' . preg_quote($label, '/') . '\s*=\s*[^\(]+$/m';
+        $this->assertMatchesRegularExpression(
+            $regex,
+            implode("\n", $lines),
+            "Row '$label' must not show a source when it comes from 'default'"
+        );
+    }
+
     /** @test */
-    public function it_emits_settings_line_in_text_mode()
+    public function it_emits_settings_header_with_one_row_per_option_in_text_mode()
     {
         $double = new EmitsConditionsHeaderCommandDouble();
         $double->options = ['format' => 'text'];
 
         $double->call($this->makeResolution());
 
-        $this->assertCount(1, $double->lines);
-        $this->assertSame(
-            'Settings: processes=4 (cli) | fail-fast=true (flows.qa.options) | mode=full (default) | time-budget=none (default) | memory-budget=none (default) | allocator=fifo (default) | stats=false (default)',
-            $double->lines[0]
-        );
+        // 'Settings:' header + 7 option rows
+        $this->assertSame('Settings:', $double->lines[0]);
+        $this->assertCount(8, $double->lines);
+
+        $this->assertHeaderRow($double->lines, 'processes', '4', 'cli');
+        $this->assertHeaderRow($double->lines, 'fail-fast', 'true', 'flows.qa.options');
+        $this->assertHeaderRow($double->lines, 'mode', 'full', 'default');
+        $this->assertHeaderRow($double->lines, 'time-budget', 'none', 'default');
+        $this->assertHeaderRow($double->lines, 'memory-budget', 'none', 'default');
+        $this->assertHeaderRow($double->lines, 'allocator', 'fifo', 'default');
+        $this->assertHeaderRow($double->lines, 'stats', 'false', 'default');
         $this->assertSame([], $double->errLines);
+    }
+
+    /** @test */
+    public function default_source_is_omitted_so_only_overridden_values_show_their_origin()
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolution());
+
+        // Defaults must NOT carry a `(default)` tail — that's noise.
+        $this->assertHeaderRowHasNoSource($double->lines, 'mode');
+        $this->assertHeaderRowHasNoSource($double->lines, 'time-budget');
+        $this->assertHeaderRowHasNoSource($double->lines, 'memory-budget');
+        $this->assertHeaderRowHasNoSource($double->lines, 'allocator');
+        $this->assertHeaderRowHasNoSource($double->lines, 'stats');
+
+        // Overridden values must carry their source.
+        $joined = implode("\n", $double->lines);
+        $this->assertStringContainsString('(cli)', $joined);
+        $this->assertStringContainsString('(flows.qa.options)', $joined);
+        $this->assertStringNotContainsString('(default)', $joined);
+    }
+
+    /** @test */
+    public function setting_rows_are_aligned_on_the_equals_sign()
+    {
+        $double = new EmitsConditionsHeaderCommandDouble();
+        $double->options = ['format' => 'text'];
+
+        $double->call($this->makeResolution());
+
+        $equalsPositions = [];
+        foreach (array_slice($double->lines, 1) as $row) {
+            // Only setting rows (skip 'Flows:' if present)
+            if (strpos($row, '=') === false) {
+                continue;
+            }
+            $equalsPositions[] = strpos($row, '=');
+        }
+        $this->assertNotEmpty($equalsPositions);
+        $this->assertCount(1, array_unique($equalsPositions), 'All `=` signs must align in the same column');
     }
 
     /** @test */
@@ -51,9 +140,8 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolution(), ['qa', 'lint']);
 
-        $this->assertCount(2, $double->lines);
-        $this->assertStringStartsWith('Settings:', $double->lines[0]);
-        $this->assertSame('Flows: qa, lint', $double->lines[1]);
+        $this->assertSame('Settings:', $double->lines[0]);
+        $this->assertSame('Flows: qa, lint', end($double->lines));
     }
 
     /** @test */
@@ -64,7 +152,9 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolution(), null);
 
-        $this->assertCount(1, $double->lines);
+        foreach ($double->lines as $line) {
+            $this->assertStringStartsNotWith('Flows:', $line);
+        }
     }
 
     /** @test */
@@ -77,7 +167,7 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolution('default', ExecutionMode::FAST), null, $inputFiles);
 
-        $this->assertStringContainsString('mode=files (cli)', $double->lines[0]);
+        $this->assertHeaderRow($double->lines, 'mode', 'files', 'cli');
     }
 
     /** @test */
@@ -101,9 +191,9 @@ class EmitsConditionsHeaderTest extends TestCase
         $double->call($this->makeResolution(), ['qa', 'lint']);
 
         $this->assertSame([], $double->lines);
-        $this->assertCount(2, $double->errLines);
-        $this->assertStringStartsWith('Settings:', $double->errLines[0]);
-        $this->assertSame('Flows: qa, lint', $double->errLines[1]);
+        $this->assertGreaterThan(1, count($double->errLines));
+        $this->assertSame('Settings:', $double->errLines[0]);
+        $this->assertSame('Flows: qa, lint', end($double->errLines));
     }
 
     /** @test */
@@ -115,11 +205,12 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolution());
 
-        $this->assertCount(1, $double->lines);
+        $this->assertNotEmpty($double->lines);
+        $this->assertSame('Settings:', $double->lines[0]);
     }
 
     // ========================================================================
-    // time-budget segment (v3.3 item 4)
+    // time-budget segment
     // ========================================================================
 
     private function makeResolutionWithTimeBudget(?array $value, string $source): EffectiveOptionsResolution
@@ -147,9 +238,11 @@ class EmitsConditionsHeaderTest extends TestCase
             'flows.options'
         ));
 
-        $this->assertStringContainsString(
-            'time-budget=warn-after=120s,fail-after=300s (flows.options)',
-            $double->lines[0]
+        $this->assertHeaderRow(
+            $double->lines,
+            'time-budget',
+            'warn-after=120s,fail-after=300s',
+            'flows.options'
         );
     }
 
@@ -164,9 +257,11 @@ class EmitsConditionsHeaderTest extends TestCase
             'flows.qa.options'
         ));
 
-        $this->assertStringContainsString(
-            'time-budget=warn-after=60s (flows.qa.options)',
-            $double->lines[0]
+        $this->assertHeaderRow(
+            $double->lines,
+            'time-budget',
+            'warn-after=60s',
+            'flows.qa.options'
         );
     }
 
@@ -178,10 +273,7 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolutionWithTimeBudget(null, 'cli'));
 
-        $this->assertStringContainsString(
-            'time-budget=disabled (cli)',
-            $double->lines[0]
-        );
+        $this->assertHeaderRow($double->lines, 'time-budget', 'disabled', 'cli');
     }
 
     /** @test */
@@ -192,14 +284,12 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolutionWithTimeBudget(null, 'default'));
 
-        $this->assertStringContainsString(
-            'time-budget=none (default)',
-            $double->lines[0]
-        );
+        $this->assertHeaderRow($double->lines, 'time-budget', 'none', 'default');
+        $this->assertHeaderRowHasNoSource($double->lines, 'time-budget');
     }
 
     // ========================================================================
-    // memory-budget / allocator / stats segments (v3.3 — gh-48)
+    // memory-budget / allocator / stats segments
     // ========================================================================
 
     private function makeResolutionWithMemoryBudget(?array $value, string $source): EffectiveOptionsResolution
@@ -229,9 +319,11 @@ class EmitsConditionsHeaderTest extends TestCase
             'flows.options'
         ));
 
-        $this->assertStringContainsString(
-            'memory-budget=warn-above=3500MB,fail-above=3900MB (flows.options)',
-            $double->lines[0]
+        $this->assertHeaderRow(
+            $double->lines,
+            'memory-budget',
+            'warn-above=3500MB,fail-above=3900MB',
+            'flows.options'
         );
     }
 
@@ -246,9 +338,11 @@ class EmitsConditionsHeaderTest extends TestCase
             'flows.qa.options'
         ));
 
-        $this->assertStringContainsString(
-            'memory-budget=warn-above=1500MB (flows.qa.options)',
-            $double->lines[0]
+        $this->assertHeaderRow(
+            $double->lines,
+            'memory-budget',
+            'warn-above=1500MB',
+            'flows.qa.options'
         );
     }
 
@@ -260,10 +354,7 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolutionWithMemoryBudget(null, 'cli'));
 
-        $this->assertStringContainsString(
-            'memory-budget=disabled (cli)',
-            $double->lines[0]
-        );
+        $this->assertHeaderRow($double->lines, 'memory-budget', 'disabled', 'cli');
     }
 
     /** @test */
@@ -274,10 +365,8 @@ class EmitsConditionsHeaderTest extends TestCase
 
         $double->call($this->makeResolutionWithMemoryBudget(null, 'default'));
 
-        $this->assertStringContainsString(
-            'memory-budget=none (default)',
-            $double->lines[0]
-        );
+        $this->assertHeaderRow($double->lines, 'memory-budget', 'none', 'default');
+        $this->assertHeaderRowHasNoSource($double->lines, 'memory-budget');
     }
 
     /** @test */
@@ -300,7 +389,7 @@ class EmitsConditionsHeaderTest extends TestCase
         $double->options = ['format' => 'text'];
         $double->call($resolution);
 
-        $this->assertStringContainsString('allocator=greedy (cli)', $double->lines[0]);
-        $this->assertStringContainsString('stats=true (cli)', $double->lines[0]);
+        $this->assertHeaderRow($double->lines, 'allocator', 'greedy', 'cli');
+        $this->assertHeaderRow($double->lines, 'stats', 'true', 'cli');
     }
 }

@@ -38,10 +38,17 @@ The same flag set as [`flow`](flow.md): `--fail-fast`, `--processes`, `--exclude
 
 ## Conditions header
 
-Every `flow` / `flows` / `job` run prints a one-line header in text mode (and in structured mode with `--show-progress`) with the resolved options and their source:
+Every `flow` / `flows` / `job` run prints a header in text mode (and in structured mode with `--show-progress`) with the resolved options and their source — one row per option, aligned, source omitted when it comes from `default`:
 
 ```
-Settings: processes=4 (cli) | fail-fast=true (flows.ci-pack.options) | mode=full (default)
+Settings:
+  processes     = 4                    (cli)
+  fail-fast     = true                 (flows.ci-pack.options)
+  mode          = full
+  time-budget   = none
+  memory-budget = none
+  allocator     = fifo
+  stats         = false
 Flows: qa, lint
 ```
 
