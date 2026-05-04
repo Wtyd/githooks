@@ -23,9 +23,13 @@ use Wtyd\GitHooks\Output\OutputFormats;
  *     allocator      = greedy                              (flows.ci-validation.options)
  *     stats          = true                                (flows.ci-validation.options)
  *
- * Source is omitted when it is `default` — the value alone carries the
- * information; `(default)` was just decoration drowning the signal of
- * the cells where the user actually overrode something.
+ * Every row carries its `(source)` parenthesis — including `(default)` —
+ * so the column is aligned and the audit trail is complete: seeing
+ * `allocator = fifo (default)` confirms "this fell through, nothing
+ * overrode it", which is the exact question the operator asks when
+ * behaviour is surprising. Omitting the source on default rows broke
+ * the visual column and forced the reader to wonder "is this empty
+ * because it defaulted, or because something is missing?".
  *
  * Output channel:
  *  - `--format=text` (default): stdout via $this->line().
@@ -73,13 +77,9 @@ trait EmitsConditionsHeader
         $lines = ['Settings:'];
         foreach ($rows as $row) {
             $label = str_pad($row['label'], $maxLabel);
-            $line  = "  $label = " . $row['value'];
-
-            if ($row['source'] !== '' && $row['source'] !== 'default') {
-                $line = "  $label = " . str_pad($row['value'], $maxValue) . " ({$row['source']})";
-            }
-
-            $lines[] = rtrim($line);
+            $value = str_pad($row['value'], $maxValue);
+            $source = $row['source'] !== '' ? $row['source'] : 'default';
+            $lines[] = rtrim("  $label = $value ($source)");
         }
 
         if ($expandedFlows !== null && $expandedFlows !== []) {

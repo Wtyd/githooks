@@ -28,43 +28,25 @@ class EmitsConditionsHeaderTest extends TestCase
     }
 
     /**
-     * Assert there is exactly one header line matching `<label> = <value>`
-     * (with any padding) and, when $source is non-null and not 'default',
-     * a trailing `(<source>)` parenthesis.
+     * Assert there is exactly one header line matching `<label> = <value> (<source>)`
+     * (with any padding). Every row must carry a source parenthesis — including
+     * `(default)` — so the column stays aligned and the audit trail is complete.
      *
      * @param string[] $lines
      */
-    private function assertHeaderRow(array $lines, string $label, string $value, ?string $source = null): void
+    private function assertHeaderRow(array $lines, string $label, string $value, string $source): void
     {
         $regex = '/^\s*'
             . preg_quote($label, '/')
             . '\s*=\s*'
-            . preg_quote($value, '/');
-        if ($source !== null && $source !== 'default') {
-            $regex .= '\s+\(' . preg_quote($source, '/') . '\)';
-        }
-        $regex .= '\s*$/m';
+            . preg_quote($value, '/')
+            . '\s+\(' . preg_quote($source, '/') . '\)'
+            . '\s*$/m';
 
         $this->assertMatchesRegularExpression(
             $regex,
             implode("\n", $lines),
-            "Expected header row '$label = $value" . ($source !== null && $source !== 'default' ? " ($source)" : '') . "'"
-        );
-    }
-
-    /**
-     * Assert the row for $label does NOT include a `(source)` parenthesis
-     * (i.e. source was 'default' and was correctly omitted).
-     *
-     * @param string[] $lines
-     */
-    private function assertHeaderRowHasNoSource(array $lines, string $label): void
-    {
-        $regex = '/^\s*' . preg_quote($label, '/') . '\s*=\s*[^\(]+$/m';
-        $this->assertMatchesRegularExpression(
-            $regex,
-            implode("\n", $lines),
-            "Row '$label' must not show a source when it comes from 'default'"
+            "Expected header row '$label = $value ($source)'"
         );
     }
 
@@ -91,25 +73,31 @@ class EmitsConditionsHeaderTest extends TestCase
     }
 
     /** @test */
-    public function default_source_is_omitted_so_only_overridden_values_show_their_origin()
+    public function every_row_carries_its_source_parenthesis_including_default()
     {
         $double = new EmitsConditionsHeaderCommandDouble();
         $double->options = ['format' => 'text'];
 
         $double->call($this->makeResolution());
 
-        // Defaults must NOT carry a `(default)` tail — that's noise.
-        $this->assertHeaderRowHasNoSource($double->lines, 'mode');
-        $this->assertHeaderRowHasNoSource($double->lines, 'time-budget');
-        $this->assertHeaderRowHasNoSource($double->lines, 'memory-budget');
-        $this->assertHeaderRowHasNoSource($double->lines, 'allocator');
-        $this->assertHeaderRowHasNoSource($double->lines, 'stats');
+        // Symmetry: every settings row ends in `(...)` so the column aligns
+        // and the audit trail is explicit. `(default)` is a meaningful
+        // signal — "this fell through, nothing overrode it".
+        foreach (array_slice($double->lines, 1) as $row) {
+            if (strpos($row, '=') === false) {
+                continue; // Skip the optional 'Flows:' line.
+            }
+            $this->assertMatchesRegularExpression(
+                '/\([^)]+\)\s*$/',
+                $row,
+                "Row '$row' must end with a (source) parenthesis"
+            );
+        }
 
-        // Overridden values must carry their source.
         $joined = implode("\n", $double->lines);
+        $this->assertStringContainsString('(default)', $joined);
         $this->assertStringContainsString('(cli)', $joined);
         $this->assertStringContainsString('(flows.qa.options)', $joined);
-        $this->assertStringNotContainsString('(default)', $joined);
     }
 
     /** @test */
@@ -285,7 +273,6 @@ class EmitsConditionsHeaderTest extends TestCase
         $double->call($this->makeResolutionWithTimeBudget(null, 'default'));
 
         $this->assertHeaderRow($double->lines, 'time-budget', 'none', 'default');
-        $this->assertHeaderRowHasNoSource($double->lines, 'time-budget');
     }
 
     // ========================================================================
@@ -366,7 +353,6 @@ class EmitsConditionsHeaderTest extends TestCase
         $double->call($this->makeResolutionWithMemoryBudget(null, 'default'));
 
         $this->assertHeaderRow($double->lines, 'memory-budget', 'none', 'default');
-        $this->assertHeaderRowHasNoSource($double->lines, 'memory-budget');
     }
 
     /** @test */

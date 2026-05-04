@@ -296,23 +296,23 @@ In dry-run the `command` field per job is the exact shell command that would hav
 
 ## Effective options and conditions header
 
-Every `flow`, `flows` and `job` run prints a **conditions header** at the start so the operator sees with which `processes`, `fail-fast`, `mode`, budgets, allocator and stats the plan is running, and where each value comes from. One row per option, aligned, with `(source)` only on values that didn't come from `default`:
+Every `flow`, `flows` and `job` run prints a **conditions header** at the start so the operator sees with which `processes`, `fail-fast`, `mode`, budgets, allocator and stats the plan is running, and where each value comes from. One row per option, aligned, every row carries its `(source)` parenthesis — `(default)` included — so the column stays aligned and the audit trail is complete:
 
 ```
 Settings:
-  processes     = 4                    (cli)
-  fail-fast     = true                 (flows.ci-pack.options)
-  mode          = full
-  time-budget   = none
-  memory-budget = none
-  allocator     = fifo
-  stats         = false
+  processes     = 4    (cli)
+  fail-fast     = true (flows.ci-pack.options)
+  mode          = full (default)
+  time-budget   = none (default)
+  memory-budget = none (default)
+  allocator     = fifo (default)
+  stats         = false (default)
 Flows: qa, lint
 ```
 
 - The header writes to **stdout** in text mode (default) and to **stderr** when a structured format is combined with `--show-progress` (so stdout payloads stay clean for piping).
 - The optional `Flows:` line appears in declarative, ad-hoc and mixed multi-flow runs (omitted in `flow X` and `flows X` single-flow degenerate).
-- Sources from `default` are deliberately omitted to keep the eye on what the operator actually overrode (cli, `flows.options`, `flows.<X>.options`).
+- `(default)` is a meaningful signal — "this fell through, nothing overrode it" — and is the exact answer the operator wants when behaviour is surprising.
 - The same information is exposed in JSON v2 as the `effectiveOptions` root block (always present in `flow` / `flows` / `job` runs, additive to v2):
 
   ```json
