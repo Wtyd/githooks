@@ -282,4 +282,115 @@ class StatsTableRendererTest extends TestCase
     {
         return new MemoryStats(true, 100, 0.5, ['a' => 100], ['a' => 100], 4, 1, 0.5, ['a'], ['a' => 1]);
     }
+
+    // ========================================================================
+    // Color tagging — when the OutputInterface is decorated (CI logs that
+    // accept ANSI), the renderer must wrap KO/OK ⚠/⏭ and the TOTAL fail/ok
+    // markers in <fg=...> tags so the operator's eye locks on the failure
+    // without scanning row by row. Off-decoration the tags strip away
+    // cleanly and existing assertions still hold.
+    // ========================================================================
+
+    /** @test */
+    public function ko_status_cell_is_wrapped_in_red_when_output_is_decorated(): void
+    {
+        $stats = $this->buildEmptyStats();
+        $jobs = [new JobResult('boom', false, '', '1s')];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput(BufferedOutput::VERBOSITY_NORMAL, true);
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        // ANSI escape for red: \033[31m...\033[39m
+        $this->assertMatchesRegularExpression('/\e\[31m\s*KO\s*\e\[39m/', $rendered);
+    }
+
+    /** @test */
+    public function memory_warned_status_cell_is_wrapped_in_yellow_when_decorated(): void
+    {
+        $stats = new MemoryStats(
+            true,
+            800,
+            1.0,
+            ['warned' => 800],
+            ['warned' => 800],
+            4,
+            1,
+            1.0,
+            ['warned'],
+            ['warned' => 1]
+        );
+        $jobs = [
+            (new JobResult('warned', true, '', '1s'))
+                ->withMemoryPeak(800)
+                ->withMemoryThreshold(JobResult::MEMORY_THRESHOLD_WARNED, JobResult::MEMORY_REASON_WARN, 600, 1500),
+        ];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput(BufferedOutput::VERBOSITY_NORMAL, true);
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        // ANSI escape for yellow: \033[33m...\033[39m
+        $this->assertMatchesRegularExpression('/\e\[33m.*OK.*⚠.*\e\[39m/u', $rendered);
+    }
+
+    /** @test */
+    public function skipped_status_cell_is_wrapped_in_blue_when_decorated(): void
+    {
+        $stats = new MemoryStats(true, 0, 0.0, [], [], 4, 0, 0.0, [], []);
+        $jobs = [JobResult::skipped('idle', 'phpcs', 'no input files match', [])];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput(BufferedOutput::VERBOSITY_NORMAL, true);
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        // ANSI escape for blue: \033[34m...\033[39m
+        $this->assertMatchesRegularExpression('/\e\[34m.*⏭.*\e\[39m/u', $rendered);
+    }
+
+    /** @test */
+    public function total_row_uses_red_for_failure_and_green_for_success_when_decorated(): void
+    {
+        $stats = $this->buildEmptyStats();
+
+        // Failure case
+        $failing = new FlowResult('qa', [new JobResult('a', false, '', '1s')], '1s');
+        $failing->setMemoryStats($stats);
+        $output = new BufferedOutput(BufferedOutput::VERBOSITY_NORMAL, true);
+        (new StatsTableRenderer())->render($output, $failing);
+        $rendered = $output->fetch();
+        $this->assertMatchesRegularExpression('/\e\[31m.*0\/1\s*✗.*\e\[39m/u', $rendered);
+
+        // Success case
+        $passing = new FlowResult('qa', [new JobResult('a', true, '', '1s')], '1s');
+        $passing->setMemoryStats($stats);
+        $output2 = new BufferedOutput(BufferedOutput::VERBOSITY_NORMAL, true);
+        (new StatsTableRenderer())->render($output2, $passing);
+        $rendered2 = $output2->fetch();
+        $this->assertMatchesRegularExpression('/\e\[32m.*1\/1\s*✔.*\e\[39m/u', $rendered2);
+    }
+
+    /** @test */
+    public function color_tags_strip_cleanly_when_output_is_undecorated(): void
+    {
+        // Guard: never leak literal `<fg=...>` markers to plain logs.
+        $stats = $this->buildEmptyStats();
+        $jobs = [new JobResult('boom', false, '', '1s')];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput(BufferedOutput::VERBOSITY_NORMAL, false);
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        $this->assertStringNotContainsString('<fg=', $rendered);
+        $this->assertStringNotContainsString('</>', $rendered);
+        $this->assertStringContainsString('KO', $rendered);
+    }
 }

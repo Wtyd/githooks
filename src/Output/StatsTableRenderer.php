@@ -65,10 +65,13 @@ final class StatsTableRenderer
         $table->addRow(new TableSeparator());
         $passed = $result->getPassedCount();
         $total = count($result->getJobResults());
-        $totalIcon = $result->isSuccess() ? '✔' : '✗';
+        $isOk = $result->isSuccess();
+        $totalCell = $isOk
+            ? "<fg=green>$passed/$total ✔</>"
+            : "<fg=red>$passed/$total ✗</>";
         $table->addRow([
             'TOTAL (flow)',
-            "$passed/$total $totalIcon",
+            $totalCell,
             $result->getTotalTime(),
             $stats->getCoresPeak() . '/' . $coresLimit,
             $stats->isSamplerActive() ? $stats->getMemoryPeak() . ' MB' : 'n/a',
@@ -77,16 +80,22 @@ final class StatsTableRenderer
         $table->render();
     }
 
+    /**
+     * Symfony Console wraps `<fg=...>...</>` to ANSI when the OutputInterface
+     * is decorated. FormatsOutput::forceCIDecorationIfApplicable() turns it on
+     * for GitHub Actions / GitLab CI; off-TTY without CI the tags strip out
+     * cleanly, so we never leak literal `<fg=...>` markers to plain logs.
+     */
     private function renderJobStatus(JobResult $job): string
     {
         if ($job->isSkipped()) {
-            return '⏭';
+            return '<fg=blue>⏭</>';
         }
         if ($job->isMemoryFailed() || !$job->isSuccess()) {
-            return 'KO';
+            return '<fg=red>KO</>';
         }
         if ($job->isMemoryWarned()) {
-            return 'OK ⚠';
+            return '<fg=yellow>OK ⚠</>';
         }
         return 'OK';
     }

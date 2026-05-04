@@ -44,6 +44,8 @@ trait FormatsOutput
      */
     private function applyFormat(FlowExecutor $executor, ?FlowPlan $plan = null): void
     {
+        $this->forceCIDecorationIfApplicable();
+
         $format = strval($this->option('format'));
 
         if ($format !== '' && !in_array($format, OutputFormats::SUPPORTED, true)) {
@@ -102,6 +104,35 @@ trait FormatsOutput
     private function isCIDisabled(): bool
     {
         return method_exists($this, 'option') && $this->hasOption('no-ci') && $this->option('no-ci');
+    }
+
+    /**
+     * Force ANSI decoration on the OutputInterface when running under a CI
+     * that renders ANSI escapes (GitHub Actions, GitLab CI). Symfony Console
+     * disables decoration off-TTY by default, which strips every `<fg=red>…</>`
+     * tag the trait emits — making `✗ Flow time-budget exceeded` and warning
+     * lines invisible in CI logs (the operator's eye has no signal to lock on).
+     *
+     * Safe for structured formats (`--format=json|junit|sarif|codeclimate`):
+     * their payloads contain no Symfony tags so decoration has nothing to
+     * convert, and the section_start/section_end ANSI escapes already emitted
+     * by GitLabCIDecorator confirm the channel accepts ANSI.
+     */
+    private function forceCIDecorationIfApplicable(): void
+    {
+        if ($this->isCIDisabled()) {
+            return;
+        }
+        if (CIEnvironment::detect() === CIEnvironment::NONE) {
+            return;
+        }
+        if (!method_exists($this, 'getOutput')) {
+            return;
+        }
+        $output = $this->getOutput();
+        if ($output instanceof \Symfony\Component\Console\Output\OutputInterface) {
+            $output->setDecorated(true);
+        }
     }
 
     /**
