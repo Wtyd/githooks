@@ -24,9 +24,18 @@ A new `flows` command runs **several flows in a single plan** — one PHP runtim
 A new conditions header is emitted at the start of every `flow`, `flows` and `job` run to make the active options visible at a glance:
 
 ```
-Settings: processes=4 (cli) | fail-fast=true (flows.ci-pack.options) | mode=full (default)
+Settings:
+  processes     = 4    (cli)
+  fail-fast     = true (flows.ci-pack.options)
+  mode          = full (default)
+  time-budget   = none (default)
+  memory-budget = none (default)
+  allocator     = fifo (default)
+  stats         = false (default)
 Flows: qa, lint
 ```
+
+Every row carries its `(source)` parenthesis — `(default)` included — so the column stays aligned and the audit trail is complete.
 
 - **Channels**: stdout in text mode (default); stderr when a structured format is combined with `--show-progress`. Silent for plain `--format=json|junit|sarif|codeclimate` so stdout payloads stay clean.
 - **JSON v2 contract** (always present in `flow` / `flows` / `job` runs): a new root `effectiveOptions` block listing each option's `value` and `source`. `source` ∈ `{cli, flows.<X>.options, flows.<alias>.options, flows.options, default}`.

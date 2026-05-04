@@ -8,17 +8,7 @@
     {
       "id": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
       "title": "To Do",
-      "cards": [
-        {
-          "id": "20679207-b636-4222-937f-f53115060c5c",
-          "listId": "dac973d9-a667-4f8c-9bff-05358f18bdb3",
-          "title": "Prueba",
-          "description": "",
-          "labels": [],
-          "checkboxes": [],
-          "comments": []
-        }
-      ]
+      "cards": []
     },
     {
       "id": "2c5a0b65-e90c-404e-975a-611ee6907151",

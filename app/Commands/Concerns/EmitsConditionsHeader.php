@@ -12,8 +12,24 @@ use Wtyd\GitHooks\Output\OutputFormats;
  * Emit the cross-cutting "conditions header" that shows the effective options of
  * a `flow`, `flows` or `job` run with their source (REQ-019..021 / spec §4.6).
  *
- * Usage from a Laravel-Zero command:
- *   $this->emitConditionsHeader($resolution, $expandedFlows, $inputFiles);
+ * Layout (option C — aligned multi-line):
+ *
+ *   Settings:
+ *     processes      = 8                                   (flows.ci-validation.options)
+ *     fail-fast      = false                               (flows.options)
+ *     mode           = fast-branch                         (cli)
+ *     time-budget    = warn-after=800s,fail-after=1200s    (flows.ci-validation.options)
+ *     memory-budget  = warn-above=3000MB,fail-above=5000MB (flows.ci-validation.options)
+ *     allocator      = greedy                              (flows.ci-validation.options)
+ *     stats          = true                                (flows.ci-validation.options)
+ *
+ * Every row carries its `(source)` parenthesis — including `(default)` —
+ * so the column is aligned and the audit trail is complete: seeing
+ * `allocator = fifo (default)` confirms "this fell through, nothing
+ * overrode it", which is the exact question the operator asks when
+ * behaviour is surprising. Omitting the source on default rows broke
+ * the visual column and forced the reader to wonder "is this empty
+ * because it defaulted, or because something is missing?".
  *
  * Output channel:
  *  - `--format=text` (default): stdout via $this->line().
@@ -49,27 +65,22 @@ trait EmitsConditionsHeader
         ?array $expandedFlows,
         ?InputFilesResolution $inputFiles
     ): array {
-        $trace = $resolution->getTrace();
-        $modeKey = 'executionMode';
+        $rows = $this->buildSettingsRows($resolution, $inputFiles);
 
-        $modeValue = $inputFiles !== null
-            ? 'files'
-            : (string) ($trace[$modeKey]['value'] ?? 'full');
-        $modeSource = $inputFiles !== null
-            ? 'cli'
-            : (string) ($trace[$modeKey]['source'] ?? 'default');
+        $maxLabel = 0;
+        $maxValue = 0;
+        foreach ($rows as $row) {
+            $maxLabel = max($maxLabel, strlen($row['label']));
+            $maxValue = max($maxValue, strlen($row['value']));
+        }
 
-        $segments = [
-            $this->formatTraceSegment('processes', $trace['processes'] ?? null),
-            $this->formatTraceSegment('fail-fast', $trace['failFast'] ?? null),
-            "mode=$modeValue ($modeSource)",
-            $this->formatTimeBudgetSegment($trace['timeBudget'] ?? null),
-            $this->formatMemoryBudgetSegment($trace['memoryBudget'] ?? null),
-            $this->formatTraceSegment('allocator', $trace['allocator'] ?? null),
-            $this->formatTraceSegment('stats', $trace['stats'] ?? null),
-        ];
-
-        $lines = ['Settings: ' . implode(' | ', $segments)];
+        $lines = ['Settings:'];
+        foreach ($rows as $row) {
+            $label = str_pad($row['label'], $maxLabel);
+            $value = str_pad($row['value'], $maxValue);
+            $source = $row['source'] !== '' ? $row['source'] : 'default';
+            $lines[] = rtrim("  $label = $value ($source)");
+        }
 
         if ($expandedFlows !== null && $expandedFlows !== []) {
             $lines[] = 'Flows: ' . implode(', ', $expandedFlows);
@@ -79,96 +90,91 @@ trait EmitsConditionsHeader
     }
 
     /**
-     * Render the time-budget cell:
-     *  - missing/default → `time-budget=none (default)`
-     *  - cli disabled → `time-budget=disabled (cli)`
-     *  - configured → `time-budget=warn-after=Ws,fail-after=Fs (origin)`
-     *
-     * @param array{value: mixed, source: string}|null $entry
+     * @return array<int, array{label: string, value: string, source: string}>
      */
-    private function formatTimeBudgetSegment(?array $entry): string
-    {
-        if ($entry === null) {
-            return 'time-budget=none (default)';
-        }
+    private function buildSettingsRows(
+        EffectiveOptionsResolution $resolution,
+        ?InputFilesResolution $inputFiles
+    ): array {
+        $trace = $resolution->getTrace();
 
-        $source = (string) ($entry['source'] ?? 'default');
-        $value = $entry['value'] ?? null;
+        $modeValue = $inputFiles !== null
+            ? 'files'
+            : (string) ($trace['executionMode']['value'] ?? 'full');
+        $modeSource = $inputFiles !== null
+            ? 'cli'
+            : (string) ($trace['executionMode']['source'] ?? 'default');
 
-        if ($value === null) {
-            return $source === 'cli'
-                ? 'time-budget=disabled (cli)'
-                : "time-budget=none ($source)";
-        }
-
-        if (is_array($value)) {
-            $parts = [];
-            $warn = $value['warnAfter'] ?? null;
-            $fail = $value['failAfter'] ?? null;
-            if ($warn !== null) {
-                $parts[] = "warn-after={$warn}s";
-            }
-            if ($fail !== null) {
-                $parts[] = "fail-after={$fail}s";
-            }
-            $rendered = $parts === [] ? 'none' : implode(',', $parts);
-            return "time-budget=$rendered ($source)";
-        }
-
-        return 'time-budget=' . $this->stringifyTraceValue($value) . " ($source)";
-    }
-
-    /**
-     * Render the memory-budget cell:
-     *  - missing/default → `memory-budget=none (default)`
-     *  - cli disabled → `memory-budget=disabled (cli)`
-     *  - configured → `memory-budget=warn-above=WMB,fail-above=FMB (origin)`
-     *
-     * @param array{value: mixed, source: string}|null $entry
-     */
-    private function formatMemoryBudgetSegment(?array $entry): string
-    {
-        if ($entry === null) {
-            return 'memory-budget=none (default)';
-        }
-
-        $source = (string) ($entry['source'] ?? 'default');
-        $value = $entry['value'] ?? null;
-
-        if ($value === null) {
-            return $source === 'cli'
-                ? 'memory-budget=disabled (cli)'
-                : "memory-budget=none ($source)";
-        }
-
-        if (is_array($value)) {
-            $parts = [];
-            $warn = $value['warnAbove'] ?? null;
-            $fail = $value['failAbove'] ?? null;
-            if ($warn !== null) {
-                $parts[] = "warn-above={$warn}MB";
-            }
-            if ($fail !== null) {
-                $parts[] = "fail-above={$fail}MB";
-            }
-            $rendered = $parts === [] ? 'none' : implode(',', $parts);
-            return "memory-budget=$rendered ($source)";
-        }
-
-        return 'memory-budget=' . $this->stringifyTraceValue($value) . " ($source)";
+        return [
+            $this->settingsRow('processes', $trace['processes'] ?? null),
+            $this->settingsRow('fail-fast', $trace['failFast'] ?? null),
+            ['label' => 'mode', 'value' => $modeValue, 'source' => $modeSource],
+            $this->budgetRow('time-budget', $trace['timeBudget'] ?? null, 'after', 's'),
+            $this->budgetRow('memory-budget', $trace['memoryBudget'] ?? null, 'above', 'MB'),
+            $this->settingsRow('allocator', $trace['allocator'] ?? null),
+            $this->settingsRow('stats', $trace['stats'] ?? null),
+        ];
     }
 
     /**
      * @param array{value: mixed, source: string}|null $entry
+     * @return array{label: string, value: string, source: string}
      */
-    private function formatTraceSegment(string $label, ?array $entry): string
+    private function settingsRow(string $label, ?array $entry): array
     {
         if ($entry === null) {
-            return "$label=? (default)";
+            return ['label' => $label, 'value' => '?', 'source' => 'default'];
         }
-        $value = $this->stringifyTraceValue($entry['value']);
-        $source = (string) $entry['source'];
-        return "$label=$value ($source)";
+        return [
+            'label'  => $label,
+            'value'  => $this->stringifyTraceValue($entry['value']),
+            'source' => (string) $entry['source'],
+        ];
+    }
+
+    /**
+     * Render a budget row (time / memory). Output is identical to the previous
+     * single-line format (e.g. `warn-after=800s,fail-after=1200s`) so existing
+     * downstream consumers / docs keep matching.
+     *
+     * @param array{value: mixed, source: string}|null $entry
+     * @return array{label: string, value: string, source: string}
+     */
+    private function budgetRow(string $label, ?array $entry, string $direction, string $unit): array
+    {
+        if ($entry === null) {
+            return ['label' => $label, 'value' => 'none', 'source' => 'default'];
+        }
+
+        $source = (string) ($entry['source'] ?? 'default');
+        $value  = $entry['value'] ?? null;
+
+        if ($value === null) {
+            $rendered = $source === 'cli' ? 'disabled' : 'none';
+            return ['label' => $label, 'value' => $rendered, 'source' => $source];
+        }
+
+        if (is_array($value)) {
+            $warnKey = 'warn' . ucfirst($direction); // warnAfter | warnAbove
+            $failKey = 'fail' . ucfirst($direction); // failAfter | failAbove
+            $parts = [];
+            $warn = $value[$warnKey] ?? null;
+            $fail = $value[$failKey] ?? null;
+            if ($warn !== null) {
+                $parts[] = "warn-{$direction}={$warn}{$unit}";
+            }
+            if ($fail !== null) {
+                $parts[] = "fail-{$direction}={$fail}{$unit}";
+            }
+            $rendered = $parts === [] ? 'none' : implode(',', $parts);
+            return ['label' => $label, 'value' => $rendered, 'source' => $source];
+        }
+
+        return [
+            'label'  => $label,
+            'value'  => $this->stringifyTraceValue($value),
+            'source' => $source,
+        ];
     }
 
     /** @param mixed $value */
