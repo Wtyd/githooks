@@ -105,6 +105,35 @@ trait FormatsOutput
     }
 
     /**
+     * Open the GitLab CI "Summary" collapsible section (expanded by default) so
+     * the final results table is its own group instead of being absorbed by
+     * whichever per-job section happens to be the last open one.
+     */
+    private function emitCISummarySectionStart(): void
+    {
+        if ($this->isCIDisabled()) {
+            return;
+        }
+        if (CIEnvironment::detect() !== CIEnvironment::GITLAB_CI) {
+            return;
+        }
+        $ts = time();
+        echo "\033[0Ksection_start:{$ts}:githooks_summary[collapsed=false]\r\033[0KSummary\n";
+    }
+
+    private function emitCISummarySectionEnd(): void
+    {
+        if ($this->isCIDisabled()) {
+            return;
+        }
+        if (CIEnvironment::detect() !== CIEnvironment::GITLAB_CI) {
+            return;
+        }
+        $ts = time();
+        echo "\033[0Ksection_end:{$ts}:githooks_summary\r\033[0K\n";
+    }
+
+    /**
      * Resolve the progress handler for structured formats.
      * Uses the container binding so tests can override with NullOutputHandler.
      *
@@ -149,6 +178,16 @@ trait FormatsOutput
      * per-job and flow-level threshold explanation lines (REQ-018..REQ-020).
      */
     private function renderTextSummary(FlowResult $result): void
+    {
+        $this->emitCISummarySectionStart();
+        try {
+            $this->renderTextSummaryBody($result);
+        } finally {
+            $this->emitCISummarySectionEnd();
+        }
+    }
+
+    private function renderTextSummaryBody(FlowResult $result): void
     {
         $total = count($result->getJobResults());
         $passed = $result->getPassedCount();
