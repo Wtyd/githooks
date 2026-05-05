@@ -207,6 +207,16 @@ class CheckConfigurationFileCommand extends Command
             foreach ($jobs as $name => $job) {
                 try {
                     $jobInstance = $this->jobRegistry->create($job);
+                    // Apply the declared cores override so the rendered command
+                    // reflects the user's intent (cores wins over the native
+                    // flag, native flag-only is promoted as cores). conf:check
+                    // does not have flow context, so the budget clamp is NOT
+                    // applied — the table shows the declared value, not the
+                    // runtime-clamped one.
+                    $coresOverride = $jobInstance->getCoresOverride();
+                    if ($coresOverride !== null) {
+                        $jobInstance->applyThreadLimit($coresOverride);
+                    }
                     $command = $jobInstance->buildCommand();
                     $status = $this->validateJob($jobInstance, $job);
                     if ($status !== '<fg=green>✔</>') {
