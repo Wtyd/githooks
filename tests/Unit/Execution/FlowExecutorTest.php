@@ -13,8 +13,10 @@ use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\CustomJob;
+use Wtyd\GitHooks\Jobs\ParallelLintJob;
 use Wtyd\GitHooks\Jobs\ParatestJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
+use Wtyd\GitHooks\Jobs\PhpstanJob;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
 
@@ -803,7 +805,11 @@ class FlowExecutorTest extends TestCase
             'paths'    => ['src'],
             'parallel' => 8,
         ]));
-        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
+        // processes=8 keeps the declared parallel=8 below the flow budget
+        // so the clamp does not apply — the test still pins the peak to
+        // the allocated capability (vs. the default 1 a swap mutant would
+        // produce).
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 8));
 
         $result = $executor->execute($plan);
 
@@ -915,7 +921,10 @@ class FlowExecutorTest extends TestCase
             'paths'          => ['src'],
             'cores'          => 2,
         ]));
-        $plan = new FlowPlan('qa', [$phpcs], new OptionsConfiguration(false, 1));
+        // processes=8 keeps cores=2 below the budget — see
+        // explicit_cores_override_clamps_args_to_flow_budget for the
+        // clamp scenario.
+        $plan = new FlowPlan('qa', [$phpcs], new OptionsConfiguration(false, 8));
 
         $result = $executor->execute($plan, true);
 
@@ -936,7 +945,9 @@ class FlowExecutorTest extends TestCase
             'configuration'  => 'phpunit.xml',
             'cores'          => 4,
         ]));
-        $plan = new FlowPlan('qa', [$paratest], new OptionsConfiguration(false, 1));
+        // processes=8 keeps cores=4 below the budget so this test pins
+        // the propagation to the native flag, not the clamp.
+        $plan = new FlowPlan('qa', [$paratest], new OptionsConfiguration(false, 8));
 
         $result = $executor->execute($plan, true);
 
@@ -945,6 +956,130 @@ class FlowExecutorTest extends TestCase
             return $jr->getCommand();
         }, $result->getJobResults());
         $this->assertStringContainsString('--processes=4', $commands[0]);
+    }
+
+    /**
+     * @test
+     * The flow rules: when `cores: N` exceeds the flow's processes budget,
+     * the args propagated to the tool are clamped to the budget. Without
+     * this clamp, the tool would actually spawn N workers while the pool
+     * accounts for `min(N, budget)` — admitting other jobs that then
+     * contend for cores the tool is silently consuming.
+     */
+    public function explicit_cores_override_clamps_args_to_flow_budget()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $phpcs = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'executable-path' => 'vendor/bin/phpcs',
+            'paths'           => ['src'],
+            'cores'           => 8,
+        ]));
+        $plan = new FlowPlan('qa', [$phpcs], new OptionsConfiguration(false, 4));
+
+        $result = $executor->execute($plan, true);
+
+        $command = $result->getJobResults()[0]->getCommand();
+        $this->assertStringContainsString('--parallel=4', $command);
+        $this->assertStringNotContainsString('--parallel=8', $command);
+    }
+
+    /**
+     * @test
+     * Symmetric with the explicit-cores clamp: when only the native flag is
+     * declared (and getCoresOverride() promotes it as implicit override),
+     * the clamp must apply identically.
+     */
+    public function promoted_native_flag_clamps_args_to_flow_budget()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $phpcs = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'executable-path' => 'vendor/bin/phpcs',
+            'paths'           => ['src'],
+            'parallel'        => 8,
+        ]));
+        $plan = new FlowPlan('qa', [$phpcs], new OptionsConfiguration(false, 4));
+
+        $result = $executor->execute($plan, true);
+
+        $command = $result->getJobResults()[0]->getCommand();
+        $this->assertStringContainsString('--parallel=4', $command);
+    }
+
+    /**
+     * @test
+     * Negative pin: when the override fits within the budget, no clamp
+     * is applied and the declared value reaches the tool verbatim.
+     */
+    public function explicit_cores_override_passes_through_when_below_budget()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $phpcs = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'executable-path' => 'vendor/bin/phpcs',
+            'paths'           => ['src'],
+            'cores'           => 2,
+        ]));
+        $plan = new FlowPlan('qa', [$phpcs], new OptionsConfiguration(false, 8));
+
+        $result = $executor->execute($plan, true);
+
+        $command = $result->getJobResults()[0]->getCommand();
+        $this->assertStringContainsString('--parallel=2', $command);
+    }
+
+    /**
+     * @test
+     * When sequential allocation runs (single job or processes=1), a
+     * controllable capability default that exceeds the budget must also
+     * be clamped — including the args propagated to the tool. Otherwise
+     * parallel-lint's default `-j 10` would always win even on a 1-core
+     * flow.
+     *
+     * ParallelLintJob default capability is `jobs: 10`. With processes=2
+     * and no override declared, the tool must run with `-j 2`.
+     */
+    public function sequential_default_capability_clamps_args_to_flow_budget_for_controllable()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $lint = new ParallelLintJob(new JobConfiguration('lint', 'parallel-lint', [
+            'paths' => ['src'],
+        ]));
+        $plan = new FlowPlan('qa', [$lint], new OptionsConfiguration(false, 2));
+
+        $result = $executor->execute($plan, true);
+
+        $command = $result->getJobResults()[0]->getCommand();
+        $this->assertStringContainsString('-j 2', $command);
+        $this->assertStringNotContainsString('-j 10', $command);
+    }
+
+    /**
+     * @test
+     * Negative pin for the sequential clamp: uncontrollable capabilities
+     * (phpstan reads `.neon`) have no CLI flag to clamp, so applyThreadLimit
+     * must NOT be called and the command must remain unchanged. The
+     * threadAllocations bookkeeping is still clamped so the pool's cores
+     * accounting stays consistent.
+     */
+    public function sequential_default_capability_does_not_apply_thread_limit_for_uncontrollable()
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+
+        $phpstan = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'executable-path' => 'vendor/bin/phpstan',
+            'paths'           => ['src'],
+        ]));
+        $plan = new FlowPlan('qa', [$phpstan], new OptionsConfiguration(false, 1));
+
+        $result = $executor->execute($plan, true);
+
+        $command = $result->getJobResults()[0]->getCommand();
+        // phpstan has no CLI threads flag — the command is unaffected.
+        $this->assertStringNotContainsString('--parallel', $command);
+        $this->assertStringNotContainsString('--threads', $command);
     }
 
     /** @test */

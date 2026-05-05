@@ -110,6 +110,7 @@ GitHooks now declaratively watches RSS consumption per job and across the whole 
 - **`conf:check` fix — phpcbf**: the conflict warning between `cores` and `parallel` (already emitted for phpcs) now applies to phpcbf as well.
 - **`conf:check` validation — native flag**: when declared without `cores`, the native threading flag (`parallel` / `threads` / `jobs` / `processes`) is validated as a positive integer — symmetric with `cores`. A `parallel: -1` or `threads: '4'` now warns instead of silently degrading at the allocator.
 - **Symmetric clamp**: a native flag value > `processes` is clamped to the budget at runtime, the same way `cores: N > processes` was clamped before.
+- **The flow rules — args clamp at every path**: until v3.3 a job declaring more cores than the flow's `processes` budget still spawned its declared workers in the SO (the pool's accounting was clamped, but `args['parallel']` / `args['threads']` / etc. were not). Same job in two flows ("local" with `processes: 4`, "ci" with `processes: 16`) had to choose one of the two budgets in its declaration. Now `applyThreadLimit()` clamps the override to the flow's budget before reaching the tool, in both the explicit-override and the sequential-default paths. Declare the maximum your job can use; each flow caps it.
 
 ### Deprecations
 

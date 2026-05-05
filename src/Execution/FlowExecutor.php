@@ -245,28 +245,34 @@ class FlowExecutor
         $this->peakEstimatedThreads = 0;
         $this->threadAllocations = [];
 
-        $this->applyExplicitCoresOverrides($jobs);
+        $this->applyExplicitCoresOverrides($jobs, $maxProcesses);
 
         if ($maxProcesses > 1 && count($jobs) > 1) {
             return $this->allocateParallelBudget($jobs, $maxProcesses);
         }
 
-        $this->fillSequentialAllocations($jobs);
+        $this->fillSequentialAllocations($jobs, $maxProcesses);
         return $maxProcesses;
     }
 
     /**
-     * Apply explicit `cores: N` overrides — always honoured, regardless of mode.
+     * Apply the cores override declared by the job (explicit `cores: N` or the
+     * tool's native threading flag promoted via JobAbstract::extractCoresOverride).
+     * The flow's `processes` budget is the absolute ceiling: a job declaring
+     * more cores than the flow allows is clamped to the budget so the args
+     * propagated to the tool match what the pool's admission accounts for.
+     * Same job can live in flows with different budgets — the flow rules.
      *
      * @param JobAbstract[] $jobs
      */
-    private function applyExplicitCoresOverrides(array $jobs): void
+    private function applyExplicitCoresOverrides(array $jobs, int $coresBudget): void
     {
         foreach ($jobs as $job) {
             $override = $job->getCoresOverride();
             if ($override !== null) {
-                $job->applyThreadLimit($override);
-                $this->threadAllocations[$job->getName()] = $override;
+                $clamped = max(1, min($override, $coresBudget));
+                $job->applyThreadLimit($clamped);
+                $this->threadAllocations[$job->getName()] = $clamped;
             }
         }
     }
@@ -296,19 +302,35 @@ class FlowExecutor
     }
 
     /**
-     * Sequential mode allocation — each job uses its capability default
-     * unless an explicit override is already set.
+     * Sequential mode allocation — each job without an explicit override
+     * gets `min(capability.defaultThreads, coresBudget)` so the flow's
+     * `processes` budget is the absolute ceiling, even when the job has
+     * a default capability (parallel-lint's default `jobs: 10`, paratest's
+     * default `processes: 4`, etc.). For controllable capabilities the
+     * clamped value is propagated to the tool via applyThreadLimit so the
+     * args match the pool's admission accounting.
      *
      * @param JobAbstract[] $jobs
      */
-    private function fillSequentialAllocations(array $jobs): void
+    private function fillSequentialAllocations(array $jobs, int $coresBudget): void
     {
         foreach ($jobs as $job) {
             if (isset($this->threadAllocations[$job->getName()])) {
                 continue;
             }
             $cap = $job->getThreadCapability();
-            $this->threadAllocations[$job->getName()] = $cap !== null ? $cap->getDefaultThreads() : 1;
+            if ($cap === null) {
+                $this->threadAllocations[$job->getName()] = 1;
+                continue;
+            }
+            $allocation = max(
+                $cap->getMinimumThreads(),
+                min($cap->getDefaultThreads(), $coresBudget)
+            );
+            if ($cap->isControllable()) {
+                $job->applyThreadLimit($allocation);
+            }
+            $this->threadAllocations[$job->getName()] = $allocation;
         }
     }
 
