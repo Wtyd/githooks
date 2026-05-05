@@ -139,6 +139,18 @@ githooks flow qa --stats
 
 Then declare conservative `warn-above`/`fail-above` based on the table.
 
+The status column is colour-coded when the output is decorated (TTY or
+under CI — see [CI/CD → ANSI colour in CI logs](ci-cd.md#ansi-colour-in-ci-logs)):
+
+| Cell | Colour | Meaning |
+|---|---|---|
+| `OK` | default | Job passed cleanly. |
+| `OK ⚠` | yellow | Job passed but crossed a `warn-above` / `warn-after` threshold. |
+| `KO` | red | Job failed (tool exit code `≠ 0`, or `fail-above` / `fail-after` crossed). |
+| `⏭` | blue | Job was skipped (no input files match, fail-fast cancellation, killed by flow guard). |
+| `TOTAL ✔` | green | Flow passed. |
+| `TOTAL ✗` | red | Flow failed (any job KO, or flow-level budget exceeded). |
+
 ### FIFO vs greedy
 
 | Strategy | When to pick |

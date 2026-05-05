@@ -8,11 +8,15 @@ Execution options control how flows run their jobs. They can be set globally (fo
 |---|---|---|---|
 | `processes` | Integer | `1` | Total CPU cores budget for parallel execution. |
 | `fail-fast` | Boolean | `false` | Stop the flow when a job fails. |
-| `ignoreErrorsOnExit` | Boolean | `false` | Flow returns exit 0 even if any job has errors. Overrides job-level setting. |
+| `ignore-errors-on-exit` | Boolean | `false` | Flow returns exit 0 even if any job has errors. Overrides job-level setting. |
 | `main-branch` | String | Auto-detected | Main branch name for `fast-branch` diff computation. |
 | `fast-branch-fallback` | String | `'full'` | Fallback when `fast-branch` cannot compute the diff (e.g. shallow clone). `'full'` runs with all paths; `'fast'` falls back to staged files only. |
 | `executable-prefix` | String | `''` | Command prefix prepended to all job executables (e.g. `'docker exec -i app'`). |
 | `reports` | Map<string,string> | `[]` | Map of `format => path` to write extra report files alongside `--format`/`--output`. See [Multi-report](#multi-report). |
+| `time-budget` | Object | `null` | Flow-level `warn-after` / `fail-after` thresholds (seconds) over the sum of executed-job durations. See [Time budget](#time-budget-time-budget). |
+| `memory-budget` | Object | `null` | Flow-level `warn-above` / `fail-above` thresholds (MB) over the simultaneous RSS sum across jobs in flight. See [Memory budget](#memory-budget-memory-budget). |
+| `allocator` | String | `'fifo'` | Admission strategy when the pool fills: `fifo` (strict order) or `greedy` (first-fit scan). See [Allocator strategy](#allocator-strategy-allocator). |
+| `stats` | Boolean | `false` | Activate RSS sampling and emit the `--stats` summary table. See [Stats](#stats-stats). |
 
 ## Priority
 
@@ -58,16 +62,16 @@ A job can opt out of the automatic split by declaring [`cores: N`](jobs.md#reser
 
 See [How-To: Parallel Execution](../how-to/parallel-execution.md) for detailed examples.
 
-## Fail-fast and ignoreErrorsOnExit
+## Fail-fast and ignore-errors-on-exit
 
-`fail-fast` and `ignoreErrorsOnExit` are **not compatible at flow level**. If both are `true`, `ignoreErrorsOnExit` is ignored.
+`fail-fast` and `ignore-errors-on-exit` are **not compatible at flow level**. If both are `true`, `ignore-errors-on-exit` is ignored.
 
-However, `fail-fast` is compatible with `ignoreErrorsOnExit` at **job level**. A job with `ignoreErrorsOnExit: true` will not trigger the flow's fail-fast, even if it detects problems.
+However, `fail-fast` is compatible with `ignore-errors-on-exit` at **job level**. A job with `ignore-errors-on-exit: true` will not trigger the flow's fail-fast, even if it detects problems.
 
 ```php
 'flows' => [
     'safe' => [
-        'options' => ['ignoreErrorsOnExit' => true],
+        'options' => ['ignore-errors-on-exit' => true],
         'jobs'    => ['first_job', 'second_job'],  // flow always returns exit 0
     ],
 
@@ -78,7 +82,7 @@ However, `fail-fast` is compatible with `ignoreErrorsOnExit` at **job level**. A
 ],
 ```
 
-The `ignoreErrorsOnExit` at flow level overrides the same option for all jobs in that flow.
+The `ignore-errors-on-exit` at flow level overrides the same option for all jobs in that flow.
 
 ## Executable prefix
 
@@ -206,6 +210,58 @@ githooks flow qa --format=json --no-reports --report-sarif=/tmp/q.sarif
 ```
 
 See [How-To: CI/CD](../how-to/ci-cd.md) for end-to-end pipeline recipes.
+
+## Time budget (`time-budget`)
+
+Watches the **accumulated execution time** of a flow against declared
+`warn-after` / `fail-after` thresholds (seconds). Catches drift across
+the whole pipeline — a flow can cross `fail-after` and exit `1` even
+when every job individually returned `0`. Independent of per-job
+`warn-after` / `fail-after` thresholds: the two layers answer different
+questions ("is this *job* regressing?" vs. "is the pipeline as a whole
+regressing?") and remain decoupled.
+
+```php
+'flows' => [
+    'options' => [
+        // Default global. Inherited by any flow that does not redefine it.
+        'time-budget' => [
+            'warn-after' => 800,   // seconds
+            'fail-after' => 1200,
+        ],
+    ],
+    'pre-commit-light' => [
+        'options' => [
+            // Per-flow override.
+            'time-budget' => ['warn-after' => 60],
+        ],
+        'jobs' => ['phpcbf', 'parallel-lint'],
+    ],
+],
+```
+
+**Behaviour when crossed:**
+
+| Threshold | Action |
+|---|---|
+| `warn-after` | `⚠` annotation, exit `0` |
+| `fail-after` | Exit `1` even if every job had passed individually |
+
+The flow value is evaluated **post-hoc** (sum of executed-job durations
+once the run finishes). It does not preempt the schedule — it surfaces
+drift after the fact.
+
+**Per-job thresholds** are declared directly inside the job with flat
+`warn-after` / `fail-after` keys — see [Jobs → Per-job time threshold](jobs.md#per-job-time-threshold-warn-after-fail-after).
+At both levels `conf:check` rejects `warn-after >= fail-after` and
+non-positive integers; `time-budget` placed inside a job is rejected
+(it is reserved for `flows.options`).
+
+CLI overrides: `--warn-after=N`, `--fail-after=N`, `--no-time-budget`.
+Apply flow-level on `flow` / `flows`; apply to the single job on
+`githooks job <name>`. `--no-time-budget` always wins and disables both
+layers for that run; mixing it with `--warn-after` / `--fail-after`
+emits a stderr warning and ignores the conflicting flags.
 
 ## Memory budget (`memory-budget`)
 

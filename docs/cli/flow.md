@@ -12,7 +12,7 @@ githooks flow <name> [options]
 
 | Option | Description |
 |---|---|
-| `--fail-fast` | Stop on first job failure. Overrides config value. See [Options: Fail-fast and ignoreErrorsOnExit](../configuration/options.md#fail-fast-and-ignoreerrorsonexit). |
+| `--fail-fast` | Stop on first job failure. Overrides config value. See [Options: Fail-fast and ignore-errors-on-exit](../configuration/options.md#fail-fast-and-ignore-errors-on-exit). |
 | `--processes=N` | Number of parallel processes. Overrides config value. `N` is a thread budget that is distributed across internally-parallel tools — see [Options: Thread budget](../configuration/options.md#thread-budget). |
 | `--exclude-jobs=a,b` | Comma-separated list of jobs to skip. |
 | `--only-jobs=a,b` | Comma-separated list of jobs to run (others skipped). Cannot combine with `--exclude-jobs`. |
@@ -25,8 +25,14 @@ githooks flow <name> [options]
 | `--fast-branch` | Fast-branch mode — analyze files that differ from the main branch. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
 | `--files=a,b,c` | Files mode — accelerable jobs analyze only the explicit list (CSV). Mutually exclusive with `--files-from`. Wins over `--fast`/`--fast-branch`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
 | `--files-from=PATH` | Files mode — read the list of paths from `PATH` (one per line; `#` comments and blanks ignored; UTF-8 + CRLF tolerated). Use this when the list exceeds the shell `ARG_MAX` or comes from `git diff --name-only`. |
-| `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob (`*`, `**`, `?`). Requires `--files` or `--files-from`. See [How-To: --files / --files-from](../how-to/files-flag.md#exclude-pattern). |
+| `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob (`*`, `**`, `?`). Requires `--files` or `--files-from`. See [How-To: --files / --files-from](../how-to/files-flag.md#-exclude-pattern). |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
+| `--warn-after=N` / `--fail-after=N` | Thresholds (s) over the sum of executed-job durations: `warn` annotates ⚠, `fail` exits 1 even if every job passed individually. See [Options: Time budget](../configuration/options.md#time-budget-time-budget). |
+| `--no-time-budget` | Disable per-job AND flow-level time evaluation for this run. Mixing with `--warn-after` / `--fail-after` emits a stderr warning and ignores them. |
+| `--memory-warn-above=N` / `--memory-fail-above=N` | Thresholds (MB) over the simultaneous RSS sum of jobs in flight: `warn` annotates ⚠, `fail` kills jobs in flight and exits 1 even if every job passed. See [Options: Memory budget](../configuration/options.md#memory-budget-memory-budget). |
+| `--no-memory-budget` | Disable per-job AND flow-level memory evaluation for this run. |
+| `--allocator=fifo\|greedy` | Admission strategy when the pool fills: `fifo` blocks the queue if the head does not fit; `greedy` scans for the first job that fits. Effective in 2D mode (cores + memory). See [Options: Allocator strategy](../configuration/options.md#allocator-strategy-allocator). |
+| `--stats` | Activate RSS sampling and print the 5-column summary table (Job / Status / Time / Peak Cores / Peak Memory) after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
 | `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--config=PATH` | Path to configuration file. |

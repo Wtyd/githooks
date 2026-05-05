@@ -17,7 +17,7 @@ A new `flows` command runs **several flows in a single plan** — one PHP runtim
   - `flows ci-pack deploy` (mixed) — meta-flow + extra flows, where per-flow / per-alias options are deliberately ignored.
 - **Meta-flows in config** ([`flows.<alias>.flows`](configuration/flows.md#meta-flows)): a flow that lists other flows instead of jobs. Declares its own `options` and `reports`. `conf:check` validates the new shape: each `flows.<X>` declares exactly one of `jobs` or `flows`, references must point at existing normal flows (no nesting in v3.3), and the jobs/flows/meta-flows namespace must stay flat.
 - **`flows.options` cascade per key**: `cli > flows.<X>.options > flows.options > default` (single-flow / declarative) collapses to `cli > flows.options > default` for ad-hoc and mixed runs (per-flow/alias options are intentionally ignored — see [why](https://wtyd.github.io/githooks/configuration/flows/#meta-flows)).
-- **REQ-018 warning**: when a flow or alias's `options` block is ignored because of the run mode, `flows` emits a one-line notice naming the ignored sources so the operator knows what is and isn't being applied.
+- **Ignored-options warning**: when a flow or alias's `options` block is ignored because of the run mode, `flows` emits a one-line notice naming the ignored sources so the operator knows what is and isn't being applied.
 
 #### Cross-cutting conditions header + `effectiveOptions`
 
@@ -79,13 +79,10 @@ Two parallel, independent systems that watch the temporal health of every QA run
 - **Per-job thresholds** (`jobs.<name>.warn-after` / `fail-after`, seconds): catch local regressions of a specific job. Crossing `warn-after` annotates `⚠`; crossing `fail-after` flips a passing job to KO with exit `1`.
 - **Flow time-budget** (`flows.options.time-budget` or `flows.<name>.options.time-budget`): catch accumulated drift across the whole flow. The post-hoc sum of executed-job durations is compared with `warn-after` / `fail-after` declared at the flow level. **A flow that crosses `fail-after` exits 1 even when every job passed individually** — the conceptual key of the feature.
 - **Independence**: declaring `time-budget` at the flow level does NOT propagate `warn-after` / `fail-after` to individual jobs. The two layers answer different questions ("is this job regressing?" vs. "is the pipeline as a whole regressing?") and remain decoupled.
-- **CLI overrides**: `--warn-after=N`, `--fail-after=N` (flow-level on `flow` / `flows`; job-level on `job` per spec REQ-016). `--no-time-budget` disables both layers for that run; mixing it with `--warn-after` emits a warning on stderr.
+- **CLI overrides**: `--warn-after=N`, `--fail-after=N` (flow-level on `flow` / `flows`; job-level on `job`). `--no-time-budget` disables both layers for that run; mixing it with `--warn-after` emits a warning on stderr.
 - **JSON v2 (explicit-null pattern)**: a new root `timeBudget` field (object or `null`) and per-job `threshold` field (object or `null`) are always present. Consumers can write `if (job.threshold) { … }` without existence checks. `reason` is a string when warned/failed is `true`, `null` otherwise.
 - **Conditions header**: extended with a `time-budget=...` segment showing the effective values and their origin (`flows.options`, `flows.<X>.options`, `cli`, `default`).
 - **`conf:check` validation**: rejects non-positive integers, `warn-after >= fail-after`, `time-budget` placed inside a job; warns on unknown keys with did-you-mean suggestions.
-- **Differentiator**: GrumPHP, CaptainHook, lefthook, pre-commit (Yelp) and golangci-lint do not expose a declarative time budget at job + aggregate level.
-
-Spec: [spec/spec-design-time-budget-thresholds.md](../spec/spec-design-time-budget-thresholds.md).
 
 #### Memory budget + 2D allocator + RSS sampler (Linux)
 
@@ -96,15 +93,13 @@ GitHooks now declaratively watches RSS consumption per job and across the whole 
   - Extended form `memory: { warn-above: 1500, fail-above: 2000 }` — explicit thresholds, no reservation.
   - Crossing `warn-above` annotates `⚠`; crossing `fail-above` flips the job to KO with exit `1` even when the tool itself returned `0`.
 - **Flow `memory-budget`** (`flows.options.memory-budget` or per-flow): observational watchdog over the simultaneous RSS sum across jobs in flight. Crossing `fail-above` **kills jobs in flight** (`process->stop(0)`) and skips the queued ones with reason `"flow memory-budget exceeded"`. The flow exits 1 even if every individual job had passed (the conceptual key of the feature).
-- **2D allocator** (`flows.options.allocator: fifo|greedy`): when a `memory-budget` is declared **and** at least one job has a short-form `memory:` reservation, the pool admits jobs only when both cores and memory fit. FIFO blocks the entire queue when the head does not fit; greedy scans for the first fitting job (REQ-019). 1D mode (cores only) is preserved when either side of the precondition is missing.
+- **2D allocator** (`flows.options.allocator: fifo|greedy`): when a `memory-budget` is declared **and** at least one job has a short-form `memory:` reservation, the pool admits jobs only when both cores and memory fit. FIFO blocks the entire queue when the head does not fit; greedy scans for the first fitting job. 1D mode (cores only) is preserved when either side of the precondition is missing.
 - **RSS sampler**: Linux via `/proc/<PID>/status` walked across the process tree (root + descendants — Symfony's shell wrapper alone is ~1 MB; the actual analyzers are children); macOS via a single `ps -o pid=,ppid=,rss= -ax` invocation per tick. Polled every 1 second while jobs are in flight. Windows degrades gracefully — a short stderr warning (`⚠ Memory budget disabled: RSS sampling not available on Windows`) disables thresholds; the 2D allocator still schedules from declared `memory:` reservations and `--stats` still emits the cores axis.
 - **`--stats` table**: 5-column summary (Job / Status / Time / Peak Cores / Peak Memory) with a TOTAL row + temporal attribution lines `Memory peak at Xs: jobA Pmb + jobB Pmb...` and `Cores peak at Xs:  jobA + jobB...`. Active when `--stats` (CLI) or `stats: true` (config).
 - **CLI overrides**: `--memory-warn-above=N`, `--memory-fail-above=N`, `--no-memory-budget`, `--allocator=fifo|greedy`, `--stats`. Apply flow-level except in `githooks job` where they apply to the single job.
-- **JSON v2**: new root-level `memoryBudget` and `stats` blocks (always present under the explicit-null pattern), per-job `memoryReserved`, `memoryPeak`, `memoryThreshold` and `killedReason`. SARIF / JUnit / Code Climate are unchanged in this iteration (REQ-042).
+- **JSON v2**: new root-level `memoryBudget` and `stats` blocks (always present under the explicit-null pattern), per-job `memoryReserved`, `memoryPeak`, `memoryThreshold` and `killedReason`. SARIF / JUnit / Code Climate are unchanged in this iteration.
 - **Conditions header**: extended with `memory-budget=warn-above=WMB,fail-above=FMB (origin)`, `allocator=fifo|greedy (origin)` and `stats=true|false (origin)` segments alongside `time-budget`.
 - **`conf:check` validation**: positive-integer guards, warn/fail ordering, `memory > memory-budget.warn-above` (could-never-run), unknown allocator values, `memory-budget` typo suggestions.
-
-Spec: [spec/spec-design-memory-budget.md](../spec/spec-design-memory-budget.md).
 
 ### Deprecations
 
@@ -124,7 +119,7 @@ The four legacy camelCase keys inherited from v2 inside `jobs.<name>` are deprec
 - **Conflict**: declaring both forms for the same key in the same job aborts that job with an error (`conflicting keys '...' and '...'`). Pick one.
 - **Out of scope for v3.3**: `conf:migrate` is **not** updated yet — that is step 2 of the deprecation plan, in a later v3.x. The camelCase removal itself is step 3, in v4.0.
 
-Migration guide: [Migration → v3.3 deprecations](migration/v33-deprecations.md). Spec: [spec/spec-design-kebab-case-keys-deprecation.md](../spec/spec-design-kebab-case-keys-deprecation.md).
+Migration guide: [Migration → v3.3 deprecations](migration/v33-deprecations.md).
 
 ---
 

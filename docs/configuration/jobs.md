@@ -48,6 +48,8 @@ The following keywords are available for all job types (except `custom`, which h
 | `execution` | String | Per-job execution mode override: `full`, `fast`, or `fast-branch`. |
 | `executable-prefix` | String | Per-job prefix override. Set to `null` or `''` to opt out of the global prefix. |
 | `cores` | Integer | Reserve N cores in the [thread budget](options.md#thread-budget). See [Reserving cores explicitly](#reserving-cores-explicitly-cores) below. |
+| `memory` | Integer or Object | Per-job memory threshold (MB) — and 2D allocator reservation when given as a short integer. See [Per-job memory threshold](#per-job-memory-threshold-memory) below. |
+| `warn-after` / `fail-after` | Integer | Per-job time thresholds (seconds). See [Per-job time threshold](#per-job-time-threshold-warn-after-fail-after) below. |
 
 !!! tip
     Missing keys can cause the job to fail at runtime. For example, a `phpcs` job without `standard` may fail if no standard is configured in the tool's own config file.
@@ -146,6 +148,41 @@ a stderr warning). The key has two equivalent forms:
 **Calibration tip:** run with `--stats` once **without** thresholds to
 discover real peaks, then declare conservative `warn-above`/`fail-above`
 based on the table.
+
+## Per-job time threshold (`warn-after` / `fail-after`)
+
+Each job can declare flat `warn-after` / `fail-after` keys (seconds) to
+catch local regressions in its own duration. They are independent of the
+flow-level [`time-budget`](options.md#time-budget-time-budget) — the two
+layers answer different questions ("is this *job* regressing?" vs. "is
+the pipeline as a whole regressing?") and remain decoupled.
+
+```php
+'jobs' => [
+    'phpunit' => [
+        'type'       => 'phpunit',
+        'config'     => 'phpunit.xml',
+        'warn-after' => 120,   // ⚠ when this single job takes longer
+        'fail-after' => 180,   // KO when this single job takes longer
+    ],
+],
+```
+
+**Behaviour:**
+
+- Crossing `warn-after` adds a `⚠` annotation; the job still passes.
+- Crossing `fail-after` flips the job to KO with exit `1`, even when the
+  tool itself returned `0`.
+
+`conf:check` rejects `warn-after >= fail-after`, non-positive integers,
+and a `time-budget` key placed inside a job (the canonical job-level
+keys are flat `warn-after` / `fail-after`; `time-budget` is reserved for
+flow-level `flows.options`).
+
+CLI override on a single-job run: `githooks job <name> --warn-after=N
+--fail-after=N` (or `--no-time-budget` to disable both layers for that
+run). See [Time budget](options.md#time-budget-time-budget) for the
+flow-level counterpart and the cross-layer rules.
 
 ## Job inheritance (`extends`)
 

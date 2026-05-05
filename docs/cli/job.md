@@ -12,8 +12,8 @@ githooks job <name> [options]
 
 | Option | Description |
 |---|---|
-| `--fail-fast` | Forwarded to the flow-preparer infrastructure; for a single-job run it only affects re-stage behaviour on fix jobs. See [Options: Fail-fast and ignoreErrorsOnExit](../configuration/options.md#fail-fast-and-ignoreerrorsonexit). |
-| `--ignore-errors-on-exit` | Return exit code 0 even if the job fails (useful for advisory checks). See [Options: Fail-fast and ignoreErrorsOnExit](../configuration/options.md#fail-fast-and-ignoreerrorsonexit). |
+| `--fail-fast` | Forwarded to the flow-preparer infrastructure; for a single-job run it only affects re-stage behaviour on fix jobs. See [Options: Fail-fast and ignore-errors-on-exit](../configuration/options.md#fail-fast-and-ignore-errors-on-exit). |
+| `--ignore-errors-on-exit` | Return exit code 0 even if the job fails (useful for advisory checks). See [Options: Fail-fast and ignore-errors-on-exit](../configuration/options.md#fail-fast-and-ignore-errors-on-exit). |
 | `--dry-run` | Show command without executing. |
 | `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. See [How-To: Output Formats](../how-to/output-formats.md). |
 | `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. See [Writing a report to a file](../how-to/output-formats.md#writing-a-report-to-a-file). |
@@ -25,6 +25,11 @@ githooks job <name> [options]
 | `--files-from=PATH` | Files mode — read paths from a manifest file (one per line). |
 | `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob. Requires `--files` or `--files-from`. |
 | `--no-ci` | Disable auto-detection of CI annotations. See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
+| `--warn-after=N` / `--fail-after=N` | Per-job time thresholds (s): `warn` annotates ⚠, `fail` flips the job to KO with exit 1 even if the tool returned 0. See [Jobs: Per-job time threshold](../configuration/jobs.md#per-job-time-threshold-warn-after-fail-after). |
+| `--no-time-budget` | Disable the per-job time threshold for this run. |
+| `--memory-warn-above=N` / `--memory-fail-above=N` | Per-job RSS thresholds (MB): `warn` annotates ⚠, `fail` flips the job to KO with exit 1 even if the tool returned 0. See [Jobs: Per-job memory threshold](../configuration/jobs.md#per-job-memory-threshold-memory). |
+| `--no-memory-budget` | Disable the per-job memory threshold for this run. |
+| `--stats` | Activate RSS sampling and print the summary table (Job / Status / Time / Peak Cores / Peak Memory) after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--config=PATH` | Path to configuration file. |
 | `-- ARGS...` | Extra arguments passed to the tool. Place after `--` separator. |

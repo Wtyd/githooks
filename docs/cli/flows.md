@@ -69,7 +69,7 @@ githooks flows ci-pack
 # Override processes; CLI wins over the meta-flow's options
 githooks flows ci-pack --processes=8
 
-# Mixed: meta-flow + normal flow; meta-flow options are ignored, REQ-018 warning
+# Mixed: meta-flow + normal flow; meta-flow options are ignored (warning emitted)
 githooks flows ci-pack deploy
 
 # Multi-report from one combined run

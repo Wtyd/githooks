@@ -77,14 +77,21 @@ Results: 3/4 passed in 3.45s
 
 | Tool | Type | Description |
 |---|---|---|
-| [PHP CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) | `phpcs` / `phpcbf` | Code style checking and auto-fixing |
 | [PHPStan](https://github.com/phpstan/phpstan) | `phpstan` | Static analysis |
+| [Psalm](https://psalm.dev/) | `psalm` | Static analysis |
+| [PHP CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) | `phpcs` | Code style checking |
+| [PHP Code Beautifier](https://github.com/squizlabs/PHP_CodeSniffer) | `phpcbf` | Auto-fix code style violations |
+| [PHP CS Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) | `php-cs-fixer` | Code style auto-fixing (rule-set based) |
+| [Rector](https://github.com/rectorphp/rector) | `rector` | Automated refactoring and modernisation |
 | [PHP Mess Detector](https://phpmd.org/) | `phpmd` | Code quality rules |
 | [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint) | `parallel-lint` | Syntax checking |
 | [PHPUnit](https://phpunit.de/) | `phpunit` | Unit testing |
-| [Psalm](https://psalm.dev/) | `psalm` | Static analysis |
+| [Paratest](https://github.com/paratestphp/paratest) | `paratest` | Parallel PHPUnit runner |
 | [PHP Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd) | `phpcpd` | Duplicate code detection |
-| Any tool | `custom` | Run any command via `script` or `executablePath` + `paths` |
+| Any command | `custom` | Run any shell command — ESLint, Prettier, `composer audit`, etc. |
+| Any command (legacy) | `script` | Legacy v2 alias. Prefer `custom` for new configs. |
+
+See the [Tools Reference](tools/index.md) for per-tool configuration, accelerability and internal threading.
 
 ## Sample configuration
 
@@ -136,6 +143,8 @@ return [
     ],
 ];
 ```
+
+Need budgets, meta-flows, files mode or multi-report? See [Advanced configuration](configuration/options.md) and the [v3.3 changelog](changelog.md#330-unreleased).
 
 [Get started](getting-started/installation.md){ .md-button .md-button--primary }
 [Configuration reference](configuration/index.md){ .md-button }

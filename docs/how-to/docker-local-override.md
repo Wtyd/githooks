@@ -89,7 +89,7 @@ githooks.local.php
 
 - GitHooks looks for `githooks.local.php` in the same directory as `githooks.php`.
 - If found, it merges the local config over the main config using `array_replace_recursive`.
-- The `executable-prefix` is prepended to every job's `executablePath` automatically.
+- The `executable-prefix` is prepended to every job's `executable-path` automatically.
 
 So `vendor/bin/phpstan analyse src` becomes `docker exec -i app vendor/bin/phpstan analyse src`.
 

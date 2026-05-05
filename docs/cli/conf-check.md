@@ -16,7 +16,13 @@ githooks conf:check [--config=PATH]
 - Argument types are valid (paths must be array, rules must be string, etc.).
 - Flow and hook references point to existing jobs/flows.
 - Hook names are valid git events.
-- Unknown configuration keys (warnings).
+- Unknown configuration keys (warnings, with did-you-mean suggestions for typos).
+- [Meta-flows](../configuration/flows.md#meta-flows): each `flows.<X>` declares exactly one of `jobs` or `flows`; `flows.<alias>.flows` only references existing **normal** flows (no nesting); the jobs/flows/meta-flows namespace is flat.
+- [Multi-report](../configuration/options.md#multi-report): only `json`, `junit`, `sarif`, `codeclimate` keys are accepted; paths must be strings and writable.
+- [Time budget](../configuration/options.md#time-budget-time-budget): positive integers; `warn-after < fail-after`; `time-budget` rejected inside a job (canonical keys at job level are flat `warn-after` / `fail-after`).
+- [Memory budget](../configuration/options.md#memory-budget-memory-budget): positive integers; `warn-above < fail-above`; per-job `memory > memory-budget.warn-above` is flagged as a could-never-run configuration.
+- [Allocator](../configuration/options.md#allocator-strategy-allocator): only `fifo` and `greedy` are valid.
+- `--files` / `--files-from`: rejected when declared as keys inside `flow.options` or a job (CLI-only by design).
 
 ### Deep validation
 

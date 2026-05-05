@@ -59,7 +59,7 @@ return [
 | Section | Required | Description |
 |---|---|---|
 | [Hooks](hooks.md) | No | Maps git events to flows/jobs. Supports conditional execution by branch and staged files. |
-| [Flows](flows.md) | Yes | Named groups of jobs with shared execution options. |
+| [Flows](flows.md) | Yes | Named groups of jobs with shared execution options. A flow can also be a [meta-flow](flows.md#meta-flows) that references other flows instead of jobs. |
 | [Jobs](jobs.md) | Yes | Individual QA tasks with type-specific configuration. Supports inheritance via `extends`. |
 | [Options](options.md) | No | Global and per-flow execution options (processes, fail-fast, main-branch). |
 | [Configuration File](file.md) | — | File format, search paths, validation, and migration. |

@@ -23,15 +23,15 @@ Use the `script` key for the full command. Simple and direct, but does not suppo
 
 ## Structured mode (with paths)
 
-Use `executablePath` + `paths` + optional `otherArguments`. This mode supports `--fast` acceleration when `accelerable: true`.
+Use `executable-path` + `paths` + optional `other-arguments`. This mode supports `--fast` acceleration when `accelerable: true`.
 
 ```php
 'eslint_src' => [
-    'type'           => 'custom',
-    'executablePath' => 'npx eslint',
-    'paths'          => ['resources/js'],
-    'otherArguments' => '--fix',
-    'accelerable'    => true,
+    'type'             => 'custom',
+    'executable-path'  => 'npx eslint',
+    'paths'            => ['resources/js'],
+    'other-arguments'  => '--fix',
+    'accelerable'      => true,
 ],
 ```
 
@@ -41,14 +41,17 @@ In normal mode, this runs: `npx eslint resources/js --fix`. With `--fast`, it ru
 
 | Keyword | Mode | Description |
 |---|---|---|
-| `script` | Simple | The full command to execute. Required if `executablePath` is not set. |
-| `executablePath` | Structured | Path to the executable. Required if `script` is not set. |
+| `script` | Simple | The full command to execute. Required if `executable-path` is not set. |
+| `executable-path` | Structured | Path to the executable. Required if `script` is not set. |
 | `paths` | Structured | Directories or files to analyze. |
-| `otherArguments` | Structured | Extra CLI flags appended after paths. |
+| `other-arguments` | Structured | Extra CLI flags appended after paths. |
 | `accelerable` | Structured | Boolean. Opt-in for `--fast` path filtering. Default `false`. |
 | `execution` | Both | Per-job execution mode override (`full`, `fast`, `fast-branch`). |
-| `ignoreErrorsOnExit` | Both | Job returns exit 0 even with problems. |
-| `failFast` | Both | Stop remaining jobs if this one fails. |
+| `ignore-errors-on-exit` | Both | Job returns exit 0 even with problems. |
+| `fail-fast` | Both | Stop remaining jobs if this one fails. |
+
+!!! note
+    The legacy camelCase keys (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) are still accepted in v3.3 with a deprecation warning. They will be removed in v4.0. See [v3.3 deprecations](../migration/v33-deprecations.md).
 
 ## Examples
 
@@ -65,11 +68,11 @@ In normal mode, this runs: `npx eslint resources/js --fix`. With `--fast`, it ru
 
 ```php
 'eslint_src' => [
-    'type'           => 'custom',
-    'executablePath' => 'npx eslint',
-    'paths'          => ['resources/js'],
-    'otherArguments' => '--fix',
-    'accelerable'    => true,
+    'type'             => 'custom',
+    'executable-path'  => 'npx eslint',
+    'paths'            => ['resources/js'],
+    'other-arguments'  => '--fix',
+    'accelerable'      => true,
 ],
 ```
 
@@ -77,11 +80,11 @@ In normal mode, this runs: `npx eslint resources/js --fix`. With `--fast`, it ru
 
 ```php
 'prettier' => [
-    'type'           => 'custom',
-    'executablePath' => 'npx prettier',
-    'paths'          => ['resources/js', 'resources/css'],
-    'otherArguments' => '--check',
-    'accelerable'    => true,
+    'type'             => 'custom',
+    'executable-path'  => 'npx prettier',
+    'paths'            => ['resources/js', 'resources/css'],
+    'other-arguments'  => '--check',
+    'accelerable'      => true,
 ],
 ```
 

@@ -29,7 +29,7 @@ jobs:
 GitHooks auto-detects CI environments and emits native annotations:
 
 - **GitHub Actions** (`GITHUB_ACTIONS=true`): wraps each job in `::group::JOB::…::endgroup::`, and parses tool output for `file.php:LINE` patterns to emit `::error file=…,line=…::MESSAGE` annotations that appear inline in the PR diff.
-- **GitLab CI** (`GITLAB_CI` env var set): wraps job output in `section_start:` / `section_end:` markers so the job log in the GitLab UI shows collapsible sections per job.
+- **GitLab CI** (`GITLAB_CI` env var set): wraps each job in a collapsible `section_start:` / `section_end:` block (see "GitLab CI sections" below for the per-job collapse rules and the dedicated Summary section).
 
 No configuration needed — annotations are on by default in CI. Opt out with `--no-ci`:
 
@@ -38,6 +38,46 @@ githooks flow qa --no-ci         # plain output even under GITHUB_ACTIONS
 ```
 
 Annotations stream on **stdout** alongside the normal text output, so they show up directly in the CI log. When using structured formats (`--format=json` etc.), annotations route to **stderr** so they don't contaminate the stdout payload.
+
+### ANSI colour in CI logs
+
+Symfony Console disables ANSI decoration off-TTY by default — every `<fg=red>✗ Flow time-budget exceeded…</>` and `<fg=yellow>⚠ Job exceeded memory threshold…</>` would otherwise be stripped before reaching the log, leaving the operator scanning every row to spot the failure. GitHooks **forces decoration on** when running under GitHub Actions or GitLab CI so:
+
+- `× Flow time-budget exceeded` and `⚠ memory-budget warning` lines render in red / yellow.
+- The `--stats` table cells render with colour: `KO` red, `OK ⚠` yellow, `⏭` blue, `TOTAL ✗ / ✔` red / green.
+- Symfony Table headers render in green (default Symfony behaviour with decoration on).
+
+Both GitHub Actions and GitLab CI render ANSI in their log viewers. `--no-ci` opts out of the forced decoration alongside the section markers.
+
+### GitLab CI sections
+
+Each job becomes its own collapsible section in the GitLab job log. The decorator buffers the job's body and emits the section **atomically** on close — so even with `processes > 1` and many jobs running in parallel, sections never interleave (which the GitLab `section_start` / `section_end` protocol does not support):
+
+| Outcome | Section flag | Behaviour in the UI |
+|---|---|---|
+| OK | `[collapsed=true]` | Section appears folded; click to expand. |
+| KO | `[collapsed=false]` | Section appears **expanded by default** — the tool's output (violations, stack traces) is visible without manual expansion. |
+| Skipped | `[collapsed=true]` | One-line section showing the skip reason. |
+
+After the per-job sections, a final `githooks_summary[collapsed=false]` section wraps the `Results: P/N passed in T` line, the `--stats` table (when active) and any `Report written to: …` notices. It is expanded by default so the run summary is visible at a glance.
+
+```text
+> phpcs_luz                                            (collapsed, OK)
+> phpstan_luz_ci                                       (collapsed, OK)
+v phpmd_luz_src_b                                      (auto-expanded, KO)
+    --- phpmd_luz_src_b ---
+    9 | VIOLATION | Avoid variables with short names like $a…
+    Found 16 violations and 0 errors in 15ms
+v Summary                                              (auto-expanded)
+    Results: 11/24 passed in 55.63s ✗
+    +-----------------+--------+--------+...
+    | Job             | Status | Time   |
+    | phpstan_luz_ci  | KO     | 15.18s |  ← red
+    | TOTAL (flow)    | 11/24 ✗| 55.63s |  ← red
+    +-----------------+--------+--------+...
+```
+
+Symfony Style chips with the live timer (e.g. the `00:00` clock GitLab shows on the right of each section header) and the per-job durations are GitLab's own UI — the decorator only emits the section markers and the body content.
 
 ## Fast-branch mode for PRs
 

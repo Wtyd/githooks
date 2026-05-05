@@ -6,11 +6,11 @@ GitHooks can run non-PHP tools using the `custom` job type. This lets you manage
 
 ```php
 'eslint_src' => [
-    'type'           => 'custom',
-    'executablePath' => 'npx eslint',
-    'paths'          => ['resources/js'],
-    'otherArguments' => '--fix',
-    'accelerable'    => true,  // opt-in for --fast
+    'type'             => 'custom',
+    'executable-path'  => 'npx eslint',
+    'paths'            => ['resources/js'],
+    'other-arguments'  => '--fix',
+    'accelerable'      => true,  // opt-in for --fast
 ],
 ```
 
@@ -20,11 +20,11 @@ With `--fast`, only staged JavaScript files within `resources/js/` are analyzed.
 
 ```php
 'prettier' => [
-    'type'           => 'custom',
-    'executablePath' => 'npx prettier',
-    'paths'          => ['resources/js', 'resources/css'],
-    'otherArguments' => '--check',
-    'accelerable'    => true,
+    'type'             => 'custom',
+    'executable-path'  => 'npx prettier',
+    'paths'            => ['resources/js', 'resources/css'],
+    'other-arguments'  => '--check',
+    'accelerable'      => true,
 ],
 ```
 
@@ -32,11 +32,11 @@ With `--fast`, only staged JavaScript files within `resources/js/` are analyzed.
 
 ```php
 'stylelint' => [
-    'type'           => 'custom',
-    'executablePath' => 'npx stylelint',
-    'paths'          => ['resources/css'],
-    'otherArguments' => '--fix',
-    'accelerable'    => true,
+    'type'             => 'custom',
+    'executable-path'  => 'npx stylelint',
+    'paths'            => ['resources/css'],
+    'other-arguments'  => '--fix',
+    'accelerable'      => true,
 ],
 ```
 

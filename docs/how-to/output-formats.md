@@ -127,24 +127,63 @@ githooks flow qa --format=json
   "version": 2,
   "flow": "qa",
   "success": false,
-  "totalTime": "3.45s",
+  "totalTime": "15.18s",
   "executionMode": "full",
   "passed": 2,
   "failed": 1,
   "skipped": 0,
+  "timeBudget": {
+    "warnAfter": 800,
+    "failAfter": 1200,
+    "totalJobDuration": 1015.2,
+    "warned": true,
+    "failed": false
+  },
+  "memoryBudget": {
+    "warnAbove": 3000,
+    "failAbove": 5000,
+    "peakObserved": 3743,
+    "peakAtSecond": 12.34,
+    "peakAttribution": [{ "name": "phpstan_src", "value": 3500 }],
+    "warned": true,
+    "failed": false
+  },
+  "stats": {
+    "cores": {
+      "limit": 8,
+      "flowPeak": { "value": 8, "atSecond": 0.01, "jobsInFlight": ["phpstan_src", "phpcs", "phpunit"] }
+    },
+    "memory": {
+      "flowPeak": { "value": 3743, "atSecond": 12.34, "jobsInFlight": [{ "name": "phpstan_src", "value": 3500 }] }
+    }
+  },
+  "warnings": [],
+  "deprecations": [],
   "jobs": [
     {
       "name": "phpstan_src",
       "type": "phpstan",
       "success": false,
       "time": "2.34s",
+      "duration": 2.34,
       "exitCode": 1,
       "output": "src/Foo.php:12  Access to undefined property $bar",
       "fixApplied": false,
       "command": "vendor/bin/phpstan analyse -c qa/phpstan.neon --no-progress src",
       "paths": ["src"],
       "skipped": false,
-      "skipReason": null
+      "skipReason": null,
+      "threshold": {
+        "warnAfter": 120,
+        "failAfter": 180,
+        "warned": false,
+        "failed": false,
+        "reason": null
+      },
+      "memoryReserved": null,
+      "memoryPeak": 3500,
+      "memoryThreshold": null,
+      "killedReason": null
     }
   ]
 }
@@ -156,10 +195,18 @@ githooks flow qa --format=json
 |---|---|---|
 | `version` | integer | Schema version — currently `2`. Bumped on breaking changes. |
 | `flow` | string | Flow name (or job name when called from `githooks job`). |
-| `success` | boolean | `true` if **all** non-skipped jobs passed. |
+| `success` | boolean | `true` if **all** non-skipped jobs passed AND no flow-level `fail-after` / `fail-above` was crossed. |
 | `totalTime` | string | Human-readable wall-clock time. `"0ms"` under `--dry-run`. |
-| `executionMode` | string | `"full"`, `"fast"` or `"fast-branch"`. Reflects the actual `--fast` / `--fast-branch` flag used. |
+| `executionMode` | string | `"full"`, `"fast"`, `"fast-branch"` or `"files"`. Reflects the actual mode used. |
 | `passed` / `failed` / `skipped` | integer | Counters matching the entries in `jobs[]`. |
+| `timeBudget` | object or null | Flow-level time budget state. `null` when not configured. See [Time budget block](#time-budget-block). |
+| `memoryBudget` | object or null | Flow-level memory budget state. `null` when not configured. See [Memory budget block](#memory-budget-block). |
+| `stats` | object or null | RSS sampling + cores attribution. `null` when `stats: false` (default). See [Stats block](#stats-block). |
+| `inputFiles` | object | Present only in files mode (`--files` / `--files-from`). See [Input files block](#input-files-block). |
+| `flows` | array | Present only in multi-flow runs. List of normal flows actually executed after meta-flow expansion. |
+| `effectiveOptions` | object | Always present in `flow` / `flows` / `job` runs. Each option's `value` and resolved `source`. See [Effective options and conditions header](#effective-options-and-conditions-header). |
+| `warnings` | string[] | Always present (empty when no warnings). Validation warnings emitted on stderr during the run. |
+| `deprecations` | object[] | Always present (empty when none). Each entry: `{job, oldKey, newKey, removalVersion, kind}`. See [v3.3 deprecations](../migration/v33-deprecations.md). |
 
 ### Per-job fields
 
@@ -167,15 +214,150 @@ githooks flow qa --format=json
 |---|---|---|
 | `name` | string | Job name as configured. |
 | `type` | string | Job type (`phpstan`, `phpcs`, `custom`, …). |
-| `success` | boolean | `true` if the job passed. |
+| `success` | boolean | `true` if the job passed AND no per-job `fail-after` / `fail-above` was crossed. |
 | `time` | string | Human-readable execution time. |
-| `exitCode` | integer | Underlying tool exit code. |
-| `output` | string | Captured stdout/stderr of the tool. |
+| `duration` | float | Execution time in seconds (raw — useful for sorting / comparisons). |
+| `exitCode` | integer or null | Underlying tool exit code. `null` for skipped jobs. |
+| `output` | string | Captured stdout/stderr of the tool, ANSI escapes stripped. |
 | `fixApplied` | boolean | `true` when the job modified files (fix jobs in non dry-run). |
 | `command` | string | Shell command that was executed (always present; useful under `--dry-run`). |
-| `paths` | array | Paths analysed (after fast / fast-branch filtering). |
-| `skipped` | boolean | `true` when the job was skipped (fast mode with no matching files, `--exclude-jobs`, or a fail-fast trigger in an earlier job). |
+| `paths` | array | Paths analysed (after fast / fast-branch / files filtering). |
+| `skipped` | boolean | `true` when the job was skipped (fast mode with no matching files, `--exclude-jobs`, fail-fast cancellation, or `fail-above` killing the queue). |
 | `skipReason` | string or null | Free-form reason string when `skipped: true`. |
+| `threshold` | object or null | Per-job time threshold state. `null` when no `warn-after` / `fail-after` configured. See [Per-job threshold block](#per-job-threshold-block). |
+| `memoryReserved` | integer or null | MB reserved by the 2D allocator for this job. `null` when no short-form `memory:` was declared. |
+| `memoryPeak` | integer or null | Peak RSS observed (MB). `null` when the sampler did not run (no stats / Windows). |
+| `memoryThreshold` | object or null | Per-job memory threshold state. `null` when no `memory` threshold configured. See [Per-job memory threshold block](#per-job-memory-threshold-block). |
+| `killedReason` | string or null | Set when the job was killed mid-run by a flow-level guard (e.g. `"flow memory-budget exceeded"`). `null` otherwise. |
+| `inputFiles` | object | Present on accelerable jobs in files mode. The slice of input files that matched this job's `paths`. |
+
+### Time budget block
+
+`timeBudget` (root) carries the flow-level state under the explicit-null
+pattern: present as an object with the same shape always when configured,
+`null` when no `time-budget` was declared (or `--no-time-budget` was set):
+
+```json
+"timeBudget": {
+  "warnAfter": 800,
+  "failAfter": 1200,
+  "totalJobDuration": 1015.2,
+  "warned": true,
+  "failed": false
+}
+```
+
+`totalJobDuration` is the post-hoc sum of executed-job durations in
+seconds. `warned` / `failed` flip `true` when their respective threshold
+is crossed. A flow with `failed: true` exits `1` even when every job's
+own `success` is `true`.
+
+### Per-job threshold block
+
+`threshold` (per job) carries per-job warn-after / fail-after state. `null`
+when not configured:
+
+```json
+"threshold": {
+  "warnAfter": 120,
+  "failAfter": 180,
+  "warned": false,
+  "failed": true,
+  "reason": "execution exceeded fail-after (181.2s)"
+}
+```
+
+`reason` is a string when `warned` or `failed` is `true`, `null` when both
+are `false`. A job with `failed: true` flips its top-level `success` to
+`false` even when the underlying tool exited `0`.
+
+### Memory budget block
+
+`memoryBudget` (root) carries the flow-level RSS guard. `null` when not
+configured:
+
+```json
+"memoryBudget": {
+  "warnAbove": 3000,
+  "failAbove": 5000,
+  "peakObserved": 3743,
+  "peakAtSecond": 12.34,
+  "peakAttribution": [{ "name": "phpstan_src", "value": 3500 }],
+  "warned": true,
+  "failed": false
+}
+```
+
+`peakAttribution` is the list of jobs in flight at the peak instant with
+their individual contribution (MB). When `failed: true`, the runtime kills
+jobs in flight via `process->stop(0)` and skips queued ones with reason
+`"flow memory-budget exceeded"`.
+
+### Per-job memory threshold block
+
+`memoryThreshold` (per job): `null` when not configured. Same shape as
+`threshold` but with `warnAbove` / `failAbove` (MB):
+
+```json
+"memoryThreshold": {
+  "warnAbove": 1500,
+  "failAbove": 2000,
+  "warned": false,
+  "failed": true,
+  "reason": "peak 2150 MB exceeded fail-above (2000 MB)"
+}
+```
+
+### Stats block
+
+`stats` (root) is emitted only when `stats: true` (config) or `--stats`
+(CLI). The `cores` sub-block is always present when active (deterministic
+from the schedule); the `memory` sub-block is present only when the RSS
+sampler produced data (Linux/macOS — Windows degrades gracefully):
+
+```json
+"stats": {
+  "cores": {
+    "limit": 8,
+    "flowPeak": {
+      "value": 8,
+      "atSecond": 0.01,
+      "jobsInFlight": ["phpstan_src", "phpcs", "phpunit"]
+    }
+  },
+  "memory": {
+    "flowPeak": {
+      "value": 3743,
+      "atSecond": 12.34,
+      "jobsInFlight": [{ "name": "phpstan_src", "value": 3500 }]
+    }
+  }
+}
+```
+
+### Input files block
+
+`inputFiles` (root) is emitted only in files mode (`--files`,
+`--files-from`). Per-job `inputFiles` shows the slice that matched each
+accelerable job's `paths`:
+
+```json
+"inputFiles": {
+  "source": "files-from",
+  "sourcePath": "/tmp/changed.txt",
+  "totalProvided": 142,
+  "totalValid": 138,
+  "invalid": ["does/not/exist.php"],
+  "excludedPatterns": ["**/Generated/**"],
+  "excluded": ["src/Generated/Foo.php"],
+  "totalAfterExclude": 137
+}
+```
+
+`source` is `"files"` or `"files-from"`. `sourcePath` is the manifest path
+when `--files-from`, `null` for inline `--files`. `excludedPatterns` /
+`excluded` / `totalAfterExclude` are present only when
+`--exclude-pattern` was used. See [How-To: --files / --files-from](files-flag.md).
 
 ### Fail-fast and the `jobs[]` array
 

@@ -9,6 +9,7 @@ All commands that read a configuration file accept `--config=path` to specify a 
 | Command | Description |
 |---|---|
 | [`githooks flow`](flow.md) | Run a flow (group of jobs). |
+| [`githooks flows`](flows.md) | Run several flows — or a declarative meta-flow — as a single combined plan. |
 | [`githooks job`](job.md) | Run a single job. |
 | [`githooks hook`](hook.md) | Install or remove git hooks. |
 | [`githooks status`](status.md) | Show hook installation status. |

@@ -37,15 +37,15 @@ Full:
 
 ```php
 'phpmd_src' => [
-    'type'           => 'phpmd',
-    'executablePath' => 'tools/phpmd',
-    'paths'          => ['src'],
-    'rules'          => './qa/phpmd-ruleset.xml',
-    'exclude'        => ['vendor'],
-    'cache'          => true,
-    'cache-strategy' => 'content',
-    'suffixes'       => 'php',
-    'baseline-file'  => 'phpmd-baseline.xml',
+    'type'            => 'phpmd',
+    'executable-path' => 'tools/phpmd',
+    'paths'           => ['src'],
+    'rules'           => './qa/phpmd-ruleset.xml',
+    'exclude'         => ['vendor'],
+    'cache'           => true,
+    'cache-strategy'  => 'content',
+    'suffixes'        => 'php',
+    'baseline-file'   => 'phpmd-baseline.xml',
 ],
 ```
 
