@@ -49,6 +49,19 @@ class PhpstanJob extends JobAbstract
     }
 
     /**
+     * Public accessor for the worker count declared in the .neon. Used by
+     * cross-flow validators (ConfigurationParser) that must compare the
+     * effective phpstan parallelism against each flow's `processes` budget
+     * before runtime. Mirrors the private detectNeonWorkers() — same
+     * fallback (4) when the .neon is absent or has no
+     * `maximumNumberOfProcesses` entry.
+     */
+    public function getDeclaredNeonWorkers(): int
+    {
+        return $this->detectNeonWorkers();
+    }
+
+    /**
      * @return string[]
      * @SuppressWarnings(PHPMD.UndefinedVariable) preg_match assigns $matches by reference
      */

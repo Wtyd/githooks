@@ -537,6 +537,18 @@ class JobConfiguration
         return $this->config['execution'] ?? null;
     }
 
+    /**
+     * Declared `cores: N` keyword (without inferring from native flags).
+     * Returns null when absent or invalid; cross-flow validators use this
+     * to check whether a job's reservation exceeds any flow's `processes`
+     * budget before runtime.
+     */
+    public function getCores(): ?int
+    {
+        $value = $this->config['cores'] ?? null;
+        return is_int($value) && $value > 0 ? $value : null;
+    }
+
     public function getWarnAfter(): ?int
     {
         $value = $this->config['warn-after'] ?? null;

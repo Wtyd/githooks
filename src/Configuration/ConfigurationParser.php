@@ -119,6 +119,13 @@ class ConfigurationParser
         // be admitted against — global or per-flow. Such a job could never run.
         $this->validateMemoryReserves($jobs, $globalOptions, $flows, $result);
 
+        // 4c. Cross-validation: uncontrollable jobs (phpstan, custom) where the
+        // declared cores/neon-workers exceed the flow's `processes` budget. The
+        // flow rules everywhere else (clamp at applyThreadLimit), but for these
+        // two GitHooks cannot force the tool to honour the budget — so we warn
+        // so the operator knows other jobs in the flow will wait in serial.
+        $this->validateCoresAgainstFlowBudgets($jobs, $globalOptions, $flows, $result);
+
         // 5. Warn about unknown top-level keys
         $knownKeys = ['hooks', 'flows', 'jobs'];
         foreach (array_keys($raw) as $key) {
@@ -207,6 +214,98 @@ class ConfigurationParser
                     . "declared in flow '$flowName' — could never run."
                 );
             }
+        }
+    }
+
+    /**
+     * Cross-validation of cores reservations against each flow's `processes`
+     * budget for uncontrollable jobs (phpstan reads .neon, custom is opaque).
+     * In both cases GitHooks cannot force the tool to honour the budget at
+     * runtime, so we surface the mismatch as a warning so the operator
+     * knows other jobs in the flow will wait in serial while the offending
+     * job runs. Controllable tools are not validated here — they are
+     * clamped at applyThreadLimit by FlowExecutor.
+     *
+     * @param array<string, JobConfiguration> $jobs
+     * @param array<string, FlowConfiguration> $flows
+     */
+    private function validateCoresAgainstFlowBudgets(
+        array $jobs,
+        OptionsConfiguration $globalOptions,
+        array $flows,
+        ValidationResult $result
+    ): void {
+        foreach ($jobs as $name => $job) {
+            $declared = $this->declaredCoresForUncontrollable($job);
+            if ($declared === null) {
+                continue;
+            }
+            [$value, $source] = $declared;
+            $this->validateCoresAgainstFlows($name, $value, $source, $globalOptions, $flows, $result);
+        }
+    }
+
+    /**
+     * Return [value, source] when the job is uncontrollable and declares
+     * a value to compare against `processes`, or null otherwise. `source`
+     * is a human-readable label embedded in the warning so the operator
+     * knows where the value came from.
+     *
+     * @return array{0:int,1:string}|null
+     */
+    private function declaredCoresForUncontrollable(JobConfiguration $job): ?array
+    {
+        $type = $job->getType();
+        if ($type === 'custom') {
+            $cores = $job->getCores();
+            return $cores !== null ? [$cores, "cores=$cores"] : null;
+        }
+        if ($type === 'phpstan') {
+            try {
+                $instance = $this->jobRegistry->create($job);
+            } catch (\Throwable $e) {
+                return null;
+            }
+            if (!$instance instanceof \Wtyd\GitHooks\Jobs\PhpstanJob) {
+                return null;
+            }
+            $workers = $instance->getDeclaredNeonWorkers();
+            return [$workers, "neon-workers=$workers"];
+        }
+        return null;
+    }
+
+    /**
+     * Compare the declared cores against every flow that runs the job. Emits
+     * one warning per flow exceeded; flows that fit are silent.
+     *
+     * @param array<string, FlowConfiguration> $flows
+     */
+    private function validateCoresAgainstFlows(
+        string $jobName,
+        int $declared,
+        string $source,
+        OptionsConfiguration $globalOptions,
+        array $flows,
+        ValidationResult $result
+    ): void {
+        foreach ($flows as $flowName => $flow) {
+            if (!in_array($jobName, $flow->getJobs(), true)) {
+                continue;
+            }
+            $flowOptions = $flow->getOptions();
+            $processes = $flowOptions !== null
+                ? $flowOptions->getProcesses()
+                : $globalOptions->getProcesses();
+            if ($declared <= $processes) {
+                continue;
+            }
+            $result->addWarning(
+                "Job '$jobName' in flow '$flowName': $source exceeds the flow's "
+                . "processes ($processes). The job will saturate the budget while "
+                . "running; other jobs in the flow will wait in serial. Adjust "
+                . "either side or accept this trade-off."
+            );
         }
     }
 

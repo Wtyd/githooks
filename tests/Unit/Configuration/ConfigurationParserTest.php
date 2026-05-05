@@ -1110,10 +1110,14 @@ PHP;
     /** @test */
     public function it_does_not_report_error_when_job_has_memory_but_no_budget_declared(): void
     {
+        // processes=4 covers phpstan's default 4 workers so the cores cross-flow
+        // validator stays silent — the focus of this test is that no
+        // memory-related error is emitted when memory-budget is absent.
         $config = <<<'PHP'
 <?php
 return [
     'flows' => [
+        'options' => ['processes' => 4],
         'qa' => ['jobs' => ['phpstan_src']],
     ],
     'jobs' => [
@@ -1475,5 +1479,234 @@ PHP;
         $errorText = implode("\n", $result->getValidation()->getErrors());
         $this->assertStringContainsString("'pack' references unknown flow 'nope'", $errorText);
         $this->assertStringContainsString("references 'inner' which is also a meta-flow", $errorText);
+    }
+
+    // ========================================================================
+    // cores cross-validation against flow.processes (v3.3 — uncontrollable jobs)
+    // The flow rules. Both phpstan (workers from .neon, no CLI flag) and
+    // custom (opaque scripts) are uncontrollable: GitHooks cannot force the
+    // tool to honour the budget. Cross-flow validation surfaces the
+    // mismatch as a warning so the user knows other jobs in the flow will
+    // wait in serial — without forcing them to fix it (it is a valid
+    // trade-off when the dev knows their machine can absorb it).
+    // ========================================================================
+
+    /** @test */
+    public function it_warns_when_custom_cores_exceeds_per_flow_processes(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'local' => [
+            'options' => ['processes' => 4],
+            'jobs' => ['eslint'],
+        ],
+    ],
+    'jobs' => [
+        'eslint' => [
+            'type'   => 'custom',
+            'script' => 'npx eslint src/',
+            'cores'  => 8,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("'eslint'", $warningText);
+        $this->assertStringContainsString("flow 'local'", $warningText);
+        $this->assertStringContainsString('cores', $warningText);
+        $this->assertStringContainsString('8', $warningText);
+        $this->assertStringContainsString('4', $warningText);
+        $this->assertStringContainsString('saturate', $warningText);
+        // It is a warning, not an error: the user may know what they're doing.
+        $this->assertFalse(
+            $result->hasErrors(),
+            'cores > processes for an uncontrollable job is a warning, not an error: '
+            . implode("\n", $result->getValidation()->getErrors())
+        );
+    }
+
+    /** @test */
+    public function it_warns_when_custom_cores_exceeds_global_processes(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'options' => ['processes' => 2],
+        'qa' => ['jobs' => ['eslint']],
+    ],
+    'jobs' => [
+        'eslint' => [
+            'type'   => 'custom',
+            'script' => 'npx eslint src/',
+            'cores'  => 8,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("'eslint'", $warningText);
+        $this->assertStringContainsString("flow 'qa'", $warningText);
+        $this->assertStringContainsString('saturate', $warningText);
+    }
+
+    /** @test */
+    public function it_does_not_warn_when_custom_cores_fits_flow_processes(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'ci' => [
+            'options' => ['processes' => 16],
+            'jobs' => ['eslint'],
+        ],
+    ],
+    'jobs' => [
+        'eslint' => [
+            'type'   => 'custom',
+            'script' => 'npx eslint src/',
+            'cores'  => 8,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringNotContainsString('saturate', $warningText);
+    }
+
+    /** @test */
+    public function it_warns_only_in_flows_where_custom_cores_exceeds_processes(): void
+    {
+        // Same job in two flows: 'local' (processes=4 → exceeds), 'ci'
+        // (processes=16 → fits). The job declaration is the maximum
+        // capacity; each flow caps it. Warning only fires for the flow
+        // that cannot accommodate it.
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'local' => [
+            'options' => ['processes' => 4],
+            'jobs' => ['eslint'],
+        ],
+        'ci' => [
+            'options' => ['processes' => 16],
+            'jobs' => ['eslint'],
+        ],
+    ],
+    'jobs' => [
+        'eslint' => [
+            'type'   => 'custom',
+            'script' => 'npx eslint src/',
+            'cores'  => 8,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("flow 'local'", $warningText);
+        $this->assertStringNotContainsString("flow 'ci'", $warningText);
+    }
+
+    /** @test */
+    public function it_warns_when_phpstan_neon_workers_exceed_flow_processes(): void
+    {
+        $neonPath = $this->fixturesPath . '/phpstan-test.neon';
+        file_put_contents($neonPath, "parameters:\n    maximumNumberOfProcesses: 8\n");
+
+        $config = <<<PHP
+<?php
+return [
+    'flows' => [
+        'local' => [
+            'options' => ['processes' => 2],
+            'jobs' => ['phpstan_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'paths'  => ['src'],
+            'config' => '$neonPath',
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("'phpstan_src'", $warningText);
+        $this->assertStringContainsString("flow 'local'", $warningText);
+        $this->assertStringContainsString('8', $warningText);
+        $this->assertStringContainsString('2', $warningText);
+        $this->assertStringContainsString('saturate', $warningText);
+        // Warning, not error.
+        $this->assertFalse(
+            $result->hasErrors(),
+            implode("\n", $result->getValidation()->getErrors())
+        );
+
+        @unlink($neonPath);
+    }
+
+    /** @test */
+    public function it_does_not_warn_when_phpstan_neon_workers_fit_flow_processes(): void
+    {
+        $neonPath = $this->fixturesPath . '/phpstan-test.neon';
+        file_put_contents($neonPath, "parameters:\n    maximumNumberOfProcesses: 4\n");
+
+        $config = <<<PHP
+<?php
+return [
+    'flows' => [
+        'ci' => [
+            'options' => ['processes' => 8],
+            'jobs' => ['phpstan_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'paths'  => ['src'],
+            'config' => '$neonPath',
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringNotContainsString('saturate', $warningText);
+
+        @unlink($neonPath);
     }
 }
