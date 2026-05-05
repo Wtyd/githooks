@@ -23,6 +23,7 @@ githooks conf:check [--config=PATH]
 - [Memory budget](../configuration/options.md#memory-budget-memory-budget): positive integers; `warn-above < fail-above`; per-job `memory > memory-budget.warn-above` is flagged as a could-never-run configuration.
 - [Allocator](../configuration/options.md#allocator-strategy-allocator): only `fifo` and `greedy` are valid.
 - [Cores / native thread flag](../configuration/jobs.md#reserving-cores-cores-or-the-tools-native-flag): `cores` must be a positive integer; declaring both `cores` and the tool's native flag (`parallel`, `threads`, `jobs`, `processes`) emits a conflict warning; declaring `cores > 1` on a single-threaded tool (`phpmd`, `phpunit`, `phpcpd`) emits a no-benefit warning.
+- [The flow rules](../configuration/jobs.md#the-flow-rules): for uncontrollable jobs whose declaration cannot be clamped by the runtime (`phpstan` reads `.neon`, `type: custom` is opaque), `conf:check` emits a cross-flow warning when `cores` (custom) or `maximumNumberOfProcesses` (phpstan) exceeds a flow's `processes`. The warning names the affected flow and explains that other jobs in it will wait in serial while the offending job runs. Same job referenced from multiple flows is validated against each flow independently.
 - `--files` / `--files-from`: rejected when declared as keys inside `flow.options` or a job (CLI-only by design).
 
 ### Deep validation

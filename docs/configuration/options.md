@@ -45,13 +45,14 @@ Running `githooks flow qa --processes=4` would use `fail-fast=true` (from flow) 
 
 ## Thread budget
 
-The `processes` option controls the **total CPU cores** available, not just the number of parallel jobs. When `processes > 1`, GitHooks distributes threads across jobs that support internal parallelism:
+The `processes` option controls the **total CPU cores** available — not just the number of parallel jobs, and not just a soft hint. It is the **absolute ceiling**: no individual job can spawn more workers than `processes` allows. When `processes > 1`, GitHooks distributes threads across jobs that support internal parallelism:
 
 | Tool | Internal parallelism flag |
 |---|---|
 | phpcs / phpcbf | `--parallel` |
 | parallel-lint | `-j` |
 | psalm | `--threads` |
+| paratest | `--processes` |
 | phpstan | Worker count from `.neon` config (not adjustable at runtime) |
 
 For example, with `processes: 4` and two threadable jobs, each gets approximately 2 threads. Use `githooks flow <name> --monitor` to see the actual thread usage.
@@ -59,6 +60,8 @@ For example, with `processes: 4` and two threadable jobs, each gets approximatel
 ### Per-job reservation (`cores`)
 
 A job can opt out of the automatic split by declaring [`cores: N`](jobs.md#reserving-cores-cores-or-the-tools-native-flag). The allocator reserves exactly N cores for that job and, when the tool is controllable (phpcs, psalm, parallel-lint, paratest), passes the corresponding flag automatically. Useful to guarantee a specific budget for paratest workers or to pin a phpstan configuration.
+
+When the declared value exceeds `processes` (`cores: 8` on a flow with `processes: 4`), the runtime clamps it to the budget — both the native flag emitted to the tool and the pool's accounting see `4`. The same clamp applies to the native flag declared without `cores` and to capability defaults (parallel-lint's default `-j 10`, paratest's default `--processes=4`). For uncontrollable tools (phpstan reads `.neon`, custom scripts are opaque) the runtime cannot force the clamp; [`conf:check`](../cli/conf-check.md) emits a cross-flow warning instead. See [The flow rules](jobs.md#the-flow-rules) for the full pattern.
 
 See [How-To: Parallel Execution](../how-to/parallel-execution.md) for detailed examples.
 

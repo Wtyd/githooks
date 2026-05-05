@@ -91,10 +91,10 @@ cases:
 
 | Category | Tools | `cores` / native flag |
 |---|---|---|
-| **Controllable** | `phpcs`, `phpcbf`, `psalm`, `parallel-lint`, `paratest` | Interchangeable. `cores: N` ↔ native flag. Allocator + flag both honoured. |
-| **Uncontrollable with internal threading** | `phpstan` | `cores: N` reserves N slots in the budget so `--monitor`/2D-allocator account accurately. The worker count itself is read from `.neon`'s `maximumNumberOfProcesses`; no CLI flag exists to force it. |
+| **Controllable** | `phpcs`, `phpcbf`, `psalm`, `parallel-lint`, `paratest` | Interchangeable. `cores: N` ↔ native flag. Allocator + flag both honoured. The flow's `processes` is the absolute ceiling — see [The flow rules](#the-flow-rules) below. |
+| **Uncontrollable with internal threading** | `phpstan` | `cores: N` reserves N slots in the budget so `--monitor`/2D-allocator account accurately. The worker count itself is read from `.neon`'s `maximumNumberOfProcesses`; no CLI flag exists to force it. When the `.neon` value exceeds a flow's `processes`, [`conf:check`](../cli/conf-check.md) emits a cross-flow warning. |
 | **Single-threaded** | `phpmd`, `phpunit`, `phpcpd` | The tool only uses 1 core. Declaring `cores > 1` reserves slots without benefit and slows admission of other jobs — `conf:check` emits a warning. Omit the key (or set `cores: 1`) on these jobs. |
-| **`custom`** | any user script | No automatic detection. Declare `cores: N` if your script has its own concurrency (`npx eslint --concurrency=N`, parallel make, etc.); the warning is suppressed because the system can't inspect external scripts. |
+| **`custom`** | any user script | No automatic detection. Declare `cores: N` if your script has its own concurrency (`npx eslint --concurrency=N`, parallel make, etc.); the single-threaded warning is suppressed because the system can't inspect external scripts. When `cores > flow.processes`, the same cross-flow warning as phpstan applies. |
 
 ### When both forms are declared
 
@@ -102,6 +102,40 @@ If a job declares both `cores` and the native flag at the same time
 (e.g. `cores: 2` and `parallel: 4` on a phpcs job), `cores` wins at
 runtime and [`conf:check`](../cli/conf-check.md) emits a warning naming
 both values. Pick one and remove the other.
+
+### The flow rules
+
+A job can be referenced from multiple flows with different `processes`
+budgets — typically `local` on a developer's machine and `ci` on a beefier
+runner. The recommended pattern is to declare the **maximum** capacity in
+the job; each flow caps it according to its own `processes`:
+
+```php
+'flows' => [
+    'local' => ['options' => ['processes' => 4],  'jobs' => ['phpcs_src']],
+    'ci'    => ['options' => ['processes' => 16], 'jobs' => ['phpcs_src']],
+],
+'jobs' => [
+    'phpcs_src' => [
+        'type'  => 'phpcs',
+        'paths' => ['src'],
+        'cores' => 8,   // declared maximum
+    ],
+],
+```
+
+- In `local` (`processes: 4`), the runtime emits `--parallel=4` and reserves 4 cores.
+- In `ci` (`processes: 16`), the runtime emits `--parallel=8` and reserves 8 cores.
+
+The same clamp applies to the native flag when declared without `cores`
+(e.g. `parallel: 8`, `threads: 8`), to the default capability of
+controllable tools (parallel-lint's default `jobs: 10`, paratest's
+default `processes: 4`), and to `cores`/`neon-workers` for uncontrollable
+jobs — except that for phpstan and `type: custom` GitHooks cannot
+**force** the limit (phpstan reads `.neon` directly, custom scripts are
+opaque). For these two, [`conf:check`](../cli/conf-check.md) emits a
+cross-flow warning naming the affected flow so you can adjust the
+declaration or accept that other jobs in that flow will wait in serial.
 
 ## Per-job memory threshold (`memory`)
 
