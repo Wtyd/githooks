@@ -19,10 +19,20 @@ class JobConfiguration
      */
     private const THREAD_ARG_KEYS = [
         'phpcs'         => 'parallel',
+        'phpcbf'        => 'parallel',
         'psalm'         => 'threads',
         'parallel-lint' => 'jobs',
         'paratest'      => 'processes',
     ];
+
+    /**
+     * Tool types that have no internal parallelism. Declaring `cores: N > 1`
+     * on these reserves slots in the budget without benefit (the tool still
+     * uses one core) and slows admission of other jobs. `custom` is excluded
+     * on purpose: scripts may have their own concurrency the system cannot
+     * inspect, so the user is trusted there.
+     */
+    private const SINGLE_THREADED_TYPES = ['phpmd', 'phpunit', 'phpcpd'];
 
     /**
      * Map of legacy camelCase keys (deprecated since v3.3, removed in v4.0)
@@ -267,6 +277,15 @@ class JobConfiguration
         $cores = $config['cores'];
         if (!is_int($cores) || $cores < 1) {
             $result->addWarning("Job '$name': 'cores' must be a positive integer.");
+            return;
+        }
+
+        if (in_array($type, self::SINGLE_THREADED_TYPES, true) && $cores > 1) {
+            $result->addWarning(
+                "Job '$name': '$type' is single-threaded; 'cores' ($cores) "
+                . "reserves slots in the budget without benefit. Remove the key "
+                . "or set 'cores: 1'."
+            );
             return;
         }
 

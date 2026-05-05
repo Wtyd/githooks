@@ -93,17 +93,42 @@ abstract class JobAbstract
     }
 
     /**
-     * Pop `cores` from $this->args and return it as a validated positive integer,
-     * or null when absent/invalid.
+     * Resolve the cores override that the budget allocator pins for this job.
+     *
+     * Two equivalent declarations are accepted (only the first one wins when
+     * both are present):
+     *
+     *   1. `cores: N` — the explicit, tool-agnostic form. Always honoured,
+     *      regardless of the job type.
+     *   2. The tool's native threading flag (e.g. `parallel: N` on phpcs,
+     *      `threads: N` on psalm, `jobs: N` on parallel-lint, `processes: N`
+     *      on paratest). Promoted as implicit override only when the
+     *      capability is controllable. Uncontrollable (phpstan) and
+     *      single-threaded tools have no native flag to promote, so the
+     *      override stays null.
+     *
+     * Returns the validated positive integer, or null when absent/invalid.
      */
     private function extractCoresOverride(): ?int
     {
-        if (!array_key_exists('cores', $this->args)) {
+        if (array_key_exists('cores', $this->args)) {
+            $cores = $this->args['cores'];
+            unset($this->args['cores']);
+            return is_int($cores) && $cores >= 1 ? $cores : null;
+        }
+
+        $capability = $this->getThreadCapability();
+        if ($capability === null || !$capability->isControllable()) {
             return null;
         }
-        $cores = $this->args['cores'];
-        unset($this->args['cores']);
-        return is_int($cores) && $cores >= 1 ? $cores : null;
+
+        $key = $capability->getArgumentKey();
+        if (!array_key_exists($key, $this->args)) {
+            return null;
+        }
+
+        $value = $this->args[$key];
+        return is_int($value) && $value >= 1 ? $value : null;
     }
 
     abstract public static function getDefaultExecutable(): string;

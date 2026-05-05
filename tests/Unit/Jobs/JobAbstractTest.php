@@ -8,7 +8,11 @@ use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
+use Wtyd\GitHooks\Jobs\ParatestJob;
+use Wtyd\GitHooks\Jobs\PhpcsJob;
+use Wtyd\GitHooks\Jobs\PhpmdJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
+use Wtyd\GitHooks\Jobs\PsalmJob;
 
 /**
  * Direct coverage for JobAbstract logic that was only exercised indirectly.
@@ -283,5 +287,119 @@ class JobAbstractTest extends TestCase
 
         $this->assertFalse($forcedOff->isAccelerable(), 'accelerable=false must override SUPPORTS_FAST=true');
         $this->assertTrue($forcedOn->isAccelerable(), 'accelerable=true must override SUPPORTS_FAST=false');
+    }
+
+    // ========================================================================
+    // cores ↔ native-thread-flag interchangeability (v3.3 follow-up)
+    // ========================================================================
+
+    /** @test */
+    public function getCoresOverride_promotes_phpcs_parallel_when_cores_absent()
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'parallel' => 4,
+        ]));
+
+        $this->assertSame(4, $job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_promotes_psalm_threads_when_cores_absent()
+    {
+        $job = new PsalmJob(new JobConfiguration('psalm_src', 'psalm', [
+            'paths'   => ['src'],
+            'threads' => 3,
+        ]));
+
+        $this->assertSame(3, $job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_promotes_parallel_lint_jobs_when_cores_absent()
+    {
+        $job = new ParallelLintJob(new JobConfiguration('lint', 'parallel-lint', [
+            'paths' => ['./'],
+            'jobs'  => 6,
+        ]));
+
+        $this->assertSame(6, $job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_promotes_paratest_processes_when_cores_absent()
+    {
+        $job = new ParatestJob(new JobConfiguration('paratest', 'paratest', [
+            'processes' => 8,
+        ]));
+
+        $this->assertSame(8, $job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_returns_explicit_cores_when_both_native_and_cores_set()
+    {
+        // cores wins over the native flag — already true; this test pins the
+        // contract so the new "promote native" path doesn't accidentally
+        // overwrite the explicit cores value.
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'parallel' => 4,
+            'cores'    => 2,
+        ]));
+
+        $this->assertSame(2, $job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_returns_null_when_native_flag_value_is_invalid()
+    {
+        // The promoted value must pass the same is_int && >=1 guard as
+        // explicit cores. A string like '4' is rejected.
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'parallel' => '4',
+        ]));
+
+        $this->assertNull($job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_does_not_promote_for_uncontrollable_tools()
+    {
+        // phpstan has a ThreadCapability but it is uncontrollable
+        // (workers come from .neon, no CLI flag). No native flag exists in
+        // its ARGUMENT_MAP, so there is nothing to promote — the override
+        // stays null when 'cores' is absent.
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths'  => ['src'],
+            'config' => 'qa/phpstan.neon',
+        ]));
+
+        $this->assertNull($job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_does_not_promote_for_single_threaded_tools()
+    {
+        // phpmd has no ThreadCapability at all. Nothing to promote.
+        $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', [
+            'paths' => ['src'],
+            'rules' => 'cleancode',
+        ]));
+
+        $this->assertNull($job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_does_not_promote_for_custom_jobs()
+    {
+        // CustomJob has no ThreadCapability by default. The user must declare
+        // 'cores' explicitly if they want budget reservation.
+        $job = new CustomJob(new JobConfiguration('eslint', 'custom', [
+            'script' => 'npx eslint src/',
+        ]));
+
+        $this->assertNull($job->getCoresOverride());
     }
 }

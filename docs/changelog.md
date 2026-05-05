@@ -101,6 +101,15 @@ GitHooks now declaratively watches RSS consumption per job and across the whole 
 - **Conditions header**: extended with `memory-budget=warn-above=WMB,fail-above=FMB (origin)`, `allocator=fifo|greedy (origin)` and `stats=true|false (origin)` segments alongside `time-budget`.
 - **`conf:check` validation**: positive-integer guards, warn/fail ordering, `memory > memory-budget.warn-above` (could-never-run), unknown allocator values, `memory-budget` typo suggestions.
 
+#### `cores` ↔ native thread flag interchangeability
+
+`cores: N` and the tool's native threading flag (`parallel` on phpcs/phpcbf, `threads` on psalm, `jobs` on parallel-lint, `processes` on paratest) now work identically in both directions: declaring **either** one reserves N cores in the budget and emits the right CLI flag at runtime. Until v3.3 declaring only the native flag (without `cores`) was silently dropped in parallel mode and the allocator distributed the budget evenly instead.
+
+- **No config change required**: the existing pattern of pinning with `cores: N` keeps working unchanged.
+- **`conf:check` warning — single-threaded tools**: declaring `cores > 1` on `phpmd`, `phpunit` or `phpcpd` now emits a warning ("`<tool>` is single-threaded; `cores` reserves slots in the budget without benefit"). The tool only uses one core, so reserving more slows admission of other jobs without gain. `cores: 1` and absence of `cores` are silent. `type: custom` is exempt — user scripts may have their own concurrency the system can't inspect.
+- **`conf:check` fix — phpcbf**: the conflict warning between `cores` and `parallel` (already emitted for phpcs) now applies to phpcbf as well.
+- **Symmetric clamp**: a native flag value > `processes` is clamped to the budget at runtime, the same way `cores: N > processes` was clamped before.
+
 ### Deprecations
 
 #### kebab-case keys for `jobs.<name>` (step 1 of 3)
@@ -157,7 +166,7 @@ The output behaviour now depends on the format and the execution context. The un
 
 #### Thread budget
 
-- **Per-job `cores` reservation ([`cores`](configuration/jobs.md#reserving-cores-explicitly-cores))**: every job can declare `cores: N` to reserve N slots in the thread budget. Controllable tools (phpcs, psalm, parallel-lint, paratest) automatically receive their native threading flag (`--parallel`, `--threads`, `-j`, `--processes`) with the same value, so you configure parallelism once per job regardless of the tool. Budget-only tools (phpstan, custom jobs) use `cores` to keep the `--monitor` peak accurate without forcing worker count. `conf:check` warns when `cores` coexists with a tool's native threading flag.
+- **Per-job `cores` reservation ([`cores`](configuration/jobs.md#reserving-cores-cores-or-the-tools-native-flag))**: every job can declare `cores: N` to reserve N slots in the thread budget. Controllable tools (phpcs, psalm, parallel-lint, paratest) automatically receive their native threading flag (`--parallel`, `--threads`, `-j`, `--processes`) with the same value, so you configure parallelism once per job regardless of the tool. Budget-only tools (phpstan, custom jobs) use `cores` to keep the `--monitor` peak accurate without forcing worker count. `conf:check` warns when `cores` coexists with a tool's native threading flag.
 
 #### Other
 - **`conf:check` command truncation**: long generated commands are truncated to 80 chars (with `…`) in the job table to keep the output readable on narrow terminals. `githooks job X --dry-run` still shows the full command.

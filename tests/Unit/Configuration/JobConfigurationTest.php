@@ -676,6 +676,116 @@ class JobConfigurationTest extends TestCase
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'overrides'));
     }
 
+    /** @test */
+    public function it_warns_when_cores_coexists_with_phpcbf_parallel()
+    {
+        // phpcbf inherits PhpcsJob's controllable capability — declaring both
+        // `cores` and `parallel` must emit the same conflict warning as phpcs.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcbf_src', [
+            'type'     => 'phpcbf',
+            'paths'    => ['src'],
+            'parallel' => 8,
+            'cores'    => 2,
+        ], $this->registry, $result, new JobRegistry());
+
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString("Job 'phpcbf_src'", $warningText);
+        $this->assertStringContainsString("'cores' overrides 'parallel'", $warningText);
+        $this->assertStringContainsString('cores=2', $warningText);
+        $this->assertStringContainsString('parallel=8', $warningText);
+    }
+
+    /** @test */
+    public function it_warns_when_cores_is_declared_on_a_single_threaded_tool_phpmd()
+    {
+        // phpmd has no internal threading; cores>1 reserves slots in the budget
+        // without benefit and slows admission of other jobs.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpmd_src', [
+            'type'  => 'phpmd',
+            'paths' => ['src'],
+            'rules' => 'cleancode',
+            'cores' => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $warningText = implode(' ', $result->getWarnings());
+        $this->assertStringContainsString("Job 'phpmd_src'", $warningText);
+        $this->assertStringContainsString('single-threaded', $warningText);
+        $this->assertStringContainsString("'cores'", $warningText);
+    }
+
+    /** @test */
+    public function it_warns_when_cores_is_declared_on_a_single_threaded_tool_phpunit()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpunit_all', [
+            'type'  => 'phpunit',
+            'cores' => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($this->warningsContain($result->getWarnings(), 'single-threaded'));
+    }
+
+    /** @test */
+    public function it_warns_when_cores_is_declared_on_a_single_threaded_tool_phpcpd()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcpd_src', [
+            'type'  => 'phpcpd',
+            'paths' => ['src'],
+            'cores' => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($this->warningsContain($result->getWarnings(), 'single-threaded'));
+    }
+
+    /** @test */
+    public function it_does_not_warn_when_cores_is_one_on_single_threaded_tool()
+    {
+        // cores: 1 is the effective default for non-threaded jobs; declaring
+        // it explicitly is harmless documentation and must not warn.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpmd_src', [
+            'type'  => 'phpmd',
+            'paths' => ['src'],
+            'rules' => 'cleancode',
+            'cores' => 1,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'single-threaded'));
+    }
+
+    /** @test */
+    public function it_does_not_warn_about_single_threaded_when_cores_absent()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpmd_src', [
+            'type'  => 'phpmd',
+            'paths' => ['src'],
+            'rules' => 'cleancode',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'single-threaded'));
+    }
+
+    /** @test */
+    public function it_does_not_warn_about_single_threaded_when_type_is_custom()
+    {
+        // custom jobs may run scripts with their own internal parallelism
+        // (npx eslint --concurrency=N, etc.) that the system cannot inspect.
+        // The user knows what they execute; do not emit the single-threaded
+        // warning even with cores>1.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('eslint_src', [
+            'type'   => 'custom',
+            'script' => 'npx eslint src/',
+            'cores'  => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), 'single-threaded'));
+    }
+
     /** @param string[] $warnings */
     private function warningsContain(array $warnings, string $needle): bool
     {

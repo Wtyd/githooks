@@ -20,7 +20,7 @@ Paratest inherits every keyword from [PHPUnit](phpunit.md) and adds one for work
 | `filter` | String | Filter which tests to run by regex pattern. | `'testSomething'` |
 | `log-junit` | String | Log test execution in JUnit XML format. | `'junit.xml'` |
 
-Plus all [common keywords](../configuration/jobs.md#common-keywords), including [`cores`](../configuration/jobs.md#reserving-cores-explicitly-cores).
+Plus all [common keywords](../configuration/jobs.md#common-keywords), including [`cores`](../configuration/jobs.md#reserving-cores-cores-or-the-tools-native-flag).
 
 ## Examples
 
@@ -51,7 +51,7 @@ The `cores` keyword is the recommended way to declare paratest parallelism becau
 1. Reserves N cores in the [thread budget](../configuration/options.md#thread-budget) so the allocator knows what paratest will consume.
 2. Passes `--processes=N` to paratest so the worker count matches the reservation.
 
-If you set both `cores` and `processes`, `cores` wins at runtime and [`conf:check`](../cli/conf-check.md) emits a warning. See [Reserving cores explicitly](../configuration/jobs.md#reserving-cores-explicitly-cores).
+If you set both `cores` and `processes`, `cores` wins at runtime and [`conf:check`](../cli/conf-check.md) emits a warning. See [Reserving cores explicitly](../configuration/jobs.md#reserving-cores-cores-or-the-tools-native-flag).
 
 ## Why use paratest instead of phpunit?
 

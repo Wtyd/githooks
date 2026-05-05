@@ -47,7 +47,7 @@ The following keywords are available for all job types (except `custom`, which h
 | `accelerable` | Boolean | Override `--fast` behavior. Default depends on type. |
 | `execution` | String | Per-job execution mode override: `full`, `fast`, or `fast-branch`. |
 | `executable-prefix` | String | Per-job prefix override. Set to `null` or `''` to opt out of the global prefix. |
-| `cores` | Integer | Reserve N cores in the [thread budget](options.md#thread-budget). See [Reserving cores explicitly](#reserving-cores-explicitly-cores) below. |
+| `cores` | Integer | Reserve N cores in the [thread budget](options.md#thread-budget). See [Reserving cores explicitly](#reserving-cores-cores-or-the-tools-native-flag) below. |
 | `memory` | Integer or Object | Per-job memory threshold (MB) — and 2D allocator reservation when given as a short integer. See [Per-job memory threshold](#per-job-memory-threshold-memory) below. |
 | `warn-after` / `fail-after` | Integer | Per-job time thresholds (seconds). See [Per-job time threshold](#per-job-time-threshold-warn-after-fail-after) below. |
 
@@ -57,46 +57,51 @@ The following keywords are available for all job types (except `custom`, which h
 !!! warning "Deprecated camelCase keys"
     The keys `executablePath`, `otherArguments`, `ignoreErrorsOnExit` and `failFast` (camelCase, inherited from v2) are still accepted in v3.3 with a deprecation warning, but they will be removed in **v4.0**. Use the kebab-case form shown in the table above. See [Migration: v3.3 deprecations](../migration/v33-deprecations.md).
 
-## Reserving cores explicitly (`cores`)
+## Reserving cores (`cores` or the tool's native flag)
 
 Every job accepts a `cores: N` keyword (integer ≥ 1) that reserves N cores
-in the [thread budget](options.md#thread-budget). When the tool exposes its
-own threading flag, `cores` **also drives that flag** — you declare the cost
-once, GitHooks tells the tool to honour it. That means you don't need to
-remember the specific option for each tool (`--parallel`, `--threads`, `-j`,
-`--processes`): declare `cores` and forget.
+in the [thread budget](options.md#thread-budget). On tools with their own
+threading flag, **`cores: N` and the native flag are interchangeable** —
+declare whichever feels natural and GitHooks does the right thing in both
+cases:
+
+- Reserves N cores in the allocator so the parallel pool admits jobs
+  honouring the actual cost.
+- Passes the tool the right flag (`--parallel`, `--threads`, `-j`,
+  `--processes`) without you having to remember which one is which.
 
 ```php
 'jobs' => [
+    // Form 1: explicit `cores`. Tool-agnostic, easiest to read.
     'phpcs_src' => [
         'type'  => 'phpcs',
         'paths' => ['src'],
-        'cores' => 2,   // reserves 2 cores + passes --parallel=2 to phpcs
+        'cores' => 2,        // → reserves 2 + emits --parallel=2
     ],
-    'phpunit_paratest' => [
-        'type'  => 'paratest',
-        'cores' => 4,   // reserves 4 cores + passes --processes=4 to paratest
+
+    // Form 2: native flag. Equivalent — the allocator promotes it.
+    'paratest_all' => [
+        'type'      => 'paratest',
+        'processes' => 4,    // → reserves 4 + emits --processes=4
     ],
 ],
 ```
 
-| Tool type | `cores: N` propagates to | Behaviour |
+### Tool categories
+
+| Category | Tools | `cores` / native flag |
 |---|---|---|
-| `phpcs` / `phpcbf` | `--parallel=N` | Full — allocator + flag |
-| `psalm` | `--threads=N` | Full — allocator + flag |
-| `parallel-lint` | `-j N` | Full — allocator + flag |
-| `paratest` | `--processes=N` | Full — allocator + flag |
-| `phpstan` | (none — `.neon` decides) | Budget-only |
-| `phpunit`, `phpcpd`, `phpmd`, `custom`, …  | (none) | Budget-only |
+| **Controllable** | `phpcs`, `phpcbf`, `psalm`, `parallel-lint`, `paratest` | Interchangeable. `cores: N` ↔ native flag. Allocator + flag both honoured. |
+| **Uncontrollable with internal threading** | `phpstan` | `cores: N` reserves N slots in the budget so `--monitor`/2D-allocator account accurately. The worker count itself is read from `.neon`'s `maximumNumberOfProcesses`; no CLI flag exists to force it. |
+| **Single-threaded** | `phpmd`, `phpunit`, `phpcpd` | The tool only uses 1 core. Declaring `cores > 1` reserves slots without benefit and slows admission of other jobs — `conf:check` emits a warning. Omit the key (or set `cores: 1`) on these jobs. |
+| **`custom`** | any user script | No automatic detection. Declare `cores: N` if your script has its own concurrency (`npx eslint --concurrency=N`, parallel make, etc.); the warning is suppressed because the system can't inspect external scripts. |
 
-**Budget-only tools** (`phpstan`, `custom`, anything without a ThreadCapability)
-use `cores` solely to reserve slots in the allocator so `--monitor` peak is
-accurate. The tool's own parallelism is not forced — you must configure it
-separately (phpstan via `.neon`, custom jobs via their own script).
+### When both forms are declared
 
-If both `cores` and the tool's native thread flag are set (e.g. `cores: 2`
-and `parallel: 4` on a phpcs job), `cores` wins at runtime and
-[`conf:check`](../cli/conf-check.md) emits a warning.
+If a job declares both `cores` and the native flag at the same time
+(e.g. `cores: 2` and `parallel: 4` on a phpcs job), `cores` wins at
+runtime and [`conf:check`](../cli/conf-check.md) emits a warning naming
+both values. Pick one and remove the other.
 
 ## Per-job memory threshold (`memory`)
 

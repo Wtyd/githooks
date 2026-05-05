@@ -37,7 +37,7 @@ For example, with `processes: 4` and two threadable jobs (phpcs and parallel-lin
 
 ## Reserve cores explicitly (`cores`)
 
-Sometimes you want a specific job to always get a fixed amount of cores regardless of what the rest of the flow does — typically for paratest workers, phpstan with many workers declared in `.neon`, or custom jobs running their own parallel runner. Declare [`cores: N`](../configuration/jobs.md#reserving-cores-explicitly-cores) on the job:
+Sometimes you want a specific job to always get a fixed amount of cores regardless of what the rest of the flow does — typically for paratest workers, phpstan with many workers declared in `.neon`, or custom jobs running their own parallel runner. Declare [`cores: N`](../configuration/jobs.md#reserving-cores-cores-or-the-tools-native-flag) on the job:
 
 ```php
 'jobs' => [
