@@ -108,6 +108,7 @@ GitHooks now declaratively watches RSS consumption per job and across the whole 
 - **No config change required**: the existing pattern of pinning with `cores: N` keeps working unchanged.
 - **`conf:check` warning — single-threaded tools**: declaring `cores > 1` on `phpmd`, `phpunit` or `phpcpd` now emits a warning ("`<tool>` is single-threaded; `cores` reserves slots in the budget without benefit"). The tool only uses one core, so reserving more slows admission of other jobs without gain. `cores: 1` and absence of `cores` are silent. `type: custom` is exempt — user scripts may have their own concurrency the system can't inspect.
 - **`conf:check` fix — phpcbf**: the conflict warning between `cores` and `parallel` (already emitted for phpcs) now applies to phpcbf as well.
+- **`conf:check` validation — native flag**: when declared without `cores`, the native threading flag (`parallel` / `threads` / `jobs` / `processes`) is validated as a positive integer — symmetric with `cores`. A `parallel: -1` or `threads: '4'` now warns instead of silently degrading at the allocator.
 - **Symmetric clamp**: a native flag value > `processes` is clamped to the budget at runtime, the same way `cores: N > processes` was clamped before.
 
 ### Deprecations

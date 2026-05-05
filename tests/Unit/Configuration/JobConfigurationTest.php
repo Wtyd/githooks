@@ -770,6 +770,91 @@ class JobConfigurationTest extends TestCase
     }
 
     /** @test */
+    public function it_warns_when_native_thread_flag_is_negative_without_cores()
+    {
+        // Symmetric with `cores: -1`: the native flag is interchangeable
+        // with cores, so the same positive-integer guard must apply.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => -1,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($this->warningsContain($result->getWarnings(), "'parallel' must be a positive integer"));
+    }
+
+    /** @test */
+    public function it_warns_when_native_thread_flag_is_a_string_without_cores()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => '4',
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($this->warningsContain($result->getWarnings(), "'parallel' must be a positive integer"));
+    }
+
+    /** @test */
+    public function it_warns_when_native_thread_flag_is_zero_on_psalm()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('psalm_src', [
+            'type'    => 'psalm',
+            'paths'   => ['src'],
+            'threads' => 0,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($this->warningsContain($result->getWarnings(), "'threads' must be a positive integer"));
+    }
+
+    /** @test */
+    public function it_warns_when_native_thread_flag_is_negative_on_paratest()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('paratest_all', [
+            'type'      => 'paratest',
+            'processes' => -3,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertTrue($this->warningsContain($result->getWarnings(), "'processes' must be a positive integer"));
+    }
+
+    /** @test */
+    public function it_does_not_warn_when_native_thread_flag_has_valid_positive_int()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), "must be a positive integer"));
+    }
+
+    /** @test */
+    public function it_does_not_validate_native_thread_flag_when_cores_is_also_declared()
+    {
+        // When both forms are declared, the existing conflict warning fires
+        // and `cores` wins at runtime; the per-format positive-integer check
+        // on the native flag would be a redundant noise message.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'cores'    => 2,
+            'parallel' => -1,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($this->warningsContain($result->getWarnings(), "'parallel' must be a positive integer"));
+        // the conflict warning still fires
+        $this->assertTrue($this->warningsContain($result->getWarnings(), "'cores' overrides 'parallel'"));
+    }
+
+    /** @test */
     public function it_does_not_warn_about_single_threaded_when_type_is_custom()
     {
         // custom jobs may run scripts with their own internal parallelism

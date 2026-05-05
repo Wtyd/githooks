@@ -258,9 +258,17 @@ class JobConfiguration
     }
 
     /**
-     * Validate the optional `cores` keyword (positive integer) and warn if it
-     * coexists with the tool's native threading flag (`cores` always wins at
-     * runtime, so the native flag is silently overridden).
+     * Validate the optional `cores` keyword (positive integer) and the tool's
+     * native threading flag, which is interchangeable with `cores` on
+     * controllable tools (`parallel`, `threads`, `jobs`, `processes`).
+     *
+     * Rules:
+     *  - `cores` declared: must be positive int. Single-threaded tools warn on
+     *    `cores > 1`. When the native flag is also declared, `cores` wins and
+     *    a conflict warning fires (no positive-int check on the native flag —
+     *    it is being overridden, validating it would be redundant noise).
+     *  - `cores` absent and a controllable native flag is declared: validate
+     *    it as positive int (symmetric with `cores`).
      *
      * @param array<string, mixed> $config
      */
@@ -271,6 +279,7 @@ class JobConfiguration
         ValidationResult $result
     ): void {
         if (!array_key_exists('cores', $config)) {
+            self::validateNativeThreadFlagAsCores($name, $type, $config, $result);
             return;
         }
 
@@ -300,6 +309,36 @@ class JobConfiguration
                 "Job '$name': 'cores' overrides '$nativeKey' "
                 . "(cores=$cores, $nativeKey=$nativeValue)."
             );
+        }
+    }
+
+    /**
+     * When `cores` is absent, the tool's native threading flag acts as
+     * implicit cores override at runtime (JobAbstract::extractCoresOverride).
+     * Apply the same positive-integer guard `cores` enjoys, so a malformed
+     * `parallel: -1` does not silently degrade to "ignored at the allocator,
+     * still passed verbatim to the tool".
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateNativeThreadFlagAsCores(
+        string $name,
+        string $type,
+        array $config,
+        ValidationResult $result
+    ): void {
+        if (!isset(self::THREAD_ARG_KEYS[$type])) {
+            return;
+        }
+
+        $nativeKey = self::THREAD_ARG_KEYS[$type];
+        if (!array_key_exists($nativeKey, $config)) {
+            return;
+        }
+
+        $value = $config[$nativeKey];
+        if (!is_int($value) || $value < 1) {
+            $result->addWarning("Job '$name': '$nativeKey' must be a positive integer.");
         }
     }
 

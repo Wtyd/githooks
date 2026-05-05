@@ -9,6 +9,7 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
 use Wtyd\GitHooks\Jobs\ParatestJob;
+use Wtyd\GitHooks\Jobs\PhpcbfJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Jobs\PhpmdJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
@@ -302,6 +303,21 @@ class JobAbstractTest extends TestCase
         ]));
 
         $this->assertSame(4, $job->getCoresOverride());
+    }
+
+    /** @test */
+    public function getCoresOverride_promotes_phpcbf_parallel_through_inheritance()
+    {
+        // PhpcbfJob extends PhpcsJob and inherits the controllable
+        // 'parallel' capability. The promotion path must reach phpcbf
+        // by inheritance — pinning this guards against a future override
+        // of getThreadCapability in PhpcbfJob that breaks the symmetry.
+        $job = new PhpcbfJob(new JobConfiguration('phpcbf_src', 'phpcbf', [
+            'paths'    => ['src'],
+            'parallel' => 5,
+        ]));
+
+        $this->assertSame(5, $job->getCoresOverride());
     }
 
     /** @test */
