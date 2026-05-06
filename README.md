@@ -141,17 +141,17 @@ return [
             'paths'    => ['src'],
             'standard' => 'PSR12',
             'ignore'   => ['vendor'],
-            // executablePath omitted: auto-detects vendor/bin/phpcs, then system PATH
+            // executable-path omitted: auto-detects vendor/bin/phpcs, then system PATH
         ],
         'phpcbf_src' => [
             'extends' => 'phpcs_src', // inherits paths, standard, ignore from phpcs
             'type'    => 'phpcbf',    // overrides type
         ],
         'phpmd_src' => [
-            'type'           => 'phpmd',
-            'executablePath' => 'tools/phpmd', // explicit path when not in vendor/bin
-            'paths'          => ['src'],
-            'rules'          => 'cleancode,codesize,naming,unusedcode',
+            'type'            => 'phpmd',
+            'executable-path' => 'tools/phpmd', // explicit path when not in vendor/bin
+            'paths'           => ['src'],
+            'rules'           => 'cleancode,codesize,naming,unusedcode',
         ],
         'parallel_lint' => [
             'type'    => 'parallel-lint',
@@ -172,11 +172,11 @@ return [
             'script' => 'composer audit',
         ],
         'eslint_src' => [
-            'type'           => 'custom',
-            'executablePath' => 'npx eslint',    // structured mode: executable + paths
-            'paths'          => ['resources/js'],
-            'otherArguments' => '--fix',
-            'accelerable'    => true,            // opt-in: filters paths to staged files with --fast
+            'type'            => 'custom',
+            'executable-path' => 'npx eslint',    // structured mode: executable + paths
+            'paths'           => ['resources/js'],
+            'other-arguments' => '--fix',
+            'accelerable'     => true,            // opt-in: filters paths to staged files with --fast
         ],
     ],
 ];
@@ -184,45 +184,67 @@ return [
 
 ### Key concepts
 
-* **Hooks** map git events (`pre-commit`, `pre-push`, etc.) to flows and jobs. Supports conditional execution by branch (`only-on`) and staged file patterns (`only-files`).
-* **Flows** are named groups of jobs with shared options (`fail-fast`, `processes`). Reusable across hooks and directly executable from CLI.
-* **Jobs** are individual QA tasks. Each declares a `type` and its arguments. Jobs can inherit from other jobs with `extends`. When `executablePath` is omitted, GitHooks auto-detects the binary in `vendor/bin/`.
+* **Hooks** map git events (`pre-commit`, `pre-push`, etc.) to flows and jobs. Supports conditional execution by branch (`only-on` / `exclude-on`) and staged file patterns (`only-files` / `exclude-files`).
+* **Flows** are named groups of jobs with shared options (`fail-fast`, `processes`, `time-budget`, `memory-budget`, `reports`). Reusable across hooks and directly executable from CLI. Meta-flows (`flows.<X>.flows`) compose other flows in a single run.
+* **Jobs** are individual QA tasks. Each declares a `type` and its arguments. Jobs can inherit from other jobs with `extends`. When `executable-path` is omitted, GitHooks auto-detects the binary in `vendor/bin/`. Per-job thresholds (`warn-after`, `fail-after`, `memory`, `cores`) cap regressions.
+* **Execution modes**: `full` (default), `--fast` (only staged files), `--fast-branch` (only files changed vs base branch), `--files` / `--files-from` (explicit list).
 
-See the [wiki](https://github.com/Wtyd/githooks/wiki/3x-ConfigurationFile) for the full configuration reference.
+See the [documentation site](https://wtyd.github.io/githooks/) for the full configuration reference.
 
 # 6. Supported Tools
 
 | Tool | Type | Description |
 |---|---|---|
-| [PHP CodeSniffer](https://github.com/squizlabs/PHP_CodeSniffer) | `phpcs` / `phpcbf` | Code style checking and auto-fixing |
+| [PHP CodeSniffer](https://github.com/PHPCSStandards/PHP_CodeSniffer) | `phpcs` / `phpcbf` | Code style checking and auto-fixing |
 | [PHPStan](https://github.com/phpstan/phpstan) | `phpstan` | Static analysis |
+| [Psalm](https://psalm.dev/) | `psalm` | Static analysis |
 | [PHP Mess Detector](https://phpmd.org/) | `phpmd` | Code quality rules |
 | [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint) | `parallel-lint` | Syntax checking |
 | [PHPUnit](https://phpunit.de/) | `phpunit` | Unit testing |
-| [Psalm](https://psalm.dev/) | `psalm` | Static analysis |
+| [Paratest](https://github.com/paratestphp/paratest) | `paratest` | Parallel PHPUnit driver |
+| [PHP CS Fixer](https://cs.symfony.com/) | `php-cs-fixer` | Code style auto-fixing |
+| [Rector](https://getrector.com/) | `rector` | Automated code refactoring |
 | [PHP Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd) | `phpcpd` | Duplicate code detection |
-| Any tool | `custom` | Run any command via `script` or `executablePath` + `paths` |
+| Inline command | `script` | Run a single shell command (`executable: 'composer audit'`). No path filtering. |
+| Any tool | `custom` | Run any binary with `script` (one-liner) or `executable-path` + `paths` (+ `accelerable: true` to opt into `--fast` / `--fast-branch` filtering) |
 
-The `custom` type replaces the deprecated `security-checker` and `script` tools. Two modes:
-* **Simple**: `script` key contains the full command (`'script' => 'composer audit'`).
-* **With paths**: `executablePath` + `paths` + optional `otherArguments`. Supports `--fast` acceleration when `accelerable: true`.
+Two ways to run non-PHP tools:
+
+* `script` — minimal, one-liner command for tools that don't take paths (`composer audit`, `npm audit`, etc.).
+* `custom` — path-aware execution. Two modes: pass the full command in `script`, or declare `executable-path` + `paths` + optional `other-arguments`. Set `accelerable: true` to filter paths down to staged / branch-changed files when running with `--fast` / `--fast-branch`.
 
 # 7. Commands
 
 | Command | Description |
 |---|---|
-| `githooks flow <name>` | Run a flow. Options: `--fail-fast`, `--processes`, `--exclude-jobs`, `--only-jobs`, `--dry-run`, `--format`, `--fast`, `--monitor` |
-| `githooks job <name>` | Run a single job. Options: `--dry-run`, `--format`, `--fast` |
-| `githooks hook` | Install git hooks via `core.hooksPath` |
-| `githooks hook:clean` | Remove installed hooks |
-| `githooks status` | Show hook installation status |
-| `githooks cache:clear [jobs...]` | Clear QA tool cache files |
-| `githooks conf:init` | Generate configuration file (interactive or template) |
-| `githooks conf:check` | Validate configuration with deep checks |
-| `githooks conf:migrate` | Migrate v2 config to v3 format |
-| `githooks system:info` | Show CPU and process configuration |
+| `githooks flow <name>` | Run a single flow. |
+| `githooks flows <name1> <name2>…` | Run multiple flows in a combined plan: ad-hoc list, declarative meta-flow, or mixed. Jobs deduped by first occurrence. |
+| `githooks job <name>` | Run a single job. Pass extra args to the underlying tool with `--`: `githooks job phpunit -- --filter=MyTest`. |
+| `githooks hook` | Install git hooks via `core.hooksPath`. |
+| `githooks hook:clean` | Remove installed hooks. |
+| `githooks status` | Show hook installation status. |
+| `githooks cache:clear [jobs…]` | Clear QA tool cache files. Accepts job names, flow names, or no argument (clear all). |
+| `githooks conf:init` | Generate configuration file (interactive or template). |
+| `githooks conf:check` | Validate configuration with deep checks (paths, executables, configs, deprecations, did-you-mean for typos). |
+| `githooks conf:migrate` | Migrate v2 config to v3 format. |
+| `githooks system:info` | Show CPU detection (cgroup-aware) and process configuration. |
 
-See the [wiki](https://github.com/Wtyd/githooks/wiki/3x-ConsoleCommands) for detailed documentation.
+### Common flags for `flow` / `flows` / `job`
+
+| Flag | Purpose |
+|---|---|
+| `--mode=full\|fast\|fast-branch` / `--fast` / `--fast-branch` | Select execution mode. `fast` filters to staged files, `fast-branch` to files changed vs base branch. |
+| `--files=a,b,c` / `--files-from=PATH` / `--exclude-pattern=glob` | Run against an explicit list of files (CSV, manifest, or with exclusion patterns). |
+| `--processes=N`, `--fail-fast`, `--only-jobs=a,b`, `--exclude-jobs=a,b`, `--dry-run` | Control parallelism, fail-fast behaviour, and job selection. |
+| `--format=text\|json\|junit\|sarif\|codeclimate` | Output format on stdout. JSON v2 schema is stable. |
+| `--report-json=PATH`, `--report-junit=PATH`, `--report-sarif=PATH`, `--report-codeclimate=PATH` | Write structured reports to files (one or many at once). `--no-reports` skips the config-declared reports. |
+| `--output=PATH` | Write the `--format=…` payload to a file instead of stdout. |
+| `--show-progress` | Force progress to stderr even with a structured `--format` (CI dashboards). |
+| `--stats` | Print a 5-column table (Job / Status / Time / Peak Cores / Peak Memory) plus temporal attribution at the end of the flow. Also exposes `stats` block in JSON v2. |
+| `--warn-after=N`, `--fail-after=N`, `--no-time-budget` | Override flow time-budget thresholds (seconds). |
+| `--memory-warn-above=MB`, `--memory-fail-above=MB`, `--no-memory-budget`, `--allocator=fifo\|greedy` | Override memory-budget thresholds and 2D allocator strategy. |
+
+See the [documentation site](https://wtyd.github.io/githooks/) for the full command reference.
 
 # 8. Documentation
 
@@ -240,5 +262,5 @@ Full documentation is available at **[wtyd.github.io/githooks](https://wtyd.gith
 # 9. Contributing
 Contributions are welcome! Send a [pull request](https://github.com/Wtyd/githooks/pulls) or open an [issue](https://github.com/Wtyd/githooks/issues). See the [Contributing](https://github.com/Wtyd/githooks/wiki/Contributing) guide.
 
-# 9. License
+# 10. License
 The MIT License (MIT). Please see [License File](/LICENSE) for more information.

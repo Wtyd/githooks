@@ -211,26 +211,6 @@ return [
 
 Consulta la skill correspondiente antes de empezar una tarea que encaje en estas categorías.
 
-## Tablero Kanban
+## Backlog
 
-Tablero de tareas pendientes en `.kanbn/.kanban` (JSON, formato de la extensión VS Code `harehare.portable-kanban`).
-
-**UUIDs fijos de las listas** (no regenerar):
-
-| Lista | UUID |
-|---|---|
-| Backlog | `e9cc2968-c4a3-4d7d-b534-f3d023cb1a5d` |
-| To Do | `dac973d9-a667-4f8c-9bff-05358f18bdb3` |
-| Doing | `2c5a0b65-e90c-404e-975a-611ee6907151` |
-| Done | `edf13be7-1921-4f0e-bec7-0aff2d14f25b` |
-
-**Schema de card**: `{ id (UUID v4), listId (uno de los anteriores), title, description (markdown), labels: [], checkboxes: [], comments: [] }`.
-
-**Convención de título**: `[CRIT|ALTA|MED|BAJA] BUG-N — descripción corta` (la prioridad como prefijo porque la spec del campo `labels` no está documentada y dejarlo vacío evita romper el fichero).
-
-**Generar UUIDs v4** (no hay `uuidgen` en el contenedor):
-```bash
-php8.4 -r "\$d=random_bytes(16);\$d[6]=chr((ord(\$d[6])&0x0f)|0x40);\$d[8]=chr((ord(\$d[8])&0x3f)|0x80);echo vsprintf('%s%s-%s-%s-%s-%s%s%s',str_split(bin2hex(\$d),4)).PHP_EOL;"
-```
-
-**Validar tras editar**: `python3 -c "import json; json.load(open('.kanbn/.kanban'))"`.
+Las ideas pendientes (bugs, features) viven en `ROADMAP.md`. Convención de título: `[CRIT|ALTA|MED|BAJA] BUG-N — descripción corta` para bugs; `FEAT-N · descripción corta` para features.

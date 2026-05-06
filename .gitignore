@@ -52,3 +52,7 @@ githooks-80
 # MkDocs build output
 site/
 public/
+
+# Personal kanban (local task tracking, not part of the project)
+.kanbn/
+.kanban
