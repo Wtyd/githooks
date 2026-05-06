@@ -1064,4 +1064,245 @@ class FlowPreparerTest extends TestCase
             $planWith->getJobs()[0]->buildCommand()
         );
     }
+
+    // ========================================================================
+    // BUG-15: decision-table for filterJobForMode().
+    // ========================================================================
+
+    /**
+     * Decision table over (mode × context-presence × effective-set × paths ×
+     * accelerable × match-result). Adversarial coverage: each row is a distinct
+     * equivalence class. Rows marked with ★ in the comment are the ones that
+     * change behaviour with the BUG-15 fix (empty effective-set must skip
+     * universally — accelerable or not, paths declared or not).
+     *
+     * @test
+     * @dataProvider modeFilteringDecisionTable
+     */
+    public function it_filters_jobs_per_mode_decision_table(
+        ?string $invocationMode,
+        \Closure $jobFactory,
+        \Closure $contextFactory,
+        bool $expectSkip,
+        ?string $expectSkipReason,
+        ?array $expectFinalPaths,
+        string $fastBranchFallback = 'full'
+    ): void {
+        /** @var JobConfiguration $jobConfig */
+        $jobConfig = $jobFactory();
+        /** @var ExecutionContext|null $context */
+        $context = $contextFactory();
+
+        $flow = new FlowConfiguration('qa', [$jobConfig->getName()]);
+        $validation = new ValidationResult();
+        $globalOptions = new OptionsConfiguration(false, 1, null, $fastBranchFallback);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $globalOptions,
+            [$jobConfig->getName() => $jobConfig],
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $plan = $this->preparer->prepare($flow, $config, $context, [], [], $invocationMode);
+
+        if ($expectSkip) {
+            $this->assertCount(0, $plan->getJobs(), 'job should be skipped');
+            $skipped = $plan->getSkippedJobs();
+            $this->assertArrayHasKey($jobConfig->getName(), $skipped);
+            $this->assertSame($expectSkipReason, $skipped[$jobConfig->getName()]['reason']);
+            $this->assertNotEmpty($validation->getWarnings());
+            $this->assertStringContainsString($expectSkipReason, $validation->getWarnings()[0]);
+            return;
+        }
+
+        $this->assertCount(1, $plan->getJobs(), 'job should be admitted');
+        $this->assertSame($expectFinalPaths, $plan->getJobs()[0]->getConfiguredPaths());
+    }
+
+    /**
+     * @return array<string, array{0: ?string, 1: \Closure, 2: \Closure, 3: bool, 4: ?string, 5: ?array<int,string>}>
+     */
+    public function modeFilteringDecisionTable(): array
+    {
+        $accelerableWithPaths    = static fn(): JobConfiguration => new JobConfiguration('j', 'phpstan', ['paths' => ['src']]);
+        $accelerableNoPaths      = static fn(): JobConfiguration => new JobConfiguration('j', 'phpstan', []);
+        $nonAccelerableWithPaths = static fn(): JobConfiguration => new JobConfiguration('j', 'phpunit', ['paths' => ['tests']]);
+        $nonAccelerableNoPaths   = static fn(): JobConfiguration => new JobConfiguration('j', 'phpunit', []);
+
+        $contextNull           = static fn(): ?ExecutionContext => null;
+        // Match only src/Foo.php inside 'src' or 'tests'. The fake's
+        // directoryContainsFile() ignores the directory and returns true for
+        // anything in this list, so list ONLY the file we want admitted.
+        $fastSrcMatch          = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setModifiedfiles(['src/Foo.php', 'docs/readme.md']);
+            $f->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+            return ExecutionContext::forFastMode($f);
+        };
+        $fastTestsMatch        = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setModifiedfiles(['tests/FooTest.php', 'docs/readme.md']);
+            $f->setFilesThatShouldBeFoundInDirectories(['tests/FooTest.php']);
+            return ExecutionContext::forFastMode($f);
+        };
+        $fastNoMatch           = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setModifiedfiles(['vendor/Foo.php']);
+            return ExecutionContext::forFastMode($f);
+        };
+        $fastEmpty             = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setModifiedfiles([]);
+            return ExecutionContext::forFastMode($f);
+        };
+        $fastBranchSrcMatch    = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setBranchDiffFiles(['src/Foo.php']);
+            $f->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastBranchTestsMatch  = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setBranchDiffFiles(['tests/FooTest.php']);
+            $f->setFilesThatShouldBeFoundInDirectories(['tests/FooTest.php']);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastBranchNoMatch     = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setBranchDiffFiles(['vendor/Foo.php']);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastBranchEmpty       = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setBranchDiffFiles([]);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastBranchDiffFailedStagedEmpty = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setBranchDiffFiles(null);
+            $f->setModifiedfiles([]);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastBranchDiffFailedNoStagedMatch = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setBranchDiffFiles(null);
+            $f->setModifiedfiles(['vendor/Foo.php']);
+            return ExecutionContext::create($f, 'master');
+        };
+
+        return [
+            // Row 1 — FULL bypasses everything.
+            '01 FULL + accel + paths + match' => [
+                ExecutionMode::FULL, $accelerableWithPaths, $fastSrcMatch,
+                false, null, ['src'],
+            ],
+
+            // Rows 2-3 — context null, modes get short-circuited.
+            '02 FAST + accel + paths + null context' => [
+                ExecutionMode::FAST, $accelerableWithPaths, $contextNull,
+                false, null, ['src'],
+            ],
+            '03 FAST_BRANCH + accel + paths + null context' => [
+                ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $contextNull,
+                false, null, ['src'],
+            ],
+
+            // Row 4 — FAST + accel + paths + empty set ⇒ skip (already worked pre-fix).
+            '04 FAST + accel + paths + empty set' => [
+                ExecutionMode::FAST, $accelerableWithPaths, $fastEmpty,
+                true, 'no changes to validate', null,
+            ],
+            // ★ Row 5 — FAST + non-accel + paths + empty set ⇒ skip (NEW).
+            '05 FAST + non-accel + paths + empty set ★' => [
+                ExecutionMode::FAST, $nonAccelerableWithPaths, $fastEmpty,
+                true, 'no changes to validate', null,
+            ],
+            // ★ Row 6 — FAST + accel + NO paths + empty set ⇒ skip (NEW).
+            '06 FAST + accel + no paths + empty set ★' => [
+                ExecutionMode::FAST, $accelerableNoPaths, $fastEmpty,
+                true, 'no changes to validate', null,
+            ],
+            // ★ Row 7 — FAST + non-accel + NO paths + empty set ⇒ skip (NEW).
+            '07 FAST + non-accel + no paths + empty set ★' => [
+                ExecutionMode::FAST, $nonAccelerableNoPaths, $fastEmpty,
+                true, 'no changes to validate', null,
+            ],
+
+            // Row 8 — FAST + accel + paths + matches ⇒ run with filtered paths.
+            '08 FAST + accel + paths + match' => [
+                ExecutionMode::FAST, $accelerableWithPaths, $fastSrcMatch,
+                false, null, ['src/Foo.php'],
+            ],
+            // Row 9 — FAST + accel + paths + no match ⇒ skip (existing behaviour).
+            '09 FAST + accel + paths + no match' => [
+                ExecutionMode::FAST, $accelerableWithPaths, $fastNoMatch,
+                true, 'no staged files match its paths', null,
+            ],
+            // Row 10 — FAST + non-accel + paths + match ⇒ run with ORIGINAL paths
+            //          (NOT reduced to matched files — non-accel is binary admission).
+            '10 FAST + non-accel + paths + match' => [
+                ExecutionMode::FAST, $nonAccelerableWithPaths, $fastTestsMatch,
+                false, null, ['tests'],
+            ],
+            // Row 11 — FAST + non-accel + NO paths + non-empty set ⇒ run.
+            '11 FAST + non-accel + no paths + match' => [
+                ExecutionMode::FAST, $nonAccelerableNoPaths, $fastSrcMatch,
+                false, null, [],
+            ],
+
+            // Row 12 — FAST_BRANCH + accel + paths + empty set ⇒ skip (existing).
+            '12 FAST_BRANCH + accel + paths + empty set' => [
+                ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $fastBranchEmpty,
+                true, 'no changes to validate', null,
+            ],
+            // ★ Row 13 — FAST_BRANCH + non-accel + paths + empty set ⇒ skip (NEW).
+            '13 FAST_BRANCH + non-accel + paths + empty set ★' => [
+                ExecutionMode::FAST_BRANCH, $nonAccelerableWithPaths, $fastBranchEmpty,
+                true, 'no changes to validate', null,
+            ],
+            // ★ Row 14 — FAST_BRANCH + non-accel + NO paths + empty set ⇒ skip (NEW).
+            '14 FAST_BRANCH + non-accel + no paths + empty set ★' => [
+                ExecutionMode::FAST_BRANCH, $nonAccelerableNoPaths, $fastBranchEmpty,
+                true, 'no changes to validate', null,
+            ],
+
+            // Row 15 — FAST_BRANCH + accel + paths + diff-failed + staged-empty
+            //          + fallback=FAST: filterFiles returns null, fallback to FAST,
+            //          empty → skip with fallback message (existing behaviour).
+            '15 FAST_BRANCH (fallback=FAST) + diff-failed + staged empty' => [
+                ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $fastBranchDiffFailedStagedEmpty,
+                true, 'no staged files match its paths', null, 'fast',
+            ],
+            // Row 16 — FAST_BRANCH + accel + paths + diff-failed + no staged match
+            //          + fallback=FAST ⇒ skip via fallback to FAST + no-match.
+            '16 FAST_BRANCH (fallback=FAST) + diff-failed + no staged match' => [
+                ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $fastBranchDiffFailedNoStagedMatch,
+                true, 'no staged files match its paths', null, 'fast',
+            ],
+            // Row 17 — FAST_BRANCH + accel + paths + diff-failed + fallback=FULL
+            //          (default): job runs with original paths (existing behaviour).
+            '17 FAST_BRANCH (fallback=FULL) + diff-failed runs unfiltered' => [
+                ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $fastBranchDiffFailedNoStagedMatch,
+                false, null, ['src'],
+            ],
+
+            // Row 18 — FAST_BRANCH + accel + paths + matches ⇒ run with filtered paths.
+            '18 FAST_BRANCH + accel + paths + match' => [
+                ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $fastBranchSrcMatch,
+                false, null, ['src/Foo.php'],
+            ],
+            // Row 19 — FAST_BRANCH + non-accel + paths + match ⇒ run with original paths.
+            '19 FAST_BRANCH + non-accel + paths + match' => [
+                ExecutionMode::FAST_BRANCH, $nonAccelerableWithPaths, $fastBranchTestsMatch,
+                false, null, ['tests'],
+            ],
+            // Row 20 — FAST_BRANCH + accel + paths + no match ⇒ skip.
+            '20 FAST_BRANCH + accel + paths + no match' => [
+                ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $fastBranchNoMatch,
+                true, 'no staged files match its paths', null,
+            ],
+        ];
+    }
 }

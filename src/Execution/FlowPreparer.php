@@ -13,6 +13,10 @@ use Wtyd\GitHooks\Jobs\JobRegistry;
 
 /**
  * Pure function: resolves a flow configuration into an executable plan (list of job instances).
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Single owner of mode resolution +
+ *   accelerability gating + path filtering + skip-reason mapping for both the multi-job
+ *   prepare() and prepareSingleJob() entry points; cohesive by design.
  */
 class FlowPreparer
 {
@@ -66,10 +70,13 @@ class FlowPreparer
             $originalConfig = $jobConfig;
             $jobConfig = $this->applyExecutionMode($jobConfig, $flow, $effectiveInvocation, $context, $options, $config);
             if ($jobConfig === null) {
-                // Job was skipped by execution mode filtering — record it
-                $reason = ($context !== null && $context->hasInputFiles())
-                    ? 'no input files match its paths'
-                    : 'no staged files match its paths';
+                // Job was skipped by execution mode filtering — record it.
+                // Match the reason filterJobForMode() emitted as a warning so
+                // structured outputs (JSON / SARIF / JUnit) and the validation
+                // log stay consistent. BUG-15: the universal "no changes to
+                // validate" branch is checked first; otherwise fall back to the
+                // existing per-paths messages.
+                $reason = $this->resolveSkipReason($context, $effectiveInvocation, $flow, $originalConfig);
                 $skippedJobs[$jobName] = [
                     'type' => $originalConfig->getType(),
                     'reason' => $reason,
@@ -203,6 +210,28 @@ class FlowPreparer
     }
 
     /**
+     * Map the skipped-job reason recorded in FlowPlan to the warning emitted
+     * by filterJobForMode(). Keeps structured outputs (JSON / SARIF / JUnit)
+     * aligned with the validation log.
+     */
+    private function resolveSkipReason(
+        ?ExecutionContext $context,
+        ?string $effectiveInvocation,
+        FlowConfiguration $flow,
+        JobConfiguration $originalConfig
+    ): string {
+        if ($context !== null && $effectiveInvocation !== null) {
+            $mode = $this->resolveMode($effectiveInvocation, $originalConfig, $flow);
+            if ($context->isEffectiveSetEmpty($mode)) {
+                return 'no changes to validate';
+            }
+        }
+        return ($context !== null && $context->hasInputFiles())
+            ? 'no input files match its paths'
+            : 'no staged files match its paths';
+    }
+
+    /**
      * Apply execution mode filtering to a job config within a flow.
      * Returns null if the job should be skipped, or the (possibly filtered) JobConfiguration.
      */
@@ -252,6 +281,22 @@ class FlowPreparer
             return $jobConfig;
         }
 
+        $jobName = $jobConfig->getName();
+
+        // BUG-15: in fast/fast-branch with an empty effective set (no staged
+        // files / no diff vs base) every job is skipped — accelerable or
+        // not, paths declared or not. The contract of these modes is "run
+        // only what the changes affect; nothing changed = nothing to run".
+        // This guard lives BEFORE the accelerable/paths short-circuit so
+        // non-accelerable jobs (phpunit, paratest, custom, script, …) honour
+        // it instead of running their original paths.
+        if ($context !== null && $context->isEffectiveSetEmpty($mode)) {
+            if ($config !== null) {
+                $config->getValidation()->addWarning("Job '$jobName' was skipped: no changes to validate.");
+            }
+            return null;
+        }
+
         if (!$jobConfig->isAccelerable($this->jobRegistry) || empty($jobConfig->getPaths())) {
             return $jobConfig;
         }
@@ -260,7 +305,6 @@ class FlowPreparer
             return $jobConfig;
         }
 
-        $jobName = $jobConfig->getName();
         $filteredFiles = $context->filterFilesForMode($mode, $jobConfig->getPaths());
 
         if ($filteredFiles === null && $mode === ExecutionMode::FAST_BRANCH) {

@@ -14,6 +14,10 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
  * Files mode (--files / --files-from) reuses this object via forInputFiles():
  * the resolved list is exposed as if it were "staged", so FlowPreparer's FAST
  * filter pipeline works unchanged. See spec-design-files-flag.md §7.4.
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Coheres the staged + diff + cwd + paths
+ *   normalisation across the three execution modes; splitting these would scatter the
+ *   same concern across collaborators and force callers to compose them by hand.
  */
 class ExecutionContext
 {
@@ -128,6 +132,34 @@ class ExecutionContext
     {
         $this->ensureStagedLoaded();
         return $this->filterFileList($this->stagedFiles, $originalPaths);
+    }
+
+    /**
+     * Whether the effective input set for this mode is empty (BUG-15).
+     *
+     * "Effective set empty" means the upstream source has nothing to validate
+     * — `--fast` with no staged files, or `--fast-branch` with no diff vs the
+     * base branch. Decoupled from `getPaths()` so all jobs (accelerable or
+     * not, with or without paths) can share a single skip predicate.
+     *
+     * Returns false for FULL (mode does not consume the staged/diff set) and
+     * for FAST_BRANCH when the diff itself failed (`getBranchDiffFilesLazy()`
+     * returns null, which is the fallback signal — distinct from "diff
+     * succeeded but empty").
+     */
+    public function isEffectiveSetEmpty(string $mode): bool
+    {
+        if ($mode === ExecutionMode::FAST) {
+            $this->ensureStagedLoaded();
+            return $this->stagedFiles === [];
+        }
+
+        if ($mode === ExecutionMode::FAST_BRANCH) {
+            $branchFiles = $this->getBranchDiffFilesLazy();
+            return $branchFiles === [];
+        }
+
+        return false;
     }
 
     /**

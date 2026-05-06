@@ -367,7 +367,7 @@ class FlowCommandTest extends SystemTestCase
         // enough feedback — the command must not duplicate it via its own echo.
         $this->artisan("flow qa --fast --config=$this->configPath")
             ->containsStringInOutput('⏩ phpstan_src')
-            ->containsStringInOutput('no staged files')
+            ->containsStringInOutput('no changes to validate')
             ->assertExitCode(0);
     }
 
