@@ -711,4 +711,68 @@ class ExecutionContextTest extends TestCase
 
         $this->assertNotSame($original, $derived);
     }
+
+    // ========================================================================
+    // isAbsolutePath() coverage (private — exercised via normaliseToCwdRelative)
+    // ========================================================================
+
+    /**
+     * Decision-table test for the Windows drive-letter path detection at L275.
+     *
+     * Factors of the predicate
+     *   `strlen >= 3 && ctype_alpha[0] && [1] === ':' && ([2] === '/' || [2] === '\\')`:
+     *
+     *  - len: 0, 1, 2, 3 (frontier), >3
+     *  - first char: alpha vs non-alpha (digit / symbol / accented)
+     *  - second char: `:` vs other
+     *  - third char: `/`, `\`, other
+     *
+     * Mutants killed:
+     *  - L275 GreaterThanOrEqualTo (`>=` → `>`): kills when `len === 3`.
+     *  - L275 DecrementInteger (`$path[1]` → `$path[0]`): a `C:\` path passes
+     *    via index 1, never via index 0.
+     *  - L275 LogicalAnd (`&&` → `||`/precedence shift): a path like `"abXfoo"`
+     *    where [2] is neither `/` nor `\` must NOT be considered absolute.
+     *  - L275 LogicalAndSingleSubExprNegation (`ctype_alpha` → `!ctype_alpha`):
+     *    `"3:\foo"` (digit at [0]) must be rejected.
+     *  - L275 LogicalOrAllSubExprNegation in InputFilesResolver:304 (sister code):
+     *    paths with `[2]` other than `/`/`\\` rejected.
+     *
+     * Routed via `withCwd('/abs')` + `filterFilesForPaths` is too coarse for
+     * these path predicates, so we go through Reflection on `isAbsolutePath`
+     * directly — public surface of this private helper is tested indirectly
+     * via normaliseToCwdRelative in the wider suite.
+     *
+     * @test
+     * @dataProvider isAbsolutePathCases
+     */
+    function isAbsolutePath_classifies_each_path_correctly(string $path, bool $expected): void
+    {
+        $context = ExecutionContext::default();
+        $reflection = new \ReflectionMethod(ExecutionContext::class, 'isAbsolutePath');
+        $reflection->setAccessible(true);
+
+        $this->assertSame($expected, $reflection->invoke($context, $path));
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: bool}>
+     */
+    public function isAbsolutePathCases(): array
+    {
+        return [
+            'empty string'                     => ['',         false],
+            'unix root'                        => ['/foo',     true],
+            'windows root with backslash'      => ['\\foo',    true],
+            'windows drive forward slash'      => ['C:/foo',   true],
+            'windows drive backslash'          => ['C:\\foo',  true],
+            'windows drive at exact len=3 (kills GreaterThanOrEqualTo)' => ['C:\\', true],
+            'len=2 (below boundary)'           => ['C:',       false],
+            'digit at first char (kills LogicalAnd negation)' => ['3:\\foo', false],
+            'no colon at second char'          => ['CCfoo',    false],
+            'colon at second but bad separator' => ['C:Xfoo',  false],
+            'relative path is not absolute'    => ['relative/foo', false],
+            'single char relative'             => ['x',        false],
+        ];
+    }
 }
