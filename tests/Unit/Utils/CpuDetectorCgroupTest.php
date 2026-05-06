@@ -137,6 +137,113 @@ class CpuDetectorCgroupTest extends TestCase
                 ['/sys/fs/cgroup/cpuset/cpuset.cpus' => "0,2,4\n"],
                 3,
             ],
+
+            // ---- Adversarial coverage rows (Infection 2026-05-06 hardening) ----
+
+            // v2 cpu.max with non-numeric quota and numeric period: must reject
+            // (count<2 not the issue, !is_numeric($parts[0]) catches it).
+            'v2 cpu.max "abc 100000" → fallback' => [
+                [self::V2_PATH => "abc 100000\n"],
+                20,
+            ],
+
+            // v2 cpu.max with numeric quota and non-numeric period: must reject
+            // (!is_numeric($parts[1]) is the operative branch).
+            'v2 cpu.max "100000 abc" → fallback' => [
+                [self::V2_PATH => "100000 abc\n"],
+                20,
+            ],
+
+            // v1 with only quota present, period absent → both must be readable
+            // (LogicalOr `||` in the null-guard, killed by mutating to `&&`).
+            'v1 only quota present → fallback' => [
+                [self::V1_QUOTA_PATH => "400000\n"],
+                20,
+            ],
+
+            // v1 with only period present, quota absent → fallback.
+            'v1 only period present → fallback' => [
+                [self::V1_PERIOD_PATH => "100000\n"],
+                20,
+            ],
+
+            // v2 cpu.max + cpuset both present, distinct values: cpu.max returns
+            // 4, cpuset returns 2 → min wins (kills mutants on `Coalesce` order).
+            // (already covered by 'cpu.max=4, cpuset=2 → 2' above)
+
+            // Empty cpuset string (whitespace only) → countCpusetEntries returns 0
+            // → readCpusetLimit returns null (kills `$count > 0` → `>= 0` mutation).
+            'cpuset whitespace only → fallback' => [
+                ['/sys/fs/cgroup/cpuset.cpus.effective' => "   \n"],
+                20,
+            ],
+
+            // Quota=0 (boundary): divideQuota must return null (kills `<=` → `<`
+            // mutation that would let 0 through and produce ceil(0/period)=0).
+            'v2 quota=0 → fallback (divideQuota guards <=)' => [
+                [self::V2_PATH => "0 100000\n"],
+                20,
+            ],
+
+            // Period=0 (boundary): divideQuota guards both sides; without guard
+            // a division by zero would happen.
+            'v2 period=0 → fallback (divideQuota guards <=)' => [
+                [self::V2_PATH => "100000 0\n"],
+                20,
+            ],
+
+            // Fractional quota that distinguishes ceil from round/floor:
+            // 220% / 100% = 2.2 → ceil → 3 (round → 2, floor → 2).
+            'v2 fractional 220% → ceil to 3 (kills RoundingFamily)' => [
+                [self::V2_PATH => "220000 100000\n"],
+                3,
+            ],
+
+            // cpuset with malformed double-dash range "0-3-5": current code uses
+            // explode(..., 2) so rangeEnd parses as "3-5" which fails is_numeric
+            // → segment counts as 0 → total cpuset count is 0 → null (fallback).
+            // Mutating explode limit from 2 → 3 would change list destructuring
+            // and is killed by this case.
+            'cpuset malformed "0-3-5" → fallback' => [
+                ['/sys/fs/cgroup/cpuset.cpus.effective' => "0-3-5\n"],
+                20,
+            ],
+
+            // cpuset segment "0-x" with non-numeric end: is_numeric guard rejects
+            // → returns 0 → cpuset total is 0 → fallback.
+            'cpuset segment "0-x" → fallback (is_numeric guard)' => [
+                ['/sys/fs/cgroup/cpuset.cpus.effective' => "0-x\n"],
+                20,
+            ],
+
+            // cpuset segment "x-3" symmetric: kills LogicalAnd mutation that
+            // weakens both numeric checks to OR.
+            'cpuset segment "x-3" → fallback' => [
+                ['/sys/fs/cgroup/cpuset.cpus.effective' => "x-3\n"],
+                20,
+            ],
+
+            // cpuset single-CPU range "5-5" (boundary): rangeEnd >= rangeStart
+            // is true, count = (5-5)+1 = 1. Kills `>=` → `>` mutation.
+            'cpuset range "5-5" → 1' => [
+                ['/sys/fs/cgroup/cpuset.cpus.effective' => "5-5\n"],
+                1,
+            ],
+
+            // cpuset with non-numeric scalar segment: "0,abc,5" must skip "abc"
+            // and count 0 + 1 (5) = 1 (not 2 or 3). Kills the `: 0` ternary
+            // mutations to `: -1` and `: 1`.
+            'cpuset "0,abc,5" → 2 (skip non-numeric)' => [
+                ['/sys/fs/cgroup/cpuset.cpus.effective' => "0,abc,5\n"],
+                2,
+            ],
+
+            // cpuset reversed range "5-1" where end < start: rangeEnd >= rangeStart
+            // fails → segment count 0 → fallback.
+            'cpuset reversed range "5-1" → fallback' => [
+                ['/sys/fs/cgroup/cpuset.cpus.effective' => "5-1\n"],
+                20,
+            ],
         ];
     }
 }

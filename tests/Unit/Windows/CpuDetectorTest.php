@@ -7,6 +7,7 @@ namespace Tests\Unit\Windows;
 use PHPUnit\Framework\TestCase;
 use Tests\Doubles\UnixCpuDetectorStub;
 use Tests\Doubles\WindowsCpuDetectorNoExecStub;
+use Tests\Doubles\WindowsCpuDetectorScriptedExecStub;
 use Tests\Doubles\WindowsCpuDetectorStub;
 use Wtyd\GitHooks\Utils\CpuDetector;
 
@@ -171,5 +172,103 @@ class CpuDetectorTest extends TestCase
         ], $procCpuinfoCount = 4);
 
         $this->assertSame(4, $detector->detect());
+    }
+
+    /**
+     * @test
+     * Kills L34 Concat / ConcatOperandRemoval / MethodCallRemoval and L35
+     * Identical: when wmic exits 0 with a numeric output line, that value
+     * becomes the result and the command was the wmic+stderrRedirect concat.
+     */
+    function windows_wmic_returns_numeric_output_and_uses_full_command_with_stderr_redirect()
+    {
+        $original = getenv('NUMBER_OF_PROCESSORS');
+        putenv('NUMBER_OF_PROCESSORS');
+
+        try {
+            $detector = new WindowsCpuDetectorScriptedExecStub([
+                'output' => ['NumberOfLogicalProcessors', '8', ''],
+                'exit'   => 0,
+            ]);
+
+            $this->assertSame(8, $detector->detect());
+            $this->assertCount(1, $detector->executed);
+            $command = $detector->executed[0];
+            // Order matters: the wmic invocation must come BEFORE the stderr
+            // redirect, never after. This kills L34 Concat (operand swap).
+            $this->assertStringStartsWith('wmic cpu get NumberOfLogicalProcessors ', $command);
+            $this->assertNotSame('wmic cpu get NumberOfLogicalProcessors ', $command);
+        } finally {
+            if ($original === false) {
+                putenv('NUMBER_OF_PROCESSORS');
+            } else {
+                putenv("NUMBER_OF_PROCESSORS=$original");
+            }
+        }
+    }
+
+    /**
+     * @test
+     * Kills L207 LogicalNot in readFileContents: an unreadable path must
+     * return null (not be read). Uses a real file that does NOT exist.
+     */
+    function read_file_contents_returns_null_for_unreadable_path()
+    {
+        $detector = new CpuDetector();
+        $reflection = new \ReflectionMethod(CpuDetector::class, 'readFileContents');
+        $reflection->setAccessible(true);
+
+        $result = $reflection->invoke($detector, '/nonexistent/path/that/cannot/exist/anywhere');
+        $this->assertNull($result);
+    }
+
+    /**
+     * @test
+     * Kills L218 Ternary in readFileContents: a readable file returns its
+     * contents, not null. Uses a real tmpfile so the production path runs
+     * end-to-end (including is_readable + file_get_contents).
+     */
+    function read_file_contents_returns_contents_for_readable_file()
+    {
+        $tmpPath = tempnam(sys_get_temp_dir(), 'cpudetector_test_');
+        $this->assertNotFalse($tmpPath);
+        file_put_contents($tmpPath, "200000 100000\n");
+
+        try {
+            $detector = new CpuDetector();
+            $reflection = new \ReflectionMethod(CpuDetector::class, 'readFileContents');
+            $reflection->setAccessible(true);
+
+            $result = $reflection->invoke($detector, $tmpPath);
+            $this->assertSame("200000 100000\n", $result);
+        } finally {
+            @unlink($tmpPath);
+        }
+    }
+
+    /**
+     * @test
+     * Kills L251 FunctionCallRemoval in execCommand: the production
+     * `exec()` must actually run. We verify with a portable command (`echo`
+     * on Unix) that output and exit code propagate via the references.
+     *
+     * @group integration
+     */
+    function exec_command_invokes_real_exec_and_propagates_output_and_exit_code()
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Unix-only echo command');
+        }
+
+        $detector = new CpuDetector();
+        $reflection = new \ReflectionMethod(CpuDetector::class, 'execCommand');
+        $reflection->setAccessible(true);
+
+        $output = [];
+        $exitCode = -1;
+        $reflection->invokeArgs($detector, ['echo cpudetector-real-exec', &$output, &$exitCode]);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertSame(['cpudetector-real-exec'], $output);
     }
 }
