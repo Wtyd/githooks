@@ -278,6 +278,172 @@ class FlowExecutorTest extends TestCase
         $this->assertMatchesRegularExpression('/^\d+ms$/', $result->getJobResults()[0]->getExecutionTime());
     }
 
+    /**
+     * Decision-table test for FlowExecutor::formatTime boundaries.
+     *
+     * Factors:
+     *  - $seconds < 1   → "Nms" (round to milliseconds)
+     *  - $seconds < 60  → "X.YYs" (number_format 2 decimals)
+     *  - $seconds >= 60 → "{Mm Ss}" (floor minutes, integer seconds)
+     *
+     * Frontiers (AVL):
+     *  - 0.999 vs 1.0       (< 1 vs == 1) — kills LessThan mutation
+     *  - 59.99 vs 60.0      (< 60 vs == 60) — kills second branch boundary
+     *  - 90, 119, 120       — kills DecrementInteger (`/60` vs `/59`),
+     *                         RoundingFamily (`floor` vs `ceil`/`round`) and
+     *                         CastInt (integer seconds in interpolation).
+     *
+     * @test
+     * @dataProvider formatTimeBoundaries
+     */
+    public function format_time_returns_expected_string_for_boundary(float $seconds, string $expected): void
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $reflection = new \ReflectionMethod(FlowExecutor::class, 'formatTime');
+        $reflection->setAccessible(true);
+
+        $this->assertSame($expected, $reflection->invoke($executor, $seconds));
+    }
+
+    /**
+     * Decision-table test for FlowExecutor::buildTimeBudgetState.
+     *
+     * Factors:
+     *  - sum of durations (skipped jobs excluded by `continue`)
+     *  - failAfter threshold (null = disabled, otherwise sum >= failAfter ⇒ failed)
+     *  - warnAfter threshold (null = disabled, otherwise sum >= warnAfter ⇒ warned,
+     *    BUT only when not failed: !$failed && $warnAfter !== null && $sum >= $warnAfter)
+     *
+     * Mutants killed:
+     *  - L782 Continue_ (continue → break): skipped jobs in middle of list still
+     *    leave subsequent durations summed.
+     *  - L784 Assignment (`+=` → `=`): exact total of multiple non-skipped durations.
+     *  - L790 LogicalAnd: when failed=true AND warnAfter is reached, warned must
+     *    remain false (the !$failed guard wins).
+     *
+     * @test
+     */
+    public function build_time_budget_state_sums_only_non_skipped_durations(): void
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildTimeBudgetState');
+        $reflection->setAccessible(true);
+
+        $budget = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(10, 20);
+
+        // Factor coverage: 4 results of which 1 is skipped (in the middle).
+        // Sum must be 1.0 + 2.0 + 4.0 = 7.0 (the skipped 100.0 is dropped via
+        // `continue`; mutating to `break` would stop after the skipped entry,
+        // dropping the trailing 4.0 and producing sum=3.0). Killing
+        // `+=` → `=` requires summing more than two non-skipped durations.
+        $r1 = $this->makeJobResult('a', 1.0, false);
+        $r2 = $this->makeJobResult('b', 2.0, false);
+        $r3 = $this->makeJobResult('skipped', 100.0, true);
+        $r4 = $this->makeJobResult('d', 4.0, false);
+
+        /** @var \Wtyd\GitHooks\Execution\TimeBudgetState $state */
+        $state = $reflection->invoke($executor, $budget, [$r1, $r2, $r3, $r4]);
+        $this->assertNotNull($state);
+        $this->assertEqualsWithDelta(7.0, $state->getTotalJobDuration(), 0.001);
+        $this->assertFalse($state->isFailed());
+        $this->assertFalse($state->isWarned()); // 7 < 10
+    }
+
+    /**
+     * @test
+     */
+    public function build_time_budget_state_warned_true_when_sum_in_warn_band(): void
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildTimeBudgetState');
+        $reflection->setAccessible(true);
+
+        $budget = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(10, 20);
+
+        $r1 = $this->makeJobResult('a', 12.0, false);
+
+        $state = $reflection->invoke($executor, $budget, [$r1]);
+        $this->assertNotNull($state);
+        $this->assertFalse($state->isFailed()); // 12 < 20
+        $this->assertTrue($state->isWarned());  // 12 >= 10
+    }
+
+    /**
+     * @test
+     * Kills L790 LogicalAnd: when sum >= failAfter AND sum >= warnAfter, the
+     * `!$failed` guard must prevent warned from being set. Mutating to
+     * `(!$failed || $warnAfter !== null) && ...` would let `warned` be true.
+     */
+    public function build_time_budget_state_warned_false_when_failed(): void
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildTimeBudgetState');
+        $reflection->setAccessible(true);
+
+        $budget = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(10, 20);
+
+        $r1 = $this->makeJobResult('a', 25.0, false); // exceeds both warn and fail
+
+        $state = $reflection->invoke($executor, $budget, [$r1]);
+        $this->assertNotNull($state);
+        $this->assertTrue($state->isFailed());   // 25 >= 20
+        $this->assertFalse($state->isWarned());  // failed wins
+    }
+
+    /**
+     * @test
+     */
+    public function build_time_budget_state_returns_null_when_budget_is_null(): void
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildTimeBudgetState');
+        $reflection->setAccessible(true);
+
+        $this->assertNull($reflection->invoke($executor, null, []));
+    }
+
+    private function makeJobResult(string $name, float $durationSeconds, bool $skipped): \Wtyd\GitHooks\Execution\JobResult
+    {
+        if ($skipped) {
+            return \Wtyd\GitHooks\Execution\JobResult::skipped($name, 'custom', 'skip', []);
+        }
+        return new \Wtyd\GitHooks\Execution\JobResult(
+            $name,
+            true,
+            'output',
+            sprintf('%.2fs', $durationSeconds),
+            false,
+            null,
+            'custom',
+            0,
+            [],
+            false,
+            null,
+            null,
+            null,
+            $durationSeconds
+        );
+    }
+
+    /**
+     * @return array<string, array{0: float, 1: string}>
+     */
+    public function formatTimeBoundaries(): array
+    {
+        return [
+            'sub-millisecond rounds to 0ms'    => [0.0001,  '0ms'],
+            'just below 1s → 999ms'            => [0.999,   '999ms'],
+            'exactly 1s → "1.00s" (not 1000ms)' => [1.0,     '1.00s'],
+            'fractional seconds < 60'          => [12.345,  '12.35s'],
+            'just below 60s → "59.99s"'        => [59.99,   '59.99s'],
+            'exactly 60s → "1m 0s"'            => [60.0,    '1m 0s'],
+            '90s → "1m 30s" (kills RoundingFamily floor→ceil/round)' => [90.0, '1m 30s'],
+            '119s → "1m 59s" (kills DecrementInteger /60→/59)'       => [119.0, '1m 59s'],
+            '120s → "2m 0s"'                  => [120.0,  '2m 0s'],
+            'fractional minutes 90.7s → "1m 30s" (kills CastInt on $secs)' => [90.7, '1m 30s'],
+        ];
+    }
+
     // ========================================================================
     // Parallel: two passing jobs
     // ========================================================================
