@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\PhpcbfJob;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Utils\GitStager;
@@ -76,11 +73,12 @@ class RestageAfterFixTest extends SystemTestCase
         $unstagedBefore = trim(shell_exec('git diff --name-only') ?? '');
         $this->assertNotEmpty($unstagedBefore, 'Fixed file should appear as unstaged change');
 
-        // 5. Execute FlowExecutor with GitStager — phpcbf job that exits 1 (= fix applied)
+        // 5. Execute FlowExecutor with GitStager — phpcbf job that exits 1 (= fix applied).
+        //    The fake script ignores any args the executor may inject (e.g. --parallel=N
+        //    from applyThreadLimit) so the test stays decoupled from phpcs/phpcbf flag evolution.
         $executor = new FlowExecutor(new NullOutputHandler(), new GitStager());
         $job = new PhpcbfJob(new JobConfiguration('phpcbf_test', 'phpcbf', [
-            'executable-path' => '/bin/sh -c',
-            'other-arguments' => '"exit 1"',
+            'executable-path' => __DIR__ . '/../Fixtures/scripts/phpcbf-fake-fix.sh',
         ]));
 
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
