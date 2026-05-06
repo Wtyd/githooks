@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.3.1] (Unreleased)
+
+### Fixed
+
+- **BUG-15** — `--fast` / `--fast-branch` no longer leave non-accelerable jobs (`phpunit`, `paratest`, `phpcpd`, `script`, `custom`, `composer-*`) running their full suites when the effective input set is empty (no staged files / no diff vs base). The skip is now universal: any job — accelerable or not, with or without `paths` declared — is skipped with reason `no changes to validate` when the mode produced no input. Restores parity with the v2.x contract ("nothing changed = nothing to run"). Implemented in [`FlowPreparer::filterJobForMode()`](../src/Execution/FlowPreparer.php#L244) via a new universal guard backed by [`ExecutionContext::isEffectiveSetEmpty()`](../src/Execution/ExecutionContext.php). Decision-table coverage in [`tests/Unit/Execution/FlowPreparerTest.php`](../tests/Unit/Execution/FlowPreparerTest.php) (`it_filters_jobs_per_mode_decision_table` with 20 rows).
+
 ## [3.3.0] (Unreleased)
 
 ### New Features

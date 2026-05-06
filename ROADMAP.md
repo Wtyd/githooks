@@ -6,17 +6,7 @@ Solo ideas pendientes de implementar. Lo ya cerrado vive en `docs/changelog.md`.
 
 ## v3.3.x — Bugs pendientes
 
-### BUG-15 · `--fast` / `--fast-branch` con set vacío no skipea non-accelerable
-
-Con `--fast` (sin staged) o `--fast-branch` (sin diff contra base), los jobs accelerable skipean correctamente pero los non-accelerable (phpunit, paratest, phpcpd, script, custom, composer-*) **siguen ejecutándose** con sus `paths` originales. Resultado: el flow lanza la suite entera de phpunit aunque el modo señaló "no hay cambios relevantes". Contradice el contrato del modo y rompe la paridad con la 2.x.
-
-**Reproducción**: `flow qa --fast` con working tree limpio sobre una config con `phpstan_src` (accelerable, paths declarados) y `phpunit_tests` (non-accelerable). phpstan skipea, phpunit corre la suite.
-
-**Alcance**: solo el caso de **set efectivo vacío**. Cuando el set NO es vacío pero no matchea los `paths` del job, la regla declarativa correcta es `only-files` per-job entry (ver FEAT-1 en v3.4) — separa los conceptos `paths` (input para la tool) y reglas de admisión.
-
-**Implementación**: en [`FlowPreparer::filterJobForMode()`](src/Execution/FlowPreparer.php#L244), detectar la rama "context con set vacío" antes del check de accelerable. Test parametrizado sobre la decision table `(modo × set × accelerable × paths declarados)`.
-
-**Coste**: bajo. ~30 LOC + test parametrizado.
+_(BUG-15 cerrado — ver `docs/changelog.md` sección [3.3.1].)_
 
 ---
 
