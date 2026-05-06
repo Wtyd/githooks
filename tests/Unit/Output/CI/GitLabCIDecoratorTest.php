@@ -267,4 +267,160 @@ class GitLabCIDecoratorTest extends TestCase
         $this->assertStringContainsString('running...', $body);
         $this->assertStringContainsString('phpstan OK 0.5s', $body);
     }
+
+    /**
+     * Targets the trailing-newline guard at GitLabCIDecorator::emitSection (L113):
+     *
+     *   if ($body !== '' && substr($body, -1) !== "\n") { echo "\n"; }
+     *
+     * Mutants killed:
+     *  - L113 NotIdentical (`!== ''` → `=== ''`)
+     *  - L113 DecrementInteger (`-1` → `-2`)
+     *  - L113 IncrementInteger (`-1` → `-0`)
+     *  - L113 NotIdentical (inner `!== "\n"` → `=== "\n"`)
+     *  - L113 UnwrapSubstr (`substr($body, -1)` → `$body`)
+     *  - L113 LogicalAnd (`&&` → `||`)
+     *  - L113 LogicalAndAllSubExprNegation
+     *  - L113 LogicalAndNegation
+     *
+     * Strategy: drive the decorator with an inner that emits a body whose
+     * last char is NOT `\n`. The decorator must add EXACTLY ONE `\n` between
+     * the body and `section_end`, so the output cannot contain `\n\n` between
+     * them. Likewise, with a body that DOES end in `\n` no extra newline can
+     * appear. With an empty body (skipped via inner that emits nothing
+     * before close), the guard must NOT add a `\n` either (kills LogicalAnd).
+     *
+     * @test
+     */
+    public function emit_section_normalises_trailing_newline(): void
+    {
+        // Case A — body without trailing \n.
+        $innerNoNewline = new class implements OutputHandler {
+            public function onFlowStart(int $totalJobs): void
+            {
+            }
+            public function onJobStart(string $jobName): void
+            {
+                echo "no-newline-content"; // no trailing \n
+            }
+            public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+            {
+            }
+            public function onJobSuccess(string $jobName, string $time): void
+            {
+            }
+            public function onJobError(string $jobName, string $time, string $output): void
+            {
+            }
+            public function onJobSkipped(string $jobName, string $reason): void
+            {
+            }
+            public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function flush(): void
+            {
+            }
+        };
+
+        $decorator = new GitLabCIDecorator($innerNoNewline);
+        ob_start();
+        $decorator->onJobStart('jobA');
+        $decorator->onJobSuccess('jobA', '1s');
+        $output = ob_get_clean();
+
+        // Body content present
+        $this->assertStringContainsString('no-newline-content', $output);
+        // Exactly one '\n' between content and section_end (the guard added it).
+        $this->assertMatchesRegularExpression(
+            '/no-newline-content\nsection_end:/',
+            preg_replace('/\033\[0K/', '', $output) ?? '',
+            'Body without trailing newline must get exactly one \n added before section_end'
+        );
+        // No double newline (kills NotIdentical-inversion which would always add \n).
+        $this->assertStringNotContainsString(
+            "no-newline-content\n\n",
+            preg_replace('/\033\[0K/', '', $output) ?? ''
+        );
+
+        // Case B — body already terminated by \n (NO extra newline added).
+        $innerWithNewline = new class implements OutputHandler {
+            public function onFlowStart(int $totalJobs): void
+            {
+            }
+            public function onJobStart(string $jobName): void
+            {
+                echo "with-newline-content\n";
+            }
+            public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+            {
+            }
+            public function onJobSuccess(string $jobName, string $time): void
+            {
+            }
+            public function onJobError(string $jobName, string $time, string $output): void
+            {
+            }
+            public function onJobSkipped(string $jobName, string $reason): void
+            {
+            }
+            public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function flush(): void
+            {
+            }
+        };
+        $decorator = new GitLabCIDecorator($innerWithNewline);
+        ob_start();
+        $decorator->onJobStart('jobB');
+        $decorator->onJobSuccess('jobB', '1s');
+        $output = ob_get_clean();
+        // Body ends with single \n, decorator must NOT add a second one.
+        $this->assertStringNotContainsString(
+            "with-newline-content\n\n",
+            preg_replace('/\033\[0K/', '', $output) ?? '',
+            'Body already ending in newline must not have an extra newline appended'
+        );
+
+        // Case C — empty body (inner emits nothing): guard `$body !== ''`
+        // must short-circuit, no spurious \n inserted between header and end.
+        $innerEmpty = new class implements OutputHandler {
+            public function onFlowStart(int $totalJobs): void
+            {
+            }
+            public function onJobStart(string $jobName): void
+            {
+            }
+            public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+            {
+            }
+            public function onJobSuccess(string $jobName, string $time): void
+            {
+            }
+            public function onJobError(string $jobName, string $time, string $output): void
+            {
+            }
+            public function onJobSkipped(string $jobName, string $reason): void
+            {
+            }
+            public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function flush(): void
+            {
+            }
+        };
+        $decorator = new GitLabCIDecorator($innerEmpty);
+        ob_start();
+        $decorator->onJobSuccess('jobC', '1s');
+        $output = ob_get_clean();
+        $stripped = preg_replace('/\033\[0K/', '', $output) ?? '';
+        // After "jobC\n" must come immediately "section_end:" — no extra blank line.
+        $this->assertMatchesRegularExpression(
+            '/jobC\nsection_end:/',
+            $stripped,
+            'Empty body must not have a blank line inserted between header and section_end'
+        );
+    }
 }
