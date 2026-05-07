@@ -365,7 +365,7 @@ class JobConfiguration
             // 'time-budget' is recognised so the unknown-key loop doesn't emit a
             // duplicate warning; the dedicated check in validateTimeBudgetKeys()
             // already rejects it as an error (BUG-10).
-            ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory', 'time-budget']
+            ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory', 'time-budget', 'cache-dir']
         );
 
         self::reportUnknownAndCliOnlyJobKeys($name, $type, $config, $knownKeys, $result);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Jobs;
 
+use Wtyd\GitHooks\Jobs\CacheResolver\PhpConfigCacheResolver;
+
 class RectorJob extends JobAbstract
 {
     public const SUPPORTS_FAST = true;
@@ -40,9 +42,50 @@ class RectorJob extends JobAbstract
         return $exitCode === 0;
     }
 
+    private bool $cacheUnresolvable = false;
+
     /** @return string[] */
     public function getCachePaths(): array
     {
-        return ['/tmp/rector'];
+        $this->cacheUnresolvable = false;
+
+        $metaArg = $this->args['cache-dir'] ?? '';
+        if (is_string($metaArg) && trim($metaArg) !== '') {
+            return [trim($metaArg)];
+        }
+
+        $configFile = $this->locateConfigFile();
+        if ($configFile !== null) {
+            $resolved = PhpConfigCacheResolver::resolve($configFile, 'cacheDirectory');
+            if ($resolved !== null) {
+                return [$resolved];
+            }
+            if (PhpConfigCacheResolver::declaresUnresolvable($configFile, 'cacheDirectory')) {
+                $this->cacheUnresolvable = true;
+            }
+        }
+
+        return [sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'];
+    }
+
+    public function getCacheResolutionWarning(): ?string
+    {
+        if (!$this->cacheUnresolvable) {
+            return null;
+        }
+        return "could not parse cacheDirectory() in rector.php (uses a variable or helper); "
+            . "declare 'cache-dir' on the job to override (last-resort, see docs)";
+    }
+
+    private function locateConfigFile(): ?string
+    {
+        $explicit = $this->args['config'] ?? '';
+        if (is_string($explicit) && $explicit !== '' && is_file($explicit) && is_readable($explicit)) {
+            return $explicit;
+        }
+        if (is_file('rector.php') && is_readable('rector.php')) {
+            return 'rector.php';
+        }
+        return null;
     }
 }

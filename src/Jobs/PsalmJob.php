@@ -41,7 +41,28 @@ class PsalmJob extends JobAbstract
     /** @return string[] */
     public function getCachePaths(): array
     {
+        $config = $this->args['config'] ?? '';
+        if (!empty($config) && is_file($config) && is_readable($config)) {
+            $previous = libxml_use_internal_errors(true);
+            $xml = simplexml_load_file($config);
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+            if ($xml !== false && isset($xml['cacheDirectory'])) {
+                $dir = trim((string) $xml['cacheDirectory']);
+                if ($dir !== '') {
+                    return [$this->resolveRelativeToConfig($dir, $config)];
+                }
+            }
+        }
         return ['.psalm/cache/'];
+    }
+
+    private function resolveRelativeToConfig(string $path, string $configFile): string
+    {
+        if ($path === '' || $path[0] === '/' || preg_match('#^[A-Za-z]:[\\\\/]#', $path) === 1) {
+            return $path;
+        }
+        return dirname($configFile) . DIRECTORY_SEPARATOR . $path;
     }
 
     public function getThreadCapability(): ?ThreadCapability

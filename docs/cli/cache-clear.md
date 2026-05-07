@@ -12,15 +12,83 @@ githooks cache:clear [names...] [--config=PATH]
 
 Accepts job names, flow names (resolved to their jobs), or a mix. Without arguments, clears caches for all configured jobs.
 
-## Default cache locations
+## How the cache path is resolved
 
-| Tool | Default cache |
-|---|---|
-| PHPStan | `{sys_get_temp_dir}/phpstan/` (or `tmpDir` from `.neon` config) |
-| PHPMD | `.phpmd.cache` (or `cache-file` from job config) |
-| PHPCS | `.phpcs.cache` |
-| Psalm | `.psalm/cache/` |
-| PHPUnit | `.phpunit.result.cache` |
+GitHooks tries to find the **effective** cache path for each job, in this order of precedence:
+
+1. **Job arg in `githooks.php`** — if the tool accepts a CLI flag for the cache, declaring it on the job is the most reliable option.
+2. **Tool's native config file** — for tools whose cache config is declarative (NEON, XML), the path is parsed from there. Includes are followed and placeholders expanded where applicable.
+3. **Default** — the tool's documented default.
+
+| Tool | Native config source | Default if nothing declared |
+|---|---|---|
+| **PHPStan** | `tmpDir:` in the `.neon` (follows `includes:` recursively, expands `%currentWorkingDirectory%` and `%rootDir%`) | `{sys_get_temp_dir}/phpstan/` |
+| **Psalm** | `cacheDirectory` attribute in `psalm.xml` (resolved relative to the XML) | `.psalm/cache/` |
+| **PHPCS** | Job arg `cache` → `<arg name="cache" value="..."/>` in the ruleset XML | `.phpcs.cache` |
+| **PHPUnit** | `cacheResultFile` / `cacheDirectory` attribute in `phpunit.xml` (or `phpunit.xml.dist`, resolved relative to the XML) | `.phpunit.result.cache` |
+| **PHPMD** | Job arg `cache-file` | `.phpmd.result.cache` |
+| **Rector** | Best-effort regex over `cacheDirectory(...)` in `rector.php` (recognises literals, `__DIR__ . '/literal'`, `sys_get_temp_dir() . '/literal'`) | `{sys_get_temp_dir}/rector_cached_files` |
+| **PHP-CS-Fixer** | Job arg `cache-file` (passed as `--cache-file` to the tool, which respects it over the config) → best-effort regex over `setCacheFile(...)` in `.php-cs-fixer.php` | `.php-cs-fixer.cache` |
+
+## Last-resort override: `cache-dir` (Rector only)
+
+When `rector.php` sets `cacheDirectory()` with a dynamic expression — a variable, an environment helper, a custom function — GitHooks **cannot** resolve the path statically. In that case `cache:clear` falls back to the default and prints a warning:
+
+```
+- rector_src: /tmp/rector_cached_files (not found — could not parse cacheDirectory() in rector.php (uses a variable or helper); declare 'cache-dir' on the job to override (last-resort, see docs))
+```
+
+To make `cache:clear` work in this scenario, declare `cache-dir` on the job in `githooks.php` with the **same path** that `rector.php` ends up resolving:
+
+```php
+'rector_src' => [
+    'type'      => 'rector',
+    'config'    => 'rector.php',
+    'cache-dir' => '.rector-cache',   // last-resort override
+    'paths'     => ['src'],
+],
+```
+
+!!! warning "Use only when strictly necessary"
+
+    `cache-dir` duplicates information that already lives in `rector.php`. If you change the path in one file and forget the other, **`cache:clear` will silently delete the wrong (or no) directory** while the real cache stays intact. The default behaviour — let GitHooks parse the config — is always preferable. Reach for `cache-dir` only when:
+
+    - your `rector.php` uses a variable, environment helper, or custom function for `cacheDirectory()`, and
+    - you have a pipeline (CI, Makefile, hook) that relies on `cache:clear` doing the right thing.
+
+    Otherwise prefer rewriting `cacheDirectory()` to a literal or `__DIR__ . '/literal'` form, which GitHooks parses automatically.
+
+## PHPCS with chained rulesets
+
+If your `phpcs.xml` includes another ruleset with `<rule ref="Vendor/Other.xml"/>` and that included ruleset defines `<arg name="cache" value="..."/>`, **GitHooks does not follow refs** — only the cache declaration in the directly referenced ruleset is read.
+
+The fix is the same single-source-of-truth pattern as PHP-CS-Fixer: declare `cache` on the job. PHPCS treats it as the CLI flag `--cache=PATH`, which **wins over any `<arg name="cache">`** in any ruleset (including the included ones). Both runtime and `cache:clear` end up using the path you declared:
+
+```php
+'phpcs_src' => [
+    'type'     => 'phpcs',
+    'standard' => 'qa/phpcs.xml',
+    'cache'    => 'qa/phpcs.cache',   // CLI flag, wins over ruleset (incl. <rule ref>)
+    'paths'    => ['src'],
+],
+```
+
+No duplication risk: phpcs **uses** the path you declared, so the runtime cache and the path that `cache:clear` deletes are guaranteed to match.
+
+## PHP-CS-Fixer caveat
+
+If `.php-cs-fixer.php` sets `setCacheFile()` with a dynamic expression, the same warning is emitted. **Do not** add a meta-arg here — instead use `cache-file` on the job:
+
+```php
+'php_cs_fixer' => [
+    'type'       => 'php-cs-fixer',
+    'config'     => '.php-cs-fixer.php',
+    'cache-file' => '.cache/php-cs-fixer.cache',
+    'paths'      => ['src'],
+],
+```
+
+`cache-file` is a real CLI flag (`--cache-file=...`) that the tool itself respects over `setCacheFile()`. There is no duplication risk: php-cs-fixer **uses** the path you declared, so the runtime cache and the path that `cache:clear` deletes are guaranteed to match.
 
 ## Examples
 

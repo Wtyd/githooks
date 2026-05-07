@@ -32,11 +32,195 @@ class PhpcsJobTest extends TestCase
     }
 
     /** @test */
-    public function cache_paths_are_phpcs_cache()
+    public function cache_paths_default_to_phpcs_cache()
     {
         $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', ['paths' => ['src']]));
 
         $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function cache_paths_honour_cache_argument_string_value()
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths' => ['src'],
+            'cache' => 'storage/phpcs.cache',
+        ]));
+
+        $this->assertSame(['storage/phpcs.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function cache_paths_ignore_boolean_cache_argument_and_keep_default()
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths' => ['src'],
+            'cache' => true,
+        ]));
+
+        $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function cache_paths_read_cache_arg_from_ruleset_xml()
+    {
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-ruleset-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, <<<'XML'
+<?xml version="1.0"?>
+<ruleset name="Test">
+    <description>Test ruleset</description>
+    <arg name="cache" value="qa/phpcs.cache"/>
+    <rule ref="PSR12"/>
+</ruleset>
+XML);
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+            ]));
+
+            $this->assertSame(['qa/phpcs.cache'], $job->getCachePaths());
+        } finally {
+            unlink($rulesetPath);
+        }
+    }
+
+    /** @test */
+    public function cache_paths_fall_back_to_default_when_ruleset_has_no_cache_arg()
+    {
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-ruleset-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, <<<'XML'
+<?xml version="1.0"?>
+<ruleset name="Test">
+    <rule ref="PSR12"/>
+</ruleset>
+XML);
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+            ]));
+
+            $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+        } finally {
+            unlink($rulesetPath);
+        }
+    }
+
+    /** @test */
+    public function whitespace_only_cache_arg_falls_back_to_default()
+    {
+        // Adversarial: '   ' is not a real path; must fall back, not delete '   '.
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths' => ['src'],
+            'cache' => '   ',
+        ]));
+
+        $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function cache_arg_with_leading_or_trailing_whitespace_is_trimmed()
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths' => ['src'],
+            'cache' => '  qa/phpcs.cache  ',
+        ]));
+
+        $this->assertSame(['qa/phpcs.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function multiple_cache_args_in_ruleset_pick_the_last_one()
+    {
+        // Adversarial: phpcs itself last-wins on duplicated args; we mirror it.
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-multi-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, <<<'XML'
+<?xml version="1.0"?>
+<ruleset name="Test">
+    <arg name="cache" value="first.cache"/>
+    <arg name="cache" value="second.cache"/>
+</ruleset>
+XML);
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+            ]));
+
+            $this->assertSame(['second.cache'], $job->getCachePaths());
+        } finally {
+            unlink($rulesetPath);
+        }
+    }
+
+    /** @test */
+    public function cache_arg_in_ruleset_is_skipped_when_value_is_empty_then_falls_back()
+    {
+        // Adversarial: <arg name="cache" value=""/> alone → default.
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-empty-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, <<<'XML'
+<?xml version="1.0"?>
+<ruleset name="Test">
+    <arg name="cache" value=""/>
+</ruleset>
+XML);
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+            ]));
+
+            $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+        } finally {
+            unlink($rulesetPath);
+        }
+    }
+
+    /** @test */
+    public function malformed_ruleset_does_not_crash_falls_back_to_default()
+    {
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-bad-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, '<?xml version="1.0"?><ruleset><arg name="cache" value="x"');
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+            ]));
+
+            $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+        } finally {
+            unlink($rulesetPath);
+        }
+    }
+
+    /** @test */
+    public function cache_arg_in_job_takes_precedence_over_ruleset()
+    {
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-ruleset-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, <<<'XML'
+<?xml version="1.0"?>
+<ruleset name="Test">
+    <arg name="cache" value="ruleset/phpcs.cache"/>
+</ruleset>
+XML);
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+                'cache'    => 'job/phpcs.cache',
+            ]));
+
+            $this->assertSame(['job/phpcs.cache'], $job->getCachePaths());
+        } finally {
+            unlink($rulesetPath);
+        }
     }
 
     /** @test */

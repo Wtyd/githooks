@@ -424,6 +424,21 @@ abstract class JobAbstract
         return [];
     }
 
+    /**
+     * Optional human-readable warning explaining why getCachePaths() may be
+     * returning a fallback default rather than the real cache path. Used by
+     * cache:clear to surface "I tried to parse your config but couldn't, so
+     * I'm guessing the default" — only relevant for tools whose cache config
+     * lives in PHP code (rector.php, .php-cs-fixer.php).
+     *
+     * Returning null (the default) means resolution succeeded or the job
+     * does not have a cache.
+     */
+    public function getCacheResolutionWarning(): ?string
+    {
+        return null;
+    }
+
     /** @param mixed $value */
     private function isEmpty($value): bool
     {

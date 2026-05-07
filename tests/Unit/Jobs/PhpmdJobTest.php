@@ -30,13 +30,12 @@ class PhpmdJobTest extends TestCase
     }
 
     /** @test */
-    public function cache_paths_default_to_phpmd_cache_when_cache_file_is_absent()
+    public function cache_paths_default_to_phpmd_result_cache_when_cache_file_is_absent()
     {
-        // Mutant L47 CoalesceSwapFirstArg: `[] ?? '.phpmd.cache'` would always return '.phpmd.cache'
-        // or vice-versa. Exact value check mata ambos extremos del swap.
+        // PHPMD >= 2.13 default cache file is '.phpmd.result.cache'.
         $job = new PhpmdJob(new JobConfiguration('phpmd_src', 'phpmd', ['paths' => ['src']]));
 
-        $this->assertSame(['.phpmd.cache'], $job->getCachePaths());
+        $this->assertSame(['.phpmd.result.cache'], $job->getCachePaths());
     }
 
     /** @test */

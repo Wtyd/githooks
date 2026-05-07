@@ -1,0 +1,281 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Jobs\CacheResolver;
+
+use PHPUnit\Framework\TestCase;
+use Wtyd\GitHooks\Jobs\CacheResolver\PhpConfigCacheResolver;
+
+/**
+ * Covers the static-best-effort resolver shared by RectorJob and PhpCsFixerJob.
+ * Factor table:
+ *   - method name: cacheDirectory / setCacheFile / non-existent
+ *   - argument shape: literal / __DIR__ . 'literal' / sys_get_temp_dir() . 'literal'
+ *                     / variable / function call other than the two we recognize
+ *   - quotes: single / double
+ *   - file presence: missing / present
+ */
+class PhpConfigCacheResolverTest extends TestCase
+{
+    /** @var string[] */
+    private array $paths = [];
+
+    private string $sandbox;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->sandbox = sys_get_temp_dir() . '/php-config-resolver-' . uniqid('', true);
+        mkdir($this->sandbox, 0755, true);
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->paths as $p) {
+            if (is_file($p)) {
+                @unlink($p);
+            }
+        }
+        if (is_dir($this->sandbox)) {
+            @rmdir($this->sandbox);
+        }
+        parent::tearDown();
+    }
+
+    /** @test */
+    public function returns_null_when_file_does_not_exist()
+    {
+        $this->assertNull(PhpConfigCacheResolver::resolve($this->sandbox . '/missing.php', 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function returns_null_when_method_is_not_called_in_file()
+    {
+        $path = $this->writePhp('plain.php', "<?php\nreturn function (\$config) { \$config->paths(['src']); };\n");
+
+        $this->assertNull(PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /**
+     * @test
+     * @dataProvider literalAndPlaceholderArgs
+     */
+    public function resolves_literal_and_placeholder_arguments(string $argSource, string $expectedSuffix, string $expectedPrefix)
+    {
+        $path = $this->writePhp(
+            'rector.php',
+            "<?php\nreturn function (\$config) { \$config->cacheDirectory($argSource); };\n"
+        );
+
+        $expected = $this->expectedPath($expectedPrefix, $path, $expectedSuffix);
+        $this->assertSame($expected, PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @return iterable<string, array{0: string, 1: string, 2: string}> */
+    public static function literalAndPlaceholderArgs(): iterable
+    {
+        yield 'absolute literal single-quoted' => ["'/var/cache/rector'", '/var/cache/rector', 'literal'];
+        yield 'absolute literal double-quoted' => ['"/var/cache/rector"', '/var/cache/rector', 'literal'];
+        yield '__DIR__ concat single' => ["__DIR__ . '/.rector-cache'", '/.rector-cache', 'config-dir'];
+        yield '__DIR__ concat double' => ['__DIR__ . "/.rector-cache"', '/.rector-cache', 'config-dir'];
+        yield 'sys_get_temp_dir concat' => ["\\sys_get_temp_dir() . '/rector_cache'", '/rector_cache', 'sys-temp'];
+        yield 'sys_get_temp_dir concat unprefixed' => ["sys_get_temp_dir() . '/rector_cache'", '/rector_cache', 'sys-temp'];
+    }
+
+    /**
+     * @test
+     * @dataProvider unresolvableArgs
+     */
+    public function returns_null_for_dynamic_arguments(string $argSource)
+    {
+        $path = $this->writePhp(
+            'rector.php',
+            "<?php\nreturn function (\$config) { \$config->cacheDirectory($argSource); };\n"
+        );
+
+        $this->assertNull(PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+        $this->assertTrue(PhpConfigCacheResolver::declaresUnresolvable($path, 'cacheDirectory'));
+    }
+
+    /** @return iterable<string, array{0: string}> */
+    public static function unresolvableArgs(): iterable
+    {
+        yield 'plain variable' => ['$cacheDir'];
+        yield 'env helper' => ['getenv("RECTOR_CACHE")'];
+        yield 'helper call' => ['cachePath()'];
+        yield 'dirname concat' => ['dirname(__DIR__) . "/.cache"'];
+    }
+
+    /** @test */
+    public function declares_unresolvable_returns_false_when_method_not_present()
+    {
+        $path = $this->writePhp('plain.php', "<?php\nreturn function (\$config) {};\n");
+
+        $this->assertFalse(PhpConfigCacheResolver::declaresUnresolvable($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function ignores_method_calls_inside_line_comments()
+    {
+        $path = $this->writePhp(
+            'commented.php',
+            "<?php\nreturn function (\$c) {\n    // \$c->cacheDirectory('/wrong');\n    \$c->cacheDirectory('/right');\n};\n"
+        );
+
+        $this->assertSame('/right', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function ignores_method_calls_inside_hash_comments()
+    {
+        $path = $this->writePhp(
+            'hash.php',
+            "<?php\nreturn function (\$c) {\n    # \$c->cacheDirectory('/wrong');\n    \$c->cacheDirectory('/right');\n};\n"
+        );
+
+        $this->assertSame('/right', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function ignores_method_calls_inside_block_comments()
+    {
+        $path = $this->writePhp(
+            'block.php',
+            "<?php\nreturn function (\$c) {\n    /* \$c->cacheDirectory('/wrong');\n       extra junk */\n    \$c->cacheDirectory('/right');\n};\n"
+        );
+
+        $this->assertSame('/right', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function declares_unresolvable_is_false_when_only_call_is_commented_out()
+    {
+        $path = $this->writePhp(
+            'only-commented.php',
+            "<?php\nreturn function (\$c) {\n    // \$c->cacheDirectory(\$dynamic);\n};\n"
+        );
+
+        $this->assertFalse(PhpConfigCacheResolver::declaresUnresolvable($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function multiple_resolvable_calls_pick_the_last_in_file_order()
+    {
+        $path = $this->writePhp(
+            'override.php',
+            "<?php\nreturn function (\$c) {\n    \$c->cacheDirectory('/first');\n    \$c->cacheDirectory('/second');\n};\n"
+        );
+
+        $this->assertSame('/second', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function override_across_different_argument_shapes_picks_last_by_file_position()
+    {
+        $path = $this->writePhp(
+            'mixed-override.php',
+            "<?php\nreturn function (\$c) {\n    \$c->cacheDirectory(__DIR__ . '/.first');\n    \$c->cacheDirectory('/second');\n};\n"
+        );
+
+        $this->assertSame('/second', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function dynamic_last_call_overrides_a_resolvable_earlier_call_with_null()
+    {
+        // Runtime behaviour: the LAST call wins. If the last call is dynamic
+        // and unparseable, we don't know the effective path even though an
+        // earlier call was resolvable — return null to surface the unknown
+        // rather than a stale path the user is no longer using.
+        $path = $this->writePhp(
+            'static-then-dynamic.php',
+            "<?php\nreturn function (\$c) {\n    \$c->cacheDirectory('/static');\n    \$c->cacheDirectory(\$dynamic);\n};\n"
+        );
+
+        $this->assertNull(PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+        $this->assertTrue(PhpConfigCacheResolver::declaresUnresolvable($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function dynamic_first_call_does_not_void_a_resolvable_last_call()
+    {
+        // Symmetric to the previous case: if the LAST call is resolvable,
+        // earlier dynamic calls don't matter — runtime keeps the last value.
+        $path = $this->writePhp(
+            'dynamic-then-static.php',
+            "<?php\nreturn function (\$c) {\n    \$c->cacheDirectory(\$dynamic);\n    \$c->cacheDirectory('/static');\n};\n"
+        );
+
+        $this->assertSame('/static', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+        $this->assertFalse(PhpConfigCacheResolver::declaresUnresolvable($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function whitespace_around_method_call_is_tolerated()
+    {
+        $path = $this->writePhp(
+            'whitespace.php',
+            "<?php\nreturn function (\$c) {\n    \$c  ->  cacheDirectory  (   '/spaced'   ) ;\n};\n"
+        );
+
+        $this->assertSame('/spaced', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function multiline_method_call_resolves_correctly()
+    {
+        $path = $this->writePhp(
+            'multiline.php',
+            "<?php\nreturn function (\$c) {\n    \$c->cacheDirectory(\n        __DIR__ . '/.cache'\n    );\n};\n"
+        );
+
+        $this->assertSame(dirname(realpath($path)) . '/.cache', PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function unrelated_method_calls_with_substring_match_are_not_picked()
+    {
+        // A method named "configureCacheDirectory" should NOT match "cacheDirectory".
+        $path = $this->writePhp(
+            'substring.php',
+            "<?php\nreturn function (\$c) {\n    \$c->configureCacheDirectory('/decoy');\n};\n"
+        );
+
+        $this->assertNull(PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /** @test */
+    public function works_with_setCacheFile_method_name_for_php_cs_fixer()
+    {
+        $path = $this->writePhp(
+            '.php-cs-fixer.php',
+            "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile(__DIR__ . '/qa/.fixer.cache');\n"
+        );
+
+        $expected = dirname(realpath($path)) . '/qa/.fixer.cache';
+        $this->assertSame($expected, PhpConfigCacheResolver::resolve($path, 'setCacheFile'));
+    }
+
+    private function writePhp(string $name, string $content): string
+    {
+        $path = $this->sandbox . '/' . $name;
+        file_put_contents($path, $content);
+        $this->paths[] = $path;
+        return $path;
+    }
+
+    private function expectedPath(string $kind, string $configPath, string $suffix): string
+    {
+        switch ($kind) {
+            case 'literal':
+                return $suffix;
+            case 'config-dir':
+                return dirname(realpath($configPath)) . $suffix;
+            case 'sys-temp':
+                return sys_get_temp_dir() . $suffix;
+            default:
+                throw new \InvalidArgumentException("Unknown expected kind: $kind");
+        }
+    }
+}

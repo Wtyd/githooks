@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Jobs;
 
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-
 /**
  * phpmd has unique positional ordering: executable paths ansi rules [flags]
  * This requires a custom buildCommand().
@@ -44,7 +42,7 @@ class PhpmdJob extends JobAbstract
     /** @return string[] */
     public function getCachePaths(): array
     {
-        return [$this->args['cache-file'] ?? '.phpmd.cache'];
+        return [$this->args['cache-file'] ?? '.phpmd.result.cache'];
     }
 
     /**

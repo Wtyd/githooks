@@ -63,26 +63,26 @@ class CacheClearCommandTest extends SystemTestCase
     public function it_does_not_clear_other_jobs_when_specific_job_given()
     {
         $this->createCacheFile('.phpcs.cache');
-        $this->createCacheFile('.phpmd.cache');
+        $this->createCacheFile('.phpmd.result.cache');
 
         $this->artisan("cache:clear phpcs_src --config=$this->configPath")
             ->assertExitCode(0);
 
         $this->assertFileDoesNotExist('.phpcs.cache');
-        $this->assertFileExists('.phpmd.cache');
+        $this->assertFileExists('.phpmd.result.cache');
     }
 
     /** @test */
     public function it_clears_caches_for_all_jobs_in_a_flow()
     {
         $this->createCacheFile('.phpcs.cache');
-        $this->createCacheFile('.phpmd.cache');
+        $this->createCacheFile('.phpmd.result.cache');
 
         $this->artisan("cache:clear qa --config=$this->configPath")
             ->assertExitCode(0);
 
         $this->assertFileDoesNotExist('.phpcs.cache');
-        $this->assertFileDoesNotExist('.phpmd.cache');
+        $this->assertFileDoesNotExist('.phpmd.result.cache');
     }
 
     /** @test */
@@ -107,13 +107,13 @@ class CacheClearCommandTest extends SystemTestCase
     public function it_clears_all_jobs_when_no_arguments_given()
     {
         $this->createCacheFile('.phpcs.cache');
-        $this->createCacheFile('.phpmd.cache');
+        $this->createCacheFile('.phpmd.result.cache');
 
         $this->artisan("cache:clear --config=$this->configPath")
             ->assertExitCode(0);
 
         $this->assertFileDoesNotExist('.phpcs.cache');
-        $this->assertFileDoesNotExist('.phpmd.cache');
+        $this->assertFileDoesNotExist('.phpmd.result.cache');
     }
 
     /** @test */
@@ -124,6 +124,36 @@ class CacheClearCommandTest extends SystemTestCase
 
         $this->artisan("cache:clear --config=$this->configPath")
             ->assertExitCode(1);
+    }
+
+    /** @test */
+    public function it_surfaces_resolution_warning_when_rector_config_is_unparseable()
+    {
+        $rectorConfig = self::TESTS_PATH . '/rector.php';
+        file_put_contents(
+            $rectorConfig,
+            "<?php\nreturn function (\$config) { \$config->cacheDirectory(\$dynamicCacheDir); };\n"
+        );
+        $this->cacheArtifacts[] = $rectorConfig;
+
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['rector_src']]])
+            ->setV3Jobs([
+                'rector_src' => [
+                    'type'   => 'rector',
+                    'paths'  => [self::TESTS_PATH . '/src'],
+                    'config' => $rectorConfig,
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $exitCode = \Illuminate\Support\Facades\Artisan::call("cache:clear rector_src --config=$this->configPath");
+        $output = \Illuminate\Support\Facades\Artisan::output();
+
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('could not parse cacheDirectory', $output);
+        $this->assertStringContainsString("declare 'cache-dir'", $output);
     }
 
     /** @test */

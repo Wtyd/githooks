@@ -11,6 +11,42 @@ use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
 
 class PhpCsFixerJobTest extends TestCase
 {
+    /** @var string[] */
+    private array $sandboxPaths = [];
+
+    /** @var string[] */
+    private array $sandboxDirs = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->sandboxPaths as $p) {
+            if (is_file($p)) {
+                @unlink($p);
+            }
+        }
+        foreach ($this->sandboxDirs as $d) {
+            if (is_dir($d)) {
+                @rmdir($d);
+            }
+        }
+        parent::tearDown();
+    }
+
+    private function mkSandbox(): string
+    {
+        $dir = sys_get_temp_dir() . '/php-cs-fixer-job-' . uniqid('', true);
+        mkdir($dir, 0755, true);
+        $this->sandboxDirs[] = $dir;
+        return $dir;
+    }
+
+    private function writeFile(string $path, string $content): string
+    {
+        file_put_contents($path, $content);
+        $this->sandboxPaths[] = $path;
+        return $path;
+    }
+
     /** @test */
     public function php_cs_fixer_is_a_supported_job_type()
     {
@@ -148,13 +184,95 @@ class PhpCsFixerJobTest extends TestCase
     }
 
     /** @test */
-    public function php_cs_fixer_returns_cache_paths()
+    public function php_cs_fixer_returns_default_cache_paths_when_cache_file_is_absent_and_no_config_present()
     {
         $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
             'paths' => ['src'],
         ]));
 
         $this->assertEquals(['.php-cs-fixer.cache'], $job->getCachePaths());
+        $this->assertNull($job->getCacheResolutionWarning());
+    }
+
+    /** @test */
+    public function php_cs_fixer_falls_back_to_default_when_cache_file_is_whitespace_only()
+    {
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'paths'      => ['src'],
+            'cache-file' => '   ',
+        ]));
+
+        $this->assertSame(['.php-cs-fixer.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function php_cs_fixer_trims_whitespace_around_cache_file()
+    {
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'paths'      => ['src'],
+            'cache-file' => '  qa/.fixer.cache  ',
+        ]));
+
+        $this->assertSame(['qa/.fixer.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function php_cs_fixer_honours_custom_cache_file_argument_with_absolute_precedence()
+    {
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'paths'      => ['src'],
+            'cache-file' => '.cache/php-cs-fixer.cache',
+        ]));
+
+        $this->assertEquals(['.cache/php-cs-fixer.cache'], $job->getCachePaths());
+        $this->assertNull($job->getCacheResolutionWarning());
+    }
+
+    /** @test */
+    public function php_cs_fixer_reads_setCacheFile_literal_from_config()
+    {
+        $sandbox = $this->mkSandbox();
+        $config = $this->writeFile($sandbox . '/.php-cs-fixer.php', "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile('/abs/path.cache');\n");
+
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame(['/abs/path.cache'], $job->getCachePaths());
+        $this->assertNull($job->getCacheResolutionWarning());
+    }
+
+    /** @test */
+    public function php_cs_fixer_reads_setCacheFile_with_dir_concat()
+    {
+        $sandbox = $this->mkSandbox();
+        $config = $this->writeFile($sandbox . '/.php-cs-fixer.php', "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile(__DIR__ . '/.fixer.cache');\n");
+
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame([dirname(realpath($config)) . '/.fixer.cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function php_cs_fixer_emits_warning_when_setCacheFile_is_unparseable()
+    {
+        $sandbox = $this->mkSandbox();
+        $config = $this->writeFile($sandbox . '/.php-cs-fixer.php', "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile(\$cacheFile);\n");
+
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame(['.php-cs-fixer.cache'], $job->getCachePaths());
+        $warning = $job->getCacheResolutionWarning();
+        $this->assertNotNull($warning);
+        $this->assertStringContainsString('could not parse setCacheFile', $warning);
+        $this->assertStringContainsString('cache-file', $warning);
     }
 
     /** @test */

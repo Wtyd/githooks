@@ -7,6 +7,15 @@ All notable changes to this project are documented here.
 ### Fixed
 
 - `--fast` / `--fast-branch` no longer leave non-accelerable jobs (`phpunit`, `paratest`, `phpcpd`, `script`, `custom`, `composer-*`) running their full suites when the effective input set is empty (no staged files / no diff vs base). The skip is now universal: any job — accelerable or not, with or without `paths` declared — is skipped with reason `no changes to validate` when the mode produced no input. Restores parity with the v2.x contract ("nothing changed = nothing to run"). Implemented in [`FlowPreparer::filterJobForMode()`](../src/Execution/FlowPreparer.php#L244) via a new universal guard backed by [`ExecutionContext::isEffectiveSetEmpty()`](../src/Execution/ExecutionContext.php). Decision-table coverage in [`tests/Unit/Execution/FlowPreparerTest.php`](../tests/Unit/Execution/FlowPreparerTest.php) (`it_filters_jobs_per_mode_decision_table` with 20 rows).
+- `cache:clear` now resolves the **effective** cache path for each job instead of relying on hard-coded defaults. Previously the command read a regex on the top-level `.neon` (PHPStan, ignoring `includes:` and placeholders) and used hard-coded literals for every other tool — `cache:clear` silently reported "not found" while the real cache lived elsewhere. After the fix:
+    - PHPStan: `tmpDir:` is followed through `includes:` recursively (cycle-safe) and `%currentWorkingDirectory%` / `%rootDir%` are expanded.
+    - Psalm: reads `cacheDirectory` from `psalm.xml`, resolved relative to the XML.
+    - PHPCS: reads job arg `cache`, then `<arg name="cache" value="..."/>` from the ruleset.
+    - PHPUnit: reads `cacheResultFile` and `cacheDirectory` (10+) from `phpunit.xml` / `phpunit.xml.dist`.
+    - Rector: best-effort regex over `cacheDirectory(...)` in `rector.php` (literal, `__DIR__ . '/literal'`, `sys_get_temp_dir() . '/literal'`). Default fixed to `sys_get_temp_dir() . '/rector_cached_files'` (was incorrect `/tmp/rector`, also non-portable on Windows).
+    - PHP-CS-Fixer: best-effort regex over `setCacheFile(...)` in `.php-cs-fixer.php`; respects job arg `cache-file` over the config (matching what php-cs-fixer itself does).
+    - PHPMD: default fixed to `.phpmd.result.cache` (was incorrect `.phpmd.cache`).
+- When Rector / PHP-CS-Fixer config uses a dynamic expression for the cache path (variable, helper, env), `cache:clear` falls back to the default and surfaces a warning explaining why and how to override. Last-resort meta-arg `cache-dir` on the Rector job lets users force a path; PHP-CS-Fixer relies on its existing `cache-file` arg (which the tool itself respects as `--cache-file`). See [`docs/cli/cache-clear.md`](cli/cache-clear.md).
 
 ## [3.3.0]
 

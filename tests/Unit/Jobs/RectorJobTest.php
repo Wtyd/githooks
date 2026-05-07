@@ -11,6 +11,42 @@ use Wtyd\GitHooks\Jobs\RectorJob;
 
 class RectorJobTest extends TestCase
 {
+    /** @var string[] */
+    private array $sandboxPaths = [];
+
+    /** @var string[] */
+    private array $sandboxDirs = [];
+
+    protected function tearDown(): void
+    {
+        foreach ($this->sandboxPaths as $p) {
+            if (is_file($p)) {
+                @unlink($p);
+            }
+        }
+        foreach ($this->sandboxDirs as $d) {
+            if (is_dir($d)) {
+                @rmdir($d);
+            }
+        }
+        parent::tearDown();
+    }
+
+    private function mkSandbox(): string
+    {
+        $dir = sys_get_temp_dir() . '/rector-job-' . uniqid('', true);
+        mkdir($dir, 0755, true);
+        $this->sandboxDirs[] = $dir;
+        return $dir;
+    }
+
+    private function writeFile(string $path, string $content): string
+    {
+        file_put_contents($path, $content);
+        $this->sandboxPaths[] = $path;
+        return $path;
+    }
+
     /** @test */
     public function rector_is_a_supported_job_type()
     {
@@ -129,13 +165,142 @@ class RectorJobTest extends TestCase
     }
 
     /** @test */
-    public function rector_returns_cache_paths()
+    public function rector_default_cache_path_is_system_tmp_when_no_config_file_present()
     {
         $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
             'paths' => ['src'],
         ]));
 
-        $this->assertEquals(['/tmp/rector'], $job->getCachePaths());
+        $this->assertEquals([sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'], $job->getCachePaths());
+        $this->assertNull($job->getCacheResolutionWarning());
+    }
+
+    /** @test */
+    public function rector_meta_arg_cache_dir_takes_absolute_precedence()
+    {
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'     => ['src'],
+            'cache-dir' => 'qa/.rector-cache',
+        ]));
+
+        $this->assertSame(['qa/.rector-cache'], $job->getCachePaths());
+        $this->assertNull($job->getCacheResolutionWarning());
+    }
+
+    /** @test */
+    public function rector_reads_cache_directory_literal_from_rector_php()
+    {
+        $sandbox = $this->mkSandbox();
+        $config = $this->writeFile($sandbox . '/rector.php', "<?php\nreturn function (\$c) { \$c->cacheDirectory('/abs/cache'); };\n");
+
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame(['/abs/cache'], $job->getCachePaths());
+        $this->assertNull($job->getCacheResolutionWarning());
+    }
+
+    /** @test */
+    public function rector_reads_cache_directory_with_dir_concat()
+    {
+        $sandbox = $this->mkSandbox();
+        $config = $this->writeFile($sandbox . '/rector.php', "<?php\nreturn function (\$c) { \$c->cacheDirectory(__DIR__ . '/.rector-cache'); };\n");
+
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame([dirname(realpath($config)) . '/.rector-cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function rector_falls_back_to_default_when_meta_arg_cache_dir_is_empty_string()
+    {
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'     => ['src'],
+            'cache-dir' => '',
+        ]));
+
+        $this->assertSame([sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function rector_falls_back_to_default_when_meta_arg_cache_dir_is_not_a_string()
+    {
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'     => ['src'],
+            'cache-dir' => true,
+        ]));
+
+        $this->assertSame([sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function rector_falls_back_to_default_when_meta_arg_cache_dir_is_whitespace_only()
+    {
+        // Adversarial: '   ' is not a real path; must not be returned verbatim.
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'     => ['src'],
+            'cache-dir' => '   ',
+        ]));
+
+        $this->assertSame([sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function rector_trims_whitespace_around_meta_arg_cache_dir()
+    {
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'     => ['src'],
+            'cache-dir' => '  qa/.rector-cache  ',
+        ]));
+
+        $this->assertSame(['qa/.rector-cache'], $job->getCachePaths());
+    }
+
+    /** @test */
+    public function rector_resolution_warning_resets_between_calls()
+    {
+        // Flag must be set by getCachePaths and not leak from a previous call
+        // when the next call has no config to evaluate.
+        $sandbox = $this->mkSandbox();
+        $bad = $this->writeFile($sandbox . '/rector.php', "<?php\nreturn function (\$c) { \$c->cacheDirectory(\$x); };\n");
+
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'  => ['src'],
+            'config' => $bad,
+        ]));
+        $job->getCachePaths();
+        $this->assertNotNull($job->getCacheResolutionWarning());
+
+        // Reuse the instance with no config (simulating an earlier-loaded job).
+        $reflection = new \ReflectionClass($job);
+        $args = $reflection->getProperty('args');
+        $args->setAccessible(true);
+        $args->setValue($job, ['paths' => ['src']]);
+        $job->getCachePaths();
+
+        $this->assertNull($job->getCacheResolutionWarning());
+    }
+
+    /** @test */
+    public function rector_emits_warning_when_cache_directory_is_unparseable()
+    {
+        $sandbox = $this->mkSandbox();
+        $config = $this->writeFile($sandbox . '/rector.php', "<?php\nreturn function (\$c) { \$c->cacheDirectory(\$cacheDir); };\n");
+
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame([sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'], $job->getCachePaths());
+        $warning = $job->getCacheResolutionWarning();
+        $this->assertNotNull($warning);
+        $this->assertStringContainsString('could not parse cacheDirectory', $warning);
     }
 
     /** @test */

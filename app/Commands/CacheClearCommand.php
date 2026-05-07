@@ -122,16 +122,17 @@ class CacheClearCommand extends Command
         foreach ($jobs as $name => $jobConfig) {
             $jobInstance = $this->jobRegistry->create($jobConfig);
             $cachePaths = $jobInstance->getCachePaths();
+            $resolutionWarning = $jobInstance->getCacheResolutionWarning();
 
             foreach ($cachePaths as $path) {
-                $cleared += $this->clearPath($name, $path);
+                $cleared += $this->clearPath($name, $path, $resolutionWarning);
             }
         }
 
         return $cleared;
     }
 
-    private function clearPath(string $jobName, string $path): int
+    private function clearPath(string $jobName, string $path, ?string $resolutionWarning = null): int
     {
         if (is_dir($path)) {
             $this->deleteDirectory($path);
@@ -145,7 +146,8 @@ class CacheClearCommand extends Command
             return 1;
         }
 
-        $this->line("  \e[90m- $jobName: $path (not found)\e[0m");
+        $suffix = $resolutionWarning !== null ? " — $resolutionWarning" : '';
+        $this->line("  \e[90m- $jobName: $path (not found)$suffix\e[0m");
         return 0;
     }
 

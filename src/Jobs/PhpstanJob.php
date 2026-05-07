@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Jobs;
 
 use Wtyd\GitHooks\Execution\ThreadCapability;
+use Wtyd\GitHooks\Jobs\CacheResolver\PhpstanCacheResolver;
 
 class PhpstanJob extends JobAbstract
 {
@@ -61,20 +62,40 @@ class PhpstanJob extends JobAbstract
         return $this->detectNeonWorkers();
     }
 
+    private bool $cacheUnresolvable = false;
+
     /**
      * @return string[]
-     * @SuppressWarnings(PHPMD.UndefinedVariable) preg_match assigns $matches by reference
      */
     public function getCachePaths(): array
     {
+        $this->cacheUnresolvable = false;
         $config = $this->args['config'] ?? '';
-        if (!empty($config) && file_exists($config)) {
-            $content = file_get_contents($config);
-            if ($content !== false && preg_match('/tmpDir:\s*(.+)/', $content, $matches)) {
-                return [trim($matches[1])];
+        if (!empty($config)) {
+            $tmpDir = PhpstanCacheResolver::resolve($config);
+            if ($tmpDir !== null) {
+                if (strpos($tmpDir, '%') !== false) {
+                    // tmpDir contains a NEON placeholder we don't expand
+                    // (%env.X%, custom parameters, ...). Falling back to the
+                    // default and surfacing a warning is more honest than
+                    // returning a literal path that won't exist on disk.
+                    $this->cacheUnresolvable = true;
+                } else {
+                    return [$tmpDir];
+                }
             }
         }
         return [sys_get_temp_dir() . '/phpstan'];
+    }
+
+    public function getCacheResolutionWarning(): ?string
+    {
+        if (!$this->cacheUnresolvable) {
+            return null;
+        }
+        return "tmpDir in the .neon contains a placeholder that GitHooks does not expand "
+            . "(only %currentWorkingDirectory% and %rootDir% are recognised); "
+            . "the cache lives elsewhere — clear it manually";
     }
 
     /** @SuppressWarnings(PHPMD.UndefinedVariable) preg_match assigns $matches by reference */
