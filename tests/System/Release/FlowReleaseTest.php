@@ -85,7 +85,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('⏩', $this->getActualOutput(), 'skip glyph must appear on stdout for fast-mode no-match');
-        $this->assertStringContainsString('no staged files match', $this->getActualOutput());
+        $this->assertStringContainsString('no changes to validate', $this->getActualOutput());
     }
 
     /** @test */
