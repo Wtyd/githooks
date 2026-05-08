@@ -22,10 +22,10 @@ GitHooks tries to find the **effective** cache path for each job, in this order 
 
 | Tool | Native config source | Default if nothing declared |
 |---|---|---|
-| **PHPStan** | `tmpDir:` in the `.neon` (follows `includes:` recursively, expands `%currentWorkingDirectory%` and `%rootDir%`) | `{sys_get_temp_dir}/phpstan/` |
+| **PHPStan** | `tmpDir:` under the top-level `parameters:` block in the `.neon` (follows `includes:` recursively and cycle-safe; expands `%currentWorkingDirectory%` and `%rootDir%`; `tmpDir:` declared inside `services:` is intentionally ignored) | `{sys_get_temp_dir}/phpstan/` |
 | **Psalm** | `cacheDirectory` attribute in `psalm.xml` (resolved relative to the XML) | `.psalm/cache/` |
 | **PHPCS** | Job arg `cache` → `<arg name="cache" value="..."/>` in the ruleset XML | `.phpcs.cache` |
-| **PHPUnit** | `cacheResultFile` / `cacheDirectory` attribute in `phpunit.xml` (or `phpunit.xml.dist`, resolved relative to the XML) | `.phpunit.result.cache` |
+| **PHPUnit** | `cacheDirectory` attribute in `phpunit.xml` (PHPUnit 10+, takes precedence) → `cacheResultFile` (legacy fallback). Both resolved relative to `phpunit.xml` (or `phpunit.xml.dist`) | `.phpunit.result.cache` |
 | **PHPMD** | Job arg `cache-file` | `.phpmd.result.cache` |
 | **Rector** | Best-effort regex over `cacheDirectory(...)` in `rector.php` (recognises literals, `__DIR__ . '/literal'`, `sys_get_temp_dir() . '/literal'`) | `{sys_get_temp_dir}/rector_cached_files` |
 | **PHP-CS-Fixer** | Job arg `cache-file` (passed as `--cache-file` to the tool, which respects it over the config) → best-effort regex over `setCacheFile(...)` in `.php-cs-fixer.php` | `.php-cs-fixer.cache` |
@@ -74,6 +74,12 @@ The fix is the same single-source-of-truth pattern as PHP-CS-Fixer: declare `cac
 ```
 
 No duplication risk: phpcs **uses** the path you declared, so the runtime cache and the path that `cache:clear` deletes are guaranteed to match.
+
+## PHPUnit `cacheDirectory` vs `cacheResultFile`
+
+PHPUnit 10 introduced `cacheDirectory` and deprecated the legacy `cacheResultFile`. Projects in transition often keep both attributes in `phpunit.xml` for backward compatibility. PHPUnit itself prefers `cacheDirectory` when both are declared; `cache:clear` now matches that precedence — `cacheDirectory` is read first, `cacheResultFile` only as fallback.
+
+If your `phpunit.xml` declares only one of the two attributes, the resolution is unambiguous and works as before.
 
 ## PHP-CS-Fixer caveat
 
