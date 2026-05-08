@@ -144,7 +144,7 @@ return [
 ];
 ```
 
-Need budgets, meta-flows, files mode or multi-report? See [Advanced configuration](configuration/options.md) and the [v3.3 changelog](changelog.md#330-unreleased).
+Need budgets, meta-flows, files mode or multi-report? See [Advanced configuration](configuration/options.md) and the [v3.3 changelog](changelog.md#330).
 
 [Get started](getting-started/installation.md){ .md-button .md-button--primary }
 [Configuration reference](configuration/index.md){ .md-button }
