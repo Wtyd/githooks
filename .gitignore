@@ -53,6 +53,8 @@ githooks-80
 site/
 public/
 
-# Personal kanban (local task tracking, not part of the project)
+# Personal kanban — local-only by design. The whole .kanban-tasks/
+# directory (the .kanban file, design docs, templates) stays out of git;
+# the operational guide for it lives in .claude/skills/kanban-manage/.
 .kanbn/
-.kanban
+.kanban-tasks/

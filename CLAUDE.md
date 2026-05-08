@@ -214,4 +214,12 @@ Consulta la skill correspondiente antes de empezar una tarea que encaje en estas
 
 ## Backlog
 
-Las ideas pendientes (bugs, features) viven en `ROADMAP.md`. Convención de título: `[CRIT|ALTA|MED|BAJA] BUG-N — descripción corta` para bugs; `FEAT-N · descripción corta` para features.
+Las ideas pendientes (bugs, features) se gestionan en el kanban local `.kanban-tasks/.kanban` (extensión `harehare.portable-kanban` de VSCode). **Todo `.kanban-tasks/` está fuera de git** — el `.kanban`, los `.md` de detalle (`docs/<ID>-<slug>.md`) y las plantillas (`templates/`) son local-only por diseño. La gestión operativa (añadir/mover/cerrar cards, contadores de IDs, catálogo de labels) está en la skill `kanban-manage`.
+
+**Columnas**: `Ideas` (sin triar) → `Backlog` (triada, con versión target) → `To Do` (cycle activo) → `Doing` (WIP) → `Done` (transitoria, se vacía al cierre de release).
+
+**Convención de título**: `BUG-N · descripción corta` para bugs, `FEAT-N · descripción corta` para features. Versión y prioridad se codifican en labels del kanban, no en el título. Las cards pequeñas (chores, refactors, docs) pueden ir sin ID — solo título.
+
+**Plantillas** en `.kanban-tasks/templates/`: `feature.md` (caso de uso, propuesta, decisiones, AC, plan, out of scope) y `bug.md` (síntoma, reproducción, alcance, tests, AC). Cada `.md` lleva front matter con `id`, `tipo`, `prioridad`, `version`, `area`, `score`, `coste`, `created`.
+
+**Cierre de release**: tras publicar v3.X.Y, mover lo relevante al changelog y borrar las cards de `Done` con esa versión + sus `.md` (con margen de unos días). El `.kanban` no acumula histórico — la fuente de verdad post-release es `docs/changelog.md`.
