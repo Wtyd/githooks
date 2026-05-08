@@ -398,6 +398,69 @@ Output JSON:
 
 **Score**: 6.5/10. Coste muy bajo (reusa lógica de filterJobForMode, sin ejecución), valor real en monorepos y CI orquestado. Encaja con la línea de "data-driven" de v3.3.
 
+### FEAT-13 · `--fast-dirty` — modo de ejecución sobre el working tree completo
+
+**Casos de uso reales**:
+
+1. **Hooks de IA agentic** (Claude Code, Cursor, Cline, Copilot agent…). El agente toca ficheros y queremos aplicar el **mismo** flow que en precommit, con `--format=json` para ahorrar tokens. Hoy los ficheros no están en stage → `--fast` los pierde, `--fast-branch` analiza demasiado, y la única salida es un script bash de ~10 líneas en cada hook que computa la lista y la pasa por `--files`. El QA debería ser uno: el flow del hook humano es el flow del hook IA.
+
+2. **Dev en revisión intermedia sin commitear**. Patrón estándar de desarrollo iterativo: "voy a revisar lo que llevo antes de commitear". Hoy o haces `git add -A && githooks flow qa --fast` (ensucia el stage) o te escribes el `--files` a mano. Ambas son fricción.
+
+**Hueco que rellena**:
+
+| Modo | Set | Para |
+|---|---|---|
+| `--fast` | staged | precommit |
+| `--fast-branch` | branch diff vs main + staged | CI feature branch |
+| `--fast-dirty` | HEAD diff (staged+unstaged) ∪ untracked | hooks IA, revisión intermedia |
+| full | paths completos | CI main/release |
+
+**Definición precisa del set**:
+
+```bash
+{ git diff --name-only --diff-filter=ACMR HEAD
+  git ls-files --others --exclude-standard
+} | sort -u
+```
+
+Tracked modificados vs HEAD (staged o no) ∪ untracked no ignorados.
+
+**Decisiones del diseño**:
+
+| Decisión | Valor |
+|---|---|
+| Nombre del flag | `--fast-dirty` (idiomático git: "dirty working tree" es término oficial; corto; sin ambigüedad con `--fast` que cubre solo staged) |
+| Implementación | `ExecutionContext::getWorktreeDiffFilesLazy()` análogo a `getBranchDiffFilesLazy()`; nuevo variant `ExecutionMode::FAST_DIRTY`; reconocer `fast-dirty` en `EffectiveOptionsResolver` |
+| Fallback | Tree limpio → todos los jobs accelerable skip, exit 0. NO cae a full (sería sorprendente y rompería el caso "git status limpio tras commit") |
+| Mutuamente excluyente con | `--fast`, `--fast-branch`, `--files`, `--files-from` (todos definen el set) |
+| Compatible con | `--exclude-pattern`, `--format`, `--report-json`, `--output`, `--fail-fast`, `--processes`, budgets |
+| Untracked | **Incluidos**. Documentar en docs que si hay scratch files en paths cubiertos, usar `.gitignore` o `--exclude-pattern`. Sin código nuevo (`--no-untracked` solo si aparece reporte real) |
+| Coexistencia con `--files-from=-` (stdin) | El stdin sigue funcionando, tiene su caso de uso (input arbitrario externo). FEAT-13 cubre el caso "set canónico del working tree" con semántica nombrada y testeada, sin pipa |
+
+**Composición con FEAT-1** (`only-files` / `exclude-files`):
+
+Dos niveles ortogonales — admisión (FEAT-1) y filtrado de input (modo + `paths` del job). FEAT-1 debe leer del set unificado vía `ExecutionContext::getFilteredFiles()`, no hardcodear por modo: si lo hace, FEAT-13 compone gratis.
+
+- **Skip por only-files**: dirty `src/AppB/User.php`, job con `only-files: ['src/AppA/**']` → `skipped: true, skipReason: "no files match only-files"`.
+- **Admisión + filtrado**: dirty `src/AppA/Foo.php` + `src/AppB/Bar.php`, job accelerable con `only-files: ['src/AppA/**']` y `paths: ['src/AppA']` → admite; al binario solo `src/AppA/Foo.php` (intersección con `paths`).
+- **Non-accelerable admitido**: dirty `composer.lock`, job non-accelerable con `only-files: ['composer.lock']` → corre la suite entera (FEAT-1 solo admite, no recorta input).
+
+Test matrix de FEAT-1 debe incluir un caso por modo accelerable, no solo `--fast`.
+
+**Tests obligatorios**:
+- Unit: cómputo del set (tree limpio, solo unstaged, solo untracked, mezcla, dentro de un git worktree real, repo con submodules).
+- Integration: flow run con working tree dirty, jobs accelerable y non-accelerable.
+- Mutua exclusión con `--fast`/`--fast-branch`/`--files`/`--files-from`.
+
+**Out of scope**:
+- Distinguir tracked dirty vs untracked vía flag (esperar reporte real de "scratch indeseado analizado").
+- Modo "fast-vs-upstream" (commits locales no en remote) para pre-push hooks; es un caso distinto, no encaja en este modo.
+- Aplicar `--fast-dirty` por defecto a hooks específicos (decisión del usuario en config).
+
+**Score**: 7/10. Coste bajo (~1 día código + tests, patrón ya existe en `getBranchDiffFilesLazy`); dos casos confirmados (uno con viento de cola fuerte: agentic IA en 2026); self-contained; aditivo. No bloquea ni depende de FEAT-1/2/3.
+
+**Por qué v3.4 y no "Pendiente de análisis"**: coste tan bajo que no compite con el resto del bloque en planning, y el caso agentic-IA tiene timing — retrasarlo a v3.5 cede el espacio a otra herramienta.
+
 ### Validación de commit messages como tipo nativo (`commit-msg`)
 
 Tipo de job nativo que valida el subject del commit con reglas declarativas (`min-length`, `max-length`, `pattern`, `forbid-trailing-period`, `subject-case`, `forbid-empty`, `merge-allowed`) y preset `conventional-commits`. Se cablea al hook git `commit-msg`. Movido el 2026-04-28: a nivel funcional v3.3 ya cumple el objetivo del usuario (multi-flow + multi-reporte + budgets); commit-msg pasa a "nice-to-have" sin urgencia. **Spec de diseño ya redactada** en `spec/spec-design-commit-message-validation.md` (~620 líneas, 17 AC, 34 REQ): cuando se reabra, la implementación arranca directa de ahí.

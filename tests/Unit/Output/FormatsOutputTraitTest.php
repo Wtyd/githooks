@@ -90,6 +90,22 @@ class FormatsOutputTraitTest extends TestCase
         return new FlowPlan('qa', $jobs, $options);
     }
 
+    /**
+     * @param array<string,string> $reports
+     */
+    private function makePlanWithReports(array $reports): FlowPlan
+    {
+        $options = new OptionsConfiguration(
+            false,
+            1,
+            null,
+            'full',
+            '',
+            $reports
+        );
+        return new FlowPlan('qa', [$this->createMock(JobAbstract::class)], $options);
+    }
+
     /** @test */
     public function it_uses_streaming_text_handler_for_default_text_format_single_job()
     {
@@ -978,5 +994,168 @@ class FormatsOutputTraitTest extends TestCase
             @rmdir($base . '/deep');
             @rmdir($base);
         }
+    }
+
+    // ========================================================================
+    // structuredFormat activation matrix (BUG-16):
+    //   codeclimate/sarif requested via reports.<X> config or --report-X CLI
+    //   must request tool-level JSON output, otherwise phpstan/psalm emit text
+    //   and the report parsers produce []. Pre-3.3.2 the flag activated only
+    //   on --format=codeclimate|sarif.
+    // ========================================================================
+
+    /**
+     * @test
+     * @dataProvider structuredFlagMatrixProvider
+     *
+     * @param array<string,mixed>  $options
+     * @param array<string,string> $configReports
+     */
+    public function apply_format_activates_structured_flag_for_codeclimate_or_sarif_in_any_path(
+        array $options,
+        array $configReports,
+        bool $expected,
+        string $reason
+    ): void {
+        $double = $this->makeDouble($options);
+        $executor = $this->makeExecutor();
+        $plan = $this->makePlanWithReports($configReports);
+
+        $double->callApplyFormat($executor, $plan);
+
+        $this->assertSame(
+            $expected,
+            $this->readStructuredFlag($executor),
+            $reason
+        );
+    }
+
+    /**
+     * Decision table for needsToolJsonOutput().
+     *
+     * Factors: --format, reports.codeclimate config, reports.sarif config,
+     * --report-codeclimate CLI, --report-sarif CLI, --no-reports.
+     *
+     * @return array<string, array{0:array<string,mixed>,1:array<string,string>,2:bool,3:string}>
+     */
+    public function structuredFlagMatrixProvider(): array
+    {
+        return [
+            // --- Baseline (no codeclimate/sarif anywhere) ---
+            'text default, no reports' => [
+                ['format' => ''],
+                [],
+                false,
+                'plain text without reports must not request tool JSON',
+            ],
+            'json format alone, no reports' => [
+                ['format' => 'json'],
+                [],
+                false,
+                'JSON v2 is gitHooks-internal; phpstan text output is fine',
+            ],
+            'junit format alone, no reports' => [
+                ['format' => 'junit'],
+                [],
+                false,
+                'JUnit is gitHooks-internal; phpstan text output is fine',
+            ],
+
+            // --- --format=codeclimate|sarif as primary (already worked pre-fix) ---
+            'format=codeclimate' => [
+                ['format' => 'codeclimate'],
+                [],
+                true,
+                '--format=codeclimate must request tool JSON',
+            ],
+            'format=sarif' => [
+                ['format' => 'sarif'],
+                [],
+                true,
+                '--format=sarif must request tool JSON',
+            ],
+
+            // --- BUG-16 reproductions: config reports without --format ---
+            'config reports.codeclimate, no --format (BUG-16)' => [
+                ['format' => ''],
+                ['codeclimate' => '/tmp/q.json'],
+                true,
+                'reports.codeclimate in config must request tool JSON even without --format',
+            ],
+            'config reports.sarif, no --format (BUG-16)' => [
+                ['format' => ''],
+                ['sarif' => '/tmp/q.sarif'],
+                true,
+                'reports.sarif in config must request tool JSON even without --format',
+            ],
+            'config reports.codeclimate, --format=text (BUG-16)' => [
+                ['format' => 'text'],
+                ['codeclimate' => '/tmp/q.json'],
+                true,
+                'reports.codeclimate in config must request tool JSON with --format=text',
+            ],
+
+            // --- BUG-16 reproductions: CLI report flag without --format ---
+            'CLI --report-codeclimate, no --format (BUG-16)' => [
+                ['format' => '', 'report-codeclimate' => '/tmp/q.json'],
+                [],
+                true,
+                '--report-codeclimate must request tool JSON even without --format',
+            ],
+            'CLI --report-sarif, no --format (BUG-16)' => [
+                ['format' => '', 'report-sarif' => '/tmp/q.sarif'],
+                [],
+                true,
+                '--report-sarif must request tool JSON even without --format',
+            ],
+
+            // --- Compound: structured primary + structured secondary ---
+            'format=json + CLI --report-codeclimate (BUG-16)' => [
+                ['format' => 'json', 'report-codeclimate' => '/tmp/q.json'],
+                [],
+                true,
+                'JSON primary + codeclimate secondary must request tool JSON',
+            ],
+            'format=junit + config reports.sarif (BUG-16)' => [
+                ['format' => 'junit'],
+                ['sarif' => '/tmp/q.sarif'],
+                true,
+                'JUnit primary + sarif secondary must request tool JSON',
+            ],
+
+            // --- --no-reports interactions ---
+            '--no-reports cancels config reports.codeclimate' => [
+                ['format' => 'text', 'no-reports' => true],
+                ['codeclimate' => '/tmp/q.json'],
+                false,
+                '--no-reports suppresses config-declared codeclimate; flag stays off',
+            ],
+            '--no-reports does not cancel CLI --report-codeclimate' => [
+                ['format' => 'text', 'no-reports' => true, 'report-codeclimate' => '/tmp/q.json'],
+                [],
+                true,
+                'CLI --report-X always wins over --no-reports (BUG-5 contract)',
+            ],
+
+            // --- Reports for non-tool-parsing formats: must NOT activate ---
+            'config reports.json only' => [
+                ['format' => ''],
+                ['json' => '/tmp/q.json'],
+                false,
+                'reports.json does not parse tool stdout; tool JSON not needed',
+            ],
+            'config reports.junit only' => [
+                ['format' => ''],
+                ['junit' => '/tmp/q.xml'],
+                false,
+                'reports.junit does not parse tool stdout; tool JSON not needed',
+            ],
+            'CLI --report-junit only' => [
+                ['format' => '', 'report-junit' => '/tmp/q.xml'],
+                [],
+                false,
+                '--report-junit does not parse tool stdout; tool JSON not needed',
+            ],
+        ];
     }
 }

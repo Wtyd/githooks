@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.3.2]
+
+### Fixed
+
+- Code Climate and SARIF reports requested via `flows.options.reports.codeclimate` / `reports.sarif` in config or via `--report-codeclimate=PATH` / `--report-sarif=PATH` CLI flags came out empty (`[]` / no findings) when the primary `--format` was anything other than `codeclimate` / `sarif`. The flag that asks each tool for JSON output only activated on `--format=codeclimate|sarif`, so every tool ran with its default human-text format and the report parsers (which all do `json_decode()` over stdout) found nothing to extract. Affects every tool with a JSON-dependent parser: PHPStan (`--error-format=json`), PHPCS (`--report=json`), PHPMD (positional `json` format), Psalm (`--output-format=json`) and parallel-lint (`--json`). Fixed: tool-level JSON output is now requested whenever a codeclimate or sarif payload will be produced, regardless of how it was requested.
+
 ## [3.3.1]
 
 ### Fixed

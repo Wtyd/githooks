@@ -57,9 +57,6 @@ trait FormatsOutput
 
         if ($isStructured) {
             $handler = $this->resolveProgressHandler();
-            if ($format === 'codeclimate' || $format === 'sarif') {
-                $executor->setStructuredFormat(true);
-            }
         } elseif (
             $plan === null
             || $plan->getOptions()->getProcesses() <= 1
@@ -72,11 +69,41 @@ trait FormatsOutput
             $handler = new DashboardOutputHandler();
         }
 
+        if ($this->needsToolJsonOutput($format, $plan)) {
+            $executor->setStructuredFormat(true);
+        }
+
         // CI decorator only for text format — structured formats write clean output
         if (!$isStructured) {
             $handler = $this->wrapWithCIDecorator($handler);
         }
         $executor->setOutputHandler($handler);
+    }
+
+    /**
+     * Whether tool-level JSON output (e.g. phpstan `--error-format=json`,
+     * psalm `--output-format=json`) must be requested at runtime.
+     *
+     * Codeclimate and SARIF formatters parse each tool's stdout to extract
+     * issues. If the tools emit human text, the parsers find no JSON and
+     * the report comes out empty. The flag must be on whenever a codeclimate
+     * or sarif payload will be generated, regardless of how it was requested:
+     *
+     *   - `--format=codeclimate|sarif` (primary output).
+     *   - `reports.codeclimate` / `reports.sarif` in config (multi-report).
+     *   - `--report-codeclimate=PATH` / `--report-sarif=PATH` on CLI.
+     *
+     * `collectReportTargets()` already resolves CLI > config precedence and
+     * honours `--no-reports` (which suppresses config but not CLI flags).
+     */
+    private function needsToolJsonOutput(string $format, ?FlowPlan $plan): bool
+    {
+        if ($format === 'codeclimate' || $format === 'sarif') {
+            return true;
+        }
+        $options = $plan !== null ? $plan->getOptions() : null;
+        $reports = $this->collectReportTargets($options);
+        return isset($reports['codeclimate']) || isset($reports['sarif']);
     }
 
     /**

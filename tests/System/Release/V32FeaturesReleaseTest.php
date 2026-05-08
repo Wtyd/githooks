@@ -586,6 +586,157 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString("'cores' overrides 'parallel'", $output);
     }
 
+    // ========================================================================
+    // BUG-16 regression: codeclimate/sarif reports requested via reports.<X>
+    // config or --report-X CLI must trigger tool-level JSON output. Pre-3.3.2,
+    // structuredFormat activated only on --format=codeclimate|sarif, so phpstan
+    // ran with text output and the parser produced []. These tests exercise the
+    // .phar end-to-end with phpstan against a file that has a real error so the
+    // empty-payload regression cannot slip back into a release.
+    // ========================================================================
+
+    /** @test */
+    public function bug16_reports_codeclimate_in_config_captures_phpstan_issues_without_format_flag()
+    {
+        $srcDir = self::TESTS_PATH . '/src';
+        @mkdir($srcDir, 0777, true);
+        $phpstanFile = $this->phpFileBuilder->buildWithErrors([\Tests\Utils\PhpFileBuilder::PHPSTAN]);
+        file_put_contents("$srcDir/Bad.php", $phpstanFile);
+
+        $reportPath = self::TESTS_PATH . '/qa-cc.json';
+        @unlink($reportPath);
+
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions(['reports' => ['codeclimate' => $reportPath]])
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => ['type' => 'phpstan', 'level' => 0, 'paths' => [$srcDir]],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        // No --format. Pre-fix, this triggered the bug: phpstan ran with text
+        // output and the codeclimate file was '[]'.
+        shell_exec("$this->githooks flow qa --config=$this->configPath 2>/dev/null");
+
+        $this->assertFileExists($reportPath);
+        $decoded = json_decode((string) file_get_contents($reportPath), true);
+        $this->assertIsArray($decoded);
+        $this->assertNotEmpty(
+            $decoded,
+            'codeclimate report must contain phpstan issues; an empty array means structuredFormat was not propagated'
+        );
+
+        $hasPhpstanIssue = false;
+        foreach ($decoded as $issue) {
+            if (
+                ($issue['check_name'] ?? '') === 'phpstan'
+                || strpos($issue['check_name'] ?? '', '.') !== false
+            ) {
+                $hasPhpstanIssue = true;
+                break;
+            }
+        }
+        $this->assertTrue($hasPhpstanIssue, 'codeclimate payload must include at least one phpstan issue');
+
+        @unlink($reportPath);
+    }
+
+    /** @test */
+    public function bug16_reports_codeclimate_in_config_captures_issues_from_all_tool_types()
+    {
+        // Same bug, different surface: pre-fix the bypass affected EVERY tool
+        // whose parser depends on JSON tool output (phpcs, phpmd, phpstan,
+        // psalm, parallel-lint — all of them). Verifies that activating
+        // structuredFormat reaches each Job's applyStructuredOutputFormat()
+        // through the Phar build, not just phpstan.
+        $srcDir = self::TESTS_PATH . '/src';
+        @mkdir($srcDir, 0777, true);
+        // Build a single file with phpcs + phpmd violations.
+        // (phpstan is tested in the previous case; combining all here keeps
+        // the assertion focused on "more than one tool reports".)
+        $multiToolFile = $this->phpFileBuilder->buildWithErrors([
+            \Tests\Utils\PhpFileBuilder::PHPCS,
+            \Tests\Utils\PhpFileBuilder::PHPMD,
+        ]);
+        file_put_contents("$srcDir/Bad.php", $multiToolFile);
+
+        $reportPath = self::TESTS_PATH . '/qa-cc.json';
+        @unlink($reportPath);
+
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions(['reports' => ['codeclimate' => $reportPath]])
+            ->setV3Flows(['qa' => ['jobs' => ['phpcs_src', 'phpmd_src']]])
+            ->setV3Jobs([
+                'phpcs_src' => ['type' => 'phpcs', 'standard' => 'PSR12', 'paths' => [$srcDir]],
+                'phpmd_src' => ['type' => 'phpmd', 'paths' => [$srcDir]],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        shell_exec("$this->githooks flow qa --config=$this->configPath 2>/dev/null");
+
+        $this->assertFileExists($reportPath);
+        $decoded = json_decode((string) file_get_contents($reportPath), true);
+        $this->assertIsArray($decoded);
+        $this->assertNotEmpty(
+            $decoded,
+            'codeclimate report must contain issues from at least one tool; empty means structuredFormat was not propagated'
+        );
+
+        // At least one of each tool must have produced an issue: pre-fix every
+        // tool's stdout was text and json_decode returned null, so neither
+        // would appear in the payload.
+        $tools = [];
+        foreach ($decoded as $issue) {
+            $check = (string) ($issue['check_name'] ?? '');
+            if (strpos($check, 'Squiz.') === 0 || strpos($check, 'PSR12.') === 0 || strpos($check, 'Generic.') === 0) {
+                $tools['phpcs'] = true;
+            }
+            // phpmd uses bare rule names like 'ExcessiveParameterList', 'ShortVariable'
+            if ($check !== '' && strpos($check, '.') === false && $check !== 'phpstan') {
+                $tools['phpmd'] = true;
+            }
+        }
+        $this->assertArrayHasKey('phpcs', $tools, 'codeclimate payload must include at least one phpcs issue (Squiz/PSR12/Generic.* prefix)');
+        $this->assertArrayHasKey('phpmd', $tools, 'codeclimate payload must include at least one phpmd issue (bare rule name)');
+
+        @unlink($reportPath);
+    }
+
+    /** @test */
+    public function bug16_cli_report_sarif_captures_phpstan_issues_without_format_flag()
+    {
+        $srcDir = self::TESTS_PATH . '/src';
+        @mkdir($srcDir, 0777, true);
+        $phpstanFile = $this->phpFileBuilder->buildWithErrors([\Tests\Utils\PhpFileBuilder::PHPSTAN]);
+        file_put_contents("$srcDir/Bad.php", $phpstanFile);
+
+        $reportPath = self::TESTS_PATH . '/qa.sarif';
+        @unlink($reportPath);
+
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => ['type' => 'phpstan', 'level' => 0, 'paths' => [$srcDir]],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        // CLI flag without --format. Pre-fix, structuredFormat stayed false and
+        // SARIF.runs[0].results was empty.
+        shell_exec("$this->githooks flow qa --report-sarif=$reportPath --config=$this->configPath 2>/dev/null");
+
+        $this->assertFileExists($reportPath);
+        $decoded = json_decode((string) file_get_contents($reportPath), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame('2.1.0', $decoded['version'] ?? null);
+        $results = $decoded['runs'][0]['results'] ?? [];
+        $this->assertNotEmpty(
+            $results,
+            'SARIF runs[0].results must contain phpstan findings; empty means structuredFormat was not propagated'
+        );
+
+        @unlink($reportPath);
+    }
+
     /** @test */
     public function dashboard_falls_back_to_streaming_when_stdout_is_not_a_tty()
     {
