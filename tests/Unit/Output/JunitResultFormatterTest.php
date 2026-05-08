@@ -242,4 +242,159 @@ class JunitResultFormatterTest extends UnitTestCase
         $this->assertSame('150', $reflection->invoke($formatter, '2m 30s'));
         $this->assertSame('60', $reflection->invoke($formatter, '1m 0s'));
     }
+
+    // ========================================================================
+    // Pretty-print JSON in <failure> (3.3.2):
+    // GitLab/Jenkins JUnit viewers render <failure> verbatim. Tools that emit
+    // compact JSON (phpstan, phpcs, psalm, parallel-lint) arrive unreadable;
+    // tools that already pretty-print (phpmd) must keep their semantics.
+    // ========================================================================
+
+    /** @test */
+    function compact_json_failure_output_is_pretty_printed()
+    {
+        $compactPhpstan = '{"totals":{"errors":0,"file_errors":4},"files":{"src/Foo.php":{"errors":4,"messages":[{"message":"Method has no return type.","line":8,"identifier":"missingType.return"}]}},"errors":[]}';
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', false, $compactPhpstan, '1s'),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $failureText = $dom->getElementsByTagName('failure')->item(0)->textContent;
+
+        $this->assertStringContainsString("\n", $failureText);
+        $this->assertStringContainsString('    ', $failureText);
+        $decoded = json_decode($failureText, true);
+        $this->assertIsArray($decoded);
+        $this->assertSame(4, $decoded['totals']['file_errors']);
+    }
+
+    /** @test */
+    function pretty_printed_json_failure_output_stays_pretty_semantically()
+    {
+        $payload = [
+            'version' => '2.15.0',
+            'package' => 'phpmd',
+            'files'   => [['file' => '/abs/path/Foo.php', 'violations' => [['beginLine' => 8, 'description' => 'Avoid unused parameters.']]]],
+        ];
+        $prettyPhpmdEscaped = json_encode($payload, JSON_PRETTY_PRINT);
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpmd_src', false, $prettyPhpmdEscaped, '500ms'),
+        ], '500ms');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $failureText = $dom->getElementsByTagName('failure')->item(0)->textContent;
+
+        $this->assertStringContainsString("\n", $failureText);
+        $this->assertStringContainsString('    ', $failureText);
+        $this->assertSame($payload, json_decode($failureText, true));
+    }
+
+    /** @test */
+    function non_json_failure_output_passes_through_unchanged()
+    {
+        $rawOutput = "Test failed: expected 5, got 4\nStack trace:\n  at line 23";
+
+        $result = new FlowResult('qa', [
+            new JobResult('custom_test', false, $rawOutput, '100ms'),
+        ], '100ms');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $failureText = $dom->getElementsByTagName('failure')->item(0)->textContent;
+
+        $this->assertSame($rawOutput, $failureText);
+    }
+
+    /** @test */
+    function json_with_prologue_or_epilogue_pretty_prints_only_the_json_span()
+    {
+        $compactJson = '{"totals":{"errors":0,"file_errors":1},"files":{"src/Bad.php":{"errors":1,"messages":[{"message":"Undefined variable","line":9}]}}}';
+        $epilogue    = "\nInstructions for interpreting errors\n---------\nSee https://phpstan.org/...";
+        $combined    = $compactJson . $epilogue;
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', false, $combined, '1s'),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $failureText = $dom->getElementsByTagName('failure')->item(0)->textContent;
+
+        $this->assertGreaterThan(3, substr_count($failureText, "\n"));
+        $this->assertStringContainsString('Instructions for interpreting errors', $failureText);
+        $this->assertStringContainsString('https://phpstan.org/', $failureText);
+        $jsonEnd = strrpos($failureText, '}');
+        $jsonOnly = substr($failureText, 0, $jsonEnd + 1);
+        $decoded = json_decode($jsonOnly, true);
+        $this->assertSame(1, $decoded['totals']['file_errors']);
+    }
+
+    /** @test */
+    function empty_failure_output_passes_through_unchanged()
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('silent_failure', false, '', '50ms'),
+        ], '50ms');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $failure = $dom->getElementsByTagName('failure')->item(0);
+        $this->assertSame('', $failure->textContent);
+    }
+
+    /** @test */
+    function json_array_payload_is_also_pretty_printed()
+    {
+        $compactPsalm = '[{"file_name":"src/Foo.php","line_from":8,"message":"Type X is undefined","severity":"error"}]';
+
+        $result = new FlowResult('qa', [
+            new JobResult('psalm_src', false, $compactPsalm, '1s'),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $failureText = $dom->getElementsByTagName('failure')->item(0)->textContent;
+
+        $this->assertStringContainsString("\n", $failureText);
+        $decoded = json_decode($failureText, true);
+        $this->assertIsArray($decoded);
+        $this->assertSame('Type X is undefined', $decoded[0]['message']);
+    }
+
+    /** @test */
+    function pretty_print_runs_after_ansi_strip()
+    {
+        $jsonWithAnsi = "\e[31m" . '{"errors":1}' . "\e[0m";
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpcs_src', false, $jsonWithAnsi, '1s'),
+        ], '1s');
+
+        $formatter = new JunitResultFormatter();
+        $dom = new DOMDocument();
+        $dom->loadXML($formatter->format($result));
+
+        $failureText = $dom->getElementsByTagName('failure')->item(0)->textContent;
+
+        $this->assertStringNotContainsString("\e[", $failureText);
+        $this->assertStringContainsString("\n", $failureText);
+        $decoded = json_decode($failureText, true);
+        $this->assertSame(1, $decoded['errors']);
+    }
 }

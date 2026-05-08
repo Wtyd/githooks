@@ -8,6 +8,10 @@ All notable changes to this project are documented here.
 
 - Code Climate and SARIF reports requested via `flows.options.reports.codeclimate` / `reports.sarif` in config or via `--report-codeclimate=PATH` / `--report-sarif=PATH` CLI flags came out empty (`[]` / no findings) when the primary `--format` was anything other than `codeclimate` / `sarif`. The flag that asks each tool for JSON output only activated on `--format=codeclimate|sarif`, so every tool ran with its default human-text format and the report parsers (which all do `json_decode()` over stdout) found nothing to extract. Affects every tool with a JSON-dependent parser: PHPStan (`--error-format=json`), PHPCS (`--report=json`), PHPMD (positional `json` format), Psalm (`--output-format=json`) and parallel-lint (`--json`). Fixed: tool-level JSON output is now requested whenever a codeclimate or sarif payload will be produced, regardless of how it was requested.
 
+### Improved
+
+- JUnit `<failure>` payloads now pretty-print embedded JSON so GitLab/Jenkins viewers render each finding on its own indented block. PHPMD already emits `JSON_PRETTY_PRINT` natively; PHPStan/PHPCS/Psalm/parallel-lint emit compact one-liner JSON. When a pipeline triggers tool JSON output (typical GitLab setup pairs JUnit + Code Climate), the JUnit `<failure>` arrived as a single 1000+ char line. The formatter now detects a parseable JSON span inside `<failure>` and re-encodes it with indentation; non-JSON outputs (custom jobs, scripts) and JSON with prologue/epilogue (PHPStan's "Instructions for interpreting errors" stderr block) are preserved verbatim except for the JSON span itself. Idempotent for already-pretty payloads (semantics preserved; bytes may differ because `JSON_UNESCAPED_SLASHES` turns `\/` into `/`).
+
 ## [3.3.1]
 
 ### Fixed

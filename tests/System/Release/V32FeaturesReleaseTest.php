@@ -737,6 +737,69 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         @unlink($reportPath);
     }
 
+    // ========================================================================
+    // 3.3.2 JUnit pretty-print: tools that emit compact JSON (phpstan, phpcs,
+    // psalm, parallel-lint) ship one-liner payloads; GitLab/Jenkins viewers
+    // render <failure> verbatim, leaving the panel unreadable. The formatter
+    // now pretty-prints JSON inside <failure> so each finding gets its own
+    // indented block. phpmd already pretty-prints natively — its semantics
+    // are preserved across the round-trip.
+    // ========================================================================
+
+    /** @test */
+    public function junit_failure_pretty_prints_phpstan_compact_json_output()
+    {
+        $srcDir = self::TESTS_PATH . '/src';
+        @mkdir($srcDir, 0777, true);
+        $phpstanFile = $this->phpFileBuilder->buildWithErrors([\Tests\Utils\PhpFileBuilder::PHPSTAN]);
+        file_put_contents("$srcDir/Bad.php", $phpstanFile);
+
+        $junitPath = self::TESTS_PATH . '/qa.junit.xml';
+        $codeclimatePath = self::TESTS_PATH . '/qa.cc.json';
+        @unlink($junitPath);
+        @unlink($codeclimatePath);
+
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
+            ->setV3Jobs([
+                'phpstan_src' => ['type' => 'phpstan', 'level' => 0, 'paths' => [$srcDir]],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        // structuredFormat must be active so phpstan emits JSON. We trigger it
+        // via --report-codeclimate (typical GitLab pipeline shape: JUnit + CC
+        // generated together). The bug only manifests when phpstan actually
+        // emits compact JSON into the JUnit <failure>.
+        shell_exec(
+            "$this->githooks flow qa --format=junit --output=$junitPath"
+            . " --report-codeclimate=$codeclimatePath --config=$this->configPath 2>/dev/null"
+        );
+
+        $this->assertFileExists($junitPath);
+        $dom = new \DOMDocument();
+        $this->assertTrue($dom->load($junitPath), 'junit output must be valid XML');
+
+        $failures = $dom->getElementsByTagName('failure');
+        $this->assertGreaterThan(0, $failures->length, 'phpstan errors must produce a <failure> element');
+
+        $failureText = $failures->item(0)->textContent;
+        $bodyNewlines = substr_count(trim($failureText), "\n");
+        $this->assertGreaterThan(
+            5,
+            $bodyNewlines,
+            'phpstan JSON inside <failure> must be pretty-printed (>5 newlines); got ' . $bodyNewlines
+        );
+
+        $jsonEnd = strrpos($failureText, '}');
+        $jsonOnly = substr($failureText, 0, $jsonEnd + 1);
+        $decoded = json_decode(trim($jsonOnly), true);
+        $this->assertIsArray($decoded);
+        $this->assertArrayHasKey('files', $decoded);
+
+        @unlink($junitPath);
+        @unlink($codeclimatePath);
+    }
+
     /** @test */
     public function dashboard_falls_back_to_streaming_when_stdout_is_not_a_tty()
     {
