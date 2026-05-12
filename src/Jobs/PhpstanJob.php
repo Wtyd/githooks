@@ -11,6 +11,14 @@ class PhpstanJob extends JobAbstract
 {
     public const SUPPORTS_FAST = true;
 
+    /**
+     * PHPStan emits this on stderr when every input file is filtered out by
+     * `excludePaths.analyse` of the active config. The wrapper concatenates
+     * stderr after stdout in JobExecutor/FlowExecutor before consulting
+     * isEmptyInputTolerated(), so a single str_contains over $output is enough.
+     */
+    private const EMPTY_INPUT_MARKER = 'No files found to analyse';
+
     protected const ARGUMENT_MAP = [
         'config'             => ['flag' => '-c', 'type' => 'value', 'separator' => ' '],
         'level'              => ['flag' => '-l', 'type' => 'value', 'separator' => ' '],
@@ -47,6 +55,11 @@ class PhpstanJob extends JobAbstract
     {
         $workers = $this->detectNeonWorkers();
         return new ThreadCapability('_phpstan_internal', $workers, 1, false);
+    }
+
+    public function isEmptyInputTolerated(int $exitCode, string $output): bool
+    {
+        return $exitCode === 1 && strpos($output, self::EMPTY_INPUT_MARKER) !== false;
     }
 
     /**

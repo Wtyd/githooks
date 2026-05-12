@@ -166,6 +166,86 @@ class PhpstanJobTest extends TestCase
         $this->assertSame([$this->sandbox . '/cache'], $job->getCachePaths());
     }
 
+    /**
+     * BUG-1: PHPStan emits `[ERROR] No files found to analyse.` (stderr) and
+     * exit code 1 when `excludePaths.analyse` of the active config strips every
+     * input file. The wrapper concatenates stderr after stdout before consulting
+     * isEmptyInputTolerated(), so the heuristic operates on the combined string.
+     *
+     * @dataProvider emptyInputToleranceProvider
+     */
+    public function test_empty_input_tolerance_matches_phpstan_exit_signature(
+        int $exitCode,
+        string $output,
+        bool $expected,
+        string $scenario
+    ): void {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']]));
+
+        $this->assertSame(
+            $expected,
+            $job->isEmptyInputTolerated($exitCode, $output),
+            "Scenario: $scenario"
+        );
+    }
+
+    /** @return array<string, array{int, string, bool, string}> */
+    public function emptyInputToleranceProvider(): array
+    {
+        $marker = 'No files found to analyse';
+
+        return [
+            'exit=1 + exact marker (stderr concatenated to output)' => [
+                1,
+                " 0/0 [>] 100%\n\n [ERROR] $marker\n",
+                true,
+                'real PHPStan output when all inputs match excludePaths.analyse',
+            ],
+            'exit=1 + marker as substring of longer text' => [
+                1,
+                "Some prefix... $marker. Suffix.",
+                true,
+                'str_contains tolerates surrounding context',
+            ],
+            'exit=1 + real violations without marker' => [
+                1,
+                " ------ -------\n  Line   src/Foo.php\n  42     Class Foo not found.\n",
+                false,
+                'real failure must NOT be reinterpreted as skipped',
+            ],
+            'exit=1 + empty output' => [
+                1,
+                '',
+                false,
+                'no marker present',
+            ],
+            'exit=0 + marker present (defensive)' => [
+                0,
+                "[ERROR] $marker",
+                false,
+                'success exit code, never reinterpret',
+            ],
+            'exit=2 + marker present (defensive)' => [
+                2,
+                "[ERROR] $marker",
+                false,
+                'only exit=1 is the empty-input signature',
+            ],
+            'exit=1 + marker case mismatch' => [
+                1,
+                '[ERROR] no files found to analyse',
+                false,
+                'matcher is intentionally case-sensitive — phpstan emits this string verbatim',
+            ],
+            'exit=1 + marker on its own line' => [
+                1,
+                "$marker\n",
+                true,
+                'minimal valid output',
+            ],
+        ];
+    }
+
     private function writeNeon(string $name, string $content): string
     {
         $path = $this->sandbox . '/' . $name;

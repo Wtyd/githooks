@@ -324,4 +324,104 @@ XML);
 
         $this->assertStringEndsWith('src app', $job->buildCommand());
     }
+
+    /**
+     * BUG-1: PHPCS may filter out every input file when `--ignore` (CLI) or
+     * `<exclude-pattern>` (ruleset) covers all of them. Exit code varies by
+     * version (3.13.x: 0 silent; older / fork: 16) and so does the marker
+     * ("All specified files were excluded" vs "No files were checked"). Both
+     * are accepted defensively; the marker check is what decides.
+     *
+     * @dataProvider emptyInputToleranceProvider
+     */
+    public function test_empty_input_tolerance_matches_phpcs_exit_signature(
+        int $exitCode,
+        string $output,
+        bool $expected,
+        string $scenario
+    ): void {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', ['paths' => ['src']]));
+
+        $this->assertSame(
+            $expected,
+            $job->isEmptyInputTolerated($exitCode, $output),
+            "Scenario: $scenario"
+        );
+    }
+
+    /** @return array<string, array{int, string, bool, string}> */
+    public function emptyInputToleranceProvider(): array
+    {
+        $excluded = 'All specified files were excluded';
+        $noFiles  = 'No files were checked';
+
+        return [
+            'exit=16 + "All specified files were excluded" (legacy / fork)' => [
+                16,
+                "ERROR: $excluded or did not match filtering rules.\n",
+                true,
+                'cliente bug PROD-4492 — PHPCS legacy emits 16',
+            ],
+            'exit=16 + "No files were checked"' => [
+                16,
+                "ERROR: $noFiles.\n",
+                true,
+                'alternate marker observed across versions',
+            ],
+            'exit=1 + marker (defensive)' => [
+                1,
+                "ERROR: $excluded.\n",
+                true,
+                'exit=1 is included in the defensive set so future versions do not silently regress',
+            ],
+            'exit=2 + marker (defensive)' => [
+                2,
+                "ERROR: $excluded.\n",
+                true,
+                'exit=2 (warnings level) accepted defensively when marker present',
+            ],
+            'exit=3 + marker (defensive)' => [
+                3,
+                "ERROR: $excluded.\n",
+                true,
+                'exit=3 (errors+warnings) accepted defensively when marker present',
+            ],
+            'exit=1 + real violations without marker' => [
+                1,
+                "FILE: src/Foo.php\n----\nFOUND 9 ERRORS AFFECTING 2 LINES\n",
+                false,
+                'real failure must NOT be reinterpreted as skipped',
+            ],
+            'exit=0 + marker (defensive)' => [
+                0,
+                "$excluded",
+                false,
+                'success exit code never reinterpreted',
+            ],
+            'exit=4 + marker outside defensive set' => [
+                4,
+                "$excluded",
+                false,
+                'exit codes outside {1,2,3,16} are treated as real failures',
+            ],
+            'exit=16 + empty output' => [
+                16,
+                '',
+                false,
+                'no marker present — likely a different "exit 16" failure mode',
+            ],
+            'exit=16 + marker case mismatch' => [
+                16,
+                'all specified files were excluded',
+                false,
+                'matcher is intentionally case-sensitive — phpcs emits the marker verbatim',
+            ],
+            'exit=16 + marker as substring of longer text' => [
+                16,
+                "Some prefix... $excluded or did not match filtering rules. Suffix.",
+                true,
+                'str_contains tolerates surrounding context',
+            ],
+        ];
+    }
 }

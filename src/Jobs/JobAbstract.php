@@ -396,6 +396,23 @@ abstract class JobAbstract
     }
 
     /**
+     * Whether a non-zero exit code reflects the tool refusing to operate
+     * on an empty input set (everything the wrapper passed got dropped by
+     * the tool's internal exclusions). Subclasses override to recognise
+     * the tool-specific exit code + output signature.
+     *
+     * When this returns true, the executor reinterprets the JobResult as
+     * skipped rather than failed: the tool didn't fail — it had nothing to do.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) Default implementation
+     *   ignores both arguments; subclasses inspect them.
+     */
+    public function isEmptyInputTolerated(int $exitCode, string $output): bool
+    {
+        return false;
+    }
+
+    /**
      * Whether this tool type supports structured output parsing (JSON).
      */
     public function supportsStructuredOutput(): bool

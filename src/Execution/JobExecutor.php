@@ -33,16 +33,23 @@ class JobExecutor
         $stdout = $process->getOutput();
         $output = $stdout . $process->getErrorOutput();
         $fixApplied = $job->isFixApplied($exitCode);
+        $emptyInputTolerated = $job->isEmptyInputTolerated($exitCode, $output);
 
-        $success = $exitCode === 0 || $fixApplied;
+        $success = $exitCode === 0 || $fixApplied || $emptyInputTolerated;
 
         if ($job->isIgnoreErrorsOnExit() && !$success) {
             $success = true;
         }
 
+        $skipReason = $emptyInputTolerated
+            ? 'tool reported no input files after applying internal exclusions'
+            : null;
+
         $displayName = $job->getDisplayName();
 
-        if ($success) {
+        if ($emptyInputTolerated) {
+            $this->printer->warning("$displayName - SKIP. Time: $time ($skipReason)");
+        } elseif ($success) {
             $this->printer->success("$displayName - OK. Time: $time");
         } else {
             $this->printer->error("$displayName - KO. Time: $time");
@@ -63,8 +70,8 @@ class JobExecutor
             $job->getType(),
             $exitCode,
             $job->getConfiguredPaths(),
-            false,
-            null,
+            $emptyInputTolerated,
+            $skipReason,
             $stdout
         );
     }

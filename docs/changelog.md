@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.3.3]
+
+### Fixed
+
+- **Fast-branch / fast no longer fail with spurious "no files" errors when a job's tool config strips every input via its internal exclusion list.** Repro: a branch only touches files in one domain (e.g. `src/Gas/...`); the wrapper hands those files to a job whose `.neon` declares `excludePaths.analyse: [src/Gas]` (PHPStan) or whose `--ignore` CSV covers them (PHPCS). The tool then drops 100 % of the input and exits non-zero with `[ERROR] No files found to analyse.` (PHPStan, exit 1) or `ERROR: All specified files were excluded or did not match filtering rules.` (PHPCS, exit 16 on older versions and the PHPCSStandards fork). Before this fix the wrapper reported the job as failed, breaking mono-domain MRs (observed in consumer projects with per-domain flow structure). Each accelerable Job now declares an empty-input tolerance heuristic via `isEmptyInputTolerated(int $exitCode, string $output): bool` (mirror of the existing `isFixApplied()` pattern). `PhpstanJob` recognises `exit === 1` + `No files found to analyse`; `PhpcsJob` recognises `exit ∈ {1,2,3,16}` + `All specified files were excluded` / `No files were checked` (defensive across PHPCS 3.x and the PHPCSStandards fork). When tolerated, the JobResult is reinterpreted as `skipped: true` with `skipReason` instead of `success: false`, and the OutputHandler emits `onJobSkipped` rather than `onJobError`. Threshold evaluation is also bypassed for tolerated jobs — the tool didn't do real work, so comparing its near-zero duration against `warn-after`/`fail-after` would be meaningless. PHPMD already tolerates this case natively (`exit 0` when its `--exclude` empties the set); the other accelerable tools (parallel-lint, psalm, rector, php-cs-fixer) silently ignore non-matching inputs and do not need an override.
+
 ## [3.3.2] ⚠️ Do not use — broken release
 
 **This release is functionally identical to 3.3.1.** The git tag `v3.3.2` was published against a master commit whose bundled `.phar` binaries (`builds/githooks`, `builds/php7.4/githooks`) had never been updated from the `rc-3.3.2` branch where CI compiled them. Since GitHooks runs as a standalone `.phar`, installing `wtyd/githooks:3.3.2` ships the v3.3.1 binary under the v3.3.2 tag name. The fixes listed below are present in the source code of the tag but **not** in the executed binary.

@@ -10,6 +10,26 @@ class PhpcsJob extends JobAbstract
 {
     public const SUPPORTS_FAST = true;
 
+    /**
+     * PHPCS variants of "every input was excluded" — observed across versions
+     * (Squizlabs 2.x → 3.x and the PHPCSStandards fork). Both phrases have
+     * appeared as stdout when `--ignore` (CLI) or `<exclude-pattern>` (ruleset)
+     * filters out 100% of the files passed as arguments.
+     */
+    private const EMPTY_INPUT_MARKERS = [
+        'All specified files were excluded',
+        'No files were checked',
+    ];
+
+    /**
+     * Defensive exit-code set: PHPCS 3.13.x (the version we vendor) returns 0
+     * silently when --ignore drops every input; older versions and the
+     * PHPCSStandards fork return 16. We accept the {1,2,3,16} range so a future
+     * version bump doesn't silently regress — the marker check below is what
+     * actually decides whether the failure is real or "nothing to do".
+     */
+    private const EMPTY_INPUT_EXIT_CODES = [1, 2, 3, 16];
+
     protected const ARGUMENT_MAP = [
         'standard'         => ['flag' => '--standard', 'type' => 'value'],
         'ignore'           => ['flag' => '--ignore', 'type' => 'csv'],
@@ -86,6 +106,19 @@ class PhpcsJob extends JobAbstract
     {
         $current = isset($this->args['parallel']) ? (int) $this->args['parallel'] : 1;
         return new ThreadCapability('parallel', $current);
+    }
+
+    public function isEmptyInputTolerated(int $exitCode, string $output): bool
+    {
+        if (!in_array($exitCode, self::EMPTY_INPUT_EXIT_CODES, true)) {
+            return false;
+        }
+        foreach (self::EMPTY_INPUT_MARKERS as $marker) {
+            if (strpos($output, $marker) !== false) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public function applyThreadLimit(int $threads): void

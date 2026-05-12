@@ -669,6 +669,12 @@ class FlowExecutor
         return $this->buildResult($entry['job'], $entry['process'], $entry['start']);
     }
 
+    /**
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Aggregates exit-code, fix-applied,
+     *   empty-input tolerance, ignoreErrorsOnExit, threshold and output dispatch in
+     *   a single pass; each branch corresponds to one independent outcome of a single job.
+     * @SuppressWarnings(PHPMD.NPathComplexity) Same reason.
+     */
     private function buildResult(JobAbstract $job, Process $process, float $start): JobResult
     {
         $elapsed = $this->now() - $start;
@@ -677,7 +683,8 @@ class FlowExecutor
         $stdout = $process->getOutput();
         $output = $stdout . $process->getErrorOutput();
         $fixApplied = $job->isFixApplied($exitCode);
-        $success = $exitCode === 0 || $fixApplied;
+        $emptyInputTolerated = $job->isEmptyInputTolerated($exitCode, $output);
+        $success = $exitCode === 0 || $fixApplied || $emptyInputTolerated;
 
         if ($job->isIgnoreErrorsOnExit() && !$success) {
             $success = true;
@@ -688,7 +695,14 @@ class FlowExecutor
             $this->gitStager->stageTrackedFiles();
         }
 
-        [$thresholdState, $thresholdReason, $warnAfter, $failAfter] = $this->evaluateThreshold($job, $elapsed);
+        // Skip threshold for empty-input-tolerated jobs: the tool didn't do real
+        // work, comparing its (near-zero) duration against warn-after/fail-after
+        // would be meaningless and could fail a legitimate skip.
+        if ($emptyInputTolerated) {
+            [$thresholdState, $thresholdReason, $warnAfter, $failAfter] = [JobResult::THRESHOLD_NONE, null, null, null];
+        } else {
+            [$thresholdState, $thresholdReason, $warnAfter, $failAfter] = $this->evaluateThreshold($job, $elapsed);
+        }
 
         // Per-job FAIL by threshold flips OK→KO ONLY when the tool itself succeeded;
         // if the tool already failed (KO real), the threshold is informational and
@@ -697,9 +711,13 @@ class FlowExecutor
             $success = false;
         }
 
+        $skipReason = null;
         $displayName = $job->getDisplayName();
 
-        if ($success) {
+        if ($emptyInputTolerated) {
+            $skipReason = 'tool reported no input files after applying internal exclusions';
+            $this->outputHandler->onJobSkipped($displayName, $skipReason);
+        } elseif ($success) {
             $this->outputHandler->onJobSuccess($displayName, $time);
         } else {
             $this->outputHandler->onJobError($displayName, $time, $output);
@@ -717,8 +735,8 @@ class FlowExecutor
             $job->getType(),
             $exitCode,
             $job->getConfiguredPaths(),
-            false,
-            null,
+            $emptyInputTolerated,
+            $skipReason,
             $stdout,
             $this->buildPerJobInputFiles($job),
             $elapsed,
