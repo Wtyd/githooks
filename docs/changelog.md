@@ -2,7 +2,11 @@
 
 All notable changes to this project are documented here.
 
-## [3.3.2]
+## [3.3.2] ⚠️ Do not use — broken release
+
+**This release is functionally identical to 3.3.1.** The git tag `v3.3.2` was published against a master commit whose bundled `.phar` binaries (`builds/githooks`, `builds/php7.4/githooks`) had never been updated from the `rc-3.3.2` branch where CI compiled them. Since GitHooks runs as a standalone `.phar`, installing `wtyd/githooks:3.3.2` ships the v3.3.1 binary under the v3.3.2 tag name. The fixes listed below are present in the source code of the tag but **not** in the executed binary.
+
+**Use v3.3.3** — same fixes, correctly bundled.
 
 ### Fixed
 
