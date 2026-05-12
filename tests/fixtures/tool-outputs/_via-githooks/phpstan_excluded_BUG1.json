@@ -1,0 +1,70 @@
+{
+    "version": 2,
+    "flow": "phpstan_excl",
+    "success": true,
+    "totalTime": "0.64s",
+    "executionMode": "full",
+    "passed": 0,
+    "failed": 0,
+    "skipped": 1,
+    "timeBudget": null,
+    "memoryBudget": null,
+    "stats": null,
+    "effectiveOptions": {
+        "processes": {
+            "value": 1,
+            "source": "default"
+        },
+        "failFast": {
+            "value": false,
+            "source": "default"
+        },
+        "executionMode": {
+            "value": "full",
+            "source": "default"
+        },
+        "timeBudget": {
+            "value": null,
+            "source": "default"
+        },
+        "memoryBudget": {
+            "value": null,
+            "source": "default"
+        },
+        "allocator": {
+            "value": "fifo",
+            "source": "default"
+        },
+        "stats": {
+            "value": false,
+            "source": "default"
+        }
+    },
+    "warnings": [
+        "Job 'phpstan_excl' in flow 'qa': neon-workers=4 exceeds the flow's processes (1). The job will saturate the budget while running; other jobs in the flow will wait in serial. Adjust either side or accept this trade-off."
+    ],
+    "deprecations": [],
+    "jobs": [
+        {
+            "name": "phpstan_excl",
+            "type": "phpstan",
+            "success": true,
+            "time": "638ms",
+            "duration": 0.6379339694976807,
+            "exitCode": 1,
+            "output": "\n [ERROR] No files found to analyse.                                             \n\n",
+            "fixApplied": false,
+            "command": "vendor/bin/phpstan analyse -c qa-excl.neon src",
+            "paths": [
+                "src"
+            ],
+            "skipped": true,
+            "skipReason": "tool reported no input files after applying internal exclusions",
+            "threshold": null,
+            "memoryReserved": null,
+            "memoryPeak": null,
+            "memoryThreshold": null,
+            "killedReason": null
+        }
+    ]
+}

@@ -1,0 +1,20 @@
+PHPUnit 9.6.34 by Sebastian Bergmann and contributors.
+
+FF                                                                  2 / 2 (100%)
+
+Time: 00:00.003, Memory: 8.00 MB
+
+There were 2 failures:
+
+1) Tests\FailingTest::testItFails
+Failed asserting that false is true.
+
+/var/www/html3/tests/FailingTest.php:13
+
+2) Tests\Errors\FailingTest::testItFails
+Failed asserting that false is true.
+
+/var/www/html3/tests/errors/FailingTest.php:13
+
+FAILURES!
+Tests: 2, Assertions: 2, Failures: 2.

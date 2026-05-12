@@ -1,0 +1,68 @@
+{
+    "version": 2,
+    "flow": "phpcs4_excl",
+    "success": true,
+    "totalTime": "0.05s",
+    "executionMode": "full",
+    "passed": 0,
+    "failed": 0,
+    "skipped": 1,
+    "timeBudget": null,
+    "memoryBudget": null,
+    "stats": null,
+    "effectiveOptions": {
+        "processes": {
+            "value": 1,
+            "source": "default"
+        },
+        "failFast": {
+            "value": false,
+            "source": "default"
+        },
+        "executionMode": {
+            "value": "full",
+            "source": "default"
+        },
+        "timeBudget": {
+            "value": null,
+            "source": "default"
+        },
+        "memoryBudget": {
+            "value": null,
+            "source": "default"
+        },
+        "allocator": {
+            "value": "fifo",
+            "source": "default"
+        },
+        "stats": {
+            "value": false,
+            "source": "default"
+        }
+    },
+    "warnings": [],
+    "deprecations": [],
+    "jobs": [
+        {
+            "name": "phpcs4_excl",
+            "type": "phpcs",
+            "success": true,
+            "time": "48ms",
+            "duration": 0.04822587966918945,
+            "exitCode": 16,
+            "output": "ERROR: No files were checked.\nAll specified files were excluded or did not match filtering rules.\n\n",
+            "fixApplied": false,
+            "command": "/tmp/phpcs4-test/vendor/bin/phpcs --standard=PSR12 --ignore=src --parallel=1 src/clean/CleanFile.php",
+            "paths": [
+                "src/clean/CleanFile.php"
+            ],
+            "skipped": true,
+            "skipReason": "tool reported no input files after applying internal exclusions",
+            "threshold": null,
+            "memoryReserved": null,
+            "memoryPeak": null,
+            "memoryThreshold": null,
+            "killedReason": null
+        }
+    ]
+}

@@ -1,0 +1,1 @@
+Warning: Job 'phpstan_excl' in flow 'qa': neon-workers=4 exceeds the flow's processes (1). The job will saturate the budget while running; other jobs in the flow will wait in serial. Adjust either side or accept this trade-off.
