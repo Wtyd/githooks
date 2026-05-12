@@ -1,0 +1,8 @@
+
+To whom it may concern: Psalm cannot detect unused classes, methods and properties
+when analyzing individual files and folders. Run on the full project to enable
+complete unused code detection.
+
+To whom it may concern: Psalm cannot detect unused issue handler suppressions when
+analyzing individual files and folders or running in diff mode. Run on the full
+project with diff mode off to enable unused issue handler detection.
