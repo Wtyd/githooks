@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output\CI;
 
+use Closure;
+use Wtyd\GitHooks\Output\OutputHandler;
+
 /**
  * GitLab CI decorator.
  *
@@ -33,8 +36,29 @@ class GitLabCIDecorator extends CIOutputDecorator
     /** @var array<string, string> jobName => buffered section body */
     private array $buffers = [];
 
+    /** @var array<string, int> jobName => unix timestamp captured at onJobStart */
+    private array $startTimes = [];
+
+    /** @var Closure(): int */
+    private $clock;
+
+    /**
+     * @param Closure(): int|null $clock Optional clock injection for deterministic tests.
+     *                                   Defaults to `time()`. Same pattern as FlowExecutor::clockOverride.
+     */
+    public function __construct(OutputHandler $inner, ?Closure $clock = null)
+    {
+        parent::__construct($inner);
+        $this->clock = $clock ?? static function (): int {
+            return time();
+        };
+    }
+
     public function onJobStart(string $jobName): void
     {
+        if (!isset($this->startTimes[$jobName])) {
+            $this->startTimes[$jobName] = ($this->clock)();
+        }
         $this->buffers[$jobName] = ($this->buffers[$jobName] ?? '') . $this->captureInner(function () use ($jobName) {
             $this->inner->onJobStart($jobName);
         });
@@ -106,14 +130,19 @@ class GitLabCIDecorator extends CIOutputDecorator
         $this->sectionCounter++;
         $sectionId = 'githooks_job_' . $this->sectionCounter;
         $flag = $collapsed ? '[collapsed=true]' : '[collapsed=false]';
-        $start = time();
+
+        $end = ($this->clock)();
+        // section_start must reflect onJobStart time (BUG-16). Fallback to $end
+        // when the close path was invoked without a prior onJobStart, which
+        // preserves the previous behaviour for that branch.
+        $start = $this->startTimes[$jobName] ?? $end;
+        unset($this->startTimes[$jobName]);
 
         echo "\033[0Ksection_start:{$start}:{$sectionId}{$flag}\r\033[0K{$jobName}\n";
         echo $body;
         if ($body !== '' && substr($body, -1) !== "\n") {
             echo "\n";
         }
-        $end = time();
         echo "\033[0Ksection_end:{$end}:{$sectionId}\r\033[0K\n";
     }
 }

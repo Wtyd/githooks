@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\CI;
 
+use Closure;
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
 use Wtyd\GitHooks\Output\OutputHandler;
@@ -422,5 +423,131 @@ class GitLabCIDecoratorTest extends TestCase
             $stripped,
             'Empty body must not have a blank line inserted between header and section_end'
         );
+    }
+
+    /**
+     * BUG-16 regression: `section_start` must use the timestamp captured at
+     * `onJobStart`, not a `time()` reading taken inside `emitSection`. The
+     * previous implementation calculated both `$start` and `$end` inside
+     * `emitSection`, separated only by an `echo $body`, so GitLab always
+     * rendered grouped sections as `00:00`.
+     *
+     * Drives the fix via an injected clock that yields 100 on `onJobStart`
+     * and 105 on the close — the resulting section markers must reflect
+     * those exact values.
+     *
+     * @test
+     */
+    public function section_start_uses_onJobStart_timestamp_not_emit_time(): void
+    {
+        $clock = $this->fixedClock([100, 105]);
+        $inner = $this->createMock(OutputHandler::class);
+        $decorator = new GitLabCIDecorator($inner, $clock);
+
+        ob_start();
+        $decorator->onJobStart('phpstan');
+        $decorator->onJobSuccess('phpstan', '5s');
+        $output = ob_get_clean();
+
+        $this->assertMatchesRegularExpression('/section_start:100:/', $output);
+        $this->assertMatchesRegularExpression('/section_end:105:/', $output);
+    }
+
+    /**
+     * Decision-table coverage for BUG-16.
+     *
+     * Factors:
+     *   - close method: onJobSuccess / onJobError / onJobSkipped
+     *   - prior onJobStart: yes (rows 1-3) / no (rows 4-5)
+     *   - Δtime between start and close: 0s, 3s, 5s
+     *
+     * Rows 1-3 cover the main bug regression (with the buggy implementation
+     * all three would render as 0). Rows 4-5 cover the fallback path where
+     * the close method is invoked without a prior `onJobStart`.
+     *
+     * @test
+     * @dataProvider sectionTimestampScenarios
+     *
+     * @param int[]  $clockValues clock returns these values in order
+     * @param string $closeMethod onJobSuccess|onJobError|onJobSkipped
+     * @param bool   $callStart   whether to call onJobStart before close
+     * @param int    $expectedStart
+     * @param int    $expectedEnd
+     */
+    public function emit_section_timestamps_follow_decision_table(
+        array $clockValues,
+        string $closeMethod,
+        bool $callStart,
+        int $expectedStart,
+        int $expectedEnd
+    ): void {
+        $clock = $this->fixedClock($clockValues);
+        $inner = $this->createMock(OutputHandler::class);
+        $decorator = new GitLabCIDecorator($inner, $clock);
+
+        ob_start();
+        if ($callStart) {
+            $decorator->onJobStart('job');
+        }
+        if ($closeMethod === 'onJobSuccess') {
+            $decorator->onJobSuccess('job', '1s');
+        } elseif ($closeMethod === 'onJobError') {
+            $decorator->onJobError('job', '1s', '');
+        } else {
+            $decorator->onJobSkipped('job', 'no staged files');
+        }
+        $output = ob_get_clean();
+
+        $this->assertMatchesRegularExpression(
+            '/section_start:' . $expectedStart . ':/',
+            $output,
+            "section_start expected to be $expectedStart in scenario $closeMethod (start=$callStart)"
+        );
+        $this->assertMatchesRegularExpression(
+            '/section_end:' . $expectedEnd . ':/',
+            $output,
+            "section_end expected to be $expectedEnd in scenario $closeMethod (start=$callStart)"
+        );
+    }
+
+    public function sectionTimestampScenarios(): array
+    {
+        return [
+            // # | onJobStart | close         | Δtime | start | end
+            'success after 5s with prior start' => [
+                [100, 105], 'onJobSuccess', true, 100, 105,
+            ],
+            'error after 3s with prior start' => [
+                [200, 203], 'onJobError', true, 200, 203,
+            ],
+            'skipped at the same instant as start' => [
+                [300, 300], 'onJobSkipped', true, 300, 300,
+            ],
+            // Fallback: no onJobStart was ever called for this job. The
+            // decorator falls back to the clock reading at emit time, so
+            // start == end (preserves the previous behaviour for this path).
+            'error without prior start falls back to emit-time' => [
+                [400], 'onJobError', false, 400, 400,
+            ],
+            'skipped without prior start falls back to emit-time' => [
+                [500], 'onJobSkipped', false, 500, 500,
+            ],
+        ];
+    }
+
+    /**
+     * Build a clock closure that returns `$values` in order, then sticks at
+     * the final value to keep tests stable if the implementation incidentally
+     * makes one extra call.
+     *
+     * @param int[] $values
+     */
+    private function fixedClock(array $values): Closure
+    {
+        $remaining = $values;
+        $last = end($values);
+        return function () use (&$remaining, $last): int {
+            return array_shift($remaining) ?? $last;
+        };
     }
 }
