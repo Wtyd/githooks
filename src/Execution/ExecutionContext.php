@@ -163,6 +163,31 @@ class ExecutionContext
     }
 
     /**
+     * The full effective file set for the given mode, unfiltered by job paths.
+     *
+     * Used by FEAT-1 admission rules (`only-files` / `exclude-files` per flow
+     * entry): admission is decided over the whole change set, independent of
+     * any job's `paths`. Returns null for FULL (mode does not consume the set)
+     * and for FAST_BRANCH when the diff lookup failed (same fallback signal
+     * as filterFilesForMode).
+     *
+     * @return string[]|null
+     */
+    public function getEffectiveSet(string $mode): ?array
+    {
+        if ($mode === ExecutionMode::FAST) {
+            $this->ensureStagedLoaded();
+            return $this->stagedFiles;
+        }
+
+        if ($mode === ExecutionMode::FAST_BRANCH) {
+            return $this->getBranchDiffFilesLazy();
+        }
+
+        return null;
+    }
+
+    /**
      * Filter files for a specific execution mode.
      *
      * @param string[] $paths Job's configured paths

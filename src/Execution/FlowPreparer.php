@@ -7,7 +7,9 @@ namespace Wtyd\GitHooks\Execution;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Configuration\JobRef;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\GitHooks\Hooks\PatternMatcher;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 
@@ -22,9 +24,12 @@ class FlowPreparer
 {
     private JobRegistry $jobRegistry;
 
-    public function __construct(JobRegistry $jobRegistry)
+    private PatternMatcher $patternMatcher;
+
+    public function __construct(JobRegistry $jobRegistry, ?PatternMatcher $patternMatcher = null)
     {
         $this->jobRegistry = $jobRegistry;
+        $this->patternMatcher = $patternMatcher ?? new PatternMatcher();
     }
 
     /**
@@ -55,7 +60,8 @@ class FlowPreparer
             $effectiveInvocation = ExecutionMode::FAST;
         }
 
-        foreach ($flow->getJobs() as $jobName) {
+        foreach ($flow->getJobReferences() as $jobRef) {
+            $jobName = $jobRef->getTarget();
             if (!empty($onlyJobs) && !in_array($jobName, $onlyJobs, true)) {
                 continue;
             }
@@ -68,6 +74,20 @@ class FlowPreparer
             }
 
             $originalConfig = $jobConfig;
+
+            $admissionMode = $this->resolveMode($effectiveInvocation, $jobConfig, $flow);
+            $admissionSkipReason = $this->resolveAdmissionSkipReason($jobRef, $admissionMode, $context);
+            if ($admissionSkipReason !== null) {
+                $config->getValidation()->addWarning("Job '$jobName' was skipped: $admissionSkipReason.");
+                $skippedJobs[$jobName] = [
+                    'type' => $originalConfig->getType(),
+                    'reason' => $admissionSkipReason,
+                    'paths' => $originalConfig->getPaths(),
+                    'accelerable' => $originalConfig->isAccelerable($this->jobRegistry),
+                ];
+                continue;
+            }
+
             $jobConfig = $this->applyExecutionMode($jobConfig, $flow, $effectiveInvocation, $context, $options, $config);
             if ($jobConfig === null) {
                 // Job was skipped by execution mode filtering — record it.
@@ -331,6 +351,51 @@ class FlowPreparer
         }
 
         return $jobConfig->withPaths($filteredFiles);
+    }
+
+    /**
+     * FEAT-1 admission: evaluate `only-files` / `exclude-files` of the flow
+     * entry against the effective set of files for the mode. Returns null when
+     * the job is admitted, or a short skipReason when it must be skipped.
+     *
+     * Decoupled from `filterJobForMode()`: admission is a per-flow-entry
+     * concern (the same job admitted from another flow can have different
+     * rules), so it is evaluated here before mode-based path filtering.
+     */
+    private function resolveAdmissionSkipReason(JobRef $jobRef, string $mode, ?ExecutionContext $context): ?string
+    {
+        if (!$jobRef->hasAdmissionRules() || $mode === ExecutionMode::FULL || $context === null) {
+            return null;
+        }
+
+        $effectiveSet = $context->getEffectiveSet($mode);
+        if (empty($effectiveSet)) {
+            // Empty / unavailable set: BUG-15 already handles this with its
+            // own skip reason later in filterJobForMode(). Defer to it.
+            return null;
+        }
+
+        $onlyFiles = $jobRef->getOnlyFiles() ?? [];
+        $excludeFiles = $jobRef->getExcludeFiles() ?? [];
+
+        if ($this->patternMatcher->matchesFiles($effectiveSet, $onlyFiles, $excludeFiles)) {
+            return null;
+        }
+
+        return $this->admissionSkipMessage($jobRef);
+    }
+
+    private function admissionSkipMessage(JobRef $jobRef): string
+    {
+        $hasOnly = $jobRef->getOnlyFiles() !== null;
+        $hasExclude = $jobRef->getExcludeFiles() !== null;
+        if ($hasOnly && !$hasExclude) {
+            return "no files in the change set match its only-files rule";
+        }
+        if (!$hasOnly && $hasExclude) {
+            return "every file in the change set is filtered by its exclude-files rule";
+        }
+        return "no files in the change set survive its only-files / exclude-files rules";
     }
 
     /**

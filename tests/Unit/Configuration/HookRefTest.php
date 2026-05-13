@@ -273,4 +273,46 @@ class HookRefTest extends TestCase
         $ref = new HookRef('qa');
         $this->assertFalse($ref->hasConditions());
     }
+
+    // ========================================================================
+    // FEAT-1 alignment — null sentinel + [] error
+    // ========================================================================
+
+    /** @test */
+    public function fromArray_with_only_files_null_means_no_rule()
+    {
+        $result = new ValidationResult();
+        $ref = HookRef::fromArray(['flow' => 'qa', 'only-files' => null], $result);
+
+        $this->assertNotNull($ref);
+        $this->assertEmpty($ref->getOnlyFiles());
+        $this->assertFalse($ref->hasConditions());
+        $this->assertFalse($result->hasErrors());
+    }
+
+    /** @test */
+    public function fromArray_with_empty_only_files_returns_error_pointing_to_null()
+    {
+        $result = new ValidationResult();
+        $ref = HookRef::fromArray(['flow' => 'qa', 'only-files' => []], $result);
+
+        $this->assertNull($ref);
+        $this->assertErrorEquals(
+            "Hook ref for 'qa': 'only-files' must not be empty. Use null to disable an inherited rule.",
+            $result
+        );
+    }
+
+    /** @test */
+    public function fromArray_with_empty_exclude_files_returns_error_pointing_to_null()
+    {
+        $result = new ValidationResult();
+        $ref = HookRef::fromArray(['flow' => 'qa', 'exclude-files' => []], $result);
+
+        $this->assertNull($ref);
+        $this->assertErrorEquals(
+            "Hook ref for 'qa': 'exclude-files' must not be empty. Use null to disable an inherited rule.",
+            $result
+        );
+    }
 }

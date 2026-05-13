@@ -443,4 +443,96 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->expectsOutput('The configuration file has some errors')
             ->containsStringInOutput($expectedError);
     }
+
+    // =========================================================================
+    // FEAT-1 — flow-entry admission rules (only-files / exclude-files).
+    //
+    // Decision table — invalid declarations the parser must reject with exit 1:
+    //   A. empty only-files       (must point the user to `null`)
+    //   B. empty exclude-files
+    //   C. duplicate pattern in only-files
+    //   D. missing `job` key in object entry
+    // =========================================================================
+
+    public function flowEntryAdmissionAdversariesProvider(): array
+    {
+        $jobs = [
+            'lint' => ['type' => 'parallel-lint', 'paths' => ['src']],
+        ];
+
+        return [
+            'A. empty only-files' => [
+                'flows' => [
+                    'qa' => ['jobs' => [['job' => 'lint', 'only-files' => []]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa' job ref 'lint': 'only-files' must not be empty. Use null to disable an inherited rule.",
+            ],
+            'B. empty exclude-files' => [
+                'flows' => [
+                    'qa' => ['jobs' => [['job' => 'lint', 'exclude-files' => []]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa' job ref 'lint': 'exclude-files' must not be empty. Use null to disable an inherited rule.",
+            ],
+            'C. duplicate pattern in only-files' => [
+                'flows' => [
+                    'qa' => ['jobs' => [['job' => 'lint', 'only-files' => ['src/**', 'src/**']]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa' job ref 'lint': 'only-files' contains duplicate pattern 'src/**'.",
+            ],
+            'D. object entry without job key' => [
+                'flows' => [
+                    'qa' => ['jobs' => [['only-files' => ['src/**']]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa': job ref must have a 'job' key with a string value.",
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider flowEntryAdmissionAdversariesProvider
+     */
+    function rejects_v3_config_with_invalid_flow_entry_admission_rules(array $flows, array $jobs, string $expectedError)
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows($flows)
+            ->setV3Jobs($jobs)
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(1)
+            ->expectsOutput('The configuration file has some errors')
+            ->containsStringInOutput($expectedError);
+    }
+
+    /** @test */
+    function accepts_v3_config_with_valid_flow_entry_admission_rules()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'lint' => ['type' => 'parallel-lint', 'paths' => ['src']],
+            ])
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        ['job' => 'lint', 'only-files' => ['src/**', 'composer.json']],
+                    ],
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsOutput('The configuration file has the correct format.');
+    }
 }

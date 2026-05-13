@@ -17,6 +17,9 @@ class FlowConfiguration
     /** @var string[] Job names referenced by this flow (empty for meta-flows) */
     private array $jobs;
 
+    /** @var JobRef[] Rich job refs (FEAT-1); parallel to $jobs, in declaration order */
+    private array $jobRefs;
+
     /** @var string[]|null Flow names referenced by this meta-flow (null for normal flows) */
     private ?array $flowReferences;
 
@@ -27,16 +30,19 @@ class FlowConfiguration
     /**
      * @param string[] $jobs
      * @param string[]|null $flowReferences null for normal flows; array (possibly empty) for meta-flows
+     * @param JobRef[]|null $jobRefs FEAT-1 rich refs. Defaults to one JobRef::fromString() per name in $jobs
      */
     public function __construct(
         string $name,
         array $jobs,
         ?OptionsConfiguration $options = null,
         ?string $execution = null,
-        ?array $flowReferences = null
+        ?array $flowReferences = null,
+        ?array $jobRefs = null
     ) {
         $this->name = $name;
         $this->jobs = $jobs;
+        $this->jobRefs = $jobRefs ?? array_map([JobRef::class, 'fromString'], $jobs);
         $this->flowReferences = $flowReferences;
         $this->options = $options;
         $this->execution = $execution;
@@ -83,6 +89,7 @@ class FlowConfiguration
         }
 
         $jobs = [];
+        $jobRefs = null;
         $flowReferences = null;
 
         if ($hasJobs) {
@@ -90,12 +97,11 @@ class FlowConfiguration
                 $result->addError("Flow '$name' must have a non-empty 'jobs' array.");
                 return null;
             }
-            foreach ($raw['jobs'] as $jobRef) {
-                if (!in_array($jobRef, $availableJobNames, true)) {
-                    $result->addWarning("Flow '$name' references undefined job '$jobRef'. It will be skipped.");
-                }
+            $parsed = self::parseJobEntries($name, $raw['jobs'], $availableJobNames, $result);
+            if ($parsed === null) {
+                return null;
             }
-            $jobs = $raw['jobs'];
+            [$jobs, $jobRefs] = $parsed;
         } else {
             if (!is_array($raw['flows'])) {
                 $result->addError("Meta-flow '$name' must have a 'flows' array.");
@@ -124,7 +130,57 @@ class FlowConfiguration
             $execution = $raw['execution'];
         }
 
-        return new self($name, $jobs, $options, $execution, $flowReferences);
+        return new self($name, $jobs, $options, $execution, $flowReferences, $jobRefs);
+    }
+
+    /**
+     * Parse the `jobs` list: each entry is either a string (plain name) or an
+     * object `{job: string, only-files?: ..., exclude-files?: ...}`. Returns a
+     * tuple `[names, refs]` parallel-ordered, or null if any entry fails hard.
+     *
+     * @param mixed[] $rawEntries
+     * @param string[] $availableJobNames
+     * @return array{0: string[], 1: JobRef[]}|null
+     */
+    private static function parseJobEntries(
+        string $flowName,
+        array $rawEntries,
+        array $availableJobNames,
+        ValidationResult $result
+    ): ?array {
+        $names = [];
+        $refs = [];
+        foreach ($rawEntries as $entry) {
+            $ref = self::buildJobRef($flowName, $entry, $result);
+            if ($ref === null) {
+                return null;
+            }
+            if (!in_array($ref->getTarget(), $availableJobNames, true)) {
+                $result->addWarning(
+                    "Flow '$flowName' references undefined job '" . $ref->getTarget() . "'. It will be skipped."
+                );
+            }
+            $names[] = $ref->getTarget();
+            $refs[] = $ref;
+        }
+        return [$names, $refs];
+    }
+
+    /**
+     * @param mixed $entry raw value from `jobs[]` — string, array, or other
+     */
+    private static function buildJobRef(string $flowName, $entry, ValidationResult $result): ?JobRef
+    {
+        if (is_string($entry)) {
+            return JobRef::fromString($entry);
+        }
+        if (is_array($entry)) {
+            return JobRef::fromArray($entry, $result, $flowName);
+        }
+        $result->addError(
+            "Flow '$flowName': job entry must be a string or an object with a 'job' key."
+        );
+        return null;
     }
 
     public function getName(): string
@@ -136,6 +192,12 @@ class FlowConfiguration
     public function getJobs(): array
     {
         return $this->jobs;
+    }
+
+    /** @return JobRef[] */
+    public function getJobReferences(): array
+    {
+        return $this->jobRefs;
     }
 
     /** @return string[] */

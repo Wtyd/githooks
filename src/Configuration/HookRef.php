@@ -73,24 +73,27 @@ class HookRef
             return null;
         }
 
-        $onlyOn = [];
-        if (isset($raw['only-on'])) {
-            $onlyOn = is_array($raw['only-on']) ? $raw['only-on'] : [$raw['only-on']];
+        // array_key_exists + null sentinel: `null` means "no rule" (used by
+        // .local.php to cancel an inherited rule); `[]` is a validation error
+        // pointing the user at `null`. Aligned with FEAT-1's JobRef semantics.
+        $onlyOn = self::normalizeRule($raw, 'only-on', $target, $result);
+        if ($onlyOn === false) {
+            return null;
         }
 
-        $excludeOn = [];
-        if (isset($raw['exclude-on'])) {
-            $excludeOn = is_array($raw['exclude-on']) ? $raw['exclude-on'] : [$raw['exclude-on']];
+        $excludeOn = self::normalizeRule($raw, 'exclude-on', $target, $result);
+        if ($excludeOn === false) {
+            return null;
         }
 
-        $onlyFiles = [];
-        if (isset($raw['only-files'])) {
-            $onlyFiles = is_array($raw['only-files']) ? $raw['only-files'] : [$raw['only-files']];
+        $onlyFiles = self::normalizeRule($raw, 'only-files', $target, $result);
+        if ($onlyFiles === false) {
+            return null;
         }
 
-        $excludeFiles = [];
-        if (isset($raw['exclude-files'])) {
-            $excludeFiles = is_array($raw['exclude-files']) ? $raw['exclude-files'] : [$raw['exclude-files']];
+        $excludeFiles = self::normalizeRule($raw, 'exclude-files', $target, $result);
+        if ($excludeFiles === false) {
+            return null;
         }
 
         $execution = null;
@@ -109,7 +112,44 @@ class HookRef
             }
         }
 
-        return new self($target, $onlyOn, $onlyFiles, $excludeFiles, $excludeOn, $execution);
+        return new self($target, $onlyOn ?? [], $onlyFiles ?? [], $excludeFiles ?? [], $excludeOn ?? [], $execution);
+    }
+
+    /**
+     * Normalize one rule with the FEAT-1 sentinel semantics (consistent with
+     * `JobRef::parseRule`). Returns:
+     *   - false: validation error, caller aborts
+     *   - null: rule absent or explicitly cancelled (`null` in local override)
+     *   - string[]: declared patterns
+     *
+     * @param array<string, mixed> $raw
+     * @return string[]|null|false
+     */
+    private static function normalizeRule(array $raw, string $key, string $target, ValidationResult $result)
+    {
+        if (!array_key_exists($key, $raw)) {
+            return null;
+        }
+        $value = $raw[$key];
+        if ($value === null) {
+            return null;
+        }
+        if (is_string($value)) {
+            $value = [$value];
+        }
+        if (!is_array($value)) {
+            $result->addError(
+                "Hook ref for '$target': '$key' must be a string, array of strings, or null."
+            );
+            return false;
+        }
+        if ($value === []) {
+            $result->addError(
+                "Hook ref for '$target': '$key' must not be empty. Use null to disable an inherited rule."
+            );
+            return false;
+        }
+        return $value;
     }
 
     public function getTarget(): string
