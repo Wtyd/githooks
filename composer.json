@@ -63,7 +63,8 @@
         "psr-4": {
             "Tests\\": "tests/",
             "TestsDir\\": "testsDir/"
-        }
+        },
+        "exclude-from-classmap": ["tests/Fixtures/sarif-broken-code/"]
     },
     "config": {
         "preferred-install": "dist",
