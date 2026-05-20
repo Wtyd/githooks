@@ -27,6 +27,10 @@ namespace Wtyd\GitHooks\Output;
  *     of cursor movement on a real terminal.
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) OutputHandler interface (8) + registerJobs + tick
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) FEAT-3 added the waiting-state lane (onJobWaiting +
+ *   waitingLines + per-state filters) without breaking the single-class invariant: the dashboard owns
+ *   the four lanes (completed / running / waiting / queued) and the cursor bookkeeping. Splitting would
+ *   force coordinating the same internal state across collaborators.
  */
 class DashboardOutputHandler implements OutputHandler
 {
@@ -41,6 +45,9 @@ class DashboardOutputHandler implements OutputHandler
 
     /** @var string[] jobName list */
     private array $queued = [];
+
+    /** @var array<string, string[]> FEAT-3: jobName → list of pending needs */
+    private array $waiting = [];
 
     private int $dashboardLines = 0;
 
@@ -94,9 +101,31 @@ class DashboardOutputHandler implements OutputHandler
         $this->queued = array_values(array_filter($this->queued, function (string $name) use ($jobName) {
             return $name !== $jobName;
         }));
+        // FEAT-3: a job leaves the `waiting` set as soon as it actually starts.
+        unset($this->waiting[$jobName]);
 
         if (!$this->isTty) {
             fwrite($this->output, "  ⏳ $jobName...\n");
+        }
+    }
+
+    /**
+     * FEAT-3: register a job as waiting for one or more `needs`. Renders as
+     * `⏸ jobName (waiting yarn-install, ...)` in TTY mode. In non-TTY mode
+     * we stay silent — the line would just be noise in CI logs.
+     *
+     * @param string[] $waitingFor
+     */
+    public function onJobWaiting(string $jobName, array $waitingFor): void
+    {
+        if (empty($waitingFor)) {
+            unset($this->waiting[$jobName]);
+        } else {
+            $this->waiting[$jobName] = $waitingFor;
+        }
+
+        if ($this->isTty) {
+            $this->renderDashboard();
         }
     }
 
@@ -135,9 +164,12 @@ class DashboardOutputHandler implements OutputHandler
         $this->queued = array_values(array_filter($this->queued, function (string $name) use ($jobName) {
             return $name !== $jobName;
         }));
+        unset($this->waiting[$jobName]);
         $this->completed[$jobName] = "  ⏩ $jobName ($reason)";
 
-        if (!$this->isTty) {
+        if ($this->isTty) {
+            $this->renderDashboard();
+        } else {
             fwrite($this->output, "  ⏩ $jobName ($reason)\n");
         }
     }
@@ -183,17 +215,36 @@ class DashboardOutputHandler implements OutputHandler
     {
         $this->clearDashboard();
 
-        $lines = [];
-        $now = microtime(true);
+        $lines = array_merge(
+            $this->completedLines(),
+            $this->runningLines(microtime(true)),
+            $this->waitingLines(),
+            $this->queuedLines()
+        );
 
-        // Completed jobs
+        foreach ($lines as $line) {
+            fwrite($this->output, $line . "\n");
+        }
+
+        $this->dashboardLines = count($lines);
+    }
+
+    /** @return string[] */
+    private function completedLines(): array
+    {
+        $lines = [];
         foreach ($this->allJobs as $jobName) {
             if (isset($this->completed[$jobName])) {
                 $lines[] = $this->completed[$jobName];
             }
         }
+        return $lines;
+    }
 
-        // Running jobs with timer
+    /** @return string[] */
+    private function runningLines(float $now): array
+    {
+        $lines = [];
         foreach ($this->allJobs as $jobName) {
             if (isset($this->running[$jobName])) {
                 $elapsed = $now - $this->running[$jobName];
@@ -201,17 +252,36 @@ class DashboardOutputHandler implements OutputHandler
                 $lines[] = "  \e[33m⏳\e[0m $jobName [\e[33m{$timer}\e[0m]";
             }
         }
+        return $lines;
+    }
 
-        // Queued jobs
+    /**
+     * FEAT-3: queued jobs blocked by pending `needs`.
+     * @return string[]
+     */
+    private function waitingLines(): array
+    {
+        $lines = [];
+        foreach ($this->allJobs as $jobName) {
+            if (isset($this->waiting[$jobName])) {
+                $deps = implode(', ', $this->waiting[$jobName]);
+                $lines[] = "  \e[90m⏸ $jobName (waiting $deps)\e[0m";
+            }
+        }
+        return $lines;
+    }
+
+    /** @return string[] */
+    private function queuedLines(): array
+    {
+        $lines = [];
         foreach ($this->queued as $jobName) {
+            if (isset($this->waiting[$jobName])) {
+                continue;  // already rendered by waitingLines()
+            }
             $lines[] = "  \e[90m⏺ $jobName\e[0m";
         }
-
-        foreach ($lines as $line) {
-            fwrite($this->output, $line . "\n");
-        }
-
-        $this->dashboardLines = count($lines);
+        return $lines;
     }
 
     private function clearDashboard(): void

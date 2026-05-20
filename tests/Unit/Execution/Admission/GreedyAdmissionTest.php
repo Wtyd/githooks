@@ -75,6 +75,60 @@ class GreedyAdmissionTest extends TestCase
         $this->assertNull((new GreedyAdmission())->pickNext([], $ctx));
     }
 
+    // ========================================================================
+    // FEAT-3 · gate by `needs`
+    // ========================================================================
+
+    /** @test */
+    public function skips_job_with_unsatisfied_needs_and_admits_next(): void
+    {
+        // eslint has unsatisfied needs; phpstan has none.
+        $queue = [$this->buildJob('eslint'), $this->buildJob('phpstan')];
+        $ctx = new AdmissionContext(
+            10,
+            null,
+            [],
+            [],
+            ['eslint' => ['yarn-install']],
+            []  // yarn-install not completed
+        );
+
+        // Greedy may skip eslint and admit phpstan.
+        $this->assertSame(1, (new GreedyAdmission())->pickNext($queue, $ctx));
+    }
+
+    /** @test */
+    public function admits_job_with_satisfied_needs(): void
+    {
+        $queue = [$this->buildJob('eslint')];
+        $ctx = new AdmissionContext(
+            10,
+            null,
+            [],
+            [],
+            ['eslint' => ['yarn-install']],
+            ['yarn-install']
+        );
+
+        $this->assertSame(0, (new GreedyAdmission())->pickNext($queue, $ctx));
+    }
+
+    /** @test */
+    public function returns_null_when_all_jobs_blocked_by_needs(): void
+    {
+        $queue = [$this->buildJob('eslint'), $this->buildJob('prettier')];
+        $ctx = new AdmissionContext(
+            10,
+            null,
+            [],
+            [],
+            ['eslint' => ['yarn-install'], 'prettier' => ['yarn-install']],
+            []
+        );
+
+        $this->assertNull((new GreedyAdmission())->pickNext($queue, $ctx));
+    }
+
     private function buildJob(string $name): JobAbstract
     {
         return new PhpcsJob(new JobConfiguration($name, 'phpcs', []));

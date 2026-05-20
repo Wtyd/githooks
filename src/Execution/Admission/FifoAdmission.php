@@ -22,6 +22,16 @@ final class FifoAdmission implements AdmissionStrategy
         }
 
         $headIndex = (int) array_key_first($queue);
-        return $context->fits($queue[$headIndex]) ? $headIndex : null;
+        $head = $queue[$headIndex];
+        // FEAT-3: dependency gate runs before the resource fit check. If the
+        // head is still waiting for a `needs` target, the FIFO ordering
+        // requires us to block — even if subsequent jobs in the queue could
+        // be admitted. The pool drains heads with failed/skipped deps before
+        // each tick, so reaching this point with non-ready needs means we
+        // are genuinely waiting for a still-pending upstream job.
+        if (!$context->isJobReady($head)) {
+            return null;
+        }
+        return $context->fits($head) ? $headIndex : null;
     }
 }

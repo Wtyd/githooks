@@ -24,6 +24,14 @@ use Wtyd\GitHooks\Utils\GitStagerInterface;
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Orchestrator with sequential+parallel+threading+restaging
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Top-level coordinator: by design touches every Execution and Output collaborator
+ * @SuppressWarnings(PHPMD.ExcessiveClassLength) FEAT-3 added needs-driven propagation (parallel drain, sequential
+ *   propagation, fail-fast descendant classification, and the helper methods that build the propagated skipReason).
+ *   Splitting these would scatter the single concern of "what to do when a job's needs failed/skipped" across files.
+ * @SuppressWarnings(PHPMD.TooManyMethods) Each public/private method maps to a specific responsibility on the
+ *   sequential/parallel paths; collapsing two reduces clarity without reducing breadth of behaviour.
+ * @SuppressWarnings(PHPMD.ExcessiveMethodLength) executeParallel is a single loop that orchestrates the pool tick,
+ *   memory sampler, dashboard refresh, and FEAT-3 needs handling. Extracting parts of the loop body would force
+ *   shared state into method arguments.
  */
 class FlowExecutor
 {
@@ -147,9 +155,16 @@ class FlowExecutor
         $this->outputHandler->onFlowStart(count($jobs) + count($plan->getSkippedJobs()));
 
         if (($maxProcesses <= 1 || count($jobs) <= 1) && !$this->shouldSampleMemory($jobs, $plan->getOptions())) {
-            $results = $this->executeSequential($jobs, $failFast);
+            $results = $this->executeSequential($jobs, $failFast, $plan->getDependencyGraph());
         } else {
-            $results = $this->executeParallel($jobs, max(1, $maxProcesses), $coresBudget, $failFast, $plan->getOptions());
+            $results = $this->executeParallel(
+                $jobs,
+                max(1, $maxProcesses),
+                $coresBudget,
+                $failFast,
+                $plan->getOptions(),
+                $plan->getDependencyGraph()
+            );
         }
 
         // Include skipped jobs from plan (fast mode filtering / files mode mismatch)
@@ -368,26 +383,141 @@ class FlowExecutor
      * @param JobAbstract[] $jobs
      * @return JobResult[]
      */
-    private function executeSequential(array $jobs, bool $failFast): array
-    {
+    private function executeSequential(
+        array $jobs,
+        bool $failFast,
+        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null
+    ): array {
         $results = [];
+        $failedNames = [];     // FEAT-3: jobs whose result was a failure
+        $skippedNames = [];    // FEAT-3: jobs propagated via `needs` upstream
+        $consumed = [];        // jobs already processed (executed or skipped)
 
         foreach ($jobs as $job) {
-            $threads = $this->threadAllocations[$job->getName()] ?? 1;
+            $name = $job->getName();
+            $consumed[] = $name;
+
+            // FEAT-3 propagation: if any of this job's `needs` failed or were
+            // skipped, propagate immediately without running the job.
+            if ($dependencyGraph !== null) {
+                $blockers = self::classifyTerminalBlockersFrom(
+                    $dependencyGraph->getNeedsOf($name),
+                    $failedNames,
+                    $skippedNames
+                );
+                if ($blockers !== []) {
+                    $reason = self::formatPropagatedSkipReasonStatic($blockers);
+                    $this->outputHandler->onJobSkipped($job->getDisplayName(), $reason);
+                    $results[] = $this->attachInputFilesIfApplicable(
+                        JobResult::skipped($name, $job->getType(), $reason, $job->getConfiguredPaths()),
+                        $job
+                    );
+                    $skippedNames[] = $name;
+                    continue;
+                }
+            }
+
+            $threads = $this->threadAllocations[$name] ?? 1;
             $this->peakEstimatedThreads = max($this->peakEstimatedThreads, $threads);
 
             $result = $this->runJob($job);
             $results[] = $result;
+            if (!$result->isSuccess()) {
+                $failedNames[] = $name;
+            }
 
             if ($failFast && !$result->isSuccess()) {
-                foreach ($this->reportSkipped($jobs, $job) as $skippedResult) {
+                $descendants = $dependencyGraph !== null
+                    ? $dependencyGraph->descendantsOf($name)
+                    : [];
+                foreach ($this->reportSkippedFailFast($jobs, $consumed, $descendants, $name) as $skippedResult) {
                     $results[] = $skippedResult;
                 }
                 break;
             }
         }
 
-        return $results;
+        return $this->attachNeedsToResults($results, $dependencyGraph);
+    }
+
+    /**
+     * @param JobAbstract[] $jobs
+     * @param string[] $consumed jobs already processed (executed or skipped)
+     * @param string[] $descendants descendants of the failed job in the DAG
+     * @return JobResult[]
+     */
+    private function reportSkippedFailFast(
+        array $jobs,
+        array $consumed,
+        array $descendants,
+        string $failedJobName
+    ): array {
+        $skipped = [];
+        foreach ($jobs as $job) {
+            if (in_array($job->getName(), $consumed, true)) {
+                continue;
+            }
+            $reason = in_array($job->getName(), $descendants, true)
+                ? "needs $failedJobName failed"
+                : 'skipped by fail-fast';
+            $this->outputHandler->onJobSkipped($job->getDisplayName(), $reason);
+            $skipped[] = $this->attachInputFilesIfApplicable(
+                JobResult::skipped(
+                    $job->getName(),
+                    $job->getType(),
+                    $reason,
+                    $job->getConfiguredPaths()
+                ),
+                $job
+            );
+        }
+        return $skipped;
+    }
+
+    /**
+     * @param string[] $needs
+     * @param string[] $failedNames
+     * @param string[] $skippedNames
+     * @return array<string, string>  blockerName → 'failed' | 'skipped'
+     */
+    private static function classifyTerminalBlockersFrom(array $needs, array $failedNames, array $skippedNames): array
+    {
+        $blockers = [];
+        foreach ($needs as $dep) {
+            if (in_array($dep, $failedNames, true)) {
+                $blockers[$dep] = 'failed';
+            } elseif (in_array($dep, $skippedNames, true)) {
+                $blockers[$dep] = 'skipped';
+            }
+        }
+        return $blockers;
+    }
+
+    /**
+     * @param array<string, string> $blockers
+     */
+    private static function formatPropagatedSkipReasonStatic(array $blockers): string
+    {
+        $failed = [];
+        $skipped = [];
+        foreach ($blockers as $name => $kind) {
+            if ($kind === 'failed') {
+                $failed[] = $name;
+            } else {
+                $skipped[] = $name;
+            }
+        }
+        if ($failed === []) {
+            $verb = count($skipped) === 1 ? 'was skipped' : 'were skipped';
+            return 'needs ' . implode(', ', $skipped) . ' ' . $verb;
+        }
+        if ($skipped === []) {
+            return 'needs ' . implode(', ', $failed) . ' failed';
+        }
+        $skipVerb = count($skipped) === 1 ? 'was skipped' : 'were skipped';
+        return 'needs '
+            . implode(', ', $failed) . ' failed, '
+            . implode(', ', $skipped) . ' ' . $skipVerb;
     }
 
     /**
@@ -501,12 +631,28 @@ class FlowExecutor
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates pool + dashboard + fail-fast
      * @SuppressWarnings(PHPMD.NPathComplexity) Dashboard tick + pool fill + fail-fast paths
      */
-    private function executeParallel(array $jobs, int $maxProcesses, int $coresBudget, bool $failFast, OptionsConfiguration $options): array
-    {
+    private function executeParallel(
+        array $jobs,
+        int $maxProcesses,
+        int $coresBudget,
+        bool $failFast,
+        OptionsConfiguration $options,
+        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null
+    ): array {
         $results = [];
         $pool = $this->buildProcessPool($maxProcesses, $coresBudget, $jobs, $options);
         $pool->enqueue($jobs);
+        // FEAT-3: register needs map so the admission gate and the drain
+        // primitive know each job's dependencies.
+        if ($dependencyGraph !== null) {
+            $needsByJob = [];
+            foreach ($jobs as $job) {
+                $needsByJob[$job->getName()] = $dependencyGraph->getNeedsOf($job->getName());
+            }
+            $pool->setNeedsByJob($needsByJob);
+        }
         $failFastTriggered = false;
+        $waitingShown = [];  // FEAT-3: jobName → list-of-blockers last announced
         $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;
         $lastTick = $this->now();
 
@@ -529,6 +675,27 @@ class FlowExecutor
 
         while ($pool->hasWork()) {
             if (!$failFastTriggered) {
+                // FEAT-3: drain jobs whose `needs` already failed/skipped BEFORE
+                // attempting admission. Drained jobs surface as JobResults with
+                // a propagated `skipReason` (D2).
+                if ($dependencyGraph !== null) {
+                    foreach ($pool->drainBlockedByFailedDeps() as $drained) {
+                        $reason = $drained->getSkipReason() ?? 'needs were not satisfied';
+                        $this->outputHandler->onJobSkipped($drained->getJobName(), $reason);
+                        $results[] = $drained;
+                    }
+                    // Emit `onJobWaiting` for jobs still queued with pending
+                    // needs. Re-emit only when the blocker set changed since
+                    // the last announcement to avoid spam.
+                    foreach ($pool->getWaitingByJob() as $name => $blockers) {
+                        $last = $waitingShown[$name] ?? null;
+                        if ($last !== $blockers) {
+                            $this->outputHandler->onJobWaiting($name, $blockers);
+                            $waitingShown[$name] = $blockers;
+                        }
+                    }
+                }
+
                 $started = $pool->fillPool();
                 $this->updatePeakThreads($pool->getRunning());
 
@@ -550,25 +717,36 @@ class FlowExecutor
             foreach ($pool->pollCompleted() as $entry) {
                 $result = $this->collectResult($entry);
                 $results[] = $result;
+                $pool->notifyResult($result->getJobName(), $result->isSuccess(), false);
 
                 if ($failFast && !$result->isSuccess()) {
                     $failFastTriggered = true;
-                    foreach ($pool->terminateAll() as $terminatedEntry) {
-                        $results[] = $this->collectResult($terminatedEntry);
-                    }
+                    // FEAT-3 (D6): jobs in running terminate naturally; we no
+                    // longer terminateAll(). The remaining queue is drained
+                    // with descendant-aware skip reasons.
+                    $descendants = $dependencyGraph !== null
+                        ? $dependencyGraph->descendantsOf($result->getJobName())
+                        : [];
                     foreach ($pool->getQueuedJobs() as $skippedJob) {
-                        $this->outputHandler->onJobSkipped($skippedJob->getDisplayName(), 'skipped by fail-fast');
+                        $reason = in_array($skippedJob->getName(), $descendants, true)
+                            ? "needs {$result->getJobName()} failed"
+                            : 'skipped by fail-fast';
+                        $this->outputHandler->onJobSkipped($skippedJob->getDisplayName(), $reason);
                         $results[] = $this->attachInputFilesIfApplicable(
                             JobResult::skipped(
                                 $skippedJob->getName(),
                                 $skippedJob->getType(),
-                                'skipped by fail-fast',
+                                $reason,
                                 $skippedJob->getConfiguredPaths()
                             ),
                             $skippedJob
                         );
+                        $pool->notifyResult($skippedJob->getName(), false, true);
                     }
                     $pool->clearQueue();
+                    // Break out of the current poll loop — the outer while keeps
+                    // polling the running jobs (whose results we still collect)
+                    // until they finish naturally. We no longer terminateAll().
                     break;
                 }
             }
@@ -595,7 +773,30 @@ class FlowExecutor
             $memoryHandler->tick($pool->getRunning());
         }
 
-        return $results;
+        return $this->attachNeedsToResults($results, $dependencyGraph);
+    }
+
+    /**
+     * FEAT-3: stamp each JobResult with its declared `needs` so the JSON v2
+     * formatter can emit the field. No-op when the flow has no dependency
+     * graph (most flows; `attach` returns the array unchanged).
+     *
+     * @param JobResult[] $results
+     * @return JobResult[]
+     */
+    private function attachNeedsToResults(
+        array $results,
+        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $graph
+    ): array {
+        if ($graph === null) {
+            return $results;
+        }
+        $stamped = [];
+        foreach ($results as $result) {
+            $needs = $graph->getNeedsOf($result->getJobName());
+            $stamped[] = $needs === [] ? $result : $result->withNeeds($needs);
+        }
+        return $stamped;
     }
 
     /**
@@ -825,39 +1026,6 @@ class FlowExecutor
         return new TimeBudgetState($warnAfter, $failAfter, $sum, $warned, $failed);
     }
 
-    /**
-     * Report remaining jobs as skipped after a fail-fast trigger (sequential mode).
-     * Returns JobResult::skipped entries so the caller can append them to the
-     * results array — structured formats (JSON/JUnit/SARIF) need the full plan.
-     *
-     * @param JobAbstract[] $allJobs
-     * @param JobAbstract $failedJob
-     * @return JobResult[]
-     */
-    private function reportSkipped(array $allJobs, JobAbstract $failedJob): array
-    {
-        $skipped = [];
-        $found = false;
-        foreach ($allJobs as $job) {
-            if ($job === $failedJob) {
-                $found = true;
-                continue;
-            }
-            if ($found) {
-                $this->outputHandler->onJobSkipped($job->getDisplayName(), 'skipped by fail-fast');
-                $skipped[] = $this->attachInputFilesIfApplicable(
-                    JobResult::skipped(
-                        $job->getName(),
-                        $job->getType(),
-                        'skipped by fail-fast',
-                        $job->getConfiguredPaths()
-                    ),
-                    $job
-                );
-            }
-        }
-        return $skipped;
-    }
 
     /**
      * Attach an InputFilesPerJob slice to a JobResult when the executor is in

@@ -234,6 +234,128 @@ Same semantics as FEAT-1's `only-files` / `exclude-files`:
 - **`execution` is the only supported attribute today.** The object shape leaves room for `time-budget` / `fail-fast` to be added later without breaking the surface.
 - **`PHP collapses duplicate map keys.** `'master' => …, 'master' => …` cannot be detected — PHP keeps only the last entry.
 
+## Job dependencies (`needs`)
+
+> Since **v3.4** (FEAT-3).
+
+A flow entry can declare which other jobs in the same flow it depends on:
+
+```php
+'flows' => [
+    'qa' => [
+        'options' => ['processes' => 4],
+        'jobs' => [
+            'yarn-install',                                       // string entry: no dependencies
+            ['job' => 'eslint',   'needs' => ['yarn-install']],   // waits for yarn-install
+            ['job' => 'prettier', 'needs' => ['yarn-install']],   // waits for yarn-install
+            'phpstan',                                            // independent: starts in parallel
+            'phpcs',                                              // independent
+        ],
+    ],
+],
+```
+
+The admission gate holds `eslint` and `prettier` until `yarn-install` completes successfully — but `phpstan` and `phpcs` start immediately because they declare no dependency on `yarn-install`. With `processes: 4`, the wall time approaches the longest dependency chain rather than the sum of jobs.
+
+### Semantics
+
+| When | The dependent... |
+|---|---|
+| All `needs` finish successfully | runs normally. |
+| At least one `need` failed | is skipped with `skipReason: 'needs X failed'` (lists every failed dep when multiple). |
+| At least one `need` was skipped (and none failed) | is skipped with `skipReason: 'needs X was skipped'`. |
+| Mixed (one failed, another skipped) | `skipReason: 'needs A failed, B was skipped'`. |
+
+The skip propagates down the chain: if `eslint` is skipped because `yarn-install` failed, then `lint-fix` (`needs: ['eslint']`) is skipped with `'needs eslint was skipped'`. No invisible skips — every consequence carries its specific cause.
+
+### Static validation (`conf:check`)
+
+The dependency graph is validated at parse time, not at runtime. Errors:
+
+- **Cycle of any length**: `A → A` (self-loop), `A → B → A`, `A → B → C → A`, etc. Reported with the offending chain — e.g. `Flow 'qa': 'needs' has a cycle: A -> B -> A.`
+- **`needs` references a job not declared in the same flow** — cross-flow dependencies must be modelled with meta-flows.
+- **Same job name declared twice in `jobs`** — needs would be ambiguous.
+- **Empty list (`'needs' => []`)** — meaningless; use `null` to disable an inherited rule (see override below).
+
+### Execution order (`processes: 1`)
+
+In sequential mode the executor receives jobs **already topologically sorted** by `FlowPreparer`. The declaration order is preserved between nodes that are not related by `needs`, so the only visible effect is "things move earlier if other things needed them first" — never later.
+
+### fail-fast behaviour
+
+When `fail-fast: true` and a job fails:
+
+- Jobs **already running** complete normally (no SIGTERM cascade).
+- The remaining **queue** is skipped. Direct or transitive descendants of the failing job in the DAG receive `skipReason: 'needs X failed'`; siblings independent of the failure receive `skipReason: 'skipped by fail-fast'`.
+
+Without `needs` declared, `fail-fast` falls back to the same semantics as previous versions (running terminates naturally; queue is skipped uniformly).
+
+### Composition with `only-files` / `exclude-files` (FEAT-1)
+
+Evaluation order: **`only-files`/`exclude-files` first, `needs` second**. If a job skips by `only-files`, its dependents propagate with `'needs X was skipped'`. To avoid surprising skip cascades, declare the **same `only-files`** on the dependent so both skip together via FEAT-1 instead of via propagation:
+
+```php
+'jobs' => [
+    ['job' => 'yarn-install', 'only-files' => ['**/*.{js,ts,vue,json}']],
+    ['job' => 'eslint',
+     'needs'      => ['yarn-install'],
+     'only-files' => ['**/*.{js,ts,vue,json}'],   // ← match the upstream
+    ],
+],
+```
+
+When there is no JS in the change set, both skip by `only-files` (FEAT-1) — coherent with the dev's intent.
+
+### Composition with `on` (FEAT-2)
+
+The execution mode chosen by `on` does not affect `needs`. Dependencies are structural — they hold in `full`, `fast`, and `fast-branch` alike.
+
+### Overriding in `githooks.local.php`
+
+Same semantics as FEAT-1/2:
+
+| Local declaration | Effect on the inherited `needs` |
+|---|---|
+| key absent | Inherits the shared list. |
+| `'needs' => null` | Cancels the inherited list. |
+| `'needs' => ['lint']` | Replaces (with the documented `array_replace_recursive` index-merge caveat). |
+
+### JSON v2
+
+Each job entry surfaces its declared dependencies under `needs`:
+
+```json
+{
+  "name": "eslint",
+  "type": "parallel-lint",
+  "needs": ["yarn-install"],
+  "skipped": true,
+  "skipReason": "needs yarn-install failed"
+}
+```
+
+`needs` is omitted when empty (no dependencies declared) so the schema stays compact for the common case.
+
+### TTY parallel dashboard
+
+Jobs waiting on dependencies show a fourth state next to `running` / `queued` / `done`:
+
+```
+  ⏳ yarn-install [3.2s]
+  ⏸ eslint (waiting yarn-install)
+  ⏸ prettier (waiting yarn-install)
+  ⏺ phpcs
+```
+
+In non-TTY output (CI logs) the waiting lane is silent — only the final results (run / skip with reason) appear.
+
+### Out of scope for v3.4
+
+- **Cross-flow `needs`** — use meta-flows for that.
+- **GitLab-style conditions** (`when: 'on_failure'` / `when: 'always'`).
+- **Matrix-style fan-out** — declare each variant as its own job.
+- **`optional: true` per dependency** to opt out of propagation — waiting on a confirmed use case.
+
 ## Meta-flows
 
 A **meta-flow** is a flow that, instead of declaring `jobs`, declares `flows` — a list of normal flow names to combine into a single executable plan. It is the declarative companion to [`githooks flows ci-pack`](../cli/flows.md): the combo lives with the project, runs the same locally and in CI, and exposes its own options.

@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output;
 
+use Wtyd\GitHooks\Output\Concerns\OutputHandlerWaitingNoOp;
+
 /**
  * Silent output handler for structured formats (JSON, JUnit).
  * Captures nothing — the final output comes from a ResultFormatter.
  */
 class NullOutputHandler implements OutputHandler
 {
+    use OutputHandlerWaitingNoOp;
+
     /** @SuppressWarnings(PHPMD.UnusedFormalParameter) Interface implementation */
     public function onFlowStart(int $totalJobs): void
     {

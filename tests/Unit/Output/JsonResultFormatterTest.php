@@ -625,4 +625,69 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertSame('phpstan_src', $data['jobs'][0]['name']);
         $this->assertSame('phpcs_all', $data['jobs'][1]['name']);
     }
+
+    // ========================================================================
+    // FEAT-3 · `needs` emission (Group I)
+    // ========================================================================
+
+    /**
+     * @test
+     * I1 — when the job entry declares `needs`, JSON v2 surfaces them.
+     */
+    function emits_needs_when_declared(): void
+    {
+        $job = (new JobResult('eslint', true, '', '500ms'))
+            ->withNeeds(['yarn-install']);
+
+        $json = (new JsonResultFormatter())->format(new FlowResult('qa', [$job], '500ms'));
+        $data = json_decode($json, true);
+
+        $this->assertSame(['yarn-install'], $data['jobs'][0]['needs']);
+    }
+
+    /**
+     * @test
+     * I2 — entries without `needs` declared omit the field entirely (no `[]`).
+     */
+    function omits_needs_when_empty(): void
+    {
+        $job = new JobResult('phpstan', true, '', '1s');
+
+        $json = (new JsonResultFormatter())->format(new FlowResult('qa', [$job], '1s'));
+        $data = json_decode($json, true);
+
+        $this->assertArrayNotHasKey('needs', $data['jobs'][0]);
+    }
+
+    /**
+     * @test
+     * I3 — multiple needs preserve declaration order.
+     */
+    function emits_multiple_needs_in_order(): void
+    {
+        $job = (new JobResult('app', true, '', '2s'))
+            ->withNeeds(['compile', 'lint']);
+
+        $json = (new JsonResultFormatter())->format(new FlowResult('qa', [$job], '2s'));
+        $data = json_decode($json, true);
+
+        $this->assertSame(['compile', 'lint'], $data['jobs'][0]['needs']);
+    }
+
+    /**
+     * @test
+     * I4 — when a propagation skip happens, `needs` coexists with `skipReason`.
+     */
+    function emits_needs_and_skipReason_for_propagated_skips(): void
+    {
+        $job = JobResult::skipped('eslint', 'parallel-lint', 'needs yarn-install failed', [])
+            ->withNeeds(['yarn-install']);
+
+        $json = (new JsonResultFormatter())->format(new FlowResult('qa', [$job], '0s'));
+        $data = json_decode($json, true);
+
+        $this->assertSame(['yarn-install'], $data['jobs'][0]['needs']);
+        $this->assertTrue($data['jobs'][0]['skipped']);
+        $this->assertSame('needs yarn-install failed', $data['jobs'][0]['skipReason']);
+    }
 }

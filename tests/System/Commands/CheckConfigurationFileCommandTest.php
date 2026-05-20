@@ -656,4 +656,115 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(0)
             ->containsStringInOutput("'on' has no catch-all '*' pattern");
     }
+
+    // =========================================================================
+    // FEAT-3 — `needs` per flow entry.
+    //
+    // Decision table — invalid declarations the parser must reject with exit 1:
+    //   A. self-loop (cycle of length 1)
+    //   B. cycle of length 2 (A → B → A)
+    //   C. needs references undefined job
+    //   D. same job declared twice in the `jobs` list
+    //   E. empty `needs` list (points the user at `null`)
+    // =========================================================================
+
+    public function flowNeedsAdversariesProvider(): array
+    {
+        $jobs = [
+            'lint'  => ['type' => 'parallel-lint', 'paths' => ['src']],
+            'other' => ['type' => 'parallel-lint', 'paths' => ['src']],
+        ];
+
+        return [
+            'A. self-loop (cycle n=1)' => [
+                'flows' => [
+                    'qa' => ['jobs' => [['job' => 'lint', 'needs' => ['lint']]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa': 'needs' has a cycle: lint -> lint.",
+            ],
+            'B. cycle of length 2' => [
+                'flows' => [
+                    'qa' => ['jobs' => [
+                        ['job' => 'lint',  'needs' => ['other']],
+                        ['job' => 'other', 'needs' => ['lint']],
+                    ]
+                    ],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa': 'needs' has a cycle: lint -> other -> lint.",
+            ],
+            'C. needs references undefined job' => [
+                'flows' => [
+                    'qa' => ['jobs' => [['job' => 'lint', 'needs' => ['ghost']]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa' job ref 'lint': 'needs' references undefined job 'ghost'.",
+            ],
+            'D. duplicate job in jobs list' => [
+                'flows' => [
+                    'qa' => ['jobs' => ['lint', ['job' => 'lint', 'needs' => ['other']]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa': job 'lint' is declared more than once.",
+            ],
+            'E. empty needs list' => [
+                'flows' => [
+                    'qa' => ['jobs' => [['job' => 'lint', 'needs' => []]]],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa' job ref 'lint': 'needs' must not be empty. Use null to disable an inherited rule.",
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider flowNeedsAdversariesProvider
+     */
+    function rejects_v3_config_with_invalid_needs(array $flows, array $jobs, string $expectedError)
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks([])
+            ->setV3Flows($flows)
+            ->setV3Jobs($jobs)
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(1)
+            ->expectsOutput('The configuration file has some errors')
+            ->containsStringInOutput($expectedError);
+    }
+
+    /** @test */
+    function accepts_v3_config_with_valid_needs_dag()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks([])
+            ->setV3Jobs([
+                'compile' => ['type' => 'parallel-lint', 'paths' => ['src']],
+                'lint'    => ['type' => 'parallel-lint', 'paths' => ['src']],
+                'app'     => ['type' => 'parallel-lint', 'paths' => ['src']],
+            ])
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        'compile',
+                        ['job' => 'lint', 'needs' => ['compile']],
+                        ['job' => 'app',  'needs' => ['compile', 'lint']],
+                    ],
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsOutput('The configuration file has the correct format.');
+    }
 }

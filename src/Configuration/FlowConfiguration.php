@@ -30,11 +30,15 @@ class FlowConfiguration
     /** @var FlowOnRule[]|null FEAT-2: ordered rules `branch_pattern => attrs` */
     private ?array $onRules;
 
+    /** FEAT-3: dependency graph among job entries, or null when no `needs` declared */
+    private ?FlowDependencyGraph $dependencyGraph;
+
     /**
      * @param string[] $jobs
      * @param string[]|null $flowReferences null for normal flows; array (possibly empty) for meta-flows
      * @param JobRef[]|null $jobRefs FEAT-1 rich refs. Defaults to one JobRef::fromString() per name in $jobs
      * @param FlowOnRule[]|null $onRules FEAT-2 branch-based mode rules in declaration order
+     * @param FlowDependencyGraph|null $dependencyGraph FEAT-3 DAG of `needs` relations
      */
     public function __construct(
         string $name,
@@ -43,7 +47,8 @@ class FlowConfiguration
         ?string $execution = null,
         ?array $flowReferences = null,
         ?array $jobRefs = null,
-        ?array $onRules = null
+        ?array $onRules = null,
+        ?FlowDependencyGraph $dependencyGraph = null
     ) {
         $this->name = $name;
         $this->jobs = $jobs;
@@ -52,6 +57,7 @@ class FlowConfiguration
         $this->options = $options;
         $this->execution = $execution;
         $this->onRules = $onRules;
+        $this->dependencyGraph = $dependencyGraph;
     }
 
     /**
@@ -141,7 +147,21 @@ class FlowConfiguration
             return null;
         }
 
-        return new self($name, $jobs, $options, $execution, $flowReferences, $jobRefs, $onRules);
+        // FEAT-3: build dependency graph only for normal flows that declared
+        // jobs. Meta-flows have no jobs of their own — their composition is
+        // resolved at expansion time. ($jobRefs is guaranteed non-null on
+        // the $hasJobs branch by parseJobEntries — checked above.)
+        $dependencyGraph = null;
+        if ($hasJobs) {
+            // $jobRefs is non-null on the $hasJobs branch (set by parseJobEntries
+            // above; otherwise we returned). PHPStan tracks the flow narrowing.
+            $dependencyGraph = FlowDependencyGraph::build($name, $jobRefs, $result);
+            if ($dependencyGraph === null) {
+                return null;
+            }
+        }
+
+        return new self($name, $jobs, $options, $execution, $flowReferences, $jobRefs, $onRules, $dependencyGraph);
     }
 
     /**
@@ -290,5 +310,15 @@ class FlowConfiguration
     public function getOn(): ?array
     {
         return $this->onRules;
+    }
+
+    /**
+     * FEAT-3: DAG of `needs` relations among job entries. Null for meta-flows
+     * (no jobs of their own) or for normal flows constructed without going
+     * through `fromArray()` (e.g. internal aggregates).
+     */
+    public function getDependencyGraph(): ?FlowDependencyGraph
+    {
+        return $this->dependencyGraph;
     }
 }

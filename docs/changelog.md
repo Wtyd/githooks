@@ -6,6 +6,41 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- **Intra-flow dependencies with `needs: [<job>, ...]` per flow entry** (FEAT-3). A flow entry now accepts a `needs` attribute that lists other jobs in the same flow it depends on:
+    ```php
+    'qa' => [
+        'options' => ['processes' => 4],
+        'jobs' => [
+            'yarn-install',
+            ['job' => 'eslint',   'needs' => ['yarn-install']],
+            ['job' => 'prettier', 'needs' => ['yarn-install']],
+            'phpstan',  // independent — runs in parallel with yarn-install
+            'phpcs',    // independent
+        ],
+    ],
+    ```
+    The admission gate (`FifoAdmission` / `GreedyAdmission`) holds back a job until all its `needs` have completed **successfully**. In sequential mode (`processes: 1`) the executor receives jobs in topological order, so the dependency contract is honoured automatically. The parallel pool drains jobs whose `needs` already failed or were skipped and reports them with a precise `skipReason`:
+    - `needs yarn-install failed` — single failure
+    - `needs compile, lint failed` — multiple failures
+    - `needs yarn-install was skipped` — single skip propagation
+    - `needs A failed, B was skipped` — mixed causes
+
+    Closes the epic `flow-entry-attrs` (FEAT-1 `only-files`/`exclude-files`, FEAT-2 `on`, FEAT-3 `needs`). Compositions with FEAT-1: when an upstream job skipped by `only-files`, dependents propagate visibly with `skipReason: 'needs X was skipped'` so the dev doesn't get a silent skip cascade — recommended pattern in docs is to declare the same `only-files` on the dependent so both skip together.
+
+    `conf:check` validates the DAG statically with DFS: cycles of any length (`A -> A`, `A -> B -> A`, `A -> B -> C -> A`, …) are rejected with the offending chain in the error message; `needs` targets that don't exist as job declarations in the same flow are rejected; the same job declared twice in `jobs` is rejected; an empty `needs => []` list is rejected pointing the user at `null` (which cancels an inherited rule from `.local.php`).
+
+    `fail-fast` behaviour evolved: jobs in `running` now finish naturally instead of being terminated (change from prior behaviour). The queue is skipped with `skipReason: 'needs X failed'` for descendants of the failing job in the DAG, `skipped by fail-fast` for the rest. The terminate-on-fail behaviour of the previous releases is gone — fail-fast is now best-effort cancellation of pending work, not killing of in-flight work.
+
+    UI changes:
+    - **TTY parallel dashboard** gains a `⏸ jobName (waiting X, Y)` lane showing jobs queued because their `needs` are still in flight.
+    - **JSON v2** emits `needs: [...]` on each job entry whose declaration carries dependencies (omitted when empty for consistency with `skipReason`).
+
+    `OutputHandler::onJobWaiting(string, string[])` was added to the contract. Existing handlers (text, streaming, progress, null, CI decorators) absorb the call via the new `OutputHandlerWaitingNoOp` trait — only `DashboardOutputHandler` actually paints the state.
+
+    Override semantics in `githooks.local.php` mirror FEAT-1/2: missing key inherits; `'needs' => null` cancels the inherited list; declared local list takes effect (with the documented `array_replace_recursive` index-merge caveat — unchanged across the epic).
+
+    Out of scope for v3.4: cross-flow `needs` (use meta-flows instead), GitLab-style `when: 'on_failure'`/`when: 'always'` conditions, matrix-style fan-out, and `optional: true` per dependency (will land when demand surfaces).
+
 - **Per-flow execution mode selected by branch with `on => [branch_pattern => attrs]`** (FEAT-2). A flow can now declare an `on` map that picks its execution mode based on the current branch:
     ```php
     'ci-validation' => [

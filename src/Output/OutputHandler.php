@@ -27,6 +27,16 @@ interface OutputHandler
 
     public function onJobSkipped(string $jobName, string $reason): void;
 
+    /**
+     * FEAT-3: called when a job is queued but cannot start because one or
+     * more declared `needs` are still pending. Only the parallel dashboard
+     * pays attention to this signal today — every other handler trait-defaults
+     * to no-op via `OutputHandlerWaitingNoOp`.
+     *
+     * @param string[] $waitingFor list of still-pending dependency names
+     */
+    public function onJobWaiting(string $jobName, array $waitingFor): void;
+
     public function onJobDryRun(string $jobName, string $command): void;
 
     /**

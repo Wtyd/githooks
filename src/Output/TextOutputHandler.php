@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output;
 
+use Wtyd\GitHooks\Output\Concerns\OutputHandlerWaitingNoOp;
 use Wtyd\GitHooks\Utils\Printer;
 
 /**
@@ -12,6 +13,8 @@ use Wtyd\GitHooks\Utils\Printer;
  */
 class TextOutputHandler implements OutputHandler
 {
+    use OutputHandlerWaitingNoOp;
+
     private Printer $printer;
 
     /** @var array<array{jobName: string, output: string}> */

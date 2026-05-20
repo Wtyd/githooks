@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output;
 
+use Wtyd\GitHooks\Output\Concerns\OutputHandlerWaitingNoOp;
 use Wtyd\GitHooks\Utils\Printer;
 
 /**
@@ -14,6 +15,8 @@ use Wtyd\GitHooks\Utils\Printer;
  */
 class StreamingTextOutputHandler implements OutputHandler
 {
+    use OutputHandlerWaitingNoOp;
+
     private Printer $printer;
 
     public function __construct(Printer $printer)

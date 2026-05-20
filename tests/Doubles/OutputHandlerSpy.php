@@ -36,6 +36,9 @@ class OutputHandlerSpy implements OutputHandler
     /** @var array<int, array{job: string, reason: string}> */
     public array $skippedJobs = [];
 
+    /** @var array<int, array{job: string, waitingFor: string[]}> FEAT-3 */
+    public array $waitingJobs = [];
+
     /** @var array<int, array{job: string, command: string}> */
     public array $dryRunJobs = [];
 
@@ -69,6 +72,14 @@ class OutputHandlerSpy implements OutputHandler
     public function onJobSkipped(string $jobName, string $reason): void
     {
         $this->skippedJobs[] = ['job' => $jobName, 'reason' => $reason];
+    }
+
+    /**
+     * @param string[] $waitingFor
+     */
+    public function onJobWaiting(string $jobName, array $waitingFor): void
+    {
+        $this->waitingJobs[] = ['job' => $jobName, 'waitingFor' => $waitingFor];
     }
 
     public function onJobDryRun(string $jobName, string $command): void

@@ -44,6 +44,14 @@ class JsonResultFormatter implements ResultFormatter
                 $entry['inputFiles'] = $perJob->toArray();
             }
 
+            // FEAT-3: emit `needs` only when the entry actually declared
+            // dependencies. Empty arrays would clutter the schema for the
+            // common case where no `needs` are used (D5).
+            $needs = $job->getNeeds();
+            if ($needs !== []) {
+                $entry['needs'] = $needs;
+            }
+
             return $entry;
         }, $result->getJobResults());
 

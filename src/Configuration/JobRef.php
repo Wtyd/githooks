@@ -25,15 +25,24 @@ class JobRef
     /** @var string[]|null */
     private ?array $excludeFiles;
 
+    /** @var string[] FEAT-3: ordered job names this entry depends on within the same flow */
+    private array $needs;
+
     /**
      * @param string[]|null $onlyFiles
      * @param string[]|null $excludeFiles
+     * @param string[] $needs
      */
-    public function __construct(string $target, ?array $onlyFiles = null, ?array $excludeFiles = null)
-    {
+    public function __construct(
+        string $target,
+        ?array $onlyFiles = null,
+        ?array $excludeFiles = null,
+        array $needs = []
+    ) {
         $this->target = $target;
         $this->onlyFiles = $onlyFiles;
         $this->excludeFiles = $excludeFiles;
+        $this->needs = $needs;
     }
 
     public static function fromString(string $ref): self
@@ -67,9 +76,87 @@ class JobRef
             return null;
         }
 
+        $needs = self::parseNeeds($raw, $flowName, $target, $result);
+        if ($needs === false) {
+            return null;
+        }
+
         self::warnUnknownKeys($raw, $flowName, $target, $result);
 
-        return new self($target, $onlyFiles, $excludeFiles);
+        return new self($target, $onlyFiles, $excludeFiles, $needs);
+    }
+
+    /**
+     * Parse the optional `needs` attribute (FEAT-3). Returns:
+     *   - false on validation error (caller aborts)
+     *   - string[] (possibly empty when key absent or `null`)
+     *
+     * @param array<string, mixed> $raw
+     * @return string[]|false
+     */
+    private static function parseNeeds(
+        array $raw,
+        string $flowName,
+        string $target,
+        ValidationResult $result
+    ) {
+        if (!array_key_exists('needs', $raw) || $raw['needs'] === null) {
+            return [];
+        }
+
+        $value = $raw['needs'];
+        if (is_string($value)) {
+            $value = [$value];
+        }
+        if (!is_array($value)) {
+            $result->addError(
+                "Flow '$flowName' job ref '$target': 'needs' must be a string, array of strings, or null."
+            );
+            return false;
+        }
+        if (empty($value)) {
+            $result->addError(
+                "Flow '$flowName' job ref '$target': 'needs' must not be empty. Use null to disable an inherited rule."
+            );
+            return false;
+        }
+
+        return self::validateJobNameList($value, $flowName, $target, $result);
+    }
+
+    /**
+     * @param mixed[] $value
+     * @return string[]|false
+     */
+    private static function validateJobNameList(
+        array $value,
+        string $flowName,
+        string $target,
+        ValidationResult $result
+    ) {
+        $needs = [];
+        foreach ($value as $name) {
+            if (!is_string($name)) {
+                $result->addError(
+                    "Flow '$flowName' job ref '$target': 'needs' must be a string, array of strings, or null."
+                );
+                return false;
+            }
+            if ($name === '') {
+                $result->addError(
+                    "Flow '$flowName' job ref '$target': 'needs' contains an empty job name."
+                );
+                return false;
+            }
+            if (in_array($name, $needs, true)) {
+                $result->addError(
+                    "Flow '$flowName' job ref '$target': 'needs' contains duplicate job name '$name'."
+                );
+                return false;
+            }
+            $needs[] = $name;
+        }
+        return $needs;
     }
 
     /**
@@ -157,7 +244,7 @@ class JobRef
      */
     private static function warnUnknownKeys(array $raw, string $flowName, string $target, ValidationResult $result): void
     {
-        $knownKeys = ['job', 'only-files', 'exclude-files'];
+        $knownKeys = ['job', 'only-files', 'exclude-files', 'needs'];
         foreach (array_keys($raw) as $key) {
             if (!in_array($key, $knownKeys, true)) {
                 $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
@@ -188,5 +275,16 @@ class JobRef
     public function hasAdmissionRules(): bool
     {
         return $this->onlyFiles !== null || $this->excludeFiles !== null;
+    }
+
+    /**
+     * FEAT-3: ordered job names this entry depends on within the same flow.
+     * Empty array when no dependencies are declared.
+     *
+     * @return string[]
+     */
+    public function getNeeds(): array
+    {
+        return $this->needs;
     }
 }

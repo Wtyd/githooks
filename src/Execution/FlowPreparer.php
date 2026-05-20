@@ -60,7 +60,14 @@ class FlowPreparer
             $effectiveInvocation = ExecutionMode::FAST;
         }
 
-        foreach ($flow->getJobReferences() as $jobRef) {
+        // FEAT-3: when the flow has a dependency graph, iterate in topological
+        // order so executeSequential() respects `needs` automatically (it has
+        // no admission strategy, only iterates the array verbatim). The
+        // parallel path also benefits — the FIFO queue stays consistent with
+        // the declared dependency order.
+        $orderedRefs = $this->orderJobRefsTopologically($flow);
+
+        foreach ($orderedRefs as $jobRef) {
             $jobName = $jobRef->getTarget();
             if (!empty($onlyJobs) && !in_array($jobName, $onlyJobs, true)) {
                 continue;
@@ -121,7 +128,10 @@ class FlowPreparer
             $context,
             $skippedJobs,
             $effectiveInvocation ?? ExecutionMode::FULL,
-            $context !== null ? $context->getInputFilesResolution() : null
+            $context !== null ? $context->getInputFilesResolution() : null,
+            null,
+            null,
+            $flow->getDependencyGraph()
         );
     }
 
@@ -351,6 +361,32 @@ class FlowPreparer
         }
 
         return $jobConfig->withPaths($filteredFiles);
+    }
+
+    /**
+     * Return the job refs in topological order if the flow has a dependency
+     * graph; otherwise return them in declaration order unchanged.
+     *
+     * @return JobRef[]
+     */
+    private function orderJobRefsTopologically(FlowConfiguration $flow): array
+    {
+        $refs = $flow->getJobReferences();
+        $graph = $flow->getDependencyGraph();
+        if ($graph === null) {
+            return $refs;
+        }
+        $byName = [];
+        foreach ($refs as $ref) {
+            $byName[$ref->getTarget()] = $ref;
+        }
+        $ordered = [];
+        foreach ($graph->getOrderedNames() as $name) {
+            if (isset($byName[$name])) {
+                $ordered[] = $byName[$name];
+            }
+        }
+        return $ordered;
     }
 
     /**

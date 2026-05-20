@@ -49,6 +49,14 @@ abstract class CIOutputDecorator implements OutputHandler
         $this->inner->onJobSkipped($jobName, $reason);
     }
 
+    /**
+     * @param string[] $waitingFor
+     */
+    public function onJobWaiting(string $jobName, array $waitingFor): void
+    {
+        $this->inner->onJobWaiting($jobName, $waitingFor);
+    }
+
     public function onJobDryRun(string $jobName, string $command): void
     {
         $this->inner->onJobDryRun($jobName, $command);

@@ -30,20 +30,45 @@ final class AdmissionContext
     /** @var array<string, ?int> jobName → memory reservation in MB (null when not declared in short form) */
     public array $memoryReserveByJob;
 
+    /** @var array<string, string[]> FEAT-3: jobName → list of jobs it depends on within the same flow */
+    public array $needsByJob;
+
+    /** @var string[] FEAT-3: jobs that completed successfully (their dependents are unblocked) */
+    public array $completedJobs;
+
+    /** @var string[] FEAT-3: jobs whose process failed (their dependents propagate the skip) */
+    public array $failedJobs;
+
+    /** @var string[] FEAT-3: jobs that were skipped (only-files, fail-fast, or upstream propagation) */
+    public array $skippedJobs;
+
     /**
      * @param array<string, int>  $coresByJob
      * @param array<string, ?int> $memoryReserveByJob
+     * @param array<string, string[]> $needsByJob
+     * @param string[] $completedJobs
+     * @param string[] $failedJobs
+     * @param string[] $skippedJobs
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Resource axes (cores/memory) plus FEAT-3 dependency tracking.
      */
     public function __construct(
         int $coresFree,
         ?int $memoryFree,
         array $coresByJob,
-        array $memoryReserveByJob
+        array $memoryReserveByJob,
+        array $needsByJob = [],
+        array $completedJobs = [],
+        array $failedJobs = [],
+        array $skippedJobs = []
     ) {
         $this->coresFree = $coresFree;
         $this->memoryFree = $memoryFree;
         $this->coresByJob = $coresByJob;
         $this->memoryReserveByJob = $memoryReserveByJob;
+        $this->needsByJob = $needsByJob;
+        $this->completedJobs = $completedJobs;
+        $this->failedJobs = $failedJobs;
+        $this->skippedJobs = $skippedJobs;
     }
 
     /**
@@ -65,5 +90,72 @@ final class AdmissionContext
 
         $memoryReserve = $this->memoryReserveByJob[$name] ?? 0;
         return $memoryReserve <= $this->memoryFree;
+    }
+
+    /**
+     * FEAT-3: a job is ready when every declared `needs` target completed
+     * successfully. Failed or skipped needs make the job non-ready forever
+     * (the pool will drain it as skipped-by-dep before the strategy sees it).
+     */
+    public function isJobReady(JobAbstract $job): bool
+    {
+        $needs = $this->needsByJob[$job->getName()] ?? [];
+        if ($needs === []) {
+            return true;
+        }
+        foreach ($needs as $dep) {
+            if (!in_array($dep, $this->completedJobs, true)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Needs that are still pending (neither completed nor failed/skipped).
+     * Used by the pool to emit `onJobWaiting` events for the dashboard — a
+     * blocker that is already failed/skipped is a propagation candidate, not
+     * a waiting candidate.
+     *
+     * @return string[]
+     */
+    public function getBlockingNeeds(JobAbstract $job): array
+    {
+        $needs = $this->needsByJob[$job->getName()] ?? [];
+        $blocking = [];
+        foreach ($needs as $dep) {
+            if (in_array($dep, $this->completedJobs, true)) {
+                continue;
+            }
+            if (in_array($dep, $this->failedJobs, true)) {
+                continue;
+            }
+            if (in_array($dep, $this->skippedJobs, true)) {
+                continue;
+            }
+            $blocking[] = $dep;
+        }
+        return $blocking;
+    }
+
+    /**
+     * Needs that reached a terminal non-success state (failed or skipped).
+     * Used by the pool to build the `skipReason` when propagating an upstream
+     * fail/skip down the DAG. Order preserves the declaration order of `needs`.
+     *
+     * @return array<string, string>  jobName → 'failed' | 'skipped'
+     */
+    public function getFailedOrSkippedNeeds(JobAbstract $job): array
+    {
+        $needs = $this->needsByJob[$job->getName()] ?? [];
+        $result = [];
+        foreach ($needs as $dep) {
+            if (in_array($dep, $this->failedJobs, true)) {
+                $result[$dep] = 'failed';
+            } elseif (in_array($dep, $this->skippedJobs, true)) {
+                $result[$dep] = 'skipped';
+            }
+        }
+        return $result;
     }
 }

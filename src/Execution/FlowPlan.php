@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 
@@ -33,6 +34,8 @@ class FlowPlan
 
     private ?EffectiveOptionsResolution $effectiveOptions;
 
+    private ?FlowDependencyGraph $dependencyGraph;
+
     /**
      * @param JobAbstract[] $jobs
      * @param array<string, array{type: string, reason: string, paths: string[], accelerable?: bool}> $skippedJobs
@@ -48,7 +51,8 @@ class FlowPlan
         string $executionMode = ExecutionMode::FULL,
         ?InputFilesResolution $inputFiles = null,
         ?array $expandedFlows = null,
-        ?EffectiveOptionsResolution $effectiveOptions = null
+        ?EffectiveOptionsResolution $effectiveOptions = null,
+        ?FlowDependencyGraph $dependencyGraph = null
     ) {
         $this->flowName = $flowName;
         $this->jobs = $jobs;
@@ -59,6 +63,16 @@ class FlowPlan
         $this->inputFiles = $inputFiles;
         $this->expandedFlows = $expandedFlows;
         $this->effectiveOptions = $effectiveOptions;
+        $this->dependencyGraph = $dependencyGraph;
+    }
+
+    /**
+     * FEAT-3: dependency graph among job entries within this flow. Null for
+     * meta-flows or for plans built outside `FlowPreparer::prepare()`.
+     */
+    public function getDependencyGraph(): ?FlowDependencyGraph
+    {
+        return $this->dependencyGraph;
     }
 
     public function getFlowName(): string

@@ -82,6 +82,9 @@ class JobResult
 
     private ?string $killedReason = null;
 
+    /** @var string[] FEAT-3: job names this entry declared as `needs` */
+    private array $needs = [];
+
     /**
      * @param string[] $paths
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Value object
@@ -211,6 +214,28 @@ class JobResult
     {
         $clone = clone $this;
         $clone->inputFiles = $inputFiles;
+        return $clone;
+    }
+
+    /**
+     * FEAT-3: declared dependencies of the flow entry (propagated from JobRef).
+     * Empty array when no `needs` were declared. Surfaces in JSON v2 only when
+     * non-empty (D5).
+     *
+     * @return string[]
+     */
+    public function getNeeds(): array
+    {
+        return $this->needs;
+    }
+
+    /**
+     * @param string[] $needs
+     */
+    public function withNeeds(array $needs): self
+    {
+        $clone = clone $this;
+        $clone->needs = $needs;
         return $clone;
     }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Output;
 
+use Wtyd\GitHooks\Output\Concerns\OutputHandlerWaitingNoOp;
+
 /**
  * Progress output on stderr for structured formats (json, junit, codeclimate, sarif).
  *
@@ -15,6 +17,8 @@ namespace Wtyd\GitHooks\Output;
  */
 class ProgressOutputHandler implements OutputHandler
 {
+    use OutputHandlerWaitingNoOp;
+
     /** @var resource */
     private $stream;
 

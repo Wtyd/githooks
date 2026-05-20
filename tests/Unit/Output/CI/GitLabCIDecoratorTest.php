@@ -133,6 +133,9 @@ class GitLabCIDecoratorTest extends TestCase
             public function onJobDryRun(string $jobName, string $command): void
             {
             }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+            }
             public function flush(): void
             {
                 echo "framed error block (should be suppressed)\n";
@@ -252,6 +255,9 @@ class GitLabCIDecoratorTest extends TestCase
             public function onJobDryRun(string $jobName, string $command): void
             {
             }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+            }
             public function flush(): void
             {
             }
@@ -325,6 +331,9 @@ class GitLabCIDecoratorTest extends TestCase
             public function onJobDryRun(string $jobName, string $command): void
             {
             }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+            }
             public function flush(): void
             {
             }
@@ -374,6 +383,9 @@ class GitLabCIDecoratorTest extends TestCase
             public function onJobDryRun(string $jobName, string $command): void
             {
             }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+            }
             public function flush(): void
             {
             }
@@ -412,6 +424,9 @@ class GitLabCIDecoratorTest extends TestCase
             {
             }
             public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
             {
             }
             public function flush(): void

@@ -59,6 +59,43 @@ class FifoAdmissionTest extends TestCase
         $this->assertNull((new FifoAdmission())->pickNext($queue, $ctx));
     }
 
+    // ========================================================================
+    // FEAT-3 · gate by `needs`
+    // ========================================================================
+
+    /** @test */
+    public function blocks_head_when_needs_not_completed(): void
+    {
+        $queue = [$this->buildJob('eslint'), $this->buildJob('phpstan')];
+        $ctx = new AdmissionContext(
+            10,
+            null,
+            [],
+            [],
+            ['eslint' => ['yarn-install']],
+            []  // yarn-install not yet completed
+        );
+
+        // FIFO blocks the head; phpstan must NOT be admitted out of order.
+        $this->assertNull((new FifoAdmission())->pickNext($queue, $ctx));
+    }
+
+    /** @test */
+    public function admits_head_once_needs_completed(): void
+    {
+        $queue = [$this->buildJob('eslint')];
+        $ctx = new AdmissionContext(
+            10,
+            null,
+            [],
+            [],
+            ['eslint' => ['yarn-install']],
+            ['yarn-install']
+        );
+
+        $this->assertSame(0, (new FifoAdmission())->pickNext($queue, $ctx));
+    }
+
     private function buildJob(string $name): JobAbstract
     {
         return new PhpcsJob(new JobConfiguration($name, 'phpcs', []));

@@ -353,6 +353,7 @@ class JobRefTest extends TestCase
                 'job' => 'tests_a',
                 'only-files' => ['src/A/**'],
                 'exclude-files' => ['src/A/Vendor/**'],
+                'needs' => ['setup'],
             ],
             $result,
             'qa'
@@ -360,5 +361,195 @@ class JobRefTest extends TestCase
 
         $this->assertNotNull($ref);
         $this->assertEmpty($result->getWarnings());
+    }
+
+    // ========================================================================
+    // FEAT-3 · `needs` attribute (Group A)
+    // ========================================================================
+
+    /** @test */
+    public function fromString_has_empty_needs()
+    {
+        // A3
+        $ref = JobRef::fromString('eslint');
+
+        $this->assertSame([], $ref->getNeeds());
+    }
+
+    /** @test */
+    public function fromArray_without_needs_defaults_to_empty()
+    {
+        // A4
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(['job' => 'eslint'], $result, 'qa');
+
+        $this->assertNotNull($ref);
+        $this->assertSame([], $ref->getNeeds());
+        $this->assertFalse($result->hasErrors());
+    }
+
+    /** @test */
+    public function fromArray_with_single_need_captures_list()
+    {
+        // A1
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => ['yarn-install']],
+            $result,
+            'qa'
+        );
+
+        $this->assertNotNull($ref);
+        $this->assertSame(['yarn-install'], $ref->getNeeds());
+    }
+
+    /** @test */
+    public function fromArray_with_multiple_needs_preserves_order()
+    {
+        // A2
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => ['yarn-install', 'install-deps']],
+            $result,
+            'qa'
+        );
+
+        $this->assertNotNull($ref);
+        $this->assertSame(['yarn-install', 'install-deps'], $ref->getNeeds());
+    }
+
+    /** @test */
+    public function fromArray_with_needs_null_means_empty()
+    {
+        // A5 — sentinel for canceling inherited rule from .local.php
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => null],
+            $result,
+            'qa'
+        );
+
+        $this->assertNotNull($ref);
+        $this->assertSame([], $ref->getNeeds());
+        $this->assertFalse($result->hasErrors());
+    }
+
+    /** @test */
+    public function fromArray_with_empty_needs_returns_error_pointing_to_null()
+    {
+        // A6
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => []],
+            $result,
+            'qa'
+        );
+
+        $this->assertNull($ref);
+        $this->assertErrorEquals(
+            "Flow 'qa' job ref 'eslint': 'needs' must not be empty. Use null to disable an inherited rule.",
+            $result
+        );
+    }
+
+    /** @test */
+    public function fromArray_with_needs_as_string_normalizes_to_list()
+    {
+        // A7
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => 'yarn-install'],
+            $result,
+            'qa'
+        );
+
+        $this->assertNotNull($ref);
+        $this->assertSame(['yarn-install'], $ref->getNeeds());
+    }
+
+    /** @test */
+    public function fromArray_with_needs_wrong_type_returns_error()
+    {
+        // A8
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => 42],
+            $result,
+            'qa'
+        );
+
+        $this->assertNull($ref);
+        $this->assertErrorEquals(
+            "Flow 'qa' job ref 'eslint': 'needs' must be a string, array of strings, or null.",
+            $result
+        );
+    }
+
+    /** @test */
+    public function fromArray_with_duplicate_needs_returns_error()
+    {
+        // A9
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => ['yarn-install', 'yarn-install']],
+            $result,
+            'qa'
+        );
+
+        $this->assertNull($ref);
+        $this->assertErrorEquals(
+            "Flow 'qa' job ref 'eslint': 'needs' contains duplicate job name 'yarn-install'.",
+            $result
+        );
+    }
+
+    /** @test */
+    public function fromArray_with_empty_need_name_returns_error()
+    {
+        // A10
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => ['']],
+            $result,
+            'qa'
+        );
+
+        $this->assertNull($ref);
+        $this->assertErrorEquals(
+            "Flow 'qa' job ref 'eslint': 'needs' contains an empty job name.",
+            $result
+        );
+    }
+
+    /** @test */
+    public function fromArray_with_non_string_need_returns_error()
+    {
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'needs' => ['yarn-install', 42]],
+            $result,
+            'qa'
+        );
+
+        $this->assertNull($ref);
+        $this->assertTrue($result->hasErrors());
+    }
+
+    /** @test */
+    public function fromArray_typo_in_needs_suggests_correction()
+    {
+        $result = new ValidationResult();
+        $ref = JobRef::fromArray(
+            ['job' => 'eslint', 'need' => ['yarn-install']],
+            $result,
+            'qa'
+        );
+
+        $this->assertNotNull($ref);
+        $this->assertFalse($result->hasErrors());
+        $this->assertWarningEquals(
+            "Flow 'qa' job ref 'eslint': unknown key 'need'. Did you mean 'needs'?",
+            $result
+        );
     }
 }

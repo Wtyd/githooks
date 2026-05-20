@@ -20,6 +20,13 @@ final class GreedyAdmission implements AdmissionStrategy
     public function pickNext(array $queue, AdmissionContext $context): ?int
     {
         foreach ($queue as $index => $job) {
+            // FEAT-3: jobs with unsatisfied `needs` are unselectable. They
+            // remain in the queue waiting for their upstream job to complete;
+            // the pool drains jobs whose needs already failed/skipped before
+            // each tick, so what remains here is genuinely "still pending".
+            if (!$context->isJobReady($job)) {
+                continue;
+            }
             if ($context->fits($job)) {
                 return $index;
             }

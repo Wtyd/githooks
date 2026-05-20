@@ -232,7 +232,8 @@ class FlowCommand extends Command
                 $plan->getExecutionMode(),
                 $plan->getInputFiles(),
                 $plan->getExpandedFlows(),
-                $resolution
+                $resolution,
+                $plan->getDependencyGraph()
             );
 
             $this->applyFormat($this->executor, $plan);

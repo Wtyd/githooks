@@ -16,6 +16,10 @@ use Wtyd\GitHooks\Jobs\JobAbstract;
  * reservations so the strategy can decide which queued job, if any, fits.
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) Constructor wires every optional dimension of the 2D allocator.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) FEAT-3 added the `needs` admission gate and propagation
+ *   primitives (drainBlockedByFailedDeps, getWaitingByJob, classifyTerminalBlockers, formatPropagatedSkipReason).
+ *   These belong here because they read the same internal state the pool already owns; splitting them across
+ *   helpers would force exposing the internal sets.
  */
 class ProcessPool
 {
@@ -42,6 +46,18 @@ class ProcessPool
     private int $coresInUse = 0;
 
     private int $memoryReservedInUse = 0;
+
+    /** @var array<string, string[]> FEAT-3: jobName → declared needs */
+    private array $needsByJob = [];
+
+    /** @var string[] FEAT-3: jobs whose process finished with success */
+    private array $completedJobs = [];
+
+    /** @var string[] FEAT-3: jobs whose process finished with failure */
+    private array $failedJobs = [];
+
+    /** @var string[] FEAT-3: jobs that were skipped (only-files, fail-fast, or upstream propagation) */
+    private array $skippedJobs = [];
 
     /**
      * @param int $maxProcesses Slot limit: how many jobs may run in parallel.
@@ -173,8 +189,154 @@ class ProcessPool
             $coresFree,
             $memoryFree,
             $this->coresByJob,
-            $this->memoryReserveByJob
+            $this->memoryReserveByJob,
+            $this->needsByJob,
+            $this->completedJobs,
+            $this->failedJobs,
+            $this->skippedJobs
         );
+    }
+
+    /**
+     * FEAT-3: register the dependency graph for the run. Called once after
+     * `enqueue()` so the pool knows which `needs` each job declares.
+     *
+     * @param array<string, string[]> $needsByJob
+     */
+    public function setNeedsByJob(array $needsByJob): void
+    {
+        $this->needsByJob = $needsByJob;
+    }
+
+    /**
+     * FEAT-3: notify the pool that a job finished. The pool keeps three
+     * disjoint sets (completed / failed / skipped) used by the admission
+     * gate and by `drainBlockedByFailedDeps()` to propagate.
+     */
+    public function notifyResult(string $jobName, bool $success, bool $skipped): void
+    {
+        if ($skipped) {
+            $this->skippedJobs[] = $jobName;
+            return;
+        }
+        if ($success) {
+            $this->completedJobs[] = $jobName;
+            return;
+        }
+        $this->failedJobs[] = $jobName;
+    }
+
+    /**
+     * FEAT-3: remove from the queue every job whose `needs` include at least
+     * one failed or skipped dependency, returning a `JobResult::skipped()` for
+     * each. Mutates the pool state: the drained jobs are also added to the
+     * skippedJobs set so their own dependents propagate downstream.
+     *
+     * @return JobResult[]
+     */
+    public function drainBlockedByFailedDeps(): array
+    {
+        $drained = [];
+        $stillQueued = [];
+        foreach ($this->queue as $job) {
+            $blockers = $this->classifyTerminalBlockers($job->getName());
+            if ($blockers === []) {
+                $stillQueued[] = $job;
+                continue;
+            }
+            $reason = self::formatPropagatedSkipReason($blockers);
+            $drained[] = JobResult::skipped(
+                $job->getName(),
+                $job->getType(),
+                $reason,
+                []
+            );
+            $this->skippedJobs[] = $job->getName();
+        }
+        $this->queue = $stillQueued;
+        return $drained;
+    }
+
+    /**
+     * FEAT-3: jobs in the queue still waiting for one or more `needs` to
+     * complete. Used by the executor to surface `onJobWaiting` events in the
+     * dashboard. The result includes the still-pending blockers (failed and
+     * skipped ones are filtered out — those go through drainBlockedByFailedDeps).
+     *
+     * @return array<string, string[]>  jobName → list of pending needs
+     */
+    public function getWaitingByJob(): array
+    {
+        $waiting = [];
+        foreach ($this->queue as $job) {
+            $name = $job->getName();
+            $needs = $this->needsByJob[$name] ?? [];
+            $pending = [];
+            foreach ($needs as $dep) {
+                if (
+                    in_array($dep, $this->completedJobs, true)
+                    || in_array($dep, $this->failedJobs, true)
+                    || in_array($dep, $this->skippedJobs, true)
+                ) {
+                    continue;
+                }
+                $pending[] = $dep;
+            }
+            if ($pending !== []) {
+                $waiting[$name] = $pending;
+            }
+        }
+        return $waiting;
+    }
+
+    /**
+     * @return array<string, string>  blockerName → 'failed' | 'skipped'
+     */
+    private function classifyTerminalBlockers(string $jobName): array
+    {
+        $needs = $this->needsByJob[$jobName] ?? [];
+        $blockers = [];
+        foreach ($needs as $dep) {
+            if (in_array($dep, $this->failedJobs, true)) {
+                $blockers[$dep] = 'failed';
+            } elseif (in_array($dep, $this->skippedJobs, true)) {
+                $blockers[$dep] = 'skipped';
+            }
+        }
+        return $blockers;
+    }
+
+    /**
+     * Build the human-readable propagated skip reason according to D2:
+     *   - all failed:    "needs A, B failed"
+     *   - all skipped:   "needs A, B were skipped"
+     *   - mixed:         "needs A failed, B was skipped"
+     *
+     * @param array<string, string> $blockers
+     */
+    private static function formatPropagatedSkipReason(array $blockers): string
+    {
+        $failed = [];
+        $skipped = [];
+        foreach ($blockers as $name => $kind) {
+            if ($kind === 'failed') {
+                $failed[] = $name;
+            } else {
+                $skipped[] = $name;
+            }
+        }
+
+        if ($failed === []) {
+            $verb = count($skipped) === 1 ? 'was skipped' : 'were skipped';
+            return 'needs ' . implode(', ', $skipped) . ' ' . $verb;
+        }
+        if ($skipped === []) {
+            return 'needs ' . implode(', ', $failed) . ' failed';
+        }
+        $skipVerb = count($skipped) === 1 ? 'was skipped' : 'were skipped';
+        return 'needs '
+            . implode(', ', $failed) . ' failed, '
+            . implode(', ', $skipped) . ' ' . $skipVerb;
     }
 
     /**
