@@ -7,9 +7,12 @@ namespace Wtyd\GitHooks\Execution;
 use Wtyd\GitHooks\Configuration\AllocatorStrategy;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
+use Wtyd\GitHooks\Configuration\FlowOnRule;
 use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
+use Wtyd\GitHooks\Hooks\PatternMatcher;
+use Wtyd\GitHooks\Utils\BranchResolution;
 
 /**
  * Resolves the effective option set for a run, layering CLI > flow.options > flows.options > default
@@ -32,6 +35,13 @@ final class EffectiveOptionsResolver
     public const SOURCE_FLOWS_OPTIONS = 'flows.options';
     public const SOURCE_DEFAULT = 'default';
 
+    private PatternMatcher $patternMatcher;
+
+    public function __construct(?PatternMatcher $patternMatcher = null)
+    {
+        $this->patternMatcher = $patternMatcher ?? new PatternMatcher();
+    }
+
     /**
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade inputs explicitly.
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$cliNoTimeBudget`/`$cliNoMemoryBudget` are CLI gates, not polymorphism breaks.
@@ -49,9 +59,11 @@ final class EffectiveOptionsResolver
         ?int $cliMemoryFailAbove = null,
         bool $cliNoMemoryBudget = false,
         ?string $cliAllocator = null,
-        ?bool $cliStats = null
+        ?bool $cliStats = null,
+        ?BranchResolution $branchResolution = null
     ): EffectiveOptionsResolution {
         $sourceLabel = "flows.{$flow->getName()}.options";
+        $onSourceLabel = "flows.{$flow->getName()}.on";
 
         return $this->resolve(
             $config,
@@ -68,7 +80,10 @@ final class EffectiveOptionsResolver
             $cliMemoryFailAbove,
             $cliNoMemoryBudget,
             $cliAllocator,
-            $cliStats
+            $cliStats,
+            $flow->getOn(),
+            $onSourceLabel,
+            $branchResolution
         );
     }
 
@@ -90,6 +105,9 @@ final class EffectiveOptionsResolver
         ?string $cliAllocator = null,
         ?bool $cliStats = null
     ): EffectiveOptionsResolution {
+        // FEAT-2: in multi-flow runs the per-flow `on` map is intentionally
+        // ignored (matches CON-001/002 for flow-level options). The branch
+        // resolution carries no influence on the mode in this path.
         return $this->resolve(
             $config,
             null,
@@ -105,11 +123,15 @@ final class EffectiveOptionsResolver
             $cliMemoryFailAbove,
             $cliNoMemoryBudget,
             $cliAllocator,
-            $cliStats
+            $cliStats,
+            null,
+            '',
+            null
         );
     }
 
     /**
+     * @param FlowOnRule[]|null $onRules FEAT-2 branch → attrs rules in declaration order
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Parameters mirror the cascade inputs explicitly.
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Cascade evaluates several option keys.
      * @SuppressWarnings(PHPMD.NPathComplexity) Optional keys add independent branches.
@@ -130,7 +152,10 @@ final class EffectiveOptionsResolver
         ?int $cliMemoryFailAbove = null,
         bool $cliNoMemoryBudget = false,
         ?string $cliAllocator = null,
-        ?bool $cliStats = null
+        ?bool $cliStats = null,
+        ?array $onRules = null,
+        string $onSourceLabel = '',
+        ?BranchResolution $branchResolution = null
     ): EffectiveOptionsResolution {
         $globalOptions = $config->getGlobalOptions();
 
@@ -141,7 +166,10 @@ final class EffectiveOptionsResolver
             $flowExecution,
             $cliFailFast,
             $cliProcesses,
-            $invocationMode
+            $invocationMode,
+            $onRules,
+            $onSourceLabel,
+            $branchResolution
         );
 
         [$timeBudget, $timeBudgetSource] = $this->cascadeTimeBudget(
@@ -211,6 +239,7 @@ final class EffectiveOptionsResolver
      * Run the cascade for the original v3.0+ options (fail-fast, processes,
      * executionMode, mainBranch). Returns a struct to keep `resolve()` short.
      *
+     * @param FlowOnRule[]|null $onRules FEAT-2 branch → attrs rules
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Aggregates the original cascade inputs.
      * @return array{
      *   failFast: bool, failFastSource: string,
@@ -226,7 +255,10 @@ final class EffectiveOptionsResolver
         ?string $flowExecution,
         ?bool $cliFailFast,
         ?int $cliProcesses,
-        ?string $invocationMode
+        ?string $invocationMode,
+        ?array $onRules = null,
+        string $onSourceLabel = '',
+        ?BranchResolution $branchResolution = null
     ): array {
         [$failFast, $failFastSource] = $this->cascadeBool(
             'fail-fast',
@@ -249,7 +281,10 @@ final class EffectiveOptionsResolver
         [$executionMode, $executionModeSource] = $this->resolveExecutionMode(
             $invocationMode,
             $flowExecution,
-            $flowSourceLabel
+            $flowSourceLabel,
+            $onRules,
+            $onSourceLabel,
+            $branchResolution
         );
 
         [$mainBranch, $mainBranchSource] = $this->cascadeOptionalString(
@@ -537,20 +572,56 @@ final class EffectiveOptionsResolver
     }
 
     /**
+     * @param FlowOnRule[]|null $onRules FEAT-2: ordered branch → attrs rules
      * @return array{0: string, 1: string}
      */
     private function resolveExecutionMode(
         ?string $invocationMode,
         ?string $flowExecution,
-        string $flowSourceLabel
+        string $flowSourceLabel,
+        ?array $onRules = null,
+        string $onSourceLabel = '',
+        ?BranchResolution $branchResolution = null
     ): array {
         if ($invocationMode !== null) {
             return [$invocationMode, self::SOURCE_CLI];
+        }
+        $onMode = $this->matchOn($onRules, $branchResolution);
+        if ($onMode !== null && $onSourceLabel !== '') {
+            return [$onMode, $onSourceLabel];
         }
         if ($flowExecution !== null && $flowSourceLabel !== '') {
             return [$flowExecution, $flowSourceLabel];
         }
         return [ExecutionMode::FULL, self::SOURCE_DEFAULT];
+    }
+
+    /**
+     * Find the first branch-pattern rule that matches the resolved branch and
+     * declares an `execution` attribute. Returns the mode or null if either
+     * the rule set is absent, the branch is unknown, or no rule matches.
+     *
+     * Declaration order is the matching priority (D3): the first match wins.
+     * Literal patterns and globs are not reordered — the user controls the
+     * precedence by ordering their `on` map.
+     *
+     * @param FlowOnRule[]|null $onRules
+     */
+    private function matchOn(?array $onRules, ?BranchResolution $branchResolution): ?string
+    {
+        if ($onRules === null || $onRules === [] || $branchResolution === null) {
+            return null;
+        }
+        $branch = $branchResolution->getBranch();
+        foreach ($onRules as $rule) {
+            if ($this->patternMatcher->matchesBranch($branch, [$rule->getPattern()])) {
+                $mode = $rule->getExecutionMode();
+                if ($mode !== null) {
+                    return $mode;
+                }
+            }
+        }
+        return null;
     }
 
     /**

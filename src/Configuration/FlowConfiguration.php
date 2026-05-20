@@ -27,10 +27,14 @@ class FlowConfiguration
 
     private ?string $execution;
 
+    /** @var FlowOnRule[]|null FEAT-2: ordered rules `branch_pattern => attrs` */
+    private ?array $onRules;
+
     /**
      * @param string[] $jobs
      * @param string[]|null $flowReferences null for normal flows; array (possibly empty) for meta-flows
      * @param JobRef[]|null $jobRefs FEAT-1 rich refs. Defaults to one JobRef::fromString() per name in $jobs
+     * @param FlowOnRule[]|null $onRules FEAT-2 branch-based mode rules in declaration order
      */
     public function __construct(
         string $name,
@@ -38,7 +42,8 @@ class FlowConfiguration
         ?OptionsConfiguration $options = null,
         ?string $execution = null,
         ?array $flowReferences = null,
-        ?array $jobRefs = null
+        ?array $jobRefs = null,
+        ?array $onRules = null
     ) {
         $this->name = $name;
         $this->jobs = $jobs;
@@ -46,6 +51,7 @@ class FlowConfiguration
         $this->flowReferences = $flowReferences;
         $this->options = $options;
         $this->execution = $execution;
+        $this->onRules = $onRules;
     }
 
     /**
@@ -130,7 +136,62 @@ class FlowConfiguration
             $execution = $raw['execution'];
         }
 
-        return new self($name, $jobs, $options, $execution, $flowReferences, $jobRefs);
+        $onRules = self::parseOn($name, $raw, $result);
+        if ($onRules === false) {
+            return null;
+        }
+
+        return new self($name, $jobs, $options, $execution, $flowReferences, $jobRefs, $onRules);
+    }
+
+    /**
+     * Parse the optional `on` map (FEAT-2). Returns:
+     *   - false: validation error, caller aborts
+     *   - null: `on` absent / empty (no admission rules)
+     *   - FlowOnRule[]: declaration-ordered rules
+     *
+     * @param array<string, mixed> $raw
+     * @return FlowOnRule[]|null|false
+     */
+    private static function parseOn(string $flowName, array $raw, ValidationResult $result)
+    {
+        if (!array_key_exists('on', $raw) || $raw['on'] === null) {
+            // `null` is the sentinel for "cancel inherited `on` from the shared
+            // config" — consistent with FEAT-1's only-files/exclude-files
+            // semantics. Absent or null both mean "no admission rules".
+            return null;
+        }
+        $rawOn = $raw['on'];
+        if (!is_array($rawOn)) {
+            $result->addError("Flow '$flowName': 'on' must be an array of branch patterns.");
+            return false;
+        }
+        if ($rawOn === []) {
+            $result->addWarning("Flow '$flowName': 'on' is declared but empty; it will be ignored.");
+            return null;
+        }
+
+        $rules = [];
+        $hasCatchAll = false;
+        foreach ($rawOn as $pattern => $rawAttrs) {
+            $rule = FlowOnRule::fromArray((string) $pattern, $rawAttrs, $result, $flowName);
+            if ($rule === null) {
+                return false;
+            }
+            if ($rule->getPattern() === '*') {
+                $hasCatchAll = true;
+            }
+            $rules[] = $rule;
+        }
+
+        if (!$hasCatchAll) {
+            $result->addWarning(
+                "Flow '$flowName': 'on' has no catch-all '*' pattern; non-matching branches fall back to "
+                . "flow.execution / flows.options.execution / default."
+            );
+        }
+
+        return $rules;
     }
 
     /**
@@ -219,5 +280,15 @@ class FlowConfiguration
     public function getExecution(): ?string
     {
         return $this->execution;
+    }
+
+    /**
+     * FEAT-2: ordered list of branch → attrs rules, or null if not declared.
+     *
+     * @return FlowOnRule[]|null
+     */
+    public function getOn(): ?array
+    {
+        return $this->onRules;
     }
 }

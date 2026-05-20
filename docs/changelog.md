@@ -6,6 +6,25 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- **Per-flow execution mode selected by branch with `on => [branch_pattern => attrs]`** (FEAT-2). A flow can now declare an `on` map that picks its execution mode based on the current branch:
+    ```php
+    'ci-validation' => [
+        'on' => [
+            'master' => ['execution' => 'full'],
+            'beta'   => ['execution' => 'full'],
+            '*'      => ['execution' => 'fast-branch'],
+        ],
+        'jobs' => [/* ... */],
+    ],
+    ```
+    The `script: vendor/bin/githooks flows ci-validation` line in CI is enough — no more `GITHOOKS_FLAGS` plumbing in each rules template. The mode cascade becomes `--fast/--fast-branch CLI > flows.<X>.on > flows.<X>.execution > flows.options.execution > default`; the `Settings:` header reports `mode = X (flows.<X>.on)` when the branch match wins so operators see the decision trail.
+
+    Branch detection follows a fixed cascade: `--branch=X` CLI flag (new in this release) > `$GITHOOKS_BRANCH` env > CI vars in this order: `CI_COMMIT_REF_NAME` (GitLab), `GITHUB_REF_NAME` (GitHub Actions), `BUILDKITE_BRANCH`, `BITBUCKET_BRANCH`, `CIRCLE_BRANCH`, `DRONE_COMMIT_BRANCH`, `TRAVIS_PULL_REQUEST_BRANCH` / `TRAVIS_BRANCH` > `git rev-parse --abbrev-ref HEAD` > detached-HEAD error pointing the user at `--branch` / `$GITHOOKS_BRANCH`. The resolver is only invoked when the flow actually declares `on`, so flows without it keep running on a detached HEAD.
+
+    Pattern matching is **first declared wins** (literal or glob — the user controls precedence by ordering the map). Today the only attribute supported under `on.<branch>` is `execution`; the object shape leaves room for `time-budget`/`fail-fast` to land in later versions without breaking the surface. Override semantics in `githooks.local.php` mirror FEAT-1: `'on' => null` cancels an inherited map, missing key inherits, declared local map merges per pattern. `conf:check` validates the shape (non-array, scalar attrs, unsupported `execution` value with did-you-mean for typos, warning when no catch-all `*` is declared).
+
+    Out of scope for v3.4: `on` is per-flow only — in `flows X Y` multi-flow runs the per-flow `on` is intentionally ignored (matches CON-001/002 for flow-level options). Composes with FEAT-1: the mode chosen by `on` activates or not the `only-files`/`exclude-files` admission rules (no-op in `full`).
+
 - **Declarative per-flow-entry admission with `only-files` / `exclude-files`** (FEAT-1). Flow entries in `flows.<X>.jobs` now accept the existing string form **or** an object `{job, only-files?, exclude-files?}` that gates whether the job runs based on the change set, independently of the job's own `paths` filtering. The decision is binary (`skipped: true` with a clear `skipReason` vs run) and applies to all job types (accelerable / non-accelerable / custom). In `full` mode the rules are no-op so manual `flow qa` keeps working as before. Use case: a monorepo serialising two test suites in a single flow where each suite is skipped declaratively when its sources are untouched — replacing the `type: custom` + `git diff … grep -qE …; exit 0` workaround that surfaces as `passed` and breaks on POSIX-less runners. The match uses the same glob semantics as `HookRef` (`**`, `*`, `?`) and reuses `PatternMatcher`. Override semantics in `githooks.local.php` (consistent with `time-budget` / `memory-budget`): `'only-files' => null` cancels an inherited rule from the shared config; `'only-files' => []` is a validation error (`conf:check` points the user at `null`); `'only-files' => ['src/**', ...]` declares the rule. `HookRef` was aligned to the same `array_key_exists` + `null`-sentinel detection so hook-level and flow-entry-level rules share one convention. Documented caveat: when both shared and local declare lists of different lengths, the inherited `array_replace_recursive` merges per index (sobrante del compartido se conserva) — out of scope to fix here; the recommended workaround for clean replacement is `null` in shared + list in local.
 
 ### Fixed

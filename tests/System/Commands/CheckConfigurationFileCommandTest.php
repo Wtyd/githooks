@@ -535,4 +535,125 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(0)
             ->expectsOutput('The configuration file has the correct format.');
     }
+
+    // =========================================================================
+    // FEAT-2 — `on => [branch_pattern => attrs]` per flow.
+    //
+    // Decision table — invalid declarations the parser must reject with exit 1:
+    //   A. `on` declared but not an array (e.g. raw string)
+    //   B. attrs of a pattern is not an object
+    //   C. unsupported execution mode value (e.g. 'turbo')
+    //   D. empty pattern key
+    // =========================================================================
+
+    public function flowOnAdversariesProvider(): array
+    {
+        $jobs = [
+            'lint' => ['type' => 'parallel-lint', 'paths' => ['src']],
+        ];
+
+        return [
+            'A. on is not an array' => [
+                'flows' => [
+                    'qa' => [
+                        'on'   => 'master',
+                        'jobs' => ['lint'],
+                    ],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa': 'on' must be an array of branch patterns.",
+            ],
+            'B. pattern attrs is a scalar' => [
+                'flows' => [
+                    'qa' => [
+                        'on'   => ['master' => 'full'],
+                        'jobs' => ['lint'],
+                    ],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa' on rule for 'master': attributes must be an object.",
+            ],
+            'C. unsupported execution mode' => [
+                'flows' => [
+                    'qa' => [
+                        'on'   => ['master' => ['execution' => 'turbo']],
+                        'jobs' => ['lint'],
+                    ],
+                ],
+                'jobs' => $jobs,
+                'expectedError' => "Flow 'qa' on rule for 'master': 'execution' must be one of: full, fast, fast-branch.",
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider flowOnAdversariesProvider
+     */
+    function rejects_v3_config_with_invalid_on_block(array $flows, array $jobs, string $expectedError)
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows($flows)
+            ->setV3Jobs($jobs)
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(1)
+            ->expectsOutput('The configuration file has some errors')
+            ->containsStringInOutput($expectedError);
+    }
+
+    /** @test */
+    function accepts_v3_config_with_valid_on_block_having_catch_all()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'lint' => ['type' => 'parallel-lint', 'paths' => ['src']],
+            ])
+            ->setV3Hooks([])
+            ->setV3Flows([
+                'ci' => [
+                    'on' => [
+                        'master' => ['execution' => 'full'],
+                        '*'      => ['execution' => 'fast-branch'],
+                    ],
+                    'jobs' => ['lint'],
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsOutput('The configuration file has the correct format.');
+    }
+
+    /** @test */
+    function warns_when_on_lacks_catch_all_but_still_exits_zero()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'lint' => ['type' => 'parallel-lint', 'paths' => ['src']],
+            ])
+            ->setV3Hooks([])
+            ->setV3Flows([
+                'ci' => [
+                    'on'   => ['master' => ['execution' => 'full']],
+                    'jobs' => ['lint'],
+                ],
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput("'on' has no catch-all '*' pattern");
+    }
 }

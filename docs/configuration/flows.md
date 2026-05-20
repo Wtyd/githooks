@@ -148,6 +148,92 @@ When both the shared config and `.local.php` declare lists of **different length
 
 This is a generic limitation of the project's merge strategy (it affects every list: `Tools`, `paths`, `jobs`, …), not specific to FEAT-1. Recommended pattern for a clean replacement: declare `null` in the shared config and move the actual list to `.local.php`, or rewrite the local list with the same length as the shared one.
 
+## Branch-driven execution mode (`on`)
+
+> Since **v3.4** (FEAT-2).
+
+A flow can declare an `on` map that picks its execution mode based on the current branch:
+
+```php
+'flows' => [
+    'ci-validation' => [
+        'on' => [
+            'master' => ['execution' => 'full'],
+            'beta'   => ['execution' => 'full'],
+            'main'   => ['execution' => 'full'],
+            '*'      => ['execution' => 'fast-branch'],
+        ],
+        'jobs' => [/* ... */],
+    ],
+],
+```
+
+In CI this collapses the per-rules-template `GITHOOKS_FLAGS=--fast-branch` boilerplate to a single line:
+
+```yaml
+script: vendor/bin/githooks flows ci-validation
+```
+
+In `master` the mode is `full` (FEAT-1's `only-files` rules become no-op). In a task branch the mode is `fast-branch` and admission filters apply.
+
+### Resolution cascade
+
+The effective mode is decided in this order (first that produces a value wins):
+
+1. `--fast` / `--fast-branch` CLI flags.
+2. `flows.<X>.on` matched against the current branch.
+3. `flows.<X>.execution`.
+4. `flows.options.execution` (global default).
+5. Fallback: `full`.
+
+The `Settings:` header at the top of each run shows the source — `mode = full (flows.<X>.on)` makes the decision trail explicit.
+
+### Branch detection cascade
+
+The current branch is read with the following priority (first non-empty wins):
+
+1. `--branch=<name>` CLI flag (FEAT-2 — useful for testing or local override).
+2. `$GITHOOKS_BRANCH` env var — explicit user override.
+3. CI variables in this order: `CI_COMMIT_REF_NAME` (GitLab), `GITHUB_REF_NAME` (GitHub Actions), `BUILDKITE_BRANCH` (Buildkite), `BITBUCKET_BRANCH` (Bitbucket Pipelines), `CIRCLE_BRANCH` (CircleCI), `DRONE_COMMIT_BRANCH` (Drone), `TRAVIS_PULL_REQUEST_BRANCH` (PR build) / `TRAVIS_BRANCH` (push build).
+4. `git rev-parse --abbrev-ref HEAD`.
+5. Otherwise (detached HEAD): the run aborts with an error pointing the user at `--branch` or `$GITHOOKS_BRANCH`.
+
+The resolver is only invoked when the flow declares `on`. Flows without `on` keep running unchanged on a detached HEAD.
+
+### Pattern matching
+
+The order of patterns in the map is the priority order: **the first pattern that matches wins** — literal or glob. Same glob syntax as elsewhere in the project: `*` matches anything except `/`, `**` matches zero or more directories, `?` matches one character except `/`. Catch-all is `'*'`.
+
+```php
+'on' => [
+    'release/v*' => ['execution' => 'full'],          // matches release/v1, release/v2
+    'release/*'  => ['execution' => 'fast-branch'],   // catches the rest of release/*
+    '*'          => ['execution' => 'fast'],          // everything else
+],
+```
+
+`conf:check` emits a warning when no catch-all `'*'` is declared so the user knows non-matching branches will fall back to `flow.execution` or `flows.options.execution`.
+
+### Overriding in `githooks.local.php`
+
+Same semantics as FEAT-1's `only-files` / `exclude-files`:
+
+| Local declaration | Effect on the inherited rule |
+|---|---|
+| `'on' => null` | Cancels the inherited `on` map. Mode falls through to lower cascade levels. |
+| key absent | Inherits the shared map unchanged. |
+| `'on' => [...]` | Per-pattern deep merge (associative keys). Patterns present in local override the shared definition for that pattern; patterns only in shared survive. |
+
+### Composition with hook-level conditions
+
+`hooks.<event>.<ref>.only-on` admits the flow to the hook event by branch; `flows.<X>.on` selects the mode of the admitted flow. Levels are orthogonal — a hook with `only-on: master` plus a flow with `on: '*' => fast-branch` would never run because the hook admission fires only on `master`, where the flow would pick `full` if so configured.
+
+### Scope and caveats
+
+- **Per-flow only.** Multi-flow runs (`githooks flows X Y`) ignore per-flow `on` (matches the existing CON-001/002 for flow-level options). The mode comes from `--fast/--fast-branch` or `flows.options.execution`.
+- **`execution` is the only supported attribute today.** The object shape leaves room for `time-budget` / `fail-fast` to be added later without breaking the surface.
+- **`PHP collapses duplicate map keys.** `'master' => …, 'master' => …` cannot be detected — PHP keeps only the last entry.
+
 ## Meta-flows
 
 A **meta-flow** is a flow that, instead of declaring `jobs`, declares `flows` — a list of normal flow names to combine into a single executable plan. It is the declarative companion to [`githooks flows ci-pack`](../cli/flows.md): the combo lives with the project, runs the same locally and in CI, and exposes its own options.

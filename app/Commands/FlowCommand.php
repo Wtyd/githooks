@@ -23,6 +23,8 @@ use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\InputFilesResolver;
+use Wtyd\GitHooks\Utils\BranchResolver;
+use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class FlowCommand extends Command
@@ -67,6 +69,7 @@ class FlowCommand extends Command
                             {--stats : Print a final stats table with peak cores/memory per job and emit the stats block in JSON v2}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
+                            {--branch= : Override the detected branch name used to evaluate flow.on rules (FEAT-2)}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';
@@ -171,6 +174,22 @@ class FlowCommand extends Command
             $cliAllocator = $this->resolveAllocatorFlag();
             $cliStats = $this->resolveStatsFlag();
 
+            // FEAT-2: only resolve the branch when the flow declares `on`.
+            // Detached HEAD must not break flows that don't depend on it.
+            $branchResolution = null;
+            if ($flow->getOn() !== null) {
+                try {
+                    $cliBranch = $this->option('branch');
+                    $branchResolution = (new BranchResolver())->resolve(
+                        is_string($cliBranch) && $cliBranch !== '' ? $cliBranch : null,
+                        $fileUtils
+                    );
+                } catch (DetachedHeadException $e) {
+                    $this->error($e->getMessage());
+                    return 1;
+                }
+            }
+
             $resolver = new EffectiveOptionsResolver();
             $resolution = $resolver->resolveSingle(
                 $config,
@@ -185,8 +204,21 @@ class FlowCommand extends Command
                 $memoryBudgetFlags['failAbove'],
                 $memoryBudgetFlags['disabled'],
                 $cliAllocator,
-                $cliStats
+                $cliStats,
+                $branchResolution
             );
+
+            // FEAT-2: the `on`-resolved mode may flip the invocation mode used
+            // by the preparer (which decides accelerable paths/skips). Without
+            // this re-sync, the cascade-resolved mode would only reach the
+            // header / JSON trace, not the executor.
+            if (
+                $invocationMode === null
+                && $resolution->getTrace()['executionMode']['source'] !== EffectiveOptionsResolver::SOURCE_DEFAULT
+                && $resolution->getExecutionMode() !== ExecutionMode::FULL
+            ) {
+                $invocationMode = $resolution->getExecutionMode();
+            }
 
             $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);
 
