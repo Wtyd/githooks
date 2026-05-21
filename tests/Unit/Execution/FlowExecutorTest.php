@@ -11,6 +11,8 @@ use Tests\Doubles\InjectableFlowExecutor;
 use Tests\Doubles\OutputHandlerSpy;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
+use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\ThreadCapability;
@@ -969,14 +971,19 @@ class FlowExecutorTest extends TestCase
     {
         $executor = new FlowExecutor(new NullOutputHandler());
 
-        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
-            'paths'    => ['src'],
-            'parallel' => 8,
-        ]));
-        // processes=8 keeps the declared parallel=8 below the flow budget
-        // so the clamp does not apply — the test still pins the peak to
-        // the allocated capability (vs. the default 1 a swap mutant would
-        // produce).
+        // Anonymous CustomJob declaring an 8-thread capability. The script is a
+        // no-op so the test does not pay for any real tool execution — we are
+        // only verifying the peak is read from threadAllocations and not from
+        // the `?? 1` fallback (the mutation we want to kill on L162).
+        $job = new class (new JobConfiguration('fake', 'custom', ['script' => 'true'])) extends CustomJob {
+            public function getThreadCapability(): ?ThreadCapability
+            {
+                return new ThreadCapability('_fake', 8, 1, false);
+            }
+        };
+        // processes=8 keeps the declared 8 below the flow budget so the clamp
+        // does not apply — the test still pins the peak to the allocated
+        // capability (vs. the default 1 a swap mutant would produce).
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 8));
 
         $result = $executor->execute($plan);
@@ -1485,13 +1492,38 @@ class FlowExecutorTest extends TestCase
         array $memoryReserves,
         int $expectedPeak
     ): void {
+        // Mirror the clamp logic from FlowExecutor::buildProcessPool: any
+        // per-job memory reservation above the bin-packing reference (warnAbove
+        // here) is clamped down to the reference. The test asserts that, when
+        // that clamp serializes admission, the peak collapses to 1 — and when
+        // it doesn't, both jobs run concurrently and the peak hits 2.
         $jobs = [];
+        $coresByJob = [];
+        $clampedMemByJob = [];
         foreach ($memoryReserves as $idx => $memMb) {
+            $name = 'job_' . $idx;
             $jobs[] = new CustomJob(new JobConfiguration(
-                'job_' . $idx,
+                $name,
                 'custom',
-                ['script' => 'sleep 0.2', 'memory' => $memMb]
+                ['script' => 'unused-by-fake', 'memory' => $memMb]
             ));
+            $coresByJob[$name] = 1;
+            $clampedMemByJob[$name] = min($memMb, $warnAbove);
+        }
+
+        $pool = new FakeProcessPool(
+            2,
+            new FifoAdmission(),
+            $warnAbove,
+            $coresByJob,
+            $clampedMemByJob,
+            2
+        );
+        foreach (array_keys($clampedMemByJob) as $name) {
+            // Two polls in running so admission has to make its decision while
+            // the first job is still occupying its reservation — this is what
+            // exposes the clamp's effect on the peak.
+            $pool->programResult($name, 0, '', '', 2);
         }
 
         $options = new OptionsConfiguration(
@@ -1508,7 +1540,8 @@ class FlowExecutorTest extends TestCase
         );
         $plan = new FlowPlan('test', $jobs, $options);
 
-        $executor = new FlowExecutor(new NullOutputHandler());
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
         $result = $executor->execute($plan);
 
         $this->assertSame(
@@ -1678,10 +1711,28 @@ class FlowExecutorTest extends TestCase
         string $expectedFirstFinished
     ): void {
         $jobs = [
-            new CustomJob(new JobConfiguration('big', 'custom', ['script' => 'sleep 0.4', 'memory' => 80])),
-            new CustomJob(new JobConfiguration('med', 'custom', ['script' => 'sleep 0.05', 'memory' => 80])),
-            new CustomJob(new JobConfiguration('small', 'custom', ['script' => 'sleep 0.05', 'memory' => 20])),
+            new CustomJob(new JobConfiguration('big', 'custom', ['script' => 'unused-by-fake', 'memory' => 80])),
+            new CustomJob(new JobConfiguration('med', 'custom', ['script' => 'unused-by-fake', 'memory' => 80])),
+            new CustomJob(new JobConfiguration('small', 'custom', ['script' => 'unused-by-fake', 'memory' => 20])),
         ];
+
+        // Sequencing under the fake pool (no wallclock):
+        //   - BIG stays running for 5 polls — long enough for the executor
+        //     to make admission decisions while it occupies its slot.
+        //   - MED and SMALL finish on the first poll once admitted, so what
+        //     the test observes is purely *which one is admitted first*.
+        $strategy = $allocator === 'greedy' ? new GreedyAdmission() : new FifoAdmission();
+        $pool = new FakeProcessPool(
+            2,                              // slots
+            $strategy,
+            100,                            // memoryBudget (binPackingReference)
+            ['big' => 1, 'med' => 1, 'small' => 1],
+            ['big' => 80, 'med' => 80, 'small' => 20],
+            2                               // coresBudget
+        );
+        $pool->programResult('big', 0, '', '', 5);
+        $pool->programResult('med', 0, '', '', 1);
+        $pool->programResult('small', 0, '', '', 1);
 
         $options = new OptionsConfiguration(
             false,                                                                    // failFast
@@ -1697,7 +1748,8 @@ class FlowExecutorTest extends TestCase
         );
         $plan = new FlowPlan('test', $jobs, $options);
 
-        $executor = new FlowExecutor(new NullOutputHandler());
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
         $result = $executor->execute($plan);
 
         $names = array_map(fn($r) => $r->getJobName(), $result->getJobResults());
