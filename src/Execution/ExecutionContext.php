@@ -33,6 +33,14 @@ class ExecutionContext
     /** @var string[]|null|false  null=not loaded, false=load failed, array=loaded */
     private $branchDiffFiles = null;
 
+    /**
+     * FEAT-13: lazy cache for the worktree diff set (`fast-dirty` mode).
+     * Same three-state convention as branchDiffFiles.
+     *
+     * @var string[]|null|false
+     */
+    private $worktreeDiffFiles = null;
+
     /** @var bool Whether staged files have been loaded (for lazy create() factory) */
     private bool $stagedLoaded;
 
@@ -159,6 +167,11 @@ class ExecutionContext
             return $branchFiles === [];
         }
 
+        if ($mode === ExecutionMode::FAST_DIRTY) {
+            $dirtyFiles = $this->getWorktreeDiffFilesLazy();
+            return $dirtyFiles === null || $dirtyFiles === [];
+        }
+
         return false;
     }
 
@@ -182,6 +195,10 @@ class ExecutionContext
 
         if ($mode === ExecutionMode::FAST_BRANCH) {
             return $this->getBranchDiffFilesLazy();
+        }
+
+        if ($mode === ExecutionMode::FAST_DIRTY) {
+            return $this->getWorktreeDiffFilesLazy();
         }
 
         return null;
@@ -210,6 +227,17 @@ class ExecutionContext
                 return null; // signal fallback
             }
             return $this->filterFileList($branchFiles, $paths);
+        }
+
+        if ($mode === ExecutionMode::FAST_DIRTY) {
+            $dirtyFiles = $this->getWorktreeDiffFilesLazy();
+            if ($dirtyFiles === null) {
+                // No git / no HEAD → treat as empty set (skip path), NOT as
+                // fallback-to-full. The contract says clean tree / no repo =
+                // nothing to validate.
+                return [];
+            }
+            return $this->filterFileList($dirtyFiles, $paths);
         }
 
         return null;
@@ -259,6 +287,39 @@ class ExecutionContext
         $this->branchDiffFiles = array_values(array_unique(array_merge($diffFiles, $this->stagedFiles)));
 
         return $this->branchDiffFiles;
+    }
+
+    /**
+     * FEAT-13: lazy load of the worktree diff set. Same three-state cache as
+     * {@see getBranchDiffFilesLazy()}: null=not loaded, false=load failed,
+     * array=loaded. Returns null on failure so the caller can treat the set
+     * as empty (skip universe, NOT fallback to full).
+     *
+     * @return string[]|null
+     */
+    private function getWorktreeDiffFilesLazy(): ?array
+    {
+        if ($this->worktreeDiffFiles === false) {
+            return null;
+        }
+
+        if (is_array($this->worktreeDiffFiles)) {
+            return $this->worktreeDiffFiles;
+        }
+
+        if ($this->fileUtils === null) {
+            $this->worktreeDiffFiles = false;
+            return null;
+        }
+
+        $files = $this->fileUtils->getWorktreeDiffFiles();
+        if ($files === null) {
+            $this->worktreeDiffFiles = false;
+            return null;
+        }
+
+        $this->worktreeDiffFiles = $files;
+        return $this->worktreeDiffFiles;
     }
 
     /**

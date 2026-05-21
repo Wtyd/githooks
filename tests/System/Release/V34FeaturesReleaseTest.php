@@ -15,6 +15,7 @@ use Tests\ReleaseTestCase;
  *   broader integration coverage).
  *
  * @group release
+ * @group git
  */
 class V34FeaturesReleaseTest extends ReleaseTestCase
 {
@@ -187,6 +188,87 @@ class V34FeaturesReleaseTest extends ReleaseTestCase
             $byName['downstream']['skipReason'],
             'downstream skipReason must follow the "needs X was skipped" wording'
         );
+    }
+
+    /**
+     * FEAT-13 — `--fast-dirty` end-to-end against the compiled `.phar`.
+     *
+     * Materialises a sandbox git repo inside TESTS_PATH, chdirs into it,
+     * then invokes the `.phar` so my own uncommitted changes in html1 never
+     * leak into the assertion.
+     *
+     * @test
+     */
+    public function phar_runs_flow_with_fast_dirty_mode(): void
+    {
+        $tests = self::TESTS_PATH;
+        $sandbox = "$tests/sandbox-fast-dirty";
+        $cwd = (string) getcwd();
+        @mkdir($sandbox, 0777, true);
+        @mkdir("$sandbox/src/AppA", 0777, true);
+        @mkdir("$sandbox/src/AppB", 0777, true);
+
+        chdir($sandbox);
+        try {
+            shell_exec('git init --quiet');
+            shell_exec('git symbolic-ref HEAD refs/heads/main');
+            shell_exec('git config user.email "v34-release@example.com"');
+            shell_exec('git config user.name "V34 Release Test"');
+            shell_exec('git config commit.gpgsign false');
+            file_put_contents('src/AppA/Foo.php', "<?php\n");
+            file_put_contents('src/AppB/Bar.php', "<?php\n");
+            shell_exec('git add -A');
+            shell_exec('git commit --quiet -m baseline');
+
+            // Dirty only AppB → an entry restricted to AppA must skip,
+            // confirming admission composes with --fast-dirty.
+            file_put_contents('src/AppB/Bar.php', "<?php\n// dirty\n");
+
+            $configFile = 'githooks.php';
+            $config = [
+                'flows' => [
+                    'qa' => [
+                        'jobs' => [
+                            ['job' => 'lint_appA', 'only-files' => ['src/AppA/**']],
+                            ['job' => 'lint_appB', 'only-files' => ['src/AppB/**']],
+                        ],
+                    ],
+                ],
+                'jobs' => [
+                    'lint_appA' => ['type' => 'custom', 'script' => 'true', 'paths' => ['src/AppA'], 'accelerable' => true],
+                    'lint_appB' => ['type' => 'custom', 'script' => 'true', 'paths' => ['src/AppB'], 'accelerable' => true],
+                ],
+            ];
+            file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+
+            // ReleaseTestCase copies the binary into self::TESTS_PATH (parent of sandbox).
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+
+            passthru(
+                sprintf(
+                    '%s flow qa --fast-dirty --format=json --config=%s 2>/dev/null',
+                    $binary,
+                    $configFile
+                ),
+                $exitCode
+            );
+
+            $this->assertSame(0, $exitCode);
+            $decoded = json_decode($this->getActualOutput(), true);
+            $this->assertIsArray($decoded);
+            $this->assertSame('fast-dirty', $decoded['executionMode']);
+            $this->assertSame('cli', $decoded['effectiveOptions']['executionMode']['source']);
+
+            $byName = $this->indexJobs($decoded['jobs']);
+            $this->assertTrue($byName['lint_appA']['skipped'], 'AppA must skip — no dirty files match');
+            $this->assertSame(
+                'no files in the change set match its only-files rule',
+                $byName['lint_appA']['skipReason']
+            );
+            $this->assertFalse($byName['lint_appB']['skipped'], 'AppB must run — Bar.php is dirty');
+        } finally {
+            chdir($cwd);
+        }
     }
 
     /**

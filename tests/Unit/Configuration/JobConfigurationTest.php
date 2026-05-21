@@ -369,7 +369,7 @@ class JobConfigurationTest extends TestCase
 
         $this->assertNull($job);
         $this->assertErrorEquals(
-            "Job 'phpstan_src': 'execution' must be one of: full, fast, fast-branch.",
+            "Job 'phpstan_src': 'execution' must be one of: full, fast, fast-branch, fast-dirty.",
             $result
         );
     }

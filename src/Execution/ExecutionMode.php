@@ -9,9 +9,10 @@ class ExecutionMode
     public const FULL = 'full';
     public const FAST = 'fast';
     public const FAST_BRANCH = 'fast-branch';
+    public const FAST_DIRTY = 'fast-dirty';
 
     /** @var string[] */
-    public const ALL = [self::FULL, self::FAST, self::FAST_BRANCH];
+    public const ALL = [self::FULL, self::FAST, self::FAST_BRANCH, self::FAST_DIRTY];
 
     public static function isValid(string $mode): bool
     {

@@ -6,6 +6,21 @@ All notable changes to this project are documented here.
 
 ### Added
 
+- **`--fast-dirty` execution mode** (FEAT-13). Fourth execution mode that fills the gap between `--fast` (only staged files) and `--fast-branch` (branch diff vs main + staged). The set is the **unified working tree**:
+    ```bash
+    { git diff --name-only --diff-filter=ACMR HEAD     # tracked: staged or unstaged, excluding D
+      git ls-files --others --exclude-standard         # untracked, respecting .gitignore
+    } | sort -u
+    ```
+
+    Use cases that motivated it:
+    - **AI agentic hooks** (Claude Code, Cursor, Cline, Copilot agent…): the agent touches files without staging and we want the same flow that runs at precommit with `--format=json`. Before FEAT-13 each hook needed ~10 lines of bash to compute the list and feed `--files`; now it's a single flag.
+    - **Mid-review without committing**: `voy a revisar lo que llevo antes de commitear` — was either `git add -A && --fast` (pollutes stage) or hand-rolled `--files`.
+
+    Available on `flow`, `flows`, `job` and in `flows.<X>.execution`, `flows.<X>.on.<branch>.execution`, `jobs.<X>.execution` (same surface as `fast`/`fast-branch`). Mutually exclusive with `--fast`, `--fast-branch`, `--files`, `--files-from`: combining two emits `--fast-dirty and --X are mutually exclusive` and exits 1. Clean working tree → all accelerable jobs skipped with `no changes to validate`, exit 0 (does NOT fall back to `full`, matching the post-commit "nothing to validate" semantics). Composes with FEAT-1's `only-files`/`exclude-files` admission and FEAT-3's `needs` (the BUG-19 propagation contract holds for fast-dirty too). The `--diff-filter=ACMR` guarantees that paths handed to linters always exist on disk — deleted files (`git rm`, `unlink`) are excluded; renamed entries surface as the destination.
+
+    Implementation lives in `FileUtils::getWorktreeDiffFiles()` (paralelo a `getBranchDiffFiles`) and `ExecutionContext::getWorktreeDiffFilesLazy()`. Mutual exclusion is consolidated in the new `AssertsExecutionModeFlagsExclusive` trait so the three commands (`flow`, `flows`, `job`) share a single source of truth for both the conflict check and the flag-to-mode mapping.
+
 - **Intra-flow dependencies with `needs: [<job>, ...]` per flow entry** (FEAT-3). A flow entry now accepts a `needs` attribute that lists other jobs in the same flow it depends on:
     ```php
     'qa' => [

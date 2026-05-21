@@ -122,6 +122,56 @@ class FileUtils implements FileUtilsInterface
     }
 
     /**
+     * FEAT-13: unified working-tree set.
+     * Returns the union of:
+     *   - tracked files with A/C/M/R differences vs HEAD (staged or unstaged),
+     *   - untracked files that are not gitignored.
+     * Deleted entries (D) are excluded by --diff-filter=ACMR so the returned
+     * paths always exist on disk. Renamed entries surface as the destination.
+     *
+     * Returns null when the cwd is not a git repository or HEAD does not
+     * resolve (fresh init without a commit, etc.). Callers treat null as
+     * "set empty" via {@see ExecutionContext::isEffectiveSetEmpty()}.
+     *
+     * @return string[]|null
+     */
+    public function getWorktreeDiffFiles(): ?array
+    {
+        $silent = Platform::stderrRedirect();
+
+        // First gate: we must be inside a git work tree.
+        $isInsideWorkTree = [];
+        $returnCode = 0;
+        exec("git rev-parse --is-inside-work-tree $silent", $isInsideWorkTree, $returnCode);
+        if ($returnCode !== 0 || ($isInsideWorkTree[0] ?? '') !== 'true') {
+            return null;
+        }
+
+        // Second gate: HEAD must resolve so `git diff HEAD` has a baseline.
+        $headRev = [];
+        exec("git rev-parse --verify HEAD $silent", $headRev, $returnCode);
+        if ($returnCode !== 0) {
+            return null;
+        }
+
+        // Tracked: union of staged+unstaged vs HEAD, excluding D.
+        $tracked = [];
+        exec("git diff --name-only --diff-filter=ACMR HEAD $silent", $tracked, $returnCode);
+        if ($returnCode !== 0) {
+            return null;
+        }
+
+        // Untracked, respecting .gitignore.
+        $untracked = [];
+        exec("git ls-files --others --exclude-standard $silent", $untracked, $returnCode);
+        if ($returnCode !== 0) {
+            return null;
+        }
+
+        return array_values(array_unique(array_merge($tracked, $untracked)));
+    }
+
+    /**
      * @inheritDoc
      */
     public function detectMainBranch(): ?string

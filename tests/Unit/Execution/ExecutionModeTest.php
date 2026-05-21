@@ -27,6 +27,12 @@ class ExecutionModeTest extends TestCase
         $this->assertTrue(ExecutionMode::isValid('fast-branch'));
     }
 
+    /** @test */
+    public function fast_dirty_is_valid()
+    {
+        $this->assertTrue(ExecutionMode::isValid('fast-dirty'));
+    }
+
     /**
      * @test
      * @dataProvider invalidModeProvider
@@ -48,12 +54,13 @@ class ExecutionModeTest extends TestCase
     }
 
     /** @test */
-    public function all_contains_exactly_three_modes()
+    public function all_contains_exactly_four_modes()
     {
-        $this->assertCount(3, ExecutionMode::ALL);
+        $this->assertCount(4, ExecutionMode::ALL);
         $this->assertContains(ExecutionMode::FULL, ExecutionMode::ALL);
         $this->assertContains(ExecutionMode::FAST, ExecutionMode::ALL);
         $this->assertContains(ExecutionMode::FAST_BRANCH, ExecutionMode::ALL);
+        $this->assertContains(ExecutionMode::FAST_DIRTY, ExecutionMode::ALL);
     }
 
     /** @test */
@@ -62,5 +69,6 @@ class ExecutionModeTest extends TestCase
         $this->assertEquals('full', ExecutionMode::FULL);
         $this->assertEquals('fast', ExecutionMode::FAST);
         $this->assertEquals('fast-branch', ExecutionMode::FAST_BRANCH);
+        $this->assertEquals('fast-dirty', ExecutionMode::FAST_DIRTY);
     }
 }

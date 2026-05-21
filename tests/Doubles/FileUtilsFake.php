@@ -70,6 +70,19 @@ class FileUtilsFake extends FileUtils
         return $this->detectedMainBranch;
     }
 
+    /** @var string[]|null  null=fallback (signal "not a git repo"), array=set */
+    protected ?array $worktreeDiffFiles = null;
+
+    public function setWorktreeDiffFiles(?array $files): void
+    {
+        $this->worktreeDiffFiles = $files;
+    }
+
+    public function getWorktreeDiffFiles(): ?array
+    {
+        return $this->worktreeDiffFiles;
+    }
+
     /** @var array<string, string[]> */
     protected array $directoryExpansions = [];
 

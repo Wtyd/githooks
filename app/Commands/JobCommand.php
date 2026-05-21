@@ -14,6 +14,7 @@ use Wtyd\GitHooks\Execution\{
     FlowPreparer,
     InputFilesResolver
 };
+use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
@@ -29,6 +30,7 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class JobCommand extends Command
 {
+    use AssertsExecutionModeFlagsExclusive;
     use EmitsConditionsHeader;
     use EmitsConfigWarnings;
     use EmitsStderr;
@@ -53,6 +55,7 @@ class JobCommand extends Command
                             {--dry-run : Show commands without executing}
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
+                            {--fast-dirty : Fast-dirty mode — accelerable jobs analyze the entire working tree (staged, unstaged, and untracked non-ignored files)}
                             {--files= : CSV of files to filter accelerable jobs by (mutually exclusive with --files-from)}
                             {--files-from= : Path to a manifest file with one path per line (mutually exclusive with --files)}
                             {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
@@ -96,6 +99,10 @@ class JobCommand extends Command
         $jobName = strval($this->argument('name'));
         $configFile = strval($this->option('config'));
 
+        if (!$this->assertExecutionModeFlagsExclusive()) {
+            return 1;
+        }
+
         try {
             $config = $this->parser->parse($configFile);
 
@@ -125,12 +132,7 @@ class JobCommand extends Command
 
             $fileUtils = $this->getLaravel()->make(FileUtilsInterface::class);
 
-            $invocationMode = null;
-            if ($this->option('fast')) {
-                $invocationMode = ExecutionMode::FAST;
-            } elseif ($this->option('fast-branch')) {
-                $invocationMode = ExecutionMode::FAST_BRANCH;
-            }
+            $invocationMode = $this->resolveInvocationModeFromCli();
 
             $mainBranch = $config->getGlobalOptions()->getMainBranch()
                 ?? $fileUtils->detectMainBranch();

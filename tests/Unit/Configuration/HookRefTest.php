@@ -187,7 +187,7 @@ class HookRefTest extends TestCase
 
         $this->assertNull($ref);
         $this->assertErrorEquals(
-            "Hook ref for 'qa': 'execution' must be one of: full, fast, fast-branch.",
+            "Hook ref for 'qa': 'execution' must be one of: full, fast, fast-branch, fast-dirty.",
             $result
         );
     }

@@ -581,7 +581,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
                     ],
                 ],
                 'jobs' => $jobs,
-                'expectedError' => "Flow 'qa' on rule for 'master': 'execution' must be one of: full, fast, fast-branch.",
+                'expectedError' => "Flow 'qa' on rule for 'master': 'execution' must be one of: full, fast, fast-branch, fast-dirty.",
             ],
         ];
     }

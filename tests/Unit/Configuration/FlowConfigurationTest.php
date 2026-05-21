@@ -164,7 +164,7 @@ class FlowConfigurationTest extends TestCase
 
         $this->assertNull($flow);
         $this->assertErrorEquals(
-            "Flow 'lint': 'execution' must be one of: full, fast, fast-branch.",
+            "Flow 'lint': 'execution' must be one of: full, fast, fast-branch, fast-dirty.",
             $result
         );
     }

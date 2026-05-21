@@ -42,6 +42,18 @@ interface FileUtilsInterface
     public function getBranchDiffFiles(string $mainBranch): ?array;
 
     /**
+     * FEAT-13: get the unified set of files in the dirty working tree.
+     * Set = `git diff --diff-filter=ACMR HEAD` ∪ `git ls-files --others --exclude-standard`.
+     * That is: tracked files with staged or unstaged changes (excluding Deleted) ∪
+     * untracked files that are not gitignored.
+     *
+     * The filter ACMR guarantees that every returned path exists in the filesystem.
+     *
+     * @return string[]|null Null if unable to compute (not a git repo, fresh init without HEAD, etc.)
+     */
+    public function getWorktreeDiffFiles(): ?array;
+
+    /**
      * Auto-detect the main branch name.
      * Checks CI env vars (GITHUB_BASE_REF, CI_MERGE_REQUEST_TARGET_BRANCH_NAME,
      * BITBUCKET_PR_DESTINATION_BRANCH), then git symbolic-ref, then tries master/main.

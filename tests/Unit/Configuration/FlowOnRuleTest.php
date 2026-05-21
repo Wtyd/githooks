@@ -101,7 +101,7 @@ class FlowOnRuleTest extends TestCase
 
         $this->assertNull($rule);
         $this->assertErrorEquals(
-            "Flow 'ci-validation' on rule for 'master': 'execution' must be one of: full, fast, fast-branch.",
+            "Flow 'ci-validation' on rule for 'master': 'execution' must be one of: full, fast, fast-branch, fast-dirty.",
             $result
         );
     }
