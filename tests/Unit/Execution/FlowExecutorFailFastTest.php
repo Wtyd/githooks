@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Doubles\FakeProcessPool;
+use Tests\Doubles\InjectableFlowExecutor;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
@@ -12,128 +14,127 @@ use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 
+/**
+ * Verifies the fail-fast contract of FlowExecutor across the two paths
+ * (parallel pool / sequential loop). All parallel tests use FakeProcessPool
+ * so no real subprocess is spawned — the executor walks its inner loop
+ * deterministically and the fake pool enforces a safety cap that would
+ * trip if a regression turned the loop into a livelock.
+ *
+ * After FEAT-3 the fail-fast contract is: jobs in `running` finish
+ * naturally (no terminateAll), the queue is drained with `skipped by
+ * fail-fast` (or the FEAT-3 needs-aware reason when a dependency graph
+ * is in play), and every queued job emits an `onJobSkipped` event so
+ * structured formats still report the full plan.
+ */
 class FlowExecutorFailFastTest extends TestCase
 {
     /**
      * @test
-     * When fail-fast triggers in parallel mode, jobs that were running concurrently
-     * should still appear in the results with their (partial) output collected.
+     * When fail-fast triggers in parallel mode, jobs that were running at
+     * the failure point still appear in the results with their output
+     * collected. They finish naturally — fail-fast no longer terminates
+     * them.
      */
-    public function parallel_fail_fast_collects_results_from_in_flight_jobs()
+    public function parallel_fail_fast_collects_results_from_in_flight_jobs(): void
     {
-        $executor = new FlowExecutor(new NullOutputHandler());
-
-        // Job that fails immediately
         $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', [
-            'script' => 'echo "fast output" && exit 1',
+            'script' => 'unused-by-fake',
         ]));
-
-        // Job that takes long enough to still be running when fast_fail finishes
         $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', [
-            'script' => 'echo "slow partial output" && sleep 5',
+            'script' => 'unused-by-fake',
         ]));
 
-        $options = new OptionsConfiguration(true, 2); // fail-fast=true, processes=2
-        $plan = new FlowPlan('test', [$fastFail, $slowJob], $options);
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('fast_fail', 1, 'fast output');
+        $pool->programResult('slow_job', 0, 'slow partial output', '', 2);
 
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
+
+        $plan = new FlowPlan('test', [$fastFail, $slowJob], new OptionsConfiguration(true, 2));
         $result = $executor->execute($plan);
-        $jobResults = $result->getJobResults();
 
-        $jobNames = array_map(fn($r) => $r->getJobName(), $jobResults);
-
-        $this->assertContains('fast_fail', $jobNames, 'The failed job should be in results');
-        $this->assertContains('slow_job', $jobNames, 'The in-flight terminated job should be in results');
-        $this->assertCount(2, $jobResults, 'Both jobs should appear in results');
+        $this->assertNotNull($result->getJobResult('fast_fail'));
+        $this->assertNotNull($result->getJobResult('slow_job'));
+        $this->assertCount(2, $result->getJobResults());
     }
 
     /**
      * @test
-     * The terminated in-flight job should have its partial output captured when
-     * the process has had time to flush. We use a small sleep to ensure the echo
-     * completes before termination, avoiding timing-dependent failures in CI.
+     * The output of an in-flight job at the failure point is captured. The
+     * fake pool keeps slow_job in the running set for two polls so the
+     * executor goes through one fail-fast iteration before it finishes
+     * naturally.
      */
-    public function parallel_fail_fast_captures_output_from_terminated_jobs()
+    public function parallel_fail_fast_captures_output_from_in_flight_jobs(): void
     {
-        $executor = new FlowExecutor(new NullOutputHandler());
-
-        // This job sleeps briefly to let slow_job's echo flush, then fails
         $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', [
-            'script' => 'sleep 0.2 && echo "fail output" && exit 1',
+            'script' => 'unused-by-fake',
         ]));
-
-        // This job echoes immediately then sleeps — output should be captured before termination
         $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', [
-            'script' => 'echo "partial data" && sleep 5',
+            'script' => 'unused-by-fake',
         ]));
 
-        $options = new OptionsConfiguration(true, 2);
-        $plan = new FlowPlan('test', [$fastFail, $slowJob], $options);
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('fast_fail', 1, 'fail output');
+        $pool->programResult('slow_job', 0, 'partial data', '', 3);
 
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
+
+        $plan = new FlowPlan('test', [$fastFail, $slowJob], new OptionsConfiguration(true, 2));
         $result = $executor->execute($plan);
 
-        $slowResult = null;
-        foreach ($result->getJobResults() as $jr) {
-            if ($jr->getJobName() === 'slow_job') {
-                $slowResult = $jr;
-                break;
-            }
-        }
-
+        $slowResult = $result->getJobResult('slow_job');
         $this->assertNotNull($slowResult, 'slow_job should be in results');
         $this->assertStringContainsString('partial data', $slowResult->getOutput());
     }
 
     /**
      * @test
-     * With 3 jobs (processes=2, fail-fast): first fails, second is in-flight, third never starts.
-     * All three should appear in results: failed, terminated, and 0 unstarted (skipped not in results).
-     * The total count should be 2 (failed + in-flight). The third is skipped (not a JobResult).
+     * With 3 jobs (processes=2, fail-fast): fast_fail starts and exits 1
+     * immediately, slow_job is in-flight, queued_job never starts. All
+     * three appear in results: fast_fail failed, slow_job completes
+     * naturally with the programmed exit code, queued_job is skipped with
+     * `skipped by fail-fast`.
      */
-    public function parallel_fail_fast_with_queued_and_in_flight_jobs()
+    public function parallel_fail_fast_with_queued_and_in_flight_jobs(): void
     {
-        $executor = new FlowExecutor(new NullOutputHandler());
+        $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', ['script' => 'unused-by-fake']));
+        $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', ['script' => 'unused-by-fake']));
+        $queuedJob = new CustomJob(new JobConfiguration('queued_job', 'custom', ['script' => 'unused-by-fake']));
 
-        $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', [
-            'script' => 'echo "fail" && exit 1',
-        ]));
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('fast_fail', 1, 'fail');
+        $pool->programResult('slow_job', 0, 'slow', '', 2);
+        // queued_job is never started, so its programmed result is irrelevant —
+        // fail-fast drains it as skipped before its slot is ever filled.
 
-        $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', [
-            'script' => 'echo "slow" && sleep 5',
-        ]));
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
 
-        $queuedJob = new CustomJob(new JobConfiguration('queued_job', 'custom', [
-            'script' => 'echo "should not run"',
-        ]));
-
-        $options = new OptionsConfiguration(true, 2); // Only 2 parallel slots
-        $plan = new FlowPlan('test', [$fastFail, $slowJob, $queuedJob], $options);
-
+        $plan = new FlowPlan('test', [$fastFail, $slowJob, $queuedJob], new OptionsConfiguration(true, 2));
         $result = $executor->execute($plan);
-        $jobResults = $result->getJobResults();
 
-        $jobNames = array_map(fn($r) => $r->getJobName(), $jobResults);
-
-        // fast_fail and slow_job both started (processes=2), queued_job never started
-        $this->assertContains('fast_fail', $jobNames);
-        $this->assertContains('slow_job', $jobNames);
-        // queued_job appears as a skipped entry so structured formats (JSON/JUnit/SARIF)
-        // can report the full plan, not just the subset that actually ran.
-        $this->assertContains('queued_job', $jobNames);
-        $this->assertCount(3, $jobResults);
-
-        $queuedResult = null;
-        foreach ($jobResults as $jr) {
-            if ($jr->getJobName() === 'queued_job') {
-                $queuedResult = $jr;
-            }
-        }
+        $this->assertNotNull($result->getJobResult('fast_fail'));
+        $this->assertNotNull($result->getJobResult('slow_job'));
+        $queuedResult = $result->getJobResult('queued_job');
         $this->assertNotNull($queuedResult);
+        $this->assertCount(3, $result->getJobResults());
+
         $this->assertTrue($queuedResult->isSkipped());
         $this->assertSame('skipped by fail-fast', $queuedResult->getSkipReason());
     }
 
-    /** @test */
-    public function sequential_fail_fast_includes_remaining_jobs_as_skipped_in_results()
+    /**
+     * @test
+     * Sequential mode (processes=1) is independent of ProcessPool — it runs
+     * jobs one by one and never reaches `executeParallel`. The shell calls
+     * here are immediate (`exit 1`, `echo`) so the test is fast without
+     * needing a fake.
+     */
+    public function sequential_fail_fast_includes_remaining_jobs_as_skipped_in_results(): void
     {
         $executor = new FlowExecutor(new NullOutputHandler());
 
@@ -151,14 +152,13 @@ class FlowExecutorFailFastTest extends TestCase
 
         $skippedResults = array_filter($result->getJobResults(), fn($r) => $r->isSkipped());
         $this->assertCount(2, $skippedResults);
-
         foreach ($skippedResults as $jr) {
             $this->assertSame('skipped by fail-fast', $jr->getSkipReason());
         }
     }
 
     /** @test */
-    public function sequential_fail_fast_preserves_type_and_paths_in_skipped_results()
+    public function sequential_fail_fast_preserves_type_and_paths_in_skipped_results(): void
     {
         $executor = new FlowExecutor(new NullOutputHandler());
 
@@ -170,44 +170,38 @@ class FlowExecutorFailFastTest extends TestCase
         $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 1));
         $result = $executor->execute($plan);
 
-        $neverResult = null;
-        foreach ($result->getJobResults() as $jr) {
-            if ($jr->getJobName() === 'never') {
-                $neverResult = $jr;
-            }
-        }
-
+        $neverResult = $result->getJobResult('never');
         $this->assertNotNull($neverResult);
         $this->assertSame('custom', $neverResult->getType());
         $this->assertSame(['tests'], $neverResult->getPaths());
     }
 
-    /** @test */
-    public function parallel_fail_fast_queued_job_preserves_type_and_paths()
+    /**
+     * @test
+     * Parallel-mode queued job preserves its type/paths in the skipped
+     * JobResult so structured formatters (JSON, JUnit, SARIF, CodeClimate)
+     * can emit the full plan, not just the subset that actually ran.
+     */
+    public function parallel_fail_fast_queued_job_preserves_type_and_paths(): void
     {
-        $executor = new FlowExecutor(new NullOutputHandler());
-
-        $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', [
-            'script' => 'exit 1',
-        ]));
-        $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', [
-            'script' => 'sleep 5',
-        ]));
+        $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', ['script' => 'unused-by-fake']));
+        $slowJob = new CustomJob(new JobConfiguration('slow_job', 'custom', ['script' => 'unused-by-fake']));
         $queuedJob = new CustomJob(new JobConfiguration('queued_job', 'custom', [
-            'script' => 'echo queued',
-            'paths' => ['src/queued'],
+            'script' => 'unused-by-fake',
+            'paths'  => ['src/queued'],
         ]));
+
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('fast_fail', 1, '');
+        $pool->programResult('slow_job', 0, '', '', 2);
+
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
 
         $plan = new FlowPlan('test', [$fastFail, $slowJob, $queuedJob], new OptionsConfiguration(true, 2));
         $result = $executor->execute($plan);
 
-        $queuedResult = null;
-        foreach ($result->getJobResults() as $jr) {
-            if ($jr->getJobName() === 'queued_job') {
-                $queuedResult = $jr;
-            }
-        }
-
+        $queuedResult = $result->getJobResult('queued_job');
         $this->assertNotNull($queuedResult);
         $this->assertTrue($queuedResult->isSkipped());
         $this->assertSame('custom', $queuedResult->getType());

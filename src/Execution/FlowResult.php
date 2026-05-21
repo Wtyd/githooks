@@ -77,6 +77,22 @@ class FlowResult
         return $this->jobResults;
     }
 
+    /**
+     * Look up a job result by its declared name. Returns null when no job with
+     * that name exists in the result set — callers that want to assert
+     * presence should pair this with a null check (the test side typically
+     * does `$this->assertNotNull(...)`).
+     */
+    public function getJobResult(string $name): ?JobResult
+    {
+        foreach ($this->jobResults as $result) {
+            if ($result->getJobName() === $name) {
+                return $result;
+            }
+        }
+        return null;
+    }
+
     public function isSuccess(): bool
     {
         foreach ($this->jobResults as $result) {

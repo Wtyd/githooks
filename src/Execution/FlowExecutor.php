@@ -559,7 +559,7 @@ class FlowExecutor
      *
      * @param JobAbstract[] $jobs
      */
-    private function buildProcessPool(int $maxProcesses, int $coresBudget, array $jobs, OptionsConfiguration $options): ProcessPool
+    protected function buildProcessPool(int $maxProcesses, int $coresBudget, array $jobs, OptionsConfiguration $options): ProcessPool
     {
         $coresByJob = [];
         $memoryReserveByJob = [];

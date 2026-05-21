@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\GitStagerFake;
+use Tests\Doubles\InjectableFlowExecutor;
 use Tests\Doubles\OutputHandlerSpy;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -1368,16 +1370,21 @@ class FlowExecutorTest extends TestCase
      */
     public function parallel_fail_fast_notifies_outputHandler_for_each_queued_job()
     {
-        $spy = new OutputHandlerSpy();
-        $executor = new FlowExecutor($spy);
-
         $jobs = [
-            new CustomJob(new JobConfiguration('fail_first', 'custom', ['script' => 'exit 1'])),
-            new CustomJob(new JobConfiguration('slow_inflight', 'custom', ['script' => 'sleep 5'])),
-            new CustomJob(new JobConfiguration('queued', 'custom', ['script' => 'echo q'])),
+            new CustomJob(new JobConfiguration('fail_first', 'custom', ['script' => 'unused-by-fake'])),
+            new CustomJob(new JobConfiguration('slow_inflight', 'custom', ['script' => 'unused-by-fake'])),
+            new CustomJob(new JobConfiguration('queued', 'custom', ['script' => 'unused-by-fake'])),
         ];
-        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 2));
 
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('fail_first', 1, '');
+        $pool->programResult('slow_inflight', 0, '', '', 2);
+
+        $spy = new OutputHandlerSpy();
+        $executor = new InjectableFlowExecutor($spy);
+        $executor->injectPool($pool);
+
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(true, 2));
         $executor->execute($plan);
 
         $skippedNames = array_map(fn(array $entry) => $entry['job'], $spy->skippedJobs);

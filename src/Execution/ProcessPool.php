@@ -153,7 +153,7 @@ class ProcessPool
     /**
      * @return array{process: Process, job: JobAbstract, start: float}
      */
-    private function startJob(JobAbstract $job): array
+    protected function startJob(JobAbstract $job): array
     {
         $command = $job->buildCommand();
         $process = Process::fromShellCommandLine($command);
