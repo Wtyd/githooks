@@ -1039,24 +1039,49 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L361 Multiplication `$seconds * 1000`→`/ 1000`: a 150ms sleep
-     * must produce a triple-digit millisecond count, not 0ms. Parses the
-     * rendered time literal to enforce a concrete lower bound.
+     * Kills L361 Multiplication `$seconds * 1000`→`/ 1000`: with a simulated
+     * 0.15s job duration, formatTime() must render "150ms". The wallclock
+     * is driven via the protected setClock() seam so the test runs
+     * instantly — the production code under test (`round($seconds * 1000)`)
+     * is exercised on the exact boundary, not on a fuzzy ">100ms" bound.
      *
-     * @group slow
+     * Four ticks are consumed in this sequential single-job execution:
+     *   1. execute()  flow start
+     *   2. runJob()   job start
+     *   3. buildResult job end (elapsed = 0.15)
+     *   4. execute()  flow end
      */
     public function execution_time_in_milliseconds_is_derived_from_multiplication()
     {
-        $executor = new FlowExecutor(new NullOutputHandler());
+        $ticks = [0.0, 0.0, 0.15, 0.15];
+        $idx = 0;
+        $clock = function () use (&$ticks, &$idx): float {
+            if (!isset($ticks[$idx])) {
+                throw new \LogicException("Clock exhausted at call #{$idx}");
+            }
+            return $ticks[$idx++];
+        };
 
-        $job = new CustomJob(new JobConfiguration('slow', 'custom', ['script' => 'sleep 0.15']));
+        $executor = new class (new NullOutputHandler(), $clock) extends FlowExecutor {
+            public function __construct(NullOutputHandler $output, callable $clock)
+            {
+                parent::__construct($output);
+                $this->setClock($clock);
+            }
+        };
+
+        $job = new CustomJob(new JobConfiguration('quick', 'custom', ['script' => 'true']));
         $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
 
         $result = $executor->execute($plan);
         $time = $result->getJobResults()[0]->getExecutionTime();
 
-        $this->assertMatchesRegularExpression('/^\d+ms$/', $time);
-        $this->assertGreaterThan(100, (int) $time);
+        $this->assertSame(
+            '150ms',
+            $time,
+            'formatTime(0.15s) must yield "150ms" — confirms the multiplication branch '
+                . '(`$seconds * 1000` → `/ 1000` would render "0ms").'
+        );
     }
 
     /**
