@@ -995,21 +995,25 @@ class FlowExecutorTest extends TestCase
      * @test
      * Kills L280 PlusEqual `+=`→`-=` and L278 DecrementInteger on
      * currentThreads=0→-1: two concurrent CustomJobs (no capability, default
-     * 1 thread each) must push the peak to 2. The sleep ensures both jobs
-     * overlap in the pool before either completes.
-     *
-     * @group slow
+     * 1 thread each) must push the peak to 2. The fake pool keeps both
+     * jobs in `running` for two polls so updatePeakThreads observes the
+     * concurrent overlap.
      */
     public function parallel_peak_threads_sums_concurrent_allocations()
     {
-        $executor = new FlowExecutor(new NullOutputHandler());
-
         $jobs = [
-            new CustomJob(new JobConfiguration('slow_a', 'custom', ['script' => 'sleep 0.2'])),
-            new CustomJob(new JobConfiguration('slow_b', 'custom', ['script' => 'sleep 0.2'])),
+            new CustomJob(new JobConfiguration('slow_a', 'custom', ['script' => 'unused-by-fake'])),
+            new CustomJob(new JobConfiguration('slow_b', 'custom', ['script' => 'unused-by-fake'])),
         ];
-        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(false, 2));
 
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('slow_a', 0, '', '', 2);
+        $pool->programResult('slow_b', 0, '', '', 2);
+
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
+
+        $plan = new FlowPlan('test', $jobs, new OptionsConfiguration(false, 2));
         $result = $executor->execute($plan);
 
         $this->assertSame(2, $result->getPeakEstimatedThreads());
