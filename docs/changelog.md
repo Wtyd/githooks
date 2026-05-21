@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.4]
+
+### Fixed
+
+- **GitLab CI / GitHub Actions sections no longer leak raw tool JSON when `--format=codeclimate` or `--format=sarif` (or `reports.codeclimate` / `reports.sarif` in config) is active.** When a structured format is requested, GitHooks reconfigures every supported tool to its JSON variant (`phpstan --error-format=json`, `phpcs --report=json`, `phpmd … json`, `psalm --output-format=json`, `parallel-lint --json`) so the file-based formatters can parse the output. The side-effect: failing jobs printed that JSON blob inside their CI section as the visible body — a one-line minified string for PHPStan/PHPCS (with absolute runner paths like `/builds/<group>/<project>/…`), pretty-printed JSON for PHPMD. The operator who opened a KO section saw raw JSON instead of `file  line N  message  [rule]`. JUnit/SARIF/CodeClimate file reports were already correct (they parse the JSON before emitting). What was missing was humanising the **display** layer. Fix: a new `HumanIssueFormatter` translates the per-tool JSON into a human listing (path + indented `line N` / `line N:C` rows + `Totals: X file(s), Y issue(s)`) using the existing `ToolOutputParser` registry; `FlowExecutor::buildResult` invokes it just before `OutputHandler::onJobError` when `structuredFormat = true`. The raw output is preserved unchanged in `JobResult.output`, so the file-based formatters (`JsonResultFormatter`, `JunitResultFormatter`, `SarifResultFormatter`, `CodeClimateResultFormatter`) and any `reports.*` paths keep getting the JSON they need. Fallbacks: jobs without a registered parser (`local-script`, `custom`) and tools whose JSON is broken / contains no issues fall back to the raw output (no regression vs the prior behaviour); whitespace-only outputs collapse to empty. Same upstream fix benefits `GitHubActionsDecorator`, `DashboardOutputHandler::printFramedError` and `Printer::framedErrorBlock`.
+
 ## [3.3.3]
 
 ### Fixed

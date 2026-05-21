@@ -13,7 +13,9 @@ use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
 use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Output\DashboardOutputHandler;
+use Wtyd\GitHooks\Output\HumanIssueFormatter;
 use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
 use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
 use Wtyd\GitHooks\Utils\GitStagerInterface;
 
@@ -28,6 +30,8 @@ class FlowExecutor
     private OutputHandler $outputHandler;
 
     private ?GitStagerInterface $gitStager;
+
+    private HumanIssueFormatter $humanFormatter;
 
     private bool $structuredFormat = false;
 
@@ -47,10 +51,14 @@ class FlowExecutor
     /** @var (callable():float)|null */
     private $clockOverride = null;
 
-    public function __construct(OutputHandler $outputHandler, ?GitStagerInterface $gitStager = null)
-    {
+    public function __construct(
+        OutputHandler $outputHandler,
+        ?GitStagerInterface $gitStager = null,
+        ?HumanIssueFormatter $humanFormatter = null
+    ) {
         $this->outputHandler = $outputHandler;
         $this->gitStager = $gitStager;
+        $this->humanFormatter = $humanFormatter ?? new HumanIssueFormatter(new ToolOutputParserRegistry());
     }
 
     public function getOutputHandler(): OutputHandler
@@ -720,7 +728,14 @@ class FlowExecutor
         } elseif ($success) {
             $this->outputHandler->onJobSuccess($displayName, $time);
         } else {
-            $this->outputHandler->onJobError($displayName, $time, $output);
+            // BUG-18: when structuredFormat is on the tools emit JSON for the
+            // SARIF/CodeClimate file formatters; humanise it before passing to
+            // the display layer, but keep the raw $output in the JobResult so
+            // file-based formatters keep getting the JSON they parse.
+            $displayOutput = $this->structuredFormat
+                ? $this->humanFormatter->format($job->getType(), $output)
+                : $output;
+            $this->outputHandler->onJobError($displayName, $time, $displayOutput);
         }
 
         $command = $job->buildCommand();

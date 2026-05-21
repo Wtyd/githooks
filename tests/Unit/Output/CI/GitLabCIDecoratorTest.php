@@ -6,7 +6,13 @@ namespace Tests\Unit\Output\CI;
 
 use Closure;
 use PHPUnit\Framework\TestCase;
+use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\GitHooks\Execution\FlowExecutor;
+use Wtyd\GitHooks\Execution\FlowPlan;
+use Wtyd\GitHooks\Jobs\PhpstanJob;
 use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
+use Wtyd\GitHooks\Output\DashboardOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
 
 /**
@@ -533,6 +539,61 @@ class GitLabCIDecoratorTest extends TestCase
                 [500], 'onJobSkipped', false, 500, 500,
             ],
         ];
+    }
+
+    /**
+     * BUG-18 regression: when `structuredFormat = true` and a job tool fails,
+     * the KO section must NOT contain the tool's raw JSON output. The
+     * `FlowExecutor` is expected to humanise the output upstream via the
+     * `HumanIssueFormatter` before invoking `onJobError`, so by the time the
+     * decorator buffers the body, the JSON blob is already gone.
+     *
+     * This is a regression test of the full path (FlowExecutor → decorator →
+     * dashboard inner) — it would catch any future refactor that bypasses
+     * the humanisation step (e.g. emitting raw `$output` from a new code path).
+     *
+     * @test
+     */
+    public function ko_section_with_structured_format_does_not_leak_raw_json(): void
+    {
+        $rawJson = '{"totals":{"errors":1,"file_errors":1},"files":{"src/Foo.php":'
+            . '{"errors":1,"messages":[{"message":"Class Foo not found.","line":42,'
+            . '"identifier":"class.notFound"}]}},"errors":[]}';
+        $payload = base64_encode($rawJson);
+
+        $job = new class (new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']])) extends PhpstanJob {
+            public string $payload = '';
+            public function buildCommand(): string
+            {
+                return "sh -c 'echo {$this->payload} | base64 -d; exit 1'";
+            }
+        };
+        $job->payload = $payload;
+
+        $dashboard = new DashboardOutputHandler(false);
+        $decorator = new GitLabCIDecorator($dashboard);
+        $executor = new FlowExecutor($decorator);
+        $executor->setStructuredFormat(true);
+
+        ob_start();
+        $executor->execute(new FlowPlan('test', [$job], new OptionsConfiguration(false, 1)));
+        $output = ob_get_clean();
+
+        // Strip GitLab \033[0K control sequences to ease assertion authoring.
+        $body = preg_replace('/\033\[0K/', '', $output) ?? '';
+
+        // The raw JSON markers must NOT appear anywhere in the section body.
+        $this->assertStringNotContainsString('"totals":', $body, 'Raw JSON "totals" must not leak into the KO section');
+        $this->assertStringNotContainsString('"files":', $body, 'Raw JSON "files" must not leak into the KO section');
+        $this->assertStringNotContainsString('"messages":', $body, 'Raw JSON "messages" must not leak into the KO section');
+
+        // The humanised content must appear instead.
+        $this->assertStringContainsString('src/Foo.php', $body, 'Humanised path must be present');
+        $this->assertStringContainsString('line 42', $body, 'Humanised line must be present');
+        $this->assertStringContainsString('Class Foo not found', $body, 'Humanised message must be present');
+        $this->assertStringContainsString('[class.notFound]', $body, 'Humanised rule id must be present');
+        $this->assertStringContainsString('section_start:', $body);
+        $this->assertStringContainsString('[collapsed=false]', $body);
     }
 
     /**
