@@ -154,20 +154,14 @@ class FlowExecutor
         // Both contribute events to the handler, so the denominator must cover both.
         $this->outputHandler->onFlowStart(count($jobs) + count($plan->getSkippedJobs()));
 
-        if (($maxProcesses <= 1 || count($jobs) <= 1) && !$this->shouldSampleMemory($jobs, $plan->getOptions())) {
-            $results = $this->executeSequential($jobs, $failFast, $plan->getDependencyGraph());
-        } else {
-            $results = $this->executeParallel(
-                $jobs,
-                max(1, $maxProcesses),
-                $coresBudget,
-                $failFast,
-                $plan->getOptions(),
-                $plan->getDependencyGraph()
-            );
-        }
-
-        // Include skipped jobs from plan (fast mode filtering / files mode mismatch)
+        // BUG-19: emit plan-skipped results BEFORE running the executors so the
+        // executors can seed their bookkeeping (`$skippedNames`,
+        // `ProcessPool::$skippedJobs`) with these names. Descendants that have
+        // `needs: [<plan-skipped>]` then propagate the skip instead of running.
+        // The emit-order swap is intentional: discards first, runtime work
+        // second — matches the actual cronology of decisions.
+        $preSkipped = [];
+        $preSkippedNames = [];
         foreach ($plan->getSkippedJobs() as $name => $info) {
             $this->outputHandler->onJobSkipped($name, $info['reason']);
             $skippedResult = JobResult::skipped($name, $info['type'], $info['reason'], $info['paths']);
@@ -176,8 +170,30 @@ class FlowExecutor
                     new InputFilesPerJob([], $inputFiles->getTotalValid())
                 );
             }
-            $results[] = $skippedResult;
+            $preSkipped[] = $skippedResult;
+            $preSkippedNames[] = $name;
         }
+
+        if (($maxProcesses <= 1 || count($jobs) <= 1) && !$this->shouldSampleMemory($jobs, $plan->getOptions())) {
+            $results = $this->executeSequential(
+                $jobs,
+                $failFast,
+                $plan->getDependencyGraph(),
+                $preSkippedNames
+            );
+        } else {
+            $results = $this->executeParallel(
+                $jobs,
+                max(1, $maxProcesses),
+                $coresBudget,
+                $failFast,
+                $plan->getOptions(),
+                $plan->getDependencyGraph(),
+                $preSkippedNames
+            );
+        }
+
+        $results = array_merge($preSkipped, $results);
 
         $this->outputHandler->flush();
 
@@ -381,17 +397,22 @@ class FlowExecutor
 
     /**
      * @param JobAbstract[] $jobs
+     * @param string[] $preSkippedNames BUG-19: jobs descarded by FlowPreparer
+     *        (only-files / exclude-files / execution-mode filter). Seeded into
+     *        $skippedNames so descendants with `needs: [<one of them>]`
+     *        propagate the skip instead of running.
      * @return JobResult[]
      */
     private function executeSequential(
         array $jobs,
         bool $failFast,
-        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null
+        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null,
+        array $preSkippedNames = []
     ): array {
         $results = [];
         $failedNames = [];     // FEAT-3: jobs whose result was a failure
-        $skippedNames = [];    // FEAT-3: jobs propagated via `needs` upstream
-        $consumed = [];        // jobs already processed (executed or skipped)
+        $skippedNames = $preSkippedNames; // FEAT-3 + BUG-19: include plan-skipped upstreams
+        $consumed = $preSkippedNames;     // jobs already processed (executed or skipped)
 
         foreach ($jobs as $job) {
             $name = $job->getName();
@@ -627,6 +648,9 @@ class FlowExecutor
 
     /**
      * @param JobAbstract[] $jobs
+     * @param string[] $preSkippedNames BUG-19: jobs descarded by FlowPreparer.
+     *        Notified into the pool BEFORE the loop so descendants resolve
+     *        their `needs` against the same set sequential executor sees.
      * @return JobResult[]
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates pool + dashboard + fail-fast
      * @SuppressWarnings(PHPMD.NPathComplexity) Dashboard tick + pool fill + fail-fast paths
@@ -637,7 +661,8 @@ class FlowExecutor
         int $coresBudget,
         bool $failFast,
         OptionsConfiguration $options,
-        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null
+        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null,
+        array $preSkippedNames = []
     ): array {
         $results = [];
         $pool = $this->buildProcessPool($maxProcesses, $coresBudget, $jobs, $options);
@@ -650,6 +675,14 @@ class FlowExecutor
                 $needsByJob[$job->getName()] = $dependencyGraph->getNeedsOf($job->getName());
             }
             $pool->setNeedsByJob($needsByJob);
+        }
+        // BUG-19: seed the pool's skipped set with plan-skipped jobs so the
+        // first drain pass propagates the skip to their descendants. Without
+        // this, descendants with `needs: [<plan-skipped>]` run anyway in
+        // sequential mode and can deadlock the pool in parallel mode (their
+        // needs never reach a terminal state).
+        foreach ($preSkippedNames as $name) {
+            $pool->notifyResult($name, false, true);
         }
         $failFastTriggered = false;
         $waitingShown = [];  // FEAT-3: jobName → list-of-blockers last announced
