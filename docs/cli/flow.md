@@ -23,7 +23,8 @@ githooks flow <name> [options]
 | `--no-reports` | Ignore the `reports` section from config (CLI `--report-*` flags still apply). PHPUnit `--no-coverage` style. |
 | `--fast` | Fast mode — accelerable jobs analyze only staged files. See [Execution Modes](../execution-modes.md). |
 | `--fast-branch` | Fast-branch mode — analyze files that differ from the main branch. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
-| `--files=a,b,c` | Files mode — accelerable jobs analyze only the explicit list (CSV). Mutually exclusive with `--files-from`. Wins over `--fast`/`--fast-branch`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
+| `--fast-dirty` | Fast-dirty mode — analyze the unified working tree: tracked files modified vs `HEAD` (staged or unstaged) ∪ non-ignored untracked. Ideal for AI agentic hooks and mid-review checks. Clean tree → all accelerable jobs skipped, exit 0 (no fallback to `full`). Mutually exclusive with `--fast`, `--fast-branch`, `--files`, `--files-from`. See [Fast-dirty mode](../execution-modes.md#fast-dirty-mode-fast-dirty). |
+| `--files=a,b,c` | Files mode — accelerable jobs analyze only the explicit list (CSV). Mutually exclusive with `--files-from`, `--fast`, `--fast-branch`, `--fast-dirty`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
 | `--files-from=PATH` | Files mode — read the list of paths from `PATH` (one per line; `#` comments and blanks ignored; UTF-8 + CRLF tolerated). Use this when the list exceeds the shell `ARG_MAX` or comes from `git diff --name-only`. |
 | `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob (`*`, `**`, `?`). Requires `--files` or `--files-from`. See [How-To: --files / --files-from](../how-to/files-flag.md#-exclude-pattern). |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
@@ -58,6 +59,7 @@ githooks flow qa --report-sarif=reports/qa.sarif --report-junit=reports/junit.xm
 githooks flow qa --format=json --no-reports         # AI/script: JSON to stdout, no side-effect files
 githooks flow qa --fast                             # Only staged files
 githooks flow qa --fast-branch                      # Only branch diff files
+githooks flow qa --fast-dirty                       # Working tree diff vs HEAD ∪ untracked
 githooks flow qa --files=src/User.php               # Files mode: explicit single file
 githooks flow qa --files-from=changed.txt           # Files mode: from manifest
 githooks flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'
@@ -69,7 +71,7 @@ githooks flow qa --config=qa/custom-githooks.php    # Use custom config
 
 ## Structured output
 
-- **`--format=json`** emits JSON v2: top-level `version`, `executionMode` (reflects the actual `--fast`/`--fast-branch` flag), `passed`, `failed`, `skipped`, and a `jobs` array with `type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`, `command` and `output`. Jobs cancelled by `--fail-fast` appear with `skipped: true` and `skipReason: "skipped by fail-fast"`.
+- **`--format=json`** emits JSON v2: top-level `version`, `executionMode` (reflects the actual `--fast`/`--fast-branch`/`--fast-dirty` flag), `passed`, `failed`, `skipped`, and a `jobs` array with `type`, `exitCode`, `paths`, `skipped`, `skipReason`, `fixApplied`, `command` and `output`. Jobs cancelled by `--fail-fast` appear with `skipped: true` and `skipReason: "skipped by fail-fast"`.
 - **`--format=junit`** emits JUnit XML compatible with `mikepenz/action-junit-report` and similar. Skipped jobs emit `<skipped>` elements.
 - **`--format=codeclimate`** emits a GitLab Code Quality JSON array. `location.path` is relative to the CWD.
 - **`--format=sarif`** emits a SARIF 2.1.0 report for GitHub Code Scanning. `artifactLocation.uri` is relative to the CWD.

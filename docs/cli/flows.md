@@ -32,7 +32,7 @@ Single-flow degenerate runs (`flows qa` with `qa` a normal flow) produce **the s
 
 ## Options
 
-The same flag set as [`flow`](flow.md): `--fail-fast`, `--processes`, `--exclude-jobs`, `--only-jobs`, `--format`, `--output`, `--report-*`, `--no-reports`, `--fast`, `--fast-branch`, `--fast-branch-fallback`, `--files`, `--files-from`, `--exclude-pattern`, `--monitor`, `--no-ci`, `--show-progress`, `--config`, `--dry-run`. Only the positional argument changes (variadic instead of single).
+The same flag set as [`flow`](flow.md): `--fail-fast`, `--processes`, `--exclude-jobs`, `--only-jobs`, `--format`, `--output`, `--report-*`, `--no-reports`, `--fast`, `--fast-branch`, `--fast-dirty`, `--fast-branch-fallback`, `--files`, `--files-from`, `--exclude-pattern`, `--monitor`, `--no-ci`, `--show-progress`, `--config`, `--dry-run`. Only the positional argument changes (variadic instead of single).
 
 `--exclude-jobs` and `--only-jobs` apply to the **merged deduplicated list** of jobs after meta-flow expansion, not per source flow. `--files` / `--files-from` build a **single** `ExecutionContext` shared by every job.
 

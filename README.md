@@ -187,7 +187,7 @@ return [
 * **Hooks** map git events (`pre-commit`, `pre-push`, etc.) to flows and jobs. Supports conditional execution by branch (`only-on` / `exclude-on`) and staged file patterns (`only-files` / `exclude-files`).
 * **Flows** are named groups of jobs with shared options (`fail-fast`, `processes`, `time-budget`, `memory-budget`, `reports`). Reusable across hooks and directly executable from CLI. Meta-flows (`flows.<X>.flows`) compose other flows in a single run.
 * **Jobs** are individual QA tasks. Each declares a `type` and its arguments. Jobs can inherit from other jobs with `extends`. When `executable-path` is omitted, GitHooks auto-detects the binary in `vendor/bin/`. Per-job thresholds (`warn-after`, `fail-after`, `memory`, `cores`) cap regressions.
-* **Execution modes**: `full` (default), `--fast` (only staged files), `--fast-branch` (only files changed vs base branch), `--files` / `--files-from` (explicit list).
+* **Execution modes**: `full` (default), `--fast` (only staged files), `--fast-branch` (only files changed vs base branch), `--fast-dirty` (unified working tree: dirty vs `HEAD` ∪ untracked — ideal for AI agentic hooks), `--files` / `--files-from` (explicit list).
 
 See the [documentation site](https://wtyd.github.io/githooks/) for the full configuration reference.
 
@@ -233,7 +233,7 @@ Two ways to run non-PHP tools:
 
 | Flag | Purpose |
 |---|---|
-| `--mode=full\|fast\|fast-branch` / `--fast` / `--fast-branch` | Select execution mode. `fast` filters to staged files, `fast-branch` to files changed vs base branch. |
+| `--mode=full\|fast\|fast-branch\|fast-dirty` / `--fast` / `--fast-branch` / `--fast-dirty` | Select execution mode. `fast` filters to staged files, `fast-branch` to files changed vs base branch, `fast-dirty` to the unified working tree (dirty vs `HEAD` ∪ untracked). |
 | `--files=a,b,c` / `--files-from=PATH` / `--exclude-pattern=glob` | Run against an explicit list of files (CSV, manifest, or with exclusion patterns). |
 | `--processes=N`, `--fail-fast`, `--only-jobs=a,b`, `--exclude-jobs=a,b`, `--dry-run` | Control parallelism, fail-fast behaviour, and job selection. |
 | `--format=text\|json\|junit\|sarif\|codeclimate` | Output format on stdout. JSON v2 schema is stable. |

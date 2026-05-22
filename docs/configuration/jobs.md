@@ -45,7 +45,7 @@ The following keywords are available for all job types (except `custom`, which h
 | `ignore-errors-on-exit` | Boolean | Job returns exit 0 even with problems. Default `false`. |
 | `fail-fast` | Boolean | Stop remaining jobs in the flow if this one fails. Default `false`. |
 | `accelerable` | Boolean | Override `--fast` behavior. Default depends on type. |
-| `execution` | String | Per-job execution mode override: `full`, `fast`, or `fast-branch`. |
+| `execution` | String | Per-job execution mode override: `full`, `fast`, `fast-branch`, or `fast-dirty`. |
 | `executable-prefix` | String | Per-job prefix override. Set to `null` or `''` to opt out of the global prefix. |
 | `cores` | Integer | Reserve N cores in the [thread budget](options.md#thread-budget). See [Reserving cores explicitly](#reserving-cores-cores-or-the-tools-native-flag) below. |
 | `memory` | Integer or Object | Per-job memory threshold (MB) — and 2D allocator reservation when given as a short integer. See [Per-job memory threshold](#per-job-memory-threshold-memory) below. |

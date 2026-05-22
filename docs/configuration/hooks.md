@@ -71,7 +71,7 @@ Hook refs can include conditions that control when a flow/job is executed:
 | `exclude-on` | Array of branch names or glob patterns. The ref is skipped if the current branch matches any pattern. **Always prevails over `only-on`**. Can be used alone. |
 | `only-files` | Array of file glob patterns. The ref is skipped if no staged files match any pattern. |
 | `exclude-files` | Array of file glob patterns. Staged files matching any pattern are excluded from triggering execution. **Always prevails over `only-files`**. Can be used alone. |
-| `execution` | String. Per-hook-ref execution mode override (`full`, `fast`, `fast-branch`). |
+| `execution` | String. Per-hook-ref execution mode override (`full`, `fast`, `fast-branch`, `fast-dirty`). |
 
 When multiple conditions are present, they are **AND-ed** — all must be satisfied for the ref to execute.
 
@@ -119,7 +119,7 @@ Hook refs can specify an execution mode that overrides the default:
 ],
 ```
 
-See [Execution Modes](../execution-modes.md) for details on `full`, `fast`, and `fast-branch`.
+See [Execution Modes](../execution-modes.md) for details on `full`, `fast`, `fast-branch` and `fast-dirty`.
 
 !!! info
     For `pre-commit` events, fast mode is activated automatically — you don't need to specify `'execution' => 'fast'`.

@@ -97,7 +97,7 @@ Each entry in `flows.<X>.jobs` can be either a plain string (job name) **or** an
 ],
 ```
 
-When the flow runs in `--fast` / `--fast-branch`, each entry's rules are evaluated against the change set:
+When the flow runs in `--fast`, `--fast-branch` or `--fast-dirty`, each entry's rules are evaluated against the change set:
 
 - A file `F` **admits** the job when `match(only-files, F) AND NOT match(exclude-files, F)`.
 - The job **runs** if at least one file admits it; otherwise it appears in the output as `skipped: true` with a clear `skipReason` (consistent with JSON / SARIF / JUnit reporting).
@@ -180,7 +180,7 @@ In `master` the mode is `full` (FEAT-1's `only-files` rules become no-op). In a 
 
 The effective mode is decided in this order (first that produces a value wins):
 
-1. `--fast` / `--fast-branch` CLI flags.
+1. `--fast` / `--fast-branch` / `--fast-dirty` CLI flags.
 2. `flows.<X>.on` matched against the current branch.
 3. `flows.<X>.execution`.
 4. `flows.options.execution` (global default).
@@ -230,7 +230,7 @@ Same semantics as FEAT-1's `only-files` / `exclude-files`:
 
 ### Scope and caveats
 
-- **Per-flow only.** Multi-flow runs (`githooks flows X Y`) ignore per-flow `on` (matches the existing CON-001/002 for flow-level options). The mode comes from `--fast/--fast-branch` or `flows.options.execution`.
+- **Per-flow only.** Multi-flow runs (`githooks flows X Y`) ignore per-flow `on` (matches the existing CON-001/002 for flow-level options). The mode comes from `--fast`/`--fast-branch`/`--fast-dirty` or `flows.options.execution`.
 - **`execution` is the only supported attribute today.** The object shape leaves room for `time-budget` / `fail-fast` to be added later without breaking the surface.
 - **`PHP collapses duplicate map keys.** `'master' => …, 'master' => …` cannot be detected — PHP keeps only the last entry.
 
@@ -308,7 +308,7 @@ When there is no JS in the change set, both skip by `only-files` (FEAT-1) — co
 
 ### Composition with `on` (FEAT-2)
 
-The execution mode chosen by `on` does not affect `needs`. Dependencies are structural — they hold in `full`, `fast`, and `fast-branch` alike.
+The execution mode chosen by `on` does not affect `needs`. Dependencies are structural — they hold in `full`, `fast`, `fast-branch`, and `fast-dirty` alike.
 
 ### Overriding in `githooks.local.php`
 

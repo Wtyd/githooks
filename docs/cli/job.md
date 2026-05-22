@@ -21,7 +21,8 @@ githooks job <name> [options]
 | `--no-reports` | Ignore the `reports` section from config (CLI `--report-*` flags still apply). |
 | `--fast` | Fast mode — analyze only staged files. See [Execution Modes](../execution-modes.md). |
 | `--fast-branch` | Fast-branch mode — analyze branch diff files. The branch name comes from the [`main-branch` option](../configuration/options.md#available-options); see [Execution Modes](../execution-modes.md) and [Fast-branch fallback](../execution-modes.md#fast-branch-fallback). |
-| `--files=a,b,c` | Files mode — explicit list (CSV). Mutually exclusive with `--files-from`. Wins over `--fast`/`--fast-branch`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
+| `--fast-dirty` | Fast-dirty mode — analyze the unified working tree (tracked files modified vs `HEAD`, staged or unstaged, ∪ non-ignored untracked). Clean tree → job skipped, exit 0 (no fallback to `full`). Mutually exclusive with `--fast`, `--fast-branch`, `--files`, `--files-from`. See [Fast-dirty mode](../execution-modes.md#fast-dirty-mode-fast-dirty). |
+| `--files=a,b,c` | Files mode — explicit list (CSV). Mutually exclusive with `--files-from`, `--fast`, `--fast-branch`, `--fast-dirty`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
 | `--files-from=PATH` | Files mode — read paths from a manifest file (one per line). |
 | `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob. Requires `--files` or `--files-from`. |
 | `--no-ci` | Disable auto-detection of CI annotations. See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
@@ -43,6 +44,7 @@ githooks job phpunit_all --format=json    # JSON v2 output to stdout
 githooks job phpstan_src --format=sarif   # SARIF 2.1.0 to stdout
 githooks job phpstan_src --format=sarif --output=reports/phpstan.sarif   # SARIF to a file
 githooks job phpcs_src --fast             # Only staged files
+githooks job phpcs_src --fast-dirty       # Working tree diff vs HEAD ∪ untracked
 githooks job phpstan_src --files=src/User.php   # Files mode: single explicit file (IDE on-save)
 githooks job phpstan_src --files-from=changed.txt   # Files mode: read paths from manifest
 githooks job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
