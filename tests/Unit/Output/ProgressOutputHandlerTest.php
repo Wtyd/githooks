@@ -157,4 +157,88 @@ class ProgressOutputHandlerTest extends TestCase
         $this->assertStringContainsString('OK', $output);
         $this->assertStringContainsString('Done.', $output);
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin forceEnabled default, the STDERR
+    // fallback chain, and the trailing newline in write().
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L35 FalseValue `bool $forceEnabled = false` → `= true`
+     *
+     * Constructed with a non-TTY stream and the default `$forceEnabled`,
+     * the handler must be DISABLED (`enabled=false` ⇒ write() short-circuits).
+     * The mutated default `true` would force enabled regardless of TTY.
+     */
+    public function force_enabled_defaults_to_false_so_non_tty_stream_is_silent(): void
+    {
+        $stream = fopen('php://temp', 'rw');
+        // Note: no explicit second argument — relies on the default.
+        $handler = new ProgressOutputHandler($stream);
+
+        $handler->onFlowStart(1);
+        $handler->onJobSuccess('job1', '1s');
+        $handler->flush();
+
+        rewind($stream);
+        $this->assertEmpty(stream_get_contents($stream), 'non-TTY stream must produce no output by default');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L39 ElseIfNegation `elseif (defined('STDERR'))` → `elseif (!defined('STDERR'))`
+     *
+     * When constructed with `$stream = null` and STDERR is defined (always
+     * true in CLI tests), the property must point to STDERR. The mutant
+     * `!defined('STDERR')` would always be false in CLI and the fallback
+     * `fopen('php://stderr')` branch would run, yielding a different
+     * resource handle.
+     */
+    public function null_stream_picks_STDERR_when_defined(): void
+    {
+        if (!defined('STDERR')) {
+            $this->markTestSkipped('STDERR not defined in this SAPI');
+        }
+        $handler = new ProgressOutputHandler(null);
+
+        $ref = new \ReflectionClass($handler);
+        $streamProp = $ref->getProperty('stream');
+        $streamProp->setAccessible(true);
+        $stream = $streamProp->getValue($handler);
+
+        $this->assertSame(STDERR, $stream, 'null stream must reuse the STDERR constant');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L98 Concat `$message . "\n"` (operand order / single-operand mutations)
+     *   - L98 ConcatOperandRemoval (drop of the "\n" fragment)
+     *
+     * Pin the exact byte sequence written: the OK marker, the job name and
+     * duration, the counter, and EXACTLY ONE trailing newline.
+     */
+    public function write_appends_exactly_one_newline_at_end_of_each_message(): void
+    {
+        $stream = fopen('php://temp', 'rw');
+        $handler = new ProgressOutputHandler($stream, true);
+        $handler->onFlowStart(2);
+
+        $handler->onJobSuccess('jobX', '5s');
+
+        rewind($stream);
+        $output = stream_get_contents($stream);
+
+        $this->assertSame(
+            "  \033[32mOK\033[0m jobX (5s)  [1/2]\n",
+            $output,
+            'write() emits message followed by EXACTLY one newline'
+        );
+    }
 }

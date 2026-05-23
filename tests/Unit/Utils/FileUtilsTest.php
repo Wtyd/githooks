@@ -355,4 +355,69 @@ class FileUtilsTest extends ZeroTestCase
         }
         @rmdir($dir);
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the case-insensitive extension match in
+    // expandDirectory. The other 3 FileUtils mutants (L73, L206, L241) are
+    // EQUIVALENT/COSMETIC: L73/L206 require mocking `exec()` (out of unit
+    // scope), and L241 (`str_replace('\\','/')`) is unreachable on Linux
+    // file systems where pathnames never contain backslashes.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L230 UnwrapArrayMap `array_flip(array_map('strtolower', $extensions))`
+     *
+     * Drive with an UPPERCASE extension in the filter and a lowercase file
+     * on disk. Without the strtolower over the filter set, the lookup
+     * `extSet['php']` would miss because `extSet` only contains 'PHP'.
+     */
+    public function expand_directory_filter_is_lowercased_for_lookup(): void
+    {
+        $dir = sys_get_temp_dir() . '/expand-dir-' . uniqid('', true);
+        mkdir($dir, 0755, true);
+        try {
+            file_put_contents($dir . '/lower.php', '<?php');
+            file_put_contents($dir . '/ignored.txt', 'x');
+
+            $utils = new \Wtyd\GitHooks\Utils\FileUtils();
+            $found = $utils->expandDirectory($dir, ['PHP']); // uppercase filter
+
+            $this->assertCount(1, $found, 'lower.php matches the PHP filter (case-insensitive)');
+            $this->assertStringEndsWith('/lower.php', $found[0]);
+        } finally {
+            $this->removeRecursive($dir);
+        }
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L238 UnwrapStrToLower `strtolower($entry->getExtension())`
+     *
+     * Drive with a lowercase filter and an UPPERCASE file extension on
+     * disk. Without strtolower over the entry extension, the lookup
+     * `extSet['PHP']` would miss because `extSet` only contains 'php'.
+     */
+    public function expand_directory_entry_extension_is_lowercased_for_lookup(): void
+    {
+        $dir = sys_get_temp_dir() . '/expand-dir-' . uniqid('', true);
+        mkdir($dir, 0755, true);
+        try {
+            // Filesystem on linux preserves filename case.
+            file_put_contents($dir . '/UPPER.PHP', '<?php');
+            file_put_contents($dir . '/ignored.txt', 'x');
+
+            $utils = new \Wtyd\GitHooks\Utils\FileUtils();
+            $found = $utils->expandDirectory($dir, ['php']); // lowercase filter
+
+            $this->assertCount(1, $found, 'UPPER.PHP matches the php filter (case-insensitive)');
+            $this->assertStringEndsWith('/UPPER.PHP', $found[0]);
+        } finally {
+            $this->removeRecursive($dir);
+        }
+    }
 }

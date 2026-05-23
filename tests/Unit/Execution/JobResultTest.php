@@ -287,4 +287,70 @@ class JobResultTest extends TestCase
 
         $this->assertFalse($result->hasMemoryThreshold());
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the constructor default of $fixApplied
+    // and the `clone $this` semantics of withNeeds() and
+    // withFailureByMemoryThreshold() (immutable-copy contract).
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L98 FalseValue `bool $fixApplied = false` → `= true`
+     *
+     * A JobResult constructed without an explicit $fixApplied must
+     * default to NOT having a fix applied. The mutant `= true` would
+     * make every job claim "fix applied" by default.
+     */
+    public function fix_applied_defaults_to_false_when_not_provided(): void
+    {
+        $result = new JobResult('phpcs_src', true, '', '1.0s');
+        $this->assertFalse($result->isFixApplied(), 'fixApplied default must be false');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L237 CloneRemoval `$clone = clone $this;` in withNeeds()
+     *
+     * `withNeeds()` must return an independent copy; the original must
+     * not see the new $needs. Without the clone, modifying the clone
+     * (`$clone->needs = $needs`) would mutate the receiver too.
+     */
+    public function with_needs_returns_a_clone_without_mutating_original(): void
+    {
+        $original = new JobResult('phpcs_src', true, '', '1.0s');
+        $this->assertSame([], $original->getNeeds(), 'original starts with empty needs');
+
+        $copy = $original->withNeeds(['phpstan_src', 'phpunit']);
+
+        $this->assertNotSame($original, $copy, 'withNeeds must return a new instance');
+        $this->assertSame(['phpstan_src', 'phpunit'], $copy->getNeeds(), 'copy carries the new needs');
+        $this->assertSame([], $original->getNeeds(), 'original needs must NOT be mutated');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L360 CloneRemoval `$clone = clone $this;` in withFailureByMemoryThreshold()
+     *
+     * `withFailureByMemoryThreshold()` flips success → false on a copy;
+     * the original passing result must remain success=true. Without the
+     * clone, the receiver itself would be downgraded.
+     */
+    public function with_failure_by_memory_threshold_returns_a_clone_without_mutating_original(): void
+    {
+        $original = new JobResult('phpcs_src', true, '', '1.0s');
+        $this->assertTrue($original->isSuccess(), 'original is a success');
+
+        $failed = $original->withFailureByMemoryThreshold();
+
+        $this->assertNotSame($original, $failed, 'must return a new instance');
+        $this->assertFalse($failed->isSuccess(), 'copy is now a failure');
+        $this->assertTrue($original->isSuccess(), 'original MUST still be a success');
+    }
 }

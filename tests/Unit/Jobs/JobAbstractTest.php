@@ -418,4 +418,108 @@ class JobAbstractTest extends TestCase
 
         $this->assertNull($job->getCoresOverride());
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin getCoresOverride boundary, the (bool)
+    // cast on accelerable arg, and the isEmpty() bool-guard / early return.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L131 GreaterThanOrEqualTo `$value >= 1` → `$value > 1`
+     *
+     * Boundary: native thread arg = 1 must be promoted to a coresOverride
+     * of 1 (the minimum positive integer). The mutant `> 1` would reject
+     * 1 and return null, leaving the budget allocator without an override
+     * for jobs that DO declare parallel:1 explicitly.
+     */
+    public function getCoresOverride_accepts_value_one_at_boundary(): void
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'parallel' => 1,
+        ]));
+
+        $this->assertSame(1, $job->getCoresOverride(), 'value=1 must be a valid override');
+    }
+
+    /**
+     * Companion: value=0 must STILL be rejected (no override) — kills the
+     * other side of the boundary (`>= 1` ⇒ 0 rejected).
+     *
+     * @test
+     */
+    public function getCoresOverride_rejects_value_zero_at_boundary(): void
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'parallel' => 0,
+        ]));
+
+        $this->assertNull($job->getCoresOverride(), 'value=0 must NOT be a valid override');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L318 CastBool `(bool) $this->args['accelerable']` → cast removed
+     *
+     * In strict_types mode, the return type `bool` rejects a string return
+     * value with TypeError. The cast guarantees the args value (which the
+     * configuration loader may not have coerced) is always returned as a
+     * bool. Drive with a non-bool truthy string.
+     */
+    public function isAccelerable_casts_non_bool_args_value_to_bool(): void
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'       => ['src'],
+            'accelerable' => 'yes', // non-bool truthy
+        ]));
+
+        $this->assertTrue($job->isAccelerable(), 'truthy non-bool must return true via cast');
+
+        $jobFalsy = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'       => ['src'],
+            'accelerable' => 0, // non-bool falsy
+        ]));
+
+        $this->assertFalse($jobFalsy->isAccelerable(), 'falsy non-bool must return false via cast');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L462 IfNegation `if (is_bool($value))` → `if (!is_bool($value))`
+     *   - L463 ReturnRemoval `return false;` (early return for bool values)
+     *
+     * The isEmpty() helper has a special-case contract: booleans are NEVER
+     * empty (false is a valid, intentional flag value). With IfNegation,
+     * a non-bool empty value (e.g. '') would short-circuit to `return false`
+     * instead of falling through to empty(). With ReturnRemoval, a literal
+     * `false` would fall through to empty(false)=true and be misclassified
+     * as empty.
+     */
+    public function isEmpty_treats_booleans_as_never_empty(): void
+    {
+        // Use any JobAbstract subclass to access the private isEmpty via Reflection.
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', ['paths' => ['src']]));
+        $ref = new \ReflectionMethod($job, 'isEmpty');
+        $ref->setAccessible(true);
+
+        // booleans → never empty (kills ReturnRemoval).
+        $this->assertFalse($ref->invoke($job, false), 'literal false must NOT be classified as empty');
+        $this->assertFalse($ref->invoke($job, true), 'literal true must NOT be classified as empty');
+
+        // Empty string → IS empty (kills IfNegation: with the negated guard,
+        // a non-bool empty value would erroneously short-circuit to `false`).
+        $this->assertTrue($ref->invoke($job, ''), 'empty string must be classified as empty');
+        $this->assertTrue($ref->invoke($job, []), 'empty array must be classified as empty');
+
+        // Non-empty non-bool → not empty.
+        $this->assertFalse($ref->invoke($job, 'value'), 'non-empty string is not empty');
+    }
 }
