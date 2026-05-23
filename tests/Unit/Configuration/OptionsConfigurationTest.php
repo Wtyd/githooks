@@ -79,56 +79,6 @@ class OptionsConfigurationTest extends TestCase
         $this->assertEquals(1, $options->getProcesses());
     }
 
-    /** @test */
-    public function with_overrides_applies_fail_fast()
-    {
-        $options = new OptionsConfiguration(false, 2);
-        $overridden = $options->withOverrides(true, null);
-
-        $this->assertTrue($overridden->isFailFast());
-        $this->assertEquals(2, $overridden->getProcesses());
-    }
-
-    /** @test */
-    public function with_overrides_applies_processes()
-    {
-        $options = new OptionsConfiguration(true, 1);
-        $overridden = $options->withOverrides(null, 8);
-
-        $this->assertTrue($overridden->isFailFast());
-        $this->assertEquals(8, $overridden->getProcesses());
-    }
-
-    /** @test */
-    public function with_overrides_applies_both()
-    {
-        $options = new OptionsConfiguration(false, 1);
-        $overridden = $options->withOverrides(true, 4);
-
-        $this->assertTrue($overridden->isFailFast());
-        $this->assertEquals(4, $overridden->getProcesses());
-    }
-
-    /** @test */
-    public function with_overrides_keeps_original_when_nulls()
-    {
-        $options = new OptionsConfiguration(true, 8);
-        $overridden = $options->withOverrides(null, null);
-
-        $this->assertTrue($overridden->isFailFast());
-        $this->assertEquals(8, $overridden->getProcesses());
-    }
-
-    /** @test */
-    public function with_overrides_does_not_mutate_original()
-    {
-        $original = new OptionsConfiguration(false, 1);
-        $original->withOverrides(true, 4);
-
-        $this->assertFalse($original->isFailFast());
-        $this->assertEquals(1, $original->getProcesses());
-    }
-
     // ========================================================================
     // Execution mode options (TDD — will fail until implementation exists)
     // ========================================================================
@@ -262,17 +212,6 @@ class OptionsConfigurationTest extends TestCase
         $this->assertEmpty($result->getWarnings());
     }
 
-    /** @test */
-    public function with_overrides_preserves_executable_prefix()
-    {
-        $options = new OptionsConfiguration(false, 1, null, 'full', 'docker exec app');
-        $overridden = $options->withOverrides(true, 4);
-
-        $this->assertEquals('docker exec app', $overridden->getExecutablePrefix());
-        $this->assertTrue($overridden->isFailFast());
-        $this->assertEquals(4, $overridden->getProcesses());
-    }
-
     // ========================================================================
     // reports option (multi-report v3.3 — declarative format → path map)
     // ========================================================================
@@ -396,15 +335,6 @@ class OptionsConfigurationTest extends TestCase
     }
 
     /** @test */
-    public function with_overrides_preserves_reports()
-    {
-        $options = new OptionsConfiguration(false, 1, null, 'full', '', ['sarif' => 'q.sarif']);
-        $overridden = $options->withOverrides(true, 4);
-
-        $this->assertSame(['sarif' => 'q.sarif'], $overridden->getReports());
-    }
-
-    /** @test */
     public function valid_report_formats_constant_exposes_supported_set()
     {
         $this->assertSame(
@@ -460,63 +390,6 @@ class OptionsConfigurationTest extends TestCase
         ], $result);
 
         $this->assertEmpty($result->getWarnings());
-    }
-
-    /** @test */
-    public function with_overrides_replaces_time_budget(): void
-    {
-        $original = new \Wtyd\GitHooks\Configuration\OptionsConfiguration(
-            false,
-            1,
-            null,
-            'full',
-            '',
-            [],
-            new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(120, 300)
-        );
-
-        $override = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(60, 180);
-        $result = $original->withOverrides(null, null, $override);
-
-        $this->assertSame(60, $result->getTimeBudget()->getWarnAfter());
-        $this->assertSame(180, $result->getTimeBudget()->getFailAfter());
-    }
-
-    /** @test */
-    public function with_overrides_keeps_time_budget_when_override_is_null(): void
-    {
-        $original = new \Wtyd\GitHooks\Configuration\OptionsConfiguration(
-            false,
-            1,
-            null,
-            'full',
-            '',
-            [],
-            new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(120, 300)
-        );
-
-        $result = $original->withOverrides(null, null);
-
-        $this->assertNotNull($result->getTimeBudget());
-        $this->assertSame(120, $result->getTimeBudget()->getWarnAfter());
-    }
-
-    /** @test */
-    public function with_overrides_disable_time_budget_clears_it(): void
-    {
-        $original = new \Wtyd\GitHooks\Configuration\OptionsConfiguration(
-            false,
-            1,
-            null,
-            'full',
-            '',
-            [],
-            new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(120, 300)
-        );
-
-        $result = $original->withOverrides(null, null, null, true);
-
-        $this->assertNull($result->getTimeBudget());
     }
 
     // ========================================================================
@@ -644,114 +517,6 @@ class OptionsConfigurationTest extends TestCase
     }
 
     /** @test */
-    public function with_overrides_applies_memory_budget(): void
-    {
-        $original = new OptionsConfiguration();
-        $newBudget = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(2000, 3000);
-
-        $overridden = $original->withOverrides(null, null, null, false, $newBudget);
-
-        $this->assertNotNull($overridden->getMemoryBudget());
-        $this->assertSame(2000, $overridden->getMemoryBudget()->getWarnAbove());
-    }
-
-    /** @test */
-    public function with_overrides_preserves_existing_memory_budget_when_no_new_value_given(): void
-    {
-        // Kills the Coalesce mutant on `($memoryBudget ?? $this->memoryBudget)`:
-        // dropping either operand would either lose the override or lose
-        // the fallback to the existing value.
-        $existing = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(1500, 2500);
-        $original = new OptionsConfiguration(
-            false,
-            1,
-            null,
-            'full',
-            '',
-            [],
-            null,
-            $existing
-        );
-
-        $overridden = $original->withOverrides(null, null, null, false, null, false);
-
-        $this->assertNotNull($overridden->getMemoryBudget());
-        $this->assertSame(1500, $overridden->getMemoryBudget()->getWarnAbove());
-        $this->assertSame(2500, $overridden->getMemoryBudget()->getFailAbove());
-    }
-
-    /**
-     * @test
-     * Kills OptionsConfiguration:392 Coalesce swap
-     * (`$memoryBudget ?? $this->memoryBudget` → `$this->memoryBudget ?? $memoryBudget`).
-     *
-     * The two existing tests (existing-only and override-only) cannot detect
-     * this mutation: when one operand is null, both `null ?? X` and `X ?? null`
-     * resolve to the same X. Only when BOTH operands are non-null do the
-     * expressions disagree — original returns the OVERRIDE (CLI/flow wins
-     * over global), mutant returns the EXISTING (current swallows the
-     * override and the cascade silently loses CLI flags).
-     */
-    public function with_overrides_memory_budget_override_wins_over_existing(): void
-    {
-        $existing = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(1500, 2500);
-        $override = new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(800, 1200);
-        $original = new OptionsConfiguration(
-            false,
-            1,
-            null,
-            'full',
-            '',
-            [],
-            null,
-            $existing
-        );
-
-        $overridden = $original->withOverrides(null, null, null, false, $override);
-
-        $this->assertSame(
-            800,
-            $overridden->getMemoryBudget()->getWarnAbove(),
-            'Override warn-above must win over the existing value (CLI > global cascade)'
-        );
-        $this->assertSame(
-            1200,
-            $overridden->getMemoryBudget()->getFailAbove(),
-            'Override fail-above must win over the existing value'
-        );
-    }
-
-    /** @test */
-    public function with_overrides_disable_memory_budget_clears_it(): void
-    {
-        $original = new OptionsConfiguration(
-            false,
-            1,
-            null,
-            'full',
-            '',
-            [],
-            null,
-            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(2000, 3000)
-        );
-
-        $overridden = $original->withOverrides(null, null, null, false, null, true);
-
-        $this->assertNull($overridden->getMemoryBudget());
-    }
-
-    /** @test */
-    public function with_overrides_applies_allocator_and_stats(): void
-    {
-        $original = new OptionsConfiguration();
-
-        $overridden = $original->withOverrides(null, null, null, false, null, false, 'greedy', true);
-
-        $this->assertSame('greedy', $overridden->getAllocator());
-        $this->assertTrue($overridden->isStats());
-    }
-
-    /** @test */
     public function declared_keys_track_memory_budget_allocator_and_stats(): void
     {
         $result = new ValidationResult();
@@ -764,5 +529,69 @@ class OptionsConfigurationTest extends TestCase
         $this->assertTrue($options->hasKey('memory-budget'));
         $this->assertTrue($options->hasKey('allocator'));
         $this->assertTrue($options->hasKey('stats'));
+    }
+
+    // ========================================================================
+    // BUG-20 — cascadeBlockKeysFromFlow factory: per-key cascade for the three
+    // "block-level" keys (executable-prefix, fast-branch-fallback, reports).
+    // Comprehensive scenario coverage lives in EffectiveOptionsResolverTest and
+    // FlowPreparerTest; this test pins the public contract of the factory itself.
+    // ========================================================================
+
+    /** @test */
+    public function cascade_block_keys_returns_global_when_flow_is_null(): void
+    {
+        $validation = new ValidationResult();
+        $globals = OptionsConfiguration::fromArray([
+            'executable-prefix' => 'docker exec app',
+            'fast-branch-fallback' => 'fast',
+            'reports' => ['junit' => 'qa.xml'],
+        ], $validation);
+
+        $merged = OptionsConfiguration::cascadeBlockKeysFromFlow(null, $globals);
+
+        $this->assertSame($globals, $merged);
+    }
+
+    /** @test */
+    public function cascade_block_keys_inherits_global_when_flow_does_not_declare_the_key(): void
+    {
+        $validation = new ValidationResult();
+        $globals = OptionsConfiguration::fromArray([
+            'executable-prefix' => 'docker exec app',
+            'fast-branch-fallback' => 'fast',
+            'reports' => ['junit' => 'qa.xml'],
+        ], $validation);
+        // Flow declares only an unrelated key; the three block keys must
+        // fall through to globals.
+        $flow = OptionsConfiguration::fromArray(['fail-fast' => true], $validation);
+
+        $merged = OptionsConfiguration::cascadeBlockKeysFromFlow($flow, $globals);
+
+        $this->assertSame('docker exec app', $merged->getExecutablePrefix());
+        $this->assertSame('fast', $merged->getFastBranchFallback());
+        $this->assertSame(['junit' => 'qa.xml'], $merged->getReports());
+        // The flow's unrelated declaration is preserved verbatim.
+        $this->assertTrue($merged->isFailFast());
+    }
+
+    /** @test */
+    public function cascade_block_keys_lets_flow_override_each_key_individually(): void
+    {
+        $validation = new ValidationResult();
+        $globals = OptionsConfiguration::fromArray([
+            'executable-prefix' => 'docker exec app',
+            'fast-branch-fallback' => 'fast',
+            'reports' => ['junit' => 'qa.xml'],
+        ], $validation);
+        // Flow overrides only fast-branch-fallback; prefix and reports
+        // must still come from globals.
+        $flow = OptionsConfiguration::fromArray(['fast-branch-fallback' => 'full'], $validation);
+
+        $merged = OptionsConfiguration::cascadeBlockKeysFromFlow($flow, $globals);
+
+        $this->assertSame('full', $merged->getFastBranchFallback());
+        $this->assertSame('docker exec app', $merged->getExecutablePrefix());
+        $this->assertSame(['junit' => 'qa.xml'], $merged->getReports());
     }
 }

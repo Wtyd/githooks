@@ -764,4 +764,169 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertTrue($value);
         $this->assertIsBool($value);
     }
+
+    // ========================================================================
+    // BUG-20 — per-key cascade for executable-prefix, fast-branch-fallback and
+    // reports. These three keys used to be read block-level via
+    // `$base = $flowOptions ?? $globalOptions` and lost the global value when
+    // the flow declared its own `options:` block to override an unrelated key
+    // (e.g. processes or fail-fast).
+    // ========================================================================
+
+    /**
+     * Decision table for a per-key cascade. Same factor space for each of the
+     * three keys: (global declared?, flow declares options?, flow declares the
+     * key?). The bug used to surface on row #2.
+     *
+     * @return array<string, array{0: array<string,mixed>, 1: ?array<string,mixed>, 2: string}>
+     */
+    public function executablePrefixCascadeProvider(): array
+    {
+        return [
+            // [globalRaw, flowOptsRaw, expected]
+            'row1 — global set, flow has no options'                   => [['executable-prefix' => 'docker exec app'], null, 'docker exec app'],
+            'row2 — global set, flow declares options without prefix'  => [['executable-prefix' => 'docker exec app'], ['fail-fast' => true], 'docker exec app'],
+            'row3 — global set, flow overrides prefix'                 => [['executable-prefix' => 'docker exec app'], ['executable-prefix' => 'php7.4'], 'php7.4'],
+            'row4 — global empty, flow declares options without prefix' => [[], ['fail-fast' => true], ''],
+            'row5 — global empty, flow declares prefix'                => [[], ['executable-prefix' => 'php7.4'], 'php7.4'],
+            'row6 — neither side declares prefix'                      => [[], null, ''],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider executablePrefixCascadeProvider
+     * @param array<string, mixed> $globalRaw
+     * @param array<string, mixed>|null $flowOptsRaw
+     */
+    public function single_cascades_executable_prefix_per_key(array $globalRaw, ?array $flowOptsRaw, string $expected): void
+    {
+        [$config, $flow] = $this->buildConfig($globalRaw, $flowOptsRaw);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame($expected, $resolution->getOptions()->getExecutablePrefix());
+    }
+
+    /**
+     * @return array<string, array{0: array<string,mixed>, 1: ?array<string,mixed>, 2: string}>
+     */
+    public function fastBranchFallbackCascadeProvider(): array
+    {
+        return [
+            'row1 — global set, flow has no options'                    => [['fast-branch-fallback' => 'fast'], null, 'fast'],
+            'row2 — global set, flow declares options without fallback' => [['fast-branch-fallback' => 'fast'], ['fail-fast' => true], 'fast'],
+            'row3 — global set, flow overrides fallback'                => [['fast-branch-fallback' => 'fast'], ['fast-branch-fallback' => 'full'], 'full'],
+            'row4 — global default, flow declares options without key'  => [[], ['fail-fast' => true], 'full'],
+            'row5 — global default, flow overrides fallback'            => [[], ['fast-branch-fallback' => 'fast'], 'fast'],
+            'row6 — neither side declares fallback'                     => [[], null, 'full'],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider fastBranchFallbackCascadeProvider
+     * @param array<string, mixed> $globalRaw
+     * @param array<string, mixed>|null $flowOptsRaw
+     */
+    public function single_cascades_fast_branch_fallback_per_key(array $globalRaw, ?array $flowOptsRaw, string $expected): void
+    {
+        [$config, $flow] = $this->buildConfig($globalRaw, $flowOptsRaw);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame($expected, $resolution->getOptions()->getFastBranchFallback());
+    }
+
+    /**
+     * @return array<string, array{0: array<string,mixed>, 1: ?array<string,mixed>, 2: array<string,string>}>
+     */
+    public function reportsCascadeProvider(): array
+    {
+        $globalReports = ['junit' => 'qa.xml'];
+        $flowReports = ['sarif' => 'qa.sarif'];
+        return [
+            'row1 — global set, flow has no options'                   => [['reports' => $globalReports], null, $globalReports],
+            'row2 — global set, flow declares options without reports' => [['reports' => $globalReports], ['fail-fast' => true], $globalReports],
+            'row3 — global set, flow overrides reports'                => [['reports' => $globalReports], ['reports' => $flowReports], $flowReports],
+            'row4 — global empty, flow declares options without key'   => [[], ['fail-fast' => true], []],
+            'row5 — global empty, flow overrides reports'              => [[], ['reports' => $flowReports], $flowReports],
+            'row6 — neither side declares reports'                     => [[], null, []],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider reportsCascadeProvider
+     * @param array<string, mixed> $globalRaw
+     * @param array<string, mixed>|null $flowOptsRaw
+     * @param array<string, string> $expected
+     */
+    public function single_cascades_reports_per_key(array $globalRaw, ?array $flowOptsRaw, array $expected): void
+    {
+        [$config, $flow] = $this->buildConfig($globalRaw, $flowOptsRaw);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame($expected, $resolution->getOptions()->getReports());
+    }
+
+    /**
+     * Meta-flow declarative path: same `resolveSingle` cascade, same expected
+     * outcome for row #2. Guards the bug from coming back via the meta-flow
+     * code path which is how it was first reported in production.
+     *
+     * @test
+     */
+    public function single_inherits_global_keys_for_meta_flow_with_partial_options(): void
+    {
+        $validation = new ValidationResult();
+        $globals = OptionsConfiguration::fromArray(
+            ['executable-prefix' => 'docker exec app', 'fast-branch-fallback' => 'fast', 'reports' => ['junit' => 'qa.xml']],
+            $validation
+        );
+        $metaOpts = OptionsConfiguration::fromArray(['processes' => 4], $validation);
+        $metaFlow = new FlowConfiguration('ci-validation', [], $metaOpts, null, ['qa']);
+
+        $config = new ConfigurationResult('githooks.php', $globals, [], ['ci-validation' => $metaFlow], null, $validation);
+
+        $resolution = $this->resolver->resolveSingle($config, $metaFlow, null, null, null);
+        $options = $resolution->getOptions();
+
+        $this->assertSame('docker exec app', $options->getExecutablePrefix());
+        $this->assertSame('fast', $options->getFastBranchFallback());
+        $this->assertSame(['junit' => 'qa.xml'], $options->getReports());
+        // The flow's own override still wins:
+        $this->assertSame(4, $options->getProcesses());
+    }
+
+    /**
+     * Guardrail for `resolveMultiple` (CON-001/002): the fix must not change
+     * the ad-hoc / mixed cascade, where per-flow options are ignored entirely
+     * and the three keys come from globals only.
+     *
+     * @test
+     */
+    public function multiple_keeps_block_cascade_from_globals_for_prefix_fallback_reports(): void
+    {
+        $validation = new ValidationResult();
+        $globals = OptionsConfiguration::fromArray(
+            ['executable-prefix' => 'docker exec app', 'fast-branch-fallback' => 'fast', 'reports' => ['sarif' => 'qa.sarif']],
+            $validation
+        );
+        // A flow exists with its own options but the multi-flow cascade must ignore them.
+        $flowOpts = OptionsConfiguration::fromArray(
+            ['executable-prefix' => 'IGNORED', 'fast-branch-fallback' => 'full', 'reports' => ['junit' => 'IGNORED.xml']],
+            $validation
+        );
+        $flow = new FlowConfiguration('qa', ['job_a'], $flowOpts);
+        $config = new ConfigurationResult('githooks.php', $globals, [], ['qa' => $flow], null, $validation);
+
+        $resolution = $this->resolver->resolveMultiple($config, null, null, null);
+        $options = $resolution->getOptions();
+
+        $this->assertSame('docker exec app', $options->getExecutablePrefix());
+        $this->assertSame('fast', $options->getFastBranchFallback());
+        $this->assertSame(['sarif' => 'qa.sarif'], $options->getReports());
+    }
 }

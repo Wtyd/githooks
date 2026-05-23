@@ -272,6 +272,66 @@ class V34FeaturesReleaseTest extends ReleaseTestCase
     }
 
     /**
+     * BUG-20 — `executable-prefix`, `fast-branch-fallback` and `reports`
+     * cascade per-key from `flows.options` when a flow (or meta-flow) declares
+     * its own `options:` block to override an unrelated key. End-to-end check
+     * against the compiled `.phar` so the fix is verified inside the embedded
+     * code, not just in the source tree.
+     *
+     * Setup: global `executable-prefix` set to `echo PREFIX_HIT`. The flow
+     * declares `options: { fail-fast: true }` — no prefix override. Without
+     * the fix, the prefix is lost; with it, the generated command for the
+     * job is wrapped with the prefix.
+     *
+     * `--dry-run --format=json` exposes the resolved `command` in the JSON
+     * envelope without executing the shell side-effect.
+     *
+     * @test
+     */
+    public function phar_cascades_executable_prefix_per_key_when_flow_declares_options(): void
+    {
+        $configFile = self::TESTS_PATH . '/githooks.php';
+        $config = [
+            'flows' => [
+                'options' => ['executable-prefix' => 'echo PREFIX_HIT'],
+                'qa' => [
+                    'options' => ['fail-fast' => true],
+                    'jobs' => ['noop_job'],
+                ],
+            ],
+            'jobs' => [
+                'noop_job' => [
+                    'type' => 'custom',
+                    'executable-path' => 'true',
+                    'paths' => ['.'],
+                ],
+            ],
+        ];
+        file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+
+        passthru(
+            sprintf(
+                '%s flow qa --dry-run --format=json --config=%s 2>/dev/null',
+                $this->githooks,
+                $configFile
+            ),
+            $exitCode
+        );
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+
+        $byName = $this->indexJobs($decoded['jobs']);
+        $this->assertArrayHasKey('noop_job', $byName);
+        $this->assertStringStartsWith(
+            'echo PREFIX_HIT ',
+            (string) $byName['noop_job']['command'],
+            'Global executable-prefix must cascade per-key when flow declares an options block'
+        );
+    }
+
+    /**
      * @param array<int, array<string, mixed>> $jobs
      * @return array<string, array<string, mixed>>
      */

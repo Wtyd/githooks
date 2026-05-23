@@ -365,33 +365,41 @@ class OptionsConfiguration
     }
 
     /**
-     * Return a new instance with CLI overrides applied.
-     * Only non-null values override the current config.
+     * Cascade the three block-level keys — `executable-prefix`,
+     * `fast-branch-fallback` and `reports` — from `$flow` into `$global`
+     * per-key (BUG-20). When `$flow` declares the key the flow value wins;
+     * when it doesn't, the global value is inherited. The remaining fields
+     * are taken from `$flow` verbatim (callers that need the full per-key
+     * cascade for `fail-fast`, `processes`, etc. — i.e. EffectiveOptionsResolver —
+     * overwrite them with the CLI-aware cascade afterwards).
      *
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) $disable* are CLI gates, not polymorphism breaks
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Each CLI override matches one declarative option
+     * Returns `$global` unchanged when `$flow` is null.
      */
-    public function withOverrides(
-        ?bool $failFast,
-        ?int $processes,
-        ?TimeBudgetConfiguration $timeBudget = null,
-        bool $disableTimeBudget = false,
-        ?MemoryBudgetConfiguration $memoryBudget = null,
-        bool $disableMemoryBudget = false,
-        ?string $allocator = null,
-        ?bool $stats = null
+    public static function cascadeBlockKeysFromFlow(
+        ?self $flow,
+        self $global
     ): self {
+        if ($flow === null) {
+            return $global;
+        }
+        $cascadeString = static function (string $key, callable $reader) use ($flow, $global): string {
+            return (string) ($flow->hasKey($key) ? $reader($flow) : $reader($global));
+        };
+        $cascadeArray = static function (string $key, callable $reader) use ($flow, $global): array {
+            return (array) ($flow->hasKey($key) ? $reader($flow) : $reader($global));
+        };
+
         return new self(
-            $failFast !== null ? $failFast : $this->failFast,
-            $processes !== null ? $processes : $this->processes,
-            $this->mainBranch,
-            $this->fastBranchFallback,
-            $this->executablePrefix,
-            $this->reports,
-            $disableTimeBudget ? null : ($timeBudget ?? $this->timeBudget),
-            $disableMemoryBudget ? null : ($memoryBudget ?? $this->memoryBudget),
-            $allocator !== null ? $allocator : $this->allocator,
-            $stats !== null ? $stats : $this->stats
+            $flow->failFast,
+            $flow->processes,
+            $flow->mainBranch,
+            $cascadeString('fast-branch-fallback', fn(self $opts) => $opts->getFastBranchFallback()),
+            $cascadeString('executable-prefix', fn(self $opts) => $opts->getExecutablePrefix()),
+            $cascadeArray('reports', fn(self $opts) => $opts->getReports()),
+            $flow->timeBudget,
+            $flow->memoryBudget,
+            $flow->allocator,
+            $flow->stats
         );
     }
 }

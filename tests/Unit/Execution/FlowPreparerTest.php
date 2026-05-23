@@ -857,10 +857,49 @@ class FlowPreparerTest extends TestCase
             ]),
         ];
 
-        $flowOptions = new OptionsConfiguration(false, 1, null, 'full', 'flow-prefix');
+        $validation = new ValidationResult();
+        $flowOptions = OptionsConfiguration::fromArray(['executable-prefix' => 'flow-prefix'], $validation);
         $flow = new FlowConfiguration('qa', ['phpstan_src'], $flowOptions);
 
-        $globalOptions = new OptionsConfiguration(false, 1, null, 'full', 'global-prefix');
+        $globalOptions = OptionsConfiguration::fromArray(['executable-prefix' => 'global-prefix'], $validation);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            $globalOptions,
+            $jobs,
+            ['qa' => $flow],
+            null,
+            $validation
+        );
+
+        $plan = $this->preparer->prepare($flow, $config);
+
+        $this->assertStringStartsWith('flow-prefix vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+    }
+
+    /**
+     * BUG-20 — global `executable-prefix` was lost when the flow declared its
+     * own `options:` block to override an unrelated key (e.g. fail-fast or
+     * processes). The block-level fallback `$flowOptions ?? $globalOptions`
+     * in `EffectiveOptionsResolver::mergeOptionsBlock` only kept the prefix
+     * when the flow did not declare options at all.
+     *
+     * @test
+     */
+    public function it_inherits_global_executable_prefix_when_flow_declares_partial_options()
+    {
+        $jobs = [
+            'phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', [
+                'executable-path' => 'vendor/bin/phpstan',
+                'paths' => ['src'],
+            ]),
+        ];
+
+        // Flow declares options ONLY for fail-fast — must still inherit the
+        // global executable-prefix.
+        $flowOptions = new OptionsConfiguration(true, 1);
+        $flow = new FlowConfiguration('qa', ['phpstan_src'], $flowOptions);
+
+        $globalOptions = new OptionsConfiguration(false, 1, null, 'full', 'docker exec -i app');
         $config = new ConfigurationResult(
             'githooks.php',
             $globalOptions,
@@ -872,7 +911,9 @@ class FlowPreparerTest extends TestCase
 
         $plan = $this->preparer->prepare($flow, $config);
 
-        $this->assertStringStartsWith('flow-prefix vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+        $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
+        // The unrelated override the flow asked for still applies:
+        $this->assertTrue($plan->getOptions()->isFailFast());
     }
 
     /** @test */

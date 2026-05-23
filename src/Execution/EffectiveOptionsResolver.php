@@ -625,9 +625,10 @@ final class EffectiveOptionsResolver
     }
 
     /**
-     * Build the resolved OptionsConfiguration applying per-key cascade for the tracked
-     * keys and the existing block-level fallback (flow.options ?? globals) for the rest
-     * (executable-prefix, fast-branch-fallback, reports).
+     * Build the resolved OptionsConfiguration applying per-key cascade for every
+     * tracked key. `executable-prefix`, `fast-branch-fallback` and `reports`
+     * cascade independently (BUG-20) via `OptionsConfiguration::cascadeBlockKeysFromFlow`,
+     * shared with `FlowPreparer::prepare()` to keep both code paths consistent.
      *
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade output explicitly.
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Aggregates per-key cascade results.
@@ -643,7 +644,7 @@ final class EffectiveOptionsResolver
         string $allocator = AllocatorStrategy::FIFO,
         bool $stats = false
     ): OptionsConfiguration {
-        $base = $flowOptions ?? $globalOptions;
+        $base = OptionsConfiguration::cascadeBlockKeysFromFlow($flowOptions, $globalOptions);
 
         return new OptionsConfiguration(
             $failFast,

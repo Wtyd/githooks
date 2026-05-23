@@ -48,7 +48,8 @@ class FlowPreparer
         ?string $invocationMode = null,
         string $cliExtraArgs = ''
     ): FlowPlan {
-        $options = $flow->getOptions() ?? $config->getGlobalOptions();
+        // BUG-20: per-key cascade for executable-prefix/fast-branch-fallback/reports.
+        $options = OptionsConfiguration::cascadeBlockKeysFromFlow($flow->getOptions(), $config->getGlobalOptions());
 
         $jobs = [];
         $skippedJobs = [];
