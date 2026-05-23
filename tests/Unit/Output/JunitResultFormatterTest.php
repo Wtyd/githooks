@@ -397,4 +397,184 @@ class JunitResultFormatterTest extends UnitTestCase
         $decoded = json_decode($failureText, true);
         $this->assertSame(1, $decoded['errors']);
     }
+
+    // ========================================================================
+    // Infection Tier 2 — JunitResultFormatter
+    // Boundary coverage for parseSeconds arithmetic, findJsonBounds /
+    // boundsFor decision table, prettyJsonIfApplicable substring layout,
+    // json_decode guard and json_encode flag bitwise OR.
+    // ========================================================================
+
+    /**
+     * @return array<string, array{0: string, 1: string}>
+     */
+    public function parseSecondsExactValuesProvider(): array
+    {
+        return [
+            // ms: kills L3522 IncrementInteger `/1000` → `/1001`
+            'ms exact division 250'   => ['250ms',  '0.250'],
+            'ms boundary 1'           => ['1ms',    '0.001'],
+            'ms boundary 1000'        => ['1000ms', '1.000'],
+            // s passthrough
+            's integer'               => ['7s',     '7'],
+            's decimal preserves dot' => ['1.5s',   '1.5'],
+            // m+s: kills L3535/L3561 CastInt and L3548 DecrementInteger
+            // (matches[1]→[0] would multiply the full "Nm Ms" string by 60)
+            'm+s smallest'            => ['1m 0s',  '60'],
+            'm+s typical'             => ['2m 30s', '150'],
+            'm+s zero'                => ['0m 0s',  '0'],
+            'm+s large'               => ['59m 59s', '3599'],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider parseSecondsExactValuesProvider
+     */
+    public function parse_seconds_returns_exact_numeric_value_per_format(string $time, string $expected): void
+    {
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'parseSeconds');
+        $reflection->setAccessible(true);
+        $formatter = new JunitResultFormatter();
+
+        $this->assertSame($expected, $reflection->invoke($formatter, $time));
+    }
+
+    /**
+     * Decision table for `findJsonBounds` — covers L3457 LogicalAnd,
+     * L3470 LessThan, L3483 GreaterThan and L3509 LogicalAnd in boundsFor.
+     * L3496 CastInt is killed by the assertSame on the array of ints.
+     *
+     * @return array<string, array{0: string, 1: ?array{0:int,1:int}}>
+     */
+    public function findJsonBoundsProvider(): array
+    {
+        return [
+            'object only'                        => ['{"a":1}',       [0, 6]],
+            'array only'                         => ['[1,2]',         [0, 4]],
+            'object before array — object wins'  => ['{"a":[1,2]}',   [0, 10]],
+            'array before object — array wins'   => ['[{"k":1}]',     [0, 8]],
+            'object at index > 0'                => ['prefix {"a":1}', [7, 13]],
+            'no JSON delimiters'                 => ['plain text',    null],
+            'opener but no closer'               => ['{"unclosed',    null],
+            'closer before opener'               => ['} prefix {"a":1}', [9, 15]],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider findJsonBoundsProvider
+     * @param ?array{0:int,1:int} $expected
+     */
+    public function find_json_bounds_locates_outermost_document(string $text, ?array $expected): void
+    {
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'findJsonBounds');
+        $reflection->setAccessible(true);
+        $bounds = $reflection->invoke(new JunitResultFormatter(), $text);
+
+        $this->assertSame($expected, $bounds);
+        if ($bounds !== null) {
+            // L3496 CastInt: ensure both bounds are strict ints, not coerced strings.
+            $this->assertIsInt($bounds[0]);
+            $this->assertIsInt($bounds[1]);
+        }
+    }
+
+    /**
+     * Kills L3392 (Concat operand swap), L3405 (ConcatOperandRemoval) and
+     * L3431/L3444 (Inc/Dec on the substr boundaries) by asserting that the
+     * prologue and epilogue surrounding the JSON survive byte-for-byte.
+     *
+     * @test
+     */
+    public function pretty_print_preserves_prologue_and_epilogue_byte_for_byte(): void
+    {
+        $prologue = "phpstan output\n";
+        $compactJson = '{"a":1}';
+        $epilogue = "\nSee https://phpstan.org for details.";
+        $combined = $prologue . $compactJson . $epilogue;
+
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'prettyJsonIfApplicable');
+        $reflection->setAccessible(true);
+        $out = $reflection->invoke(new JunitResultFormatter(), $combined);
+
+        $this->assertStringStartsWith($prologue, $out);
+        $this->assertStringEndsWith($epilogue, $out);
+
+        $body = substr($out, strlen($prologue), strlen($out) - strlen($prologue) - strlen($epilogue));
+        // The body must decode back to the original payload.
+        $this->assertSame(['a' => 1], json_decode(trim($body), true));
+        // And it must be pretty-printed (more than one line).
+        $this->assertGreaterThan(0, substr_count(trim($body), "\n"));
+    }
+
+    /**
+     * Kills L3330 (Identical `===` → `!==`), L3342 (NotIdentical `!==` → `===`)
+     * and L3354 (LogicalAnd `&&` → `||`) on the json_decode error guard.
+     * Strategy: invalid JSON must fall through to return the original text,
+     * while valid JSON whose decode is non-null must pretty-print.
+     *
+     * @test
+     */
+    public function pretty_print_returns_input_verbatim_when_json_is_invalid(): void
+    {
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'prettyJsonIfApplicable');
+        $reflection->setAccessible(true);
+        $formatter = new JunitResultFormatter();
+
+        // Invalid JSON inside an object span. Original guard:
+        //   $decoded === null && json_last_error() !== JSON_ERROR_NONE
+        // is TRUE → return $text unchanged.
+        // - L3330 (=== → !==): guard becomes false → continues to json_encode(null)
+        //   → output is "null" instead of the input. Killed.
+        // - L3342 (!== → ===): guard becomes false → same as above. Killed.
+        // - L3354 (&& → ||): guard short-circuits on the first true. With a
+        //   valid JSON (next test), original guard is false, mutant true →
+        //   would early-return the COMPACT input. Killed by the valid-JSON test.
+        $invalid = '{"broken": ';
+        $this->assertSame($invalid, $reflection->invoke($formatter, $invalid));
+    }
+
+    /**
+     * Complementary test for L3354 (`&& → ||`): valid JSON must pretty-print
+     * (the guard is false; the mutant `||` would short-circuit and early-return).
+     *
+     * @test
+     */
+    public function pretty_print_continues_when_json_decodes_successfully(): void
+    {
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'prettyJsonIfApplicable');
+        $reflection->setAccessible(true);
+        $formatter = new JunitResultFormatter();
+
+        $compact = '{"value":1}';
+        $pretty = $reflection->invoke($formatter, $compact);
+
+        $this->assertStringContainsString("\n", $pretty);
+        $this->assertSame(['value' => 1], json_decode(trim($pretty), true));
+    }
+
+    /**
+     * Kills L3379 (BitwiseOr `|` → `&` on `JSON_PRETTY_PRINT |
+     * JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES`). With `&` the combined
+     * flag is 0 → json_encode produces a single-line, escaped output.
+     *
+     * @test
+     */
+    public function pretty_print_emits_unescaped_slashes_and_unicode(): void
+    {
+        $compact = '{"path":"/usr/bin","name":"éclair"}';
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'prettyJsonIfApplicable');
+        $reflection->setAccessible(true);
+        $out = $reflection->invoke(new JunitResultFormatter(), $compact);
+
+        // PRETTY: multi-line.
+        $this->assertStringContainsString("\n", $out);
+        // UNESCAPED_SLASHES: literal "/usr/bin", not "\/usr\/bin".
+        $this->assertStringContainsString('/usr/bin', $out);
+        $this->assertStringNotContainsString('\\/usr', $out);
+        // UNESCAPED_UNICODE: literal "é", not "é".
+        $this->assertStringContainsString('éclair', $out);
+        $this->assertStringNotContainsString('\\u00e9', $out);
+    }
 }
