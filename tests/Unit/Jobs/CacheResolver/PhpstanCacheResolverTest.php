@@ -231,6 +231,142 @@ class PhpstanCacheResolverTest extends TestCase
         $this->assertSame('abs/cache', PhpstanCacheResolver::resolve($child));
     }
 
+    // ========================================================================
+    // Infection Tier 2 — NEON parser adversarial cases.
+    // Anchors `^…$`, initial flag values, Continue→Break in the line loop,
+    // trim/ltrim guards, isTopLevelKey first-character semantics.
+    // ========================================================================
+
+    /**
+     * Kills L2047 / L2060 (anchors `^…$` on `/^includes:\s*$/`),
+     *       L2164 / L2177 (anchors on `/^parameters:\s*$/`),
+     *       L2034 (`$inIncludes = false` initial), L2138 (`$insideParameters = false` initial),
+     *       L2086 (anchor `^` on the entry regex `^\s+-\s+…`),
+     *       L2125 (`$inIncludes = false` on exit-includes branch),
+     *       L2202 / L2215 (IncrementInteger on `$line[0]` in isTopLevelKey).
+     *
+     * Each row exercises a single anchor / initial-flag invariant.
+     *
+     * @return array<string, array{0: string, 1: ?string}>
+     */
+    public function neonAnchorAndFlagProvider(): array
+    {
+        return [
+            // L2047 `^includes:` — caret anchors at line start; a leading `#` must not match.
+            'commented-out includes is ignored' => [
+                "# includes:\n    - missing.neon\nparameters:\n    tmpDir: /tmp/anchor-caret\n",
+                '/tmp/anchor-caret',
+            ],
+            // L2060 `includes:\s*$` — dollar anchors at line end; trailing content disables the marker.
+            'includes with trailing content is not a section marker' => [
+                "includes: not-a-section\nparameters:\n    tmpDir: /tmp/anchor-dollar\n",
+                '/tmp/anchor-dollar',
+            ],
+            // L2164 / L2177 `^parameters:\s*$` — same logic for the tmpDir section.
+            'parameters with trailing content is not a section marker' => [
+                "parameters: not-a-section\nignored: 1\n",
+                null,
+            ],
+            // L2086 `^\s+-\s+` — caret on the entry regex; an entry line without indentation is ignored.
+            'entry without leading indentation is not an include' => [
+                "includes:\n- looks-like-entry\nparameters:\n    tmpDir: /tmp/entry-caret\n",
+                '/tmp/entry-caret',
+            ],
+            // L2034 `$inIncludes = false` initial — tmpDir before any "includes:" marker stays captured.
+            'tmpDir-only config without includes block works' => [
+                "parameters:\n    tmpDir: /tmp/no-includes\n",
+                '/tmp/no-includes',
+            ],
+            // L2138 `$insideParameters = false` initial — a tmpDir BEFORE the parameters block must NOT be captured.
+            'tmpDir before parameters block is ignored' => [
+                "tmpDir: /should/be/ignored\nparameters:\n    tmpDir: /real/tmp\n",
+                '/real/tmp',
+            ],
+            // L2125 `$inIncludes = false` on exit — `includes:` followed by a top-level key must close the block.
+            'top-level key after includes closes the section' => [
+                "includes:\n    - a.neon\nother:\n    tmpDir: should-not-match\nparameters:\n    tmpDir: /tmp/exit-includes\n",
+                '/tmp/exit-includes',
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider neonAnchorAndFlagProvider
+     */
+    public function neon_parser_respects_anchors_and_initial_flags(string $contents, ?string $expectedTmpDir): void
+    {
+        $path = $this->writeNeon('anchors-' . uniqid('', true) . '.neon', $contents);
+        $this->assertSame($expectedTmpDir, PhpstanCacheResolver::resolve($path));
+    }
+
+    /**
+     * Kills L2099 (UnwrapTrim of `trim($matches[1], "\"'")` on include value):
+     * quoted include values must be unquoted before being resolved.
+     *
+     * @test
+     */
+    public function quoted_include_values_are_stripped_of_surrounding_quotes(): void
+    {
+        $base = $this->writeNeon('quoted-base.neon', "parameters:\n    tmpDir: /tmp/quoted\n");
+        $childDouble = $this->writeNeon('quoted-child-double.neon', "includes:\n    - \"$base\"\n");
+        $childSingle = $this->writeNeon('quoted-child-single.neon', "includes:\n    - '$base'\n");
+
+        $this->assertSame('/tmp/quoted', PhpstanCacheResolver::resolve($childDouble));
+        $this->assertSame('/tmp/quoted', PhpstanCacheResolver::resolve($childSingle));
+    }
+
+    /**
+     * Kills L2112 / L2190 (UnwrapLtrim): `isBlankOrComment` relies on
+     * `ltrim($line)` to detect comments with leading whitespace, and the
+     * exit-includes path relies on `ltrim($line)` to skip indented comments.
+     *
+     * Without ltrim, an indented `# comment` keeps its leading space as
+     * `$trimmed[0]` and the comment check fails, breaking the iteration.
+     *
+     * @test
+     */
+    public function indented_comments_inside_parameters_are_skipped_without_aborting_the_parse(): void
+    {
+        $config = "parameters:\n"
+            . "    # commented-out level\n"
+            . "    # another comment\n"
+            . "    tmpDir: /real/tmp\n";
+        $path = $this->writeNeon('indented-comments.neon', $config);
+
+        $this->assertSame('/real/tmp', PhpstanCacheResolver::resolve($path));
+    }
+
+    /**
+     * Kills L2202 / L2215 (IncrementInteger `$line[0]` → `$line[1]`):
+     * `isTopLevelKey` must look at the very first character.
+     *
+     * @test
+     */
+    public function is_top_level_key_uses_the_first_character_strictly(): void
+    {
+        $reflection = new \ReflectionMethod(PhpstanCacheResolver::class, 'isTopLevelKey');
+        $reflection->setAccessible(true);
+
+        // No-indent first char ⇒ top level. Mutant L2202 looks at $line[1]
+        // (which is 'a' for "parameters:") and still returns true — so
+        // a string whose [1] is whitespace must distinguish:
+        $this->assertTrue($reflection->invoke(null, 'parameters:'));
+        // First char is space ⇒ NOT top level. Original: ctype_space(' ') true → !true = false → returns false.
+        // Mutant L2202 looks at [1] ('a' in "  arameters"): ctype_space false → may pass.
+        $this->assertFalse($reflection->invoke(null, '    tmpDir: x'));
+        $this->assertFalse($reflection->invoke(null, "\ttmpDir: x"));
+        // Adversarial: first char is non-space but [1] is space — mutant L2202
+        // would say "indented" and return false. Original returns true.
+        $this->assertTrue($reflection->invoke(null, 'p arameters: weird-but-top-level'));
+        // L2215: $line[1] !== "\t" must be tested too. A line starting with
+        // a single tab is NOT top level — both original and mutant agree.
+        // What distinguishes them: a line whose [0] is non-space, non-tab,
+        // and [1] is a tab. Original returns true; mutant L2215 says
+        // $line[1] === "\t" so the second clause is false → returns false.
+        $this->assertTrue($reflection->invoke(null, "x\tnot-indented"));
+    }
+
     private function writeNeon(string $name, string $content): string
     {
         $path = $this->sandbox . '/' . $name;
