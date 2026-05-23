@@ -17,8 +17,14 @@ class PhpCsFixerJobTest extends TestCase
     /** @var string[] */
     private array $sandboxDirs = [];
 
+    private ?string $cwdBefore = null;
+
     protected function tearDown(): void
     {
+        if ($this->cwdBefore !== null) {
+            chdir($this->cwdBefore);
+            $this->cwdBefore = null;
+        }
         foreach ($this->sandboxPaths as $p) {
             if (is_file($p)) {
                 @unlink($p);
@@ -316,5 +322,176 @@ class PhpCsFixerJobTest extends TestCase
 
         $this->assertStringContainsString('--show-progress=dots', $command);
         $this->assertStringEndsWith('src', $command);
+    }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the warning message, the composite
+    // locateConfigFile guard, the ordered config-file fallback chain, and
+    // the is_file/is_readable pair on each candidate.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L79 Concat (warning message): the two-fragment concatenation can be
+     *     reordered or have one fragment dropped. Only an exact-string match
+     *     catches all variants.
+     */
+    public function php_cs_fixer_warning_message_is_assembled_with_exact_text(): void
+    {
+        $sandbox = $this->mkSandbox();
+        $config = $this->writeFile(
+            $sandbox . '/.php-cs-fixer.php',
+            "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile(\$cacheFile);\n"
+        );
+
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+        $job->getCachePaths(); // primes the unresolvable flag
+
+        $expected = "could not parse setCacheFile() in .php-cs-fixer.php (uses a variable or helper); "
+            . "declare 'cache-file' on the job to override (php-cs-fixer respects --cache-file over the config)";
+
+        $this->assertSame($expected, $job->getCacheResolutionWarning());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L86 LogicalAnd ×3 (composite guard in locateConfigFile:
+     *     is_string && !=='' && is_file && is_readable)
+     *
+     * @dataProvider locateConfigGuardScenarios
+     */
+    public function php_cs_fixer_locate_config_composite_guard(
+        $explicitValue,
+        bool $expectExplicitUsed,
+        string $scenario
+    ): void {
+        $sandbox = $this->mkSandbox();
+
+        $args = ['paths' => ['src']];
+        if ($expectExplicitUsed) {
+            $explicit = $this->writeFile(
+                $sandbox . '/explicit.php',
+                "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile('/from-explicit.cache');\n"
+            );
+            $args['config'] = $explicit;
+        } else {
+            $args['config'] = $explicitValue;
+        }
+
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', $args));
+
+        if ($expectExplicitUsed) {
+            $this->assertSame(['/from-explicit.cache'], $job->getCachePaths(), $scenario);
+        } else {
+            // Fallback to the default (no cwd candidates exist in tmp sandbox).
+            $this->cdInto($sandbox);
+            $this->assertSame(['.php-cs-fixer.cache'], $job->getCachePaths(), $scenario);
+        }
+    }
+
+    /** @return array<string, array{mixed, bool, string}> */
+    public function locateConfigGuardScenarios(): array
+    {
+        return [
+            'non-string config arg → guard rejects' => [
+                ['nested'], false, 'is_string guard kills LogicalAnd mutants',
+            ],
+            'empty config arg → guard rejects'       => [
+                '',          false, '!=="" guard kills LogicalAnd mutants',
+            ],
+            'non-existent file → guard rejects'      => [
+                '/no/such/.php-cs-fixer.php', false, 'is_file guard kills LogicalAnd mutants',
+            ],
+            'valid file → guard accepts'             => [
+                '__placeholder__', true, 'all four operands accept',
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L89 ArrayItemRemoval `['.php-cs-fixer.php', '.php-cs-fixer.dist.php']`
+     *   - L89 Foreach_ (loop break / no-op)
+     *   - L90 LogicalAnd variants on `is_file($candidate) && is_readable($candidate)`
+     *
+     * Two scenarios drive the foreach: (1) ONLY `.php-cs-fixer.dist.php` exists
+     * — proves the foreach reaches the second array item (kills
+     * ArrayItemRemoval/Foreach_ that would skip the second iteration); (2)
+     * BOTH files exist but `.php-cs-fixer.php` is unreadable — proves the
+     * is_readable guard rejects it and the foreach continues to the .dist
+     * variant.
+     *
+     * @dataProvider candidateFallbackScenarios
+     */
+    public function php_cs_fixer_candidate_fallback_chain(
+        array $files,
+        ?string $unreadable,
+        string $expectedFallbackCacheFile,
+        string $scenario
+    ): void {
+        if ($unreadable !== null && function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            $this->markTestSkipped('root bypasses chmod permission checks');
+        }
+        $sandbox = $this->mkSandbox();
+
+        foreach ($files as $name => $content) {
+            $this->writeFile($sandbox . '/' . $name, $content);
+        }
+        $unreadablePath = null;
+        if ($unreadable !== null) {
+            $unreadablePath = $sandbox . '/' . $unreadable;
+            chmod($unreadablePath, 0000);
+        }
+
+        $this->cdInto($sandbox);
+
+        $job = new PhpCsFixerJob(new JobConfiguration('fixer_src', 'php-cs-fixer', ['paths' => ['src']]));
+
+        try {
+            $this->assertSame([$expectedFallbackCacheFile], $job->getCachePaths(), $scenario);
+        } finally {
+            if ($unreadablePath !== null) {
+                chmod($unreadablePath, 0644);
+            }
+        }
+    }
+
+    public function candidateFallbackScenarios(): array
+    {
+        return [
+            'only .php-cs-fixer.dist.php exists — foreach reaches second item' => [
+                ['.php-cs-fixer.dist.php' => "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile('/dist.cache');\n"],
+                null,
+                '/dist.cache',
+                'kills ArrayItemRemoval / Foreach_',
+            ],
+            'first candidate unreadable, second valid — guard continues' => [
+                [
+                    '.php-cs-fixer.php'      => "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile('/main.cache');\n",
+                    '.php-cs-fixer.dist.php' => "<?php\nreturn (new PhpCsFixer\\Config())->setCacheFile('/dist.cache');\n",
+                ],
+                '.php-cs-fixer.php',
+                '/dist.cache',
+                'kills LogicalAnd on is_file && is_readable',
+            ],
+        ];
+    }
+
+    /** Reusable cwd switch; the existing tearDown restores cwd if changed. */
+    private function cdInto(string $dir): void
+    {
+        if ($this->cwdBefore === null) {
+            $this->cwdBefore = getcwd() ?: null;
+        }
+        chdir($dir);
     }
 }

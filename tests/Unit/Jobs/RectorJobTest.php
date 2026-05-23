@@ -17,8 +17,14 @@ class RectorJobTest extends TestCase
     /** @var string[] */
     private array $sandboxDirs = [];
 
+    private ?string $cwdBefore = null;
+
     protected function tearDown(): void
     {
+        if ($this->cwdBefore !== null) {
+            chdir($this->cwdBefore);
+            $this->cwdBefore = null;
+        }
         foreach ($this->sandboxPaths as $p) {
             if (is_file($p)) {
                 @unlink($p);
@@ -344,5 +350,134 @@ class RectorJobTest extends TestCase
 
         $this->assertStringContainsString('--debug', $command);
         $this->assertStringEndsWith('src', $command);
+    }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the composite guards in locateConfigFile
+    // for both the explicit `config` arg (L83) and the cwd fallback (L86).
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L83 LogicalAnd (composite guard:
+     *     is_string($explicit) && $explicit !== '' && is_file($explicit) && is_readable($explicit))
+     *
+     * @dataProvider explicitConfigGuardScenarios
+     */
+    public function rector_locate_config_explicit_guard(
+        $explicitValue,
+        bool $expectUsed,
+        string $scenario
+    ): void {
+        $sandbox = $this->mkSandbox();
+
+        $args = ['paths' => ['src']];
+        if ($expectUsed) {
+            $explicit = $this->writeFile(
+                $sandbox . '/explicit-rector.php',
+                "<?php\nreturn (new \\Rector\\Config\\RectorConfig())->cacheDirectory('/from-explicit.cache');\n"
+            );
+            $args['config'] = $explicit;
+        } else {
+            $args['config'] = $explicitValue;
+        }
+
+        $job = new RectorJob(new JobConfiguration('rector_src', 'rector', $args));
+
+        if ($expectUsed) {
+            $this->assertSame(['/from-explicit.cache'], $job->getCachePaths(), $scenario);
+        } else {
+            $this->cdInto($sandbox); // ensures no `rector.php` in cwd
+            $this->assertSame(
+                [sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'],
+                $job->getCachePaths(),
+                $scenario
+            );
+        }
+    }
+
+    /** @return array<string, array{mixed, bool, string}> */
+    public function explicitConfigGuardScenarios(): array
+    {
+        return [
+            'non-string explicit → guard rejects' => [
+                ['nested'], false, 'is_string short-circuit',
+            ],
+            'empty explicit → guard rejects' => [
+                '', false, '!=="" short-circuit',
+            ],
+            'non-existent explicit → guard rejects' => [
+                '/no/such/rector.php', false, 'is_file short-circuit',
+            ],
+            'valid explicit → guard accepts' => [
+                '__placeholder__', true, 'all four operands accept',
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L86 LogicalAnd variants (`is_file('rector.php') && is_readable('rector.php')`)
+     *
+     * Two adjacent assertions: rector.php present-and-readable in cwd ⇒ it
+     * is picked up; rector.php present but chmod 0000 ⇒ falls back. With the
+     * `&&`→`||` mutant, the second case would still return 'rector.php' and
+     * the cache path would not match the default.
+     */
+    public function rector_locate_config_cwd_fallback_pair(): void
+    {
+        if (function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            $this->markTestSkipped('root bypasses chmod permission checks');
+        }
+
+        // Case A: rector.php in cwd is readable → used.
+        $sandboxOk = $this->mkSandbox();
+        $okConfig = $this->writeFile(
+            $sandboxOk . '/rector.php',
+            "<?php\nreturn (new \\Rector\\Config\\RectorConfig())->cacheDirectory('/from-cwd.cache');\n"
+        );
+        $this->cdInto($sandboxOk);
+
+        $jobOk = new RectorJob(new JobConfiguration('rector_src', 'rector', ['paths' => ['src']]));
+        $this->assertSame(['/from-cwd.cache'], $jobOk->getCachePaths(), 'cwd rector.php must be picked when readable');
+
+        // Restore cwd before the unreadable scenario so the sandboxes don't interfere.
+        if ($this->cwdBefore !== null) {
+            chdir($this->cwdBefore);
+            $this->cwdBefore = null;
+        }
+
+        // Case B: rector.php exists but is unreadable → falls back to default.
+        $sandboxKo = $this->mkSandbox();
+        $koConfig = $this->writeFile(
+            $sandboxKo . '/rector.php',
+            "<?php\nreturn (new \\Rector\\Config\\RectorConfig())->cacheDirectory('/must-not-be-used.cache');\n"
+        );
+        chmod($koConfig, 0000);
+        $this->cdInto($sandboxKo);
+
+        $jobKo = new RectorJob(new JobConfiguration('rector_src', 'rector', ['paths' => ['src']]));
+
+        try {
+            $this->assertSame(
+                [sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'rector_cached_files'],
+                $jobKo->getCachePaths(),
+                'unreadable cwd rector.php must NOT be picked'
+            );
+        } finally {
+            chmod($koConfig, 0644);
+        }
+    }
+
+    private function cdInto(string $dir): void
+    {
+        if ($this->cwdBefore === null) {
+            $this->cwdBefore = getcwd() ?: null;
+        }
+        chdir($dir);
     }
 }

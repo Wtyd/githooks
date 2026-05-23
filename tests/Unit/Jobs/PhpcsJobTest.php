@@ -424,4 +424,116 @@ XML);
             ],
         ];
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the composite guard on the standard arg,
+    // the is_file/is_readable guard on the ruleset path, and the trim() on
+    // the <arg value> attribute.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L69 LogicalAnd `is_string($standard) && $standard !== ''`
+     *
+     * A non-string `standard` value (e.g. accidentally an array via legacy
+     * deep-config) must NOT crash and must fall back to the default cache
+     * path — the is_string guard short-circuits the ruleset parsing.
+     */
+    public function standard_arg_non_string_falls_back_to_default_cache(): void
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'standard' => ['PSR12'], // legacy "array of standards" — not allowed but tolerated
+        ]));
+
+        $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+    }
+
+    /**
+     * Companion: empty-string standard also short-circuits (kills the
+     * `$standard !== ''` branch of the same LogicalAnd).
+     *
+     * @test
+     */
+    public function standard_arg_empty_string_falls_back_to_default_cache(): void
+    {
+        $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+            'paths'    => ['src'],
+            'standard' => '',
+        ]));
+
+        $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L80 LogicalOr `!is_file($rulesetPath) || !is_readable($rulesetPath)`
+     *
+     * Ruleset file exists but is unreadable: extractCacheFromRuleset must
+     * return null and the job must fall back to the default cache. The
+     * mutant `&&` would only short-circuit when BOTH guards are true at the
+     * same time — a readable, present file — and would proceed to parse an
+     * unreadable file, which raises a simplexml warning and corrupts the
+     * result.
+     */
+    public function unreadable_ruleset_falls_back_to_default_cache(): void
+    {
+        if (function_exists('posix_geteuid') && posix_geteuid() === 0) {
+            $this->markTestSkipped('root bypasses chmod permission checks');
+        }
+
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-unreadable-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, <<<'XML'
+<?xml version="1.0"?>
+<ruleset><arg name="cache" value="from-unreadable.cache"/></ruleset>
+XML);
+        chmod($rulesetPath, 0000);
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+            ]));
+
+            $this->assertSame(['.phpcs.cache'], $job->getCachePaths());
+        } finally {
+            chmod($rulesetPath, 0644);
+            unlink($rulesetPath);
+        }
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L95 UnwrapTrim `trim((string) $arg['value'])` → `(string) $arg['value']`
+     *
+     * Ruleset's `<arg value>` may carry leading/trailing whitespace
+     * (typical when an editor wraps the attribute). Without trim, the
+     * resolved cache path becomes "  with-spaces.cache  ", which the disk
+     * would never expose.
+     */
+    public function ruleset_arg_value_is_trimmed_of_surrounding_whitespace(): void
+    {
+        $rulesetPath = sys_get_temp_dir() . '/phpcs-trim-' . uniqid() . '.xml';
+        file_put_contents($rulesetPath, <<<'XML'
+<?xml version="1.0"?>
+<ruleset><arg name="cache" value="  trimmed.cache  "/></ruleset>
+XML);
+
+        try {
+            $job = new PhpcsJob(new JobConfiguration('phpcs_src', 'phpcs', [
+                'paths'    => ['src'],
+                'standard' => $rulesetPath,
+            ]));
+
+            $this->assertSame(['trimmed.cache'], $job->getCachePaths());
+        } finally {
+            unlink($rulesetPath);
+        }
+    }
 }
