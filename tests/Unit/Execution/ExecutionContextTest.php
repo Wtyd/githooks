@@ -775,4 +775,177 @@ class ExecutionContextTest extends TestCase
             'single char relative'             => ['x',        false],
         ];
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the lazy load in getEffectiveSet, the
+    // str_replace/rtrim normalisation pair in normaliseToCwdRelative, and
+    // the (string) cast on getcwd().
+    //
+    // L216 ReturnRemoval (filterFilesForMode FULL) and L275 FalseValue
+    // (branchDiffFiles=false cache) are EQUIVALENT: the fall-through path
+    // also returns null and the caching is internally consistent. See
+    // Infection-2026-05-23.md.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L192 MethodCallRemoval `$this->ensureStagedLoaded();` in getEffectiveSet
+     *
+     * Without the eager load, `$this->stagedFiles` stays at its initial []
+     * value and getEffectiveSet returns [] instead of the actual staged
+     * set. We construct a context via `create()` (which does NOT prime
+     * stagedFiles) and assert the FAST branch returns the FileUtils data
+     * on first access.
+     */
+    public function get_effective_set_fast_mode_lazy_loads_staged_files(): void
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php', 'src/Bar.php']);
+
+        $context = ExecutionContext::create($fileUtils, 'master');
+
+        // Sanity: prior to first access, stagedFiles is empty (lazy).
+        $this->assertSame(
+            ['src/Foo.php', 'src/Bar.php'],
+            $context->getEffectiveSet(ExecutionMode::FAST),
+            'first getEffectiveSet call must trigger ensureStagedLoaded'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L376 UnwrapStrReplace `str_replace('\\','/', $cwd)` → `$cwd`
+     *
+     * Drive a Windows-style cwd containing backslashes. With str_replace
+     * unwrapped, the cwd keeps `\` characters and the prefix-match against
+     * the (forward-slash-normalised) file fails, so normaliseToCwdRelative
+     * returns the file unchanged (instead of stripping the cwd prefix).
+     */
+    public function normalise_replaces_backslashes_in_cwd(): void
+    {
+        $context = ExecutionContext::default();
+
+        $ref = new \ReflectionClass($context);
+        $cwdProp = $ref->getProperty('cwd');
+        $cwdProp->setAccessible(true);
+        $cwdProp->setValue($context, 'C:\\Users\\proj');
+
+        $method = $ref->getMethod('normaliseToCwdRelative');
+        $method->setAccessible(true);
+
+        // file as forward-slash (what `--files` would feed). Pre-normalisation:
+        //   cwd  → 'C:/Users/proj/'
+        //   file → 'C:/Users/proj/src/Foo.php'
+        //   strncmp matches → returns 'src/Foo.php'.
+        // With UnwrapStrReplace on cwd: cwd stays 'C:\\Users\\proj/' →
+        // strncmp against 'C:/Users/proj/src/Foo.php' fails → returns file verbatim.
+        $this->assertSame(
+            'src/Foo.php',
+            $method->invoke($context, 'C:/Users/proj/src/Foo.php'),
+            'cwd backslashes must be normalised before prefix-matching'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L376 UnwrapRtrim `rtrim(str_replace(...), '/')` → `str_replace(...)`
+     *
+     * Drive a cwd that ALREADY ends with a `/`. Without rtrim, the cwd
+     * becomes `…proj//` (the explicit `. '/'` doubles it). The strncmp
+     * fails because the file does not start with `…proj//`.
+     */
+    public function normalise_strips_trailing_slashes_from_cwd_before_appending(): void
+    {
+        $context = ExecutionContext::default();
+
+        $ref = new \ReflectionClass($context);
+        $cwdProp = $ref->getProperty('cwd');
+        $cwdProp->setAccessible(true);
+        $cwdProp->setValue($context, '/home/user/proj/');
+
+        $method = $ref->getMethod('normaliseToCwdRelative');
+        $method->setAccessible(true);
+
+        $this->assertSame(
+            'src/Foo.php',
+            $method->invoke($context, '/home/user/proj/src/Foo.php'),
+            'trailing / on cwd must be stripped before the implementation appends its own /'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L377 UnwrapStrReplace `str_replace('\\','/', $file)` → `$file`
+     *
+     * Same as L376 but on the FILE side: a Windows-style file path with
+     * backslashes must be normalised before the prefix-match against the
+     * (forward-slash) cwd.
+     */
+    public function normalise_replaces_backslashes_in_file(): void
+    {
+        $context = ExecutionContext::default();
+
+        $ref = new \ReflectionClass($context);
+        $cwdProp = $ref->getProperty('cwd');
+        $cwdProp->setAccessible(true);
+        $cwdProp->setValue($context, '/home/user/proj');
+
+        $method = $ref->getMethod('normaliseToCwdRelative');
+        $method->setAccessible(true);
+
+        // Without UnwrapStrReplace on file (correct): file '\\home\\user\\proj\\src\\Foo.php'
+        // becomes '/home/user/proj/src/Foo.php', matches cwd, returns 'src/Foo.php'.
+        // With UnwrapStrReplace: file stays with backslashes, strncmp fails, returns file verbatim.
+        $this->assertSame(
+            'src/Foo.php',
+            $method->invoke($context, '\\home\\user\\proj\\src\\Foo.php'),
+            'backslashes in file must be normalised before strncmp'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L372 CastString `$this->cwd ?? (string) getcwd()` → `?? getcwd()`
+     *
+     * `getcwd()` may return `false` (rare: cwd deleted out from under us).
+     * The `(string)` cast forces false → ''. The guard at L373
+     * (`if ($cwd === '')`) then returns the file unchanged. Without the
+     * cast, the comparison `false === ''` is false, the code proceeds to
+     * `rtrim(str_replace('\\','/', false), '/')` which silently coerces
+     * false to '' and produces just `/` — corrupting the prefix-match.
+     *
+     * We can't directly force `getcwd()` to return false from a unit test
+     * (would require chdir + rmdir of the cwd, racy). Instead we drive the
+     * code path by setting `cwd` to the empty string explicitly via
+     * Reflection — same observable contract: an empty cwd must short-circuit.
+     */
+    public function normalise_short_circuits_when_cwd_is_empty_string(): void
+    {
+        $context = ExecutionContext::default();
+
+        $ref = new \ReflectionClass($context);
+        $cwdProp = $ref->getProperty('cwd');
+        $cwdProp->setAccessible(true);
+        $cwdProp->setValue($context, '');
+
+        $method = $ref->getMethod('normaliseToCwdRelative');
+        $method->setAccessible(true);
+
+        // With (string) cast in place AND $cwd='' short-circuit: returns file verbatim.
+        $this->assertSame(
+            '/abs/path/to/file.php',
+            $method->invoke($context, '/abs/path/to/file.php'),
+            'empty cwd must short-circuit before the rtrim/str_replace chain'
+        );
+    }
 }

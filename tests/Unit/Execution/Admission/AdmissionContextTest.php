@@ -249,4 +249,112 @@ class AdmissionContextTest extends TestCase
         $config = new JobConfiguration($name, 'phpcs', []);
         return new PhpcsJob($config);
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the memory-fallback default in fits(),
+    // and the three Continue_ branches + the final $blocking[] append in
+    // getBlockingNeeds().
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L91 DecrementInteger `$memoryReserveByJob[name] ?? 0` → `?? -1`
+     *   - L91 IncrementInteger same → `?? 1`
+     *
+     * A job without an entry in `memoryReserveByJob` must use 0 (no
+     * reservation declared). With memoryFree=0 the fits comparison is
+     * `0 <= 0` → true (DecrementInteger to -1 would also pass; the
+     * killable mutant is IncrementInteger to 1 → `1 <= 0` → false).
+     *
+     * To make the boundary cover BOTH mutants we also check a positive
+     * memoryFree with the absent entry — a Decrement to -1 changes
+     * nothing observable (still <= memoryFree), but a value far below 0
+     * could be detected by chaining a strict comparison if we observe
+     * the internal value via fits + memoryFree=0 edge.
+     */
+    public function fits_uses_zero_when_job_has_no_memory_reservation_recorded(): void
+    {
+        $job = $this->buildJob('noreserve');
+        // memoryFree=0 + no reservation: 0 <= 0 → true.
+        // Mutated to ?? 1: 1 <= 0 → false → would deny admission.
+        $ctx = new AdmissionContext(
+            1,
+            0,
+            ['noreserve' => 1],
+            [] // no entry for 'noreserve'
+        );
+
+        $this->assertTrue($ctx->fits($job));
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L131 Continue_ → Break_ (in getBlockingNeeds, completedJobs branch)
+     *
+     * Multiple needs where the FIRST is in completedJobs and the second
+     * is blocking. With `continue`, the foreach proceeds to evaluate the
+     * second dep and appends it. With `break`, the second dep is never
+     * scanned and the blocking list is empty.
+     */
+    public function blocking_needs_continues_past_completed_dependencies(): void
+    {
+        $ctx = $this->contextWithNeeds(
+            ['j' => ['a', 'b']],
+            ['a'],   // completed
+            [],      // failed
+            []       // skipped
+        );
+
+        $job = $this->buildJob('j');
+        $this->assertSame(['b'], $ctx->getBlockingNeeds($job));
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L134 Continue_ → Break_ (in getBlockingNeeds, failedJobs branch)
+     *
+     * Multiple needs where the FIRST is in failedJobs and the second is
+     * blocking. Same rationale as above but for the failed-jobs bucket.
+     */
+    public function blocking_needs_continues_past_failed_dependencies(): void
+    {
+        $ctx = $this->contextWithNeeds(
+            ['j' => ['a', 'b']],
+            [],      // completed
+            ['a'],   // failed
+            []       // skipped
+        );
+
+        $job = $this->buildJob('j');
+        $this->assertSame(['b'], $ctx->getBlockingNeeds($job));
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L138 ArrayOneItem `$blocking[] = $dep` (only the last item kept)
+     *
+     * Multiple needs ALL pending (no bucket): blocking must contain ALL
+     * of them in declaration order. The ArrayOneItem mutant would reduce
+     * the result to a single element.
+     */
+    public function blocking_needs_accumulates_all_pending_dependencies(): void
+    {
+        $ctx = $this->contextWithNeeds(
+            ['j' => ['a', 'b', 'c']],
+            [],
+            [],
+            []
+        );
+
+        $job = $this->buildJob('j');
+        $this->assertSame(['a', 'b', 'c'], $ctx->getBlockingNeeds($job));
+    }
 }

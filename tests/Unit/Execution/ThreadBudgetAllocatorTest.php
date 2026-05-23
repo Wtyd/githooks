@@ -536,4 +536,54 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
 
         new ThreadBudgetPlan(2, 1, ['offending_job' => 4], []);
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the minimum-thread ternary in the
+    // threadable-allocation loop. The other 5 mutants in this file are
+    // EQUIVALENT (see Infection-2026-05-23.md):
+    //   - L69 max(1,…)→max(0,…): downstream min/max chain absorbs the change
+    //     when the per-job minimum is ≥ 1, which it always is by contract.
+    //   - L72 Decrement/Increment of the `:1` fallback: unreachable — every
+    //     job in $threadableJobs has a non-null capability by construction.
+    //   - L111 break→continue in calculateMaxParallel: equivalent because
+    //     costs are sort()ed ascending, so once a job doesn't fit, no later
+    //     (larger) job fits either.
+    //   - L115 max(1,$parallel)→max(0,$parallel): unreachable — costs are
+    //     clamped to budget upstream so the first iteration ALWAYS pushes
+    //     $parallel to at least 1.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L72 Ternary swap `$capability !== null ? getMinimumThreads() : 1`
+     *     → `... ? 1 : getMinimumThreads()`
+     *
+     * A capability whose getMinimumThreads() returns a value > 1 (e.g. a
+     * tool that needs at least 4 cores to bother spawning workers) drives
+     * the contract: the allocation must be ≥ minimumThreads. With the
+     * mutated ternary, the threadable job would receive 1 even though its
+     * minimum is 4, and the runtime would later trip the per-job clamp.
+     */
+    function allocation_respects_capability_minimum_threads_when_above_threadsPerJob(): void
+    {
+        $allocator = new ThreadBudgetAllocator();
+        // Budget 6, one threadable job with min=4 and default=8.
+        // remainingBudget = 6 (no fixed cost).
+        // threadsPerJob = max(1, floor(6/1)) = 6. min(max(4, 6), 6) = 6.
+        // To force the difference between min=4 and min=1, use 2 threadable
+        // jobs so threadsPerJob = floor(6/2) = 3 < min=4.
+        $jobs = [
+            $this->makeJob('greedy', new ThreadCapability('parallel', 8, 4)),
+            $this->makeJob('cheap', new ThreadCapability('parallel', 8, 1)),
+        ];
+
+        $plan = $allocator->allocate(6, $jobs);
+
+        // With the correct ternary: greedy gets max(4, 3)=4, cheap gets max(1, 3)=3.
+        // With the swapped ternary: greedy gets max(1, 3)=3 (regression).
+        $this->assertSame(4, $plan->getAllocation('greedy'), 'min=4 must be honoured');
+        $this->assertSame(3, $plan->getAllocation('cheap'), 'min=1 yields threadsPerJob');
+    }
 }
