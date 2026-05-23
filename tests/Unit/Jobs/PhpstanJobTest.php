@@ -246,6 +246,150 @@ class PhpstanJobTest extends TestCase
         ];
     }
 
+    // ========================================================================
+    // Mutation testing Tier 3 — pin applyStructuredOutputFormat side-effects,
+    // the exact warning message and the fallback worker count.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L50 TrueValue `$args['no-progress'] = true` → `= false`
+     *   - L51 TrueValue `return true` → `return false`
+     *
+     * The structured-output adapter mutates internal args (introspectable
+     * via Reflection) and signals success with a literal `true`. Both
+     * facets are observable contracts.
+     */
+    public function apply_structured_output_format_mutates_args_and_signals_success(): void
+    {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths' => ['src'],
+        ]));
+
+        $result = $job->applyStructuredOutputFormat();
+        $this->assertTrue($result, 'applyStructuredOutputFormat must return true (signalling support)');
+
+        $ref = new \ReflectionClass($job);
+        $argsProp = $ref->getProperty('args');
+        $argsProp->setAccessible(true);
+        /** @var array<string, mixed> $args */
+        $args = $argsProp->getValue($job);
+
+        $this->assertSame('json', $args['error-format'] ?? null, 'error-format must be json');
+        $this->assertTrue($args['no-progress'] ?? null, 'no-progress must be literal true (kills TrueValue mutant)');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L109 Concat ×2 (re-ordered string fragments)
+     *   - L109 ConcatOperandRemoval ×2 (drop of one of the three fragments)
+     *
+     * `getCacheResolutionWarning` builds the warning by concatenating three
+     * literal fragments. The mutants either shuffle or drop a fragment; the
+     * only way to catch all four is to assert the FULL message verbatim.
+     */
+    public function cache_resolution_warning_is_assembled_with_the_exact_text(): void
+    {
+        $config = $this->writeNeon('unexpand.neon', "parameters:\n    tmpDir: %env.HOME%/cache\n");
+
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+        $job->getCachePaths(); // primes $cacheUnresolvable
+
+        $expected = 'tmpDir in the .neon contains a placeholder that GitHooks does not expand '
+            . '(only %currentWorkingDirectory% and %rootDir% are recognised); '
+            . 'the cache lives elsewhere — clear it manually';
+
+        $this->assertSame($expected, $job->getCacheResolutionWarning());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L119 DecrementInteger `return 4` → `return 3` (fallback when
+     *     `config` arg is absent OR file does not exist)
+     *
+     * Two scenarios anchor the fallback path: no `config` arg supplied,
+     * and `config` arg pointing to a non-existent file. Both must yield
+     * the canonical worker count = 4 (matches PHPStan's hard-coded
+     * default when `maximumNumberOfProcesses` is not declared).
+     *
+     * @dataProvider missingConfigScenarios
+     */
+    public function declared_neon_workers_falls_back_to_4_when_config_is_missing(
+        array $args,
+        string $scenario
+    ): void {
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', $args));
+        $this->assertSame(4, $job->getDeclaredNeonWorkers(), $scenario);
+    }
+
+    public function missingConfigScenarios(): array
+    {
+        return [
+            'no config arg at all' => [
+                ['paths' => ['src']],
+                'empty($config) branch',
+            ],
+            'config arg pointing to non-existent file' => [
+                ['paths' => ['src'], 'config' => '/no/such/phpstan.neon'],
+                '!file_exists($config) branch',
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L125 DecrementInteger `return 4` → `return 3`
+     *   - L125 IncrementInteger `return 4` → `return 5`
+     *   - L125 IntegerNegation  `return 4` → `return -4`
+     *
+     * NEON exists, has parameters, but no `maximumNumberOfProcesses` key.
+     * The implementation must return the canonical 4 (matches PHPStan's
+     * own default) — any mutated integer value would be observable here.
+     */
+    public function declared_neon_workers_returns_4_when_neon_omits_max_processes(): void
+    {
+        $config = $this->writeNeon('no-mnp.neon', "parameters:\n    level: 8\n    paths:\n        - src\n");
+
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame(4, $job->getDeclaredNeonWorkers());
+    }
+
+    /**
+     * Companion assertion to the above: when the NEON DOES declare
+     * `maximumNumberOfProcesses: N`, that exact integer is returned. This
+     * doesn't kill an existing mutant on its own, but it cements the
+     * contract — without it the test above would also pass if the
+     * implementation always returned 4 unconditionally.
+     *
+     * @test
+     */
+    public function declared_neon_workers_reads_the_neon_value_when_present(): void
+    {
+        $config = $this->writeNeon('mnp.neon', "parameters:\n    maximumNumberOfProcesses: 7\n    paths:\n        - src\n");
+
+        $job = new PhpstanJob(new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths'  => ['src'],
+            'config' => $config,
+        ]));
+
+        $this->assertSame(7, $job->getDeclaredNeonWorkers());
+    }
+
     private function writeNeon(string $name, string $content): string
     {
         $path = $this->sandbox . '/' . $name;
