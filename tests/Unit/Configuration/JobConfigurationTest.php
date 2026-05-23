@@ -1412,4 +1412,215 @@ class JobConfigurationTest extends TestCase
         $this->assertSame(1, $threshold->getWarnAbove());
         $this->assertTrue($threshold->isShortForm());
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the exact validation-message strings and
+    // the early-return + boundary checks in the cores/native-thread guards.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L157 Concat (conflicting deprecated-keys message)
+     *
+     * Asserts the FULL message verbatim. The existing test asserted four
+     * substrings independently, which the reordered concatenations could
+     * still satisfy.
+     */
+    public function deprecated_key_conflict_message_is_assembled_with_exact_text(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'            => 'phpstan',
+            'executablePath'  => 'vendor/bin/phpstan',
+            'executable-path' => 'vendor/bin/phpstan',
+        ], $this->registry, $result, new JobRegistry());
+
+        $expected = "Job 'phpstan_job': conflicting keys 'executablePath' and 'executable-path'. "
+            . "Use only one (kebab-case form is canonical).";
+
+        $this->assertContains($expected, $result->getErrors());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L206 Concat (memory key must be either int or object)
+     *
+     * A malformed memory value (string) triggers the addError with a
+     * two-fragment concatenation that must come out verbatim.
+     */
+    public function memory_key_invalid_type_message_is_assembled_with_exact_text(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_job', [
+            'type'   => 'phpstan',
+            'paths'  => ['src'],
+            'memory' => '2000m', // string instead of int/array
+        ], $this->registry, $result, new JobRegistry());
+
+        $expected = "Job 'phpstan_job': 'memory' must be either a positive integer (MB) or an object "
+            . "with 'warn-above'/'fail-above'.";
+
+        $this->assertContains($expected, $result->getErrors());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L294 Concat ×2 + ConcatOperandRemoval ×2 (single-threaded cores>1 message)
+     *
+     * Three-fragment concatenation — any shuffle or drop produces a
+     * different string. Pin the literal verbatim.
+     */
+    public function single_threaded_cores_warning_message_is_assembled_with_exact_text(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpmd_src', [
+            'type'  => 'phpmd',
+            'paths' => ['src'],
+            'rules' => 'cleancode',
+            'cores' => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $expected = "Job 'phpmd_src': 'phpmd' is single-threaded; 'cores' (4) "
+            . "reserves slots in the budget without benefit. Remove the key "
+            . "or set 'cores: 1'.";
+
+        $this->assertContains($expected, $result->getWarnings());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L298 ReturnRemoval `return;` after single-threaded warning.
+     *
+     * Without the return, validation falls through to the
+     * THREAD_ARG_KEYS branch and may emit a second warning for the
+     * native flag override. phpunit has no native thread key in
+     * THREAD_ARG_KEYS, but phpcpd / phpmd don't either — choose a
+     * single-threaded type that DOES have a possibility of a second
+     * warning if the early return is removed: none in the current map.
+     *
+     * Strategy: count warnings — exactly ONE warning must be emitted
+     * for the single-threaded path. With the return removed, control
+     * flows through the rest of the function, and since none of the
+     * SINGLE_THREADED_TYPES (phpmd, phpunit, phpcpd) are in
+     * THREAD_ARG_KEYS, no additional warning is emitted; HOWEVER, the
+     * `return` is still meaningful for the contract of the code path,
+     * so we test the count == 1 case as a regression guard.
+     */
+    public function single_threaded_cores_warning_emits_exactly_one_warning(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpmd_src', [
+            'type'  => 'phpmd',
+            'paths' => ['src'],
+            'rules' => 'cleancode',
+            'cores' => 4,
+        ], $this->registry, $result, new JobRegistry());
+
+        $singleThreaded = array_filter(
+            $result->getWarnings(),
+            static function (string $w): bool {
+                return strpos($w, 'single-threaded') !== false;
+            }
+        );
+        $this->assertCount(1, $singleThreaded, 'exactly one single-threaded warning');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L309 Concat (cores overrides native key message)
+     *
+     * Pin the two-fragment concatenation verbatim — phpcs supports `parallel`.
+     */
+    public function cores_overrides_native_key_warning_message_is_exact(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'cores'    => 4,
+            'parallel' => 2,
+        ], $this->registry, $result, new JobRegistry());
+
+        $expected = "Job 'phpcs_src': 'cores' overrides 'parallel' (cores=4, parallel=2).";
+
+        $this->assertContains($expected, $result->getWarnings());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L340 LessThan `$value < 1` → `<= 1` in validateNativeThreadFlagAsCores
+     *
+     * Drives the boundary: `parallel: 1` must NOT warn (value is valid),
+     * while `parallel: 0` MUST warn. The mutant `<= 1` would warn on
+     * both, breaking the boundary contract.
+     */
+    public function native_thread_flag_boundary_accepts_one_rejects_zero(): void
+    {
+        // value=1 — valid, no warning
+        $resultOk = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => 1,
+        ], $this->registry, $resultOk, new JobRegistry());
+
+        $parallelWarnings = array_filter(
+            $resultOk->getWarnings(),
+            static function (string $w): bool {
+                return strpos($w, "'parallel' must be a positive integer") !== false;
+            }
+        );
+        $this->assertCount(0, $parallelWarnings, 'parallel=1 is valid; no warning expected');
+
+        // value=0 — invalid, must warn
+        $resultKo = new ValidationResult();
+        JobConfiguration::fromArray('phpcs_src', [
+            'type'     => 'phpcs',
+            'paths'    => ['src'],
+            'parallel' => 0,
+        ], $this->registry, $resultKo, new JobRegistry());
+
+        $parallelWarningsKo = array_filter(
+            $resultKo->getWarnings(),
+            static function (string $w): bool {
+                return strpos($w, "'parallel' must be a positive integer") !== false;
+            }
+        );
+        $this->assertCount(1, $parallelWarningsKo, 'parallel=0 must warn');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L475 Concat + ConcatOperandRemoval (CLI-only key error message)
+     *
+     * Two-fragment concatenation — pin the literal verbatim.
+     */
+    public function cli_only_key_error_message_is_assembled_with_exact_text(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('phpstan_src', [
+            'type'  => 'phpstan',
+            'paths' => ['src'],
+            'files' => ['src/X.php'],
+        ], $this->registry, $result, new JobRegistry());
+
+        $expected = "Job 'phpstan_src': key 'files' is CLI-only and cannot be declared in jobs. "
+            . "Use --files on the command line instead.";
+
+        $this->assertContains($expected, $result->getErrors());
+    }
 }

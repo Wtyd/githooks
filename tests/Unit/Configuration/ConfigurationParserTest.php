@@ -1709,4 +1709,203 @@ PHP;
 
         @unlink($neonPath);
     }
+
+    // ========================================================================
+    // Mutation testing Tier 3 — pin the exact messages produced by the
+    // cross-flow validators, and prove the Continue_ branches iterate over
+    // ALL flows (never break early).
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L213 Concat (memory exceeds budget message): full-text verbatim.
+     */
+    public function memory_exceeds_budget_message_is_assembled_with_exact_text(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'ci' => [
+            'options' => ['memory-budget' => ['warn-above' => 1000]],
+            'jobs' => ['phpstan_src'],
+        ],
+    ],
+    'jobs' => [
+        'phpstan_src' => [
+            'type'   => 'phpstan',
+            'paths'  => ['src'],
+            'memory' => 2000,
+        ],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $expected = "Job 'phpstan_src': 'memory' (2000) exceeds memory-budget (1000) "
+            . "declared in flow 'ci' — could never run.";
+        $this->assertContains($expected, $result->getValidation()->getErrors());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L294 Continue_ → Break_ in validateCoresAgainstFlows
+     *
+     * Two flows, in declaration order: the first does NOT contain the
+     * uncontrollable job, the second DOES and triggers a warning. With
+     * `continue`, both are scanned and the second emits the warning. With
+     * `break`, the loop terminates on the first iteration and the second
+     * flow is never validated.
+     */
+    public function cores_against_flows_continues_past_flows_that_do_not_contain_the_job(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'other_flow' => [
+            'options' => ['processes' => 1],
+            'jobs' => ['some_other'],
+        ],
+        'ci' => [
+            'options' => ['processes' => 2],
+            'jobs' => ['custom_heavy'],
+        ],
+    ],
+    'jobs' => [
+        'some_other'   => ['type' => 'custom', 'script' => 'true'],
+        'custom_heavy' => ['type' => 'custom', 'script' => 'true', 'cores' => 8],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("flow 'ci'", $warningText);
+        $this->assertStringContainsString("'custom_heavy'", $warningText);
+        $this->assertStringContainsString('saturate', $warningText);
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L301 Continue_ → Break_ in validateCoresAgainstFlows when the
+     *     declared cores fit the flow's processes.
+     *
+     * Two flows, in declaration order: the first FITS (continue), the
+     * second EXCEEDS (warning). With `break`, the second is never reached
+     * because the first short-circuits the loop on the "fits" branch.
+     */
+    public function cores_against_flows_continues_past_flows_where_job_fits(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'fits_flow' => [
+            'options' => ['processes' => 16],
+            'jobs' => ['custom_heavy'],
+        ],
+        'exceeds_flow' => [
+            'options' => ['processes' => 2],
+            'jobs' => ['custom_heavy'],
+        ],
+    ],
+    'jobs' => [
+        'custom_heavy' => ['type' => 'custom', 'script' => 'true', 'cores' => 8],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $warningText = implode("\n", $result->getValidation()->getWarnings());
+        $this->assertStringContainsString("flow 'exceeds_flow'", $warningText);
+        $this->assertStringNotContainsString("flow 'fits_flow'", $warningText);
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L304 Concat (cores-exceeds-flow-processes warning message)
+     *
+     * Pin the FOUR-fragment concatenation verbatim — only an exact-string
+     * match catches the multiple Concat / ConcatOperandRemoval variants
+     * that the report flagged on L304.
+     */
+    public function cores_exceeds_processes_warning_message_is_assembled_with_exact_text(): void
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => [
+        'ci' => [
+            'options' => ['processes' => 2],
+            'jobs' => ['custom_heavy'],
+        ],
+    ],
+    'jobs' => [
+        'custom_heavy' => ['type' => 'custom', 'script' => 'true', 'cores' => 8],
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $result = $parser->parse();
+
+        $expected = "Job 'custom_heavy' in flow 'ci': cores=8 exceeds the flow's "
+            . "processes (2). The job will saturate the budget while "
+            . "running; other jobs in the flow will wait in serial. Adjust "
+            . "either side or accept this trade-off.";
+
+        $this->assertContains($expected, $result->getValidation()->getWarnings());
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L578 MethodCallRemoval `$result->addWarning(...)` in addYamlDeprecationWarning
+     *
+     * Parsing a .yml file must emit the deprecation warning verbatim. Without
+     * the addWarning call, the warning would be missing and the operator
+     * would never learn the format is going away in v4.0.
+     */
+    public function yaml_format_emits_deprecation_warning_verbatim(): void
+    {
+        $yaml = <<<'YAML'
+Tools:
+    - phpstan
+phpstan:
+    config: 'qa/phpstan.neon'
+YAML;
+        file_put_contents($this->fixturesPath . '/githooks.yml', $yaml);
+
+        try {
+            $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+            $result = $parser->parse();
+
+            $expected = 'YAML configuration files are deprecated since v3.0 and will be removed in v4.0. '
+                . 'Use PHP format (githooks.php) instead. Run "githooks conf:init" to generate.';
+
+            $this->assertContains($expected, $result->getValidation()->getWarnings());
+        } finally {
+            @unlink($this->fixturesPath . '/githooks.yml');
+        }
+    }
 }

@@ -95,6 +95,27 @@ class FlowConfigurationTest extends TestCase
         $this->assertStringContainsString('nonexistent', $result->getWarnings()[0]);
     }
 
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L241 Concat ×2 + ConcatOperandRemoval ×2 (undefined-job warning)
+     *
+     * Pin the literal message verbatim. The existing test only asserts the
+     * job name appears somewhere in the warning, which the reordered or
+     * partially-dropped concatenations could still satisfy.
+     */
+    public function undefined_job_reference_warning_message_is_assembled_with_exact_text(): void
+    {
+        $result = new ValidationResult();
+        FlowConfiguration::fromArray('lint', [
+            'jobs' => ['phpcs_src', 'nonexistent'],
+        ], ['phpcs_src'], $result);
+
+        $expected = "Flow 'lint' references undefined job 'nonexistent'. It will be skipped.";
+        $this->assertContains($expected, $result->getWarnings());
+    }
+
     // ========================================================================
     // Execution mode (TDD — will fail until implementation exists)
     // ========================================================================
