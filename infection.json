@@ -26,9 +26,11 @@
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeDryRun::150",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::23",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::64",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::72",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::47",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::54",
-                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204"
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204",
+                "Wtyd\\GitHooks\\Utils\\FileUtils::getCurrentBranch::73"
             ]
         },
         "DecrementInteger": {
@@ -38,13 +40,17 @@
                 "Wtyd\\GitHooks\\Utils\\Platform::isWindows",
                 "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds::74",
                 "Wtyd\\GitHooks\\Execution\\ThreadCapability::__construct::21",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::69",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::72",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::51",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::54",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::115",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::57",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::61",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::allocate::64",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::239",
                 "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch::144",
+                "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch::206",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::210",
@@ -103,12 +109,20 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::migrate",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::220",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::756",
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::64",
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::75",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::132",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::143",
                 "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::211",
                 "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::222"
+            ]
+        },
+        "FalseValue": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::685",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::777",
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::getBranchDiffFilesLazy::275"
             ]
         },
         "SharedCaseRemoval": {
@@ -129,7 +143,8 @@
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
                 "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
-                "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::45"
+                "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::45",
+                "Wtyd\\GitHooks\\Output\\CI\\GitLabCIDecorator::onJobError::92"
             ]
         },
         "MethodCallRemoval": {
@@ -154,7 +169,13 @@
         "FunctionCallRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::execCommand::98",
-                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::239"
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::239",
+                "Wtyd\\GitHooks\\Jobs\\PhpunitJob::getCachePaths::32",
+                "Wtyd\\GitHooks\\Jobs\\PhpunitJob::getCachePaths::33",
+                "Wtyd\\GitHooks\\Jobs\\PhpcsJob::extractCacheFromRuleset::85",
+                "Wtyd\\GitHooks\\Jobs\\PhpcsJob::extractCacheFromRuleset::86",
+                "Wtyd\\GitHooks\\Jobs\\PsalmJob::getCachePaths::48",
+                "Wtyd\\GitHooks\\Jobs\\PsalmJob::getCachePaths::49"
             ]
         },
         "Assignment": {
@@ -165,12 +186,16 @@
         "ReturnRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\ExecutionContext::filterFilesForMode::99",
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::filterFilesForMode::216",
                 "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::208",
                 "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::278",
                 "Wtyd\\GitHooks\\Jobs\\JobAbstract::isEmpty::293",
+                "Wtyd\\GitHooks\\Jobs\\PhpcsJob::extractCacheFromRuleset::88",
                 "Wtyd\\GitHooks\\Hooks\\PatternMatcher::fileMatchesPattern::91",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::85",
-                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::120"
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::120",
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationParser::resolveOneJob::375",
+                "Wtyd\\GitHooks\\Execution\\Admission\\AdmissionContext::isJobReady::104"
             ]
         },
         "Coalesce": {
@@ -186,6 +211,7 @@
                 "Wtyd\\GitHooks\\Hooks\\PatternMatcher::matchesFiles::74",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::91",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::101",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::111",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::228",
                 "Wtyd\\GitHooks\\Execution\\FlowMemoryHandler::setup::71"
             ]
@@ -246,6 +272,11 @@
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::50",
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::emitErrorAnnotations::50",
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::123"
+            ]
+        },
+        "UnwrapStrReplace": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Utils\\FileUtils::expandDirectory::241"
             ]
         },
         "ElseIfNegation": {
