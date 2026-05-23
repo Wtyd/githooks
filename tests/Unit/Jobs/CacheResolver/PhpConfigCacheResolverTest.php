@@ -257,6 +257,132 @@ class PhpConfigCacheResolverTest extends TestCase
         $this->assertSame($expected, PhpConfigCacheResolver::resolve($path, 'setCacheFile'));
     }
 
+    // ========================================================================
+    // Infection Tier 2 — adversarial tests for the regex parser internals.
+    // Cover preg_quote on the method name, $matches[0|1|2] index integrity,
+    // and the realpath/configPath fallback in collectDirConcat.
+    // ========================================================================
+
+    /**
+     * Kills L1839 / L1982 (PregQuote removal in `resolve` and `declaresUnresolvable`):
+     * a method name containing a regex metacharacter (e.g. `.`) must be treated
+     * as a literal. Without preg_quote, `set.Cache` would match any character
+     * between `set` and `Cache`, so `->setMyCache(__DIR__ . '/x')` would match
+     * the regex for method name `set.Cache` and resolve a path. The fix
+     * (preg_quote) prevents that false positive.
+     *
+     * @test
+     */
+    public function method_name_with_regex_metacharacter_does_not_match_unrelated_call(): void
+    {
+        $path = $this->writePhp(
+            'meta-quote.php',
+            "<?php\nreturn function (\$config) { \$config->setMyCache(__DIR__ . '/x'); };\n"
+        );
+
+        // Original: preg_quote('set.Cache', '/') = 'set\.Cache' — no match.
+        // Mutant: no quoting; '.' matches any character, so `setMyCache`
+        // (M matches the dot) WOULD resolve.
+        $this->assertNull(PhpConfigCacheResolver::resolve($path, 'set.Cache'));
+
+        // Same logic for declaresUnresolvable.
+        $this->assertFalse(PhpConfigCacheResolver::declaresUnresolvable($path, 'set.Cache'));
+    }
+
+    /**
+     * Kills L1891 / L1904 (`$matches[0][$i][0]` → `$matches[1][$i][0]` or `…[$i][1]`):
+     * the full match (position 0) is what the resolver compares against
+     * `$lastCallOffset` for tie-breaking. If the index is swapped to a
+     * capture group, the position-matching breaks and the resolver returns
+     * the wrong hit when there are multiple calls.
+     *
+     * Strategy: two `cacheDirectory(__DIR__ . '/x')` calls. The resolver
+     * must return the LAST one; if `$matches[0]` is swapped to `$matches[1]`
+     * (the inner string capture, which has its own offsets that point INSIDE
+     * the call, not at the `->` start), the tie-break fails.
+     *
+     * @test
+     */
+    public function multiple_dir_concat_calls_resolve_to_the_last_by_file_position(): void
+    {
+        $path = $this->writePhp(
+            'last-dir.php',
+            "<?php\nreturn function (\$config) {\n"
+            . "    \$config->cacheDirectory(__DIR__ . '/first');\n"
+            . "    \$config->cacheDirectory(__DIR__ . '/last');\n"
+            . "};\n"
+        );
+
+        $expected = dirname(realpath($path)) . '/last';
+        $this->assertSame($expected, PhpConfigCacheResolver::resolve($path, 'cacheDirectory'));
+    }
+
+    /**
+     * Kills L1917 / L1930 / L1956 (`$matches[1]` ↔ `$matches[0]`/`[2]` swap
+     * for the single-quote capture, and `$matches[2]` ↔ `$matches[1]` for the
+     * double-quote capture): each quoted literal must be picked from its own
+     * capture group, not from the full match or the other quote group.
+     *
+     * Strategy: mix single-quoted and double-quoted literals in the same
+     * file. If the index swap returns the wrong capture, the resolved path
+     * either contains the literal `'…'` quotes (full match) or the wrong
+     * literal content.
+     *
+     * @test
+     */
+    public function quote_style_is_resolved_from_its_own_capture_group(): void
+    {
+        $single = $this->writePhp(
+            'single.php',
+            "<?php\nreturn function (\$config) { \$config->cacheDirectory('/single-quoted'); };\n"
+        );
+        $double = $this->writePhp(
+            'double.php',
+            '<?php' . "\n" . 'return function ($config) { $config->cacheDirectory("/double-quoted"); };' . "\n"
+        );
+
+        // Both must resolve to the LITERAL string, not to the full call match
+        // (which includes "->cacheDirectory(...)"). A swap to $matches[0]
+        // would surface the entire call substring; a swap between [1] and [2]
+        // would leave the value empty for one of the quote styles.
+        $this->assertSame('/single-quoted', PhpConfigCacheResolver::resolve($single, 'cacheDirectory'));
+        $this->assertSame('/double-quoted', PhpConfigCacheResolver::resolve($double, 'cacheDirectory'));
+    }
+
+    /**
+     * Kills L1852 (Ternary swap `realpath($cfg) ?: $cfg` → `realpath ? cfg : realpath`):
+     * when realpath succeeds the dir-concat base must be the realpath
+     * directory, not the original (possibly relative) configPath dirname.
+     *
+     * Strategy: invoke the resolver with a path whose realpath differs from
+     * its dirname (a symlink). Hard to set up portably — fall back to a
+     * relative-path scenario: chdir into the sandbox and pass `./file.php`.
+     * realpath resolves to the absolute sandbox; dirname('./file.php') is '.'.
+     *
+     * @test
+     */
+    public function dir_concat_base_uses_realpath_when_config_path_is_relative(): void
+    {
+        $path = $this->writePhp(
+            'rel-base.php',
+            "<?php\nreturn function (\$config) { \$config->cacheDirectory(__DIR__ . '/cache'); };\n"
+        );
+        $cwd = (string) getcwd();
+        chdir($this->sandbox);
+        try {
+            $relative = './' . basename($path);
+            $resolved = PhpConfigCacheResolver::resolve($relative, 'cacheDirectory');
+
+            // Original: dirname(realpath('./rel-base.php')) = absolute sandbox.
+            // Mutant: dirname('./rel-base.php') = '.', so $resolved = './cache'.
+            $this->assertNotSame('./cache', $resolved);
+            $this->assertStringEndsWith('/cache', (string) $resolved);
+            $this->assertStringStartsWith('/', (string) $resolved);
+        } finally {
+            chdir($cwd);
+        }
+    }
+
     private function writePhp(string $name, string $content): string
     {
         $path = $this->sandbox . '/' . $name;
