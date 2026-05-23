@@ -51,19 +51,31 @@ php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --by-mutator
 # 3. Ficheros con más escapes (orienta orden de análisis)
 php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --by-file --top=15
 
-# 4. Lista detallada de mutants de un fichero (con la línea del log para abrirla con Read)
+# 4. Lista detallada de mutants de un fichero (con la línea del log para volcar el diff)
 php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php
 
 # 5. Lo mismo pero para timeouts
 php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php --section=timeout
+
+# 6. Diff completo de N mutants (acepta lista de L<n> o números pelados)
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --diff=552,673,686 --lines=12
 ```
 
-`--filter` imprime una línea por mutant con `L<n>` (línea del log), índice, path, mutator, ID. Usa el `L<n>` como `offset` para leer el diff con `Read`:
+`--filter` imprime una línea por mutant con `L<n>` (línea del log), índice, path, mutator, ID. Para inspeccionar el diff:
 
 ```
 L552  43) /var/www/html1/src/Execution/FlowExecutor.php:286  Continue_  f4ef6cc1...
-   → Read reports/infection/infection.log offset=552 limit=15
+   → php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --diff=552 --lines=15
 ```
+
+**Usa `--diff` en bulk para varios mutants a la vez** (ej. al procesar un módulo entero):
+
+```bash
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php \
+    --diff=3780,3792,3805,3818,3831,3844 --lines=10
+```
+
+Una sola invocación devuelve los N bloques separados por `=== L<n> ===`. Mucho más eficiente que `Read` individual por mutant y **evita** los `for L in …; do sed -n …; done` que disparan prompts de permiso y son frágiles ante cambios de layout del log.
 
 **Nunca usar** `Read` sobre `mutation-report.html` — romperá el límite de mensaje y no añade información sobre los `.log`/`.md`. Si el usuario lo adjunta, recordárselo y pedir que aporte el `infection.log` o que re-ejecute Infection acotado (ver abajo).
 
@@ -190,9 +202,12 @@ Cuando se quiera bajar al detalle de un módulo concreto:
 php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php
 # Para timeouts:
 php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --filter=src/Execution/FlowExecutor.php --section=timeout
+
+# Volcar los diffs de N mutants en una sola invocación (acepta lista de L<n> o números pelados):
+php8.4 .claude/skills/mutation-analyzer/scripts/infection-stats.php --diff=552,673,686 --lines=12
 ```
 
-Y luego `Read reports/infection/infection.log offset=L<n> limit=15` para inspeccionar el diff exacto. **No** componer `grep | sed`/`awk` ad-hoc — rompe permisos y es frágil.
+**Nunca** componer `for L in …; do sed -n "${L},$((L+10))p" …; done` ni `grep | awk` ad-hoc: dispara prompts de permiso para `sed` / `awk` y es frágil ante cambios de layout. Usa `--diff` (incluso para un solo mutant) o `Read reports/infection/infection.log offset=L<n> limit=15` para casos puntuales.
 
 **Nunca abrir `mutation-report.html`**: es HTML de 5-10 MB con CSS/JS embebidos; rompe el límite de mensaje y no aporta sobre los `.log`/`.md`.
 

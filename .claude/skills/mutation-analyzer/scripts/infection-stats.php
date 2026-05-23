@@ -28,6 +28,12 @@
  *   php8.4 infection-stats.php --section=timeout
  *       List timed-out mutants (default --section=escaped).
  *
+ *   php8.4 infection-stats.php --diff=L1[,L2,...] [--lines=N]
+ *       Dump the diff block of each mutant whose log line is given as L<n>
+ *       (use the L<n> values from --filter). Default block size is 12 lines.
+ *       Avoids `sed -n "${L},$((L+10))p"` loops that trip the permission
+ *       allow-list and that are fragile across log layout changes.
+ *
  * Flags can combine: `--by-file --top=10`.
  *
  * The reports directory defaults to reports/infection/ relative to the cwd
@@ -280,6 +286,72 @@ function commandFilter(array $opts): void
     printf("--- %d mutants ---%s", $count, PHP_EOL);
 }
 
+function commandDiff(array $opts): void
+{
+    $dir = reportsDir($opts);
+    $path = "$dir/infection.log";
+    if (!is_file($path)) {
+        fail("infection.log not found at '$path'.");
+    }
+
+    $raw = $opts['diff'];
+    if ($raw === '' || $raw === '1') {
+        fail('--diff requires one or more line offsets, e.g. --diff=3780,3792 (use the L<n> from --filter).');
+    }
+    $lines = isset($opts['lines']) ? max(1, (int) $opts['lines']) : 12;
+
+    // Parse offsets: tolerate "3780", "L3780", whitespace, and stray commas.
+    $offsets = [];
+    foreach (preg_split('/[,\s]+/', $raw) ?: [] as $token) {
+        $token = ltrim($token, 'L');
+        if ($token === '' || !ctype_digit($token)) {
+            continue;
+        }
+        $offsets[] = (int) $token;
+    }
+    if ($offsets === []) {
+        fail("--diff has no valid numeric offsets after parsing '$raw'.");
+    }
+
+    // Sort once so multiple offsets read the file in a single forward pass.
+    sort($offsets);
+    $needed = [];
+    foreach ($offsets as $start) {
+        for ($i = $start; $i < $start + $lines; $i++) {
+            $needed[$i] = true;
+        }
+    }
+
+    $buffer = [];
+    $handle = fopen($path, 'rb');
+    if ($handle === false) {
+        fail("Cannot read '$path'.");
+    }
+    $lineNo = 0;
+    while (($line = fgets($handle)) !== false) {
+        $lineNo++;
+        if (isset($needed[$lineNo])) {
+            $buffer[$lineNo] = rtrim($line, "\r\n");
+        }
+        if ($lineNo > max($offsets) + $lines) {
+            break;
+        }
+    }
+    fclose($handle);
+
+    // Emit each requested block in original offset order with a marker so the
+    // caller can demarcate them when several are queried at once.
+    foreach ($offsets as $start) {
+        printf("=== L%d ===%s", $start, PHP_EOL);
+        for ($i = $start; $i < $start + $lines; $i++) {
+            if (isset($buffer[$i])) {
+                echo $buffer[$i] . PHP_EOL;
+            }
+        }
+        echo PHP_EOL;
+    }
+}
+
 function help(): void
 {
     echo <<<HELP
@@ -290,6 +362,7 @@ Modes:
   --by-file [--top=N] [--section=]   escaped|timeout per file
   --by-mutator [--escaped-only]      per-mutator.md compact list
   --filter=<needle> [--section=]     mutants whose path contains the needle
+  --diff=L1[,L2,...] [--lines=N]     dump diff blocks at log offsets (default 12 lines)
 
 Common options:
   --reports=<path>   override reports dir (default: reports/infection/)
@@ -320,6 +393,10 @@ if (isset($opts['by-mutator'])) {
 }
 if (isset($opts['filter'])) {
     commandFilter($opts);
+    exit(0);
+}
+if (isset($opts['diff'])) {
+    commandDiff($opts);
     exit(0);
 }
 
