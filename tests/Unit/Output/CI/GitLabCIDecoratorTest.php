@@ -611,6 +611,358 @@ class GitLabCIDecoratorTest extends TestCase
         $this->assertStringContainsString('[collapsed=false]', $body);
     }
 
+    // ========================================================================
+    // Mutation testing Tier 3 — buffer accumulation, body composition, flush
+    // side-effects and finally-block guarantees. The pre-existing tests
+    // covered the happy paths but did not pin the buffer concatenation
+    // (`$buffers[name] ?? ''` . capture) nor the symmetry of the trim/rtrim
+    // pair on KO output, nor that `inner->flush()` is invoked exactly once.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L62  Coalesce             `($buffers[name] ?? '') . capture` → `('' ?? $buffers[name]) . capture`
+     *   - L62  ConcatOperandRemoval `($buffers[name] ?? '') . capture` → `capture`
+     *   - L69  Concat                same pattern on onJobOutput
+     *   - L86  Coalesce              same pattern on onJobError
+     *   - L86  ConcatOperandRemoval  same pattern on onJobError
+     *
+     * Strategy: drive the decorator with an inner that emits a different
+     * marker on every method call (start-1, output-A, output-B, success).
+     * Without the buffer accumulation (or with the swapped coalesce, which
+     * always picks `''` when the buffer already exists) every prior marker
+     * would be lost from the body emitted by emitSection. We assert ALL
+     * markers appear in the section body and in the declared order.
+     */
+    public function buffered_body_accumulates_all_inner_emissions_before_close(): void
+    {
+        $inner = new class implements OutputHandler {
+            public function onFlowStart(int $totalJobs): void
+            {
+            }
+            public function onJobStart(string $jobName): void
+            {
+                echo "marker:start\n";
+            }
+            public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+            {
+                echo "marker:output($chunk)\n";
+            }
+            public function onJobSuccess(string $jobName, string $time): void
+            {
+                echo "marker:success\n";
+            }
+            public function onJobError(string $jobName, string $time, string $output): void
+            {
+                echo "marker:error\n";
+            }
+            public function onJobSkipped(string $jobName, string $reason): void
+            {
+            }
+            public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+            }
+            public function flush(): void
+            {
+            }
+        };
+
+        $decorator = new GitLabCIDecorator($inner);
+
+        // OK path: start + 2 outputs + success — buffer must accumulate.
+        ob_start();
+        $decorator->onJobStart('j1');
+        $decorator->onJobOutput('j1', 'A', false);
+        $decorator->onJobOutput('j1', 'B', false);
+        $decorator->onJobSuccess('j1', '1s');
+        $okOut = preg_replace('/\033\[0K/', '', ob_get_clean() ?: '') ?? '';
+
+        $this->assertStringContainsString('marker:start', $okOut);
+        $this->assertStringContainsString('marker:output(A)', $okOut);
+        $this->assertStringContainsString('marker:output(B)', $okOut);
+        $this->assertStringContainsString('marker:success', $okOut);
+
+        // Their order must be preserved.
+        $idxStart = strpos($okOut, 'marker:start');
+        $idxA = strpos($okOut, 'marker:output(A)');
+        $idxB = strpos($okOut, 'marker:output(B)');
+        $idxSuccess = strpos($okOut, 'marker:success');
+        $this->assertNotFalse($idxStart);
+        $this->assertNotFalse($idxA);
+        $this->assertNotFalse($idxB);
+        $this->assertNotFalse($idxSuccess);
+        $this->assertLessThan($idxA, $idxStart, 'start marker precedes output(A)');
+        $this->assertLessThan($idxB, $idxA, 'output(A) precedes output(B)');
+        $this->assertLessThan($idxSuccess, $idxB, 'output(B) precedes success');
+
+        // KO path: start + output + error — onJobError must concatenate on
+        // top of the previous buffer, not reset it. (Kills L86 mutants.)
+        $decorator2 = new GitLabCIDecorator($inner);
+        ob_start();
+        $decorator2->onJobStart('j2');
+        $decorator2->onJobOutput('j2', 'X', false);
+        $decorator2->onJobError('j2', '1s', '');
+        $koOut = preg_replace('/\033\[0K/', '', ob_get_clean() ?: '') ?? '';
+
+        $this->assertStringContainsString('marker:start', $koOut);
+        $this->assertStringContainsString('marker:output(X)', $koOut);
+        $this->assertStringContainsString('marker:error', $koOut);
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L91 UnwrapTrim `if (trim($output) !== '')` → `if ($output !== '')`
+     *
+     * Output is pure whitespace (`"  \t  \n  "`): the body must contain ONLY
+     * the inner's emissions, never the raw whitespace. The previous
+     * `ko_section_omits_error_block_when_tool_output_is_blank` test used a
+     * loose `assertStringNotContainsString('   ', substr(...))` whose substring
+     * boundary was fragile against ANSI sequences; we anchor exactly on the
+     * absence of the rtrimmed whitespace.
+     */
+    public function ko_pure_whitespace_output_is_filtered_out_by_trim_guard(): void
+    {
+        $inner = $this->createMock(OutputHandler::class);
+        $inner->method('onJobError');
+
+        $decorator = new GitLabCIDecorator($inner);
+
+        ob_start();
+        $decorator->onJobError('phpstan', '1s', "   \t   \n   ");
+        $output = preg_replace('/\033\[0K/', '', ob_get_clean() ?: '') ?? '';
+
+        // If the trim guard is unwrapped, the body contains "rtrim(...) . \n"
+        // — for "   \t   \n   " that's "   \t   \n". Assert the body
+        // between job name and section_end does not contain leading triple
+        // whitespace or the explicit tab.
+        $bodyStart = strpos($output, "phpstan\n");
+        $this->assertNotFalse($bodyStart);
+        $body = substr($output, $bodyStart + strlen("phpstan\n"));
+        $sectionEnd = strpos($body, 'section_end:');
+        $this->assertNotFalse($sectionEnd);
+        $bodyContent = substr($body, 0, $sectionEnd);
+
+        $this->assertSame(
+            '',
+            $bodyContent,
+            'Pure whitespace output must yield an empty body, not the raw whitespace'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L92 UnwrapRtrim `$body .= rtrim($output) . "\n"` → `$body .= $output . "\n"`
+     *   - L92 Concat (order swap) → `$body .= "\n" . rtrim($output)`
+     *   - L92 Assignment `$body .=` → `$body =`
+     *
+     * Drive a KO with a previously-buffered marker AND an `$output` that
+     * already ends with `\n`. The body composition must:
+     *   1. preserve the prior buffer (kills Assignment),
+     *   2. trim the trailing newline before appending (kills UnwrapRtrim
+     *      — without rtrim we'd get `…\n\n` between content and section_end),
+     *   3. place the error content BEFORE the appended `\n` (kills Concat
+     *      order swap — the swap would emit `\nERROR` and the trailing-
+     *      newline guard on L143 would then add yet another `\n`).
+     */
+    public function ko_body_composition_pins_assignment_rtrim_and_concat_order(): void
+    {
+        $innerPrior = new class implements OutputHandler {
+            public function onFlowStart(int $totalJobs): void
+            {
+            }
+            public function onJobStart(string $jobName): void
+            {
+                echo "PRIOR\n";
+            }
+            public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+            {
+            }
+            public function onJobSuccess(string $jobName, string $time): void
+            {
+            }
+            public function onJobError(string $jobName, string $time, string $output): void
+            {
+            }
+            public function onJobSkipped(string $jobName, string $reason): void
+            {
+            }
+            public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+            }
+            public function flush(): void
+            {
+            }
+        };
+
+        $decorator = new GitLabCIDecorator($innerPrior);
+
+        ob_start();
+        $decorator->onJobStart('j');
+        // $output already ends with \n — rtrim must strip exactly one newline
+        // before the explicit `. "\n"` appends.
+        $decorator->onJobError('j', '1s', "ERROR\n");
+        $raw = ob_get_clean() ?: '';
+        $output = preg_replace('/\033\[0K/', '', $raw) ?? '';
+
+        // 1) PRIOR marker survives — kills Assignment.
+        $this->assertStringContainsString('PRIOR', $output);
+
+        // 2) Error content + exactly one \n — kills UnwrapRtrim. Without
+        //    rtrim, body would contain "ERROR\n\n" before section_end.
+        $this->assertStringNotContainsString("ERROR\n\nsection_end:", $output);
+
+        // 3) ERROR appears before the appended newline, not after. The
+        //    swapped concat (`"\n" . rtrim($output)`) would produce
+        //    "PRIOR\n\nERROR" (the appended \n is now the prefix) and the
+        //    trailing-newline guard at L143 would add another \n →
+        //    "PRIOR\n\nERROR\n". The "ERROR\n" still appears, so we anchor
+        //    on the absence of the spurious leading-\n pattern between
+        //    PRIOR and ERROR.
+        $this->assertMatchesRegularExpression(
+            '/PRIOR\nERROR\nsection_end:/',
+            $output,
+            'ERROR must follow PRIOR with exactly one \n, then \n then section_end'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L112 MethodCallRemoval `$this->captureInner(function () { ... })` removed
+     *   - L113 MethodCallRemoval `$this->inner->flush()` removed
+     *
+     * The pre-existing `inner_flush_output_is_suppressed_…` test asserted
+     * that the decorator emits `''` after a `flush()` — but that assertion
+     * is also satisfied when the closure is never invoked at all. Here we
+     * use an inner that records the invocation count of `flush()` in a
+     * public property. The decorator must call `inner->flush()` exactly
+     * once even though it captures (and discards) its output.
+     */
+    public function decorator_flush_invokes_inner_flush_exactly_once(): void
+    {
+        $inner = new class implements OutputHandler {
+            public int $flushCalls = 0;
+            public function onFlowStart(int $totalJobs): void
+            {
+            }
+            public function onJobStart(string $jobName): void
+            {
+            }
+            public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+            {
+            }
+            public function onJobSuccess(string $jobName, string $time): void
+            {
+            }
+            public function onJobError(string $jobName, string $time, string $output): void
+            {
+            }
+            public function onJobSkipped(string $jobName, string $reason): void
+            {
+            }
+            public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+                $this->flushCalls += 0; // touch to keep interface satisfied
+            }
+            public function flush(): void
+            {
+                $this->flushCalls++;
+                echo "framed error block\n"; // must be suppressed by captureInner
+            }
+        };
+
+        $decorator = new GitLabCIDecorator($inner);
+
+        ob_start();
+        $decorator->flush();
+        $captured = ob_get_clean() ?: '';
+
+        $this->assertSame(1, $inner->flushCalls, 'inner->flush() must be called exactly once');
+        $this->assertSame('', $captured, 'inner.flush() output must be discarded by captureInner');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L120 UnwrapFinally `try { $action(); } finally { $captured = ob_get_clean(); }`
+     *     → `$action(); $captured = ob_get_clean();`
+     *
+     * Without the finally block, an exception thrown inside the captured
+     * closure would leave the output buffer open, corrupting any
+     * subsequent output that the test (or production code) writes to
+     * stdout. We invoke a decorator method whose inner closure throws,
+     * verify the exception propagates, and then assert that the
+     * `ob_get_level()` is back to the level we observed before invoking
+     * the decorator — proving the buffer was popped by the finally block.
+     */
+    public function captureInner_finally_pops_output_buffer_when_inner_throws(): void
+    {
+        $inner = new class implements OutputHandler {
+            public function onFlowStart(int $totalJobs): void
+            {
+            }
+            public function onJobStart(string $jobName): void
+            {
+                throw new \RuntimeException('inner explodes during onJobStart');
+            }
+            public function onJobOutput(string $jobName, string $chunk, bool $isStderr): void
+            {
+            }
+            public function onJobSuccess(string $jobName, string $time): void
+            {
+            }
+            public function onJobError(string $jobName, string $time, string $output): void
+            {
+            }
+            public function onJobSkipped(string $jobName, string $reason): void
+            {
+            }
+            public function onJobDryRun(string $jobName, string $command): void
+            {
+            }
+            public function onJobWaiting(string $jobName, array $waitingFor): void
+            {
+            }
+            public function flush(): void
+            {
+            }
+        };
+
+        $decorator = new GitLabCIDecorator($inner);
+
+        $levelBefore = ob_get_level();
+
+        try {
+            $decorator->onJobStart('exploder');
+            $this->fail('expected RuntimeException to propagate');
+        } catch (\RuntimeException $e) {
+            $this->assertSame('inner explodes during onJobStart', $e->getMessage());
+        }
+
+        $this->assertSame(
+            $levelBefore,
+            ob_get_level(),
+            'finally must pop the output buffer started by captureInner even on exception'
+        );
+    }
+
     /**
      * Build a clock closure that returns `$values` in order, then sticks at
      * the final value to keep tests stable if the implementation incidentally

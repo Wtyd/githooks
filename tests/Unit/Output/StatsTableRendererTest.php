@@ -291,6 +291,262 @@ class StatsTableRendererTest extends TestCase
     // cleanly and existing assertions still hold.
     // ========================================================================
 
+    // ========================================================================
+    // Mutation testing Tier 3 — strict asserts that pin down the exact cell
+    // value rather than a permissive substring. The previous tests already
+    // covered most branches but the matched substrings overlapped with
+    // unrelated cells (e.g. `'-'` appears in many empty cells) leaving these
+    // mutants alive.
+    // ========================================================================
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L106 Ternary `$time !== '' ? $time : '-'` → `... ? '-' : $time`
+     *
+     * The pre-existing `time_column_renders_dash_for_empty_execution_time`
+     * test used the regex `/blank.*-/` which also matches when Peak Cores /
+     * Peak Memory render as `-` (rest of the row), so the inverted ternary
+     * survived. We pin both branches: a job WITH a non-empty time must show
+     * exactly that text in its time column, and a job WITH an empty time
+     * must show `-`.
+     */
+    public function time_column_renders_exact_time_or_dash(): void
+    {
+        $stats = $this->buildEmptyStats();
+
+        $withTime = new FlowResult('qa', [new JobResult('a', true, '', '4.20s')], '4.20s');
+        $withTime->setMemoryStats($stats);
+        $output1 = new BufferedOutput();
+        (new StatsTableRenderer())->render($output1, $withTime);
+        $this->assertMatchesRegularExpression(
+            '/\| a\s+\|.*\|\s*4\.20s\s*\|/',
+            $output1->fetch(),
+            'Non-empty time must appear verbatim in the Time column'
+        );
+
+        $empty = new FlowResult('qa', [new JobResult('b', true, '', '')], '1s');
+        $empty->setMemoryStats($stats);
+        $output2 = new BufferedOutput();
+        (new StatsTableRenderer())->render($output2, $empty);
+        $this->assertMatchesRegularExpression(
+            '/\| b\s+\|[^|]*\|\s*-\s*\|/',
+            $output2->fetch(),
+            'Empty time must render the literal "-" in the Time column'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L111 IfNegation `if ($job->isSkipped())` → `if (!$job->isSkipped())`
+     *   - L115 Ternary `$cores !== null ? (string) $cores : '-'`
+     *
+     * Two adjacent rows: a skipped job whose allocation IS recorded (so the
+     * negated branch would now expose the integer) and a live job with a
+     * declared allocation. The mutant on L111 swaps the branches making the
+     * skipped job render its cores. The mutant on L115 inverts the ternary
+     * so the live job would also render `-` instead of `2`.
+     */
+    public function cores_column_dash_for_skipped_and_integer_for_live(): void
+    {
+        $stats = new MemoryStats(
+            true,
+            0,
+            0.0,
+            [],
+            [],
+            8,
+            0,
+            0.0,
+            [],
+            ['skipped_one' => 99, 'live' => 2]
+        );
+        $jobs = [
+            JobResult::skipped('skipped_one', 'phpcs', 'no input files match', []),
+            new JobResult('live', true, '', '1s'),
+        ];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        // Skipped row → Peak Cores cell is `-` even when an allocation exists.
+        $this->assertMatchesRegularExpression(
+            '/\| skipped_one\s+\|[^|]*\|[^|]*\|\s*-\s*\|/',
+            $rendered,
+            'Skipped job must render "-" in Peak Cores even with an allocation in stats'
+        );
+        // Live row → Peak Cores cell is the integer (`2`), not `-`.
+        $this->assertMatchesRegularExpression(
+            '/\| live\s+\|[^|]*\|[^|]*\|\s*2\s*\|/',
+            $rendered,
+            'Live job must render the allocation integer in Peak Cores'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L121 ReturnRemoval `return 'n/a';` in renderJobMemory
+     *
+     * With the return removed, the function falls through to the
+     * `getMemoryPeak()` path which is null on inactive-sampler runs and
+     * returns `-`. The pre-existing test asserted only
+     * `assertStringContainsString('n/a', $rendered)` which still passed
+     * because the TOTAL row also renders `n/a` independently. Here we pin
+     * the value to the job's row cell.
+     */
+    public function memory_column_renders_n_a_in_job_row_when_sampler_inactive(): void
+    {
+        $stats = new MemoryStats(false, 0, 0.0, [], [], 4, 0, 0.0, [], []);
+        $jobs = [new JobResult('alpha', true, '', '1s')];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        // Pin the job's row, not the TOTAL row. Match `| alpha | ... | n/a |`.
+        $this->assertMatchesRegularExpression(
+            '/\| alpha\s+\|[^|]*\|[^|]*\|[^|]*\|\s*n\/a\s*\|/',
+            $rendered,
+            'Job row Peak Memory cell must be "n/a" when sampler is inactive'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L125 ReturnRemoval `return '-';` when $peak === null
+     *
+     * Sampler active, but the job recorded no memory peak (e.g. job was
+     * skipped or finished before the first sample). The cell must be `-`
+     * — not a literal `' MB'` that the falling-through return path would
+     * produce.
+     */
+    public function memory_column_renders_dash_when_peak_is_null_with_active_sampler(): void
+    {
+        $stats = new MemoryStats(
+            true,
+            500,
+            1.0,
+            ['other' => 500],
+            ['other' => 500],
+            4,
+            1,
+            1.0,
+            ['other'],
+            ['no_peak' => 1, 'other' => 1]
+        );
+        $jobs = [
+            new JobResult('no_peak', true, '', '1s'), // withMemoryPeak() not called
+            (new JobResult('other', true, '', '1s'))->withMemoryPeak(500),
+        ];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        // no_peak row → Peak Memory cell is `-` (not "0 MB" or "MB").
+        $this->assertMatchesRegularExpression(
+            '/\| no_peak\s+\|[^|]*\|[^|]*\|[^|]*\|\s*-\s*\|/',
+            $rendered,
+            'Job with null memory peak must render "-" in Peak Memory'
+        );
+        $this->assertStringNotContainsString(' MB |', preg_replace('/500 MB/', '', $rendered) ?? '');
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L133 MethodCallRemoval `$output->writeln('')` in renderAttribution
+     *
+     * The blank line between the table and the temporal attribution lines is
+     * a visual contract — without it the operator sees the attribution stuck
+     * to the bottom border of the table. We assert the exact blank-line
+     * separation before "Memory peak at".
+     */
+    public function attribution_block_is_preceded_by_a_blank_line_when_sampler_active(): void
+    {
+        $stats = new MemoryStats(
+            true,
+            300,
+            1.0,
+            ['a' => 300],
+            ['a' => 300],
+            4,
+            1,
+            1.0,
+            ['a'],
+            ['a' => 1]
+        );
+        $jobs = [(new JobResult('a', true, '', '1s'))->withMemoryPeak(300)];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        // Table closes with `+----...+\n` ; renderAttribution then writes ''
+        // (a newline) before the "Memory peak" line. We expect at least one
+        // empty line right before "Memory peak at".
+        $this->assertMatchesRegularExpression(
+            '/\+[-+]+\+\n\nMemory peak at /',
+            $rendered,
+            'Attribution block must be preceded by a blank line'
+        );
+    }
+
+    /**
+     * @test
+     *
+     * Kills:
+     *   - L156 ReturnRemoval `return '(no jobs in flight)';` for empty map
+     *
+     * Without the early return the function continues with an empty
+     * `$parts = []`, `implode(' + ', [])` returns `''`, and the attribution
+     * line ends with the colon followed by nothing.
+     */
+    public function memory_attribution_uses_no_jobs_in_flight_marker_when_map_is_empty(): void
+    {
+        $stats = new MemoryStats(
+            true,
+            400,
+            2.5,
+            [],                  // attribution map empty
+            ['a' => 400],
+            4,
+            1,
+            2.5,
+            ['a'],
+            ['a' => 1]
+        );
+        $jobs = [(new JobResult('a', true, '', '1s'))->withMemoryPeak(400)];
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        $this->assertStringContainsString(
+            'Memory peak at 2.50s: (no jobs in flight)',
+            $rendered
+        );
+    }
+
     /** @test */
     public function ko_status_cell_is_wrapped_in_red_when_output_is_decorated(): void
     {
