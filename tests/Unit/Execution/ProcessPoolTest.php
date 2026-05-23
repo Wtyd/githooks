@@ -626,6 +626,71 @@ class ProcessPoolTest extends TestCase
         $pool->terminateAll();
     }
 
+    /**
+     * Infection mutant on ProcessPool:130 (DecrementInteger `?? 1` → `?? 0`):
+     * a job started without an explicit entry in `coresByJob` must still
+     * reserve 1 core. With the mutant `?? 0`, fillPool would let two jobs
+     * coexist without consuming budget, leading to over-allocation.
+     *
+     * @test
+     */
+    function fillPool_reserves_one_core_per_job_without_explicit_cores_entry(): void
+    {
+        // Strategy != null forces the admission path that reads `coresInUse`.
+        // coresBudget=2, two jobs with no entry in coresByJob → each must
+        // add 1 core (the `?? 1` default), totalling 2.
+        $pool = new ProcessPool(
+            2,
+            new GreedyAdmission(),
+            null,            // memoryBudget
+            [],              // coresByJob (empty — forces the ?? 1 default)
+            [],              // memoryReserveByJob
+            2                // coresBudget
+        );
+        $pool->enqueue([
+            $this->makeJob('a', 'sleep 0.3'),
+            $this->makeJob('b', 'sleep 0.3'),
+        ]);
+
+        $pool->fillPool();
+
+        $coresInUse = new \ReflectionProperty(ProcessPool::class, 'coresInUse');
+        $coresInUse->setAccessible(true);
+        $this->assertSame(
+            2,
+            $coresInUse->getValue($pool),
+            'Each started job without an explicit cores entry must reserve exactly 1 core (?? 1 default).'
+        );
+
+        $pool->terminateAll();
+    }
+
+    /**
+     * Infection mutant on ProcessPool:224 (ReturnRemoval): without the early
+     * `return` after pushing to `completedJobs`, a successful result also
+     * leaks into `failedJobs` (double-counted). The two sets must stay
+     * disjoint for `classifyTerminalBlockers` to propagate skips correctly.
+     *
+     * @test
+     */
+    function notify_result_success_does_not_also_add_to_failed_jobs(): void
+    {
+        $pool = new ProcessPool(2);
+        $pool->notifyResult('jobA', true, false);  // success, not skipped
+
+        $completedProp = new \ReflectionProperty(ProcessPool::class, 'completedJobs');
+        $completedProp->setAccessible(true);
+        $failedProp = new \ReflectionProperty(ProcessPool::class, 'failedJobs');
+        $failedProp->setAccessible(true);
+
+        $this->assertSame(['jobA'], $completedProp->getValue($pool));
+        $this->assertSame(
+            [],
+            $failedProp->getValue($pool),
+            'A successful result must not leak into failedJobs — the early return guards the disjointness.'
+        );
+    }
+
     private function makeJob(string $name, string $script): CustomJob
     {
         return new CustomJob(new JobConfiguration($name, 'custom', ['script' => $script]));

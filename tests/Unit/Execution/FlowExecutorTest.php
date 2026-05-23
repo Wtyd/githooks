@@ -9,6 +9,7 @@ use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\GitStagerFake;
 use Tests\Doubles\InjectableFlowExecutor;
 use Tests\Doubles\OutputHandlerSpy;
+use Wtyd\GitHooks\Configuration\AllocatorStrategy;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
@@ -21,6 +22,7 @@ use Wtyd\GitHooks\Jobs\ParallelLintJob;
 use Wtyd\GitHooks\Jobs\ParatestJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
+use Wtyd\GitHooks\Output\DashboardOutputHandler;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\OutputHandler;
 
@@ -1806,5 +1808,113 @@ class FlowExecutorTest extends TestCase
             'fifo blocks behind big head'   => ['fifo',   'big'],
             'greedy skips to small'         => ['greedy', 'small'],
         ];
+    }
+
+    /**
+     * Infection mutant on FlowExecutor:621 (Ternary swap) survives because
+     * `flow_executor_wires_allocator_to_admission_strategy` above injects the
+     * concrete strategy directly into FakeProcessPool, bypassing the real
+     * `resolveAdmissionStrategy()` call. This test pins the mapping at the
+     * unit level so the swap is killed.
+     *
+     * @test
+     */
+    public function resolve_admission_strategy_maps_allocator_to_concrete_strategy(): void
+    {
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $reflection = new \ReflectionMethod(FlowExecutor::class, 'resolveAdmissionStrategy');
+        $reflection->setAccessible(true);
+
+        $greedyOpts = new OptionsConfiguration(false, 1, null, 'full', '', [], null, null, AllocatorStrategy::GREEDY);
+        $this->assertInstanceOf(
+            GreedyAdmission::class,
+            $reflection->invoke($executor, $greedyOpts),
+            "'greedy' allocator must map to GreedyAdmission, not FifoAdmission"
+        );
+
+        $fifoOpts = new OptionsConfiguration(false, 1, null, 'full', '', [], null, null, AllocatorStrategy::FIFO);
+        $this->assertInstanceOf(
+            FifoAdmission::class,
+            $reflection->invoke($executor, $fifoOpts),
+            "'fifo' allocator must map to FifoAdmission, not GreedyAdmission"
+        );
+    }
+
+    /**
+     * Infection mutant on FlowExecutor:924 (DecrementInteger `?? 1` → `?? 0`):
+     * when `Process::getExitCode()` is null (the process did not finish
+     * cleanly — killed, signalled, or never terminated), the defensive
+     * `?? 1` treats it as failure. The mutant `?? 0` would silently treat
+     * abnormal termination as success.
+     *
+     * @test
+     */
+    public function build_result_treats_null_exit_code_as_failure(): void
+    {
+        $process = $this->createMock(\Symfony\Component\Process\Process::class);
+        $process->method('getExitCode')->willReturn(null);
+        $process->method('getOutput')->willReturn('');
+        $process->method('getErrorOutput')->willReturn('');
+
+        $job = new CustomJob(new JobConfiguration('killed_job', 'custom', ['script' => 'true']));
+
+        $executor = new FlowExecutor(new NullOutputHandler());
+        $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildResult');
+        $reflection->setAccessible(true);
+        $result = $reflection->invoke($executor, $job, $process, 0.0);
+
+        $this->assertFalse(
+            $result->isSuccess(),
+            'null exitCode must be treated as failure — the defensive ?? 1 in buildResult guards abnormal termination.'
+        );
+        $this->assertSame(1, $result->getExitCode(), 'JobResult must carry the substituted exitCode (1, not 0).');
+    }
+
+    /**
+     * Infection mutant on FlowExecutor:794 (NotIdentical `!== null` → `=== null`):
+     * the guard `$dashboard !== null && ...` only invokes `$dashboard->tick()`
+     * when a dashboard is actually attached. Test pins the contract: with a
+     * DashboardOutputHandler instance and a clock seam that ticks > 0.2s,
+     * `tick()` is invoked at least once. The mutant inverts the guard and
+     * would never enter the branch when dashboard is non-null, leaving tick
+     * uncalled.
+     *
+     * @test
+     */
+    public function parallel_loop_invokes_dashboard_tick_when_clock_advances(): void
+    {
+        $dashboard = $this->createMock(DashboardOutputHandler::class);
+        $dashboard->expects($this->atLeastOnce())
+            ->method('tick')
+            ->with();
+
+        // Two jobs + processes=2 force executeParallel (the path with the
+        // dashboard tick guard). 3-poll runtime → loop iterates enough times
+        // for the clock seam to cross the 0.2s tick threshold.
+        $jobs = [
+            new CustomJob(new JobConfiguration('a', 'custom', ['script' => 'unused-by-fake'])),
+            new CustomJob(new JobConfiguration('b', 'custom', ['script' => 'unused-by-fake'])),
+        ];
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('a', 0, '', '', 3);
+        $pool->programResult('b', 0, '', '', 3);
+
+        $options = new OptionsConfiguration(false, 2);
+        $plan = new FlowPlan('test', $jobs, $options);
+
+        $executor = new InjectableFlowExecutor($dashboard);
+        $executor->injectPool($pool);
+
+        // Clock seam: each call advances 1s — any (now - lastTick) is > 0.2s.
+        $tick = 0.0;
+        $setClock = new \ReflectionMethod(FlowExecutor::class, 'setClock');
+        $setClock->setAccessible(true);
+        $setClock->invoke($executor, function () use (&$tick): float {
+            $tick += 1.0;
+            return $tick;
+        });
+
+        $executor->execute($plan);
+        // Mock expectations enforce the assertion automatically.
     }
 }

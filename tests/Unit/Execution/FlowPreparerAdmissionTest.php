@@ -150,6 +150,47 @@ class FlowPreparerAdmissionTest extends TestCase
         $this->assertCount(1, $plan->getJobs());
     }
 
+    /**
+     * Infection mutant on FlowPreparer:96 (Continue_ → Break_): a flow with
+     * several entries where the first is admission-skipped must keep iterating
+     * to admit the rest. With `break` the second entry would never enter the
+     * plan, silently dropped. All previous tests use a single entry and miss
+     * this contract.
+     *
+     * @test
+     */
+    public function admission_skip_of_first_entry_does_not_stop_iteration_for_following_entries(): void
+    {
+        // Staged file is in src/B, so:
+        //   - entry 1 (only-files src/A/**) → admission-skipped
+        //   - entry 2 (only-files src/B/**) → admitted
+        $context = $this->fastContextWithStaged(['src/B/Two.php']);
+
+        $jobs = [
+            'lint_a' => new JobConfiguration('lint_a', 'phpstan', ['paths' => ['src']]),
+            'lint_b' => new JobConfiguration('lint_b', 'phpstan', ['paths' => ['src']]),
+        ];
+        $jobRefs = [
+            new JobRef('lint_a', ['src/A/**'], null),
+            new JobRef('lint_b', ['src/B/**'], null),
+        ];
+        $flow = new FlowConfiguration('qa', ['lint_a', 'lint_b'], null, null, null, $jobRefs);
+        $config = $this->makeConfig($jobs, $flow);
+
+        $plan = $this->preparer->prepare($flow, $config, $context, [], [], ExecutionMode::FAST);
+
+        $skipped = $plan->getSkippedJobs();
+        $this->assertArrayHasKey('lint_a', $skipped, 'lint_a must be admission-skipped (only-files src/A/** ≠ staged src/B/Two.php)');
+
+        $admittedJobs = $plan->getJobs();
+        $this->assertCount(
+            1,
+            $admittedJobs,
+            'lint_b must reach the plan despite lint_a being admission-skipped — Continue→Break would drop it silently.'
+        );
+        $this->assertSame('lint_b', $admittedJobs[0]->getName());
+    }
+
     // ------------------------------------------------------------------
     // helpers
     // ------------------------------------------------------------------
