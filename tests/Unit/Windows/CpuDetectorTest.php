@@ -271,4 +271,91 @@ class CpuDetectorTest extends TestCase
         $this->assertSame(0, $exitCode);
         $this->assertSame(['cpudetector-real-exec'], $output);
     }
+
+    // ========================================================================
+    // Infection Tier 2 — wmic and sysctl boundary cases.
+    // ========================================================================
+
+    /**
+     * Kills L3792 (UnwrapTrim on `trim($line)` inside the wmic loop): wmic
+     * pads its output with whitespace on some Windows hosts. Without trim,
+     * is_numeric('  8  ') is false and the detector falls through to return 1.
+     *
+     * @test
+     */
+    function windows_wmic_trims_whitespace_in_output_lines()
+    {
+        $original = getenv('NUMBER_OF_PROCESSORS');
+        putenv('NUMBER_OF_PROCESSORS');
+
+        try {
+            $detector = new WindowsCpuDetectorScriptedExecStub([
+                'output' => ['NumberOfLogicalProcessors', '  8  ', ''],
+                'exit'   => 0,
+            ]);
+
+            $this->assertSame(8, $detector->detect());
+        } finally {
+            if ($original === false) {
+                putenv('NUMBER_OF_PROCESSORS');
+            } else {
+                putenv("NUMBER_OF_PROCESSORS=$original");
+            }
+        }
+    }
+
+    /**
+     * Kills L3818 (`(int) $trimmed > 0` → `>= 0`) and L3831 (LogicalAnd
+     * `&&` → `||`): wmic reporting 0 logical processors must NOT be accepted
+     * as a valid result — the detector must fall through to the sentinel 1.
+     *
+     * - With `>= 0`: 0 is accepted and returned, contradicting the contract.
+     * - With `||`: the guard accepts a non-numeric value AS LONG AS the
+     *   numeric one passes, or a non-positive numeric AS LONG AS it parses.
+     *
+     * @test
+     */
+    function windows_wmic_zero_falls_back_to_sentinel_one()
+    {
+        $original = getenv('NUMBER_OF_PROCESSORS');
+        putenv('NUMBER_OF_PROCESSORS');
+
+        try {
+            $detector = new WindowsCpuDetectorScriptedExecStub([
+                'output' => ['NumberOfLogicalProcessors', '0', ''],
+                'exit'   => 0,
+            ]);
+
+            $this->assertSame(1, $detector->detect());
+        } finally {
+            if ($original === false) {
+                putenv('NUMBER_OF_PROCESSORS');
+            } else {
+                putenv("NUMBER_OF_PROCESSORS=$original");
+            }
+        }
+    }
+
+    /**
+     * Kills L3857 (LogicalAnd `&&` → `||` on `$exitCode === 0 && !empty($output)`
+     * for the sysctl branch): exit code 0 with an EMPTY output must NOT be
+     * treated as a result — the detector must continue to /proc/cpuinfo.
+     *
+     * With `||`, the if-block enters and reads `(int) $output[0]`, which on
+     * an empty array warns + returns 0 (PHP coerces null → 0).
+     *
+     * @test
+     */
+    function unix_sysctl_with_empty_output_falls_through_to_proc_cpuinfo()
+    {
+        $detector = new UnixCpuDetectorStub(
+            [
+                'nproc 2>/dev/null'             => ['output' => [], 'exit' => 127],
+                'sysctl -n hw.ncpu 2>/dev/null' => ['output' => [], 'exit' => 0],
+            ],
+            $procCpuinfoCount = 6
+        );
+
+        $this->assertSame(6, $detector->detect());
+    }
 }

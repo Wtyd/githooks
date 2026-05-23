@@ -244,6 +244,58 @@ class CpuDetectorCgroupTest extends TestCase
                 ['/sys/fs/cgroup/cpuset.cpus.effective' => "5-1\n"],
                 20,
             ],
+
+            // Kills L3999 (Coalesce swap on readCpusetLimit): v2 cpuset.effective
+            // wins over the v1 legacy path when both files are present.
+            // Original: cpuset.effective (??) cpuset/cpuset.cpus → v2 value (2).
+            // Mutant: cpuset/cpuset.cpus (??) cpuset.effective → v1 value (8).
+            'cpuset v2 effective wins over v1 legacy when both present' => [
+                [
+                    '/sys/fs/cgroup/cpuset.cpus.effective' => "0-1\n",   // 2 cpus (v2)
+                    '/sys/fs/cgroup/cpuset/cpuset.cpus'    => "0-7\n",   // 8 cpus (v1 legacy)
+                ],
+                2,
+            ],
+        ];
+    }
+
+    /**
+     * Kills L4038 (LessThanOrEqualTo `$quota <= 0` → `$quota < 0` on
+     * `divideQuota`): the helper must reject quota=0 directly, returning
+     * null. The cgroup decision-table above hides this contract because
+     * `clampToCgroupLimit($limit < 1)` absorbs a 0 return aguas abajo.
+     * Testing `divideQuota` in isolation closes the local contract.
+     *
+     * @test
+     * @dataProvider divideQuotaBoundariesProvider
+     */
+    public function divide_quota_rejects_non_positive_inputs_directly(int $quota, int $period, ?int $expected): void
+    {
+        $detector = new UnixCpuDetectorStub([]);
+        $reflection = new \ReflectionMethod(\Wtyd\GitHooks\Utils\CpuDetector::class, 'divideQuota');
+        $reflection->setAccessible(true);
+
+        $this->assertSame($expected, $reflection->invoke($detector, $quota, $period));
+    }
+
+    /**
+     * @return array<string, array{0: int, 1: int, 2: ?int}>
+     */
+    public function divideQuotaBoundariesProvider(): array
+    {
+        return [
+            // Kills L4038 `<` → would let quota=0 through and produce ceil(0/period)=0.
+            'quota=0 is rejected'             => [0, 100000, null],
+            // Symmetric boundary on quota side: negative.
+            'negative quota is rejected'      => [-1, 100000, null],
+            'cgroup v1 sentinel -1'           => [-1, 100000, null],
+            // Period boundary mirrors the same guard for the other operand.
+            'period=0 is rejected'            => [100000, 0, null],
+            'negative period is rejected'     => [100000, -1, null],
+            // Happy path: ceil division.
+            'happy 200000/100000 → 2'         => [200000, 100000, 2],
+            'fractional 220000/100000 → 3'    => [220000, 100000, 3],  // ceil(2.2)
+            'fractional 100000/100000 → 1'    => [100000, 100000, 1],
         ];
     }
 }
