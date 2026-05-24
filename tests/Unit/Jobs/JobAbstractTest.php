@@ -17,7 +17,6 @@ use Wtyd\GitHooks\Jobs\PsalmJob;
 
 /**
  * Direct coverage for JobAbstract logic that was only exercised indirectly.
- * Infection report 2026-04-20 — L187 CastArray on 'repeat', L216 Coalesce on paths.
  */
 class JobAbstractTest extends TestCase
 {
@@ -174,9 +173,6 @@ class JobAbstractTest extends TestCase
         $this->assertFalse($job->isFixApplied(1));
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster F)
-    // ========================================================================
 
     /** @test */
     public function extract_positive_int_returns_null_for_string_value()
@@ -289,10 +285,6 @@ class JobAbstractTest extends TestCase
         $this->assertFalse($forcedOff->isAccelerable(), 'accelerable=false must override SUPPORTS_FAST=true');
         $this->assertTrue($forcedOn->isAccelerable(), 'accelerable=true must override SUPPORTS_FAST=false');
     }
-
-    // ========================================================================
-    // cores ↔ native-thread-flag interchangeability (v3.3 follow-up)
-    // ========================================================================
 
     /** @test */
     public function getCoresOverride_promotes_phpcs_parallel_when_cores_absent()
@@ -419,16 +411,8 @@ class JobAbstractTest extends TestCase
         $this->assertNull($job->getCoresOverride());
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin getCoresOverride boundary, the (bool)
-    // cast on accelerable arg, and the isEmpty() bool-guard / early return.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L131 GreaterThanOrEqualTo `$value >= 1` → `$value > 1`
      *
      * Boundary: native thread arg = 1 must be promoted to a coresOverride
      * of 1 (the minimum positive integer). The mutant `> 1` would reject
@@ -464,9 +448,6 @@ class JobAbstractTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L318 CastBool `(bool) $this->args['accelerable']` → cast removed
-     *
      * In strict_types mode, the return type `bool` rejects a string return
      * value with TypeError. The cast guarantees the args value (which the
      * configuration loader may not have coerced) is always returned as a
@@ -491,10 +472,6 @@ class JobAbstractTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L462 IfNegation `if (is_bool($value))` → `if (!is_bool($value))`
-     *   - L463 ReturnRemoval `return false;` (early return for bool values)
      *
      * The isEmpty() helper has a special-case contract: booleans are NEVER
      * empty (false is a valid, intentional flag value). With IfNegation,

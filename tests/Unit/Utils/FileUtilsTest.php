@@ -108,10 +108,6 @@ class FileUtilsTest extends ZeroTestCase
         $this->assertFalse($fileUtils->directoryContainsFile($directory, $file));
     }
 
-    // ========================================================================
-    // isSameFile tests
-    // ========================================================================
-
     /** @test */
     function isSameFile_returns_true_for_identical_paths()
     {
@@ -160,10 +156,6 @@ class FileUtilsTest extends ZeroTestCase
         $this->assertFalse($fileUtils->isSameFile('./src/Foo.php', './tests/Foo.php'));
     }
 
-    // ========================================================================
-    // detectMainBranch
-    // ========================================================================
-
     /** @var string[] */
     private const CI_VARS = [
         'GITHUB_BASE_REF',
@@ -171,9 +163,6 @@ class FileUtilsTest extends ZeroTestCase
         'BITBUCKET_PR_DESTINATION_BRANCH',
     ];
 
-    // When PHPUnit runs inside a git hook (e.g. pre-commit), git exports these
-    // vars and they leak into any `git` subprocess, overriding cwd and making
-    // the temp repo lookups target the parent repo instead.
     /** @var string[] */
     private const GIT_ENV_VARS = [
         'GIT_DIR',
@@ -356,19 +345,8 @@ class FileUtilsTest extends ZeroTestCase
         @rmdir($dir);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the case-insensitive extension match in
-    // expandDirectory. The other 3 FileUtils mutants (L73, L206, L241) are
-    // EQUIVALENT/COSMETIC: L73/L206 require mocking `exec()` (out of unit
-    // scope), and L241 (`str_replace('\\','/')`) is unreachable on Linux
-    // file systems where pathnames never contain backslashes.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L230 UnwrapArrayMap `array_flip(array_map('strtolower', $extensions))`
      *
      * Drive with an UPPERCASE extension in the filter and a lowercase file
      * on disk. Without the strtolower over the filter set, the lookup
@@ -394,9 +372,6 @@ class FileUtilsTest extends ZeroTestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L238 UnwrapStrToLower `strtolower($entry->getExtension())`
      *
      * Drive with a lowercase filter and an UPPERCASE file extension on
      * disk. Without strtolower over the entry extension, the lookup

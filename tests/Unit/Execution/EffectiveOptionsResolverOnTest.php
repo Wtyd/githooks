@@ -34,10 +34,6 @@ class EffectiveOptionsResolverOnTest extends TestCase
         $this->resolver = new EffectiveOptionsResolver();
     }
 
-    // ========================================================================
-    // Group B — matching by branch
-    // ========================================================================
-
     /** @test */
     public function B1_literal_master_match_yields_full()
     {
@@ -148,10 +144,6 @@ class EffectiveOptionsResolverOnTest extends TestCase
         $this->assertSame(ExecutionMode::FULL, $resolution->getExecutionMode());
     }
 
-    // ========================================================================
-    // Group D — full cascade across all layers
-    // ========================================================================
-
     /** @test */
     public function D1_cli_fast_wins_over_everything()
     {
@@ -232,10 +224,6 @@ class EffectiveOptionsResolverOnTest extends TestCase
         $this->assertSame(ExecutionMode::FAST, $resolution->getExecutionMode());
         $this->assertSame('flows.ci.options', $resolution->getTrace()['executionMode']['source']);
     }
-
-    // ------------------------------------------------------------------
-    // helpers
-    // ------------------------------------------------------------------
 
     /**
      * @param array<int, array{0: string, 1: string}> $rules tuples [pattern, executionMode]

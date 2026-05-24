@@ -31,10 +31,6 @@ class FlowMemoryHandlerTest extends TestCase
         Mockery::close();
     }
 
-    // ========================================================================
-    // setup()
-    // ========================================================================
-
     /** @test */
     public function setup_returns_false_when_no_thresholds_no_budget_no_stats(): void
     {
@@ -141,10 +137,6 @@ class FlowMemoryHandlerTest extends TestCase
 
         $this->assertSame([], $handler->__capturedWarnings);
     }
-
-    // ========================================================================
-    // tick()
-    // ========================================================================
 
     /** @test */
     public function tick_is_a_noop_before_setup(): void
@@ -296,10 +288,6 @@ class FlowMemoryHandlerTest extends TestCase
         $this->assertSame(1, $flowResult->getMemoryStats()->getCoresPeak());
     }
 
-    // ========================================================================
-    // shouldKill()
-    // ========================================================================
-
     /** @test */
     public function should_kill_returns_false_when_disabled(): void
     {
@@ -345,10 +333,6 @@ class FlowMemoryHandlerTest extends TestCase
 
         $this->assertFalse($handler->shouldKill());
     }
-
-    // ========================================================================
-    // enrichResults()
-    // ========================================================================
 
     /**
      * @test
@@ -567,10 +551,6 @@ class FlowMemoryHandlerTest extends TestCase
         $this->assertSame('tool error', $enriched[0]->getOutput(), 'original output preserved');
     }
 
-    // ========================================================================
-    // attachStats()
-    // ========================================================================
-
     /** @test */
     public function attach_stats_is_a_noop_when_handler_inactive(): void
     {
@@ -656,9 +636,7 @@ class FlowMemoryHandlerTest extends TestCase
         $this->assertNull($flowResult->getMemoryStats(), 'stats block omitted without --stats');
     }
 
-    // ========================================================================
     // Helpers
-    // ========================================================================
 
     private function options(
         ?MemoryBudgetConfiguration $budget = null,

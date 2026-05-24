@@ -11,7 +11,6 @@ use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 
 /**
- * Direct coverage for PhpcsJob. Infection report 2026-04-20 — L47-50.
  */
 class PhpcsJobTest extends TestCase
 {
@@ -425,17 +424,8 @@ XML);
         ];
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the composite guard on the standard arg,
-    // the is_file/is_readable guard on the ruleset path, and the trim() on
-    // the <arg value> attribute.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L69 LogicalAnd `is_string($standard) && $standard !== ''`
      *
      * A non-string `standard` value (e.g. accidentally an array via legacy
      * deep-config) must NOT crash and must fall back to the default cache
@@ -469,9 +459,6 @@ XML);
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L80 LogicalOr `!is_file($rulesetPath) || !is_readable($rulesetPath)`
      *
      * Ruleset file exists but is unreadable: extractCacheFromRuleset must
      * return null and the job must fall back to the default cache. The
@@ -508,9 +495,6 @@ XML);
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L95 UnwrapTrim `trim((string) $arg['value'])` → `(string) $arg['value']`
      *
      * Ruleset's `<arg value>` may carry leading/trailing whitespace
      * (typical when an editor wraps the attribute). Without trim, the

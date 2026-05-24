@@ -126,9 +126,6 @@ PS;
         $this->assertSame('', $sampler->getUnavailableReason());
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements — boundaries, regex anchors, divisor
-    // ========================================================================
 
     /** @test */
     public function it_does_not_invoke_ps_when_pid_set_is_empty(): void

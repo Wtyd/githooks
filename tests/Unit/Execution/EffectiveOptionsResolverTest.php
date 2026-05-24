@@ -56,10 +56,6 @@ class EffectiveOptionsResolverTest extends TestCase
         return [$config, $flow];
     }
 
-    // ========================================================================
-    // resolveSingle — single-flow degenerate / declarative meta-flow
-    // ========================================================================
-
     /** @test */
     public function single_cli_overrides_flow_and_global()
     {
@@ -177,10 +173,6 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertArrayNotHasKey('mainBranch', $resolution->getTrace());
     }
 
-    // ========================================================================
-    // resolveMultiple — ad-hoc and mixed modes
-    // ========================================================================
-
     /** @test */
     public function multiple_ignores_flow_options_and_takes_globals()
     {
@@ -267,10 +259,6 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertTrue($options->isFailFast());
         $this->assertEquals('main', $options->getMainBranch());
     }
-
-    // ========================================================================
-    // time-budget cascade (v3.3 item 4)
-    // ========================================================================
 
     /** @test */
     public function single_time_budget_falls_to_default_when_unset(): void
@@ -410,10 +398,6 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertSame(120, $resolution->getOptions()->getTimeBudget()->getWarnAfter());
         $this->assertSame('flows.options', $resolution->getTrace()['timeBudget']['source']);
     }
-
-    // ========================================================================
-    // memory-budget cascade (v3.3 — gh-48)
-    // ========================================================================
 
     /** @test */
     public function single_memory_budget_cascades_from_flow_to_global(): void
@@ -582,10 +566,6 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertSame('flows.options', $resolution->getTrace()['memoryBudget']['source']);
     }
 
-    // ========================================================================
-    // allocator cascade
-    // ========================================================================
-
     /** @test */
     public function single_allocator_default_when_undeclared(): void
     {
@@ -638,10 +618,6 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertSame('cli', $resolution->getTrace()['allocator']['source']);
     }
 
-    // ========================================================================
-    // stats cascade
-    // ========================================================================
-
     /** @test */
     public function single_stats_default_when_undeclared(): void
     {
@@ -692,9 +668,6 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertSame('cli', $resolution->getTrace()['stats']['source']);
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster D)
-    // ========================================================================
 
     /** @test */
     public function trace_time_budget_value_exposes_both_warn_after_and_fail_after_keys(): void
@@ -764,14 +737,6 @@ class EffectiveOptionsResolverTest extends TestCase
         $this->assertTrue($value);
         $this->assertIsBool($value);
     }
-
-    // ========================================================================
-    // BUG-20 — per-key cascade for executable-prefix, fast-branch-fallback and
-    // reports. These three keys used to be read block-level via
-    // `$base = $flowOptions ?? $globalOptions` and lost the global value when
-    // the flow declared its own `options:` block to override an unrelated key
-    // (e.g. processes or fail-fast).
-    // ========================================================================
 
     /**
      * Decision table for a per-key cascade. Same factor space for each of the

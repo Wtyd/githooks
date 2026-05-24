@@ -203,9 +203,6 @@ class CodeClimateResultFormatterTest extends TestCase
         $this->assertSame('minor', $data[1]['severity']);
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster E)
-    // ========================================================================
 
     /** @test */
     function it_skips_jobs_whose_tool_type_has_no_registered_parser()

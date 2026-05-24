@@ -98,9 +98,6 @@ class FlowConfigurationTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L241 Concat ×2 + ConcatOperandRemoval ×2 (undefined-job warning)
-     *
      * Pin the literal message verbatim. The existing test only asserts the
      * job name appears somewhere in the warning, which the reordered or
      * partially-dropped concatenations could still satisfy.
@@ -115,10 +112,6 @@ class FlowConfigurationTest extends TestCase
         $expected = "Flow 'lint' references undefined job 'nonexistent'. It will be skipped.";
         $this->assertContains($expected, $result->getWarnings());
     }
-
-    // ========================================================================
-    // Execution mode (TDD — will fail until implementation exists)
-    // ========================================================================
 
     /** @test */
     public function it_parses_flow_with_fast_execution()
@@ -172,7 +165,6 @@ class FlowConfigurationTest extends TestCase
 
     /**
      * @test
-     * Kills L74 Concat/ConcatOperandRemoval on the execution-mode error and
      * L75 ReturnRemoval: with an invalid execution the factory must return null.
      */
     public function it_reports_error_and_returns_null_for_invalid_execution_mode()
@@ -201,10 +193,6 @@ class FlowConfigurationTest extends TestCase
 
         $this->assertEmpty($result->getWarnings());
     }
-
-    // ========================================================================
-    // FEAT-2 · `on` per flow — whole-map shape (per-pattern shape is in FlowOnRuleTest)
-    // ========================================================================
 
     /** @test */
     public function on_absent_yields_null_getOn()
@@ -346,10 +334,6 @@ class FlowConfigurationTest extends TestCase
             $result
         );
     }
-
-    // ========================================================================
-    // Meta-flows (v3.3 — xor jobs/flows)
-    // ========================================================================
 
     /** @test */
     public function it_parses_a_meta_flow_with_flow_references()

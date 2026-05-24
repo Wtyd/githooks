@@ -113,10 +113,6 @@ class ExecutionContextTest extends TestCase
         $this->assertEmpty($filtered);
     }
 
-    // ========================================================================
-    // 3-mode execution tests (TDD — will fail until ExecutionContext is refactored)
-    // ========================================================================
-
     /** @test */
     function create_factory_provides_context_instance()
     {
@@ -207,10 +203,6 @@ class ExecutionContextTest extends TestCase
 
         $this->assertEquals(['src/Foo.php'], $filtered);
     }
-
-    // ========================================================================
-    // Lazy loading edge cases (targeting escaped mutants)
-    // ========================================================================
 
     /** @test */
     function create_with_null_main_branch_returns_null_for_fast_branch()
@@ -307,13 +299,8 @@ class ExecutionContextTest extends TestCase
         $this->assertEmpty($result);
     }
 
-    // ========================================================================
-    // Infection Tier 2 — lazy loading, cache sentinel, retry paths
-    // ========================================================================
-
     /**
      * @test
-     * Kills L86 MethodCallRemoval on `ensureStagedLoaded`: calling
      * filterFilesForPaths after create() must trigger a lazy load exactly
      * once. Mockery's `->once()` expectation captures the characteristic
      * directly — no manual counter needed.
@@ -357,7 +344,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     * Kills L142 ReturnRemoval after the cache hit branch: once the branch
      * diff has been successfully loaded, subsequent calls must NOT re-invoke
      * FileUtils::getBranchDiffFiles. `->once()` is the expectation that
      * fails if the mutant lets the method be re-entered.
@@ -377,7 +363,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     * Kills L138 ReturnRemoval + L153 FalseValue: a diff failure must be
      * cached as a sticky sentinel so the second call returns null without
      * re-querying. If the sentinel flips to `true` or the return disappears,
      * the second invocation would pass through and Mockery's `->once()`
@@ -399,7 +384,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     * Kills L147 FalseValue: when mainBranch is null the lazy loader must
      * record the failure and never query FileUtils. Mockery's `->never()`
      * on getBranchDiffFiles enforces the "never queries" contract.
      */
@@ -419,7 +403,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     * Kills L158 MethodCallRemoval on ensureStagedLoaded inside the dedup
      * branch + L159 UnwrapArrayMerge: the branch-diff result must be the
      * deduplicated union of staged and branch files. Without array_merge
      * one side disappears.
@@ -442,7 +425,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     * Kills L99 ReturnRemoval on the FULL branch: filterFilesForMode('full', …)
      * must return null without touching FileUtils at all. `->never()` on both
      * methods declares the intent directly — no counter inspection.
      */
@@ -456,10 +438,6 @@ class ExecutionContextTest extends TestCase
 
         $this->assertNull($context->filterFilesForMode(ExecutionMode::FULL, ['src']));
     }
-
-    // ========================================================================
-    // Infection Tier 2 — fileIsInPaths with real files on disk
-    // ========================================================================
 
     /** @var string[] Temporary files to clean up in tearDown */
     private array $tempPaths = [];
@@ -482,7 +460,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     * Kills L186 guards (six mutants on the file-path match): the first
      * branch of `fileIsInPaths` reaches `isSameFile($file, $path)` ONLY when
      * `$path` is a real file on disk. Previous tests used synthetic paths
      * so `is_file($path)` was always false, leaving the branch untested.
@@ -566,10 +543,6 @@ class ExecutionContextTest extends TestCase
         $this->assertSame([], $filtered);
     }
 
-    // ========================================================================
-    // forInputFiles factory (--files / --files-from)
-    // ========================================================================
-
     /** @test */
     function forInputFiles_exposes_resolution_and_serves_valid_list_as_staged()
     {
@@ -641,11 +614,6 @@ class ExecutionContextTest extends TestCase
         $this->assertNull($context->getInputFilesResolution());
     }
 
-    // ========================================================================
-    // V33-029: absolute --files paths must match job.paths (relative)
-    // Tabla en tests/Unit/Execution/factors-input-files.md
-    // ========================================================================
-
     /**
      * @test
      * @dataProvider absoluteAndRelativeInputFilesCases
@@ -712,10 +680,6 @@ class ExecutionContextTest extends TestCase
         $this->assertNotSame($original, $derived);
     }
 
-    // ========================================================================
-    // isAbsolutePath() coverage (private — exercised via normaliseToCwdRelative)
-    // ========================================================================
-
     /**
      * Decision-table test for the Windows drive-letter path detection at L275.
      *
@@ -728,14 +692,9 @@ class ExecutionContextTest extends TestCase
      *  - third char: `/`, `\`, other
      *
      * Mutants killed:
-     *  - L275 GreaterThanOrEqualTo (`>=` → `>`): kills when `len === 3`.
-     *  - L275 DecrementInteger (`$path[1]` → `$path[0]`): a `C:\` path passes
      *    via index 1, never via index 0.
-     *  - L275 LogicalAnd (`&&` → `||`/precedence shift): a path like `"abXfoo"`
      *    where [2] is neither `/` nor `\` must NOT be considered absolute.
-     *  - L275 LogicalAndSingleSubExprNegation (`ctype_alpha` → `!ctype_alpha`):
      *    `"3:\foo"` (digit at [0]) must be rejected.
-     *  - L275 LogicalOrAllSubExprNegation in InputFilesResolver:304 (sister code):
      *    paths with `[2]` other than `/`/`\\` rejected.
      *
      * Routed via `withCwd('/abs')` + `filterFilesForPaths` is too coarse for
@@ -776,8 +735,6 @@ class ExecutionContextTest extends TestCase
         ];
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the lazy load in getEffectiveSet, the
     // str_replace/rtrim normalisation pair in normaliseToCwdRelative, and
     // the (string) cast on getcwd().
     //
@@ -785,13 +742,9 @@ class ExecutionContextTest extends TestCase
     // (branchDiffFiles=false cache) are EQUIVALENT: the fall-through path
     // also returns null and the caching is internally consistent. See
     // Infection-2026-05-23.md.
-    // ========================================================================
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L192 MethodCallRemoval `$this->ensureStagedLoaded();` in getEffectiveSet
      *
      * Without the eager load, `$this->stagedFiles` stays at its initial []
      * value and getEffectiveSet returns [] instead of the actual staged
@@ -816,9 +769,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L376 UnwrapStrReplace `str_replace('\\','/', $cwd)` → `$cwd`
      *
      * Drive a Windows-style cwd containing backslashes. With str_replace
      * unwrapped, the cwd keeps `\` characters and the prefix-match against
@@ -853,9 +803,6 @@ class ExecutionContextTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L376 UnwrapRtrim `rtrim(str_replace(...), '/')` → `str_replace(...)`
-     *
      * Drive a cwd that ALREADY ends with a `/`. Without rtrim, the cwd
      * becomes `…proj//` (the explicit `. '/'` doubles it). The strncmp
      * fails because the file does not start with `…proj//`.
@@ -881,9 +828,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L377 UnwrapStrReplace `str_replace('\\','/', $file)` → `$file`
      *
      * Same as L376 but on the FILE side: a Windows-style file path with
      * backslashes must be normalised before the prefix-match against the
@@ -913,9 +857,6 @@ class ExecutionContextTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L372 CastString `$this->cwd ?? (string) getcwd()` → `?? getcwd()`
      *
      * `getcwd()` may return `false` (rare: cwd deleted out from under us).
      * The `(string)` cast forces false → ''. The guard at L373

@@ -158,16 +158,8 @@ class ProgressOutputHandlerTest extends TestCase
         $this->assertStringContainsString('Done.', $output);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin forceEnabled default, the STDERR
-    // fallback chain, and the trailing newline in write().
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L35 FalseValue `bool $forceEnabled = false` → `= true`
      *
      * Constructed with a non-TTY stream and the default `$forceEnabled`,
      * the handler must be DISABLED (`enabled=false` ⇒ write() short-circuits).
@@ -189,9 +181,6 @@ class ProgressOutputHandlerTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L39 ElseIfNegation `elseif (defined('STDERR'))` → `elseif (!defined('STDERR'))`
      *
      * When constructed with `$stream = null` and STDERR is defined (always
      * true in CLI tests), the property must point to STDERR. The mutant
@@ -216,10 +205,6 @@ class ProgressOutputHandlerTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L98 Concat `$message . "\n"` (operand order / single-operand mutations)
-     *   - L98 ConcatOperandRemoval (drop of the "\n" fragment)
      *
      * Pin the exact byte sequence written: the OK marker, the job name and
      * duration, the counter, and EXACTLY ONE trailing newline.

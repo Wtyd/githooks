@@ -184,9 +184,6 @@ class JunitResultFormatterTest extends UnitTestCase
         $this->assertSame('', $testcase->getAttribute('classname'));
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster E)
-    // ========================================================================
 
     /** @test */
     function testsuite_element_carries_a_time_attribute_in_seconds()
@@ -242,13 +239,6 @@ class JunitResultFormatterTest extends UnitTestCase
         $this->assertSame('150', $reflection->invoke($formatter, '2m 30s'));
         $this->assertSame('60', $reflection->invoke($formatter, '1m 0s'));
     }
-
-    // ========================================================================
-    // Pretty-print JSON in <failure> (3.3.2):
-    // GitLab/Jenkins JUnit viewers render <failure> verbatim. Tools that emit
-    // compact JSON (phpstan, phpcs, psalm, parallel-lint) arrive unreadable;
-    // tools that already pretty-print (phpmd) must keep their semantics.
-    // ========================================================================
 
     /** @test */
     function compact_json_failure_output_is_pretty_printed()
@@ -398,13 +388,6 @@ class JunitResultFormatterTest extends UnitTestCase
         $this->assertSame(1, $decoded['errors']);
     }
 
-    // ========================================================================
-    // Infection Tier 2 — JunitResultFormatter
-    // Boundary coverage for parseSeconds arithmetic, findJsonBounds /
-    // boundsFor decision table, prettyJsonIfApplicable substring layout,
-    // json_decode guard and json_encode flag bitwise OR.
-    // ========================================================================
-
     /**
      * @return array<string, array{0: string, 1: string}>
      */
@@ -481,7 +464,6 @@ class JunitResultFormatterTest extends UnitTestCase
     }
 
     /**
-     * Kills L3392 (Concat operand swap), L3405 (ConcatOperandRemoval) and
      * L3431/L3444 (Inc/Dec on the substr boundaries) by asserting that the
      * prologue and epilogue surrounding the JSON survive byte-for-byte.
      *
@@ -509,7 +491,6 @@ class JunitResultFormatterTest extends UnitTestCase
     }
 
     /**
-     * Kills L3330 (Identical `===` → `!==`), L3342 (NotIdentical `!==` → `===`)
      * and L3354 (LogicalAnd `&&` → `||`) on the json_decode error guard.
      * Strategy: invalid JSON must fall through to return the original text,
      * while valid JSON whose decode is non-null must pretty-print.
@@ -525,10 +506,7 @@ class JunitResultFormatterTest extends UnitTestCase
         // Invalid JSON inside an object span. Original guard:
         //   $decoded === null && json_last_error() !== JSON_ERROR_NONE
         // is TRUE → return $text unchanged.
-        // - L3330 (=== → !==): guard becomes false → continues to json_encode(null)
         //   → output is "null" instead of the input. Killed.
-        // - L3342 (!== → ===): guard becomes false → same as above. Killed.
-        // - L3354 (&& → ||): guard short-circuits on the first true. With a
         //   valid JSON (next test), original guard is false, mutant true →
         //   would early-return the COMPACT input. Killed by the valid-JSON test.
         $invalid = '{"broken": ';
@@ -555,7 +533,6 @@ class JunitResultFormatterTest extends UnitTestCase
     }
 
     /**
-     * Kills L3379 (BitwiseOr `|` → `&` on `JSON_PRETTY_PRINT |
      * JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES`). With `&` the combined
      * flag is 0 → json_encode produces a single-line, escaped output.
      *

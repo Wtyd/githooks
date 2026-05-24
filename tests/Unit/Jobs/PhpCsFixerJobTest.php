@@ -324,17 +324,9 @@ class PhpCsFixerJobTest extends TestCase
         $this->assertStringEndsWith('src', $command);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the warning message, the composite
-    // locateConfigFile guard, the ordered config-file fallback chain, and
-    // the is_file/is_readable pair on each candidate.
-    // ========================================================================
-
     /**
      * @test
      *
-     * Kills:
-     *   - L79 Concat (warning message): the two-fragment concatenation can be
      *     reordered or have one fragment dropped. Only an exact-string match
      *     catches all variants.
      */
@@ -361,8 +353,6 @@ class PhpCsFixerJobTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L86 LogicalAnd ×3 (composite guard in locateConfigFile:
      *     is_string && !=='' && is_file && is_readable)
      *
      * @dataProvider locateConfigGuardScenarios
@@ -417,11 +407,6 @@ class PhpCsFixerJobTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L89 ArrayItemRemoval `['.php-cs-fixer.php', '.php-cs-fixer.dist.php']`
-     *   - L89 Foreach_ (loop break / no-op)
-     *   - L90 LogicalAnd variants on `is_file($candidate) && is_readable($candidate)`
      *
      * Two scenarios drive the foreach: (1) ONLY `.php-cs-fixer.dist.php` exists
      * — proves the foreach reaches the second array item (kills

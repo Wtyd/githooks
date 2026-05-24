@@ -158,10 +158,6 @@ class DashboardOutputHandlerTest extends TestCase
         $this->assertStringNotContainsString('┌', $output);
     }
 
-    // ========================================================================
-    // TTY-mode mutation coverage
-    // ========================================================================
-
     /** @test */
     function tick_in_tty_renders_when_jobs_are_running()
     {

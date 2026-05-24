@@ -273,10 +273,6 @@ PHP;
         $parser->parse($this->fixturesPath . '/does_not_exist.php');
     }
 
-    // ========================================================================
-    // Local override (githooks.local.php)
-    // ========================================================================
-
     /** @test */
     public function it_merges_local_override_replacing_scalar_string()
     {
@@ -601,10 +597,6 @@ PHP;
         $this->assertNull($result->getLocalFilePath());
     }
 
-    // ========================================================================
-    // Job inheritance (extends)
-    // ========================================================================
-
     /** @test */
     public function it_reports_error_when_job_extends_itself()
     {
@@ -769,10 +761,6 @@ PHP;
         $this->assertSame(['tests'], $job->getPaths(), 'child paths must override grandparent paths');
         $this->assertSame('8', $job->getConfig()['level'] ?? null, 'level must be inherited from the middle parent');
     }
-
-    // ========================================================================
-    // Meta-flows (v3.3 — declarative composition)
-    // ========================================================================
 
     /** @test */
     public function it_parses_a_meta_flow_referencing_normal_flows()
@@ -1007,10 +995,6 @@ PHP;
         $this->assertSame('9', $child->getConfig()['level'] ?? null, 'level overridden by child');
     }
 
-    // ========================================================================
-    // memory cross-validation (v3.3 — gh-48)
-    // ========================================================================
-
     /** @test */
     public function it_reports_error_when_job_memory_exceeds_global_memory_budget(): void
     {
@@ -1137,9 +1121,6 @@ PHP;
         $this->assertEmpty($result->getValidation()->getWarnings());
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster D)
-    // ========================================================================
 
     /** @test */
     public function it_does_not_report_error_when_job_memory_equals_budget_reference(): void
@@ -1481,7 +1462,6 @@ PHP;
         $this->assertStringContainsString("references 'inner' which is also a meta-flow", $errorText);
     }
 
-    // ========================================================================
     // cores cross-validation against flow.processes (v3.3 — uncontrollable jobs)
     // The flow rules. Both phpstan (workers from .neon, no CLI flag) and
     // custom (opaque scripts) are uncontrollable: GitHooks cannot force the
@@ -1489,7 +1469,6 @@ PHP;
     // mismatch as a warning so the user knows other jobs in the flow will
     // wait in serial — without forcing them to fix it (it is a valid
     // trade-off when the dev knows their machine can absorb it).
-    // ========================================================================
 
     /** @test */
     public function it_warns_when_custom_cores_exceeds_per_flow_processes(): void
@@ -1710,17 +1689,9 @@ PHP;
         @unlink($neonPath);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the exact messages produced by the
-    // cross-flow validators, and prove the Continue_ branches iterate over
-    // ALL flows (never break early).
-    // ========================================================================
-
     /**
      * @test
      *
-     * Kills:
-     *   - L213 Concat (memory exceeds budget message): full-text verbatim.
      */
     public function memory_exceeds_budget_message_is_assembled_with_exact_text(): void
     {
@@ -1754,9 +1725,6 @@ PHP;
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L294 Continue_ → Break_ in validateCoresAgainstFlows
      *
      * Two flows, in declaration order: the first does NOT contain the
      * uncontrollable job, the second DOES and triggers a warning. With
@@ -1799,8 +1767,6 @@ PHP;
     /**
      * @test
      *
-     * Kills:
-     *   - L301 Continue_ → Break_ in validateCoresAgainstFlows when the
      *     declared cores fit the flow's processes.
      *
      * Two flows, in declaration order: the first FITS (continue), the
@@ -1840,9 +1806,6 @@ PHP;
     /**
      * @test
      *
-     * Kills:
-     *   - L304 Concat (cores-exceeds-flow-processes warning message)
-     *
      * Pin the FOUR-fragment concatenation verbatim — only an exact-string
      * match catches the multiple Concat / ConcatOperandRemoval variants
      * that the report flagged on L304.
@@ -1878,9 +1841,6 @@ PHP;
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L578 MethodCallRemoval `$result->addWarning(...)` in addYamlDeprecationWarning
      *
      * Parsing a .yml file must emit the deprecation warning verbatim. Without
      * the addWarning call, the warning would be missing and the operator

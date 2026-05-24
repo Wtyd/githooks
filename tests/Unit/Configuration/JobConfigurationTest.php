@@ -138,7 +138,6 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     * Kills L138 LogicalAnd→Or: the guard `!is_array($value) && !is_string($value)`
      * flipped to `||` would warn for valid array values. Exact-string match on
      * an integer input plus the "no warning" test below cover both sides.
      */
@@ -199,7 +198,6 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     * Kills L111 Foreach_→[] in validateArguments: the loop that warns about
      * unknown keys on tool-typed jobs (non-custom) must iterate the config.
      * Emptying the loop would silently accept arbitrary typos.
      */
@@ -310,10 +308,6 @@ class JobConfigurationTest extends TestCase
         $this->assertTrue($found, 'Expected warning about rules not being a string');
     }
 
-    // ========================================================================
-    // Execution mode (TDD — will fail until implementation exists)
-    // ========================================================================
-
     /** @test */
     public function it_parses_job_with_fast_execution()
     {
@@ -356,7 +350,6 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     * Kills L74 Concat/ConcatOperandRemoval and L75 ReturnRemoval:
      * invalid execution must produce the exact error string AND return null.
      */
     public function it_reports_error_and_returns_null_for_invalid_execution_mode()
@@ -416,10 +409,6 @@ class JobConfigurationTest extends TestCase
         ];
     }
 
-    // ========================================================================
-    // executable-prefix as known key
-    // ========================================================================
-
     /** @test */
     public function executable_prefix_is_a_known_key_for_tool_jobs()
     {
@@ -468,10 +457,6 @@ class JobConfigurationTest extends TestCase
         });
         $this->assertEmpty($unknownWarnings);
     }
-
-    // ========================================================================
-    // v3-only type validation (types in JobRegistry but not ToolRegistry)
-    // ========================================================================
 
     /** @test */
     public function it_validates_v3_only_type_when_job_registry_provided()
@@ -529,10 +514,6 @@ class JobConfigurationTest extends TestCase
         $this->assertTrue($result->hasErrors());
         $this->assertStringContainsString('not a supported tool', $result->getErrors()[0]);
     }
-
-    // ========================================================================
-    // cores: N keyword — validation and conflict warning
-    // ========================================================================
 
     /** @test */
     public function it_accepts_cores_as_positive_integer()
@@ -882,10 +863,6 @@ class JobConfigurationTest extends TestCase
         return false;
     }
 
-    // ========================================================================
-    // warn-after / fail-after thresholds (v3.3 item 4)
-    // ========================================================================
-
     /** @test */
     public function it_parses_warn_after_and_fail_after()
     {
@@ -1032,10 +1009,6 @@ class JobConfigurationTest extends TestCase
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
     }
 
-    // ========================================================================
-    // memory threshold per-job (v3.3 — gh-48)
-    // ========================================================================
-
     /** @test */
     public function it_accepts_short_form_memory_as_positive_integer(): void
     {
@@ -1181,9 +1154,6 @@ class JobConfigurationTest extends TestCase
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements: boundaries, getters, conflict logic
-    // ========================================================================
 
     /** @test */
     public function it_records_conflict_error_with_full_message_for_deprecated_and_kebab_keys(): void
@@ -1413,16 +1383,8 @@ class JobConfigurationTest extends TestCase
         $this->assertTrue($threshold->isShortForm());
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the exact validation-message strings and
-    // the early-return + boundary checks in the cores/native-thread guards.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L157 Concat (conflicting deprecated-keys message)
      *
      * Asserts the FULL message verbatim. The existing test asserted four
      * substrings independently, which the reordered concatenations could
@@ -1446,9 +1408,6 @@ class JobConfigurationTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L206 Concat (memory key must be either int or object)
-     *
      * A malformed memory value (string) triggers the addError with a
      * two-fragment concatenation that must come out verbatim.
      */
@@ -1469,9 +1428,6 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L294 Concat ×2 + ConcatOperandRemoval ×2 (single-threaded cores>1 message)
      *
      * Three-fragment concatenation — any shuffle or drop produces a
      * different string. Pin the literal verbatim.
@@ -1495,9 +1451,6 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L298 ReturnRemoval `return;` after single-threaded warning.
      *
      * Without the return, validation falls through to the
      * THREAD_ARG_KEYS branch and may emit a second warning for the
@@ -1536,9 +1489,6 @@ class JobConfigurationTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L309 Concat (cores overrides native key message)
-     *
      * Pin the two-fragment concatenation verbatim — phpcs supports `parallel`.
      */
     public function cores_overrides_native_key_warning_message_is_exact(): void
@@ -1558,9 +1508,6 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L340 LessThan `$value < 1` → `<= 1` in validateNativeThreadFlagAsCores
      *
      * Drives the boundary: `parallel: 1` must NOT warn (value is valid),
      * while `parallel: 0` MUST warn. The mutant `<= 1` would warn on
@@ -1603,9 +1550,6 @@ class JobConfigurationTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L475 Concat + ConcatOperandRemoval (CLI-only key error message)
      *
      * Two-fragment concatenation — pin the literal verbatim.
      */

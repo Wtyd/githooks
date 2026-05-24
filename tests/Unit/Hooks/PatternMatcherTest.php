@@ -20,10 +20,6 @@ class PatternMatcherTest extends TestCase
         $this->matcher = new PatternMatcher();
     }
 
-    // ========================================================================
-    // globToRegex
-    // ========================================================================
-
     /** @test */
     public function globToRegex_simple_star()
     {
@@ -86,10 +82,6 @@ class PatternMatcherTest extends TestCase
         $this->assertDoesNotMatchRegularExpression($regex, 'src//.php');
     }
 
-    // ========================================================================
-    // fileMatchesPattern
-    // ========================================================================
-
     /** @test */
     public function fileMatchesPattern_without_doublestar_uses_fnm_pathname()
     {
@@ -104,10 +96,6 @@ class PatternMatcherTest extends TestCase
         $this->assertFalse($this->matcher->fileMatchesPattern('vendor/File.php', 'src/**/*.php'));
     }
 
-    // ========================================================================
-    // matchesBranch
-    // ========================================================================
-
     /** @test */
     public function matchesBranch_empty_branch_returns_false()
     {
@@ -116,7 +104,6 @@ class PatternMatcherTest extends TestCase
 
     /**
      * @test
-     * Kills L27 ReturnRemoval: without the early `return false`, an empty
      * branch with empty include patterns would evaluate `$matched =
      * empty([]) = true` and eventually return true. The early-return for
      * empty branch must be preserved.
@@ -175,10 +162,6 @@ class PatternMatcherTest extends TestCase
         $this->assertFalse($this->matcher->matchesBranch('temp', [], ['temp']));
         $this->assertTrue($this->matcher->matchesBranch('main', [], ['temp']));
     }
-
-    // ========================================================================
-    // matchesFiles
-    // ========================================================================
 
     /** @test */
     public function matchesFiles_empty_files_returns_false()
@@ -248,10 +231,6 @@ class PatternMatcherTest extends TestCase
             []
         ));
     }
-
-    // ========================================================================
-    // globToRegex — exact regex asserts
-    // ========================================================================
 
     /**
      * @test

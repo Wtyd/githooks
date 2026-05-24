@@ -126,9 +126,6 @@ class MemoryEvaluatorTest extends TestCase
         $this->assertNull($evaluator->buildBudgetState(new MemoryBudgetConfiguration(500, 1500)));
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster D)
-    // ========================================================================
 
     /** @test */
     public function is_kill_requested_returns_false_when_budget_is_null(): void

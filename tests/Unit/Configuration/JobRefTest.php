@@ -20,10 +20,6 @@ class JobRefTest extends TestCase
 {
     use AssertWarningsTrait;
 
-    // ========================================================================
-    // fromString — A1 retrocompat
-    // ========================================================================
-
     /** @test */
     public function fromString_creates_ref_without_admission_rules()
     {
@@ -34,10 +30,6 @@ class JobRefTest extends TestCase
         $this->assertNull($ref->getExcludeFiles());
         $this->assertFalse($ref->hasAdmissionRules());
     }
-
-    // ========================================================================
-    // fromArray — happy paths
-    // ========================================================================
 
     /** @test */
     public function fromArray_with_only_job_key_equals_string_form()
@@ -119,10 +111,6 @@ class JobRefTest extends TestCase
         $this->assertSame(['vendor/**'], $ref->getExcludeFiles());
     }
 
-    // ========================================================================
-    // fromArray — null sentinel (anular regla heredada del compartido)
-    // ========================================================================
-
     /** @test */
     public function fromArray_with_only_files_null_means_no_rule()
     {
@@ -155,10 +143,6 @@ class JobRefTest extends TestCase
         $this->assertNull($ref->getExcludeFiles());
         $this->assertFalse($ref->hasAdmissionRules());
     }
-
-    // ========================================================================
-    // fromArray — validation errors
-    // ========================================================================
 
     /** @test */
     public function fromArray_with_empty_only_files_returns_error_pointing_to_null()
@@ -321,10 +305,6 @@ class JobRefTest extends TestCase
         );
     }
 
-    // ========================================================================
-    // fromArray — unknown keys → warning with did-you-mean
-    // ========================================================================
-
     /** @test */
     public function fromArray_with_unknown_key_adds_warning_with_suggestion()
     {
@@ -362,10 +342,6 @@ class JobRefTest extends TestCase
         $this->assertNotNull($ref);
         $this->assertEmpty($result->getWarnings());
     }
-
-    // ========================================================================
-    // FEAT-3 · `needs` attribute (Group A)
-    // ========================================================================
 
     /** @test */
     public function fromString_has_empty_needs()

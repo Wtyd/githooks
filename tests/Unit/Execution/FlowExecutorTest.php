@@ -32,9 +32,7 @@ use Wtyd\GitHooks\Output\OutputHandler;
  */
 class FlowExecutorTest extends TestCase
 {
-    // ========================================================================
     // Dry-run mode
-    // ========================================================================
 
     /** @test */
     public function dry_run_returns_all_jobs_as_success()
@@ -88,10 +86,6 @@ class FlowExecutorTest extends TestCase
         $plan = new FlowPlan('test', $jobs, new OptionsConfiguration());
         $executor->execute($plan, true);
     }
-
-    // ========================================================================
-    // Sequential execution
-    // ========================================================================
 
     /** @test */
     public function sequential_single_job_success()
@@ -229,10 +223,6 @@ class FlowExecutorTest extends TestCase
         $this->assertContains('ok', $names);
     }
 
-    // ========================================================================
-    // buildResult: ignoreErrorsOnExit
-    // ========================================================================
-
     /** @test */
     public function ignore_errors_on_exit_treats_failure_as_success()
     {
@@ -251,10 +241,6 @@ class FlowExecutorTest extends TestCase
         $this->assertTrue($result->getJobResults()[0]->isSuccess());
     }
 
-    // ========================================================================
-    // buildResult: exit code null (killed process)
-    // ========================================================================
-
     /** @test */
     public function success_job_exit_code_zero()
     {
@@ -266,10 +252,6 @@ class FlowExecutorTest extends TestCase
 
         $this->assertTrue($result->getJobResults()[0]->isSuccess());
     }
-
-    // ========================================================================
-    // formatTime boundaries
-    // ========================================================================
 
     /** @test */
     public function fast_job_shows_milliseconds()
@@ -321,10 +303,7 @@ class FlowExecutorTest extends TestCase
      *    BUT only when not failed: !$failed && $warnAfter !== null && $sum >= $warnAfter)
      *
      * Mutants killed:
-     *  - L782 Continue_ (continue → break): skipped jobs in middle of list still
      *    leave subsequent durations summed.
-     *  - L784 Assignment (`+=` → `=`): exact total of multiple non-skipped durations.
-     *  - L790 LogicalAnd: when failed=true AND warnAfter is reached, warned must
      *    remain false (the !$failed guard wins).
      *
      * @test
@@ -376,7 +355,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L790 LogicalAnd: when sum >= failAfter AND sum >= warnAfter, the
      * `!$failed` guard must prevent warned from being set. Mutating to
      * `(!$failed || $warnAfter !== null) && ...` would let `warned` be true.
      */
@@ -449,10 +427,6 @@ class FlowExecutorTest extends TestCase
             'fractional minutes 90.7s → "1m 30s" (kills CastInt on $secs)' => [90.7, '1m 30s'],
         ];
     }
-
-    // ========================================================================
-    // Parallel: two passing jobs
-    // ========================================================================
 
     /** @test */
     public function parallel_two_passing_jobs_both_in_results()
@@ -718,10 +692,6 @@ class FlowExecutorTest extends TestCase
         ];
     }
 
-    // ========================================================================
-    // Peak threads tracking
-    // ========================================================================
-
     /** @test */
     public function peak_estimated_threads_is_tracked()
     {
@@ -739,10 +709,6 @@ class FlowExecutorTest extends TestCase
         $this->assertGreaterThanOrEqual(1, $result->getPeakEstimatedThreads());
     }
 
-    // ========================================================================
-    // Thread budget
-    // ========================================================================
-
     /** @test */
     public function thread_budget_is_propagated_to_flow_result()
     {
@@ -755,10 +721,6 @@ class FlowExecutorTest extends TestCase
 
         $this->assertSame(4, $result->getThreadBudget());
     }
-
-    // ========================================================================
-    // Output handler callbacks
-    // ========================================================================
 
     /** @test */
     public function success_job_triggers_onJobSuccess()
@@ -834,13 +796,8 @@ class FlowExecutorTest extends TestCase
         $this->assertSame(['filtered_a', 'filtered_b'], $spy->skippedJobNames());
     }
 
-    // ========================================================================
-    // OutputHandlerSpy — event-stream assertions
-    // ========================================================================
-
     /**
      * @test
-     * Kills L258 MethodCallRemoval on `onJobStart` in the sequential path:
      * the spy must record both jobs as started in insertion order.
      */
     public function sequential_mode_fires_onJobStart_for_each_job_in_order()
@@ -863,7 +820,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L219 LogicalAnd→Or: `$failFast && !$result->isSuccess()` flipped
      * to `||` would trigger fail-fast after any successful completion. Two
      * passing jobs with failFast=true must never produce a skipped event.
      */
@@ -887,7 +843,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L220 TrueValue: `$failFastTriggered = true` flipped to `false`
      * would let the parallel loop keep starting queued jobs. With 1 slot
      * and the first job failing, the second and third must appear only as
      * skipped events — never as started.
@@ -914,7 +869,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L224 MethodCallRemoval on `onJobSkipped` and L225 confirms the
      * reason string is propagated verbatim. Derived from the queued-jobs
      * scenario above but asserting the exact reason payload.
      */
@@ -939,7 +893,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L267 Identical `$type === Process::ERR`: a job that writes only
      * to stderr must produce an output entry with `isStderr === true`.
      * Flipping `===` to `!==` would mislabel every chunk.
      */
@@ -965,7 +918,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L162 Coalesce `?? 1` in executeSequential: a swap would make the
      * peak equal to 1 regardless of the allocated capability. A single
      * PhpcsJob with parallel=8 must produce peakEstimatedThreads=8.
      */
@@ -995,7 +947,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L280 PlusEqual `+=`→`-=` and L278 DecrementInteger on
      * currentThreads=0→-1: two concurrent CustomJobs (no capability, default
      * 1 thread each) must push the peak to 2. The fake pool keeps both
      * jobs in `running` for two polls so updatePeakThreads observes the
@@ -1023,7 +974,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L299 Concat / ConcatOperandRemoval: the combined output assigned
      * to the JobResult must contain BOTH the stdout and stderr chunks. A
      * mutant that drops either operand would miss one stream entirely.
      */
@@ -1045,7 +995,6 @@ class FlowExecutorTest extends TestCase
 
     /**
      * @test
-     * Kills L361 Multiplication `$seconds * 1000`→`/ 1000`: with a simulated
      * 0.15s job duration, formatTime() must render "150ms". The wallclock
      * is driven via the protected setClock() seam so the test runs
      * instantly — the production code under test (`round($seconds * 1000)`)
@@ -1112,10 +1061,6 @@ class FlowExecutorTest extends TestCase
             return !$entry['isStderr'];
         }));
     }
-
-    // ========================================================================
-    // cores: N override propagation
-    // ========================================================================
 
     /** @test */
     public function cores_override_is_applied_to_controllable_job_in_dry_run()
@@ -1314,10 +1259,6 @@ class FlowExecutorTest extends TestCase
         $this->assertStringContainsString('--processes=4', $jobResults[1]->getCommand());
     }
 
-    // ========================================================================
-    // Execution mode propagation (plan → result)
-    // ========================================================================
-
     /** @test */
     public function execute_propagates_fast_mode_from_plan_to_result()
     {
@@ -1391,9 +1332,6 @@ class FlowExecutorTest extends TestCase
         $this->assertSame('fast', $result->getExecutionMode());
     }
 
-    // ========================================================================
-    // Tier 2 mutation kills — coordinator contracts
-    // ========================================================================
 
     /**
      * Kills FlowExecutor:530 MethodCallRemoval on `outputHandler->onJobSkipped`
@@ -1443,7 +1381,6 @@ class FlowExecutorTest extends TestCase
      * AND a job declares `memory:`, the FlowResult must surface
      * memoryBudgetState and the JobResult must surface memoryReserved.
      *
-     * Kills:
      *  - FlowExecutor:489 MethodCallRemoval `$memoryHandler->setup($jobs)` —
      *    without setup, evaluator stays null, isActive() false, enrichSingle
      *    short-circuits before withMemoryReserved() and the FlowResult never
@@ -1601,7 +1538,6 @@ class FlowExecutorTest extends TestCase
      * executeSequential (memoryHandler stays null → no stats / no per-job
      * memory enrichment).
      *
-     * Kills:
      *  - FlowExecutor:455 TrueValue (stats branch `return true → false`):
      *    when --stats is on, dropping the return makes the method fall through
      *    to the budget check (null here), then the per-job loop (null), then
@@ -1811,7 +1747,6 @@ class FlowExecutorTest extends TestCase
     }
 
     /**
-     * Infection mutant on FlowExecutor:621 (Ternary swap) survives because
      * `flow_executor_wires_allocator_to_admission_strategy` above injects the
      * concrete strategy directly into FakeProcessPool, bypassing the real
      * `resolveAdmissionStrategy()` call. This test pins the mapping at the
@@ -1841,7 +1776,6 @@ class FlowExecutorTest extends TestCase
     }
 
     /**
-     * Infection mutant on FlowExecutor:924 (DecrementInteger `?? 1` → `?? 0`):
      * when `Process::getExitCode()` is null (the process did not finish
      * cleanly — killed, signalled, or never terminated), the defensive
      * `?? 1` treats it as failure. The mutant `?? 0` would silently treat
@@ -1871,7 +1805,6 @@ class FlowExecutorTest extends TestCase
     }
 
     /**
-     * Infection mutant on FlowExecutor:794 (NotIdentical `!== null` → `=== null`):
      * the guard `$dashboard !== null && ...` only invokes `$dashboard->tick()`
      * when a dashboard is actually attached. Test pins the contract: with a
      * DashboardOutputHandler instance and a clock seam that ticks > 0.2s,

@@ -146,10 +146,6 @@ class FlowDependencyGraphTest extends TestCase
         );
     }
 
-    // ========================================================================
-    // Topological sort — stability
-    // ========================================================================
-
     /** @test */
     public function C1_topological_order_respects_dependencies()
     {
@@ -198,10 +194,6 @@ class FlowDependencyGraphTest extends TestCase
         $this->assertSame(['phpstan', 'phpcs', 'phpmd'], $graph->getOrderedNames());
     }
 
-    // ========================================================================
-    // Descendants
-    // ========================================================================
-
     /** @test */
     public function descendantsOf_returns_transitive_dependents()
     {
@@ -235,10 +227,6 @@ class FlowDependencyGraphTest extends TestCase
 
         $this->assertSame([], $graph->descendantsOf('nonexistent'));
     }
-
-    // ========================================================================
-    // Helpers
-    // ========================================================================
 
     /**
      * @param string[] $needs

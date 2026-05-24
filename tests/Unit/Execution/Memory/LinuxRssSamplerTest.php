@@ -22,9 +22,7 @@ use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
  */
 class LinuxRssSamplerTest extends TestCase
 {
-    // ========================================================================
     // Smoke tests against the real /proc — Linux only
-    // ========================================================================
 
     /** @test */
     public function it_reads_a_positive_rss_value_for_the_current_php_process(): void
@@ -79,10 +77,6 @@ class LinuxRssSamplerTest extends TestCase
         $this->assertTrue($sampler->isAvailable());
         $this->assertSame('', $sampler->getUnavailableReason());
     }
-
-    // ========================================================================
-    // Parser tests against synthetic /proc — cross-platform, in-memory
-    // ========================================================================
 
     /** @test */
     public function it_sums_rss_across_descendants_at_arbitrary_depth(): void
@@ -373,10 +367,6 @@ class LinuxRssSamplerTest extends TestCase
         // Mut:   (1024 + 2048 + 4096) / 1024        = 7
         $this->assertSame(15, $samples['root']);
     }
-
-    // ========================================================================
-    // Helpers
-    // ========================================================================
 
     /**
      * @param array<string, string> $procMap path => synthetic content

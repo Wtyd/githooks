@@ -287,14 +287,6 @@ class GitLabCIDecoratorTest extends TestCase
      *   if ($body !== '' && substr($body, -1) !== "\n") { echo "\n"; }
      *
      * Mutants killed:
-     *  - L113 NotIdentical (`!== ''` → `=== ''`)
-     *  - L113 DecrementInteger (`-1` → `-2`)
-     *  - L113 IncrementInteger (`-1` → `-0`)
-     *  - L113 NotIdentical (inner `!== "\n"` → `=== "\n"`)
-     *  - L113 UnwrapSubstr (`substr($body, -1)` → `$body`)
-     *  - L113 LogicalAnd (`&&` → `||`)
-     *  - L113 LogicalAndAllSubExprNegation
-     *  - L113 LogicalAndNegation
      *
      * Strategy: drive the decorator with an inner that emits a body whose
      * last char is NOT `\n`. The decorator must add EXACTLY ONE `\n` between
@@ -611,23 +603,8 @@ class GitLabCIDecoratorTest extends TestCase
         $this->assertStringContainsString('[collapsed=false]', $body);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — buffer accumulation, body composition, flush
-    // side-effects and finally-block guarantees. The pre-existing tests
-    // covered the happy paths but did not pin the buffer concatenation
-    // (`$buffers[name] ?? ''` . capture) nor the symmetry of the trim/rtrim
-    // pair on KO output, nor that `inner->flush()` is invoked exactly once.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L62  Coalesce             `($buffers[name] ?? '') . capture` → `('' ?? $buffers[name]) . capture`
-     *   - L62  ConcatOperandRemoval `($buffers[name] ?? '') . capture` → `capture`
-     *   - L69  Concat                same pattern on onJobOutput
-     *   - L86  Coalesce              same pattern on onJobError
-     *   - L86  ConcatOperandRemoval  same pattern on onJobError
      *
      * Strategy: drive the decorator with an inner that emits a different
      * marker on every method call (start-1, output-A, output-B, success).
@@ -717,9 +694,6 @@ class GitLabCIDecoratorTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L91 UnwrapTrim `if (trim($output) !== '')` → `if ($output !== '')`
-     *
      * Output is pure whitespace (`"  \t  \n  "`): the body must contain ONLY
      * the inner's emissions, never the raw whitespace. The previous
      * `ko_section_omits_error_block_when_tool_output_is_blank` test used a
@@ -758,11 +732,6 @@ class GitLabCIDecoratorTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L92 UnwrapRtrim `$body .= rtrim($output) . "\n"` → `$body .= $output . "\n"`
-     *   - L92 Concat (order swap) → `$body .= "\n" . rtrim($output)`
-     *   - L92 Assignment `$body .=` → `$body =`
      *
      * Drive a KO with a previously-buffered marker AND an `$output` that
      * already ends with `\n`. The body composition must:
@@ -840,10 +809,6 @@ class GitLabCIDecoratorTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L112 MethodCallRemoval `$this->captureInner(function () { ... })` removed
-     *   - L113 MethodCallRemoval `$this->inner->flush()` removed
-     *
      * The pre-existing `inner_flush_output_is_suppressed_…` test asserted
      * that the decorator emits `''` after a `flush()` — but that assertion
      * is also satisfied when the closure is never invoked at all. Here we
@@ -900,8 +865,6 @@ class GitLabCIDecoratorTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L120 UnwrapFinally `try { $action(); } finally { $captured = ob_get_clean(); }`
      *     → `$action(); $captured = ob_get_clean();`
      *
      * Without the finally block, an exception thrown inside the captured

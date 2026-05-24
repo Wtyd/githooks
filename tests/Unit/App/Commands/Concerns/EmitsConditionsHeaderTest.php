@@ -197,9 +197,7 @@ class EmitsConditionsHeaderTest extends TestCase
         $this->assertSame('Settings:', $double->lines[0]);
     }
 
-    // ========================================================================
     // time-budget segment
-    // ========================================================================
 
     private function makeResolutionWithTimeBudget(?array $value, string $source): EffectiveOptionsResolution
     {
@@ -275,9 +273,7 @@ class EmitsConditionsHeaderTest extends TestCase
         $this->assertHeaderRow($double->lines, 'time-budget', 'none', 'default');
     }
 
-    // ========================================================================
     // memory-budget / allocator / stats segments
-    // ========================================================================
 
     private function makeResolutionWithMemoryBudget(?array $value, string $source): EffectiveOptionsResolution
     {

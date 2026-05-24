@@ -105,10 +105,6 @@ class AdmissionContextTest extends TestCase
         $this->assertTrue($ctx->fits($job));
     }
 
-    // ========================================================================
-    // FEAT-3 · `needs` gate
-    // ========================================================================
-
     /** @test */
     public function isJobReady_true_when_no_needs_declared(): void
     {
@@ -250,18 +246,8 @@ class AdmissionContextTest extends TestCase
         return new PhpcsJob($config);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the memory-fallback default in fits(),
-    // and the three Continue_ branches + the final $blocking[] append in
-    // getBlockingNeeds().
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L91 DecrementInteger `$memoryReserveByJob[name] ?? 0` → `?? -1`
-     *   - L91 IncrementInteger same → `?? 1`
      *
      * A job without an entry in `memoryReserveByJob` must use 0 (no
      * reservation declared). With memoryFree=0 the fits comparison is
@@ -292,9 +278,6 @@ class AdmissionContextTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L131 Continue_ → Break_ (in getBlockingNeeds, completedJobs branch)
-     *
      * Multiple needs where the FIRST is in completedJobs and the second
      * is blocking. With `continue`, the foreach proceeds to evaluate the
      * second dep and appends it. With `break`, the second dep is never
@@ -316,9 +299,6 @@ class AdmissionContextTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L134 Continue_ → Break_ (in getBlockingNeeds, failedJobs branch)
-     *
      * Multiple needs where the FIRST is in failedJobs and the second is
      * blocking. Same rationale as above but for the failed-jobs bucket.
      */
@@ -337,9 +317,6 @@ class AdmissionContextTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L138 ArrayOneItem `$blocking[] = $dep` (only the last item kept)
      *
      * Multiple needs ALL pending (no bucket): blocking must contain ALL
      * of them in declaration order. The ArrayOneItem mutant would reduce

@@ -353,9 +353,6 @@ class InputFilesResolverTest extends TestCase
         $this->assertCount(1, $resolution->getValid());
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster D)
-    // ========================================================================
 
     /** @test */
     public function manifest_without_bom_reports_bom_detected_false(): void

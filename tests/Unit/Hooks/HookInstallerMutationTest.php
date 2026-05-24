@@ -41,10 +41,6 @@ class HookInstallerMutationTest extends TestCase
         $this->recursiveRemove($this->tempDir);
     }
 
-    // ========================================================================
-    // install()
-    // ========================================================================
-
     /** @test */
     public function install_creates_githooks_directory_if_not_exists()
     {
@@ -133,10 +129,6 @@ class HookInstallerMutationTest extends TestCase
         }
     }
 
-    // ========================================================================
-    // buildScript
-    // ========================================================================
-
     /** @test */
     public function install_with_custom_command_uses_it_in_script()
     {
@@ -172,10 +164,6 @@ class HookInstallerMutationTest extends TestCase
         $this->assertStringContainsString('basename', $content);
     }
 
-    // ========================================================================
-    // installSingle
-    // ========================================================================
-
     /** @test */
     public function installSingle_returns_path_for_valid_event()
     {
@@ -196,10 +184,6 @@ class HookInstallerMutationTest extends TestCase
 
         $this->assertNull($path);
     }
-
-    // ========================================================================
-    // installLegacy
-    // ========================================================================
 
     /** @test */
     public function installLegacy_creates_hooks_in_git_hooks_dir()
@@ -248,10 +232,6 @@ class HookInstallerMutationTest extends TestCase
         $this->assertSame(0755, fileperms($created[0]) & 0777);
     }
 
-    // ========================================================================
-    // clean
-    // ========================================================================
-
     /** @test */
     public function clean_removes_githooks_directory_and_files()
     {
@@ -299,10 +279,6 @@ class HookInstallerMutationTest extends TestCase
         $this->assertSame($cwdBefore, getcwd());
     }
 
-    // ========================================================================
-    // cleanLegacy
-    // ========================================================================
-
     /** @test */
     public function cleanLegacy_removes_specified_events()
     {
@@ -338,9 +314,7 @@ class HookInstallerMutationTest extends TestCase
         $this->assertTrue(true); // No exception thrown
     }
 
-    // ========================================================================
     // Helper
-    // ========================================================================
 
     private function recursiveRemove(string $dir): void
     {

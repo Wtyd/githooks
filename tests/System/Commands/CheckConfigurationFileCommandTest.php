@@ -283,10 +283,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(0);
     }
 
-    // =========================================================================
-    // Multi-report (v3.3 ítem 2) — config validation
-    // =========================================================================
-
     /** @test */
     function rejects_v3_config_with_invalid_report_format()
     {
@@ -365,7 +361,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->expectsOutput('The configuration file has the correct format.');
     }
 
-    // =========================================================================
     // Meta-flow shape errors must propagate exit code 1.
     //
     // Decision table — adversarial classes of an invalid v3.3 flows section:
@@ -377,7 +372,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     // Contract: each adversary must produce the matching error text AND exit 1
     // — the error must NOT be silently downgraded to a warning that lets CI pass.
     // Regression test for QA-VAL bugs V33-008..011.
-    // =========================================================================
 
     public function metaFlowShapeAdversariesProvider(): array
     {
@@ -444,7 +438,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->containsStringInOutput($expectedError);
     }
 
-    // =========================================================================
     // FEAT-1 — flow-entry admission rules (only-files / exclude-files).
     //
     // Decision table — invalid declarations the parser must reject with exit 1:
@@ -452,7 +445,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     //   B. empty exclude-files
     //   C. duplicate pattern in only-files
     //   D. missing `job` key in object entry
-    // =========================================================================
 
     public function flowEntryAdmissionAdversariesProvider(): array
     {
@@ -536,7 +528,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->expectsOutput('The configuration file has the correct format.');
     }
 
-    // =========================================================================
     // FEAT-2 — `on => [branch_pattern => attrs]` per flow.
     //
     // Decision table — invalid declarations the parser must reject with exit 1:
@@ -544,7 +535,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     //   B. attrs of a pattern is not an object
     //   C. unsupported execution mode value (e.g. 'turbo')
     //   D. empty pattern key
-    // =========================================================================
 
     public function flowOnAdversariesProvider(): array
     {
@@ -657,7 +647,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->containsStringInOutput("'on' has no catch-all '*' pattern");
     }
 
-    // =========================================================================
     // FEAT-3 — `needs` per flow entry.
     //
     // Decision table — invalid declarations the parser must reject with exit 1:
@@ -666,7 +655,6 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
     //   C. needs references undefined job
     //   D. same job declared twice in the `jobs` list
     //   E. empty `needs` list (points the user at `null`)
-    // =========================================================================
 
     public function flowNeedsAdversariesProvider(): array
     {

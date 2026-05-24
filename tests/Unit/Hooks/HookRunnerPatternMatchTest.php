@@ -41,10 +41,6 @@ class HookRunnerPatternMatchTest extends TestCase
         $this->runner = new HookRunner($this->preparer, $this->executor, $this->fileUtils);
     }
 
-    // ========================================================================
-    // globToRegex: boundary cases for ** handling
-    // ========================================================================
-
     /** @test */
     public function doublestar_between_slashes_matches_zero_or_more_dirs()
     {
@@ -138,10 +134,6 @@ class HookRunnerPatternMatchTest extends TestCase
         $this->assertCount(1, $results);
     }
 
-    // ========================================================================
-    // matchesBranch: boundary cases
-    // ========================================================================
-
     /** @test */
     public function empty_branch_string_skips_execution()
     {
@@ -230,10 +222,6 @@ class HookRunnerPatternMatchTest extends TestCase
         $this->assertEmpty($results);
     }
 
-    // ========================================================================
-    // matchesFiles: boundary cases
-    // ========================================================================
-
     /** @test */
     public function empty_files_array_skips_execution()
     {
@@ -296,10 +284,6 @@ class HookRunnerPatternMatchTest extends TestCase
         $results = $this->runner->run('pre-commit', $config);
         $this->assertEmpty($results);
     }
-
-    // ========================================================================
-    // shouldExecute: combined conditions (branch + files are AND-ed)
-    // ========================================================================
 
     /** @test */
     public function only_branch_conditions_work_alone()
@@ -378,10 +362,6 @@ class HookRunnerPatternMatchTest extends TestCase
         $this->assertNotEmpty($config->getValidation()->getWarnings());
     }
 
-    // ========================================================================
-    // exitCode
-    // ========================================================================
-
     /** @test */
     public function exitCode_returns_0_when_all_success()
     {
@@ -408,10 +388,6 @@ class HookRunnerPatternMatchTest extends TestCase
     {
         $this->assertSame(0, $this->runner->exitCode([]));
     }
-
-    // ========================================================================
-    // Helper builders
-    // ========================================================================
 
     /** @param string[] $onlyFiles @param string[] $excludeFiles */
     private function buildFileConfig(array $onlyFiles, array $excludeFiles): ConfigurationResult

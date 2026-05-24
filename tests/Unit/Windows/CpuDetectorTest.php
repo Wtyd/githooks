@@ -99,7 +99,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L47 FunctionCallRemoval (`exec('nproc')`) and L48 Identical/LogicalAnd:
      * exact value of the detected cpu count via scripted exec.
      */
     function unix_reads_exact_count_from_nproc_when_available()
@@ -114,7 +113,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L48 Identical `===`→`!==` and LogicalAnd `&&`→`||`: when nproc fails
      * (non-zero exit), detection falls through to sysctl and onwards to /proc/cpuinfo,
      * returning the fallback value (1), not the first output element.
      */
@@ -134,7 +132,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L48 LogicalAnd: `exitCode === 0 && !empty($output)` — with exit=0
      * but empty output, the mutation to `||` would use garbage `$output[0]`.
      */
     function unix_does_not_use_empty_output_even_when_exit_is_zero()
@@ -149,7 +146,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L39-style fallbacks: when every exec fails and /proc/cpuinfo is absent,
      * the sentinel return value must be exactly 1 (not 0, not 2, not -1).
      */
     function unix_returns_exact_fallback_value_when_all_probes_fail()
@@ -176,7 +172,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L34 Concat / ConcatOperandRemoval / MethodCallRemoval and L35
      * Identical: when wmic exits 0 with a numeric output line, that value
      * becomes the result and the command was the wmic+stderrRedirect concat.
      */
@@ -209,7 +204,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L207 LogicalNot in readFileContents: an unreadable path must
      * return null (not be read). Uses a real file that does NOT exist.
      */
     function read_file_contents_returns_null_for_unreadable_path()
@@ -224,7 +218,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L218 Ternary in readFileContents: a readable file returns its
      * contents, not null. Uses a real tmpfile so the production path runs
      * end-to-end (including is_readable + file_get_contents).
      */
@@ -248,7 +241,6 @@ class CpuDetectorTest extends TestCase
 
     /**
      * @test
-     * Kills L251 FunctionCallRemoval in execCommand: the production
      * `exec()` must actually run. We verify with a portable command (`echo`
      * on Unix) that output and exit code propagate via the references.
      *
@@ -272,12 +264,7 @@ class CpuDetectorTest extends TestCase
         $this->assertSame(['cpudetector-real-exec'], $output);
     }
 
-    // ========================================================================
-    // Infection Tier 2 — wmic and sysctl boundary cases.
-    // ========================================================================
-
     /**
-     * Kills L3792 (UnwrapTrim on `trim($line)` inside the wmic loop): wmic
      * pads its output with whitespace on some Windows hosts. Without trim,
      * is_numeric('  8  ') is false and the detector falls through to return 1.
      *
@@ -305,7 +292,6 @@ class CpuDetectorTest extends TestCase
     }
 
     /**
-     * Kills L3818 (`(int) $trimmed > 0` → `>= 0`) and L3831 (LogicalAnd
      * `&&` → `||`): wmic reporting 0 logical processors must NOT be accepted
      * as a valid result — the detector must fall through to the sentinel 1.
      *
@@ -337,7 +323,6 @@ class CpuDetectorTest extends TestCase
     }
 
     /**
-     * Kills L3857 (LogicalAnd `&&` → `||` on `$exitCode === 0 && !empty($output)`
      * for the sysctl branch): exit code 0 with an EMPTY output must NOT be
      * treated as a result — the detector must continue to /proc/cpuinfo.
      *

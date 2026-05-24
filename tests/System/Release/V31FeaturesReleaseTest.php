@@ -36,10 +36,6 @@ class V31FeaturesReleaseTest extends ReleaseTestCase
         parent::tearDown();
     }
 
-    // ========================================================================
-    // CLI extra arguments (-- separator, job only — flow ignores them)
-    // ========================================================================
-
     /** @test */
     public function job_passes_extra_args_after_double_dash_to_tool()
     {
@@ -121,10 +117,6 @@ class V31FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('/bin/echo hello', $output);
         $this->assertStringNotContainsString('--extra', $output);
     }
-
-    // ========================================================================
-    // executable-prefix
-    // ========================================================================
 
     /** @test */
     public function executable_prefix_is_prepended_to_command()
@@ -210,10 +202,6 @@ class V31FeaturesReleaseTest extends ReleaseTestCase
         $this->assertMatchesRegularExpression('/job_b.*\n\s+\/bin\/echo src/', $output);
     }
 
-    // ========================================================================
-    // Local override (githooks.local.php)
-    // ========================================================================
-
     /** @test */
     public function local_override_merges_executable_prefix()
     {
@@ -287,10 +275,6 @@ class V31FeaturesReleaseTest extends ReleaseTestCase
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('/bin/echo no-override', $this->getActualOutput());
     }
-
-    // ========================================================================
-    // Combined: all v3.1 features together
-    // ========================================================================
 
     /** @test */
     public function job_extra_args_appear_in_json_format()
@@ -368,10 +352,6 @@ class V31FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('GLOBAL /bin/echo', $output);
         $this->assertMatchesRegularExpression('/job_b.*\n\s+\/bin\/echo src/', $output);
     }
-
-    // ========================================================================
-    // Combined: local override + executable-prefix
-    // ========================================================================
 
     /** @test */
     public function local_override_and_prefix_work_together()

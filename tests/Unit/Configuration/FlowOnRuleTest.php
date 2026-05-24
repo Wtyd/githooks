@@ -20,10 +20,6 @@ class FlowOnRuleTest extends TestCase
 {
     use AssertWarningsTrait;
 
-    // ========================================================================
-    // fromArray — happy paths
-    // ========================================================================
-
     /** @test */
     public function fromArray_with_execution_full_captures_rule()
     {
@@ -73,10 +69,6 @@ class FlowOnRuleTest extends TestCase
         $this->assertNull($rule->getExecutionMode());
         $this->assertFalse($result->hasErrors());
     }
-
-    // ========================================================================
-    // fromArray — validation errors
-    // ========================================================================
 
     /** @test */
     public function fromArray_with_non_array_attrs_returns_error()
@@ -128,10 +120,6 @@ class FlowOnRuleTest extends TestCase
             $result
         );
     }
-
-    // ========================================================================
-    // fromArray — unknown attribute warnings (did-you-mean)
-    // ========================================================================
 
     /** @test */
     public function fromArray_with_typo_attribute_adds_warning_with_suggestion()

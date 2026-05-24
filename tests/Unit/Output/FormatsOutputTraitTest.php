@@ -609,14 +609,6 @@ class FormatsOutputTraitTest extends TestCase
         ], '1.10s', 1, 2);
     }
 
-    // ========================================================================
-    // Multi-report (v3.3 ítem 2):
-    //   - collectReportTargets: precedence CLI > config, --no-reports semantics.
-    //   - renderFormattedResult: writes N report files alongside --format/--output.
-    //   - formatterFor factory.
-    //   - OutputFormats constants lock-in.
-    // ========================================================================
-
     /** @test */
     public function output_formats_constants_expose_supported_and_structured_sets(): void
     {
@@ -643,8 +635,6 @@ class FormatsOutputTraitTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $double->callFormatterFor('xml');
     }
-
-    // ----- collectReportTargets ---------------------------------------------
 
     /** @test */
     public function collect_report_targets_returns_empty_when_no_cli_no_config(): void
@@ -772,8 +762,6 @@ class FormatsOutputTraitTest extends TestCase
         $this->assertSame([], $double->callCollectReportTargets(null));
         $this->assertSame([], $double->callCollectReportTargets(new OptionsConfiguration()));
     }
-
-    // ----- renderFormattedResult writes report files ------------------------
 
     /** @test */
     public function render_formatted_result_writes_no_extra_files_when_no_targets(): void
@@ -995,14 +983,6 @@ class FormatsOutputTraitTest extends TestCase
             @rmdir($base);
         }
     }
-
-    // ========================================================================
-    // structuredFormat activation matrix (BUG-16):
-    //   codeclimate/sarif requested via reports.<X> config or --report-X CLI
-    //   must request tool-level JSON output, otherwise phpstan/psalm emit text
-    //   and the report parsers produce []. Pre-3.3.2 the flag activated only
-    //   on --format=codeclimate|sarif.
-    // ========================================================================
 
     /**
      * @test

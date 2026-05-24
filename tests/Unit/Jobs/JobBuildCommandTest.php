@@ -344,10 +344,6 @@ class JobBuildCommandTest extends TestCase
         $this->assertNotSame($original, $modified);
     }
 
-    // ========================================================================
-    // executable-prefix
-    // ========================================================================
-
     /** @test */
     public function executable_prefix_is_prepended_to_phpstan_command()
     {
@@ -517,10 +513,6 @@ class JobBuildCommandTest extends TestCase
 
         $this->assertEquals($commandBefore, $job->buildCommand());
     }
-
-    // ========================================================================
-    // CLI extra arguments (-- args)
-    // ========================================================================
 
     /** @test */
     public function cli_extra_arguments_are_appended_to_command()

@@ -231,14 +231,7 @@ class PhpstanCacheResolverTest extends TestCase
         $this->assertSame('abs/cache', PhpstanCacheResolver::resolve($child));
     }
 
-    // ========================================================================
-    // Infection Tier 2 — NEON parser adversarial cases.
-    // Anchors `^…$`, initial flag values, Continue→Break in the line loop,
-    // trim/ltrim guards, isTopLevelKey first-character semantics.
-    // ========================================================================
-
     /**
-     * Kills L2047 / L2060 (anchors `^…$` on `/^includes:\s*$/`),
      *       L2164 / L2177 (anchors on `/^parameters:\s*$/`),
      *       L2034 (`$inIncludes = false` initial), L2138 (`$insideParameters = false` initial),
      *       L2086 (anchor `^` on the entry regex `^\s+-\s+…`),
@@ -301,7 +294,6 @@ class PhpstanCacheResolverTest extends TestCase
     }
 
     /**
-     * Kills L2099 (UnwrapTrim of `trim($matches[1], "\"'")` on include value):
      * quoted include values must be unquoted before being resolved.
      *
      * @test
@@ -317,7 +309,6 @@ class PhpstanCacheResolverTest extends TestCase
     }
 
     /**
-     * Kills L2112 / L2190 (UnwrapLtrim): `isBlankOrComment` relies on
      * `ltrim($line)` to detect comments with leading whitespace, and the
      * exit-includes path relies on `ltrim($line)` to skip indented comments.
      *
@@ -338,7 +329,6 @@ class PhpstanCacheResolverTest extends TestCase
     }
 
     /**
-     * Kills L2202 / L2215 (IncrementInteger `$line[0]` → `$line[1]`):
      * `isTopLevelKey` must look at the very first character.
      *
      * @test

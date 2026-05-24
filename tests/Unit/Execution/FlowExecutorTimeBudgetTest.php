@@ -27,9 +27,7 @@ use Wtyd\GitHooks\Output\NullOutputHandler;
  */
 class FlowExecutorTimeBudgetTest extends TestCase
 {
-    // ========================================================================
     // Per-job thresholds
-    // ========================================================================
 
     /** @test */
     public function job_without_threshold_reports_no_state(): void
@@ -123,10 +121,6 @@ class FlowExecutorTimeBudgetTest extends TestCase
         $this->assertNull($result->getTimeBudgetState());
     }
 
-    // ========================================================================
-    // Flow time-budget
-    // ========================================================================
-
     /** @test */
     public function flow_time_budget_state_is_null_when_not_configured(): void
     {
@@ -216,10 +210,6 @@ class FlowExecutorTimeBudgetTest extends TestCase
         $this->assertLessThan(1.0, $result->getTimeBudgetState()->getTotalJobDuration());
     }
 
-    // ========================================================================
-    // Boundary tests for evaluateThreshold (FlowExecutor.php:690-702)
-    // ========================================================================
-
     /** @test */
     public function job_marks_warned_when_elapsed_exactly_equals_warn_after(): void
     {
@@ -277,10 +267,6 @@ class FlowExecutorTimeBudgetTest extends TestCase
         $this->assertSame(JobResult::THRESHOLD_NONE, $jobResult->getThresholdState());
         $this->assertSame(5, $jobResult->getConfiguredWarnAfter());
     }
-
-    // ========================================================================
-    // Boundary tests for buildTimeBudgetState (FlowExecutor.php:712-732)
-    // ========================================================================
 
     /** @test */
     public function flow_marks_failed_when_sum_exactly_equals_fail_after(): void
@@ -359,10 +345,6 @@ class FlowExecutorTimeBudgetTest extends TestCase
         $this->assertFalse($result->getTimeBudgetState()->isFailed());
     }
 
-    // ========================================================================
-    // formatTime exact-format tests via getExecutionTime (FlowExecutor:779-790)
-    // ========================================================================
-
     /** @test */
     public function execution_time_under_one_second_is_rendered_as_milliseconds(): void
     {
@@ -419,10 +401,6 @@ class FlowExecutorTimeBudgetTest extends TestCase
         $this->assertSame('59.99s', $result->getJobResults()[0]->getExecutionTime());
     }
 
-    // ========================================================================
-    // Clock seam regression test
-    // ========================================================================
-
     /**
      * @test
      * Guards against a future commit accidentally re-introducing
@@ -441,10 +419,6 @@ class FlowExecutorTimeBudgetTest extends TestCase
 
         $this->assertSame(0.0, $result->getJobResults()[0]->getDurationSeconds());
     }
-
-    // ========================================================================
-    // Helpers
-    // ========================================================================
 
     /**
      * Build a FlowExecutor whose now() returns each tick in order. The

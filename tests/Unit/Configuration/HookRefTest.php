@@ -13,10 +13,6 @@ class HookRefTest extends TestCase
 {
     use AssertWarningsTrait;
 
-    // ========================================================================
-    // fromString
-    // ========================================================================
-
     /** @test */
     public function fromString_creates_ref_with_empty_conditions()
     {
@@ -30,10 +26,6 @@ class HookRefTest extends TestCase
         $this->assertNull($ref->getExecution());
         $this->assertFalse($ref->hasConditions());
     }
-
-    // ========================================================================
-    // fromArray: happy paths
-    // ========================================================================
 
     /** @test */
     public function fromArray_with_flow_key_creates_ref()
@@ -66,10 +58,6 @@ class HookRefTest extends TestCase
         $this->assertSame('qa', $ref->getTarget());
     }
 
-    // ========================================================================
-    // fromArray: validation errors
-    // ========================================================================
-
     /** @test */
     public function fromArray_without_flow_or_job_returns_null_with_error()
     {
@@ -99,10 +87,6 @@ class HookRefTest extends TestCase
         $this->assertNull($ref);
         $this->assertTrue($result->hasErrors());
     }
-
-    // ========================================================================
-    // fromArray: condition normalization (string → array)
-    // ========================================================================
 
     /** @test */
     public function fromArray_normalizes_only_on_string_to_array()
@@ -159,10 +143,6 @@ class HookRefTest extends TestCase
         $this->assertSame(['src/*.php', 'app/*.php'], $ref->getOnlyFiles());
     }
 
-    // ========================================================================
-    // fromArray: execution validation
-    // ========================================================================
-
     /** @test */
     public function fromArray_with_valid_execution_sets_it()
     {
@@ -176,7 +156,6 @@ class HookRefTest extends TestCase
 
     /**
      * @test
-     * Kills L99 Concat/ConcatOperandRemoval: the error message has to contain
      * the target name, the 'execution' literal, and the exact list of valid
      * modes. Exact-string equality kills removals of any half.
      */
@@ -201,10 +180,6 @@ class HookRefTest extends TestCase
         $this->assertNull($ref);
         $this->assertTrue($result->hasErrors());
     }
-
-    // ========================================================================
-    // fromArray: unknown keys → warnings
-    // ========================================================================
 
     /** @test */
     public function fromArray_with_unknown_key_adds_warning()
@@ -234,10 +209,6 @@ class HookRefTest extends TestCase
         $this->assertNotNull($ref);
         $this->assertEmpty($result->getWarnings());
     }
-
-    // ========================================================================
-    // hasConditions
-    // ========================================================================
 
     /** @test */
     public function hasConditions_true_with_only_on()
@@ -273,10 +244,6 @@ class HookRefTest extends TestCase
         $ref = new HookRef('qa');
         $this->assertFalse($ref->hasConditions());
     }
-
-    // ========================================================================
-    // FEAT-1 alignment — null sentinel + [] error
-    // ========================================================================
 
     /** @test */
     public function fromArray_with_only_files_null_means_no_rule()

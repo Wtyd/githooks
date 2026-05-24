@@ -257,14 +257,7 @@ class PhpConfigCacheResolverTest extends TestCase
         $this->assertSame($expected, PhpConfigCacheResolver::resolve($path, 'setCacheFile'));
     }
 
-    // ========================================================================
-    // Infection Tier 2 — adversarial tests for the regex parser internals.
-    // Cover preg_quote on the method name, $matches[0|1|2] index integrity,
-    // and the realpath/configPath fallback in collectDirConcat.
-    // ========================================================================
-
     /**
-     * Kills L1839 / L1982 (PregQuote removal in `resolve` and `declaresUnresolvable`):
      * a method name containing a regex metacharacter (e.g. `.`) must be treated
      * as a literal. Without preg_quote, `set.Cache` would match any character
      * between `set` and `Cache`, so `->setMyCache(__DIR__ . '/x')` would match
@@ -290,7 +283,6 @@ class PhpConfigCacheResolverTest extends TestCase
     }
 
     /**
-     * Kills L1891 / L1904 (`$matches[0][$i][0]` → `$matches[1][$i][0]` or `…[$i][1]`):
      * the full match (position 0) is what the resolver compares against
      * `$lastCallOffset` for tie-breaking. If the index is swapped to a
      * capture group, the position-matching breaks and the resolver returns
@@ -318,7 +310,6 @@ class PhpConfigCacheResolverTest extends TestCase
     }
 
     /**
-     * Kills L1917 / L1930 / L1956 (`$matches[1]` ↔ `$matches[0]`/`[2]` swap
      * for the single-quote capture, and `$matches[2]` ↔ `$matches[1]` for the
      * double-quote capture): each quoted literal must be picked from its own
      * capture group, not from the full match or the other quote group.
@@ -350,7 +341,6 @@ class PhpConfigCacheResolverTest extends TestCase
     }
 
     /**
-     * Kills L1852 (Ternary swap `realpath($cfg) ?: $cfg` → `realpath ? cfg : realpath`):
      * when realpath succeeds the dir-concat base must be the realpath
      * directory, not the original (possibly relative) configPath dirname.
      *

@@ -59,10 +59,6 @@ class FifoAdmissionTest extends TestCase
         $this->assertNull((new FifoAdmission())->pickNext($queue, $ctx));
     }
 
-    // ========================================================================
-    // FEAT-3 · gate by `needs`
-    // ========================================================================
-
     /** @test */
     public function blocks_head_when_needs_not_completed(): void
     {

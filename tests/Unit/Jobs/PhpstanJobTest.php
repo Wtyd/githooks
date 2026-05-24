@@ -246,17 +246,8 @@ class PhpstanJobTest extends TestCase
         ];
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin applyStructuredOutputFormat side-effects,
-    // the exact warning message and the fallback worker count.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L50 TrueValue `$args['no-progress'] = true` → `= false`
-     *   - L51 TrueValue `return true` → `return false`
      *
      * The structured-output adapter mutates internal args (introspectable
      * via Reflection) and signals success with a literal `true`. Both
@@ -284,10 +275,6 @@ class PhpstanJobTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L109 Concat ×2 (re-ordered string fragments)
-     *   - L109 ConcatOperandRemoval ×2 (drop of one of the three fragments)
-     *
      * `getCacheResolutionWarning` builds the warning by concatenating three
      * literal fragments. The mutants either shuffle or drop a fragment; the
      * only way to catch all four is to assert the FULL message verbatim.
@@ -312,8 +299,6 @@ class PhpstanJobTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L119 DecrementInteger `return 4` → `return 3` (fallback when
      *     `config` arg is absent OR file does not exist)
      *
      * Two scenarios anchor the fallback path: no `config` arg supplied,
@@ -347,11 +332,6 @@ class PhpstanJobTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L125 DecrementInteger `return 4` → `return 3`
-     *   - L125 IncrementInteger `return 4` → `return 5`
-     *   - L125 IntegerNegation  `return 4` → `return -4`
      *
      * NEON exists, has parameters, but no `maximumNumberOfProcesses` key.
      * The implementation must return the canonical 4 (matches PHPStan's

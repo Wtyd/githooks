@@ -371,12 +371,6 @@ class FlowCommandTest extends SystemTestCase
             ->assertExitCode(0);
     }
 
-    // =========================================================================
-    // Multi-report smokes (v3.3 ítem 2) — wiring CLI/signature → trait → file.
-    // The combinations matrix is covered by FormatsOutputTraitTest. These tests
-    // only verify the end-to-end plumbing through the artisan command.
-    // =========================================================================
-
     /** @test */
     public function it_writes_multiple_report_files_via_cli_flags()
     {

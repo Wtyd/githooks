@@ -198,17 +198,8 @@ XML);
         $this->assertSame(['.phpunit.result.cache'], $job->getCachePaths());
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin attribute trimming, configuration arg
-    // precedence, the composite locateConfigFile guard, and the absolute-
-    // path detection in resolveRelativeToConfig.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L39 UnwrapTrim `trim((string) $xml['cacheDirectory'])` → `(string) $xml['cacheDirectory']`
      *
      * XML attribute with surrounding whitespace: without trim, the resolved
      * path would include the leading/trailing spaces and the relative-path
@@ -236,8 +227,6 @@ XML);
     /**
      * @test
      *
-     * Kills:
-     *   - L45 UnwrapTrim same pattern on cacheResultFile attribute.
      */
     public function cache_result_file_attribute_is_trimmed_of_surrounding_whitespace(): void
     {
@@ -260,8 +249,6 @@ XML);
     /**
      * @test
      *
-     * Kills:
-     *   - L57 Coalesce `$args['configuration'] ?? $args['config'] ?? ''`
      *     → `$args['config'] ?? $args['configuration'] ?? ''`
      *
      * When BOTH keys point to readable config files, `configuration` (long
@@ -292,9 +279,6 @@ XML);
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L58 LogicalAnd ×3 in `is_string($explicit) && $explicit !== '' && is_file($explicit) && is_readable($explicit)`
      *
      * Decision table: each `&&` mutated to `||` produces a different
      * accept/reject behaviour. We pin the four failure cases that anchor
@@ -366,9 +350,6 @@ XML);
     /**
      * @test
      *
-     * Kills:
-     *   - L62 LogicalAnd `is_file($candidate) && is_readable($candidate)` → `||`
-     *
      * Create a phpunit.xml that exists but whose permissions strip read
      * access. With the mutant `||`, is_file returns true so the OR short-
      * circuits to true and locateConfigFile returns the path; PHPUnit then
@@ -412,11 +393,6 @@ XML);
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L71 LogicalOr ×2 in `$path === '' || $path[0] === '/' || preg_match(...) === 1`
-     *   - L71 IncrementInteger `$path[0]` → `$path[1]`
-     *   - L71 PregMatchRemoveCaret `#^[A-Za-z]:[\\\\/]#` → `#[A-Za-z]:[\\\\/]#`
      *
      * Decision table for `resolveRelativeToConfig`. The method must return
      * the path UNCHANGED for absolute paths (Unix `/abs`, Windows `C:\…`)

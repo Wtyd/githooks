@@ -278,10 +278,6 @@ class HookConfigurationTest extends TestCase
         $this->assertStringContainsString('hooks.command', $result->getErrors()[0]);
     }
 
-    // ========================================================================
-    // HookRef execution mode (TDD — will fail until implementation exists)
-    // ========================================================================
-
     /** @test */
     public function it_parses_hookref_with_fast_execution()
     {
@@ -402,7 +398,6 @@ class HookConfigurationTest extends TestCase
 
     /**
      * @test
-     * Kills L57 Continue_→break: with two events, the first invalid (not a git
      * hook) and the second valid, `break` would short-circuit the foreach and
      * drop the second event's configuration.
      */
@@ -426,7 +421,6 @@ class HookConfigurationTest extends TestCase
 
     /**
      * @test
-     * Kills L62 Continue_→break: two events, first with an empty refs array and
      * the second valid. `break` after the first error drops the second hook.
      */
     public function it_keeps_validating_events_after_an_empty_refs_array()

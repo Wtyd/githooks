@@ -29,10 +29,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder->enableV3Mode();
     }
 
-    // ========================================================================
-    // JSON v2 schema enrichment
-    // ========================================================================
-
     /** @test */
     public function json_v2_schema_includes_enriched_fields_per_job()
     {
@@ -66,10 +62,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertFalse($job['fixApplied']);
     }
 
-    // ========================================================================
-    // Code Climate format
-    // ========================================================================
-
     /** @test */
     public function codeclimate_format_emits_valid_json_array_to_stdout()
     {
@@ -86,10 +78,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded, 'Code Climate output must be a JSON array');
     }
-
-    // ========================================================================
-    // SARIF format
-    // ========================================================================
 
     /** @test */
     public function sarif_format_emits_valid_2_1_0_report_to_stdout()
@@ -110,10 +98,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertArrayHasKey('runs', $decoded);
         $this->assertArrayHasKey('$schema', $decoded);
     }
-
-    // ========================================================================
-    // Streaming text + stderr progress split
-    // ========================================================================
 
     /** @test */
     public function progress_is_silent_without_tty_and_json_payload_stays_on_stdout()
@@ -184,10 +168,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringNotContainsString('Done.', $stderr, '`-v` must no longer emit Done. summary');
     }
 
-    // ========================================================================
-    // CI annotations (GitHub Actions)
-    // ========================================================================
-
     /** @test */
     public function github_actions_annotations_are_emitted_when_env_var_is_set()
     {
@@ -238,10 +218,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringNotContainsString('::error file=', $output);
     }
 
-    // ========================================================================
-    // New native job types
-    // ========================================================================
-
     /** @test */
     public function php_cs_fixer_job_dry_run_emits_fix_subcommand_with_dry_run_flag()
     {
@@ -289,10 +265,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('--dry-run', $output);
         $this->assertStringContainsString('src', $output);
     }
-
-    // ========================================================================
-    // Payload guarantees (regression guards for 3.2 bugfixes)
-    // ========================================================================
 
     /** @test */
     public function json_executionMode_reflects_the_cli_flag()
@@ -462,10 +434,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringNotContainsString('Done.', $stderr, 'the bogus "Done. 0/N completed." banner must be gone');
     }
 
-    // ========================================================================
-    // Regression: --output, separator --, JUnit skipped
-    // ========================================================================
-
     /** @test */
     public function output_flag_writes_payload_to_file_for_each_structured_format()
     {
@@ -535,10 +503,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('never_job', $output);
     }
 
-    // ========================================================================
-    // Misc v3.2 features (truncation, cores conflict warning, dashboard fallback)
-    // ========================================================================
-
     /** @test */
     public function conf_check_truncates_long_commands_to_80_chars()
     {
@@ -585,15 +549,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
 
         $this->assertStringContainsString("'cores' overrides 'parallel'", $output);
     }
-
-    // ========================================================================
-    // BUG-16 regression: codeclimate/sarif reports requested via reports.<X>
-    // config or --report-X CLI must trigger tool-level JSON output. Pre-3.3.2,
-    // structuredFormat activated only on --format=codeclimate|sarif, so phpstan
-    // ran with text output and the parser produced []. These tests exercise the
-    // .phar end-to-end with phpstan against a file that has a real error so the
-    // empty-payload regression cannot slip back into a release.
-    // ========================================================================
 
     /** @test */
     public function bug16_reports_codeclimate_in_config_captures_phpstan_issues_without_format_flag()
@@ -736,15 +691,6 @@ class V32FeaturesReleaseTest extends ReleaseTestCase
 
         @unlink($reportPath);
     }
-
-    // ========================================================================
-    // 3.3.2 JUnit pretty-print: tools that emit compact JSON (phpstan, phpcs,
-    // psalm, parallel-lint) ship one-liner payloads; GitLab/Jenkins viewers
-    // render <failure> verbatim, leaving the panel unreadable. The formatter
-    // now pretty-prints JSON inside <failure> so each finding gets its own
-    // indented block. phpmd already pretty-prints natively — its semantics
-    // are preserved across the round-trip.
-    // ========================================================================
 
     /** @test */
     public function junit_failure_pretty_prints_phpstan_compact_json_output()

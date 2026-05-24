@@ -170,17 +170,8 @@ XML);
         return $path;
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the composite guards on the `config` arg
-    // and the xml-validity check, plus the ^anchor on the absolute-path regex
-    // in resolveRelativeToConfig.
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L45 LogicalAnd `!empty($config) && is_file($config) && is_readable($config)`
      *
      * @dataProvider configGuardScenarios
      */
@@ -245,9 +236,6 @@ XML);
     /**
      * @test
      *
-     * Kills:
-     *   - L50 LogicalAnd `$xml !== false && isset($xml['cacheDirectory'])`
-     *
      * Drive the two failure cases of the AND independently:
      *  - malformed XML → $xml === false: fallback (kills the right-hand
      *    isset that would now be skipped via short-circuit).
@@ -274,9 +262,6 @@ XML);
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L62 PregMatchRemoveCaret `#^[A-Za-z]:[\\\\/]#` → `#[A-Za-z]:[\\\\/]#`
      *
      * `xyzC:/path` is a relative path that ACCIDENTALLY contains the
      * Windows drive-prefix pattern in the middle. With the caret intact,

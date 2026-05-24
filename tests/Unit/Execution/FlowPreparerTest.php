@@ -474,11 +474,6 @@ class FlowPreparerTest extends TestCase
         $this->assertStringContainsString('src', $plan->getJobs()[0]->buildCommand());
     }
 
-    // ========================================================================
-    // Execution mode resolution hierarchy tests
-    // (TDD — will fail until FlowPreparer accepts invocationMode parameter)
-    // ========================================================================
-
     /** @test */
     public function invocation_mode_overrides_job_and_flow_execution()
     {
@@ -810,10 +805,6 @@ class FlowPreparerTest extends TestCase
         $this->assertStringContainsString('src/Foo.php', $command);
     }
 
-    // ========================================================================
-    // executable-prefix resolution
-    // ========================================================================
-
     /** @test */
     public function it_applies_global_executable_prefix_to_all_jobs()
     {
@@ -1027,10 +1018,6 @@ class FlowPreparerTest extends TestCase
         $this->assertStringStartsWith('docker exec -i app vendor/bin/phpstan', $plan->getJobs()[0]->buildCommand());
     }
 
-    // ========================================================================
-    // CLI extra arguments (-- args)
-    // ========================================================================
-
     /** @test */
     public function it_passes_cli_extra_args_to_all_jobs_in_flow()
     {
@@ -1105,10 +1092,6 @@ class FlowPreparerTest extends TestCase
             $planWith->getJobs()[0]->buildCommand()
         );
     }
-
-    // ========================================================================
-    // BUG-15: decision-table for filterJobForMode().
-    // ========================================================================
 
     /**
      * Decision table over (mode × context-presence × effective-set × paths ×

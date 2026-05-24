@@ -142,10 +142,6 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
         $this->assertSame(1, $plan->getMaxParallelJobs());
     }
 
-    // ========================================================================
-    // Edge cases targeting escaped mutants
-    // ========================================================================
-
     /** @test */
     function it_clamps_negative_budget_to_1()
     {
@@ -304,10 +300,6 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
         $this->assertSame(1, $plan->getAllocation('phpmd'));
     }
 
-    // ========================================================================
-    // cores: N explicit override
-    // ========================================================================
-
     /** @test */
     function cores_override_pins_allocation_on_job_without_capability()
     {
@@ -419,7 +411,6 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
         $this->assertSame(6, $plan->getAllocation('phpcs'));
     }
 
-    // ========================================================================
     // Family invariant: no per-job allocation may ever exceed the budget.
     // FifoAdmission rejects forever any job with cores > free_max, which in the
     // limit case (cores > budget) means the queue head can never be admitted
@@ -427,7 +418,6 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
     // throws LogicException on violations; these tests cover every code path
     // where an oversized allocation could leak (override, uncontrollable
     // default, threadable minimum, and combinations).
-    // ========================================================================
 
     /**
      * @test
@@ -537,27 +527,18 @@ class ThreadBudgetAllocatorTest extends UnitTestCase
         new ThreadBudgetPlan(2, 1, ['offending_job' => 4], []);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the minimum-thread ternary in the
     // threadable-allocation loop. The other 5 mutants in this file are
     // EQUIVALENT (see Infection-2026-05-23.md):
-    //   - L69 max(1,…)→max(0,…): downstream min/max chain absorbs the change
     //     when the per-job minimum is ≥ 1, which it always is by contract.
-    //   - L72 Decrement/Increment of the `:1` fallback: unreachable — every
     //     job in $threadableJobs has a non-null capability by construction.
-    //   - L111 break→continue in calculateMaxParallel: equivalent because
     //     costs are sort()ed ascending, so once a job doesn't fit, no later
     //     (larger) job fits either.
-    //   - L115 max(1,$parallel)→max(0,$parallel): unreachable — costs are
     //     clamped to budget upstream so the first iteration ALWAYS pushes
     //     $parallel to at least 1.
-    // ========================================================================
 
     /**
      * @test
      *
-     * Kills:
-     *   - L72 Ternary swap `$capability !== null ? getMinimumThreads() : 1`
      *     → `... ? 1 : getMinimumThreads()`
      *
      * A capability whose getMinimumThreads() returns a value > 1 (e.g. a

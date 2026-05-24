@@ -345,11 +345,6 @@ class HookRunnerTest extends TestCase
         $this->assertEmpty($results);
     }
 
-    // ========================================================================
-    // Fix: pre-commit no longer forces fast mode
-    // (TDD — will fail until HookRunner is refactored)
-    // ========================================================================
-
     /** @test */
     public function pre_commit_no_longer_forces_fast_mode()
     {
@@ -436,10 +431,6 @@ class HookRunnerTest extends TestCase
             new ValidationResult()
         );
     }
-
-    // ========================================================================
-    // Mutation coverage — multiple refs, warning conditions, flow execution
-    // ========================================================================
 
     /** @test */
     public function run_executes_all_refs_configured_for_event_returning_one_result_per_ref()

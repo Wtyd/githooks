@@ -75,10 +75,6 @@ class GreedyAdmissionTest extends TestCase
         $this->assertNull((new GreedyAdmission())->pickNext([], $ctx));
     }
 
-    // ========================================================================
-    // FEAT-3 · gate by `needs`
-    // ========================================================================
-
     /** @test */
     public function skips_job_with_unsatisfied_needs_and_admits_next(): void
     {

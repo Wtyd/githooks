@@ -352,16 +352,9 @@ class RectorJobTest extends TestCase
         $this->assertStringEndsWith('src', $command);
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the composite guards in locateConfigFile
-    // for both the explicit `config` arg (L83) and the cwd fallback (L86).
-    // ========================================================================
-
     /**
      * @test
      *
-     * Kills:
-     *   - L83 LogicalAnd (composite guard:
      *     is_string($explicit) && $explicit !== '' && is_file($explicit) && is_readable($explicit))
      *
      * @dataProvider explicitConfigGuardScenarios
@@ -419,9 +412,6 @@ class RectorJobTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L86 LogicalAnd variants (`is_file('rector.php') && is_readable('rector.php')`)
      *
      * Two adjacent assertions: rector.php present-and-readable in cwd ⇒ it
      * is picked up; rector.php present but chmod 0000 ⇒ falls back. With the

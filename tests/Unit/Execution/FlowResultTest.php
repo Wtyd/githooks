@@ -51,10 +51,6 @@ class FlowResultTest extends TestCase
         $this->assertEquals(0, $result->getSkippedCount());
     }
 
-    // ========================================================================
-    // Time-budget state (v3.3 item 4 — flow-level threshold)
-    // ========================================================================
-
     /** @test */
     public function time_budget_state_defaults_to_null(): void
     {

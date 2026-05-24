@@ -157,10 +157,6 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertArrayHasKey('command', $data['jobs'][0]);
     }
 
-    // ========================================================================
-    // v3.3 — flows[] root field and effectiveOptions root block
-    // ========================================================================
-
     /** @test */
     function flows_field_is_omitted_when_no_expanded_flows()
     {
@@ -238,10 +234,6 @@ class JsonResultFormatterTest extends UnitTestCase
 
         $this->assertArrayNotHasKey('effectiveOptions', $data);
     }
-
-    // ========================================================================
-    // time-budget + threshold (v3.3 item 4 — explicit null pattern)
-    // ========================================================================
 
     /** @test */
     function time_budget_root_field_is_null_when_state_absent(): void
@@ -374,10 +366,6 @@ class JsonResultFormatterTest extends UnitTestCase
 
         $this->assertSame(95.4, $data['jobs'][0]['duration']);
     }
-
-    // ========================================================================
-    // v3.3 — memory budget + stats (REQ-038..REQ-041)
-    // ========================================================================
 
     /** @test */
     function memory_blocks_are_null_when_no_budget_or_stats(): void
@@ -529,10 +517,6 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertSame('flow memory-budget exceeded', $data['jobs'][0]['killedReason']);
     }
 
-    // ========================================================================
-    // v3.3 — kebab-case warnings + deprecations[]
-    // ========================================================================
-
     /** @test */
     function warnings_and_deprecations_are_always_present_as_arrays(): void
     {
@@ -625,10 +609,6 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertSame('phpstan_src', $data['jobs'][0]['name']);
         $this->assertSame('phpcs_all', $data['jobs'][1]['name']);
     }
-
-    // ========================================================================
-    // FEAT-3 · `needs` emission (Group I)
-    // ========================================================================
 
     /**
      * @test

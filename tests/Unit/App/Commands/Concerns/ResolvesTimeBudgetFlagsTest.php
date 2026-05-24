@@ -17,9 +17,7 @@ use PHPUnit\Framework\TestCase;
  */
 class ResolvesTimeBudgetFlagsTest extends TestCase
 {
-    // ========================================================================
     // Happy paths
-    // ========================================================================
 
     /** @test */
     public function it_returns_all_nulls_when_no_flags_provided(): void
@@ -91,11 +89,6 @@ class ResolvesTimeBudgetFlagsTest extends TestCase
         $this->assertSame([], $double->errLines);
     }
 
-    // ========================================================================
-    // Bug regression — `--no-time-budget` mixed with --warn-after / --fail-after
-    // emits a warning to stderr (must NOT throw "Call to protected method").
-    // ========================================================================
-
     /** @test */
     public function no_time_budget_with_warn_after_clears_value_and_emits_warning(): void
     {
@@ -153,10 +146,6 @@ class ResolvesTimeBudgetFlagsTest extends TestCase
             $double->errLines
         );
     }
-
-    // ========================================================================
-    // parseSecondsOption — invalid integer guards (`< 1` boundary, ctype_digit)
-    // ========================================================================
 
     /** @test */
     public function empty_string_value_is_treated_as_absent_without_warning(): void

@@ -156,9 +156,6 @@ class StatsTableRendererTest extends TestCase
         $this->assertStringContainsString('KO', $rendered);
     }
 
-    // ========================================================================
-    // Mutation testing reinforcements (cluster E)
-    // ========================================================================
 
     /** @test */
     public function status_marks_ko_when_job_fails_without_memory_issue(): void
@@ -283,27 +280,14 @@ class StatsTableRendererTest extends TestCase
         return new MemoryStats(true, 100, 0.5, ['a' => 100], ['a' => 100], 4, 1, 0.5, ['a'], ['a' => 1]);
     }
 
-    // ========================================================================
     // Color tagging — when the OutputInterface is decorated (CI logs that
     // accept ANSI), the renderer must wrap KO/OK ⚠/⏭ and the TOTAL fail/ok
     // markers in <fg=...> tags so the operator's eye locks on the failure
     // without scanning row by row. Off-decoration the tags strip away
     // cleanly and existing assertions still hold.
-    // ========================================================================
-
-    // ========================================================================
-    // Mutation testing Tier 3 — strict asserts that pin down the exact cell
-    // value rather than a permissive substring. The previous tests already
-    // covered most branches but the matched substrings overlapped with
-    // unrelated cells (e.g. `'-'` appears in many empty cells) leaving these
-    // mutants alive.
-    // ========================================================================
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L106 Ternary `$time !== '' ? $time : '-'` → `... ? '-' : $time`
      *
      * The pre-existing `time_column_renders_dash_for_empty_execution_time`
      * test used the regex `/blank.*-/` which also matches when Peak Cores /
@@ -339,10 +323,6 @@ class StatsTableRendererTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L111 IfNegation `if ($job->isSkipped())` → `if (!$job->isSkipped())`
-     *   - L115 Ternary `$cores !== null ? (string) $cores : '-'`
      *
      * Two adjacent rows: a skipped job whose allocation IS recorded (so the
      * negated branch would now expose the integer) and a live job with a
@@ -392,9 +372,6 @@ class StatsTableRendererTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L121 ReturnRemoval `return 'n/a';` in renderJobMemory
-     *
      * With the return removed, the function falls through to the
      * `getMemoryPeak()` path which is null on inactive-sampler runs and
      * returns `-`. The pre-existing test asserted only
@@ -423,9 +400,6 @@ class StatsTableRendererTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L125 ReturnRemoval `return '-';` when $peak === null
      *
      * Sampler active, but the job recorded no memory peak (e.g. job was
      * skipped or finished before the first sample). The cell must be `-`
@@ -469,9 +443,6 @@ class StatsTableRendererTest extends TestCase
     /**
      * @test
      *
-     * Kills:
-     *   - L133 MethodCallRemoval `$output->writeln('')` in renderAttribution
-     *
      * The blank line between the table and the temporal attribution lines is
      * a visual contract — without it the operator sees the attribution stuck
      * to the bottom border of the table. We assert the exact blank-line
@@ -511,9 +482,6 @@ class StatsTableRendererTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L156 ReturnRemoval `return '(no jobs in flight)';` for empty map
      *
      * Without the early return the function continues with an empty
      * `$parts = []`, `implode(' + ', [])` returns `''`, and the attribution

@@ -79,10 +79,6 @@ class OptionsConfigurationTest extends TestCase
         $this->assertEquals(1, $options->getProcesses());
     }
 
-    // ========================================================================
-    // Execution mode options (TDD — will fail until implementation exists)
-    // ========================================================================
-
     /** @test */
     public function it_parses_main_branch_option()
     {
@@ -168,10 +164,6 @@ class OptionsConfigurationTest extends TestCase
         $this->assertEmpty($result->getWarnings());
     }
 
-    // ========================================================================
-    // executable-prefix option
-    // ========================================================================
-
     /** @test */
     public function it_parses_executable_prefix_option()
     {
@@ -211,10 +203,6 @@ class OptionsConfigurationTest extends TestCase
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings());
     }
-
-    // ========================================================================
-    // reports option (multi-report v3.3 — declarative format → path map)
-    // ========================================================================
 
     /** @test */
     public function it_defaults_reports_to_empty_array()
@@ -343,10 +331,6 @@ class OptionsConfigurationTest extends TestCase
         );
     }
 
-    // ========================================================================
-    // time-budget option (v3.3 item 4 — flow time-budget)
-    // ========================================================================
-
     /** @test */
     public function it_defaults_time_budget_to_null(): void
     {
@@ -391,10 +375,6 @@ class OptionsConfigurationTest extends TestCase
 
         $this->assertEmpty($result->getWarnings());
     }
-
-    // ========================================================================
-    // memory-budget, allocator and stats options (v3.3 — gh-48)
-    // ========================================================================
 
     /** @test */
     public function it_parses_memory_budget_with_warn_and_fail_above(): void
@@ -530,13 +510,6 @@ class OptionsConfigurationTest extends TestCase
         $this->assertTrue($options->hasKey('allocator'));
         $this->assertTrue($options->hasKey('stats'));
     }
-
-    // ========================================================================
-    // BUG-20 — cascadeBlockKeysFromFlow factory: per-key cascade for the three
-    // "block-level" keys (executable-prefix, fast-branch-fallback, reports).
-    // Comprehensive scenario coverage lives in EffectiveOptionsResolverTest and
-    // FlowPreparerTest; this test pins the public contract of the factory itself.
-    // ========================================================================
 
     /** @test */
     public function cascade_block_keys_returns_global_when_flow_is_null(): void

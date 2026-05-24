@@ -124,10 +124,6 @@ class JobResultTest extends TestCase
         $this->assertNotNull($result->getStdout());
     }
 
-    // ========================================================================
-    // Threshold metadata (v3.3 item 4 — per-job time thresholds)
-    // ========================================================================
-
     /** @test */
     public function threshold_defaults_are_none(): void
     {
@@ -288,17 +284,8 @@ class JobResultTest extends TestCase
         $this->assertFalse($result->hasMemoryThreshold());
     }
 
-    // ========================================================================
-    // Mutation testing Tier 3 — pin the constructor default of $fixApplied
-    // and the `clone $this` semantics of withNeeds() and
-    // withFailureByMemoryThreshold() (immutable-copy contract).
-    // ========================================================================
-
     /**
      * @test
-     *
-     * Kills:
-     *   - L98 FalseValue `bool $fixApplied = false` → `= true`
      *
      * A JobResult constructed without an explicit $fixApplied must
      * default to NOT having a fix applied. The mutant `= true` would
@@ -312,9 +299,6 @@ class JobResultTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L237 CloneRemoval `$clone = clone $this;` in withNeeds()
      *
      * `withNeeds()` must return an independent copy; the original must
      * not see the new $needs. Without the clone, modifying the clone
@@ -334,9 +318,6 @@ class JobResultTest extends TestCase
 
     /**
      * @test
-     *
-     * Kills:
-     *   - L360 CloneRemoval `$clone = clone $this;` in withFailureByMemoryThreshold()
      *
      * `withFailureByMemoryThreshold()` flips success → false on a copy;
      * the original passing result must remain success=true. Without the
