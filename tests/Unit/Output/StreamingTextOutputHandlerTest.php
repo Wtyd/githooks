@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
 use Wtyd\GitHooks\Utils\Printer;
 
 class StreamingTextOutputHandlerTest extends TestCase
 {
+    use CapturesStdout;
+
     /** @test */
     public function on_job_start_prints_header()
     {
@@ -28,9 +31,9 @@ class StreamingTextOutputHandlerTest extends TestCase
         $printer = $this->createMock(Printer::class);
         $handler = new StreamingTextOutputHandler($printer);
 
-        ob_start();
-        $handler->onJobOutput('phpstan_src', 'some output chunk', false);
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->onJobOutput('phpstan_src', 'some output chunk', false);
+        });
 
         $this->assertSame('some output chunk', $output);
     }

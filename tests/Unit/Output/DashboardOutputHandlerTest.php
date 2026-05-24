@@ -5,23 +5,26 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Output\DashboardOutputHandler;
 
 class DashboardOutputHandlerTest extends TestCase
 {
+    use CapturesStdout;
+
     /** @test */
     function non_tty_mode_prints_start_and_results()
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->registerJobs(['phpstan_src', 'phpcs_src']);
-        $handler->onJobStart('phpstan_src');
-        $handler->onJobStart('phpcs_src');
-        $handler->onJobSuccess('phpstan_src', '1.23s');
-        $handler->onJobError('phpcs_src', '500ms', 'error output');
-        $handler->flush();
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->registerJobs(['phpstan_src', 'phpcs_src']);
+            $handler->onJobStart('phpstan_src');
+            $handler->onJobStart('phpcs_src');
+            $handler->onJobSuccess('phpstan_src', '1.23s');
+            $handler->onJobError('phpcs_src', '500ms', 'error output');
+            $handler->flush();
+        });
 
         $this->assertStringContainsString('⏳ phpstan_src', $output);
         $this->assertStringContainsString('⏳ phpcs_src', $output);
@@ -34,12 +37,12 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->registerJobs(['phpstan_src']);
-        $handler->onJobStart('phpstan_src');
-        $handler->onJobError('phpstan_src', '1s', 'Line 14: Method not found');
-        $handler->flush();
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->registerJobs(['phpstan_src']);
+            $handler->onJobStart('phpstan_src');
+            $handler->onJobError('phpstan_src', '1s', 'Line 14: Method not found');
+            $handler->flush();
+        });
 
         $this->assertStringContainsString('Method not found', $output);
     }
@@ -49,10 +52,10 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->registerJobs(['job1']);
-        $handler->onJobSkipped('job1', 'no staged files');
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->registerJobs(['job1']);
+            $handler->onJobSkipped('job1', 'no staged files');
+        });
 
         $this->assertStringContainsString('⏩ job1', $output);
         $this->assertStringContainsString('no staged files', $output);
@@ -64,9 +67,9 @@ class DashboardOutputHandlerTest extends TestCase
         $handler = new DashboardOutputHandler(false);
         $handler->registerJobs(['job1']);
 
-        ob_start();
-        $handler->tick();
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->tick();
+        });
 
         $this->assertEmpty($output);
     }
@@ -76,9 +79,9 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->onFlowStart(3);
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->onFlowStart(3);
+        });
 
         $this->assertSame('', $output);
     }
@@ -88,10 +91,10 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->onJobOutput('phpstan_src', 'chunk of stdout', false);
-        $handler->onJobOutput('phpstan_src', 'chunk of stderr', true);
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->onJobOutput('phpstan_src', 'chunk of stdout', false);
+            $handler->onJobOutput('phpstan_src', 'chunk of stderr', true);
+        });
 
         $this->assertSame('', $output);
     }
@@ -101,9 +104,9 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->onJobDryRun('phpcs_src', 'vendor/bin/phpcs src');
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->onJobDryRun('phpcs_src', 'vendor/bin/phpcs src');
+        });
 
         $this->assertStringContainsString('phpcs_src', $output);
         $this->assertStringContainsString('vendor/bin/phpcs src', $output);
@@ -114,12 +117,12 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->registerJobs(['job1']);
-        $handler->onJobStart('job1');
-        $handler->onJobSuccess('job1', '100ms');
-        $handler->flush();
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->registerJobs(['job1']);
+            $handler->onJobStart('job1');
+            $handler->onJobSuccess('job1', '100ms');
+            $handler->flush();
+        });
 
         $this->assertStringNotContainsString('┌', $output);
         $this->assertStringNotContainsString('└', $output);
@@ -130,12 +133,12 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->registerJobs(['phpstan_src']);
-        $handler->onJobStart('phpstan_src');
-        $handler->onJobError('phpstan_src', '1s', "src/User.php:14\n  Method not found");
-        $handler->flush();
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->registerJobs(['phpstan_src']);
+            $handler->onJobStart('phpstan_src');
+            $handler->onJobError('phpstan_src', '1s', "src/User.php:14\n  Method not found");
+            $handler->flush();
+        });
 
         $this->assertStringContainsString('phpstan_src', $output);
         $this->assertStringContainsString('Method not found', $output);
@@ -148,12 +151,12 @@ class DashboardOutputHandlerTest extends TestCase
     {
         $handler = new DashboardOutputHandler(false);
 
-        ob_start();
-        $handler->registerJobs(['job1']);
-        $handler->onJobStart('job1');
-        $handler->onJobError('job1', '1s', '   ');
-        $handler->flush();
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($handler) {
+            $handler->registerJobs(['job1']);
+            $handler->onJobStart('job1');
+            $handler->onJobError('job1', '1s', '   ');
+            $handler->flush();
+        });
 
         $this->assertStringNotContainsString('┌', $output);
     }

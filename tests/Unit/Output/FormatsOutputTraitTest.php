@@ -6,6 +6,7 @@ namespace Tests\Unit\Output;
 
 use Illuminate\Container\Container;
 use PHPUnit\Framework\TestCase;
+use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
@@ -30,6 +31,8 @@ use Wtyd\GitHooks\Utils\Printer;
  */
 class FormatsOutputTraitTest extends TestCase
 {
+    use CapturesStdout;
+
     private Container $container;
 
     /** @var array<string,string> backup of $_SERVER CI env vars */
@@ -356,9 +359,9 @@ class FormatsOutputTraitTest extends TestCase
 
         $double = $this->makeDouble(['format' => 'text']);
 
-        ob_start();
-        $double->callRenderFormattedResult($this->buildResult());
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($double) {
+            $double->callRenderFormattedResult($this->buildResult());
+        });
 
         $this->assertStringContainsString(
             'section_start:',
@@ -377,9 +380,9 @@ class FormatsOutputTraitTest extends TestCase
         // No GITLAB_CI env: setUp() unset it.
         $double = $this->makeDouble(['format' => 'text']);
 
-        ob_start();
-        $double->callRenderFormattedResult($this->buildResult());
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($double) {
+            $double->callRenderFormattedResult($this->buildResult());
+        });
 
         $this->assertStringNotContainsString('section_start:', $output);
         $this->assertStringNotContainsString('githooks_summary', $output);
@@ -392,9 +395,9 @@ class FormatsOutputTraitTest extends TestCase
 
         $double = $this->makeDouble(['format' => 'text', 'no-ci' => true]);
 
-        ob_start();
-        $double->callRenderFormattedResult($this->buildResult());
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($double) {
+            $double->callRenderFormattedResult($this->buildResult());
+        });
 
         $this->assertStringNotContainsString('section_start:', $output);
     }

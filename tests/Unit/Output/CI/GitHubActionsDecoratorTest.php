@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\CI;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
 use Wtyd\GitHooks\Output\OutputHandler;
 
 class GitHubActionsDecoratorTest extends TestCase
 {
+    use CapturesStdout;
+
     /** @test */
     public function on_job_start_emits_group_and_delegates()
     {
@@ -18,9 +21,9 @@ class GitHubActionsDecoratorTest extends TestCase
 
         $decorator = new GitHubActionsDecorator($inner);
 
-        ob_start();
-        $decorator->onJobStart('phpstan_src');
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator) {
+            $decorator->onJobStart('phpstan_src');
+        });
 
         $this->assertStringContainsString('::group::phpstan_src', $output);
     }
@@ -33,9 +36,9 @@ class GitHubActionsDecoratorTest extends TestCase
 
         $decorator = new GitHubActionsDecorator($inner);
 
-        ob_start();
-        $decorator->onJobSuccess('phpstan_src', '1.23s');
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator) {
+            $decorator->onJobSuccess('phpstan_src', '1.23s');
+        });
 
         $this->assertStringContainsString('::endgroup::', $output);
     }
@@ -50,9 +53,9 @@ class GitHubActionsDecoratorTest extends TestCase
 
         $decorator = new GitHubActionsDecorator($inner);
 
-        ob_start();
-        $decorator->onJobError('phpstan_src', '500ms', $errorOutput);
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator, $errorOutput) {
+            $decorator->onJobError('phpstan_src', '500ms', $errorOutput);
+        });
 
         $this->assertStringContainsString('::error file=src/User.php,line=14::', $output);
         $this->assertStringContainsString('::endgroup::', $output);
@@ -66,9 +69,9 @@ class GitHubActionsDecoratorTest extends TestCase
 
         $decorator = new GitHubActionsDecorator($inner);
 
-        ob_start();
-        $decorator->onJobError('phpunit', '2s', 'General failure without file references');
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator) {
+            $decorator->onJobError('phpunit', '2s', 'General failure without file references');
+        });
 
         $this->assertStringNotContainsString('::error', $output);
         $this->assertStringContainsString('::endgroup::', $output);
@@ -91,17 +94,15 @@ class GitHubActionsDecoratorTest extends TestCase
     /** @test */
     public function on_job_error_matches_on_line_pattern()
     {
-        $inner = $this->createMock(OutputHandler::class);
+        $decorator = new GitHubActionsDecorator($this->createMock(OutputHandler::class));
 
-        $decorator = new GitHubActionsDecorator($inner);
-
-        ob_start();
-        $decorator->onJobError(
-            'phpmd_src',
-            '1s',
-            'The method foo() in src/Service/Foo.php on line 42 has too many parameters.'
-        );
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator) {
+            $decorator->onJobError(
+                'phpmd_src',
+                '1s',
+                'The method foo() in src/Service/Foo.php on line 42 has too many parameters.'
+            );
+        });
 
         $this->assertStringContainsString('::error file=src/Service/Foo.php,line=42::', $output);
     }
@@ -109,9 +110,7 @@ class GitHubActionsDecoratorTest extends TestCase
     /** @test */
     public function on_job_error_emits_one_annotation_per_matching_line()
     {
-        $inner = $this->createMock(OutputHandler::class);
-
-        $decorator = new GitHubActionsDecorator($inner);
+        $decorator = new GitHubActionsDecorator($this->createMock(OutputHandler::class));
 
         $errorOutput = implode("\n", [
             'Header without file reference',
@@ -120,9 +119,9 @@ class GitHubActionsDecoratorTest extends TestCase
             'Trailing noise',
         ]);
 
-        ob_start();
-        $decorator->onJobError('phpstan_src', '1s', $errorOutput);
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator, $errorOutput) {
+            $decorator->onJobError('phpstan_src', '1s', $errorOutput);
+        });
 
         $this->assertSame(2, substr_count($output, '::error '));
         $this->assertStringContainsString('::error file=src/A.php,line=10::', $output);
@@ -132,17 +131,15 @@ class GitHubActionsDecoratorTest extends TestCase
     /** @test */
     public function on_job_error_matches_nested_paths()
     {
-        $inner = $this->createMock(OutputHandler::class);
+        $decorator = new GitHubActionsDecorator($this->createMock(OutputHandler::class));
 
-        $decorator = new GitHubActionsDecorator($inner);
-
-        ob_start();
-        $decorator->onJobError(
-            'phpstan_src',
-            '1s',
-            ' src/Deep/Nested/Module/Service.php:123 something happened'
-        );
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator) {
+            $decorator->onJobError(
+                'phpstan_src',
+                '1s',
+                ' src/Deep/Nested/Module/Service.php:123 something happened'
+            );
+        });
 
         $this->assertStringContainsString('::error file=src/Deep/Nested/Module/Service.php,line=123::', $output);
     }
@@ -150,17 +147,15 @@ class GitHubActionsDecoratorTest extends TestCase
     /** @test */
     public function on_job_error_does_not_match_non_php_files()
     {
-        $inner = $this->createMock(OutputHandler::class);
+        $decorator = new GitHubActionsDecorator($this->createMock(OutputHandler::class));
 
-        $decorator = new GitHubActionsDecorator($inner);
-
-        ob_start();
-        $decorator->onJobError(
-            'phpstan_src',
-            '1s',
-            ' src/config.yml:10 irrelevant for code annotation'
-        );
-        $output = ob_get_clean();
+        $output = $this->captureStdoutRaw(function () use ($decorator) {
+            $decorator->onJobError(
+                'phpstan_src',
+                '1s',
+                ' src/config.yml:10 irrelevant for code annotation'
+            );
+        });
 
         $this->assertStringNotContainsString('::error file=', $output);
     }
