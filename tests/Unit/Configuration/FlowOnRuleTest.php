@@ -108,6 +108,25 @@ class FlowOnRuleTest extends TestCase
         $this->assertTrue($result->hasErrors());
     }
 
+    /**
+     * Typo on the execution value within Levenshtein distance 2 surfaces a
+     * `Did you mean 'X'?` hint — the changelog (FEAT-2) lists it explicitly
+     * alongside the validation of unsupported values.
+     *
+     * @test
+     */
+    public function fromArray_with_typo_execution_value_adds_suggestion()
+    {
+        $result = new ValidationResult();
+        $rule = FlowOnRule::fromArray('master', ['execution' => 'fastbranch'], $result, 'ci-validation');
+
+        $this->assertNull($rule);
+        $this->assertErrorEquals(
+            "Flow 'ci-validation' on rule for 'master': 'execution' must be one of: full, fast, fast-branch, fast-dirty. Did you mean 'fast-branch'?",
+            $result
+        );
+    }
+
     /** @test */
     public function fromArray_with_empty_pattern_returns_error()
     {

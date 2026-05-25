@@ -50,9 +50,10 @@ class FlowOnRule
         if (array_key_exists('execution', $rawAttrs)) {
             $value = $rawAttrs['execution'];
             if (!is_string($value) || !ExecutionMode::isValid($value)) {
+                $suggestion = is_string($value) ? KeySuggestion::suggestionFor($value, ExecutionMode::ALL) : '';
                 $result->addError(
                     "Flow '$flowName' on rule for '$pattern': 'execution' must be one of: "
-                    . implode(', ', ExecutionMode::ALL) . "."
+                    . implode(', ', ExecutionMode::ALL) . "." . $suggestion
                 );
                 return null;
             }

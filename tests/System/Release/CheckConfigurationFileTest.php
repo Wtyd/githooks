@@ -292,6 +292,45 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     }
 
     /**
+     * FEAT-2 — `conf:check` rejects an unknown `execution` value under
+     * `flows.<X>.on.<branch>.execution` and surfaces a `Did you mean 'X'?`
+     * suggestion for typos within Levenshtein distance 2 (the same
+     * KeySuggestion utility that powers unknown-attribute hints).
+     *
+     * @test
+     */
+    function conf_check_suggests_correction_for_execution_value_typo()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Flows([
+                'qa' => [
+                    'on'   => ['*' => ['execution' => 'fastbranch']],
+                    'jobs' => ['noop'],
+                ],
+            ])
+            ->setV3Jobs([
+                'noop' => ['type' => 'custom', 'script' => 'true'],
+            ]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $output = $this->getActualOutput();
+        $this->assertStringContainsString(
+            "'execution' must be one of: full, fast, fast-branch, fast-dirty.",
+            $output
+        );
+        $this->assertStringContainsString(
+            "Did you mean 'fast-branch'?",
+            $output,
+            "did-you-mean suggestion must surface for 'fastbranch' typo (Levenshtein distance 1)"
+        );
+    }
+
+    /**
      * FEAT-3 — `conf:check` rejects an empty `needs => []` and points the user
      * at `null` (the documented sentinel for cancelling an inherited list).
      *
