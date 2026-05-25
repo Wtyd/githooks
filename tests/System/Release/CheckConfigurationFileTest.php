@@ -132,4 +132,194 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('on: main', $this->getActualOutput());
     }
+
+    // ─── 3.2 · command rendering / cores conflict warning ─────────────
+
+    /**
+     * 3.2 — `conf:check` renders generated commands with an ellipsis when
+     * they exceed 80 chars (column width). The `--dry-run` path on `job`
+     * still prints the full untruncated command.
+     *
+     * @test
+     */
+    function conf_check_truncates_long_commands_to_80_chars()
+    {
+        $this->configurationFileBuilder->enableV3Mode();
+        $longScript = '/bin/echo ' . str_repeat('argument-long-enough ', 5) . 'end';
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['long_cmd_job']]])
+            ->setV3Jobs([
+                'long_cmd_job' => ['type' => 'custom', 'script' => $longScript],
+            ]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        $output = $this->getActualOutput();
+
+        // conf:check renders ellipsis (ASCII `...` or Unicode `…`).
+        $this->assertMatchesRegularExpression('/\.{3}|…/u', $output, 'conf:check should truncate long commands');
+
+        passthru("$this->githooks job long_cmd_job --dry-run --config=$configPath 2>&1", $exitCode);
+        $dryRunOutput = $this->getActualOutput();
+        $this->assertStringContainsString('argument-long-enough argument-long-enough argument-long-enough', $dryRunOutput);
+    }
+
+    /**
+     * 3.2 — when a phpcs job declares both `cores` and the tool's native
+     * `parallel` flag, `conf:check` warns that `'cores' overrides 'parallel'`.
+     *
+     * @test
+     */
+    function conf_check_warns_when_cores_conflicts_with_native_flag()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['phpcs_conflict']]])
+            ->setV3Jobs([
+                'phpcs_conflict' => [
+                    'type'     => 'phpcs',
+                    'standard' => 'PSR12',
+                    'paths'    => ['src'],
+                    'parallel' => 8,
+                    'cores'    => 2,
+                ],
+            ]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        $output = $this->getActualOutput();
+
+        $this->assertStringContainsString("'cores' overrides 'parallel'", $output);
+    }
+
+    // ─── 3.4 · FEAT-3 DAG validation (needs cycles, missing target, dup, empty) ─
+
+    /**
+     * FEAT-3 — `conf:check` rejects a `needs` cycle and surfaces the offending
+     * chain in the literal form `Flow 'qa': 'needs' has a cycle: a -> b -> a.`
+     * (see FlowDependencyGraph::build()).
+     *
+     * @test
+     */
+    function conf_check_rejects_needs_cycle()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        ['job' => 'a', 'needs' => ['b']],
+                        ['job' => 'b', 'needs' => ['a']],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'a' => ['type' => 'custom', 'script' => 'true'],
+                'b' => ['type' => 'custom', 'script' => 'true'],
+            ]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $output = $this->getActualOutput();
+        $this->assertStringContainsString("'needs' has a cycle:", $output);
+        $this->assertStringContainsString('a -> b -> a', $output);
+    }
+
+    /**
+     * FEAT-3 — `conf:check` rejects a `needs` target that does not exist as a
+     * job declaration in the same flow.
+     *
+     * @test
+     */
+    function conf_check_rejects_needs_target_not_in_flow()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        ['job' => 'real', 'needs' => ['ghost']],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'real' => ['type' => 'custom', 'script' => 'true'],
+            ]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString(
+            "'needs' references undefined job 'ghost'",
+            $this->getActualOutput()
+        );
+    }
+
+    /**
+     * FEAT-3 — `conf:check` rejects the same job declared twice in the same
+     * `jobs` list of a flow.
+     *
+     * @test
+     */
+    function conf_check_rejects_duplicate_job_in_flow()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Flows([
+                'qa' => ['jobs' => ['dup', 'dup']],
+            ])
+            ->setV3Jobs([
+                'dup' => ['type' => 'custom', 'script' => 'true'],
+            ]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString(
+            "job 'dup' is declared more than once",
+            $this->getActualOutput()
+        );
+    }
+
+    /**
+     * FEAT-3 — `conf:check` rejects an empty `needs => []` and points the user
+     * at `null` (the documented sentinel for cancelling an inherited list).
+     *
+     * @test
+     */
+    function conf_check_rejects_empty_needs_array()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        ['job' => 'a', 'needs' => []],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'a' => ['type' => 'custom', 'script' => 'true'],
+            ]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString(
+            "'needs' must not be empty. Use null to disable an inherited rule.",
+            $this->getActualOutput()
+        );
+    }
 }

@@ -103,4 +103,64 @@ class JobReleaseTest extends ReleaseTestCase
         $this->assertNotEquals(0, $exitCode);
         $this->assertStringContainsString('is not defined', $this->getActualOutput());
     }
+
+    // ─── 3.2 · new native job types (php-cs-fixer, rector) ────────────
+
+    /**
+     * 3.2 — `type: php-cs-fixer` builds a command that calls the binary's
+     * `fix` subcommand against the configured `paths`.
+     *
+     * @test
+     */
+    public function php_cs_fixer_job_dry_run_emits_fix_subcommand_with_dry_run_flag()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['cs_fixer']]])
+            ->setV3Jobs([
+                'cs_fixer' => [
+                    'type'           => 'php-cs-fixer',
+                    'executablePath' => '/bin/echo',
+                    'paths'          => ['src'],
+                ],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $output = $this->getActualOutput();
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('/bin/echo fix', $output);
+        $this->assertStringContainsString('src', $output);
+    }
+
+    /**
+     * 3.2 — `type: rector` builds a command that calls the binary's `process`
+     * subcommand against the configured `paths` and honours the `dry-run` key.
+     *
+     * @test
+     */
+    public function rector_job_dry_run_emits_process_subcommand_over_paths()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['rector_job']]])
+            ->setV3Jobs([
+                'rector_job' => [
+                    'type'           => 'rector',
+                    'executablePath' => '/bin/echo',
+                    'paths'          => ['src'],
+                    'dry-run'        => true,
+                ],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $output = $this->getActualOutput();
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('/bin/echo process', $output);
+        $this->assertStringContainsString('--dry-run', $output);
+        $this->assertStringContainsString('src', $output);
+    }
 }

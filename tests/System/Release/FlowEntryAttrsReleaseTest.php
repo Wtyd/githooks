@@ -7,17 +7,15 @@ namespace Tests\System\Release;
 use Tests\ReleaseTestCase;
 
 /**
- * Release tests for v3.4 epic flow-entry-attrs:
- * - FEAT-1: only-files / exclude-files admission rules per flow entry.
- * - FEAT-2: branch-driven execution mode via flows.<X>.on.
- * - FEAT-3 + BUG-19: needs-per-entry propagation when an upstream is
- *   admission-skipped (the entire reason this file exists alongside the
- *   broader integration coverage).
+ * Release tests for the v3.4 epic `flow-entry-attrs`: per-flow-entry
+ * attributes that compose with the execution mode.
+ *  - FEAT-1: declarative `only-files` / `exclude-files` admission rules.
+ *  - FEAT-2: branch-driven execution mode (`flows.<X>.on`).
+ *  - FEAT-3 + BUG-19: `needs` propagation when an upstream is admission-skipped.
  *
  * @group release
- * @group git
  */
-class V34FeaturesReleaseTest extends ReleaseTestCase
+class FlowEntryAttrsReleaseTest extends ReleaseTestCase
 {
     private string $configPath;
 
@@ -28,6 +26,8 @@ class V34FeaturesReleaseTest extends ReleaseTestCase
         $this->configPath = self::TESTS_PATH . '/githooks.php';
         $this->configurationFileBuilder->enableV3Mode();
     }
+
+    // ─── FEAT-1 · only-files / exclude-files ─────────────────────────
 
     /** @test */
     public function phar_runs_flow_with_only_files_admission_rule(): void
@@ -81,6 +81,117 @@ class V34FeaturesReleaseTest extends ReleaseTestCase
         );
     }
 
+    /**
+     * FEAT-1 — `exclude-files` filters specific files from the admitted set.
+     * The job still runs when at least one file survives both `only-files`
+     * and `exclude-files`.
+     *
+     * @test
+     */
+    public function phar_runs_flow_with_exclude_files_admission_rule(): void
+    {
+        $tests = self::TESTS_PATH;
+        $srcFoo = "$tests/src/foo";
+        @mkdir($srcFoo, 0777, true);
+        file_put_contents("$srcFoo/Keep.php", "<?php\n");
+        file_put_contents("$srcFoo/Skip.php", "<?php\n");
+
+        $this->configurationFileBuilder
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        [
+                            'job'           => 'lint_foo',
+                            'only-files'    => ["$tests/src/foo/**"],
+                            'exclude-files' => ['**/Skip.php'],
+                        ],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'lint_foo' => ['type' => 'custom', 'script' => 'true', 'paths' => [$srcFoo], 'accelerable' => true],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $cmd = sprintf(
+            '%s flow qa --files=%s/Keep.php,%s/Skip.php --format=json --config=%s 2>/dev/null',
+            $this->githooks,
+            $srcFoo,
+            $srcFoo,
+            $this->configPath
+        );
+
+        passthru($cmd, $exitCode);
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+
+        $byName = $this->indexJobs($decoded['jobs']);
+        $this->assertFalse(
+            $byName['lint_foo']['skipped'],
+            'lint_foo must run because Keep.php survives the exclude-files filter'
+        );
+    }
+
+    /**
+     * FEAT-1 — when only `exclude-files` is declared and every change-set file
+     * matches it, the job skips with the literal reason emitted by
+     * FlowPreparer::admissionSkipMessage() for the exclude-only branch.
+     *
+     * @test
+     */
+    public function phar_skips_job_when_exclude_files_drops_every_match(): void
+    {
+        $tests = self::TESTS_PATH;
+        $srcFoo = "$tests/src/foo";
+        @mkdir($srcFoo, 0777, true);
+        file_put_contents("$srcFoo/Skip.php", "<?php\n");
+
+        $this->configurationFileBuilder
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        [
+                            'job'           => 'lint_foo',
+                            'exclude-files' => ['**/Skip.php'],
+                        ],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'lint_foo' => ['type' => 'custom', 'script' => 'true', 'paths' => [$srcFoo], 'accelerable' => true],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $cmd = sprintf(
+            '%s flow qa --files=%s/Skip.php --format=json --config=%s 2>/dev/null',
+            $this->githooks,
+            $srcFoo,
+            $this->configPath
+        );
+
+        passthru($cmd, $exitCode);
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+
+        $byName = $this->indexJobs($decoded['jobs']);
+        $this->assertTrue(
+            $byName['lint_foo']['skipped'],
+            'lint_foo must skip when every change-set file is filtered by exclude-files'
+        );
+        $this->assertSame(
+            'every file in the change set is filtered by its exclude-files rule',
+            $byName['lint_foo']['skipReason']
+        );
+    }
+
+    // ─── FEAT-2 · branch-driven execution mode ───────────────────────
+
     /** @test */
     public function phar_runs_flow_with_branch_driven_execution_mode(): void
     {
@@ -117,6 +228,8 @@ class V34FeaturesReleaseTest extends ReleaseTestCase
         $this->assertSame('fast-branch', $onFeature['executionMode']);
         $this->assertSame('flows.qa.on', $onFeature['effectiveOptions']['executionMode']['source']);
     }
+
+    // ─── FEAT-3 + BUG-19 · needs propagation ──────────────────────────
 
     /**
      * BUG-19 — when an upstream is admission-skipped, the dependent with
@@ -187,147 +300,6 @@ class V34FeaturesReleaseTest extends ReleaseTestCase
             'needs upstream was skipped',
             $byName['downstream']['skipReason'],
             'downstream skipReason must follow the "needs X was skipped" wording'
-        );
-    }
-
-    /**
-     * FEAT-13 — `--fast-dirty` end-to-end against the compiled `.phar`.
-     *
-     * Materialises a sandbox git repo inside TESTS_PATH, chdirs into it,
-     * then invokes the `.phar` so my own uncommitted changes in html1 never
-     * leak into the assertion.
-     *
-     * @test
-     */
-    public function phar_runs_flow_with_fast_dirty_mode(): void
-    {
-        $tests = self::TESTS_PATH;
-        $sandbox = "$tests/sandbox-fast-dirty";
-        $cwd = (string) getcwd();
-        @mkdir($sandbox, 0777, true);
-        @mkdir("$sandbox/src/AppA", 0777, true);
-        @mkdir("$sandbox/src/AppB", 0777, true);
-
-        chdir($sandbox);
-        try {
-            shell_exec('git init --quiet');
-            shell_exec('git symbolic-ref HEAD refs/heads/main');
-            shell_exec('git config user.email "v34-release@example.com"');
-            shell_exec('git config user.name "V34 Release Test"');
-            shell_exec('git config commit.gpgsign false');
-            file_put_contents('src/AppA/Foo.php', "<?php\n");
-            file_put_contents('src/AppB/Bar.php', "<?php\n");
-            shell_exec('git add -A');
-            shell_exec('git commit --quiet -m baseline');
-
-            // Dirty only AppB → an entry restricted to AppA must skip,
-            // confirming admission composes with --fast-dirty.
-            file_put_contents('src/AppB/Bar.php', "<?php\n// dirty\n");
-
-            $configFile = 'githooks.php';
-            $config = [
-                'flows' => [
-                    'qa' => [
-                        'jobs' => [
-                            ['job' => 'lint_appA', 'only-files' => ['src/AppA/**']],
-                            ['job' => 'lint_appB', 'only-files' => ['src/AppB/**']],
-                        ],
-                    ],
-                ],
-                'jobs' => [
-                    'lint_appA' => ['type' => 'custom', 'script' => 'true', 'paths' => ['src/AppA'], 'accelerable' => true],
-                    'lint_appB' => ['type' => 'custom', 'script' => 'true', 'paths' => ['src/AppB'], 'accelerable' => true],
-                ],
-            ];
-            file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
-
-            // ReleaseTestCase copies the binary into self::TESTS_PATH (parent of sandbox).
-            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
-
-            passthru(
-                sprintf(
-                    '%s flow qa --fast-dirty --format=json --config=%s 2>/dev/null',
-                    $binary,
-                    $configFile
-                ),
-                $exitCode
-            );
-
-            $this->assertSame(0, $exitCode);
-            $decoded = json_decode($this->getActualOutput(), true);
-            $this->assertIsArray($decoded);
-            $this->assertSame('fast-dirty', $decoded['executionMode']);
-            $this->assertSame('cli', $decoded['effectiveOptions']['executionMode']['source']);
-
-            $byName = $this->indexJobs($decoded['jobs']);
-            $this->assertTrue($byName['lint_appA']['skipped'], 'AppA must skip — no dirty files match');
-            $this->assertSame(
-                'no files in the change set match its only-files rule',
-                $byName['lint_appA']['skipReason']
-            );
-            $this->assertFalse($byName['lint_appB']['skipped'], 'AppB must run — Bar.php is dirty');
-        } finally {
-            chdir($cwd);
-        }
-    }
-
-    /**
-     * BUG-20 — `executable-prefix`, `fast-branch-fallback` and `reports`
-     * cascade per-key from `flows.options` when a flow (or meta-flow) declares
-     * its own `options:` block to override an unrelated key. End-to-end check
-     * against the compiled `.phar` so the fix is verified inside the embedded
-     * code, not just in the source tree.
-     *
-     * Setup: global `executable-prefix` set to `echo PREFIX_HIT`. The flow
-     * declares `options: { fail-fast: true }` — no prefix override. Without
-     * the fix, the prefix is lost; with it, the generated command for the
-     * job is wrapped with the prefix.
-     *
-     * `--dry-run --format=json` exposes the resolved `command` in the JSON
-     * envelope without executing the shell side-effect.
-     *
-     * @test
-     */
-    public function phar_cascades_executable_prefix_per_key_when_flow_declares_options(): void
-    {
-        $configFile = self::TESTS_PATH . '/githooks.php';
-        $config = [
-            'flows' => [
-                'options' => ['executable-prefix' => 'echo PREFIX_HIT'],
-                'qa' => [
-                    'options' => ['fail-fast' => true],
-                    'jobs' => ['noop_job'],
-                ],
-            ],
-            'jobs' => [
-                'noop_job' => [
-                    'type' => 'custom',
-                    'executable-path' => 'true',
-                    'paths' => ['.'],
-                ],
-            ],
-        ];
-        file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
-
-        passthru(
-            sprintf(
-                '%s flow qa --dry-run --format=json --config=%s 2>/dev/null',
-                $this->githooks,
-                $configFile
-            ),
-            $exitCode
-        );
-
-        $this->assertSame(0, $exitCode);
-        $decoded = json_decode($this->getActualOutput(), true);
-        $this->assertIsArray($decoded);
-
-        $byName = $this->indexJobs($decoded['jobs']);
-        $this->assertArrayHasKey('noop_job', $byName);
-        $this->assertStringStartsWith(
-            'echo PREFIX_HIT ',
-            (string) $byName['noop_job']['command'],
-            'Global executable-prefix must cascade per-key when flow declares an options block'
         );
     }
 

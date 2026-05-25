@@ -7,13 +7,14 @@ namespace Tests\System\Release;
 use Tests\ReleaseTestCase;
 
 /**
- * Release tests for v3.3 item 3: --files / --files-from / --exclude-pattern.
- * Verifies that the .phar binary exposes the new flags and that the JSON v2
- * contract is satisfied end-to-end.
+ * Release tests for the explicit-files execution mode introduced in 3.3:
+ * `--files`, `--files-from`, `--exclude-pattern`. Covers the JSON v2
+ * `inputFiles` block and the mutual-exclusion contract between the two
+ * file-listing flags.
  *
  * @group release
  */
-class V33FilesFlagReleaseTest extends ReleaseTestCase
+class FilesModeReleaseTest extends ReleaseTestCase
 {
     private string $configPath;
 
