@@ -159,6 +159,17 @@ class JobCommand extends Command
             // the per-job thresholds of the executed job, not the flow budgets.
             // We therefore do NOT propagate them as budget overrides to the
             // resolver. They are applied to the JobAbstract instance below.
+            // FEAT-13 envelope reporting: pass the job-declared `execution`
+            // (and a `jobs.<name>.execution` label) so the JSON envelope's
+            // `executionMode` reflects it instead of falling back to `default`.
+            // The actual file-set filtering already honoured jobs.X.execution
+            // via FlowPreparer::resolveMode; this aligns the reported envelope
+            // with that behaviour.
+            $jobLevelExecution = $jobConfig->getExecution();
+            $jobLevelExecutionLabel = $jobLevelExecution !== null
+                ? "jobs.{$jobConfig->getName()}.execution"
+                : '';
+
             $resolver = new EffectiveOptionsResolver();
             $resolution = $resolver->resolveMultiple(
                 $config,
@@ -172,7 +183,9 @@ class JobCommand extends Command
                 null,
                 $memoryBudgetFlags['disabled'],
                 null,
-                $cliStats
+                $cliStats,
+                $jobLevelExecution,
+                $jobLevelExecutionLabel
             );
 
             $plan = $this->preparer->prepareSingleJob($jobConfig, $resolution->getOptions(), $context, $invocationMode, $cliExtraArgs);

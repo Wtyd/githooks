@@ -103,16 +103,25 @@ final class EffectiveOptionsResolver
         ?int $cliMemoryFailAbove = null,
         bool $cliNoMemoryBudget = false,
         ?string $cliAllocator = null,
-        ?bool $cliStats = null
+        ?bool $cliStats = null,
+        ?string $jobLevelExecution = null,
+        string $jobLevelExecutionLabel = ''
     ): EffectiveOptionsResolution {
         // FEAT-2: in multi-flow runs the per-flow `on` map is intentionally
         // ignored (matches CON-001/002 for flow-level options). The branch
         // resolution carries no influence on the mode in this path.
+        //
+        // FEAT-13 envelope reporting: `githooks job X` invokes this entry with
+        // $jobLevelExecution = $jobConfig->getExecution() so the JSON envelope's
+        // `executionMode` reflects the job-declared mode (e.g. `fast-dirty`)
+        // instead of falling back to `default`. The actual file-set filtering
+        // already honoured `jobs.X.execution` via FlowPreparer::resolveMode;
+        // this aligns the reported envelope with that behaviour.
         return $this->resolve(
             $config,
             null,
-            '',
-            null,
+            $jobLevelExecutionLabel,
+            $jobLevelExecution,
             $cliFailFast,
             $cliProcesses,
             $invocationMode,

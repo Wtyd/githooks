@@ -211,13 +211,19 @@ class FlowPreparer
             $job->applyCliExtraArguments($cliExtraArgs);
         }
         $this->applyExecutablePrefix($job, $jobConfig, $options);
+        // FEAT-13 envelope reporting: if no CLI mode flag is present, fall
+        // back to the job-declared `execution` so the plan (and the JSON
+        // envelope's top-level `executionMode`) reflects the mode the job
+        // actually runs in. Matches the resolution priority used by
+        // `resolveMode()` for jobs inside a flow.
+        $planMode = $effectiveInvocation ?? $jobConfig->getExecution() ?? ExecutionMode::FULL;
         return new FlowPlan(
             $jobConfig->getName(),
             [$job],
             $options,
             $context,
             [],
-            $effectiveInvocation ?? ExecutionMode::FULL,
+            $planMode,
             $context !== null ? $context->getInputFilesResolution() : null
         );
     }

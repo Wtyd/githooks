@@ -97,6 +97,54 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
         $this->assertArrayHasKey('$schema', $decoded);
     }
 
+    /**
+     * FEAT-13 (3.4) — when a job declares `execution: fast-dirty` and is
+     * invoked via `githooks job X` with no CLI mode flag, the JSON envelope
+     * must report `executionMode: "fast-dirty"` and
+     * `effectiveOptions.executionMode.source: "jobs.X.execution"`. The actual
+     * file-set filtering always honoured the job-declared mode
+     * (FlowPreparer::resolveMode), but pre-3.4.1 the envelope reported
+     * `"full"/"default"` — consumers (CI, AI tools) saw the wrong mode.
+     *
+     * @test
+     */
+    public function json_envelope_reflects_job_level_execution_when_job_command_is_used(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint_dirty']]])
+            ->setV3Jobs([
+                'lint_dirty' => [
+                    'type'      => 'custom',
+                    'script'    => 'true',
+                    'execution' => 'fast-dirty',
+                    'paths'     => ['.'],
+                ],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru(
+            "$this->githooks job lint_dirty --format=json --config=$this->configPath 2>/dev/null",
+            $exitCode
+        );
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame(
+            'fast-dirty',
+            $decoded['executionMode'],
+            'top-level executionMode must reflect jobs.X.execution'
+        );
+        $this->assertSame(
+            'fast-dirty',
+            $decoded['effectiveOptions']['executionMode']['value']
+        );
+        $this->assertSame(
+            'jobs.lint_dirty.execution',
+            $decoded['effectiveOptions']['executionMode']['source']
+        );
+    }
+
     /** @test */
     public function json_executionMode_reflects_the_cli_flag(): void
     {
