@@ -6,88 +6,46 @@ All notable changes to this project are documented here.
 
 ### Added
 
-- **`--fast-dirty` execution mode** (FEAT-13). Fourth execution mode that fills the gap between `--fast` (only staged files) and `--fast-branch` (branch diff vs main + staged). The set is the **unified working tree**:
-    ```bash
-    { git diff --name-only --diff-filter=ACMR HEAD     # tracked: staged or unstaged, excluding D
-      git ls-files --others --exclude-standard         # untracked, respecting .gitignore
-    } | sort -u
-    ```
+- **`--fast-dirty` execution mode.** Fourth execution mode targeting the **unified working tree**: tracked files modified vs `HEAD` (staged or unstaged, excluding deletions) ∪ untracked files honouring `.gitignore`. Fills the gap between `--fast` (staged only) and `--fast-branch` (branch diff). Designed for **AI agentic hooks** (Claude Code, Cursor, Cline, Copilot agent…) — the agent touches files without staging and we want the same pre-commit flow with `--format=json`. Available as `--fast-dirty` on `flow`/`flows`/`job` and as `execution: 'fast-dirty'` in flow/job declarations. Mutually exclusive with `--fast`/`--fast-branch`/`--files`/`--files-from`. Clean working tree → accelerable jobs skipped, exit 0 (no fallback to `full`). See [Fast-dirty mode](execution-modes.md#fast-dirty-mode-fast-dirty).
 
-    Use cases that motivated it:
-    - **AI agentic hooks** (Claude Code, Cursor, Cline, Copilot agent…): the agent touches files without staging and we want the same flow that runs at precommit with `--format=json`. Before FEAT-13 each hook needed ~10 lines of bash to compute the list and feed `--files`; now it's a single flag.
-    - **Mid-review without committing**: `voy a revisar lo que llevo antes de commitear` — was either `git add -A && --fast` (pollutes stage) or hand-rolled `--files`.
-
-    Available on `flow`, `flows`, `job` and in `flows.<X>.execution`, `flows.<X>.on.<branch>.execution`, `jobs.<X>.execution` (same surface as `fast`/`fast-branch`). Mutually exclusive with `--fast`, `--fast-branch`, `--files`, `--files-from`: combining two emits `--fast-dirty and --X are mutually exclusive` and exits 1. Clean working tree → all accelerable jobs skipped with `no changes to validate`, exit 0 (does NOT fall back to `full`, matching the post-commit "nothing to validate" semantics). Composes with FEAT-1's `only-files`/`exclude-files` admission and FEAT-3's `needs` (the BUG-19 propagation contract holds for fast-dirty too). The `--diff-filter=ACMR` guarantees that paths handed to linters always exist on disk — deleted files (`git rm`, `unlink`) are excluded; renamed entries surface as the destination.
-
-    Implementation lives in `FileUtils::getWorktreeDiffFiles()` (paralelo a `getBranchDiffFiles`) and `ExecutionContext::getWorktreeDiffFilesLazy()`. Mutual exclusion is consolidated in the new `AssertsExecutionModeFlagsExclusive` trait so the three commands (`flow`, `flows`, `job`) share a single source of truth for both the conflict check and the flag-to-mode mapping.
-
-- **Intra-flow dependencies with `needs: [<job>, ...]` per flow entry** (FEAT-3). A flow entry now accepts a `needs` attribute that lists other jobs in the same flow it depends on:
+- **Intra-flow dependencies with `needs: [<job>, ...]`.** A flow entry can declare other jobs in the same flow it depends on:
     ```php
     'qa' => [
-        'options' => ['processes' => 4],
         'jobs' => [
-            'yarn-install',
-            ['job' => 'eslint',   'needs' => ['yarn-install']],
-            ['job' => 'prettier', 'needs' => ['yarn-install']],
-            'phpstan',  // independent — runs in parallel with yarn-install
-            'phpcs',    // independent
+            'yarn_install',
+            ['job' => 'eslint',   'needs' => ['yarn_install']],
+            ['job' => 'prettier', 'needs' => ['yarn_install']],
+            'phpstan_src',  // independent — parallel with yarn_install
         ],
     ],
     ```
-    The admission gate (`FifoAdmission` / `GreedyAdmission`) holds back a job until all its `needs` have completed **successfully**. In sequential mode (`processes: 1`) the executor receives jobs in topological order, so the dependency contract is honoured automatically. The parallel pool drains jobs whose `needs` already failed or were skipped and reports them with a precise `skipReason`:
-    - `needs yarn-install failed` — single failure
-    - `needs compile, lint failed` — multiple failures
-    - `needs yarn-install was skipped` — single skip propagation
-    - `needs A failed, B was skipped` — mixed causes
+    Jobs wait until all their `needs` complete successfully; skip propagation is visible end-to-end (`needs X failed`, `needs X was skipped`). The TTY dashboard gains a `⏸ jobName (waiting X, Y)` lane and JSON v2 emits `needs: [...]`. `conf:check` validates the DAG statically (cycles, missing references, duplicates, empty list). **Behaviour change**: `fail-fast` now lets jobs in `running` finish naturally instead of terminating them — it cancels pending work, not in-flight work. See [Job dependencies (`needs`)](configuration/flows.md#job-dependencies-needs).
 
-    Closes the epic `flow-entry-attrs` (FEAT-1 `only-files`/`exclude-files`, FEAT-2 `on`, FEAT-3 `needs`). Compositions with FEAT-1: when an upstream job skipped by `only-files`, dependents propagate visibly with `skipReason: 'needs X was skipped'` so the dev doesn't get a silent skip cascade — recommended pattern in docs is to declare the same `only-files` on the dependent so both skip together.
-
-    `conf:check` validates the DAG statically with DFS: cycles of any length (`A -> A`, `A -> B -> A`, `A -> B -> C -> A`, …) are rejected with the offending chain in the error message; `needs` targets that don't exist as job declarations in the same flow are rejected; the same job declared twice in `jobs` is rejected; an empty `needs => []` list is rejected pointing the user at `null` (which cancels an inherited rule from `.local.php`).
-
-    `fail-fast` behaviour evolved: jobs in `running` now finish naturally instead of being terminated (change from prior behaviour). The queue is skipped with `skipReason: 'needs X failed'` for descendants of the failing job in the DAG, `skipped by fail-fast` for the rest. The terminate-on-fail behaviour of the previous releases is gone — fail-fast is now best-effort cancellation of pending work, not killing of in-flight work.
-
-    UI changes:
-    - **TTY parallel dashboard** gains a `⏸ jobName (waiting X, Y)` lane showing jobs queued because their `needs` are still in flight.
-    - **JSON v2** emits `needs: [...]` on each job entry whose declaration carries dependencies (omitted when empty for consistency with `skipReason`).
-
-    `OutputHandler::onJobWaiting(string, string[])` was added to the contract. Existing handlers (text, streaming, progress, null, CI decorators) absorb the call via the new `OutputHandlerWaitingNoOp` trait — only `DashboardOutputHandler` actually paints the state.
-
-    Override semantics in `githooks.local.php` mirror FEAT-1/2: missing key inherits; `'needs' => null` cancels the inherited list; declared local list takes effect (with the documented `array_replace_recursive` index-merge caveat — unchanged across the epic).
-
-    Out of scope for v3.4: cross-flow `needs` (use meta-flows instead), GitLab-style `when: 'on_failure'`/`when: 'always'` conditions, matrix-style fan-out, and `optional: true` per dependency (will land when demand surfaces).
-
-- **Per-flow execution mode selected by branch with `on => [branch_pattern => attrs]`** (FEAT-2). A flow can now declare an `on` map that picks its execution mode based on the current branch:
+- **Per-flow execution mode by branch with `on => [branch_pattern => attrs]`.** A flow picks its execution mode based on the current branch:
     ```php
-    'ci-validation' => [
+    'ci' => [
         'on' => [
             'master' => ['execution' => 'full'],
-            'beta'   => ['execution' => 'full'],
             '*'      => ['execution' => 'fast-branch'],
         ],
         'jobs' => [/* ... */],
     ],
     ```
-    The `script: vendor/bin/githooks flows ci-validation` line in CI is enough — no more `GITHOOKS_FLAGS` plumbing in each rules template. The mode cascade becomes `--fast/--fast-branch CLI > flows.<X>.on > flows.<X>.execution > flows.options.execution > default`; the `Settings:` header reports `mode = X (flows.<X>.on)` when the branch match wins so operators see the decision trail.
+    The execution mode lives **inside the flow declaration**, so a single CI step (`script: vendor/bin/githooks flows ci`) covers both protected and feature branches without branch-aware conditionals in the CI definition or duplicated jobs. Pattern matching is **first declared wins**. Branch detection cascades from a new `--branch=X` flag on `githooks flow` through `$GITHOOKS_BRANCH`, CI env vars and `git rev-parse`. The `Settings:` header reports `mode = X (flows.<X>.on)` when the branch match wins. See [Branch-driven execution mode (`on`)](configuration/flows.md#branch-driven-execution-mode-on).
 
-    Branch detection follows a fixed cascade: `--branch=X` CLI flag (new in this release) > `$GITHOOKS_BRANCH` env > CI vars in this order: `CI_COMMIT_REF_NAME` (GitLab), `GITHUB_REF_NAME` (GitHub Actions), `BUILDKITE_BRANCH`, `BITBUCKET_BRANCH`, `CIRCLE_BRANCH`, `DRONE_COMMIT_BRANCH`, `TRAVIS_PULL_REQUEST_BRANCH` / `TRAVIS_BRANCH` > `git rev-parse --abbrev-ref HEAD` > detached-HEAD error pointing the user at `--branch` / `$GITHOOKS_BRANCH`. The resolver is only invoked when the flow actually declares `on`, so flows without it keep running on a detached HEAD.
-
-    Pattern matching is **first declared wins** (literal or glob — the user controls precedence by ordering the map). Today the only attribute supported under `on.<branch>` is `execution`; the object shape leaves room for `time-budget`/`fail-fast` to land in later versions without breaking the surface. Override semantics in `githooks.local.php` mirror FEAT-1: `'on' => null` cancels an inherited map, missing key inherits, declared local map merges per pattern. `conf:check` validates the shape (non-array, scalar attrs, unsupported `execution` value with did-you-mean for typos, warning when no catch-all `*` is declared).
-
-    Out of scope for v3.4: `on` is per-flow only — in `flows X Y` multi-flow runs the per-flow `on` is intentionally ignored (matches CON-001/002 for flow-level options). Composes with FEAT-1: the mode chosen by `on` activates or not the `only-files`/`exclude-files` admission rules (no-op in `full`).
-
-- **Declarative per-flow-entry admission with `only-files` / `exclude-files`** (FEAT-1). Flow entries in `flows.<X>.jobs` now accept the existing string form **or** an object `{job, only-files?, exclude-files?}` that gates whether the job runs based on the change set, independently of the job's own `paths` filtering. The decision is binary (`skipped: true` with a clear `skipReason` vs run) and applies to all job types (accelerable / non-accelerable / custom). In `full` mode the rules are no-op so manual `flow qa` keeps working as before. Use case: a monorepo serialising two test suites in a single flow where each suite is skipped declaratively when its sources are untouched — replacing the `type: custom` + `git diff … grep -qE …; exit 0` workaround that surfaces as `passed` and breaks on POSIX-less runners. The match uses the same glob semantics as `HookRef` (`**`, `*`, `?`) and reuses `PatternMatcher`. Override semantics in `githooks.local.php` (consistent with `time-budget` / `memory-budget`): `'only-files' => null` cancels an inherited rule from the shared config; `'only-files' => []` is a validation error (`conf:check` points the user at `null`); `'only-files' => ['src/**', ...]` declares the rule. `HookRef` was aligned to the same `array_key_exists` + `null`-sentinel detection so hook-level and flow-entry-level rules share one convention. Documented caveat: when both shared and local declare lists of different lengths, the inherited `array_replace_recursive` merges per index (sobrante del compartido se conserva) — out of scope to fix here; the recommended workaround for clean replacement is `null` in shared + list in local.
+- **Declarative per-flow-entry admission with `only-files` / `exclude-files`.** Flow entries in `flows.<X>.jobs` now accept the existing string form **or** an object `{job, only-files?, exclude-files?}` that gates whether the job runs based on the change set, independently of the job's own `paths` filtering. The decision is binary (`skipped: true` with `skipReason` vs run) and applies to all job types. In `full` mode the rules are no-op. Replaces the `type: custom` + `git diff … grep -qE …; exit 0` workaround that surfaces as `passed` and breaks on POSIX-less runners. Same glob semantics as hook-level `only-files`. Combined with `on` (above), the flow declaration decides both **which mode** runs per branch and **which jobs** are admitted per change set — the CI pipeline stays a single `flows` invocation without branch-aware conditionals or per-job rules duplicated in the CI YAML, and the admission logic is exercised the same way locally and in CI (GitLab CI's `rules:` / `changes:` and GitHub Actions's `paths:` filters can be coarse and pipeline-dependent). See [Per-entry admission rules](configuration/flows.md#per-entry-admission-rules-only-files-exclude-files).
 
 ### Fixed
 
-- **`executable-prefix`, `fast-branch-fallback` and `reports` now cascade per-key from `flows.options` when a flow declares its own options block** (BUG-20). Reported by users running `executable-prefix` on a meta-flow `ci-validation` that also declared `options:` to override an unrelated key like `processes` or `fail-fast`. Previously these three keys were read block-level via `flow.options ?? globals` in both `EffectiveOptionsResolver::mergeOptionsBlock` and `FlowPreparer::prepare`, so declaring a single flow-level override silently dropped the global value. The cascade now matches what `fail-fast` / `processes` / `time-budget` / `memory-budget` / `allocator` / `stats` already did: each key inherits from globals unless the flow declares it explicitly. The new `OptionsConfiguration::cascadeBlockKeysFromFlow()` factory consolidates the rule and is shared between the resolver and the preparer, removing the parallel implementations. `resolveMultiple` (ad-hoc and mixed multi-flow modes) keeps collapsing to globals as before — CON-001/002. Same change also removes the unused `OptionsConfiguration::withOverrides()` method, which carried the same block-level pattern and would have re-introduced the bug if reused.
+- **`executable-prefix`, `fast-branch-fallback` and `reports` now cascade per-key from `flows.options`** when a flow declares its own `options` block. When a flow declared its own `options` to override an unrelated key (e.g. `processes`), the three keys above were read block-level instead of per-key and silently dropped their global value. Now they inherit per-key like `fail-fast` / `processes` / `time-budget` / `memory-budget` / `allocator` / `stats` already did. See [Per-key cascade](configuration/options.md#per-key-cascade).
 
-- **GitLab CI / GitHub Actions sections no longer leak raw tool JSON when `--format=codeclimate` or `--format=sarif` (or `reports.codeclimate` / `reports.sarif` in config) is active.** When a structured format is requested, GitHooks reconfigures every supported tool to its JSON variant (`phpstan --error-format=json`, `phpcs --report=json`, `phpmd … json`, `psalm --output-format=json`, `parallel-lint --json`) so the file-based formatters can parse the output. The side-effect: failing jobs printed that JSON blob inside their CI section as the visible body — a one-line minified string for PHPStan/PHPCS (with absolute runner paths like `/builds/<group>/<project>/…`), pretty-printed JSON for PHPMD. The operator who opened a KO section saw raw JSON instead of `file  line N  message  [rule]`. JUnit/SARIF/CodeClimate file reports were already correct (they parse the JSON before emitting). What was missing was humanising the **display** layer. Fix: a new `HumanIssueFormatter` translates the per-tool JSON into a human listing (path + indented `line N` / `line N:C` rows + `Totals: X file(s), Y issue(s)`) using the existing `ToolOutputParser` registry; `FlowExecutor::buildResult` invokes it just before `OutputHandler::onJobError` when `structuredFormat = true`. The raw output is preserved unchanged in `JobResult.output`, so the file-based formatters (`JsonResultFormatter`, `JunitResultFormatter`, `SarifResultFormatter`, `CodeClimateResultFormatter`) and any `reports.*` paths keep getting the JSON they need. Fallbacks: jobs without a registered parser (`local-script`, `custom`) and tools whose JSON is broken / contains no issues fall back to the raw output (no regression vs the prior behaviour); whitespace-only outputs collapse to empty. Same upstream fix benefits `GitHubActionsDecorator`, `DashboardOutputHandler::printFramedError` and `Printer::framedErrorBlock`.
+- **GitLab CI / GitHub Actions sections no longer leak raw tool JSON when `--format=codeclimate` or `--format=sarif`** (or `reports.codeclimate` / `reports.sarif` in config) is active. Structured formats reconfigure each tool to emit JSON so the file-based formatters can parse it; the side effect was that failing jobs printed the raw JSON blob as the visible body of their CI section. A new humanising display layer translates the per-tool JSON into a familiar `file  line N  message  [rule]` listing while the raw payload stays available unchanged for file-based reports and JSON v2 `output`. See [Human-readable KO body](how-to/ci-cd.md#human-readable-ko-body-under-formatcodeclimate-formatsarif).
 
 ## [3.3.3]
 
 ### Fixed
 
-- **Fast-branch / fast no longer fail with spurious "no files" errors when a job's tool config strips every input via its internal exclusion list.** Repro: a branch only touches files under one subtree (e.g. `src/foo/...`); the wrapper hands those files to a job whose `.neon` declares `excludePaths.analyse: [src/foo]` (PHPStan) or whose `--ignore` CSV covers them (PHPCS). The tool then drops 100 % of the input and exits non-zero with `[ERROR] No files found to analyse.` (PHPStan, exit 1) or `ERROR: All specified files were excluded or did not match filtering rules.` (PHPCS, exit 16 on older versions and the PHPCSStandards fork). Before this fix the wrapper reported the job as failed, breaking MRs in projects that split coverage across complementary jobs. Each accelerable Job now declares an empty-input tolerance heuristic via `isEmptyInputTolerated(int $exitCode, string $output): bool` (mirror of the existing `isFixApplied()` pattern). `PhpstanJob` recognises `exit === 1` + `No files found to analyse`; `PhpcsJob` recognises `exit ∈ {1,2,3,16}` + `All specified files were excluded` / `No files were checked` (defensive across PHPCS 3.x and the PHPCSStandards fork). When tolerated, the JobResult is reinterpreted as `skipped: true` with `skipReason` instead of `success: false`, and the OutputHandler emits `onJobSkipped` rather than `onJobError`. Threshold evaluation is also bypassed for tolerated jobs — the tool didn't do real work, so comparing its near-zero duration against `warn-after`/`fail-after` would be meaningless. PHPMD already tolerates this case natively (`exit 0` when its `--exclude` empties the set); the other accelerable tools (parallel-lint, psalm, rector, php-cs-fixer) silently ignore non-matching inputs and do not need an override.
+- **Fast-branch / fast no longer fail with spurious "no files" errors when a job's tool config strips every input via its internal exclusion list.** Repro: a branch touches only files under one subtree (e.g. `src/foo/...`); the wrapper hands those files to a job whose `.neon` declares `excludePaths.analyse: [src/foo]` (PHPStan) or whose `--ignore` CSV covers them (PHPCS). The tool drops 100 % of the input and exits non-zero with `[ERROR] No files found to analyse.` (PHPStan, exit 1) or `ERROR: All specified files were excluded or did not match filtering rules.` (PHPCS, exit 16 on older versions and the PHPCSStandards fork). Before this fix the wrapper reported the job as failed, breaking MRs in projects that split coverage across complementary jobs. PHPStan and PHPCS now recognise these "empty after filtering" exits, reinterpret them as `skipped: true` with `skipReason` instead of `success: false`, and bypass threshold evaluation (the tool didn't do real work, so timing it would be meaningless). PHPMD already tolerates this case natively (`exit 0` when its `--exclude` empties the set); the other accelerable tools (parallel-lint, psalm, rector, php-cs-fixer) silently ignore non-matching inputs and do not need an override.
 
 ## [3.3.2] ⚠️ Do not use — broken release
 
@@ -306,7 +264,7 @@ The output behaviour now depends on the format and the execution context. The un
 
 ### Bug Fixes
 - Fix skipped job warnings not showing orange color in terminal output.
-- Fix parallel execution deadlock when a job's reserved cores exceeded the total `processes` budget. The thread allocator now clamps both explicit `cores: N` overrides and uncontrollable tools' default workers (e.g. PHPStan reading 4 from `.neon` while `processes: 2`) to the budget, so `FifoAdmission` can always admit the queue head instead of rejecting it forever and spinning the executor at 100% CPU.
+- Fix parallel execution deadlock when a job's reserved cores exceeded the total `processes` budget. The thread allocator now clamps both explicit `cores: N` overrides and uncontrollable tools' default workers (e.g. PHPStan reading 4 from `.neon` while `processes: 2`) to the budget, so the admission queue can always admit the head instead of rejecting it forever and spinning the executor at 100% CPU.
 
 ---
 

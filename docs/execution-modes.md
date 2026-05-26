@@ -155,7 +155,7 @@ githooks flow qa --fast-dirty --exclude-pattern='tmp/**,**/Generated/**'
 
 `--fast-dirty` cannot be combined with `--fast`, `--fast-branch`, `--files` or `--files-from`. Each of those defines a different "input file set" semantics; combining two would be ambiguous, so the command exits 1 with a precise message (e.g. `--fast-dirty and --fast are mutually exclusive`).
 
-### Composition with FEAT-1 / FEAT-3
+### Composition with per-entry admission rules and dependencies
 
 `fast-dirty` composes with [per-entry admission rules](configuration/flows.md#per-entry-admission-rules-only-files-exclude-files) and with [job dependencies](configuration/flows.md#job-dependencies-needs) the same way `--fast` does — the admission gate sees the unified dirty set and the `needs` propagation contract applies identically.
 

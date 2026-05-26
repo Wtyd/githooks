@@ -43,6 +43,30 @@ Options are resolved from lowest to highest priority:
 
 Running `githooks flow qa --processes=4` would use `fail-fast=true` (from flow) and `processes=4` (from CLI).
 
+### Per-key cascade
+
+The cascade is evaluated **key by key**, not as a whole block. When a per-flow `options` block declares one key, the other keys still inherit from `flows.options`. Declaring `'options' => ['fail-fast' => true]` for a flow does **not** drop globally declared `executable-prefix`, `fast-branch-fallback`, `processes`, `reports`, budgets, allocator, stats, etc. — every key is resolved independently against the cascade above.
+
+```php
+'flows' => [
+    'options' => [
+        'executable-prefix'    => 'docker exec -i app',
+        'fast-branch-fallback' => 'fast',
+        'reports'              => ['sarif' => 'reports/global.sarif'],
+        'processes'            => 4,
+    ],
+
+    'qa' => [
+        'options' => ['fail-fast' => true], // only overrides this key
+        'jobs'    => ['phpcs_src', 'phpstan_src'],
+        // executable-prefix, fast-branch-fallback, reports, processes
+        // are all inherited from flows.options
+    ],
+],
+```
+
+> Versions before 3.4 read `executable-prefix`, `fast-branch-fallback` and `reports` block-level (`flow.options ?? globals`), so declaring a single per-flow key silently dropped those three. Fixed in 3.4 — see the [3.4 changelog entry](../changelog.md#34).
+
 ## Thread budget
 
 The `processes` option controls the **total CPU cores** available — not just the number of parallel jobs, and not just a soft hint. It is the **absolute ceiling**: no individual job can spawn more workers than `processes` allows. When `processes > 1`, GitHooks distributes threads across jobs that support internal parallelism:
@@ -233,7 +257,7 @@ regressing?") and remain decoupled.
             'fail-after' => 1200,
         ],
     ],
-    'pre-commit-light' => [
+    'quick' => [
         'options' => [
             // Per-flow override.
             'time-budget' => ['warn-after' => 60],
@@ -283,7 +307,7 @@ job leaking?" vs. "is the runner about to OOM?").
             'fail-above' => 6000,
         ],
     ],
-    'pre-commit-light' => [
+    'quick' => [
         'options' => [
             // Per-flow override.
             'memory-budget' => ['warn-above' => 800],

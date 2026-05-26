@@ -66,13 +66,7 @@ githooks flow qa --files-from=/tmp/changed.txt --format=sarif --output=qa.sarif
 
 ## --exclude-pattern
 
-Comma-separated list of glob patterns to drop from the input list (post-expansion, before per-job filtering):
-
-| Token | Meaning |
-|---|---|
-| `*` | Anything except `/` |
-| `**` | Zero or more directory levels |
-| `?` | One character (not `/`) |
+Comma-separated list of glob patterns to drop from the input list (post-expansion, before per-job filtering). Same operators as everywhere else in GitHooks — see the [Glob syntax reference](../glob-syntax.md) for the full table.
 
 Patterns are evaluated against the path **as the user supplied it** (relative to CWD, or absolute when the input was absolute). The check is OR-based — a path is dropped if **any** pattern matches.
 
@@ -101,7 +95,7 @@ If the patterns wipe out the whole list:
 
 Patterns that don't match anything are silently ignored — you can keep a long reusable exclude list without warnings.
 
-> **Different from `exclude-files` in hook config.** This flag filters paths used by an `--files` / `--files-from` invocation. The `exclude-files` key inside a hook ref ([Conditional hooks](conditional-hooks.md)) is **gating**: it decides whether a HookRef runs at all based on the staged file set. Same syntax, different role.
+> **Different from `exclude-files` in hook config.** This flag filters paths used by an `--files` / `--files-from` invocation. The `exclude-files` key inside a hook entry ([Conditional hooks](conditional-hooks.md)) is **gating**: it decides whether the hook entry runs at all based on the staged file set. Same syntax, different role.
 
 ## Mixing with --fast / --fast-branch
 

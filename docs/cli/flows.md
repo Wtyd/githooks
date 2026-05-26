@@ -34,7 +34,10 @@ Single-flow degenerate runs (`flows qa` with `qa` a normal flow) produce **the s
 
 The same flag set as [`flow`](flow.md): `--fail-fast`, `--processes`, `--exclude-jobs`, `--only-jobs`, `--format`, `--output`, `--report-*`, `--no-reports`, `--fast`, `--fast-branch`, `--fast-dirty`, `--fast-branch-fallback`, `--files`, `--files-from`, `--exclude-pattern`, `--monitor`, `--no-ci`, `--show-progress`, `--config`, `--dry-run`. Only the positional argument changes (variadic instead of single).
 
-`--exclude-jobs` and `--only-jobs` apply to the **merged deduplicated list** of jobs after meta-flow expansion, not per source flow. `--files` / `--files-from` build a **single** `ExecutionContext` shared by every job.
+!!! note "`--branch=X` is `flow`-only"
+    The `--branch=X` flag for [branch-driven execution mode (`on`)](../configuration/flows.md#branch-driven-execution-mode-on) is only registered on [`flow`](flow.md#options) in 3.4. Inside `flows`, branch detection falls back to `$GITHOOKS_BRANCH`, CI env vars and `git rev-parse --abbrev-ref HEAD`.
+
+`--exclude-jobs` and `--only-jobs` apply to the **merged deduplicated list** of jobs after meta-flow expansion, not per source flow. `--files` / `--files-from` build a **single** shared file-set that every job consumes.
 
 ## Conditions header
 

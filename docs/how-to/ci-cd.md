@@ -62,22 +62,26 @@ Each job becomes its own collapsible section in the GitLab job log. The decorato
 After the per-job sections, a final `githooks_summary[collapsed=false]` section wraps the `Results: P/N passed in T` line, the `--stats` table (when active) and any `Report written to: …` notices. It is expanded by default so the run summary is visible at a glance.
 
 ```text
-> phpcs_luz                                            (collapsed, OK)
-> phpstan_luz_ci                                       (collapsed, OK)
-v phpmd_luz_src_b                                      (auto-expanded, KO)
-    --- phpmd_luz_src_b ---
+> phpcs_src                                            (collapsed, OK)
+> phpstan_src                                          (collapsed, OK)
+v phpmd_src                                            (auto-expanded, KO)
+    --- phpmd_src ---
     9 | VIOLATION | Avoid variables with short names like $a…
     Found 16 violations and 0 errors in 15ms
 v Summary                                              (auto-expanded)
     Results: 11/24 passed in 55.63s ✗
     +-----------------+--------+--------+...
     | Job             | Status | Time   |
-    | phpstan_luz_ci  | KO     | 15.18s |  ← red
+    | phpstan_src     | KO     | 15.18s |  ← red
     | TOTAL (flow)    | 11/24 ✗| 55.63s |  ← red
     +-----------------+--------+--------+...
 ```
 
 Symfony Style chips with the live timer (e.g. the `00:00` clock GitLab shows on the right of each section header) and the per-job durations are GitLab's own UI — the decorator only emits the section markers and the body content.
+
+### Human-readable KO body under `--format=codeclimate` / `--format=sarif`
+
+When `--format=codeclimate` or `--format=sarif` is active (CLI flag or `reports.codeclimate` / `reports.sarif` in config), GitHooks reconfigures each tool to emit JSON (`phpstan --error-format=json`, `phpcs --report=json`, `phpmd … json`, `psalm --output-format=json`, `parallel-lint --json`) so the file-based formatters can parse it. The CI display layer translates that JSON back into a human listing (path + indented `line N` / `line N:C` rows + `Totals: X file(s), Y issue(s)`), so the GitLab section / GitHub Actions group / framed-error block keeps showing `file.php:line  message  [rule]` rather than a raw minified JSON blob. The `output` field in JSON v2 still carries the raw tool JSON unchanged — only the **display** layer is humanised. Custom jobs and tools without a registered parser fall back to the raw output, identical to prior behaviour.
 
 ## Fast-branch mode for PRs
 

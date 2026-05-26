@@ -77,19 +77,7 @@ When multiple conditions are present, they are **AND-ed** — all must be satisf
 
 ### Pattern syntax
 
-All patterns use **glob** syntax, not regular expressions:
-
-| Pattern | Matches | Example |
-|---|---|---|
-| `*` | Any characters except `/` in file patterns | `src/*.php` matches `src/User.php` but not `src/Models/User.php` |
-| `*` | Any characters including `/` in branch patterns | `release/*` matches `release/v2.0` |
-| `**` | Zero or more directory levels (file patterns only) | `src/**/*.php` matches `src/Models/User.php` |
-| `?` | Exactly one character | `file?.php` matches `file1.php` |
-| `[abc]` | One character from the set | `file[12].php` matches `file1.php` |
-| `[!abc]` | One character not in the set | `file[!0-9].php` matches `fileA.php` |
-
-!!! note
-    For file patterns, `*` does not cross directory separators. Use `**` to match across directories.
+All conditions use the project-wide glob syntax — `*`, `**`, `?`, `[abc]`, `{a,b,c}` — not regular expressions. See the [Glob syntax reference](../glob-syntax.md) for the complete operator table, branch-vs-file pattern differences, common patterns and anti-patterns.
 
 ### Combining conditions
 

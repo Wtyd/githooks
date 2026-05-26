@@ -197,7 +197,7 @@ githooks flow qa --format=json
 | `flow` | string | Flow name (or job name when called from `githooks job`). |
 | `success` | boolean | `true` if **all** non-skipped jobs passed AND no flow-level `fail-after` / `fail-above` was crossed. |
 | `totalTime` | string | Human-readable wall-clock time. `"0ms"` under `--dry-run`. |
-| `executionMode` | string | `"full"`, `"fast"`, `"fast-branch"` or `"files"`. Reflects the actual mode used. |
+| `executionMode` | string | `"full"`, `"fast"`, `"fast-branch"`, `"fast-dirty"` or `"files"`. Reflects the actual mode used. |
 | `passed` / `failed` / `skipped` | integer | Counters matching the entries in `jobs[]`. |
 | `timeBudget` | object or null | Flow-level time budget state. `null` when not configured. See [Time budget block](#time-budget-block). |
 | `memoryBudget` | object or null | Flow-level memory budget state. `null` when not configured. See [Memory budget block](#memory-budget-block). |

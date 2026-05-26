@@ -8,7 +8,7 @@ repo_url: https://github.com/Wtyd/githooks
 repo_name: Wtyd/githooks
 edit_uri: edit/master/docs/
 
-copyright: Copyright &copy; 2024-2026 Wtyd/GitHooks contributors
+copyright: Copyright &copy; 2020-2026 Wtyd/GitHooks contributors
 
 theme:
   name: material
@@ -124,6 +124,7 @@ nav:
     - Rector: tools/rector.md
     - Custom Jobs: tools/custom.md
   - Execution Modes: execution-modes.md
+  - Glob Syntax: glob-syntax.md
   - CLI Reference:
     - cli/index.md
     - githooks flow: cli/flow.md
@@ -153,5 +154,6 @@ nav:
     - v3.3 deprecations: migration/v33-deprecations.md
     - From GrumPHP: migration/from-grumphp.md
     - From CaptainHook: migration/from-captainhook.md
+  - Troubleshooting: troubleshooting.md
   - Comparison: comparison.md
   - Changelog: changelog.md

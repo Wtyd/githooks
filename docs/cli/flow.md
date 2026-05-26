@@ -10,6 +10,8 @@ githooks flow <name> [options]
 
 ## Options
 
+Most flags below are CLI overrides for keys declared under `flows.options` or per-flow `options:`. The table here describes the CLI form; the linked sections in [Configuration: Options](../configuration/options.md) carry defaults, types, cascade rules and validation semantics.
+
 | Option | Description |
 |---|---|
 | `--fail-fast` | Stop on first job failure. Overrides config value. See [Options: Fail-fast and ignore-errors-on-exit](../configuration/options.md#fail-fast-and-ignore-errors-on-exit). |
@@ -27,13 +29,14 @@ githooks flow <name> [options]
 | `--files=a,b,c` | Files mode — accelerable jobs analyze only the explicit list (CSV). Mutually exclusive with `--files-from`, `--fast`, `--fast-branch`, `--fast-dirty`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
 | `--files-from=PATH` | Files mode — read the list of paths from `PATH` (one per line; `#` comments and blanks ignored; UTF-8 + CRLF tolerated). Use this when the list exceeds the shell `ARG_MAX` or comes from `git diff --name-only`. |
 | `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob (`*`, `**`, `?`). Requires `--files` or `--files-from`. See [How-To: --files / --files-from](../how-to/files-flag.md#-exclude-pattern). |
+| `--branch=X` | Override the detected branch name used to resolve `flows.<name>.on => [branch_pattern => …]`. Wins over `$GITHOOKS_BRANCH`, CI env vars (`CI_COMMIT_REF_NAME`, `GITHUB_REF_NAME`, …) and `git rev-parse --abbrev-ref HEAD`. Only meaningful when the flow declares `on`. See [Branch-driven execution mode (`on`)](../configuration/flows.md#branch-driven-execution-mode-on). |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
-| `--warn-after=N` / `--fail-after=N` | Thresholds (s) over the sum of executed-job durations: `warn` annotates ⚠, `fail` exits 1 even if every job passed individually. See [Options: Time budget](../configuration/options.md#time-budget-time-budget). |
-| `--no-time-budget` | Disable per-job AND flow-level time evaluation for this run. Mixing with `--warn-after` / `--fail-after` emits a stderr warning and ignores them. |
-| `--memory-warn-above=N` / `--memory-fail-above=N` | Thresholds (MB) over the simultaneous RSS sum of jobs in flight: `warn` annotates ⚠, `fail` kills jobs in flight and exits 1 even if every job passed. See [Options: Memory budget](../configuration/options.md#memory-budget-memory-budget). |
-| `--no-memory-budget` | Disable per-job AND flow-level memory evaluation for this run. |
-| `--allocator=fifo\|greedy` | Admission strategy when the pool fills: `fifo` blocks the queue if the head does not fit; `greedy` scans for the first job that fits. Effective in 2D mode (cores + memory). See [Options: Allocator strategy](../configuration/options.md#allocator-strategy-allocator). |
-| `--stats` | Activate RSS sampling and print the 5-column summary table (Job / Status / Time / Peak Cores / Peak Memory) after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
+| `--warn-after=N` / `--fail-after=N` | Override flow-level time-budget thresholds (seconds). See [Options: Time budget](../configuration/options.md#time-budget-time-budget). |
+| `--no-time-budget` | Disable both per-job and flow-level time evaluation for this run. Mixing with `--warn-after` / `--fail-after` emits a stderr warning and ignores them. |
+| `--memory-warn-above=N` / `--memory-fail-above=N` | Override flow-level memory-budget thresholds (MB). See [Options: Memory budget](../configuration/options.md#memory-budget-memory-budget). |
+| `--no-memory-budget` | Disable both per-job and flow-level memory evaluation for this run. |
+| `--allocator=fifo\|greedy` | Override the admission strategy. See [Options: Allocator strategy](../configuration/options.md#allocator-strategy-allocator). |
+| `--stats` | Activate RSS sampling and the 5-column summary table after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
 | `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--config=PATH` | Path to configuration file. |
@@ -60,6 +63,7 @@ githooks flow qa --format=json --no-reports         # AI/script: JSON to stdout,
 githooks flow qa --fast                             # Only staged files
 githooks flow qa --fast-branch                      # Only branch diff files
 githooks flow qa --fast-dirty                       # Working tree diff vs HEAD ∪ untracked
+githooks flow ci --branch=master                    # Force branch for flows.ci.on resolution
 githooks flow qa --files=src/User.php               # Files mode: explicit single file
 githooks flow qa --files-from=changed.txt           # Files mode: from manifest
 githooks flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'

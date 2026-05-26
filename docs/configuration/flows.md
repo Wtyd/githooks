@@ -81,7 +81,7 @@ A flow can be:
 
 ## Per-entry admission rules (`only-files` / `exclude-files`)
 
-> Since **v3.4** (FEAT-1).
+> Since **v3.4**.
 
 Each entry in `flows.<X>.jobs` can be either a plain string (job name) **or** an object that declares glob-based admission rules:
 
@@ -107,13 +107,7 @@ The rules are a **binary admission gate**, decoupled from the job's input filter
 
 ### Glob syntax
 
-Same as `HookRef` and `--exclude-pattern`:
-
-| Pattern | Matches |
-|---|---|
-| `*` | Anything except `/` |
-| `**` | Zero or more directories |
-| `?` | Exactly one character except `/` |
+Same operators (`*`, `**`, `?`, `[abc]`, `{a,b,c}`) as hook-level conditions and `--exclude-pattern`. See the [Glob syntax reference](../glob-syntax.md) for the full table and common patterns.
 
 ### Composition with hook-level rules
 
@@ -146,17 +140,17 @@ When both the shared config and `.local.php` declare lists of **different length
 'only-files' => ['src/X/**', 'composer.json']
 ```
 
-This is a generic limitation of the project's merge strategy (it affects every list: `Tools`, `paths`, `jobs`, …), not specific to FEAT-1. Recommended pattern for a clean replacement: declare `null` in the shared config and move the actual list to `.local.php`, or rewrite the local list with the same length as the shared one.
+This is a generic limitation of the project's merge strategy (it affects every list: `Tools`, `paths`, `jobs`, …), not specific to per-entry admission rules. Recommended pattern for a clean replacement: declare `null` in the shared config and move the actual list to `.local.php`, or rewrite the local list with the same length as the shared one.
 
 ## Branch-driven execution mode (`on`)
 
-> Since **v3.4** (FEAT-2).
+> Since **v3.4**.
 
 A flow can declare an `on` map that picks its execution mode based on the current branch:
 
 ```php
 'flows' => [
-    'ci-validation' => [
+    'ci' => [
         'on' => [
             'master' => ['execution' => 'full'],
             'beta'   => ['execution' => 'full'],
@@ -168,13 +162,13 @@ A flow can declare an `on` map that picks its execution mode based on the curren
 ],
 ```
 
-In CI this collapses the per-rules-template `GITHOOKS_FLAGS=--fast-branch` boilerplate to a single line:
+The execution mode now lives **inside the flow declaration**, so a single CI step covers both protected and feature branches:
 
 ```yaml
-script: vendor/bin/githooks flows ci-validation
+script: vendor/bin/githooks flows ci
 ```
 
-In `master` the mode is `full` (FEAT-1's `only-files` rules become no-op). In a task branch the mode is `fast-branch` and admission filters apply.
+No branch-aware `if:` conditional in the CI definition, no duplicated job (e.g. one for `master` running `full`, another for the rest running `--fast-branch`), no environment variable injected per pipeline template. On `master` the mode resolves to `full` (per-entry `only-files` rules become no-op); on a task branch it resolves to `fast-branch` and admission filters apply — all driven by config.
 
 ### Resolution cascade
 
@@ -192,7 +186,7 @@ The `Settings:` header at the top of each run shows the source — `mode = full 
 
 The current branch is read with the following priority (first non-empty wins):
 
-1. `--branch=<name>` CLI flag (FEAT-2 — useful for testing or local override).
+1. `--branch=<name>` CLI flag — useful for testing or local override.
 2. `$GITHOOKS_BRANCH` env var — explicit user override.
 3. CI variables in this order: `CI_COMMIT_REF_NAME` (GitLab), `GITHUB_REF_NAME` (GitHub Actions), `BUILDKITE_BRANCH` (Buildkite), `BITBUCKET_BRANCH` (Bitbucket Pipelines), `CIRCLE_BRANCH` (CircleCI), `DRONE_COMMIT_BRANCH` (Drone), `TRAVIS_PULL_REQUEST_BRANCH` (PR build) / `TRAVIS_BRANCH` (push build).
 4. `git rev-parse --abbrev-ref HEAD`.
@@ -216,7 +210,7 @@ The order of patterns in the map is the priority order: **the first pattern that
 
 ### Overriding in `githooks.local.php`
 
-Same semantics as FEAT-1's `only-files` / `exclude-files`:
+Same semantics as per-entry `only-files` / `exclude-files`:
 
 | Local declaration | Effect on the inherited rule |
 |---|---|
@@ -228,15 +222,36 @@ Same semantics as FEAT-1's `only-files` / `exclude-files`:
 
 `hooks.<event>.<ref>.only-on` admits the flow to the hook event by branch; `flows.<X>.on` selects the mode of the admitted flow. Levels are orthogonal — a hook with `only-on: master` plus a flow with `on: '*' => fast-branch` would never run because the hook admission fires only on `master`, where the flow would pick `full` if so configured.
 
+### Composition with per-entry admission rules
+
+`on` decides **which mode** the flow runs in per branch; [per-entry `only-files` / `exclude-files`](#per-entry-admission-rules-only-files-exclude-files) decides **which jobs** are admitted per change set. Together they let the flow declaration carry the full execution policy:
+
+```php
+'ci' => [
+    'on' => [
+        'master' => ['execution' => 'full'],
+        '*'      => ['execution' => 'fast-branch'],
+    ],
+    'jobs' => [
+        ['job' => 'phpstan_src',     'only-files' => ['src/**']],
+        ['job' => 'phpcs_src',       'only-files' => ['src/**']],
+        ['job' => 'phpunit_backend', 'only-files' => ['src/**', 'tests/**']],
+        ['job' => 'eslint_frontend', 'only-files' => ['resources/js/**']],
+    ],
+],
+```
+
+A single `vendor/bin/githooks flows ci` CI step covers every branch, picks the mode internally, and admits each job based on the actual change set. The CI definition no longer needs branch-aware conditionals, per-job duplication or `rules:` / `changes:` filters (GitLab CI) and `paths:` filters (GitHub Actions) that depend on pipeline source and can be coarse on merge / scheduled pipelines. The admission decision lives next to the job, so the same logic is exercised locally (`flow ci --fast-branch`) and in CI.
+
 ### Scope and caveats
 
-- **Per-flow only.** Multi-flow runs (`githooks flows X Y`) ignore per-flow `on` (matches the existing CON-001/002 for flow-level options). The mode comes from `--fast`/`--fast-branch`/`--fast-dirty` or `flows.options.execution`.
+- **Per-flow only.** Multi-flow runs (`githooks flows X Y`) ignore per-flow `on` — same convention as every other flow-level option in multi-flow mode. The mode comes from `--fast`/`--fast-branch`/`--fast-dirty` or `flows.options.execution`.
 - **`execution` is the only supported attribute today.** The object shape leaves room for `time-budget` / `fail-fast` to be added later without breaking the surface.
 - **`PHP collapses duplicate map keys.** `'master' => …, 'master' => …` cannot be detected — PHP keeps only the last entry.
 
 ## Job dependencies (`needs`)
 
-> Since **v3.4** (FEAT-3).
+> Since **v3.4**.
 
 A flow entry can declare which other jobs in the same flow it depends on:
 
@@ -279,7 +294,7 @@ The dependency graph is validated at parse time, not at runtime. Errors:
 
 ### Execution order (`processes: 1`)
 
-In sequential mode the executor receives jobs **already topologically sorted** by `FlowPreparer`. The declaration order is preserved between nodes that are not related by `needs`, so the only visible effect is "things move earlier if other things needed them first" — never later.
+In sequential mode the runtime processes jobs **already topologically sorted** at admission. The declaration order is preserved between nodes that are not related by `needs`, so the only visible effect is "things move earlier if other things needed them first" — never later.
 
 ### fail-fast behaviour
 
@@ -290,9 +305,9 @@ When `fail-fast: true` and a job fails:
 
 Without `needs` declared, `fail-fast` falls back to the same semantics as previous versions (running terminates naturally; queue is skipped uniformly).
 
-### Composition with `only-files` / `exclude-files` (FEAT-1)
+### Composition with `only-files` / `exclude-files`
 
-Evaluation order: **`only-files`/`exclude-files` first, `needs` second**. If a job skips by `only-files`, its dependents propagate with `'needs X was skipped'`. To avoid surprising skip cascades, declare the **same `only-files`** on the dependent so both skip together via FEAT-1 instead of via propagation:
+Evaluation order: **`only-files`/`exclude-files` first, `needs` second**. If a job skips by `only-files`, its dependents propagate with `'needs X was skipped'`. To avoid surprising skip cascades, declare the **same `only-files`** on the dependent so both skip together via the admission rule instead of via propagation:
 
 ```php
 'jobs' => [
@@ -304,15 +319,15 @@ Evaluation order: **`only-files`/`exclude-files` first, `needs` second**. If a j
 ],
 ```
 
-When there is no JS in the change set, both skip by `only-files` (FEAT-1) — coherent with the dev's intent.
+When there is no JS in the change set, both skip by `only-files` — coherent with the dev's intent.
 
-### Composition with `on` (FEAT-2)
+### Composition with `on`
 
 The execution mode chosen by `on` does not affect `needs`. Dependencies are structural — they hold in `full`, `fast`, `fast-branch`, and `fast-dirty` alike.
 
 ### Overriding in `githooks.local.php`
 
-Same semantics as FEAT-1/2:
+Same semantics as the other per-entry attributes (`only-files` / `exclude-files`) and as the per-flow `on` map:
 
 | Local declaration | Effect on the inherited `needs` |
 |---|---|
