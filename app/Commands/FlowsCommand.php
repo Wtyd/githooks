@@ -240,7 +240,8 @@ class FlowsCommand extends Command
                 $plan->getExecutionMode(),
                 $plan->getInputFiles(),
                 $expandedFlows,
-                $resolution
+                $resolution,
+                $plan->getDependencyGraph()
             );
 
             $this->applyFormat($this->executor, $plan);

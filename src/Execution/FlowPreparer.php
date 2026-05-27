@@ -162,13 +162,25 @@ class FlowPreparer
         string $cliExtraArgs = ''
     ): FlowPlan {
         $expandedFlowNames = MultiFlowExpansion::expandFlowNames($argNames, $config);
-        $jobNames = MultiFlowExpansion::mergeFlowJobs($expandedFlowNames, $config);
+
+        // FEAT-1/FEAT-3: build the aggregate from rich JobRefs (preserving
+        // needs / only-files / exclude-files) and reconstruct the dependency
+        // graph, so `flows` honours flow-entry attributes exactly like `flow`.
+        // The single-flow degenerate is just the one-flow case of the same
+        // merge: its refs and graph are identical to the source flow.
+        $jobRefs = MultiFlowExpansion::mergeFlowJobRefs($expandedFlowNames, $config);
+        $jobNames = array_map(static fn(JobRef $ref): string => $ref->getTarget(), $jobRefs);
+        $dependencyGraph = MultiFlowExpansion::buildAggregateGraph($aggregateFlowName, $jobRefs);
 
         $aggregate = new FlowConfiguration(
             $aggregateFlowName,
             $jobNames,
             $options,
-            null
+            null,
+            null,
+            $jobRefs,
+            null,
+            $dependencyGraph
         );
 
         $plan = $this->prepare($aggregate, $config, $context, $excludeJobs, $onlyJobs, $invocationMode, $cliExtraArgs);
@@ -182,7 +194,8 @@ class FlowPreparer
             $plan->getExecutionMode(),
             $plan->getInputFiles() ?? null,
             $expandedFlowNames,
-            $plan->getEffectiveOptions()
+            $plan->getEffectiveOptions(),
+            $plan->getDependencyGraph()
         );
     }
 

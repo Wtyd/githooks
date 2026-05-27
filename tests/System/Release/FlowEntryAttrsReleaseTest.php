@@ -348,6 +348,111 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
         );
     }
 
+    // ─── BUG · `flows` must honour flow-entry attrs like `flow` ──────
+    // The `flows` command flattened the merged jobs to plain strings, losing
+    // needs / only-files / exclude-files + the dependency graph. These pin the
+    // fix end-to-end against the compiled `.phar`.
+
+    /**
+     * `flows qa` must propagate a `needs` skip when the upstream fails, exactly
+     * like `flow qa`. Before the fix the dependency graph was never built for
+     * `flows`, so `downstream` ran despite its failed dependency.
+     *
+     * @test
+     */
+    public function phar_flows_command_propagates_needs_when_upstream_fails(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows([
+                'options' => ['processes' => 1, 'fail-fast' => false],
+                'qa' => [
+                    'jobs' => [
+                        'upstream',
+                        ['job' => 'downstream', 'needs' => ['upstream']],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'upstream'   => ['type' => 'custom', 'script' => 'exit 1'],
+                'downstream' => ['type' => 'custom', 'script' => 'echo never'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $cmd = sprintf(
+            '%s flows qa --format=json --config=%s 2>/dev/null',
+            $this->githooks,
+            $this->configPath
+        );
+
+        passthru($cmd, $exitCode);
+
+        $this->assertSame(1, $exitCode, 'the run fails because upstream fails');
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+
+        $byName = $this->indexJobs($decoded['jobs']);
+        $this->assertFalse($byName['upstream']['success'], 'upstream must fail');
+        $this->assertTrue(
+            $byName['downstream']['skipped'],
+            '`flows` must skip downstream via needs (the dependency graph reached the executor)'
+        );
+        $this->assertSame('needs upstream failed', $byName['downstream']['skipReason']);
+        $this->assertSame(['upstream'], $byName['downstream']['needs'], '`needs` must be emitted in JSON v2');
+    }
+
+    /**
+     * `flows qa` must skip a job whose `exclude-files` filters every file in
+     * the change set, exactly like `flow qa`. Before the fix the admission rule
+     * was lost and the job fell through to plain mode filtering.
+     *
+     * @test
+     */
+    public function phar_flows_command_skips_job_by_exclude_files(): void
+    {
+        $tests = self::TESTS_PATH;
+        $srcFoo = "$tests/src/foo";
+        @mkdir($srcFoo, 0777, true);
+        file_put_contents("$srcFoo/Skip.php", "<?php\n");
+
+        $this->configurationFileBuilder
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        ['job' => 'lint_foo', 'exclude-files' => ['**/Skip.php']],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'lint_foo' => ['type' => 'custom', 'script' => 'true', 'paths' => [$srcFoo], 'accelerable' => true],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $cmd = sprintf(
+            '%s flows qa --files=%s/Skip.php --format=json --config=%s 2>/dev/null',
+            $this->githooks,
+            $srcFoo,
+            $this->configPath
+        );
+
+        passthru($cmd, $exitCode);
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+
+        $byName = $this->indexJobs($decoded['jobs']);
+        $this->assertTrue(
+            $byName['lint_foo']['skipped'],
+            '`flows` must skip lint_foo by exclude-files (admission rule preserved)'
+        );
+        $this->assertSame(
+            'every file in the change set is filtered by its exclude-files rule',
+            $byName['lint_foo']['skipReason']
+        );
+    }
+
     /**
      * @param array<int, array<string, mixed>> $jobs
      * @return array<string, array<string, mixed>>

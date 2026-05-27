@@ -91,27 +91,116 @@ class FlowsCommandTest extends SystemTestCase
         $this->assertArrayNotHasKey('flows', $output);
     }
 
-    /** @test */
+    /**
+     * Canonical equivalence guard for `flow X` ≡ `flows X`.
+     *
+     * Uses a *maximal* (kitchen-sink) fixture that lights up every flow-entry
+     * attribute at once — exclude-files, only-files, `needs`, and the
+     * needs↔admission interaction — and compares the *whole normalized
+     * payload*, not a hand-picked subset of fields. This is what makes the
+     * test future-proof: any attribute dropped while a carrier object crosses
+     * the `prepareMultiple → FlowPlan → FlowsCommand` boundary shows up as a
+     * diff, including an attribute that does not exist yet when this test was
+     * written. The previous version used an attribute-free fixture and a
+     * three-field comparison, so it stayed green while the entry-attrs were
+     * silently lost (the bug this guard now closes).
+     *
+     * @test
+     */
     public function single_flow_degenerate_matches_flow_command_output()
     {
-        $this->buildMultiFlowFixture();
+        $dir = $this->buildKitchenSinkFixture();
 
-        $flowOut  = $this->runFlowJson("flow qa --format=json --config=$this->configPath");
-        $flowsOut = $this->runJson("flows qa --format=json --config=$this->configPath");
+        $flowOut  = $this->runFlowJson("flow qa --files=$dir/Touched.php --format=json --config=$this->configPath");
+        $flowsOut = $this->runJson("flows qa --files=$dir/Touched.php --format=json --config=$this->configPath");
 
-        // Identifiers, executed jobs, and effectiveOptions must match.
-        $this->assertSame($flowOut['flow'], $flowsOut['flow']);
-        $this->assertSame(
-            array_column($flowOut['jobs'], 'name'),
-            array_column($flowsOut['jobs'], 'name')
-        );
+        // Top-level envelope (volatile totalTime excluded).
+        foreach (['flow', 'success', 'executionMode', 'passed', 'failed', 'skipped'] as $key) {
+            $this->assertSame($flowOut[$key], $flowsOut[$key], "envelope field `$key` must match across flow/flows");
+        }
         $this->assertSame(
             $flowOut['effectiveOptions'],
             $flowsOut['effectiveOptions'],
             'effectiveOptions must be identical across `flow X` and `flows X`'
         );
+
+        // Whole jobs payload, normalized (runtime-volatile fields stripped).
+        // A dropped attribute (needs / skipped / skipReason / command / paths …)
+        // surfaces here without the test having to anticipate which one.
+        $this->assertSame(
+            $this->normalizeJobs($flowOut['jobs']),
+            $this->normalizeJobs($flowsOut['jobs']),
+            'the full per-job payload must be identical across `flow X` and `flows X`'
+        );
+
         $this->assertArrayNotHasKey('flows', $flowOut);
         $this->assertArrayNotHasKey('flows', $flowsOut);
+    }
+
+    /**
+     * Maximal "kitchen-sink" fixture: a single normal flow `qa` whose entries
+     * exercise every flow-entry attribute (FEAT-1 + FEAT-3) plus their
+     * interaction. `--files` (created on disk) drives FAST mode so the
+     * admission rules are evaluated.
+     *
+     *  - `excluded`   → exclude-files drops the only change-set file ⇒ skipped.
+     *  - `only_miss`  → only-files matches nothing ⇒ skipped.
+     *  - `dependent`  → needs `excluded`; its dependency is skipped ⇒ propagated.
+     *  - `plain_runner` → no attrs ⇒ runs (the minimal common path inside the
+     *    same fixture).
+     *
+     * @return string Absolute directory holding the change-set file.
+     */
+    private function buildKitchenSinkFixture(): string
+    {
+        $dir = getcwd() . '/' . self::TESTS_PATH . '/src/foo';
+        @mkdir($dir, 0777, true);
+        file_put_contents("$dir/Touched.php", "<?php\n");
+
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa']])
+            ->setV3Flows([
+                'options' => ['processes' => 1, 'fail-fast' => false],
+                'qa' => [
+                    'jobs' => [
+                        ['job' => 'excluded', 'exclude-files' => ['**/Touched.php']],
+                        ['job' => 'only_miss', 'only-files' => ['**/Other.php']],
+                        ['job' => 'dependent', 'needs' => ['excluded']],
+                        'plain_runner',
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'excluded'     => ['type' => 'custom', 'script' => 'echo excluded', 'paths' => [$dir], 'accelerable' => true],
+                'only_miss'    => ['type' => 'custom', 'script' => 'echo only', 'paths' => [$dir], 'accelerable' => true],
+                'dependent'    => ['type' => 'custom', 'script' => 'echo dep'],
+                'plain_runner' => ['type' => 'custom', 'script' => 'echo run'],
+            ])
+            ->buildInFileSystem();
+
+        return $dir;
+    }
+
+    /**
+     * Normalize a JSON v2 `jobs` array for equivalence comparison: drop the
+     * runtime-volatile fields and index by job name (order-independent).
+     *
+     * @param array<int, array<string, mixed>> $jobs
+     * @return array<string, array<string, mixed>>
+     */
+    private function normalizeJobs(array $jobs): array
+    {
+        $volatile = ['time', 'duration', 'memoryPeak', 'memoryReserved'];
+        $byName = [];
+        foreach ($jobs as $job) {
+            foreach ($volatile as $key) {
+                unset($job[$key]);
+            }
+            $byName[$job['name']] = $job;
+        }
+        ksort($byName);
+        return $byName;
     }
 
     /**
@@ -294,6 +383,154 @@ class FlowsCommandTest extends SystemTestCase
         $output = $this->runJson("flows qa lint --branch=feature/x --format=json --config=$this->configPath");
 
         $this->assertNotSame('flows.qa.on', $output['effectiveOptions']['executionMode']['source']);
+    }
+
+    // ─── FEAT-1 / FEAT-3 entry-attrs must propagate through `flows` ───
+    // Regression guard: before the fix, `flows` flattened the merged jobs to
+    // plain strings and lost needs / only-files / exclude-files + the
+    // dependency graph. `flows X` must behave like `flow X` for these.
+
+    /**
+     * Fixture with a `qa` flow that chains jobs via `needs`. `upstream` fails,
+     * so `downstream` (needs upstream) must be skipped while `independent`
+     * (no needs) still runs.
+     */
+    private function buildNeedsFixture(): void
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa']])
+            ->setV3Flows([
+                'options' => ['processes' => 1, 'fail-fast' => false],
+                'qa' => [
+                    'jobs' => [
+                        'upstream',
+                        ['job' => 'downstream', 'needs' => ['upstream']],
+                        'independent',
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'upstream'    => ['type' => 'custom', 'script' => 'exit 1'],
+                'downstream'  => ['type' => 'custom', 'script' => 'echo never'],
+                'independent' => ['type' => 'custom', 'script' => 'echo ok'],
+            ])
+            ->buildInFileSystem();
+    }
+
+    /** @test C1: `flows qa` propagates `needs` skip when the upstream fails */
+    public function single_flow_needs_skips_dependent_when_upstream_fails()
+    {
+        $this->buildNeedsFixture();
+
+        $output = $this->runJson("flows qa --format=json --config=$this->configPath");
+
+        $jobs = $this->indexJobs($output['jobs']);
+        $this->assertFalse($jobs['upstream']['success'], 'upstream is expected to fail');
+        $this->assertTrue($jobs['downstream']['skipped'], 'downstream must be skipped — its `needs` failed');
+        $this->assertSame('needs upstream failed', $jobs['downstream']['skipReason']);
+        $this->assertSame(['upstream'], $jobs['downstream']['needs'], '`needs` field must be present in JSON v2');
+        $this->assertFalse($jobs['independent']['skipped'], 'independent job has no needs and must run');
+    }
+
+    /** @test C1: the documented equivalence — `flows qa` ≡ `flow qa` for `needs` */
+    public function single_flow_needs_matches_flow_command()
+    {
+        $this->buildNeedsFixture();
+
+        $flowOut  = $this->runFlowJson("flow qa --format=json --config=$this->configPath");
+        $flowsOut = $this->runJson("flows qa --format=json --config=$this->configPath");
+
+        $flow  = $this->indexJobs($flowOut['jobs']);
+        $flows = $this->indexJobs($flowsOut['jobs']);
+
+        foreach (['upstream', 'downstream', 'independent'] as $name) {
+            $this->assertSame(
+                $flow[$name]['skipped'],
+                $flows[$name]['skipped'],
+                "`$name` skipped state must match across flow/flows"
+            );
+            $this->assertSame(
+                $flow[$name]['skipReason'],
+                $flows[$name]['skipReason'],
+                "`$name` skipReason must match across flow/flows"
+            );
+            $this->assertSame(
+                $flow[$name]['needs'] ?? null,
+                $flows[$name]['needs'] ?? null,
+                "`$name` needs field must match across flow/flows"
+            );
+        }
+    }
+
+    /**
+     * Fixture for admission rules. `lint_foo` declares `exclude-files` that
+     * drops every file in the change set, so the job must be skipped. Files
+     * are created on disk because `--files` ignores non-existent paths.
+     *
+     * @return string Absolute directory holding the change-set files.
+     */
+    private function buildAdmissionFixture(): string
+    {
+        $dir = getcwd() . '/' . self::TESTS_PATH . '/src/foo';
+        @mkdir($dir, 0777, true);
+        file_put_contents("$dir/Skip.php", "<?php\n");
+
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa']])
+            ->setV3Flows([
+                'qa' => [
+                    'jobs' => [
+                        ['job' => 'lint_foo', 'exclude-files' => ['**/Skip.php']],
+                    ],
+                ],
+            ])
+            ->setV3Jobs([
+                'lint_foo' => ['type' => 'custom', 'script' => 'true', 'paths' => [$dir], 'accelerable' => true],
+            ])
+            ->buildInFileSystem();
+
+        return $dir;
+    }
+
+    /** @test C2: `flows qa` skips a job by `exclude-files` exactly like `flow qa` */
+    public function single_flow_exclude_files_skips_job_like_flow_command()
+    {
+        $dir = $this->buildAdmissionFixture();
+
+        $flowOut  = $this->runFlowJson("flow qa --files=$dir/Skip.php --format=json --config=$this->configPath");
+        $flowsOut = $this->runJson("flows qa --files=$dir/Skip.php --format=json --config=$this->configPath");
+
+        $flow  = $this->indexJobs($flowOut['jobs']);
+        $flows = $this->indexJobs($flowsOut['jobs']);
+
+        $this->assertTrue($flow['lint_foo']['skipped'], 'flow must skip lint_foo (every file matches exclude-files)');
+        $this->assertSame(
+            $flow['lint_foo']['skipped'],
+            $flows['lint_foo']['skipped'],
+            '`flows` must skip by exclude-files exactly like `flow`'
+        );
+        $this->assertSame(
+            $flow['lint_foo']['skipReason'],
+            $flows['lint_foo']['skipReason'],
+            'admission skipReason must match across flow/flows'
+        );
+    }
+
+    /**
+     * Index a JSON v2 `jobs` array by job name.
+     *
+     * @param array<int, array<string, mixed>> $jobs
+     * @return array<string, array<string, mixed>>
+     */
+    private function indexJobs(array $jobs): array
+    {
+        $byName = [];
+        foreach ($jobs as $job) {
+            $byName[$job['name']] = $job;
+        }
+        return $byName;
     }
 
     /**

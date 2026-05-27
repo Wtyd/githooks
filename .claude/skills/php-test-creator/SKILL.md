@@ -157,6 +157,23 @@ Señales de alarma:
 - Los providers nombran sus filas por escenario (`'three jobs config'`) en lugar de por clase (`'cost > budget'`).
 - Cobertura de líneas alta + ningún test con `>`, `>=`, `==` en la frontera del parámetro.
 
+### Tests de paso-a-través / equivalencia: fixture maximal
+
+Aplica cuando un test afirma que un objeto **atraviesa una frontera intacto**: equivalencias (`flow X` ≡ `flows X`), "el plan refleja la config", "el envelope refleja el job", copy-constructors posicionales (`new FlowPlan(...)` reconstruido en varios call sites), merges que reenvían campos. Son bugs de **cableado**, no de lógica: un atributo se cae al recomponer un objeto portador campo-a-campo. El nivel unitario de las piezas puras es **ciego** a ellos — sólo se ven donde se observa la pérdida (el payload final).
+
+Es el anti-patrón "valor inocuo común" llevado al **fixture**: un fixture sin atributos opcionales pasa en verde aunque la propagación esté rota.
+
+Reglas:
+
+1. **Fixture maximal, no mínimo.** Un único fixture "kitchen-sink" que active a la vez **todos** los atributos opcionales a valores no-default (todos los `needs` / `only-files` / `exclude-files` / `on` / … y, si aporta, su interacción — p.ej. un job cuyo `needs` apunta a otro que la admisión salta). No hace falta separar por atributo a este nivel; eso es trabajo del nivel unitario.
+2. **Compara el payload completo normalizado**, no los campos que se te ocurran a mano. `assertSame($normaliza($a), $normaliza($b))` quitando sólo lo volátil en runtime (`time`, `duration`, `memoryPeak`, `memoryReserved`, `totalTime`). Así un campo perdido aparece como diff **sin que el test lo prevea — incluido un atributo que aún no existe** cuando se escribe el test. Comparar 3 campos elegidos a mano es lo que dejó pasar el bug.
+3. **Mantén también un camino mínimo** (sin attrs) como smoke del caso común; pero la caza de pérdidas la hace el maximal + comparación total contra la referencia.
+4. **Verifica que el guard muerde**: rompe temporalmente un punto del cableado y confirma que el test se pone rojo (si el fix está sin commitear, NO uses `git checkout` para restaurar — revierte a HEAD y te borra el fix; deshaz la rotura a mano).
+
+Complemento estructural (reduce la dependencia de la disciplina de tests): minimiza las reconstrucciones posicionales de objetos portadores. Cada `new FlowPlan(...)` repetido con ~10 args es una ocasión de omitir el último; prefiere withers (`$plan->withOptions($o)->withExpandedFlows($f)`) que copian todo lo demás, de modo que un campo nuevo no haya que acordarse de reenviarlo en cada call site.
+
+Caso de referencia: **BUG flows-entry-attrs (rc-3.4.0)**. `flows` perdía needs/admisión porque `prepareMultiple` aplanaba los jobs a strings y el grafo se caía en dos reconstrucciones de `FlowPlan`. El test `single_flow_degenerate_matches_flow_command_output` existía y comparaba `flow` ≡ `flows`, pero su fixture no llevaba ningún entry-attr y sólo comparaba 3 campos → verde en falso. Ahora usa fixture maximal + payload completo.
+
 ### Cuándo aplicar este capítulo
 
 Obligatorio cuando el componente bajo test:
