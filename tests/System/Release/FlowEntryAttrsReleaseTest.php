@@ -229,6 +229,51 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
         $this->assertSame('flows.qa.on', $onFeature['effectiveOptions']['executionMode']['source']);
     }
 
+    /**
+     * The `flows` command (single-flow degenerate) must resolve `on` exactly
+     * like `flow` — including the new `--branch` flag. Before the fix `flows`
+     * never wired branch resolution, so `on` was silently ignored and the mode
+     * fell through to `full`/default; this asserts the embedded `.phar` honours
+     * it end-to-end.
+     *
+     * @test
+     */
+    public function phar_runs_flows_command_with_branch_driven_execution_mode(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows([
+                'qa' => [
+                    'on' => [
+                        'main'   => ['execution' => 'full'],
+                        'master' => ['execution' => 'full'],
+                        '*'      => ['execution' => 'fast-branch'],
+                    ],
+                    'jobs' => ['ok_job'],
+                ],
+            ])
+            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => 'true']]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $cmdFor = function (string $branch): string {
+            return sprintf(
+                '%s flows qa --branch=%s --format=json --config=%s 2>/dev/null',
+                $this->githooks,
+                escapeshellarg($branch),
+                $this->configPath
+            );
+        };
+
+        $onMaster = json_decode((string) shell_exec($cmdFor('master')), true);
+        $onFeature = json_decode((string) shell_exec($cmdFor('feature/x')), true);
+
+        $this->assertSame('full', $onMaster['executionMode']);
+        $this->assertSame('flows.qa.on', $onMaster['effectiveOptions']['executionMode']['source']);
+
+        $this->assertSame('fast-branch', $onFeature['executionMode']);
+        $this->assertSame('flows.qa.on', $onFeature['effectiveOptions']['executionMode']['source']);
+    }
+
     // ─── FEAT-3 + BUG-19 · needs propagation ──────────────────────────
 
     /**

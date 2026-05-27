@@ -26,6 +26,9 @@ use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\InputFilesResolver;
+use Wtyd\GitHooks\Utils\BranchResolution;
+use Wtyd\GitHooks\Utils\BranchResolver;
+use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
@@ -70,6 +73,7 @@ class FlowsCommand extends Command
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
                             {--fast-branch-fallback= : Fallback strategy (fast|full)}
                             {--fast-dirty : Fast-dirty mode — accelerable jobs analyze the entire working tree (staged, unstaged, and untracked non-ignored files)}
+                            {--branch= : Override the detected branch name used to evaluate flow.on rules (single-flow runs only)}
                             {--files= : CSV of files to filter accelerable jobs by (mutually exclusive with --files-from)}
                             {--files-from= : Path to a manifest file with one path per line (mutually exclusive with --files)}
                             {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
@@ -173,6 +177,15 @@ class FlowsCommand extends Command
             $cliAllocator = $this->resolveAllocatorFlag();
             $cliStats = $this->resolveStatsFlag();
 
+            // FEAT-2: resolve the branch only for a single normal flow that
+            // declares `on` (multi-flow runs intentionally ignore per-flow `on`).
+            try {
+                $branchResolution = $this->resolveBranchForSingleFlow($argNames, $config, $fileUtils);
+            } catch (DetachedHeadException $e) {
+                $this->error($e->getMessage());
+                return 1;
+            }
+
             $resolver = new EffectiveOptionsResolver();
             [$resolution, $isSingleFlow, $isDeclarative] = $this->resolveOptionsForMode(
                 $resolver,
@@ -184,8 +197,22 @@ class FlowsCommand extends Command
                 $timeBudgetFlags,
                 $memoryBudgetFlags,
                 $cliAllocator,
-                $cliStats
+                $cliStats,
+                $branchResolution
             );
+
+            // FEAT-2: re-sync invocationMode so the `on`-resolved mode reaches the
+            // preparer/executor, not only the header/JSON trace. Scoped to the
+            // single-flow `on` case (branchResolution is null in every other mode),
+            // mirroring FlowCommand.
+            if (
+                $invocationMode === null
+                && $branchResolution !== null
+                && $resolution->getExecutionMode() !== ExecutionMode::FULL
+                && $resolution->getTrace()['executionMode']['source'] !== EffectiveOptionsResolver::SOURCE_DEFAULT
+            ) {
+                $invocationMode = $resolution->getExecutionMode();
+            }
 
             $this->emitIgnoredOptionsWarning($argNames, $config, $isSingleFlow, $isDeclarative);
 
@@ -305,7 +332,8 @@ class FlowsCommand extends Command
         array $timeBudgetFlags,
         array $memoryBudgetFlags,
         ?string $cliAllocator,
-        ?bool $cliStats
+        ?bool $cliStats,
+        ?BranchResolution $branchResolution = null
     ): array {
         $unique = array_values(array_unique($argNames));
 
@@ -327,7 +355,8 @@ class FlowsCommand extends Command
                 $memoryBudgetFlags['failAbove'],
                 $memoryBudgetFlags['disabled'],
                 $cliAllocator,
-                $cliStats
+                $cliStats,
+                $branchResolution
             );
             return [$resolution, $isSingleFlow, $isDeclarative];
         }
@@ -350,6 +379,39 @@ class FlowsCommand extends Command
             false,
             false,
         ];
+    }
+
+    /**
+     * FEAT-2: resolve the current branch only when the run is a single normal
+     * flow that declares an `on` map. Multi-flow runs ignore per-flow `on`, and
+     * meta-flows / flows without `on` never touch branch detection — so those
+     * keep working on a detached HEAD.
+     *
+     * @param string[] $argNames
+     * @throws DetachedHeadException when `on` must be evaluated but the branch
+     *         cannot be detected and no --branch / $GITHOOKS_BRANCH was given.
+     */
+    private function resolveBranchForSingleFlow(
+        array $argNames,
+        ConfigurationResult $config,
+        FileUtilsInterface $fileUtils
+    ): ?BranchResolution {
+        $unique = array_values(array_unique($argNames));
+        if (count($unique) !== 1) {
+            return null;
+        }
+
+        $flow = $config->getFlow($unique[0]);
+        if ($flow === null || $flow->isMetaFlow() || $flow->getOn() === null) {
+            return null;
+        }
+
+        $cliBranch = $this->option('branch');
+
+        return (new BranchResolver())->resolve(
+            is_string($cliBranch) && $cliBranch !== '' ? $cliBranch : null,
+            $fileUtils
+        );
     }
 
     /**

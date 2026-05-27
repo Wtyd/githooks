@@ -43,6 +43,33 @@ class FlowsCommandTest extends SystemTestCase
             ->buildInFileSystem();
     }
 
+    /**
+     * Fixture with a normal flow `qa` that declares an `on` map (branch-driven
+     * execution mode) and a second normal flow `lint` without `on`.
+     */
+    private function buildBranchDrivenFixture(): void
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa']])
+            ->setV3Flows([
+                'qa' => [
+                    'on' => [
+                        'master' => ['execution' => 'full'],
+                        '*'      => ['execution' => 'fast-branch'],
+                    ],
+                    'jobs' => ['job_a', 'job_b'],
+                ],
+                'lint' => ['jobs' => ['job_b', 'job_c']],
+            ])
+            ->setV3Jobs([
+                'job_a' => ['type' => 'custom', 'script' => 'true'],
+                'job_b' => ['type' => 'custom', 'script' => 'true'],
+                'job_c' => ['type' => 'custom', 'script' => 'true'],
+            ])
+            ->buildInFileSystem();
+    }
+
     /** @test */
     public function single_flow_degenerate_runs_as_a_normal_flow()
     {
@@ -194,6 +221,79 @@ class FlowsCommandTest extends SystemTestCase
 
         $names = array_column($output['jobs'], 'name');
         $this->assertSame(['job_a', 'job_c'], $names);
+    }
+
+    // ─── Branch-driven execution mode (`on`) in single-flow degenerate ───
+    // Regression guard: `flows qa` must resolve `on` exactly like `flow qa`.
+
+    /** @test T1: literal branch match resolves to its mode */
+    public function single_flow_on_resolves_full_for_literal_branch_match()
+    {
+        $this->buildBranchDrivenFixture();
+
+        $output = $this->runJson("flows qa --branch=master --format=json --config=$this->configPath");
+
+        $this->assertSame('full', $output['executionMode']);
+        $this->assertSame('flows.qa.on', $output['effectiveOptions']['executionMode']['source']);
+    }
+
+    /** @test T2: catch-all match resolves to its mode */
+    public function single_flow_on_resolves_fast_branch_for_catch_all()
+    {
+        $this->buildBranchDrivenFixture();
+
+        $output = $this->runJson("flows qa --branch=feature/x --format=json --config=$this->configPath");
+
+        $this->assertSame('fast-branch', $output['executionMode']);
+        $this->assertSame('flows.qa.on', $output['effectiveOptions']['executionMode']['source']);
+    }
+
+    /** @test T3: CLI mode flag precedes `on` */
+    public function single_flow_cli_mode_flag_wins_over_on()
+    {
+        $this->buildBranchDrivenFixture();
+
+        $output = $this->runJson("flows qa --branch=master --fast --format=json --config=$this->configPath");
+
+        $this->assertSame('fast', $output['executionMode']);
+        $this->assertSame('cli', $output['effectiveOptions']['executionMode']['source']);
+    }
+
+    /** @test T4: --branch is accepted and inert when the flow declares no `on` */
+    public function single_flow_without_on_accepts_branch_flag()
+    {
+        $this->buildBranchDrivenFixture();
+
+        $this->artisan("flows lint --branch=whatever --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->containsStringInOutput = ['passed'];
+    }
+
+    /** @test T5: `flows qa` resolves the same mode as `flow qa` (the documented equivalence) */
+    public function single_flow_on_matches_flow_command_execution_mode()
+    {
+        $this->buildBranchDrivenFixture();
+
+        $flowOut  = $this->runFlowJson("flow qa --branch=feature/x --format=json --config=$this->configPath");
+        $flowsOut = $this->runJson("flows qa --branch=feature/x --format=json --config=$this->configPath");
+
+        $this->assertSame($flowOut['executionMode'], $flowsOut['executionMode']);
+        $this->assertSame(
+            $flowOut['effectiveOptions']['executionMode'],
+            $flowsOut['effectiveOptions']['executionMode'],
+            'executionMode resolution must be identical across `flow X` and `flows X` when the flow declares `on`'
+        );
+    }
+
+    /** @test T6: multi-flow runs intentionally ignore per-flow `on` */
+    public function multi_flow_ignores_per_flow_on()
+    {
+        $this->buildBranchDrivenFixture();
+
+        $output = $this->runJson("flows qa lint --branch=feature/x --format=json --config=$this->configPath");
+
+        $this->assertNotSame('flows.qa.on', $output['effectiveOptions']['executionMode']['source']);
     }
 
     /**
