@@ -41,6 +41,8 @@ All notable changes to this project are documented here.
 
 - **GitLab CI / GitHub Actions sections no longer leak raw tool JSON when `--format=codeclimate` or `--format=sarif`** (or `reports.codeclimate` / `reports.sarif` in config) is active. Structured formats reconfigure each tool to emit JSON so the file-based formatters can parse it; the side effect was that failing jobs printed the raw JSON blob as the visible body of their CI section. A new humanising display layer translates the per-tool JSON into a familiar `file  line N  message  [rule]` listing while the raw payload stays available unchanged for file-based reports and JSON v2 `output`. See [Human-readable KO body](how-to/ci-cd.md#human-readable-ko-body-under-formatcodeclimate-formatsarif).
 
+- **`githooks job <name> --format=json` now reflects the job's declared `execution` in the envelope.** When a job declared `execution: fast` / `fast-branch` (or the new `fast-dirty`), the JSON v2 envelope still reported `executionMode: "full"` / `source: "default"` even though the file-set filtering already honoured the declared mode — CI dashboards and AI consumers read the wrong mode. The `executionMode` value and its `effectiveOptions` `source` line now reflect `jobs.<name>.execution`.
+
 ## [3.3.3]
 
 ### Fixed
