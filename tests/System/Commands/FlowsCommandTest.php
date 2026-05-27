@@ -518,6 +518,103 @@ class FlowsCommandTest extends SystemTestCase
         );
     }
 
+    // ─── Multi-flow modes must propagate entry-attrs end-to-end ──────
+    // The bug spanned every mode, but the legacy multi-flow tests use
+    // attribute-free fixtures (job_a/b/c → script true), so they could not
+    // observe the loss. These exercise needs across the merged union (ad-hoc),
+    // through meta-flow expansion, and the topological ordering in mixed runs.
+
+    /**
+     * Fixture with several normal flows whose entries carry `needs`, plus a
+     * meta-flow `ci`. `compile` fails so `pkg` (in a *different* flow than the
+     * ones it merges with) must propagate the skip across the union.
+     */
+    private function buildMultiFlowAttrsFixture(): void
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa']])
+            ->setV3Flows([
+                'options' => ['processes' => 1, 'fail-fast' => false],
+                'build' => ['jobs' => [
+                    'compile',
+                    ['job' => 'pkg', 'needs' => ['compile']],
+                ]
+                ],
+                'qa' => ['jobs' => [
+                    'prep',
+                    ['job' => 'tests', 'needs' => ['prep']],
+                ]
+                ],
+                'deploy' => ['jobs' => [
+                    ['job' => 'ship', 'needs' => ['verify']],
+                    'verify',
+                ]
+                ],
+                'ci' => ['flows' => ['build', 'qa']],
+            ])
+            ->setV3Jobs([
+                'compile' => ['type' => 'custom', 'script' => 'exit 1'],
+                'pkg'     => ['type' => 'custom', 'script' => 'echo pkg'],
+                'prep'    => ['type' => 'custom', 'script' => 'echo prep'],
+                'tests'   => ['type' => 'custom', 'script' => 'echo tests'],
+                'ship'    => ['type' => 'custom', 'script' => 'echo ship'],
+                'verify'  => ['type' => 'custom', 'script' => 'echo verify'],
+            ])
+            ->buildInFileSystem();
+    }
+
+    /** @test ad-hoc: `needs` propagates across the merged union of two flows */
+    public function ad_hoc_multiflow_propagates_cross_flow_needs()
+    {
+        $this->buildMultiFlowAttrsFixture();
+
+        $output = $this->runJson("flows build qa --format=json --config=$this->configPath");
+
+        $this->assertSame(['build', 'qa'], $output['flows']);
+        $jobs = $this->indexJobs($output['jobs']);
+        $this->assertFalse($jobs['compile']['success'], 'compile must fail');
+        $this->assertTrue($jobs['pkg']['skipped'], 'pkg (flow build) must propagate its failed `needs`');
+        $this->assertSame('needs compile failed', $jobs['pkg']['skipReason']);
+        $this->assertSame(['compile'], $jobs['pkg']['needs']);
+        $this->assertFalse($jobs['tests']['skipped'], 'tests (flow qa) runs — its dependency prep passed');
+        $this->assertSame(['prep'], $jobs['tests']['needs']);
+    }
+
+    /** @test declarative: a meta-flow propagates `needs` through expansion */
+    public function declarative_multiflow_propagates_needs_through_expansion()
+    {
+        $this->buildMultiFlowAttrsFixture();
+
+        $output = $this->runJson("flows ci --format=json --config=$this->configPath");
+
+        $this->assertSame(['build', 'qa'], $output['flows']);
+        $jobs = $this->indexJobs($output['jobs']);
+        $this->assertTrue($jobs['pkg']['skipped'], 'pkg must propagate via needs after meta-flow expansion');
+        $this->assertSame('needs compile failed', $jobs['pkg']['skipReason']);
+    }
+
+    /** @test mixed: the merged union is ordered topologically across flows */
+    public function mixed_multiflow_orders_merged_jobs_topologically()
+    {
+        $this->buildMultiFlowAttrsFixture();
+
+        $output = $this->runJson("flows ci deploy --format=json --config=$this->configPath");
+
+        $this->assertSame(['build', 'qa', 'deploy'], $output['flows']);
+        $names = array_column($output['jobs'], 'name');
+        // `ship` declares `needs: [verify]` *before* verify in the flow; the
+        // reconstructed graph must still emit verify first.
+        $this->assertLessThan(
+            array_search('ship', $names, true),
+            array_search('verify', $names, true),
+            'verify must precede ship (topological order across the aggregate)'
+        );
+        $jobs = $this->indexJobs($output['jobs']);
+        $this->assertSame(['verify'], $jobs['ship']['needs']);
+        $this->assertFalse($jobs['ship']['skipped'], 'ship runs — verify passed');
+    }
+
     /**
      * Index a JSON v2 `jobs` array by job name.
      *

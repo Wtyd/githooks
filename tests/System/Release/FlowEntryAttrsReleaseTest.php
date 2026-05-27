@@ -454,6 +454,63 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
     }
 
     /**
+     * Multi-flow run: `needs` must propagate across the merged union of two
+     * flows. `compile` (flow build) fails ⇒ `pkg` (also flow build, but merged
+     * alongside flow qa) is skipped. Guards the multi-flow path end-to-end in
+     * the `.phar`, which the single-flow release tests above do not exercise.
+     *
+     * @test
+     */
+    public function phar_flows_command_propagates_needs_in_multi_flow_run(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows([
+                'options' => ['processes' => 1, 'fail-fast' => false],
+                'build' => ['jobs' => [
+                    'compile',
+                    ['job' => 'pkg', 'needs' => ['compile']],
+                ]
+                ],
+                'qa' => ['jobs' => [
+                    'prep',
+                    ['job' => 'tests', 'needs' => ['prep']],
+                ]
+                ],
+            ])
+            ->setV3Jobs([
+                'compile' => ['type' => 'custom', 'script' => 'exit 1'],
+                'pkg'     => ['type' => 'custom', 'script' => 'echo pkg'],
+                'prep'    => ['type' => 'custom', 'script' => 'echo prep'],
+                'tests'   => ['type' => 'custom', 'script' => 'echo tests'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $cmd = sprintf(
+            '%s flows build qa --format=json --config=%s 2>/dev/null',
+            $this->githooks,
+            $this->configPath
+        );
+
+        passthru($cmd, $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+        $this->assertSame(['build', 'qa'], $decoded['flows']);
+
+        $byName = $this->indexJobs($decoded['jobs']);
+        $this->assertFalse($byName['compile']['success']);
+        $this->assertTrue(
+            $byName['pkg']['skipped'],
+            '`flows build qa` must propagate the cross-union needs skip'
+        );
+        $this->assertSame('needs compile failed', $byName['pkg']['skipReason']);
+        $this->assertSame(['compile'], $byName['pkg']['needs']);
+        $this->assertFalse($byName['tests']['skipped'], 'tests runs — prep passed');
+    }
+
+    /**
      * @param array<int, array<string, mixed>> $jobs
      * @return array<string, array<string, mixed>>
      */
