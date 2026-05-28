@@ -110,6 +110,8 @@ nav:
     - Jobs: configuration/jobs.md
     - Options: configuration/options.md
     - Configuration File: configuration/file.md
+    - Execution Modes: execution-modes.md
+    - Glob Syntax: glob-syntax.md
   - Tools Reference:
     - tools/index.md
     - PHPStan: tools/phpstan.md
@@ -123,8 +125,6 @@ nav:
     - PHP CS Fixer: tools/phpcsfixer.md
     - Rector: tools/rector.md
     - Custom Jobs: tools/custom.md
-  - Execution Modes: execution-modes.md
-  - Glob Syntax: glob-syntax.md
   - CLI Reference:
     - cli/index.md
     - githooks flow: cli/flow.md
@@ -154,6 +154,7 @@ nav:
     - v3.3 deprecations: migration/v33-deprecations.md
     - From GrumPHP: migration/from-grumphp.md
     - From CaptainHook: migration/from-captainhook.md
-  - Troubleshooting: troubleshooting.md
-  - Comparison: comparison.md
-  - Changelog: changelog.md
+  - Resources:
+    - Troubleshooting: troubleshooting.md
+    - Comparison: comparison.md
+    - Changelog: changelog.md
