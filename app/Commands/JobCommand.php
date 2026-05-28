@@ -6,13 +6,10 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Execution\{
-    EffectiveOptionsResolver,
-    ExecutionContext,
-    ExecutionMode,
     FlowExecutor,
-    FlowPlan,
-    FlowPreparer,
-    InputFilesResolver
+    InputFilesResolver,
+    JobRunner,
+    JobRunRequest
 };
 use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
@@ -25,9 +22,7 @@ use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 class JobCommand extends Command
 {
@@ -74,26 +69,22 @@ class JobCommand extends Command
 
     protected $description = 'Execute a single job defined in the configuration file';
 
-    private ConfigurationParser $parser;
-
-    private FlowPreparer $preparer;
-
     private FlowExecutor $executor;
 
     private InputFilesResolver $inputFilesResolver;
 
+    private JobRunner $runner;
+
     public function __construct(
-        ConfigurationParser $parser,
-        FlowPreparer $preparer,
         FlowExecutor $executor,
-        InputFilesResolver $inputFilesResolver
+        InputFilesResolver $inputFilesResolver,
+        JobRunner $runner
     ) {
         parent::__construct();
         $this->ignoreValidationErrors();
-        $this->parser = $parser;
-        $this->preparer = $preparer;
         $this->executor = $executor;
         $this->inputFilesResolver = $inputFilesResolver;
+        $this->runner = $runner;
     }
 
     public function handle(): int
@@ -102,134 +93,33 @@ class JobCommand extends Command
             return 1;
         }
 
-        $jobName = strval($this->argument('name'));
-        $configFile = strval($this->option('config'));
-
         if (!$this->assertExecutionModeFlagsExclusive()) {
             return 1;
         }
 
         try {
-            $config = $this->parser->parse($configFile);
+            $request = $this->buildRunRequest();
+            $preparation = $this->runner->prepare($request);
 
-            if ($config->isLegacy()) {
-                $this->error("The 'job' command requires v3 configuration format (hooks/flows/jobs).");
-                $this->warn("Use 'githooks conf:init' to generate the new format.");
+            foreach ($preparation->errors as $error) {
+                $this->error($error);
+            }
+            if (!$preparation->success) {
                 return 1;
             }
 
-            if ($config->hasErrors()) {
-                foreach ($config->getValidation()->getErrors() as $error) {
-                    $this->error($error);
-                }
-                return 1;
-            }
+            $this->applyFormat($this->executor, $preparation->plan);
+            $this->executor->setThresholdsDisabled($request->timeBudgetDisabled);
+            $this->executor->setMemoryBudgetDisabled($request->memoryBudgetDisabled);
 
-            $jobConfig = $config->getJob($jobName);
+            $this->emitConditionsHeader($preparation->resolution, null, $preparation->plan->getInputFiles());
 
-            if ($jobConfig === null) {
-                $this->error("Job '$jobName' is not defined in the configuration file.");
-                $availableJobs = array_keys($config->getJobs());
-                if (!empty($availableJobs)) {
-                    $this->info('Available jobs: ' . implode(', ', $availableJobs));
-                }
-                return 1;
-            }
+            $result = $this->executor->execute($preparation->plan, (bool) $this->option('dry-run'));
+            $result->setConfigValidation($preparation->config->getValidation());
 
-            $fileUtils = $this->getLaravel()->make(FileUtilsInterface::class);
+            $this->emitConfigWarnings($preparation->config->getValidation());
 
-            $invocationMode = $this->resolveInvocationModeFromCli();
-
-            $mainBranch = $config->getGlobalOptions()->getMainBranch()
-                ?? $fileUtils->detectMainBranch();
-
-            $inputFilesResolution = $this->resolveInputFilesFlags();
-
-            if ($inputFilesResolution !== null) {
-                $context = ExecutionContext::forInputFiles($inputFilesResolution, $fileUtils);
-                $invocationMode = ExecutionMode::FAST;
-            } else {
-                $context = ExecutionContext::create($fileUtils, $mainBranch);
-            }
-
-            $cliExtraArgs = $this->getCliExtraArguments();
-
-            $cliFailFast = $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null;
-            $cliProcesses = null;
-            $timeBudgetFlags = $this->resolveTimeBudgetFlags();
-            $memoryBudgetFlags = $this->resolveMemoryBudgetFlags();
-            $cliStats = $this->resolveStatsFlag();
-
-            // In `job`, --warn-after / --fail-after and --memory-warn-above /
-            // --memory-fail-above are job-level (REQ-016 / REQ-031): they override
-            // the per-job thresholds of the executed job, not the flow budgets.
-            // We therefore do NOT propagate them as budget overrides to the
-            // resolver. They are applied to the JobAbstract instance below.
-            // FEAT-13 envelope reporting: pass the job-declared `execution`
-            // (and a `jobs.<name>.execution` label) so the JSON envelope's
-            // `executionMode` reflects it instead of falling back to `default`.
-            // The actual file-set filtering already honoured jobs.X.execution
-            // via FlowPreparer::resolveMode; this aligns the reported envelope
-            // with that behaviour.
-            $jobLevelExecution = $jobConfig->getExecution();
-            $jobLevelExecutionLabel = $jobLevelExecution !== null
-                ? "jobs.{$jobConfig->getName()}.execution"
-                : '';
-
-            $resolver = new EffectiveOptionsResolver();
-            $resolution = $resolver->resolveMultiple(
-                $config,
-                $cliFailFast,
-                $cliProcesses,
-                $invocationMode,
-                null,
-                null,
-                $timeBudgetFlags['disabled'],
-                null,
-                null,
-                $memoryBudgetFlags['disabled'],
-                null,
-                $cliStats,
-                $jobLevelExecution,
-                $jobLevelExecutionLabel
-            );
-
-            $plan = $this->preparer->prepareSingleJob($jobConfig, $resolution->getOptions(), $context, $invocationMode, $cliExtraArgs);
-
-            if ($timeBudgetFlags['warnAfter'] !== null || $timeBudgetFlags['failAfter'] !== null) {
-                foreach ($plan->getJobs() as $jobAbstract) {
-                    $jobAbstract->applyThresholdOverride(
-                        $timeBudgetFlags['warnAfter'],
-                        $timeBudgetFlags['failAfter']
-                    );
-                }
-            }
-
-            $plan = new FlowPlan(
-                $plan->getFlowName(),
-                $plan->getJobs(),
-                $resolution->getOptions(),
-                $plan->getContext(),
-                $plan->getSkippedJobs(),
-                $plan->getExecutionMode(),
-                $plan->getInputFiles(),
-                $plan->getExpandedFlows(),
-                $resolution
-            );
-
-            $this->applyFormat($this->executor, $plan);
-
-            $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
-            $this->executor->setMemoryBudgetDisabled($memoryBudgetFlags['disabled']);
-
-            $this->emitConditionsHeader($resolution, null, $plan->getInputFiles());
-
-            $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
-            $result->setConfigValidation($config->getValidation());
-
-            $this->emitConfigWarnings($config->getValidation());
-
-            $this->renderFormattedResult($result, $plan->getOptions());
+            $this->renderFormattedResult($result, $preparation->plan->getOptions());
 
             return $result->isSuccess() ? 0 : 1;
         } catch (GitHooksExceptionInterface $e) {
@@ -237,6 +127,27 @@ class JobCommand extends Command
             $this->emitStderr($e->getMessage());
             return 1;
         }
+    }
+
+    private function buildRunRequest(): JobRunRequest
+    {
+        $timeBudget = $this->resolveTimeBudgetFlags();
+        $memoryBudget = $this->resolveMemoryBudgetFlags();
+        return new JobRunRequest(
+            strval($this->argument('name')),
+            strval($this->option('config')),
+            $this->getCliExtraArguments(),
+            $this->resolveInputFilesFlags(),
+            $this->resolveInvocationModeFromCli(),
+            $timeBudget['warnAfter'],
+            $timeBudget['failAfter'],
+            $timeBudget['disabled'],
+            $memoryBudget['warnAbove'],
+            $memoryBudget['failAbove'],
+            $memoryBudget['disabled'],
+            $this->resolveStatsFlag(),
+            $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null
+        );
     }
 
     private function getCliExtraArguments(): string

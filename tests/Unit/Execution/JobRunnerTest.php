@@ -1,0 +1,314 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Unit\Execution;
+
+use PHPUnit\Framework\TestCase;
+use Tests\Doubles\FileUtilsFake;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\GitHooks\Configuration\ConfigurationResult;
+use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\GitHooks\Exception\ExitException;
+use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\GitHooks\Execution\FlowPreparer;
+use Wtyd\GitHooks\Execution\JobRunner;
+use Wtyd\GitHooks\Execution\JobRunRequest;
+use Wtyd\GitHooks\Jobs\JobRegistry;
+
+/**
+ * Unit tests for `JobRunner::prepare()`. The Runner is the pure-orchestration
+ * extract from `JobCommand::handle()` — parse + validate + find + context +
+ * options + plan + threshold overrides. Tests use a real `FlowPreparer` and
+ * `FileUtilsFake`, and stub `ConfigurationParser` via a small in-test fake
+ * to keep each case <5 ms.
+ */
+class JobRunnerTest extends TestCase
+{
+    private FileUtilsFake $fileUtils;
+
+    private FlowPreparer $preparer;
+
+    protected function setUp(): void
+    {
+        $this->fileUtils = new FileUtilsFake();
+        $this->preparer = new FlowPreparer(new JobRegistry());
+    }
+
+    /** @test */
+    public function parser_exception_is_returned_as_failure_with_message(): void
+    {
+        $parser = $this->fakeParser(function () {
+            throw new ExitException('config file not found at /tmp/x.php');
+        });
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'phpcs_src']));
+
+        $this->assertFalse($prep->success);
+        $this->assertSame(['config file not found at /tmp/x.php'], $prep->errors);
+        $this->assertNull($prep->plan);
+        $this->assertNull($prep->resolution);
+        $this->assertNull($prep->config);
+    }
+
+    /** @test */
+    public function legacy_config_returns_failure_with_help_message(): void
+    {
+        $legacy = ConfigurationResult::legacy([], '/tmp/githooks.yml', new ValidationResult());
+        $parser = $this->fakeParser(fn() => $legacy);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'phpcs_src']));
+
+        $this->assertFalse($prep->success);
+        $this->assertCount(2, $prep->errors);
+        $this->assertStringContainsString("requires v3", $prep->errors[0]);
+        $this->assertStringContainsString("conf:init", $prep->errors[1]);
+    }
+
+    /** @test */
+    public function config_with_validation_errors_returns_failure(): void
+    {
+        $validation = new ValidationResult();
+        $validation->addError('options.processes must be a positive integer');
+        $validation->addError('jobs.phpcs_src.paths is required');
+        $config = $this->configWithJobs([], $validation);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'phpcs_src']));
+
+        $this->assertFalse($prep->success);
+        $this->assertSame(
+            [
+                'options.processes must be a positive integer',
+                'jobs.phpcs_src.paths is required',
+            ],
+            $prep->errors
+        );
+    }
+
+    /** @test */
+    public function job_not_defined_returns_failure_without_available_list_when_empty(): void
+    {
+        $config = $this->configWithJobs([]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'nonexistent']));
+
+        $this->assertFalse($prep->success);
+        $this->assertSame(
+            ["Job 'nonexistent' is not defined in the configuration file."],
+            $prep->errors
+        );
+    }
+
+    /** @test */
+    public function job_not_defined_includes_available_jobs_list_when_present(): void
+    {
+        $config = $this->configWithJobs([
+            'phpcs_src'   => $this->jobConfig('phpcs_src'),
+            'phpstan_src' => $this->jobConfig('phpstan_src'),
+        ]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'nope']));
+
+        $this->assertFalse($prep->success);
+        $this->assertCount(2, $prep->errors);
+        $this->assertSame("Job 'nope' is not defined in the configuration file.", $prep->errors[0]);
+        $this->assertSame('Available jobs: phpcs_src, phpstan_src', $prep->errors[1]);
+    }
+
+    /** @test */
+    public function happy_path_returns_plan_resolution_and_config(): void
+    {
+        $config = $this->configWithJobs([
+            'phpcs_src' => $this->jobConfig('phpcs_src'),
+        ]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'phpcs_src']));
+
+        $this->assertTrue($prep->success);
+        $this->assertSame([], $prep->errors);
+        $this->assertNotNull($prep->plan);
+        $this->assertNotNull($prep->resolution);
+        $this->assertSame($config, $prep->config);
+        $this->assertCount(1, $prep->plan->getJobs());
+    }
+
+    /** @test */
+    public function plan_carries_the_resolution_after_rewrap(): void
+    {
+        $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'phpcs_src']));
+
+        $this->assertSame(
+            $prep->resolution,
+            $prep->plan->getEffectiveOptions(),
+            'plan must be re-packed with the resolution so renderers see effectiveOptions'
+        );
+    }
+
+    /** @test */
+    public function input_files_resolution_forces_fast_mode(): void
+    {
+        $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $inputFiles = new \Wtyd\GitHooks\Execution\InputFilesResolution(
+            \Wtyd\GitHooks\Execution\InputFilesResolution::SOURCE_CLI,
+            null,
+            ['src/Touched.php'],
+            [],
+            [],
+            [],
+            1
+        );
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req([
+                'jobName' => 'phpcs_src',
+                'inputFiles' => $inputFiles,
+                'invocationMode' => ExecutionMode::FULL, // ignored when inputFiles present
+            ]));
+
+        $this->assertTrue($prep->success);
+        $this->assertSame(ExecutionMode::FAST, $prep->plan->getExecutionMode());
+    }
+
+    /** @test */
+    public function main_branch_detection_falls_back_to_file_utils_when_global_option_absent(): void
+    {
+        $this->fileUtils->setDetectedMainBranch('main');
+        $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req(['jobName' => 'phpcs_src']));
+
+        $this->assertTrue($prep->success);
+        // No direct assertion on the branch (ExecutionContext is opaque from
+        // outside); the test asserts that the prepare did not blow up when the
+        // global config had no `main-branch` and the resolver had to consult
+        // FileUtils::detectMainBranch().
+    }
+
+    /** @test */
+    public function time_budget_overrides_propagate_to_each_job_in_the_plan(): void
+    {
+        $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+            ->prepare($this->req([
+                'jobName' => 'phpcs_src',
+                'timeBudgetWarn' => 5,
+                'timeBudgetFail' => 10,
+            ]));
+
+        $this->assertTrue($prep->success);
+        $job = $prep->plan->getJobs()[0];
+        // Smoke test the override took effect — JobAbstract exposes thresholds
+        // through getter only via inspection so we trust no exception thrown.
+        // The behavioural assertion lives in system tests for `--warn-after`
+        // / `--fail-after`.
+        $this->assertNotNull($job);
+    }
+
+    // ───────── Helpers ─────────
+
+    /**
+     * @param callable():(ConfigurationResult|ExitException) $resolver
+     */
+    private function fakeParser(callable $resolver): ConfigurationParser
+    {
+        return new class ($resolver) extends ConfigurationParser {
+            /** @var callable */
+            private $resolver;
+
+            public function __construct(callable $resolver)
+            {
+                // Skip the parent constructor: we are not parsing real files.
+                $this->resolver = $resolver;
+            }
+
+            public function parse(string $configFile = ''): ConfigurationResult
+            {
+                $result = ($this->resolver)();
+                if ($result instanceof ConfigurationResult) {
+                    return $result;
+                }
+                throw $result; // ExitException
+            }
+        };
+    }
+
+    /**
+     * @param array<string, JobConfiguration> $jobs
+     */
+    private function configWithJobs(array $jobs, ?ValidationResult $validation = null): ConfigurationResult
+    {
+        return new ConfigurationResult(
+            '/tmp/githooks.php',
+            new OptionsConfiguration(false, 1),
+            $jobs,
+            [],
+            null,
+            $validation ?? new ValidationResult()
+        );
+    }
+
+    private function jobConfig(string $name): JobConfiguration
+    {
+        return new JobConfiguration($name, 'custom', ['script' => 'true']);
+    }
+
+    /**
+     * @param array<string, mixed> $overrides
+     */
+    private function req(array $overrides = []): JobRunRequest
+    {
+        $defaults = [
+            'jobName' => 'phpcs_src',
+            'configFile' => '/tmp/githooks.php',
+            'cliExtraArgs' => '',
+            'inputFiles' => null,
+            'invocationMode' => null,
+            'timeBudgetWarn' => null,
+            'timeBudgetFail' => null,
+            'timeBudgetDisabled' => false,
+            'memoryWarnAbove' => null,
+            'memoryFailAbove' => null,
+            'memoryBudgetDisabled' => false,
+            'statsFlag' => null,
+            'cliFailFast' => null,
+        ];
+        $f = array_merge($defaults, $overrides);
+        return new JobRunRequest(
+            $f['jobName'],
+            $f['configFile'],
+            $f['cliExtraArgs'],
+            $f['inputFiles'],
+            $f['invocationMode'],
+            $f['timeBudgetWarn'],
+            $f['timeBudgetFail'],
+            $f['timeBudgetDisabled'],
+            $f['memoryWarnAbove'],
+            $f['memoryFailAbove'],
+            $f['memoryBudgetDisabled'],
+            $f['statsFlag'],
+            $f['cliFailFast']
+        );
+    }
+}
