@@ -39,7 +39,14 @@ description: >
 | `Doing` | En progreso. | WIP — no hard limit, pero típicamente 1-2. | Mergeada o cerrada. |
 | `Done` | Cerrada en el ciclo. **Transitoria.** | Mergeada en la rama de la versión. | Release publicada → eliminación. |
 
-**No se usa la lane `Archive` del kanban.** Tras publicar v3.X.Y se borran las cards de `Done` con esa versión + sus `.md` (con margen de unos días). Fuente de verdad post-release: `docs/changelog.md`.
+**Tras publicar v3.X.Y** se borran las cards de `Done` con esa versión + sus `.md` (con margen de unos días). Fuente de verdad post-release: `docs/changelog.md`.
+
+**Archive** (botón "Archive" en cada card, UI de `harehare.portable-kanban`): mueve la card a una colección oculta `k["archive"]["cards"]` fuera de las listas. **Usar para won't-fix o pospuesto sin versión**: ideas/bugs que se descartan o se posponen indefinidamente, pero cuyo `.md` se quiere conservar como contexto histórico (a diferencia de `Done`, que se vacía cada release). El `.md` asociado **no se borra** al archivar; queda en `docs/` por si la card se restaura en el futuro.
+
+| Estado | Cuándo | Visibilidad |
+|---|---|---|
+| `Done` | Cerrada en el ciclo, mergeada → se elimina post-release | Visible en el board |
+| `Archive` | Won't-fix o pospuesto sin versión target | Oculta del board, recuperable desde la UI |
 
 ### Títulos e IDs
 
@@ -122,12 +129,16 @@ for lst in k["lists"]:
         m = re.match(r"(BUG|FEAT)-(\d+)", c["title"])
         if m:
             nums[m.group(1)].append(int(m.group(2)))
+for c in k.get("archive", {}).get("cards", []):
+    m = re.match(r"(BUG|FEAT)-(\d+)", c["title"])
+    if m:
+        nums[m.group(1)].append(int(m.group(2)))
 print("next BUG:", max(nums["BUG"]) + 1)
 print("next FEAT:", max(nums["FEAT"]) + 1)
 PY
 ```
 
-También revisar `Done` (cards no eliminadas todavía) y los `.md` de `docs/` (referencias históricas) para no reusar un ID ya quemado.
+También revisar los `.md` de `docs/` (referencias históricas) para no reusar un ID ya quemado.
 
 ### Añadir una card nueva
 
@@ -254,6 +265,46 @@ PY
 # Después: rm los .md correspondientes (no están tracked, no hay git rm)
 ```
 
+### Archivar / restaurar una card
+
+Para **won't-fix** o **pospuesto sin versión**: card sale del board pero sobrevive en `k["archive"]["cards"]`. El `.md` se conserva (no borrar). Para restaurar, volver a `Ideas` o `Backlog` según corresponda.
+
+```bash
+# Archivar
+python3 <<'PY'
+import json
+PATH = "/var/www/html1/.kanban-tasks/.kanban"
+k = json.load(open(PATH))
+match = "BUG-17 ·"
+moved = None
+for lst in k["lists"]:
+    for i, c in enumerate(lst["cards"]):
+        if c["title"].startswith(match):
+            moved = lst["cards"].pop(i)
+            break
+    if moved: break
+k.setdefault("archive", {"lists": [], "cards": []})["cards"].append(moved)
+json.dump(k, open(PATH, "w"), indent=2, ensure_ascii=False)
+PY
+
+# Restaurar (de archive a Ideas)
+python3 <<'PY'
+import json
+PATH = "/var/www/html1/.kanban-tasks/.kanban"
+k = json.load(open(PATH))
+match = "BUG-17 ·"
+arch = k.get("archive", {}).get("cards", [])
+for i, c in enumerate(arch):
+    if c["title"].startswith(match):
+        restored = arch.pop(i)
+        ideas = next(l for l in k["lists"] if l["title"] == "Ideas")
+        restored["listId"] = ideas["id"]
+        ideas["cards"].append(restored)
+        break
+json.dump(k, open(PATH, "w"), indent=2, ensure_ascii=False)
+PY
+```
+
 ### Listar / inspeccionar el kanban
 
 ```bash
@@ -263,6 +314,12 @@ k = json.load(open('/var/www/html1/.kanban-tasks/.kanban'))
 for lst in k['lists']:
     print(f'== {lst[\"title\"]} ({len(lst[\"cards\"])}) ==')
     for c in lst['cards']:
+        labels = ', '.join(l['title'] for l in c['labels'])
+        print(f'  - {c[\"title\"]}  [{labels}]')
+arch = k.get('archive', {}).get('cards', [])
+if arch:
+    print(f'== Archive ({len(arch)}) ==')
+    for c in arch:
         labels = ', '.join(l['title'] for l in c['labels'])
         print(f'  - {c[\"title\"]}  [{labels}]')
 "

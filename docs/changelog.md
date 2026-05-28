@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.4.1]
+
+### Fixed
+
+- **Unknown CLI options no longer silently shift the parser** in `flow`, `flows` and `job` (BUG-21). The three execution commands keep `ignoreValidationErrors()` on so that `job <name> -- <args>` keeps forwarding extra args to the underlying tool, but a typo such as `flow qa --foo=bar --config=/path/x.php` would previously make Symfony swallow `--foo` *and* silently drop `--config`, then fall back to `qa/githooks.php` — wrong config, wrong jobs, no error. A new `ValidatesUnknownOptionsBeforeDashDash` concern now inspects the input tokens before either command reads `--config`, rejects unknown long options and short shortcuts (cluster-aware), and emits a Symfony-style `The "--foo" option does not exist.` per offender; `flow` and `flows` additionally emit a custom error if `--` itself is present (neither command supports passthrough). The new behaviour caps any input-validation typo at exit 1 *before* the configuration file is resolved, so a typo can no longer accidentally execute the project-wide QA flow.
+
 ## [3.4]
 
 ### Added

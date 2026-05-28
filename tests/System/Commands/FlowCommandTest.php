@@ -474,4 +474,63 @@ class FlowCommandTest extends SystemTestCase
             @unlink($cliJunit);
         }
     }
+
+    /**
+     * BUG-21 · casilla #1 — flag desconocido `--foo=bar` coexistiendo con
+     * `--config=X`. Antes del fix, `ignoreValidationErrors()` silenciaba
+     * `--foo` y descolocaba el parser perdiendo `--config`. Post-fix Symfony
+     * rechaza nativamente.
+     *
+     * @test
+     */
+    public function unknown_long_option_with_value_returns_exit_1_and_does_not_execute(): void
+    {
+        $this->artisan("flow qa --foo=bar --config=$this->configPath")
+            ->assertExitCode(1);
+
+        $this->containsStringInOutput = ['--foo'];
+        $this->notContainsStringInOutput = ['Settings:'];
+    }
+
+    /**
+     * BUG-21 · casilla #4 — shortcut desconocido `-x` antes del `--`.
+     *
+     * @test
+     */
+    public function unknown_short_option_returns_exit_1(): void
+    {
+        $this->artisan("flow qa -x --config=$this->configPath")
+            ->assertExitCode(1);
+
+        $this->notContainsStringInOutput = ['Settings:'];
+    }
+
+    /**
+     * BUG-21 · casilla #5 — múltiples flags desconocidos en la misma línea.
+     * Verifica que al menos uno aparece en el error y que no se ejecuta.
+     *
+     * @test
+     */
+    public function multiple_unknown_options_return_exit_1(): void
+    {
+        $this->artisan("flow qa --foo --bar --config=$this->configPath")
+            ->assertExitCode(1);
+
+        $this->notContainsStringInOutput = ['Settings:'];
+    }
+
+    /**
+     * BUG-21 · casilla #3 — `flow` no soporta el separador `--` (vestigio
+     * del commit `8eab746` ya retirado del flujo de extracción).
+     *
+     * @test
+     */
+    public function dash_dash_separator_is_rejected_with_custom_message(): void
+    {
+        $this->artisan("flow qa --config=$this->configPath -- something")
+            ->assertExitCode(1);
+
+        $this->containsStringInOutput = ['flow', 'does not support', '--'];
+        $this->notContainsStringInOutput = ['Settings:'];
+    }
 }

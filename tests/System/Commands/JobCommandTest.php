@@ -173,4 +173,61 @@ class JobCommandTest extends SystemTestCase
             @unlink($sarifPath);
         }
     }
+
+    /**
+     * BUG-21 · casilla #9 — flag desconocido `--foo=bar` antes del `--`
+     * coexistiendo con `--config=X`. Antes del fix, `--foo` se silenciaba y
+     * `--config` se perdía. Post-fix, el concern detecta `--foo` y aborta con
+     * exit 1, sin ejecutar el job.
+     *
+     * @test
+     */
+    public function unknown_long_option_before_dashdash_returns_exit_1_without_losing_config(): void
+    {
+        $this->artisan("job phpcs_src --foo=bar --config=$this->configPath")
+            ->assertExitCode(1);
+
+        $this->containsStringInOutput = ['--foo'];
+        $this->notContainsStringInOutput = ['passed'];
+    }
+
+    /**
+     * BUG-21 · casilla #10 — flag desconocido antes del `--`, args válidos
+     * después. El error sobre `--foo` debe primar; el tool no debe ejecutarse.
+     *
+     * @test
+     */
+    public function unknown_option_before_dashdash_still_errors_when_passthrough_exists(): void
+    {
+        $this->artisan("job phpcs_src --foo=bar --config=$this->configPath -- --filter=X")
+            ->assertExitCode(1);
+
+        $this->containsStringInOutput = ['--foo'];
+    }
+
+    /**
+     * BUG-21 · casilla #13 — shortcut desconocido (`-x`).
+     *
+     * @test
+     */
+    public function unknown_short_option_returns_exit_1(): void
+    {
+        $this->artisan("job phpcs_src -x --config=$this->configPath")
+            ->assertExitCode(1);
+
+        $this->notContainsStringInOutput = ['passed'];
+    }
+
+    /**
+     * BUG-21 · casilla #12 — flag con pinta de githooks (`--config=Y`) **después**
+     * del `--` se pasa al tool tal cual, sin que githooks lo procese ni cause
+     * error. No-regresión del passthrough.
+     *
+     * @test
+     */
+    public function known_looking_option_after_dashdash_is_passthrough_not_validated(): void
+    {
+        $this->artisan("job phpcs_src --config=$this->configPath -- --config=/tmp/looks-like-githooks-but-goes-to-tool.php")
+            ->assertExitCode(0);
+    }
 }

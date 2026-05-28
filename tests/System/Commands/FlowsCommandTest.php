@@ -649,4 +649,38 @@ class FlowsCommandTest extends SystemTestCase
             @unlink($tmp);
         }
     }
+
+    /**
+     * BUG-21 · casilla #6 — flag desconocido `--foo=bar` con `--config=X`.
+     * Mismo comportamiento que `flow`: Symfony rechaza nativamente al
+     * eliminarse el `ignoreValidationErrors()` vestigial.
+     *
+     * @test
+     */
+    public function unknown_long_option_with_value_returns_exit_1(): void
+    {
+        $this->buildMultiFlowFixture();
+
+        $this->artisan("flows qa --foo=bar --config=$this->configPath")
+            ->assertExitCode(1);
+
+        $this->containsStringInOutput = ['--foo'];
+        $this->notContainsStringInOutput = ['Settings:'];
+    }
+
+    /**
+     * BUG-21 · casilla #7 — `flows` tampoco soporta `--` (igual que `flow`).
+     *
+     * @test
+     */
+    public function dash_dash_separator_is_rejected_with_custom_message(): void
+    {
+        $this->buildMultiFlowFixture();
+
+        $this->artisan("flows qa --config=$this->configPath -- something")
+            ->assertExitCode(1);
+
+        $this->containsStringInOutput = ['flows', 'does not support', '--'];
+        $this->notContainsStringInOutput = ['Settings:'];
+    }
 }

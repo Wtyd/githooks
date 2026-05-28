@@ -24,6 +24,7 @@ use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
+use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
@@ -40,6 +41,7 @@ class JobCommand extends Command
     use ResolvesMemoryBudgetFlags;
     use ResolvesStatsFlag;
     use ResolvesTimeBudgetFlags;
+    use ValidatesUnknownOptionsBeforeDashDash;
 
     protected $signature = 'job
                             {name : The job to execute}
@@ -96,6 +98,10 @@ class JobCommand extends Command
 
     public function handle(): int
     {
+        if (!$this->assertNoUnknownOptionsBeforeDashDash()) {
+            return 1;
+        }
+
         $jobName = strval($this->argument('name'));
         $configFile = strval($this->option('config'));
 

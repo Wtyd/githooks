@@ -15,6 +15,7 @@ use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
+use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
@@ -54,6 +55,7 @@ class FlowsCommand extends Command
     use ResolvesMemoryBudgetFlags;
     use ResolvesStatsFlag;
     use ResolvesTimeBudgetFlags;
+    use ValidatesUnknownOptionsBeforeDashDash;
 
     protected $signature = 'flows
                             {names* : One or more flow or meta-flow names}
@@ -120,6 +122,18 @@ class FlowsCommand extends Command
      */
     public function handle(): int
     {
+        if ($this->inputContainsDashDashSeparator()) {
+            $this->error(
+                "The 'flows' command does not support the '--' separator. "
+                . "Use 'githooks job <name> -- <args>' to forward extra args to a tool."
+            );
+            return 1;
+        }
+
+        if (!$this->assertNoUnknownOptionsBeforeDashDash()) {
+            return 1;
+        }
+
         /** @var string[] $argNames */
         $argNames = (array) $this->argument('names');
         $configFile = strval($this->option('config'));
