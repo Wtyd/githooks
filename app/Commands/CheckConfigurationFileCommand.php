@@ -4,6 +4,7 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
+use Wtyd\GitHooks\Configuration\ConfigurationChecker;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Jobs\JobRegistry;
@@ -37,13 +38,21 @@ class CheckConfigurationFileCommand extends Command
 
     protected JobRegistry $jobRegistry;
 
+    protected ConfigurationChecker $checker;
+
+    /**
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Aggregates the config-read pipeline (reader,
+     *   parser, tool registry) plus the rendering helpers (printer) and the pure-validation
+     *   checker; splitting would force the Command to know more about the wiring.
+     */
     public function __construct(
         FileReader $fileReader,
         Printer $printer,
         ToolsPreparer $toolsPreparer,
         ToolRegistry $toolRegistry,
         ConfigurationParser $configParser,
-        JobRegistry $jobRegistry
+        JobRegistry $jobRegistry,
+        ConfigurationChecker $checker
     ) {
         $this->fileReader = $fileReader;
         $this->printer = $printer;
@@ -51,6 +60,7 @@ class CheckConfigurationFileCommand extends Command
         $this->toolRegistry = $toolRegistry;
         $this->configParser = $configParser;
         $this->jobRegistry = $jobRegistry;
+        $this->checker = $checker;
         parent::__construct();
     }
 
@@ -227,7 +237,7 @@ class CheckConfigurationFileCommand extends Command
                     $status = '<fg=red>error</>';
                     $hasValidationWarnings = true;
                 }
-                $jobRows[] = [$name, $this->truncateCommand($command), $status];
+                $jobRows[] = [$name, $this->checker->truncateCommand($command), $status];
             }
             $this->line('');
             $this->table(['Job', 'Command', 'Status'], $jobRows);
@@ -267,11 +277,7 @@ class CheckConfigurationFileCommand extends Command
      */
     private function validateJob($jobInstance, $jobConfig): string
     {
-        $warnings = [];
-
-        $this->validateExecutable($jobInstance->getExecutable(), $warnings);
-        $this->validatePaths($jobConfig->getPaths(), $warnings);
-        $this->validateConfigFiles($jobConfig->getConfig(), $warnings);
+        $warnings = $this->checker->validateJob($jobInstance, $jobConfig);
 
         if (empty($warnings)) {
             return '<fg=green>✔</>';
@@ -280,117 +286,22 @@ class CheckConfigurationFileCommand extends Command
         return '<fg=red>' . implode('; ', $warnings) . '</>';
     }
 
-    /** @param string[] &$warnings */
-    private function validateExecutable(string $executable, array &$warnings): void
-    {
-        if ($executable !== '' && !$this->executableExists($executable)) {
-            $warnings[] = "executable '$executable' not found";
-        }
-    }
-
     /**
-     * @param string[] $paths
-     * @param string[] &$warnings
-     */
-    private function validatePaths(array $paths, array &$warnings): void
-    {
-        foreach ($paths as $path) {
-            if (!is_dir($path) && !file_exists($path)) {
-                $warnings[] = "path '$path' not found";
-            }
-        }
-    }
-
-    /**
-     * Validate filesystem-level concerns of the `reports` map. Returns true when
-     * an error has been emitted (target path is not writable). Missing parent
-     * directories are flagged as warnings — they get created on run.
+     * Render the report-path checks via the printer. Returns true when any
+     * error was emitted so the caller can mark the overall result as failed.
      *
      * @param array<string, string> $reports
      */
     private function validateReportsPaths(array $reports, string $context): bool
     {
-        $hasError = false;
-        foreach ($reports as $format => $path) {
-            $where = "$context.reports.$format";
-
-            if (file_exists($path) && !is_writable($path)) {
-                $this->printer->resultError("$where: '$path' is not writable.");
-                $hasError = true;
-                continue;
-            }
-
-            $dir = dirname($path);
-            if ($dir === '' || $dir === '.') {
-                continue;
-            }
-            if (!is_dir($dir)) {
-                $this->printer->resultWarning("$where: directory '$dir' does not exist; it will be created on run.");
-                continue;
-            }
-            if (!is_writable($dir)) {
-                $this->printer->resultError("$where: directory '$dir' is not writable.");
-                $hasError = true;
-            }
+        $result = $this->checker->validateReportsPaths($reports, $context);
+        foreach ($result['errors'] as $error) {
+            $this->printer->resultError($error);
         }
-        return $hasError;
-    }
-
-    /**
-     * @param array<string, mixed> $jobArgs
-     * @param string[] &$warnings
-     */
-    private function validateConfigFiles(array $jobArgs, array &$warnings): void
-    {
-        $this->checkFileRef($jobArgs, 'config', 'config file', $warnings);
-        // Only validate 'rules' as file path if it looks like a path (contains / or .xml)
-        if (
-            !empty($jobArgs['rules']) && is_string($jobArgs['rules'])
-            && (strpos($jobArgs['rules'], '/') !== false || strpos($jobArgs['rules'], '.xml') !== false)
-        ) {
-            $this->checkFileRef($jobArgs, 'rules', 'rules file', $warnings);
+        foreach ($result['warnings'] as $warning) {
+            $this->printer->resultWarning($warning);
         }
-    }
-
-    /**
-     * @param array<string, mixed> $args
-     * @param string[] &$warnings
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
-     */
-    private function checkFileRef(array $args, string $key, string $label, array &$warnings, bool $skipCsv = false): void
-    {
-        if (empty($args[$key]) || !is_string($args[$key])) {
-            return;
-        }
-        if ($skipCsv && strpos($args[$key], ',') !== false) {
-            return;
-        }
-        if (!file_exists($args[$key])) {
-            $warnings[] = "$label '{$args[$key]}' not found";
-        }
-    }
-
-    /**
-     * Truncate long commands for table display readability.
-     */
-    private function truncateCommand(string $command, int $maxLength = 80): string
-    {
-        if (strlen($command) <= $maxLength) {
-            return $command;
-        }
-
-        return substr($command, 0, $maxLength - 3) . '...';
-    }
-
-    private function executableExists(string $executable): bool
-    {
-        if (file_exists($executable)) {
-            return true;
-        }
-        $output = [];
-        $code = 0;
-        exec('which ' . escapeshellarg($executable) . ' 2>/dev/null', $output, $code);
-        return $code === 0;
+        return !empty($result['errors']);
     }
 
     protected function handleLegacy(string $configFile = ''): int

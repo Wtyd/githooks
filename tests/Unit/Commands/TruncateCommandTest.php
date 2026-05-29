@@ -5,24 +5,27 @@ declare(strict_types=1);
 namespace Tests\Unit\Commands;
 
 use PHPUnit\Framework\TestCase;
-use ReflectionMethod;
-use Wtyd\GitHooks\App\Commands\CheckConfigurationFileCommand;
+use Wtyd\GitHooks\Configuration\ConfigurationChecker;
 
+/**
+ * Tests for the command-truncation rule. Phase 3b moved the rule into
+ * {@see ConfigurationChecker::truncateCommand()} (pure function) so it no
+ * longer needs reflection on CheckConfigurationFileCommand to be exercised.
+ */
 class TruncateCommandTest extends TestCase
 {
-    private ReflectionMethod $method;
+    private ConfigurationChecker $checker;
 
     protected function setUp(): void
     {
-        $this->method = new ReflectionMethod(CheckConfigurationFileCommand::class, 'truncateCommand');
-        $this->method->setAccessible(true);
+        $this->checker = new ConfigurationChecker();
     }
 
     /** @test */
     public function it_does_not_truncate_short_commands()
     {
         $command = 'vendor/bin/phpstan analyse -c phpstan.neon src';
-        $result = $this->truncate($command);
+        $result = $this->checker->truncateCommand($command);
 
         $this->assertEquals($command, $result);
     }
@@ -31,7 +34,7 @@ class TruncateCommandTest extends TestCase
     public function it_does_not_truncate_at_exactly_80_chars()
     {
         $command = str_repeat('x', 80);
-        $result = $this->truncate($command);
+        $result = $this->checker->truncateCommand($command);
 
         $this->assertEquals($command, $result);
         $this->assertEquals(80, strlen($result));
@@ -41,7 +44,7 @@ class TruncateCommandTest extends TestCase
     public function it_truncates_commands_longer_than_80_chars()
     {
         $command = str_repeat('x', 100);
-        $result = $this->truncate($command);
+        $result = $this->checker->truncateCommand($command);
 
         $this->assertEquals(80, strlen($result));
         $this->assertStringEndsWith('...', $result);
@@ -55,7 +58,7 @@ class TruncateCommandTest extends TestCase
             . '--exclude qa --exclude bootstrap --exclude database --exclude storage '
             . '--exclude tests --exclude resources --exclude public ./';
 
-        $result = $this->truncate($command);
+        $result = $this->checker->truncateCommand($command);
 
         $this->assertEquals(80, strlen($result));
         $this->assertStringEndsWith('...', $result);
@@ -66,7 +69,7 @@ class TruncateCommandTest extends TestCase
     public function it_respects_custom_max_length()
     {
         $command = str_repeat('x', 50);
-        $result = $this->truncate($command, 30);
+        $result = $this->checker->truncateCommand($command, 30);
 
         $this->assertEquals(30, strlen($result));
         $this->assertStringEndsWith('...', $result);
@@ -75,19 +78,6 @@ class TruncateCommandTest extends TestCase
     /** @test */
     public function it_handles_empty_string()
     {
-        $this->assertEquals('', $this->truncate(''));
-    }
-
-    private function truncate(string $command, int $maxLength = 80): string
-    {
-        // Create a minimal instance via reflection (skip constructor)
-        $class = new \ReflectionClass(CheckConfigurationFileCommand::class);
-        $instance = $class->newInstanceWithoutConstructor();
-
-        if ($maxLength !== 80) {
-            return $this->method->invoke($instance, $command, $maxLength);
-        }
-
-        return $this->method->invoke($instance, $command);
+        $this->assertEquals('', $this->checker->truncateCommand(''));
     }
 }

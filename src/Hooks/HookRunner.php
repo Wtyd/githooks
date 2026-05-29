@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Hooks;
 
+use LogicException;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
@@ -60,7 +61,7 @@ class HookRunner
     public function runEvent(string $event, string $configFile, OutputInterface $output): int
     {
         if ($this->parser === null) {
-            throw new \LogicException(
+            throw new LogicException(
                 'HookRunner::runEvent() requires a ConfigurationParser. ' .
                 'Inject one via the constructor or use the lower-level run() entry point.'
             );
