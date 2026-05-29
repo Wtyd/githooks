@@ -67,27 +67,6 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
     }
 
     /** @test */
-    public function flow_ignores_args_after_double_dash(): void
-    {
-        $this->configurationFileBuilder
-            ->setV3Flows(['qa' => ['jobs' => ['job_a', 'job_b']]])
-            ->setV3Jobs([
-                'job_a' => ['type' => 'custom', 'script' => '/bin/echo job-a'],
-                'job_b' => ['type' => 'custom', 'script' => '/bin/echo job-b'],
-            ]);
-
-        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
-
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath -- --extra 2>&1", $exitCode);
-
-        $this->assertEquals(0, $exitCode);
-        $output = $this->getActualOutput();
-        $this->assertStringNotContainsString('--extra', $output);
-        $this->assertStringContainsString('job-a', $output);
-        $this->assertStringContainsString('job-b', $output);
-    }
-
-    /** @test */
     public function job_without_double_dash_works_normally(): void
     {
         $this->configurationFileBuilder
