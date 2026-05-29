@@ -39,7 +39,15 @@ jobs:
           ${{ runner.os }}-
   
     - name: Install dependencies
+      env:
+        # setup-php@v2 writes ~/.composer/auth.json with $GITHUB_TOKEN by
+        # default. Recently that token has been occasionally malformed
+        # (newlines embedded), causing composer to fail with "github oauth
+        # token contains invalid characters". Our deps are all public, so
+        # we drop the auto-written auth before install.
+        COMPOSER_AUTH: '{}'
       run: |
+        rm -f ~/.composer/auth.json ~/.config/composer/auth.json
         chmod -R +x tools/*
         tools/composer install --prefer-dist --no-progress
 
@@ -98,7 +106,10 @@ jobs:
 
     # Install dependencies for run phpunit
     - name: Install dependencies
+      env:
+        COMPOSER_AUTH: '{}'
       run: |
+        rm -f ~/.composer/auth.json ~/.config/composer/auth.json
         composer install --prefer-dist --no-progress
         chmod -R +x tools/*
 
@@ -176,7 +187,10 @@ jobs:
             ${{ runner.os }}-
     
       - name: Install dependencies
+        env:
+          COMPOSER_AUTH: '{}'
         run: |
+          rm -f ~/.composer/auth.json ~/.config/composer/auth.json
           chmod -R +x tools/*
           tools/composer install --prefer-dist --no-progress
 
