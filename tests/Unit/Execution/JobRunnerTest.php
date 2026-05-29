@@ -13,10 +13,14 @@ use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Exception\ExitException;
 use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\JobRunner;
 use Wtyd\GitHooks\Execution\JobRunRequest;
 use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
+use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
+use Wtyd\GitHooks\Output\FlowResultRenderer;
 
 /**
  * Unit tests for `JobRunner::prepare()`. The Runner is the pure-orchestration
@@ -37,6 +41,25 @@ class JobRunnerTest extends TestCase
         $this->preparer = new FlowPreparer(new JobRegistry());
     }
 
+    /**
+     * Build a JobRunner with the business-pipeline collaborators wired to real
+     * fakes ($preparer, $fileUtils) and the render-side collaborators stubbed.
+     * The render deps are unused by prepare() — the entry point these tests
+     * exercise — so phpunit mocks are enough.
+     */
+    private function makeRunner(ConfigurationParser $parser): JobRunner
+    {
+        return new JobRunner(
+            $parser,
+            $this->preparer,
+            $this->fileUtils,
+            $this->createMock(FlowExecutor::class),
+            $this->createMock(FlowResultRenderer::class),
+            $this->createMock(ConditionsHeaderEmitter::class),
+            $this->createMock(ConfigWarningsEmitter::class)
+        );
+    }
+
     /** @test */
     public function parser_exception_is_returned_as_failure_with_message(): void
     {
@@ -44,7 +67,7 @@ class JobRunnerTest extends TestCase
             throw new ExitException('config file not found at /tmp/x.php');
         });
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'phpcs_src']));
 
         $this->assertFalse($prep->success);
@@ -60,7 +83,7 @@ class JobRunnerTest extends TestCase
         $legacy = ConfigurationResult::legacy([], '/tmp/githooks.yml', new ValidationResult());
         $parser = $this->fakeParser(fn() => $legacy);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'phpcs_src']));
 
         $this->assertFalse($prep->success);
@@ -78,7 +101,7 @@ class JobRunnerTest extends TestCase
         $config = $this->configWithJobs([], $validation);
         $parser = $this->fakeParser(fn() => $config);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'phpcs_src']));
 
         $this->assertFalse($prep->success);
@@ -97,7 +120,7 @@ class JobRunnerTest extends TestCase
         $config = $this->configWithJobs([]);
         $parser = $this->fakeParser(fn() => $config);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'nonexistent']));
 
         $this->assertFalse($prep->success);
@@ -116,7 +139,7 @@ class JobRunnerTest extends TestCase
         ]);
         $parser = $this->fakeParser(fn() => $config);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'nope']));
 
         $this->assertFalse($prep->success);
@@ -133,7 +156,7 @@ class JobRunnerTest extends TestCase
         ]);
         $parser = $this->fakeParser(fn() => $config);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'phpcs_src']));
 
         $this->assertTrue($prep->success);
@@ -150,7 +173,7 @@ class JobRunnerTest extends TestCase
         $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
         $parser = $this->fakeParser(fn() => $config);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'phpcs_src']));
 
         $this->assertSame(
@@ -176,7 +199,7 @@ class JobRunnerTest extends TestCase
             1
         );
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req([
                 'jobName' => 'phpcs_src',
                 'inputFiles' => $inputFiles,
@@ -194,7 +217,7 @@ class JobRunnerTest extends TestCase
         $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
         $parser = $this->fakeParser(fn() => $config);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req(['jobName' => 'phpcs_src']));
 
         $this->assertTrue($prep->success);
@@ -210,7 +233,7 @@ class JobRunnerTest extends TestCase
         $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
         $parser = $this->fakeParser(fn() => $config);
 
-        $prep = (new JobRunner($parser, $this->preparer, $this->fileUtils))
+        $prep = ($this->makeRunner($parser))
             ->prepare($this->req([
                 'jobName' => 'phpcs_src',
                 'timeBudgetWarn' => 5,

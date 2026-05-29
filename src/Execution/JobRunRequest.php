@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\Execution;
 
 /**
- * Input DTO for {@see JobRunner::prepare()}. Built by `JobCommand::handle()`
- * after the CLI flags have been read and the per-concern resolvers
- * (`Resolves*Flag`) have produced their structs. All fields are pre-resolved:
- * the Runner does no I/O nor argument parsing itself.
+ * Input DTO for {@see JobRunner::prepare()} and {@see JobRunner::run()}. Built
+ * by `JobCommand::handle()` after the CLI flags have been read and the
+ * per-concern resolvers (`Resolves*Flag`) have produced their structs. All
+ * fields are pre-resolved: the Runner does no I/O nor argument parsing itself.
  *
  * Public properties (not `readonly`) by PHP 7.4 compatibility (the tier
  * `builds/php7.4/` ships on PHP 7.4/8.0). Treat as immutable at the consumer
@@ -42,9 +42,13 @@ class JobRunRequest
 
     public ?bool $cliFailFast;
 
+    public bool $dryRun;
+
     /**
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 13 pre-resolved CLI inputs;
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 14 pre-resolved CLI inputs;
      *   merging into sub-structs would obscure the JobCommand → JobRunner contract.
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The `disabled` / `dryRun` booleans are
+     *   configuration toggles pre-resolved by the Command, not branching flags inside this DTO.
      */
     public function __construct(
         string $jobName,
@@ -59,7 +63,8 @@ class JobRunRequest
         ?int $memoryFailAbove,
         bool $memoryBudgetDisabled,
         ?bool $statsFlag,
-        ?bool $cliFailFast
+        ?bool $cliFailFast,
+        bool $dryRun = false
     ) {
         $this->jobName = $jobName;
         $this->configFile = $configFile;
@@ -74,5 +79,6 @@ class JobRunRequest
         $this->memoryBudgetDisabled = $memoryBudgetDisabled;
         $this->statsFlag = $statsFlag;
         $this->cliFailFast = $cliFailFast;
+        $this->dryRun = $dryRun;
     }
 }

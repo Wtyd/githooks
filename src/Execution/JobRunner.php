@@ -4,27 +4,36 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\OutputStyle as SymfonyOutputStyle;
+use Symfony\Component\Console\Style\SymfonyStyle;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
+use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
+use Wtyd\GitHooks\Output\FlowResultRenderer;
+use Wtyd\GitHooks\Output\HeaderOptions;
+use Wtyd\GitHooks\Output\RenderOptions;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
- * Pure-orchestration handler for `githooks job <name>`. Takes a fully-resolved
- * {@see JobRunRequest} from the Command layer and returns a
- * {@see JobPreparation} the Command can act on (emit errors, configure the
- * executor, run, render). Lives outside the Symfony Command hierarchy so the
- * 8-step business pipeline (parse → validate v3/legacy → validate config →
- * find job → build context → resolve effective options → prepare plan →
- * apply per-job threshold overrides) can be unit-tested with synthetic fakes
- * without booting Laravel-Zero or `$this->artisan()`.
+ * Pure-orchestration handler for `githooks job <name>`. The Command layer
+ * builds a {@see JobRunRequest} from the parsed CLI flags and a
+ * {@see RenderOptions} from the format/output/report flags, then delegates
+ * the full pipeline to {@see run()}. Lives outside the Symfony Command
+ * hierarchy so the eight-step business pipeline plus rendering ceremony can
+ * be unit-tested with synthetic fakes without booting Laravel-Zero or
+ * `$this->artisan()`.
  *
- * Phase 1 of the JobCommand refactor (see plan
- * `serene-gathering-nova.md`): rendering ceremony — applying format,
- * emitting the conditions header, calling `FlowExecutor::execute()`,
- * rendering the `FlowResult` — stays in the Command via the existing traits
- * (`FormatsOutput`, `EmitsConditionsHeader`, `EmitsConfigWarnings`). Phase 2
- * extracts those traits to plain classes and migrates the rendering inside
- * the Runner as well.
+ * Phase 1 (commit `e6d0ad0`): extracted the prepare() pipeline (parse →
+ * validate → find job → context → cascade options → preparer → thresholds →
+ * rewrap). Phase 2b (this revision): swallows the render ceremony
+ * (applyFormat → emit header → execute → emit warnings → render result),
+ * collapsing JobCommand::handle() to a thin adapter.
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Composes parser, preparer, executor,
+ *   renderer and emitters; the coupling reflects the surface, not a smell.
  */
 class JobRunner
 {
@@ -34,14 +43,85 @@ class JobRunner
 
     private FileUtilsInterface $fileUtils;
 
+    private FlowExecutor $executor;
+
+    private FlowResultRenderer $renderer;
+
+    private ConditionsHeaderEmitter $headerEmitter;
+
+    private ConfigWarningsEmitter $warningsEmitter;
+
+    /**
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Seven collaborators by design: business pipeline
+     *   (parser/preparer/executor + fileUtils) and the three render concerns (renderer +
+     *   header/warnings emitters) are all required for the full run() pipeline.
+     */
     public function __construct(
         ConfigurationParser $parser,
         FlowPreparer $preparer,
-        FileUtilsInterface $fileUtils
+        FileUtilsInterface $fileUtils,
+        FlowExecutor $executor,
+        FlowResultRenderer $renderer,
+        ConditionsHeaderEmitter $headerEmitter,
+        ConfigWarningsEmitter $warningsEmitter
     ) {
         $this->parser = $parser;
         $this->preparer = $preparer;
         $this->fileUtils = $fileUtils;
+        $this->executor = $executor;
+        $this->renderer = $renderer;
+        $this->headerEmitter = $headerEmitter;
+        $this->warningsEmitter = $warningsEmitter;
+    }
+
+    /**
+     * Run the full job pipeline: prepare → applyFormat → emit header →
+     * execute → emit warnings → render result. Returns the process exit code
+     * (0 success, 1 failure).
+     *
+     * The Command's only responsibility above this is: validate pre-execution
+     * flags (unknown-options, execution-mode mutex), build the request DTOs,
+     * and call this method.
+     */
+    public function run(JobRunRequest $request, OutputInterface $output, RenderOptions $renderOptions): int
+    {
+        try {
+            $preparation = $this->prepare($request);
+
+            foreach ($preparation->errors as $error) {
+                $this->emitError($output, $error);
+            }
+            if (!$preparation->success) {
+                return 1;
+            }
+
+            /** @var FlowPlan $plan */
+            $plan = $preparation->plan;
+            /** @var EffectiveOptionsResolution $resolution */
+            $resolution = $preparation->resolution;
+            /** @var \Wtyd\GitHooks\Configuration\ConfigurationResult $config */
+            $config = $preparation->config;
+
+            $this->renderer->applyFormat($this->executor, $plan, $renderOptions, $output);
+            $this->executor->setThresholdsDisabled($request->timeBudgetDisabled);
+            $this->executor->setMemoryBudgetDisabled($request->memoryBudgetDisabled);
+
+            $headerOptions = new HeaderOptions($renderOptions->format, $renderOptions->showProgress);
+            $this->headerEmitter->emit($resolution, null, $plan->getInputFiles(), $headerOptions, $output);
+
+            $result = $this->executor->execute($plan, $request->dryRun);
+            $result->setConfigValidation($config->getValidation());
+
+            $this->warningsEmitter->emit($config->getValidation(), $output);
+
+            $this->renderer->renderFormattedResult($result, $plan->getOptions(), $renderOptions, $output);
+
+            return $result->isSuccess() ? 0 : 1;
+        } catch (GitHooksExceptionInterface $e) {
+            // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
+            $this->emitStderr($output, $e->getMessage());
+            return 1;
+        }
     }
 
     /**
@@ -153,5 +233,40 @@ class JobRunner
         );
 
         return JobPreparation::success($plan, $resolution, $config);
+    }
+
+    /**
+     * Emit a single pre-execution error to stderr-equivalent. Mirrors the
+     * `$this->error(...)` call the Command used to make: red prefix in
+     * production, silent on test buffers (so phpunit stdout stays clean).
+     */
+    private function emitError(OutputInterface $output, string $message): void
+    {
+        if ($output instanceof SymfonyStyle) {
+            $output->getErrorStyle()->writeln("<error>$message</error>");
+            return;
+        }
+        $output->writeln("<error>$message</error>");
+    }
+
+    /**
+     * Mirror of the previous `EmitsStderr::emitStderr()` trait — write to the
+     * console's stderr stream when available, drop the message in test buffers.
+     */
+    private function emitStderr(OutputInterface $output, string $message): void
+    {
+        if ($output instanceof SymfonyOutputStyle && method_exists($output, 'getOutput')) {
+            $underlying = $output->getOutput();
+            if ($underlying instanceof ConsoleOutputInterface) {
+                $underlying->getErrorOutput()->writeln($message);
+                return;
+            }
+        }
+        if ($output instanceof ConsoleOutputInterface) {
+            $output->getErrorOutput()->writeln($message);
+            return;
+        }
+        // Fallback: writeln on the duck-typed output (test buffers capture).
+        $output->writeln($message);
     }
 }
