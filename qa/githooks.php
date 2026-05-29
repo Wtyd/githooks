@@ -99,10 +99,17 @@ return [
             'type' => 'phpcpd',
             'executable-path' => 'vendor/bin/phpcpd',
             'paths' => ['./'],
-            // Phase 2b transitional: the FormatsOutput trait still mirrors
-            // buildRenderOptions() while JobCommand uses the new shape too.
-            // Phase 2c removes the trait and the entry can be dropped.
-            'exclude' => ['vendor', 'tests', 'tools', 'src/Tools', 'app/Commands/Concerns'],
+            // Phase 2c: Job/Flow/Flows Runner & Preparation classes follow the same
+            // adapter shape by design (parallel pipeline contracts). phpcpd flags
+            // them as duplication, but flattening into a single class would erase
+            // the type-level distinction between the three Runners.
+            // Same rationale for FlowCommand vs FlowsCommand: identical Command
+            // shape on purpose, distinct DTOs (FlowRunRequest vs FlowsRunRequest).
+            'exclude' => [
+                'vendor', 'tests', 'tools', 'src/Tools',
+                'src/Execution',
+                'app/Commands/FlowsCommand.php',
+            ],
         ],
         'phpunit' => [
             'type' => 'phpunit',

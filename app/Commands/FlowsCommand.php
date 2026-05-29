@@ -6,50 +6,33 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings;
+use Wtyd\GitHooks\App\Commands\Concerns\BuildsRenderOptions;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolver;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Execution\FlowPreparer;
+use Wtyd\GitHooks\Execution\FlowsRunner;
+use Wtyd\GitHooks\Execution\FlowsRunRequest;
 use Wtyd\GitHooks\Execution\InputFilesResolver;
-use Wtyd\GitHooks\Utils\BranchResolution;
-use Wtyd\GitHooks\Utils\BranchResolver;
-use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
 /**
- * `flows <name1> <name2> ...` — run several flows or a meta-flow as a single plan.
+ * Thin CLI adapter for `githooks flows <name1> <name2> ...`. Phase 2c reduces
+ * handle() to pre-flight validation + build DTOs + delegate to
+ * {@see FlowsRunner::run()}.
  *
- * Four invocation modes (spec §1, §3.3):
- *  - single-flow degenerate: 1 arg that is a normal flow → equivalent to `flow X`.
- *  - declarative:            1 arg that is a meta-flow → uses meta-flow options.
- *  - ad-hoc:                 ≥2 normal flows → flows.options + CLI only.
- *  - mixed:                  ≥2 args, at least one meta-flow → flows.options + CLI only.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Aggregates parser, preparer, executor and resolvers.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Inherits the surface of the
+ *   pre-2c Command (8 concerns + Runner + resolver); the coupling is now
+ *   structurally simpler than before.
  */
 class FlowsCommand extends Command
 {
     use AssertsExecutionModeFlagsExclusive;
-    use EmitsConditionsHeader;
-    use EmitsConfigWarnings;
+    use BuildsRenderOptions;
     use EmitsStderr;
-    use FormatsOutput;
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
     use ResolvesMemoryBudgetFlags;
@@ -94,32 +77,18 @@ class FlowsCommand extends Command
 
     protected $description = 'Execute several flows (or a declarative meta-flow) as a single plan';
 
-    private ConfigurationParser $parser;
-
-    private FlowPreparer $preparer;
-
-    private FlowExecutor $executor;
+    private FlowsRunner $runner;
 
     private InputFilesResolver $inputFilesResolver;
 
-    public function __construct(
-        ConfigurationParser $parser,
-        FlowPreparer $preparer,
-        FlowExecutor $executor,
-        InputFilesResolver $inputFilesResolver
-    ) {
+    public function __construct(FlowsRunner $runner, InputFilesResolver $inputFilesResolver)
+    {
         parent::__construct();
         $this->ignoreValidationErrors();
-        $this->parser = $parser;
-        $this->preparer = $preparer;
-        $this->executor = $executor;
+        $this->runner = $runner;
         $this->inputFilesResolver = $inputFilesResolver;
     }
 
-    /**
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Orchestrates parse, validate, resolve, prepare, render
-     * @SuppressWarnings(PHPMD.NPathComplexity) Each branch (modes, errors, output) adds an independent path
-     */
     public function handle(): int
     {
         if ($this->inputContainsDashDashSeparator()) {
@@ -134,346 +103,49 @@ class FlowsCommand extends Command
             return 1;
         }
 
-        /** @var string[] $argNames */
-        $argNames = (array) $this->argument('names');
-        $configFile = strval($this->option('config'));
-
         if (!$this->assertExecutionModeFlagsExclusive()) {
             return 1;
         }
 
         try {
-            $config = $this->parser->parse($configFile);
-
-            if ($config->isLegacy()) {
-                $this->error("The 'flows' command requires v3 configuration format (hooks/flows/jobs).");
-                $this->warn("Use 'githooks conf:init' to generate the new format.");
-                return 1;
-            }
-
-            if ($config->hasErrors()) {
-                foreach ($config->getValidation()->getErrors() as $error) {
-                    $this->error($error);
-                }
-                return 1;
-            }
-
-            if (!$this->validateFlowNames($argNames, $config)) {
-                return 1;
-            }
-
-            $excludeJobs = $this->csvOption('exclude-jobs');
-            $onlyJobs = $this->csvOption('only-jobs');
-            if (!empty($excludeJobs) && !empty($onlyJobs)) {
-                $this->error('Options --exclude-jobs and --only-jobs cannot be used together.');
-                return 1;
-            }
-
-            $fileUtils = $this->getLaravel()->make(FileUtilsInterface::class);
-
-            $invocationMode = $this->resolveInvocationModeFromCli();
-
-            $mainBranch = $config->getGlobalOptions()->getMainBranch()
-                ?? $fileUtils->detectMainBranch();
-
-            $inputFilesResolution = $this->resolveInputFilesFlags(true);
-            if ($inputFilesResolution !== null) {
-                $context = ExecutionContext::forInputFiles($inputFilesResolution, $fileUtils);
-                $invocationMode = ExecutionMode::FAST;
-            } else {
-                $context = ExecutionContext::create($fileUtils, $mainBranch);
-            }
-
-            $cliFailFast = $this->option('fail-fast') ? true : null;
-            $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
-            $timeBudgetFlags = $this->resolveTimeBudgetFlags();
-            $memoryBudgetFlags = $this->resolveMemoryBudgetFlags();
-            $cliAllocator = $this->resolveAllocatorFlag();
-            $cliStats = $this->resolveStatsFlag();
-
-            // FEAT-2: resolve the branch only for a single normal flow that
-            // declares `on` (multi-flow runs intentionally ignore per-flow `on`).
-            try {
-                $branchResolution = $this->resolveBranchForSingleFlow($argNames, $config, $fileUtils);
-            } catch (DetachedHeadException $e) {
-                $this->error($e->getMessage());
-                return 1;
-            }
-
-            $resolver = new EffectiveOptionsResolver();
-            [$resolution, $isSingleFlow, $isDeclarative] = $this->resolveOptionsForMode(
-                $resolver,
-                $config,
-                $argNames,
-                $cliFailFast,
-                $cliProcesses,
-                $invocationMode,
-                $timeBudgetFlags,
-                $memoryBudgetFlags,
-                $cliAllocator,
-                $cliStats,
-                $branchResolution
-            );
-
-            // FEAT-2: re-sync invocationMode so the `on`-resolved mode reaches the
-            // preparer/executor, not only the header/JSON trace. Scoped to the
-            // single-flow `on` case (branchResolution is null in every other mode),
-            // mirroring FlowCommand.
-            if (
-                $invocationMode === null
-                && $branchResolution !== null
-                && $resolution->getExecutionMode() !== ExecutionMode::FULL
-                && $resolution->getTrace()['executionMode']['source'] !== EffectiveOptionsResolver::SOURCE_DEFAULT
-            ) {
-                $invocationMode = $resolution->getExecutionMode();
-            }
-
-            $this->emitIgnoredOptionsWarning($argNames, $config, $isSingleFlow, $isDeclarative);
-
-            $aggregateFlowName = $this->buildRunIdentifier($argNames);
-
-            $plan = $this->preparer->prepareMultiple(
-                $argNames,
-                $aggregateFlowName,
-                $config,
-                $resolution->getOptions(),
-                $context,
-                $excludeJobs,
-                $onlyJobs,
-                $invocationMode
-            );
-
-            $expandedFlows = $isSingleFlow ? null : $plan->getExpandedFlows();
-
-            $plan = new FlowPlan(
-                $plan->getFlowName(),
-                $plan->getJobs(),
-                $resolution->getOptions(),
-                $plan->getContext(),
-                $plan->getSkippedJobs(),
-                $plan->getExecutionMode(),
-                $plan->getInputFiles(),
-                $expandedFlows,
-                $resolution,
-                $plan->getDependencyGraph()
-            );
-
-            $this->applyFormat($this->executor, $plan);
-
-            $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
-            $this->executor->setMemoryBudgetDisabled($memoryBudgetFlags['disabled']);
-
-            $this->emitConditionsHeader($resolution, $expandedFlows, $plan->getInputFiles());
-
-            $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
-            $result->setConfigValidation($config->getValidation());
-
-            $this->emitConfigWarnings($config->getValidation());
-
-            $this->renderFormattedResult($result, $plan->getOptions());
-
-            if ($this->option('monitor')) {
-                $this->renderMonitorReport($result);
-            }
-
-            return $result->isSuccess() ? 0 : 1;
+            $request = $this->buildRunRequest();
         } catch (GitHooksExceptionInterface $e) {
-            // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
             $this->emitStderr($e->getMessage());
             return 1;
         }
+
+        return $this->runner->run($request, $this->output, $this->buildRenderOptions());
     }
 
-    /**
-     * @param string[] $argNames
-     */
-    private function validateFlowNames(array $argNames, ConfigurationResult $config): bool
+    private function buildRunRequest(): FlowsRunRequest
     {
-        $valid = true;
-        foreach ($argNames as $name) {
-            if ($config->getFlow($name) !== null) {
-                continue;
-            }
-            $this->error("Flow '$name' is not defined in the configuration file.");
-            $valid = false;
-        }
-
-        if ($valid) {
-            return true;
-        }
-
-        [$normalFlows, $metaFlows] = $this->splitFlowsByKind($config);
-        if (!empty($normalFlows)) {
-            $this->info('Available flows: ' . implode(', ', $normalFlows));
-        }
-        if (!empty($metaFlows)) {
-            $this->info('Available meta-flows: ' . implode(', ', $metaFlows));
-        }
-        return false;
-    }
-
-    /**
-     * @return array{0: string[], 1: string[]}
-     */
-    private function splitFlowsByKind(ConfigurationResult $config): array
-    {
-        $normal = [];
-        $meta = [];
-        foreach ($config->getFlows() as $flow) {
-            if ($flow->isMetaFlow()) {
-                $meta[] = $flow->getName();
-            } else {
-                $normal[] = $flow->getName();
-            }
-        }
-        return [$normal, $meta];
-    }
-
-    /**
-     * @param string[] $argNames
-     * @param array{warnAfter: ?int, failAfter: ?int, disabled: bool} $timeBudgetFlags
-     * @param array{warnAbove: ?int, failAbove: ?int, disabled: bool} $memoryBudgetFlags
-     * @return array{0: EffectiveOptionsResolution, 1: bool, 2: bool}
-     *         Returns [resolution, isSingleFlow, isDeclarative]
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the cascade inputs explicitly.
-     */
-    private function resolveOptionsForMode(
-        EffectiveOptionsResolver $resolver,
-        ConfigurationResult $config,
-        array $argNames,
-        ?bool $cliFailFast,
-        ?int $cliProcesses,
-        ?string $invocationMode,
-        array $timeBudgetFlags,
-        array $memoryBudgetFlags,
-        ?string $cliAllocator,
-        ?bool $cliStats,
-        ?BranchResolution $branchResolution = null
-    ): array {
-        $unique = array_values(array_unique($argNames));
-
-        if (count($unique) === 1) {
-            $flow = $config->getFlow($unique[0]);
-            $isMeta = $flow !== null && $flow->isMetaFlow();
-            $isSingleFlow = !$isMeta;
-            $isDeclarative = $isMeta;
-            $resolution = $resolver->resolveSingle(
-                $config,
-                $flow,
-                $cliFailFast,
-                $cliProcesses,
-                $invocationMode,
-                $timeBudgetFlags['warnAfter'],
-                $timeBudgetFlags['failAfter'],
-                $timeBudgetFlags['disabled'],
-                $memoryBudgetFlags['warnAbove'],
-                $memoryBudgetFlags['failAbove'],
-                $memoryBudgetFlags['disabled'],
-                $cliAllocator,
-                $cliStats,
-                $branchResolution
-            );
-            return [$resolution, $isSingleFlow, $isDeclarative];
-        }
-
-        return [
-            $resolver->resolveMultiple(
-                $config,
-                $cliFailFast,
-                $cliProcesses,
-                $invocationMode,
-                $timeBudgetFlags['warnAfter'],
-                $timeBudgetFlags['failAfter'],
-                $timeBudgetFlags['disabled'],
-                $memoryBudgetFlags['warnAbove'],
-                $memoryBudgetFlags['failAbove'],
-                $memoryBudgetFlags['disabled'],
-                $cliAllocator,
-                $cliStats
-            ),
-            false,
-            false,
-        ];
-    }
-
-    /**
-     * FEAT-2: resolve the current branch only when the run is a single normal
-     * flow that declares an `on` map. Multi-flow runs ignore per-flow `on`, and
-     * meta-flows / flows without `on` never touch branch detection — so those
-     * keep working on a detached HEAD.
-     *
-     * @param string[] $argNames
-     * @throws DetachedHeadException when `on` must be evaluated but the branch
-     *         cannot be detected and no --branch / $GITHOOKS_BRANCH was given.
-     */
-    private function resolveBranchForSingleFlow(
-        array $argNames,
-        ConfigurationResult $config,
-        FileUtilsInterface $fileUtils
-    ): ?BranchResolution {
-        $unique = array_values(array_unique($argNames));
-        if (count($unique) !== 1) {
-            return null;
-        }
-
-        $flow = $config->getFlow($unique[0]);
-        if ($flow === null || $flow->isMetaFlow() || $flow->getOn() === null) {
-            return null;
-        }
-
+        $timeBudget = $this->resolveTimeBudgetFlags();
+        $memoryBudget = $this->resolveMemoryBudgetFlags();
         $cliBranch = $this->option('branch');
+        /** @var string[] $argNames */
+        $argNames = (array) $this->argument('names');
 
-        return (new BranchResolver())->resolve(
+        return new FlowsRunRequest(
+            $argNames,
+            strval($this->option('config')),
+            $this->option('fail-fast') ? true : null,
+            $this->option('processes') !== null ? (int) $this->option('processes') : null,
+            $this->csvOption('exclude-jobs'),
+            $this->csvOption('only-jobs'),
+            $this->resolveInputFilesFlags(true),
+            $this->resolveInvocationModeFromCli(),
+            $timeBudget['warnAfter'],
+            $timeBudget['failAfter'],
+            $timeBudget['disabled'],
+            $memoryBudget['warnAbove'],
+            $memoryBudget['failAbove'],
+            $memoryBudget['disabled'],
+            $this->resolveAllocatorFlag(),
+            $this->resolveStatsFlag(),
             is_string($cliBranch) && $cliBranch !== '' ? $cliBranch : null,
-            $fileUtils
+            (bool) $this->option('dry-run'),
+            (bool) $this->option('monitor')
         );
-    }
-
-    /**
-     * @param string[] $argNames
-     */
-    private function emitIgnoredOptionsWarning(
-        array $argNames,
-        ConfigurationResult $config,
-        bool $isSingleFlow,
-        bool $isDeclarative
-    ): void {
-        if ($isSingleFlow || $isDeclarative) {
-            return;
-        }
-
-        $ignored = [];
-        foreach (array_unique($argNames) as $name) {
-            $flow = $config->getFlow($name);
-            if ($flow !== null && $flow->getOptions() !== null) {
-                $ignored[] = $name;
-            }
-        }
-
-        if ($ignored === []) {
-            return;
-        }
-
-        // REQ-018 advisory: route to stderr so pipelines capturing stdout
-        // (CI, --format=json, scripted tooling) don't pick up the message.
-        $this->emitStderr(
-            "⚠️  Options declared in '" . implode("', '", $ignored) . "' are ignored in multi-flow runs."
-            . "\n  Effective options come from flows.options + CLI; see header below."
-        );
-    }
-
-    /**
-     * Build the user-facing run identifier following spec §4.4.
-     *
-     * @param string[] $argNames
-     */
-    private function buildRunIdentifier(array $argNames): string
-    {
-        $unique = array_values(array_unique($argNames));
-        if (count($unique) === 1) {
-            return $unique[0];
-        }
-        return implode('+', $unique);
     }
 
     /**

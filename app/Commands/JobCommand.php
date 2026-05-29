@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
+use Wtyd\GitHooks\App\Commands\Concerns\BuildsRenderOptions;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
@@ -17,8 +18,6 @@ use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\InputFilesResolver;
 use Wtyd\GitHooks\Execution\JobRunner;
 use Wtyd\GitHooks\Execution\JobRunRequest;
-use Wtyd\GitHooks\Output\OutputFormats;
-use Wtyd\GitHooks\Output\RenderOptions;
 
 /**
  * Thin CLI adapter for `githooks job <name>`. Phase 2b reduces handle() to
@@ -33,6 +32,7 @@ use Wtyd\GitHooks\Output\RenderOptions;
 class JobCommand extends Command
 {
     use AssertsExecutionModeFlagsExclusive;
+    use BuildsRenderOptions;
     use EmitsStderr;
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
@@ -126,33 +126,6 @@ class JobCommand extends Command
             $this->resolveStatsFlag(),
             $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null,
             (bool) $this->option('dry-run')
-        );
-    }
-
-    private function buildRenderOptions(): RenderOptions
-    {
-        $cliReports = [];
-        foreach (OutputFormats::STRUCTURED as $format) {
-            $key = "report-$format";
-            if (!$this->hasOption($key)) {
-                continue;
-            }
-            $value = $this->option($key);
-            if ($value === null || $value === '') {
-                continue;
-            }
-            $cliReports[$format] = strval($value);
-        }
-
-        $outputPath = $this->hasOption('output') ? $this->option('output') : null;
-
-        return new RenderOptions(
-            strval($this->option('format')),
-            $outputPath === null || $outputPath === '' ? null : strval($outputPath),
-            $this->hasOption('no-reports') && (bool) $this->option('no-reports'),
-            $this->hasOption('no-ci') && (bool) $this->option('no-ci'),
-            $this->hasOption('show-progress') && (bool) $this->option('show-progress'),
-            $cliReports
         );
     }
 

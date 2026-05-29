@@ -6,36 +6,28 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsConditionsHeader;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings;
+use Wtyd\GitHooks\App\Commands\Concerns\BuildsRenderOptions;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolver;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Execution\FlowPreparer;
+use Wtyd\GitHooks\Execution\FlowRunner;
+use Wtyd\GitHooks\Execution\FlowRunRequest;
 use Wtyd\GitHooks\Execution\InputFilesResolver;
-use Wtyd\GitHooks\Utils\BranchResolver;
-use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
+/**
+ * Thin CLI adapter for `githooks flow <name>`. Phase 2c reduces handle() to
+ * pre-flight validation + build DTOs + delegate to {@see FlowRunner::run()}.
+ */
 class FlowCommand extends Command
 {
     use AssertsExecutionModeFlagsExclusive;
-    use EmitsConditionsHeader;
-    use EmitsConfigWarnings;
+    use BuildsRenderOptions;
     use EmitsStderr;
-    use FormatsOutput;
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
     use ResolvesMemoryBudgetFlags;
@@ -79,25 +71,15 @@ class FlowCommand extends Command
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';
 
-    private ConfigurationParser $parser;
-
-    private FlowPreparer $preparer;
-
-    private FlowExecutor $executor;
+    private FlowRunner $runner;
 
     private InputFilesResolver $inputFilesResolver;
 
-    public function __construct(
-        ConfigurationParser $parser,
-        FlowPreparer $preparer,
-        FlowExecutor $executor,
-        InputFilesResolver $inputFilesResolver
-    ) {
+    public function __construct(FlowRunner $runner, InputFilesResolver $inputFilesResolver)
+    {
         parent::__construct();
         $this->ignoreValidationErrors();
-        $this->parser = $parser;
-        $this->preparer = $preparer;
-        $this->executor = $executor;
+        $this->runner = $runner;
         $this->inputFilesResolver = $inputFilesResolver;
     }
 
@@ -115,166 +97,58 @@ class FlowCommand extends Command
             return 1;
         }
 
-        $flowName = strval($this->argument('name'));
-        $configFile = strval($this->option('config'));
-
         if (!$this->assertExecutionModeFlagsExclusive()) {
             return 1;
         }
 
         try {
-            $config = $this->parser->parse($configFile);
-
-            if ($config->isLegacy()) {
-                $this->error("The 'flow' command requires v3 configuration format (hooks/flows/jobs).");
-                $this->warn("Use 'githooks conf:init' to generate the new format.");
-                return 1;
-            }
-
-            if ($config->hasErrors()) {
-                foreach ($config->getValidation()->getErrors() as $error) {
-                    $this->error($error);
-                }
-                return 1;
-            }
-
-            $flow = $config->getFlow($flowName);
-
-            if ($flow === null) {
-                $this->error("Flow '$flowName' is not defined in the configuration file.");
-                $availableFlows = array_keys($config->getFlows());
-                if (!empty($availableFlows)) {
-                    $this->info('Available flows: ' . implode(', ', $availableFlows));
-                }
-                return 1;
-            }
-
-            $fileUtils = $this->getLaravel()->make(FileUtilsInterface::class);
-
-            $invocationMode = $this->resolveInvocationModeFromCli();
-
-            $mainBranch = $config->getGlobalOptions()->getMainBranch()
-                ?? $fileUtils->detectMainBranch();
-
-            $inputFilesResolution = $this->resolveInputFilesFlags(true);
-
-            if ($inputFilesResolution !== null) {
-                $context = ExecutionContext::forInputFiles($inputFilesResolution, $fileUtils);
-                $invocationMode = ExecutionMode::FAST;
-            } else {
-                $context = ExecutionContext::create($fileUtils, $mainBranch);
-            }
-
-            $excludeJobs = [];
-            $excludeOption = $this->option('exclude-jobs');
-            if (!empty($excludeOption)) {
-                $excludeJobs = array_map('trim', explode(',', strval($excludeOption)));
-            }
-
-            $onlyJobs = [];
-            $onlyOption = $this->option('only-jobs');
-            if (!empty($onlyOption)) {
-                $onlyJobs = array_map('trim', explode(',', strval($onlyOption)));
-            }
-
-            if (!empty($excludeJobs) && !empty($onlyJobs)) {
-                $this->error('Options --exclude-jobs and --only-jobs cannot be used together.');
-                return 1;
-            }
-
-            // CLI options for the per-key effective-options cascade
-            $cliFailFast = $this->option('fail-fast') ? true : null;
-            $cliProcesses = $this->option('processes') !== null ? (int) $this->option('processes') : null;
-            $timeBudgetFlags = $this->resolveTimeBudgetFlags();
-            $memoryBudgetFlags = $this->resolveMemoryBudgetFlags();
-            $cliAllocator = $this->resolveAllocatorFlag();
-            $cliStats = $this->resolveStatsFlag();
-
-            // FEAT-2: only resolve the branch when the flow declares `on`.
-            // Detached HEAD must not break flows that don't depend on it.
-            $branchResolution = null;
-            if ($flow->getOn() !== null) {
-                try {
-                    $cliBranch = $this->option('branch');
-                    $branchResolution = (new BranchResolver())->resolve(
-                        is_string($cliBranch) && $cliBranch !== '' ? $cliBranch : null,
-                        $fileUtils
-                    );
-                } catch (DetachedHeadException $e) {
-                    $this->error($e->getMessage());
-                    return 1;
-                }
-            }
-
-            $resolver = new EffectiveOptionsResolver();
-            $resolution = $resolver->resolveSingle(
-                $config,
-                $flow,
-                $cliFailFast,
-                $cliProcesses,
-                $invocationMode,
-                $timeBudgetFlags['warnAfter'],
-                $timeBudgetFlags['failAfter'],
-                $timeBudgetFlags['disabled'],
-                $memoryBudgetFlags['warnAbove'],
-                $memoryBudgetFlags['failAbove'],
-                $memoryBudgetFlags['disabled'],
-                $cliAllocator,
-                $cliStats,
-                $branchResolution
-            );
-
-            // FEAT-2: the `on`-resolved mode may flip the invocation mode used
-            // by the preparer (which decides accelerable paths/skips). Without
-            // this re-sync, the cascade-resolved mode would only reach the
-            // header / JSON trace, not the executor.
-            if (
-                $invocationMode === null
-                && $resolution->getTrace()['executionMode']['source'] !== EffectiveOptionsResolver::SOURCE_DEFAULT
-                && $resolution->getExecutionMode() !== ExecutionMode::FULL
-            ) {
-                $invocationMode = $resolution->getExecutionMode();
-            }
-
-            $plan = $this->preparer->prepare($flow, $config, $context, $excludeJobs, $onlyJobs, $invocationMode);
-
-            // Replace the plan options with the cascade-resolved ones and attach the trace
-            $plan = new FlowPlan(
-                $plan->getFlowName(),
-                $plan->getJobs(),
-                $resolution->getOptions(),
-                $plan->getContext(),
-                $plan->getSkippedJobs(),
-                $plan->getExecutionMode(),
-                $plan->getInputFiles(),
-                $plan->getExpandedFlows(),
-                $resolution,
-                $plan->getDependencyGraph()
-            );
-
-            $this->applyFormat($this->executor, $plan);
-
-            $this->executor->setThresholdsDisabled($timeBudgetFlags['disabled']);
-            $this->executor->setMemoryBudgetDisabled($memoryBudgetFlags['disabled']);
-
-            $this->emitConditionsHeader($resolution, $plan->getExpandedFlows(), $plan->getInputFiles());
-
-            $result = $this->executor->execute($plan, (bool) $this->option('dry-run'));
-            $result->setConfigValidation($config->getValidation());
-
-            $this->emitConfigWarnings($config->getValidation());
-
-            $this->renderFormattedResult($result, $plan->getOptions());
-
-            if ($this->option('monitor')) {
-                $this->renderMonitorReport($result);
-            }
-
-            return $result->isSuccess() ? 0 : 1;
+            $request = $this->buildRunRequest();
         } catch (GitHooksExceptionInterface $e) {
-            // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
             $this->emitStderr($e->getMessage());
             return 1;
         }
+
+        return $this->runner->run($request, $this->output, $this->buildRenderOptions());
+    }
+
+    private function buildRunRequest(): FlowRunRequest
+    {
+        $timeBudget = $this->resolveTimeBudgetFlags();
+        $memoryBudget = $this->resolveMemoryBudgetFlags();
+        $cliBranch = $this->option('branch');
+
+        return new FlowRunRequest(
+            strval($this->argument('name')),
+            strval($this->option('config')),
+            $this->option('fail-fast') ? true : null,
+            $this->option('processes') !== null ? (int) $this->option('processes') : null,
+            $this->csvOption('exclude-jobs'),
+            $this->csvOption('only-jobs'),
+            $this->resolveInputFilesFlags(true),
+            $this->resolveInvocationModeFromCli(),
+            $timeBudget['warnAfter'],
+            $timeBudget['failAfter'],
+            $timeBudget['disabled'],
+            $memoryBudget['warnAbove'],
+            $memoryBudget['failAbove'],
+            $memoryBudget['disabled'],
+            $this->resolveAllocatorFlag(),
+            $this->resolveStatsFlag(),
+            is_string($cliBranch) && $cliBranch !== '' ? $cliBranch : null,
+            (bool) $this->option('dry-run'),
+            (bool) $this->option('monitor')
+        );
+    }
+
+    /**
+     * @return string[]
+     */
+    private function csvOption(string $name): array
+    {
+        $value = $this->option($name);
+        if (empty($value)) {
+            return [];
+        }
+        return array_map('trim', explode(',', strval($value)));
     }
 }

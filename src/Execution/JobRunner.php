@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
-use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\OutputStyle as SymfonyOutputStyle;
-use Symfony\Component\Console\Style\SymfonyStyle;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
 use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
 use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
 use Wtyd\GitHooks\Output\FlowResultRenderer;
@@ -37,6 +35,8 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
  */
 class JobRunner
 {
+    use EmitsRunnerStderr;
+
     private ConfigurationParser $parser;
 
     private FlowPreparer $preparer;
@@ -233,40 +233,5 @@ class JobRunner
         );
 
         return JobPreparation::success($plan, $resolution, $config);
-    }
-
-    /**
-     * Emit a single pre-execution error to stderr-equivalent. Mirrors the
-     * `$this->error(...)` call the Command used to make: red prefix in
-     * production, silent on test buffers (so phpunit stdout stays clean).
-     */
-    private function emitError(OutputInterface $output, string $message): void
-    {
-        if ($output instanceof SymfonyStyle) {
-            $output->getErrorStyle()->writeln("<error>$message</error>");
-            return;
-        }
-        $output->writeln("<error>$message</error>");
-    }
-
-    /**
-     * Mirror of the previous `EmitsStderr::emitStderr()` trait — write to the
-     * console's stderr stream when available, drop the message in test buffers.
-     */
-    private function emitStderr(OutputInterface $output, string $message): void
-    {
-        if ($output instanceof SymfonyOutputStyle && method_exists($output, 'getOutput')) {
-            $underlying = $output->getOutput();
-            if ($underlying instanceof ConsoleOutputInterface) {
-                $underlying->getErrorOutput()->writeln($message);
-                return;
-            }
-        }
-        if ($output instanceof ConsoleOutputInterface) {
-            $output->getErrorOutput()->writeln($message);
-            return;
-        }
-        // Fallback: writeln on the duck-typed output (test buffers capture).
-        $output->writeln($message);
     }
 }
