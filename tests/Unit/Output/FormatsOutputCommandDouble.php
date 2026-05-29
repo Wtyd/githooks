@@ -4,15 +4,25 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
+use Symfony\Component\Console\Output\OutputInterface;
 use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\GitHooks\Output\FlowResultRenderer;
 use Wtyd\GitHooks\Output\ResultFormatter;
 
 /**
- * Test double that exposes the private methods of FormatsOutput trait.
+ * Test double that exposes the (now-thin) FormatsOutput trait. After Phase 2a
+ * the trait delegates to {@see FlowResultRenderer}; this double captures the
+ * renderer's writeln output via {@see RoutingBufferedOutput} bound to the
+ * public arrays below, so existing assertions
+ * (`$double->lines`, `$double->warnings`, `$double->infos`) keep working.
+ *
+ * Tests that need to assert on Symfony decoration assign their own
+ * {@see \Symfony\Component\Console\Output\BufferedOutput} to $symfonyOutput;
+ * in that case getOutput() returns the BufferedOutput and writes go there.
  *
  * @SuppressWarnings(PHPMD)
  */
@@ -34,12 +44,19 @@ class FormatsOutputCommandDouble
 
     public $laravel;
 
-    /** @var \Symfony\Component\Console\Output\OutputInterface|null */
-    public $symfonyOutput = null;
+    public ?OutputInterface $symfonyOutput = null;
 
-    public function getOutput()
+    private RoutingBufferedOutput $routingOutput;
+
+    public function __construct()
     {
-        return $this->symfonyOutput;
+        $this->routingOutput = new RoutingBufferedOutput();
+        $this->routingOutput->bindArrays($this->lines, $this->warnings, $this->infos);
+    }
+
+    public function getOutput(): OutputInterface
+    {
+        return $this->symfonyOutput ?? $this->routingOutput;
     }
 
     public function option(string $name = null)
@@ -50,32 +67,6 @@ class FormatsOutputCommandDouble
     public function hasOption(string $name): bool
     {
         return array_key_exists($name, $this->options);
-    }
-
-    public function warn(string $message): void
-    {
-        $this->warnings[] = $message;
-    }
-
-    public function line(string $message): void
-    {
-        $this->lines[] = $message;
-    }
-
-    public function info(string $message): void
-    {
-        $this->infos[] = $message;
-    }
-
-    /**
-     * Override of the trait's emitReportWrittenNotice() so the test can
-     * inspect what was sent to stderr without actually writing to it.
-     * Tests that previously expected this to land in $infos[] now use
-     * $reportNotices[]; both are kept in lock-step here for back-compat.
-     */
-    protected function emitReportWrittenNotice(string $path): void
-    {
-        $this->infos[] = "Report written to: $path";
     }
 
     public function getLaravel()
@@ -103,6 +94,6 @@ class FormatsOutputCommandDouble
 
     public function callFormatterFor(string $format): ResultFormatter
     {
-        return $this->formatterFor($format);
+        return (new FlowResultRenderer($this->laravel))->formatterFor($format);
     }
 }

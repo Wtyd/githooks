@@ -8,471 +8,81 @@ use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Output\CI\CIEnvironment;
-use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
-use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
-use Wtyd\GitHooks\Output\DashboardOutputHandler;
-use Wtyd\GitHooks\Output\CodeClimateResultFormatter;
-use Wtyd\GitHooks\Output\JsonResultFormatter;
-use Wtyd\GitHooks\Output\JunitResultFormatter;
+use Wtyd\GitHooks\Output\FlowResultRenderer;
 use Wtyd\GitHooks\Output\OutputFormats;
-use Wtyd\GitHooks\Output\OutputHandler;
-use Wtyd\GitHooks\Output\ProgressOutputHandler;
-use Wtyd\GitHooks\Output\ResultFormatter;
-use Wtyd\GitHooks\Output\SarifResultFormatter;
-use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\GitHooks\Output\RenderOptions;
 
 /**
- * Shared logic for commands that support --format and multi-report --report-* flags.
+ * Adapter trait that delegates to {@see FlowResultRenderer}. Kept during
+ * Phase 2a so the three commands keep working untouched; removed in Phase 2c
+ * when all three switch to the Runner-based pipeline.
  *
- * Consumer Commands MUST also `use EmitsStderr;` so the trait's call to
- * `$this->emitStderr(...)` resolves. We don't `use EmitsStderr` here to
- * avoid the diamond-collision PHP raises when a Command also uses
- * ResolvesInputFiles (which would also bring its own copy of the trait).
+ * Consumer Commands MUST also `use EmitsStderr;` (legacy contract preserved
+ * for the few collaborator traits that still reference `$this->emitStderr`).
  */
 trait FormatsOutput
 {
     /**
-     * Select the output handler based on format and execution context.
-     *
-     * | Format | Sequential (processes<=1) | Parallel (processes>1) |
-     * |--------|--------------------------|----------------------|
-     * | text   | StreamingTextOutputHandler| TextOutputHandler    |
-     * | json   | ProgressOutputHandler    | ProgressOutputHandler|
-     * | junit  | ProgressOutputHandler    | ProgressOutputHandler|
+     * @SuppressWarnings(PHPMD.UnusedPrivateMethod) used by classes that consume the trait
      */
     private function applyFormat(FlowExecutor $executor, ?FlowPlan $plan = null): void
     {
-        $this->forceCIDecorationIfApplicable();
-
-        $format = strval($this->option('format'));
-
-        if ($format !== '' && !in_array($format, OutputFormats::SUPPORTED, true)) {
-            $this->warn("Unknown format '$format'. Using text output. Valid formats: " . implode(', ', OutputFormats::SUPPORTED) . '.');
-            $format = 'text';
-        }
-
-        $isStructured = in_array($format, OutputFormats::STRUCTURED, true);
-
-        if ($isStructured) {
-            $handler = $this->resolveProgressHandler();
-        } elseif (
-            $plan === null
-            || $plan->getOptions()->getProcesses() <= 1
-            || count($plan->getJobs()) <= 1
-        ) {
-            // Text format: use streaming for sequential, keep buffered for parallel
-            $handler = new StreamingTextOutputHandler($this->getLaravel()->make(Printer::class));
-        } else {
-            // Parallel text: use dashboard with live timers
-            $handler = new DashboardOutputHandler();
-        }
-
-        if ($this->needsToolJsonOutput($format, $plan)) {
-            $executor->setStructuredFormat(true);
-        }
-
-        // CI decorator only for text format — structured formats write clean output
-        if (!$isStructured) {
-            $handler = $this->wrapWithCIDecorator($handler);
-        }
-        $executor->setOutputHandler($handler);
+        $this->makeRenderer()->applyFormat($executor, $plan, $this->buildRenderOptions(), $this->getOutput());
     }
 
     /**
-     * Whether tool-level JSON output (e.g. phpstan `--error-format=json`,
-     * psalm `--output-format=json`) must be requested at runtime.
-     *
-     * Codeclimate and SARIF formatters parse each tool's stdout to extract
-     * issues. If the tools emit human text, the parsers find no JSON and
-     * the report comes out empty. The flag must be on whenever a codeclimate
-     * or sarif payload will be generated, regardless of how it was requested:
-     *
-     *   - `--format=codeclimate|sarif` (primary output).
-     *   - `reports.codeclimate` / `reports.sarif` in config (multi-report).
-     *   - `--report-codeclimate=PATH` / `--report-sarif=PATH` on CLI.
-     *
-     * `collectReportTargets()` already resolves CLI > config precedence and
-     * honours `--no-reports` (which suppresses config but not CLI flags).
-     */
-    private function needsToolJsonOutput(string $format, ?FlowPlan $plan): bool
-    {
-        if ($format === 'codeclimate' || $format === 'sarif') {
-            return true;
-        }
-        $options = $plan !== null ? $plan->getOptions() : null;
-        $reports = $this->collectReportTargets($options);
-        return isset($reports['codeclimate']) || isset($reports['sarif']);
-    }
-
-    /**
-     * Wrap handler with CI decorator if auto-detected and not disabled.
-     */
-    private function wrapWithCIDecorator(OutputHandler $handler): OutputHandler
-    {
-        if ($this->isCIDisabled()) {
-            return $handler;
-        }
-
-        $ci = CIEnvironment::detect();
-
-        if ($ci === CIEnvironment::GITHUB_ACTIONS) {
-            return new GitHubActionsDecorator($handler);
-        }
-
-        if ($ci === CIEnvironment::GITLAB_CI) {
-            return new GitLabCIDecorator($handler);
-        }
-
-        return $handler;
-    }
-
-    private function isCIDisabled(): bool
-    {
-        return method_exists($this, 'option') && $this->hasOption('no-ci') && $this->option('no-ci');
-    }
-
-    /**
-     * Force ANSI decoration on the OutputInterface when running under a CI
-     * that renders ANSI escapes (GitHub Actions, GitLab CI). Symfony Console
-     * disables decoration off-TTY by default, which strips every `<fg=red>…</>`
-     * tag the trait emits — making `✗ Flow time-budget exceeded` and warning
-     * lines invisible in CI logs (the operator's eye has no signal to lock on).
-     *
-     * Safe for structured formats (`--format=json|junit|sarif|codeclimate`):
-     * their payloads contain no Symfony tags so decoration has nothing to
-     * convert, and the section_start/section_end ANSI escapes already emitted
-     * by GitLabCIDecorator confirm the channel accepts ANSI.
-     */
-    private function forceCIDecorationIfApplicable(): void
-    {
-        if ($this->isCIDisabled()) {
-            return;
-        }
-        if (CIEnvironment::detect() === CIEnvironment::NONE) {
-            return;
-        }
-        if (!method_exists($this, 'getOutput')) {
-            return;
-        }
-        $output = $this->getOutput();
-        if ($output instanceof \Symfony\Component\Console\Output\OutputInterface) {
-            $output->setDecorated(true);
-        }
-    }
-
-    /**
-     * Open the GitLab CI "Summary" collapsible section (expanded by default) so
-     * the final results table is its own group instead of being absorbed by
-     * whichever per-job section happens to be the last open one.
-     */
-    private function emitCISummarySectionStart(): void
-    {
-        if ($this->isCIDisabled()) {
-            return;
-        }
-        if (CIEnvironment::detect() !== CIEnvironment::GITLAB_CI) {
-            return;
-        }
-        $ts = time();
-        echo "\033[0Ksection_start:{$ts}:githooks_summary[collapsed=false]\r\033[0KSummary\n";
-    }
-
-    private function emitCISummarySectionEnd(): void
-    {
-        if ($this->isCIDisabled()) {
-            return;
-        }
-        if (CIEnvironment::detect() !== CIEnvironment::GITLAB_CI) {
-            return;
-        }
-        $ts = time();
-        echo "\033[0Ksection_end:{$ts}:githooks_summary\r\033[0K\n";
-    }
-
-    /**
-     * Resolve the progress handler for structured formats.
-     * Uses the container binding so tests can override with NullOutputHandler.
-     *
-     * `--show-progress` forces progress to be emitted even when stderr is not a TTY
-     * (useful in CI with --format=json|junit|sarif|codeclimate).
-     */
-    private function resolveProgressHandler(): ProgressOutputHandler
-    {
-        if ($this->getLaravel()->bound(ProgressOutputHandler::class)) {
-            return $this->getLaravel()->make(ProgressOutputHandler::class);
-        }
-
-        $forceEnabled = $this->hasOption('show-progress') && (bool) $this->option('show-progress');
-        return new ProgressOutputHandler(null, $forceEnabled);
-    }
-
-    /**
-     * Render the FlowResult according to --format and emit any extra report files
-     * declared via `--report-*` flags or the `reports` config map.
+     * @SuppressWarnings(PHPMD.UnusedPrivateMethod) used by classes that consume the trait
      */
     private function renderFormattedResult(FlowResult $result, ?OptionsConfiguration $options = null): void
     {
-        $format = strval($this->option('format'));
-
-        if (in_array($format, OutputFormats::STRUCTURED, true)) {
-            $this->writeStructuredPayload($this->formatterFor($format)->format($result));
-        } elseif ($format === '' || $format === 'text') {
-            $this->renderTextSummary($result);
-        } else {
-            // Unknown format slipped through (e.g. raw test double bypassing applyFormat).
-            $this->renderTextSummary($result);
-        }
-
-        $targets = $this->collectReportTargets($options);
-        foreach ($targets as $reportFormat => $path) {
-            $this->writeReportFile($reportFormat, $path, $result);
-        }
+        $this->makeRenderer()->renderFormattedResult($result, $options, $this->buildRenderOptions(), $this->getOutput());
     }
 
     /**
-     * Render the human-readable summary (`Results: P/N passed in T`) plus the
-     * per-job and flow-level threshold explanation lines (REQ-018..REQ-020).
+     * @SuppressWarnings(PHPMD.UnusedPrivateMethod) used by classes that consume the trait
      */
-    private function renderTextSummary(FlowResult $result): void
+    private function renderMonitorReport(FlowResult $result): void
     {
-        $this->emitCISummarySectionStart();
-        try {
-            $this->renderTextSummaryBody($result);
-        } finally {
-            $this->emitCISummarySectionEnd();
-        }
-    }
-
-    private function renderTextSummaryBody(FlowResult $result): void
-    {
-        $total = count($result->getJobResults());
-        $passed = $result->getPassedCount();
-        $time = $result->getTotalTime();
-
-        $tbState = $result->getTimeBudgetState();
-        $mbState = $result->getMemoryBudgetState();
-        $suffix = '';
-        if (!$result->isSuccess()) {
-            $suffix = ' <fg=red>✗</>';
-        } elseif (($tbState !== null && $tbState->isWarned()) || ($mbState !== null && $mbState->isWarned())) {
-            $suffix = ' <fg=yellow>⚠ (1 warning)</>';
-        } elseif ($result->isSuccess()) {
-            $suffix = ' ✔️';
-        }
-
-        $this->line("Results: $passed/$total passed in $time$suffix");
-
-        // Per-job threshold notices, ordered by appearance.
-        foreach ($result->getJobResults() as $jobResult) {
-            $this->emitJobThresholdNotice($jobResult);
-            $this->emitJobMemoryNotice($jobResult);
-        }
-
-        // Flow-level time-budget notice (last so it summarises).
-        if ($tbState !== null && $tbState->isFailed()) {
-            $limit = $tbState->getFailAfter();
-            $sum = number_format($tbState->getTotalJobDuration(), 1);
-            $this->line("<fg=red>✗ Flow time-budget exceeded: total job time {$sum}s, limit {$limit}s</>");
-        } elseif ($tbState !== null && $tbState->isWarned()) {
-            $limit = $tbState->getWarnAfter();
-            $sum = number_format($tbState->getTotalJobDuration(), 1);
-            $this->line("<fg=yellow>⚠ Flow time-budget warning: total job time {$sum}s exceeded warn-after ({$limit}s)</>");
-        }
-
-        $this->emitFlowMemoryBudgetNotice($mbState);
-
-        if ($result->getMemoryStats() !== null) {
-            (new \Wtyd\GitHooks\Output\StatsTableRenderer())
-                ->render($this->getOutput(), $result);
-        }
-    }
-
-    private function emitJobMemoryNotice(\Wtyd\GitHooks\Execution\JobResult $jobResult): void
-    {
-        if ($jobResult->getMemoryThresholdState() === \Wtyd\GitHooks\Execution\JobResult::MEMORY_THRESHOLD_NONE) {
-            return;
-        }
-
-        $name = $jobResult->getJobName();
-        $peak = $jobResult->getMemoryPeak();
-        $isFailed = $jobResult->isMemoryFailed();
-        $limit = $isFailed ? $jobResult->getConfiguredMemoryFail() : $jobResult->getConfiguredMemoryWarn();
-        $kind = $isFailed ? 'fail-above' : 'warn-above';
-
-        if (!$jobResult->isSuccess() && $jobResult->getExitCode() !== null && $jobResult->getExitCode() !== 0) {
-            $this->line("   <fg=yellow>↳ also exceeded memory threshold (peak {$peak} MB, $kind {$limit} MB)</>");
-            return;
-        }
-
-        $color = $isFailed ? 'red' : 'yellow';
-        $icon = $isFailed ? '✗' : '⚠';
-        $this->line("<fg=$color>$icon Job '$name' exceeded memory threshold (peak {$peak} MB, $kind {$limit} MB)</>");
-    }
-
-    private function emitFlowMemoryBudgetNotice(?\Wtyd\GitHooks\Execution\MemoryBudgetState $state): void
-    {
-        if ($state === null) {
-            return;
-        }
-        if ($state->isFailed()) {
-            $limit = $state->getFailAbove();
-            $peak = $state->getPeakObserved();
-            $this->line("<fg=red>✗ Flow memory-budget exceeded: peak {$peak} MB, limit {$limit} MB</>");
-        } elseif ($state->isWarned()) {
-            $limit = $state->getWarnAbove();
-            $peak = $state->getPeakObserved();
-            $this->line("<fg=yellow>⚠ Flow memory-budget warning: peak {$peak} MB exceeded warn-above ({$limit} MB)</>");
-        }
-    }
-
-    private function emitJobThresholdNotice(\Wtyd\GitHooks\Execution\JobResult $jobResult): void
-    {
-        if ($jobResult->getThresholdState() === \Wtyd\GitHooks\Execution\JobResult::THRESHOLD_NONE) {
-            return;
-        }
-
-        $name = $jobResult->getJobName();
-        $duration = number_format($jobResult->getDurationSeconds(), 1);
-        $isFailed = $jobResult->isThresholdFailed();
-        $limit = $isFailed ? $jobResult->getConfiguredFailAfter() : $jobResult->getConfiguredWarnAfter();
-        $kind = $isFailed ? 'fail-after' : 'warn-after';
-
-        // Real KO with secondary threshold annotation: indented secondary line.
-        if (!$jobResult->isSuccess() && $jobResult->getExitCode() !== null && $jobResult->getExitCode() !== 0) {
-            $this->line("   <fg=yellow>↳ also exceeded time threshold (took {$duration}s, $kind {$limit}s)</>");
-            return;
-        }
-
-        $color = $isFailed ? 'red' : 'yellow';
-        $icon = $isFailed ? '✗' : '⚠';
-        $this->line("<fg=$color>$icon Job '$name' exceeded time threshold (took {$duration}s, $kind {$limit}s)</>");
+        $this->makeRenderer()->renderMonitorReport($result, $this->getOutput());
     }
 
     /**
-     * Build the [format => path] map of extra report files to emit.
-     *
-     * Precedence (per format):
-     *   1. CLI flag `--report-X=PATH` (always wins).
-     *   2. `flow.options.reports.X` / `flows.options.reports.X` from config,
-     *      unless `--no-reports` is active.
-     *
-     * `--no-reports` short‑circuits config but does NOT cancel CLI flags
-     * (PHPUnit `--no-coverage` style), so a consumer can do:
-     *   `flow qa --format=json --no-reports --report-sarif=/tmp/q.sarif`
-     * to get JSON on stdout and only the SARIF file, ignoring whatever
-     * the project config declares.
-     *
      * @return array<string, string>
      */
     private function collectReportTargets(?OptionsConfiguration $options): array
     {
-        $noReports = $this->hasOption('no-reports') && (bool) $this->option('no-reports');
+        return $this->makeRenderer()->collectReportTargets($options, $this->buildRenderOptions());
+    }
 
-        $targets = ($noReports || $options === null) ? [] : $options->getReports();
-
+    private function buildRenderOptions(): RenderOptions
+    {
+        $cliReports = [];
         foreach (OutputFormats::STRUCTURED as $format) {
-            $cliKey = "report-$format";
-            if (!$this->hasOption($cliKey)) {
+            $key = "report-$format";
+            if (!$this->hasOption($key)) {
                 continue;
             }
-            $value = $this->option($cliKey);
+            $value = $this->option($key);
             if ($value === null || $value === '') {
                 continue;
             }
-            $targets[$format] = strval($value);
+            $cliReports[$format] = strval($value);
         }
 
-        return $targets;
+        $outputPath = $this->hasOption('output') ? $this->option('output') : null;
+
+        return new RenderOptions(
+            strval($this->option('format')),
+            $outputPath === null || $outputPath === '' ? null : strval($outputPath),
+            $this->hasOption('no-reports') && (bool) $this->option('no-reports'),
+            $this->hasOption('no-ci') && (bool) $this->option('no-ci'),
+            $this->hasOption('show-progress') && (bool) $this->option('show-progress'),
+            $cliReports
+        );
     }
 
-    /**
-     * Render and write a single report file for the given format.
-     */
-    private function writeReportFile(string $format, string $path, FlowResult $result): void
+    private function makeRenderer(): FlowResultRenderer
     {
-        $content = $this->formatterFor($format)->format($result);
-        $this->writeContentToFile($content, $path);
-        $this->emitReportWrittenNotice($path);
-    }
-
-    /**
-     * Map a structured format name to its concrete ResultFormatter.
-     *
-     * @throws \InvalidArgumentException for unsupported formats.
-     */
-    private function formatterFor(string $format): ResultFormatter
-    {
-        switch ($format) {
-            case 'json':
-                return new JsonResultFormatter();
-            case 'junit':
-                return new JunitResultFormatter();
-            case 'sarif':
-                return new SarifResultFormatter();
-            case 'codeclimate':
-                return new CodeClimateResultFormatter();
-            default:
-                throw new \InvalidArgumentException("Unsupported report format: '$format'");
-        }
-    }
-
-    /**
-     * Write a structured payload to stdout (default) or to a file when --output=PATH is set.
-     * Missing parent directories in the target path are created on the fly so that
-     * CI pipelines can use `--output=reports/qa.sarif` without a preceding `mkdir`.
-     */
-    private function writeStructuredPayload(string $content): void
-    {
-        $customOutput = $this->hasOption('output') ? $this->option('output') : null;
-
-        if (empty($customOutput)) {
-            $this->line($content);
-            return;
-        }
-
-        $path = strval($customOutput);
-        $this->writeContentToFile($content, $path);
-        $this->emitReportWrittenNotice($path);
-    }
-
-    /**
-     * Inform the operator that a report file was written. Goes to STDERR so
-     * --format=json/junit/sarif/codeclimate stdout stays a clean parseable
-     * payload (BUG-5). Protected so test doubles can capture the calls.
-     */
-    protected function emitReportWrittenNotice(string $path): void
-    {
-        $this->emitStderr("Report written to: $path");
-    }
-
-    /**
-     * Write content to a file, creating any missing parent directories.
-     */
-    private function writeContentToFile(string $content, string $path): void
-    {
-        $dir = dirname($path);
-        if ($dir !== '' && $dir !== '.' && !is_dir($dir)) {
-            mkdir($dir, 0777, true);
-        }
-        file_put_contents($path, $content . "\n");
-    }
-
-    private function renderMonitorReport(FlowResult $result): void
-    {
-        $peak = $result->getPeakEstimatedThreads();
-        $budget = $result->getThreadBudget();
-
-        if ($peak === 0 && $budget === 0) {
-            return;
-        }
-
-        $this->line('');
-        $this->line("Thread monitor: peak ~{$peak} threads (budget: {$budget})");
-
-        if ($peak > $budget && $budget > 0) {
-            $this->warn("  Warning: estimated peak ($peak) exceeded budget ($budget). Consider reducing 'processes' or tool parallelism.");
-        }
+        return new FlowResultRenderer($this->getLaravel());
     }
 }
