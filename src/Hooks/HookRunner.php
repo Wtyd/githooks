@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Hooks;
 
+use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\HookRef;
+use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
@@ -17,6 +21,8 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
  */
 class HookRunner
 {
+    use EmitsRunnerStderr;
+
     private FlowPreparer $preparer;
 
     private FlowExecutor $executor;
@@ -25,12 +31,94 @@ class HookRunner
 
     private PatternMatcher $patternMatcher;
 
-    public function __construct(FlowPreparer $preparer, FlowExecutor $executor, FileUtilsInterface $fileUtils, ?PatternMatcher $patternMatcher = null)
-    {
+    private ?ConfigurationParser $parser;
+
+    public function __construct(
+        FlowPreparer $preparer,
+        FlowExecutor $executor,
+        FileUtilsInterface $fileUtils,
+        ?PatternMatcher $patternMatcher = null,
+        ?ConfigurationParser $parser = null
+    ) {
         $this->preparer = $preparer;
         $this->executor = $executor;
         $this->fileUtils = $fileUtils;
         $this->patternMatcher = $patternMatcher ?? new PatternMatcher();
+        $this->parser = $parser;
+    }
+
+    /**
+     * High-level entry point: parse the config, validate v3/non-error, and
+     * delegate to {@see run()}. Used by HookRunCommand as a thin adapter.
+     *
+     * @param OutputInterface $output Sink for stderr-routed warnings/errors.
+     * @return int Process exit code (0 success, 1 failure).
+     *
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) Each branch is one class of
+     *   pre-execution error or warning the operator must see.
+     */
+    public function runEvent(string $event, string $configFile, OutputInterface $output): int
+    {
+        if ($this->parser === null) {
+            throw new \LogicException(
+                'HookRunner::runEvent() requires a ConfigurationParser. ' .
+                'Inject one via the constructor or use the lower-level run() entry point.'
+            );
+        }
+
+        try {
+            $config = $this->parser->parse($configFile);
+
+            if ($config->isLegacy()) {
+                $this->emitError($output, "hook:run requires v3 configuration format (hooks/flows/jobs).");
+                return 1;
+            }
+
+            if ($config->hasErrors()) {
+                foreach ($config->getValidation()->getErrors() as $error) {
+                    $this->emitError($output, $error);
+                }
+                return 1;
+            }
+
+            if ($config->getHooks() === null) {
+                $output->writeln("<comment>No 'hooks' section found in configuration. Nothing to run.</comment>");
+                return 0;
+            }
+
+            $results = $this->run($event, $config);
+
+            if (empty($results)) {
+                $conditionWarning = $this->extractConditionWarning($config);
+
+                if ($conditionWarning !== '') {
+                    $output->writeln("<comment>$conditionWarning</comment>");
+                } else {
+                    $output->writeln("<comment>No flows or jobs configured for event '$event'.</comment>");
+                }
+                return 0;
+            }
+
+            return $this->exitCode($results);
+        } catch (Throwable $e) {
+            $this->emitError($output, $e->getMessage());
+            return 1;
+        }
+    }
+
+    /**
+     * Surface the "all skipped by execution conditions" warning emitted by
+     * {@see run()} when every ref matched but was filtered out by only-on /
+     * exclude-on / only-files / exclude-files.
+     */
+    private function extractConditionWarning(ConfigurationResult $config): string
+    {
+        foreach ($config->getValidation()->getWarnings() as $warning) {
+            if (strpos($warning, 'skipped by execution conditions') !== false) {
+                return $warning;
+            }
+        }
+        return '';
     }
 
     /**

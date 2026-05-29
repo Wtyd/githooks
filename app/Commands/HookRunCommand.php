@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Hooks\HookRunner;
 
+/**
+ * Thin CLI adapter for `githooks hook:run <event>`. Phase 3 reduces handle()
+ * to a single delegate call: parse + validate + run live in {@see HookRunner::runEvent()}.
+ */
 class HookRunCommand extends Command
 {
     protected $signature = 'hook:run
@@ -16,66 +19,20 @@ class HookRunCommand extends Command
 
     protected $description = 'Execute all flows/jobs associated with a git hook event. Called by the hook script.';
 
-    private ConfigurationParser $parser;
-
     private HookRunner $runner;
 
-    public function __construct(ConfigurationParser $parser, HookRunner $runner)
+    public function __construct(HookRunner $runner)
     {
         parent::__construct();
-        $this->parser = $parser;
         $this->runner = $runner;
     }
 
     public function handle(): int
     {
-        $event = strval($this->argument('event'));
-        $configFile = strval($this->option('config'));
-
-        try {
-            $config = $this->parser->parse($configFile);
-
-            if ($config->isLegacy()) {
-                $this->error("hook:run requires v3 configuration format (hooks/flows/jobs).");
-                return 1;
-            }
-
-            if ($config->hasErrors()) {
-                foreach ($config->getValidation()->getErrors() as $error) {
-                    $this->error($error);
-                }
-                return 1;
-            }
-
-            if ($config->getHooks() === null) {
-                $this->warn("No 'hooks' section found in configuration. Nothing to run.");
-                return 0;
-            }
-
-            $results = $this->runner->run($event, $config);
-
-            if (empty($results)) {
-                $warnings = $config->getValidation()->getWarnings();
-                $conditionWarning = '';
-                foreach ($warnings as $warning) {
-                    if (strpos($warning, 'skipped by execution conditions') !== false) {
-                        $conditionWarning = $warning;
-                        break;
-                    }
-                }
-
-                if ($conditionWarning !== '') {
-                    $this->warn($conditionWarning);
-                } else {
-                    $this->warn("No flows or jobs configured for event '$event'.");
-                }
-                return 0;
-            }
-
-            return $this->runner->exitCode($results);
-        } catch (\Throwable $e) {
-            $this->error($e->getMessage());
-            return 1;
-        }
+        return $this->runner->runEvent(
+            strval($this->argument('event')),
+            strval($this->option('config')),
+            $this->output
+        );
     }
 }

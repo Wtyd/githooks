@@ -89,7 +89,9 @@ class RegisterBindings
                 return new HookRunner(
                     $app->make(FlowPreparer::class),
                     $app->make(FlowExecutor::class),
-                    $app->make(FileUtilsInterface::class)
+                    $app->make(FileUtilsInterface::class),
+                    null,
+                    $app->make(ConfigurationParser::class)
                 );
             },
             HookInstaller::class => function () {
