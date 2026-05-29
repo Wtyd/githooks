@@ -10,10 +10,15 @@ use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
 use Wtyd\GitHooks\Jobs\ParatestJob;
 use Wtyd\GitHooks\Jobs\PhpcbfJob;
+use Wtyd\GitHooks\Jobs\PhpcpdJob;
+use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Jobs\PhpmdJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
+use Wtyd\GitHooks\Jobs\PhpunitJob;
 use Wtyd\GitHooks\Jobs\PsalmJob;
+use Wtyd\GitHooks\Jobs\RectorJob;
+use Wtyd\GitHooks\Jobs\ScriptJob;
 
 /**
  * Direct coverage for JobAbstract logic that was only exercised indirectly.
@@ -99,6 +104,54 @@ class JobAbstractTest extends TestCase
         $this->assertSame('phpstan_src', $job->getName());
         $this->assertSame('phpstan', $job->getType());
         $this->assertSame('phpstan_src', $job->getDisplayName());
+    }
+
+    /**
+     * BUG-23 regression net: `getDisplayName()` must return the job key for every Job type,
+     * not the executable. A `script`-typed override historically returned `$this->executable`,
+     * making two parallel jobs with the same executable indistinguishable in OK/KO/SKIP logs.
+     * Parametrized so adding a new Job type without inheriting the parent behaviour breaks here.
+     *
+     * @test
+     * @dataProvider allJobClassesProvider
+     */
+    public function display_name_returns_job_key_for_every_job_type(
+        string $jobClass,
+        string $jobType
+    ): void {
+        $config = new JobConfiguration(
+            "{$jobType}_shard_a",
+            $jobType,
+            [
+                'executable-path' => './run-tests',
+                'script'          => 'true',
+                'paths'           => ['src'],
+            ]
+        );
+
+        $job = new $jobClass($config);
+
+        $this->assertSame("{$jobType}_shard_a", $job->getDisplayName());
+    }
+
+    /** @return array<string, array{0: class-string, 1: string}> */
+    public static function allJobClassesProvider(): array
+    {
+        return [
+            'phpstan'       => [PhpstanJob::class, 'phpstan'],
+            'phpmd'         => [PhpmdJob::class, 'phpmd'],
+            'phpcs'         => [PhpcsJob::class, 'phpcs'],
+            'phpcbf'        => [PhpcbfJob::class, 'phpcbf'],
+            'phpunit'       => [PhpunitJob::class, 'phpunit'],
+            'paratest'      => [ParatestJob::class, 'paratest'],
+            'psalm'         => [PsalmJob::class, 'psalm'],
+            'parallel-lint' => [ParallelLintJob::class, 'parallel-lint'],
+            'phpcpd'        => [PhpcpdJob::class, 'phpcpd'],
+            'php-cs-fixer'  => [PhpCsFixerJob::class, 'php-cs-fixer'],
+            'rector'        => [RectorJob::class, 'rector'],
+            'script'        => [ScriptJob::class, 'script'],
+            'custom'        => [CustomJob::class, 'custom'],
+        ];
     }
 
     /** @test */

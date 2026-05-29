@@ -29,9 +29,4 @@ class ScriptJob extends JobAbstract
 
         return $command;
     }
-
-    public function getDisplayName(): string
-    {
-        return $this->executable;
-    }
 }
