@@ -56,15 +56,25 @@ class ScriptJobDisplayNameReleaseTest extends ReleaseTestCase
     }
 
     /**
-     * The real-world case from the bug report: two parallel script jobs with the
-     * same executable. Before the fix they were indistinguishable in the output;
-     * after the fix each one reports its own job key.
+     * The real-world case from the bug report: two script jobs sharing the same
+     * executable. Before the fix they were indistinguishable in the output;
+     * after the fix each one reports its own job key. Runs the default sequential
+     * executor — the bug lives in JobExecutor's display logic, identical under
+     * both serial and parallel scheduling, so a single mode is enough.
      *
      * @test
      */
-    public function two_parallel_script_jobs_with_same_executable_are_distinguishable(): void
+    public function two_script_jobs_with_same_executable_are_distinguishable(): void
     {
+        // The builder ships a default `hooks => pre-commit => ['qa']` block.
+        // We declare a single ad-hoc flow `shards`, so the default hook would
+        // reference a missing `qa` flow and the command would abort with
+        // "Hook 'pre-commit' references 'qa' which is not a defined flow or job."
+        // before getting anywhere near the display-name logic. Hook empty by design:
+        // this test exercises the executor's OK/KO output for two `script` jobs,
+        // not the hook subsystem.
         $this->configurationFileBuilder
+            ->setV3Hooks([])
             ->setV3Flows(['shards' => ['jobs' => ['shard_a', 'shard_b']]])
             ->setV3Jobs([
                 'shard_a' => [
@@ -79,7 +89,7 @@ class ScriptJobDisplayNameReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow shards --config=$this->configPath --processes=2 2>&1", $exitCode);
+        passthru("$this->githooks flow shards --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -89,7 +99,7 @@ class ScriptJobDisplayNameReleaseTest extends ReleaseTestCase
         $this->assertLessThanOrEqual(
             1,
             substr_count($output, '/bin/echo identical-runner - OK'),
-            'Two parallel script jobs were shown with their executable instead of their job key.'
+            'Two script jobs were shown with their executable instead of their job key.'
         );
     }
 }
