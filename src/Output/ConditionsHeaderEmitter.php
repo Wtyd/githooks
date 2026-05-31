@@ -33,9 +33,11 @@ use Wtyd\GitHooks\Execution\InputFilesResolution;
  *
  * Output channel:
  *  - `--format=text` (default): stdout via `$output->writeln()`.
- *  - structured + `--show-progress`: stderr via `getErrorStyle()` when the
- *    output is a SymfonyStyle; otherwise silent (test buffer).
- *  - structured without --show-progress: silent (would corrupt stdout payload).
+ *  - clean-stdout formats (structured + `claude-code`) with `--show-progress`:
+ *    stderr via `getErrorStyle()` when the output is a SymfonyStyle; otherwise
+ *    silent (test buffer).
+ *  - clean-stdout formats without --show-progress: silent (would corrupt the
+ *    stdout payload).
  */
 class ConditionsHeaderEmitter
 {
@@ -200,9 +202,9 @@ class ConditionsHeaderEmitter
      * Decide where the header lines go (or return null to suppress).
      *
      *  - text format: stdout via the OutputInterface.
-     *  - structured + --show-progress on a SymfonyStyle: stderr via getErrorStyle().
-     *  - structured without --show-progress: null (stdout would corrupt JSON/JUnit).
-     *  - structured + --show-progress on a non-SymfonyStyle output: null
+     *  - clean-stdout (structured + claude-code) + --show-progress on a SymfonyStyle: stderr via getErrorStyle().
+     *  - clean-stdout without --show-progress: null (stdout would corrupt the payload).
+     *  - clean-stdout + --show-progress on a non-SymfonyStyle output: null
      *    (test buffer / minimal output — matches the pre-refactor trait
      *    behaviour because the trait's resolveHeaderChannel relied on
      *    `getOutput()->getErrorStyle()` which only existed on SymfonyStyle).
@@ -212,9 +214,9 @@ class ConditionsHeaderEmitter
      */
     private function resolveSink(HeaderOptions $options, OutputInterface $output): ?OutputInterface
     {
-        $isStructured = in_array($options->format, OutputFormats::STRUCTURED, true);
-
-        if (!$isStructured) {
+        // claude-code shares the structured formats' clean-stdout contract: the
+        // header must never reach stdout, only stderr (and only with progress).
+        if (!OutputFormats::hasCleanStdout($options->format)) {
             return $output;
         }
 

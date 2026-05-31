@@ -21,6 +21,7 @@ Practical recipes for common scenarios. Each guide stands alone — read the one
 |---|---|
 | [CI/CD Integration](ci-cd.md) | You are wiring GitHooks into GitHub Actions, GitLab CI, or any pipeline. Includes JUnit / SARIF / Code Climate report integration and CI annotations. |
 | [Output Formats](output-formats.md) | You need JSON v2, JUnit, SARIF or Code Climate output for an automation, IDE or CI dashboard. |
+| [AI Agent Hooks (Claude Code)](ai-hooks.md) | You want to wire GitHooks as the *stop hook* of an AI coding agent so failing QA blocks the agent with a readable reason instead of shipping broken code. |
 
 ## Sharing configuration across environments
 

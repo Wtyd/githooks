@@ -45,7 +45,7 @@ class JobCommand extends Command
                             {name : The job to execute}
                             {--fail-fast : Stop on failure}
                             {--ignore-errors-on-exit : Continue even if the job fails}
-                            {--format= : Output format (text, json, junit, codeclimate, sarif)}
+                            {--format= : Output format (text, json, junit, codeclimate, sarif, claude-code)}
                             {--output= : Write the structured payload to PATH (default: stdout)}
                             {--report-json= : Also write a JSON v2 report to PATH}
                             {--report-junit= : Also write a JUnit XML report to PATH}

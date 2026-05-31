@@ -41,7 +41,7 @@ class FlowCommand extends Command
                             {--processes= : Number of parallel processes}
                             {--exclude-jobs= : Comma-separated list of jobs to skip}
                             {--only-jobs= : Comma-separated list of jobs to run (others skipped)}
-                            {--format= : Output format (text, json, junit, codeclimate, sarif)}
+                            {--format= : Output format (text, json, junit, codeclimate, sarif, claude-code)}
                             {--output= : Write the structured payload to PATH (default: stdout)}
                             {--report-json= : Also write a JSON v2 report to PATH}
                             {--report-junit= : Also write a JUnit XML report to PATH}

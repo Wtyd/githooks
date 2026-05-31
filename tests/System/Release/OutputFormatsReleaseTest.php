@@ -60,6 +60,56 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
         $this->assertFalse($job['fixApplied']);
     }
 
+    /**
+     * FEAT-15 — `--format=claude-code` emits the Claude Code stop-hook protocol
+     * straight from the embedded .phar: a failing flow must print a parseable
+     * `{"decision":"block","reason":…}` to stdout AND exit 0 (the protocol only
+     * honours the JSON on a zero exit). This guards the contract end-to-end so a
+     * regression in the build/embed would fail here.
+     *
+     * @test
+     */
+    public function claude_code_format_blocks_with_exit_0_on_failure(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['fail_job']]])
+            ->setV3Jobs([
+                'fail_job' => ['type' => 'custom', 'script' => 'echo "boom" && exit 1'],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --format=claude-code --config=$this->configPath 2>/dev/null", $exitCode);
+
+        $this->assertSame(0, $exitCode, 'claude-code must exit 0 even when a job fails');
+
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded, 'stdout must be a single parseable JSON object');
+        $this->assertSame('block', $decoded['decision']);
+        $this->assertNotEmpty($decoded['reason']);
+        $this->assertStringContainsString('fail_job', $decoded['reason']);
+    }
+
+    /**
+     * FEAT-15 — a passing flow must produce no stdout (and exit 0) so the stop
+     * hook stays silent and the agent is not blocked.
+     *
+     * @test
+     */
+    public function claude_code_format_is_silent_on_success(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
+            ->setV3Jobs([
+                'ok_job' => ['type' => 'custom', 'script' => 'true'],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --format=claude-code --config=$this->configPath 2>/dev/null", $exitCode);
+
+        $this->assertSame(0, $exitCode);
+        $this->assertSame('', trim($this->getActualOutput()), 'stdout must be empty on success');
+    }
+
     /** @test */
     public function codeclimate_format_emits_valid_json_array_to_stdout(): void
     {

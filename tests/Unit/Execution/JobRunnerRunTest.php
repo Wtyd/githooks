@@ -101,6 +101,24 @@ class JobRunnerRunTest extends TestCase
         $this->assertSame(1, $exit);
     }
 
+    /** @test FEAT-15: claude-code keeps exit 0 even when the job fails (stop-hook contract). */
+    public function claude_code_format_returns_zero_even_when_executor_fails(): void
+    {
+        $parser = $this->fakeParser(fn() => $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]));
+        $executor = $this->createMock(FlowExecutor::class);
+        $executor->expects($this->once())
+            ->method('execute')
+            ->willReturn($this->failedResult());
+
+        $exit = $this->makeRunner($parser, $executor)->run(
+            $this->req(['jobName' => 'phpcs_src']),
+            new RoutingBufferedOutput(),
+            new RenderOptions('claude-code', null, false, false, false, [])
+        );
+
+        $this->assertSame(0, $exit);
+    }
+
     /** @test */
     public function dry_run_flag_propagates_to_the_executor(): void
     {

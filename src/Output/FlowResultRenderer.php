@@ -75,9 +75,12 @@ class FlowResultRenderer
             $format = 'text';
         }
 
-        $isStructured = in_array($format, OutputFormats::STRUCTURED, true);
+        // claude-code is stdout-only like the structured formats: progress goes
+        // to stderr and the final payload is the only thing on stdout, so it
+        // shares their handler and skips the CI ANSI decorator (FEAT-15).
+        $cleanStdout = OutputFormats::hasCleanStdout($format);
 
-        if ($isStructured) {
+        if ($cleanStdout) {
             $handler = $this->resolveProgressHandler($options);
         } elseif (
             $plan === null
@@ -95,8 +98,8 @@ class FlowResultRenderer
             $executor->setStructuredFormat(true);
         }
 
-        // CI decorator only for text format — structured formats write clean output
-        if (!$isStructured) {
+        // CI decorator only for text format — clean-stdout formats write raw output
+        if (!$cleanStdout) {
             $handler = $this->wrapWithCIDecorator($handler, $options);
         }
         $executor->setOutputHandler($handler);
@@ -220,6 +223,16 @@ class FlowResultRenderer
         OutputInterface $output
     ): void {
         $format = $options->format;
+
+        // FEAT-15: the AI stop-hook payload is stdout-only and never produces
+        // report files — emit it (silent on success) and return early.
+        if ($format === OutputFormats::CLAUDE_CODE) {
+            $payload = (new ClaudeCodeResultFormatter())->format($result);
+            if ($payload !== '') {
+                $output->writeln($payload);
+            }
+            return;
+        }
 
         if (in_array($format, OutputFormats::STRUCTURED, true)) {
             $this->writeStructuredPayload($this->formatterFor($format)->format($result), $options, $output);

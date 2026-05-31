@@ -12,6 +12,7 @@ use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
 use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
 use Wtyd\GitHooks\Output\FlowResultRenderer;
 use Wtyd\GitHooks\Output\HeaderOptions;
+use Wtyd\GitHooks\Output\OutputFormats;
 use Wtyd\GitHooks\Output\RenderOptions;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
@@ -116,7 +117,7 @@ class JobRunner
 
             $this->renderer->renderFormattedResult($result, $plan->getOptions(), $renderOptions, $output);
 
-            return $result->isSuccess() ? 0 : 1;
+            return OutputFormats::exitCodeFor($renderOptions->format, $result->isSuccess());
         } catch (GitHooksExceptionInterface $e) {
             // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
             $this->emitStderr($output, $e->getMessage());

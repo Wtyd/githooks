@@ -1,6 +1,6 @@
 # Output Formats
 
-GitHooks supports five output formats: `text` (default), `json`, `junit`, `codeclimate` and `sarif`. All are available on both `flow` and `job` commands via `--format=FORMAT`.
+GitHooks supports six output formats: `text` (default), `json`, `junit`, `codeclimate`, `sarif` and `claude-code`. All are available on the `flow`, `flows` and `job` commands via `--format=FORMAT`.
 
 ## Text (default)
 
@@ -454,6 +454,18 @@ Upload to GitHub Code Scanning — the `--output` path must match the `sarif_fil
   with:
     sarif_file: githooks-results.sarif
 ```
+
+## Claude Code stop-hook
+
+`--format=claude-code` emits the Claude Code AI agent *stop-hook* protocol: empty stdout
+and exit 0 on success, a `{"decision":"block","reason":…}` JSON on failure (also exit 0, by
+protocol). It replaces the per-repo bash wrapper that AI integrations used to need.
+
+```bash
+githooks flow qa --fast-dirty --format=claude-code
+```
+
+See the dedicated guide: [AI Agent Hooks (Claude Code)](ai-hooks.md).
 
 ## Single job output
 

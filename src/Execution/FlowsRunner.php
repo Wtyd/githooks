@@ -14,6 +14,7 @@ use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
 use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
 use Wtyd\GitHooks\Output\FlowResultRenderer;
 use Wtyd\GitHooks\Output\HeaderOptions;
+use Wtyd\GitHooks\Output\OutputFormats;
 use Wtyd\GitHooks\Output\RenderOptions;
 use Wtyd\GitHooks\Utils\BranchResolution;
 use Wtyd\GitHooks\Utils\BranchResolver;
@@ -115,7 +116,7 @@ class FlowsRunner
                 $this->renderer->renderMonitorReport($result, $output);
             }
 
-            return $result->isSuccess() ? 0 : 1;
+            return OutputFormats::exitCodeFor($renderOptions->format, $result->isSuccess());
         } catch (GitHooksExceptionInterface $e) {
             $this->emitStderr($output, $e->getMessage());
             return 1;

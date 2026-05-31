@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.5]
+
+### Added
+
+- **`--format=claude-code` — native AI agent stop-hook output.** A new output format that emits the [Claude Code](https://claude.com/claude-code) stop-hook protocol directly, available on `flow`, `flows` and `job`. On success it prints nothing and exits 0; on a QA failure it prints a single `{"decision":"block","reason":"## job\n<output>…"}` JSON line **and still exits 0** — the stop-hook protocol only honours the block JSON on a zero exit, so a non-zero code would make the agent surface stderr and confuse it with a native block. The `reason` aggregates the plain-text output of every failed job (ANSI stripped, JSON-escaped) under a Markdown `## <jobName>` heading. A genuine configuration error (bad config, undefined flow) still exits 1. This pairs with `--fast-dirty` (3.4) — the working-tree *input* mode designed for AI agents — to close the loop end to end and replaces the per-repo bash wrapper that integrations previously needed. The format is named after its consumer; other agents will get their own opt-in `--format=<agent>` value when their protocols stabilise. See [AI Agent Hooks (Claude Code)](how-to/ai-hooks.md).
+
 ## [3.4.1]
 
 ### Fixed

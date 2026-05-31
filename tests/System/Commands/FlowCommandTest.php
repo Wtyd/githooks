@@ -236,6 +236,36 @@ class FlowCommandTest extends SystemTestCase
             ->assertExitCode(1);
     }
 
+    /** @test FEAT-15: claude-code blocks a failing flow via stdout JSON but exits 0. */
+    public function it_emits_block_json_with_exit_0_on_failure_in_claude_code_format()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['failing_job']]])
+            ->setV3Jobs([
+                'failing_job' => ['type' => 'custom', 'script' => '/bin/false'],
+            ])
+            ->buildInFileSystem();
+
+        // The job fails, yet the stop-hook protocol requires exit 0 so the
+        // JSON is honoured (a non-zero exit would surface stderr instead).
+        $this->artisan("flow qa --format=claude-code --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->containsStringInOutput = ['"decision":"block"', '"reason"', '## failing_job'];
+        // stdout must stay a clean JSON payload — the conditions header must not leak.
+        $this->notContainsStringInOutput = ['Settings:'];
+    }
+
+    /** @test FEAT-15: claude-code is silent on success so the agent is not blocked. */
+    public function it_is_silent_with_exit_0_on_success_in_claude_code_format()
+    {
+        $this->artisan("flow qa --format=claude-code --config=$this->configPath")
+            ->assertExitCode(0);
+
+        $this->notContainsStringInOutput = ['decision', 'block'];
+    }
+
     /** @test */
     public function returns_exit_1_when_config_has_validation_errors()
     {
@@ -358,10 +388,11 @@ class FlowCommandTest extends SystemTestCase
             ])
             ->buildInFileSystem();
 
-        $fileUtils = $this->app->make(FileUtilsInterface::class);
-        if ($fileUtils instanceof FileUtilsFake) {
-            $fileUtils->setModifiedfiles(['tests/FooTest.php']);
-        }
+        // Empty change set → fast mode has nothing to validate, so the
+        // accelerable job is skipped and the handler emits the `⏩` notice.
+        // Driven through an injected fake so the result is deterministic and
+        // independent of the real git index (e.g. when running inside a hook).
+        $this->driveFlowRunnerWithStagedFiles([]);
 
         // Text format: the streaming handler emits `⏩ jobname (reason)`, which is
         // enough feedback — the command must not duplicate it via its own echo.
@@ -532,5 +563,44 @@ class FlowCommandTest extends SystemTestCase
 
         $this->containsStringInOutput = ['flow', 'does not support', '--'];
         $this->notContainsStringInOutput = ['Settings:'];
+    }
+
+    /**
+     * Drive the `flow` command's FlowRunner with a FileUtilsFake exposing the
+     * given staged file set.
+     *
+     * FlowCommand is resolved once during bootstrap with the production
+     * FileUtils, so binding a fake in a test never reaches its FlowRunner
+     * through the container — the fast/branch/dirty file resolution would fall
+     * through to the real git index and make the test non-deterministic (it
+     * would only pass with an empty index, e.g. break inside a commit hook).
+     * Build a FlowRunner wired to the fake and swap it into the already-resolved
+     * command so the change set is fully controlled by the test.
+     *
+     * @param string[] $stagedFiles
+     */
+    private function driveFlowRunnerWithStagedFiles(array $stagedFiles): void
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles($stagedFiles);
+
+        $runner = new \Wtyd\GitHooks\Execution\FlowRunner(
+            $this->app->make(\Wtyd\GitHooks\Configuration\ConfigurationParser::class),
+            $this->app->make(\Wtyd\GitHooks\Execution\FlowPreparer::class),
+            $fileUtils,
+            $this->app->make(\Wtyd\GitHooks\Execution\FlowExecutor::class),
+            new \Wtyd\GitHooks\Output\FlowResultRenderer($this->app),
+            $this->app->make(\Wtyd\GitHooks\Output\ConditionsHeaderEmitter::class),
+            $this->app->make(\Wtyd\GitHooks\Output\ConfigWarningsEmitter::class)
+        );
+
+        $kernel = $this->app->make(\Illuminate\Contracts\Console\Kernel::class);
+        $getArtisan = new \ReflectionMethod($kernel, 'getArtisan');
+        $getArtisan->setAccessible(true);
+        $command = $getArtisan->invoke($kernel)->find('flow');
+
+        $runnerProperty = new \ReflectionProperty($command, 'runner');
+        $runnerProperty->setAccessible(true);
+        $runnerProperty->setValue($command, $runner);
     }
 }

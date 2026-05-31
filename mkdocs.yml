@@ -146,6 +146,7 @@ nav:
     - Frontend Tools: how-to/frontend-tools.md
     - Job Inheritance: how-to/job-inheritance.md
     - Output Formats: how-to/output-formats.md
+    - AI Agent Hooks (Claude Code): how-to/ai-hooks.md
     - Docker & Local Override: how-to/docker-local-override.md
     - Automating Hook Installation: how-to/automate-install.md
   - Migration:

@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\Output;
 
 use Wtyd\GitHooks\Configuration\Deprecation;
 use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\GitHooks\Output\Concerns\StripsAnsi;
 use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\InputFilesResolution;
@@ -16,6 +17,8 @@ use Wtyd\GitHooks\Execution\TimeBudgetState;
 
 class JsonResultFormatter implements ResultFormatter
 {
+    use StripsAnsi;
+
     public function format(FlowResult $result): string
     {
         $jobs = array_map(function (JobResult $job): array {
@@ -173,11 +176,6 @@ class JsonResultFormatter implements ResultFormatter
             'warned'           => $state->isWarned(),
             'failed'           => $state->isFailed(),
         ];
-    }
-
-    private function stripAnsi(string $text): string
-    {
-        return (string) preg_replace('/\x1B(?:\[[0-9;]*[A-Za-z]|\][^\x07]*\x07)|\r/', '', $text);
     }
 
     /**
