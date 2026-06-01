@@ -72,15 +72,12 @@ class JobCommand extends Command
 
     protected $description = 'Execute a single job defined in the configuration file';
 
-    private JobRunner $runner;
-
     private InputFilesResolver $inputFilesResolver;
 
-    public function __construct(JobRunner $runner, InputFilesResolver $inputFilesResolver)
+    public function __construct(InputFilesResolver $inputFilesResolver)
     {
         parent::__construct();
         $this->ignoreValidationErrors();
-        $this->runner = $runner;
         $this->inputFilesResolver = $inputFilesResolver;
     }
 
@@ -104,7 +101,10 @@ class JobCommand extends Command
             return 1;
         }
 
-        return $this->runner->run($request, $this->output, $this->buildRenderOptions());
+        // Lazy runner resolution (see FlowCommand) so test container rebinds of
+        // FileUtilsInterface reach JobRunner's FileUtils at execution time.
+        return $this->getLaravel()->make(JobRunner::class)
+            ->run($request, $this->output, $this->buildRenderOptions());
     }
 
     private function buildRunRequest(): JobRunRequest

@@ -77,15 +77,12 @@ class FlowsCommand extends Command
 
     protected $description = 'Execute several flows (or a declarative meta-flow) as a single plan';
 
-    private FlowsRunner $runner;
-
     private InputFilesResolver $inputFilesResolver;
 
-    public function __construct(FlowsRunner $runner, InputFilesResolver $inputFilesResolver)
+    public function __construct(InputFilesResolver $inputFilesResolver)
     {
         parent::__construct();
         $this->ignoreValidationErrors();
-        $this->runner = $runner;
         $this->inputFilesResolver = $inputFilesResolver;
     }
 
@@ -114,7 +111,10 @@ class FlowsCommand extends Command
             return 1;
         }
 
-        return $this->runner->run($request, $this->output, $this->buildRenderOptions());
+        // Lazy runner resolution (see FlowCommand) so test container rebinds of
+        // FileUtilsInterface reach FlowsRunner's FileUtils at execution time.
+        return $this->getLaravel()->make(FlowsRunner::class)
+            ->run($request, $this->output, $this->buildRenderOptions());
     }
 
     private function buildRunRequest(): FlowsRunRequest

@@ -71,15 +71,12 @@ class FlowCommand extends Command
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';
 
-    private FlowRunner $runner;
-
     private InputFilesResolver $inputFilesResolver;
 
-    public function __construct(FlowRunner $runner, InputFilesResolver $inputFilesResolver)
+    public function __construct(InputFilesResolver $inputFilesResolver)
     {
         parent::__construct();
         $this->ignoreValidationErrors();
-        $this->runner = $runner;
         $this->inputFilesResolver = $inputFilesResolver;
     }
 
@@ -108,7 +105,13 @@ class FlowCommand extends Command
             return 1;
         }
 
-        return $this->runner->run($request, $this->output, $this->buildRenderOptions());
+        // Resolve the runner lazily (not via constructor) so the container
+        // bindings active at execution time win — e.g. a test re-binding
+        // FileUtilsInterface in setUp reaches FlowRunner's FileUtils. With
+        // constructor injection the command is built at bootstrap and would
+        // capture the production FileUtils, ignoring later test rebinds.
+        return $this->getLaravel()->make(FlowRunner::class)
+            ->run($request, $this->output, $this->buildRenderOptions());
     }
 
     private function buildRunRequest(): FlowRunRequest
