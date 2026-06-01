@@ -25,27 +25,24 @@ class FlowCommandTest extends SystemTestCase
     public function it_runs_a_flow_with_all_jobs_passing()
     {
         $this->artisan("flow qa --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['passed'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('passed');
     }
 
     /** @test */
     public function it_shows_error_for_undefined_flow()
     {
         $this->artisan("flow nonexistent --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['is not defined'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('is not defined');
     }
 
     /** @test */
     public function it_shows_available_flows_when_undefined()
     {
         $this->artisan("flow nonexistent --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['Available flows'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('Available flows');
     }
 
     /** @test */
@@ -56,9 +53,8 @@ class FlowCommandTest extends SystemTestCase
         $legacyBuilder->buildInFileSystem();
 
         $this->artisan("flow qa --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['requires v3'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('requires v3');
     }
 
     /** @test */
@@ -93,9 +89,8 @@ class FlowCommandTest extends SystemTestCase
             ->buildInFileSystem();
 
         $this->artisan("flow qa --fail-fast --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['skipped by fail-fast'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('skipped by fail-fast');
     }
 
     /** @test */
@@ -118,18 +113,19 @@ class FlowCommandTest extends SystemTestCase
     public function it_supports_json_output_format()
     {
         $this->artisan("flow qa --format=json --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['"flow"', '"success"', '"jobs"'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('"flow"')
+            ->containsStringInOutput('"success"')
+            ->containsStringInOutput('"jobs"');
     }
 
     /** @test */
     public function it_supports_junit_output_format()
     {
         $this->artisan("flow qa --format=junit --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['<?xml', 'testsuite'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('<?xml')
+            ->containsStringInOutput('testsuite');
     }
 
     /** @test */
@@ -140,9 +136,8 @@ class FlowCommandTest extends SystemTestCase
 
         try {
             $this->artisan("flow qa --format=codeclimate --config=$this->configPath")
-                ->assertExitCode(0);
-
-            $this->containsStringInOutput = ['['];
+                ->assertExitCode(0)
+                ->containsStringInOutput('[');
             $this->assertFileDoesNotExist($defaultPath, 'no magic default file should be created');
         } finally {
             @unlink($defaultPath);
@@ -176,9 +171,9 @@ class FlowCommandTest extends SystemTestCase
 
         try {
             $this->artisan("flow qa --format=sarif --config=$this->configPath")
-                ->assertExitCode(0);
-
-            $this->containsStringInOutput = ['2.1.0', 'runs'];
+                ->assertExitCode(0)
+                ->containsStringInOutput('2.1.0')
+                ->containsStringInOutput('runs');
             $this->assertFileDoesNotExist($defaultPath, 'no magic default file should be created');
         } finally {
             @unlink($defaultPath);
@@ -207,18 +202,16 @@ class FlowCommandTest extends SystemTestCase
     public function it_warns_on_unknown_format_and_falls_back_to_text()
     {
         $this->artisan("flow qa --format=xml --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ["Unknown format 'xml'"];
+            ->assertExitCode(0)
+            ->containsStringInOutput("Unknown format 'xml'");
     }
 
     /** @test */
     public function it_shows_monitor_report()
     {
         $this->artisan("flow qa --monitor --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['Thread monitor'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('Thread monitor');
     }
 
     /** @test */
@@ -249,21 +242,22 @@ class FlowCommandTest extends SystemTestCase
 
         // The job fails, yet the stop-hook protocol requires exit 0 so the
         // JSON is honoured (a non-zero exit would surface stderr instead).
-        $this->artisan("flow qa --format=claude-code --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['"decision":"block"', '"reason"', '## failing_job'];
         // stdout must stay a clean JSON payload — the conditions header must not leak.
-        $this->notContainsStringInOutput = ['Settings:'];
+        $this->artisan("flow qa --format=claude-code --config=$this->configPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput('"decision":"block"')
+            ->containsStringInOutput('"reason"')
+            ->containsStringInOutput('## failing_job')
+            ->notContainsStringInOutput('Settings:');
     }
 
     /** @test FEAT-15: claude-code is silent on success so the agent is not blocked. */
     public function it_is_silent_with_exit_0_on_success_in_claude_code_format()
     {
         $this->artisan("flow qa --format=claude-code --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->notContainsStringInOutput = ['decision', 'block'];
+            ->assertExitCode(0)
+            ->notContainsStringInOutput('decision')
+            ->notContainsStringInOutput('block');
     }
 
     /** @test */
@@ -341,16 +335,15 @@ class FlowCommandTest extends SystemTestCase
             ])
             ->buildInFileSystem();
 
-        // Staged files that don't match the job's paths
-        $fileUtils = $this->app->make(FileUtilsInterface::class);
-        if ($fileUtils instanceof FileUtilsFake) {
-            $fileUtils->setModifiedfiles(['tests/FooTest.php']);
-        }
+        // Staged files that don't match the job's paths. Bind a configured fake
+        // instance so it reaches the lazily resolved FlowRunner.
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['tests/FooTest.php']);
+        $this->app->instance(FileUtilsInterface::class, $fileUtils);
 
         $this->artisan("flow qa --fast --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['skipped'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('no staged files match its paths');
     }
 
     /** @test */
@@ -390,9 +383,11 @@ class FlowCommandTest extends SystemTestCase
 
         // Empty change set → fast mode has nothing to validate, so the
         // accelerable job is skipped and the handler emits the `⏩` notice.
-        // Driven through an injected fake so the result is deterministic and
-        // independent of the real git index (e.g. when running inside a hook).
-        $this->driveFlowRunnerWithStagedFiles([]);
+        // Bind an explicit empty fake instance so the (lazily resolved) FlowRunner
+        // sees it — deterministic, independent of the real git index (e.g. in a hook).
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles([]);
+        $this->app->instance(FileUtilsInterface::class, $fileUtils);
 
         // Text format: the streaming handler emits `⏩ jobname (reason)`, which is
         // enough feedback — the command must not duplicate it via its own echo.
@@ -517,10 +512,9 @@ class FlowCommandTest extends SystemTestCase
     public function unknown_long_option_with_value_returns_exit_1_and_does_not_execute(): void
     {
         $this->artisan("flow qa --foo=bar --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['--foo'];
-        $this->notContainsStringInOutput = ['Settings:'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('--foo')
+            ->notContainsStringInOutput('Settings:');
     }
 
     /**
@@ -531,9 +525,8 @@ class FlowCommandTest extends SystemTestCase
     public function unknown_short_option_returns_exit_1(): void
     {
         $this->artisan("flow qa -x --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->notContainsStringInOutput = ['Settings:'];
+            ->assertExitCode(1)
+            ->notContainsStringInOutput('Settings:');
     }
 
     /**
@@ -545,9 +538,8 @@ class FlowCommandTest extends SystemTestCase
     public function multiple_unknown_options_return_exit_1(): void
     {
         $this->artisan("flow qa --foo --bar --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->notContainsStringInOutput = ['Settings:'];
+            ->assertExitCode(1)
+            ->notContainsStringInOutput('Settings:');
     }
 
     /**
@@ -559,48 +551,10 @@ class FlowCommandTest extends SystemTestCase
     public function dash_dash_separator_is_rejected_with_custom_message(): void
     {
         $this->artisan("flow qa --config=$this->configPath -- something")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['flow', 'does not support', '--'];
-        $this->notContainsStringInOutput = ['Settings:'];
-    }
-
-    /**
-     * Drive the `flow` command's FlowRunner with a FileUtilsFake exposing the
-     * given staged file set.
-     *
-     * FlowCommand is resolved once during bootstrap with the production
-     * FileUtils, so binding a fake in a test never reaches its FlowRunner
-     * through the container — the fast/branch/dirty file resolution would fall
-     * through to the real git index and make the test non-deterministic (it
-     * would only pass with an empty index, e.g. break inside a commit hook).
-     * Build a FlowRunner wired to the fake and swap it into the already-resolved
-     * command so the change set is fully controlled by the test.
-     *
-     * @param string[] $stagedFiles
-     */
-    private function driveFlowRunnerWithStagedFiles(array $stagedFiles): void
-    {
-        $fileUtils = new FileUtilsFake();
-        $fileUtils->setModifiedfiles($stagedFiles);
-
-        $runner = new \Wtyd\GitHooks\Execution\FlowRunner(
-            $this->app->make(\Wtyd\GitHooks\Configuration\ConfigurationParser::class),
-            $this->app->make(\Wtyd\GitHooks\Execution\FlowPreparer::class),
-            $fileUtils,
-            $this->app->make(\Wtyd\GitHooks\Execution\FlowExecutor::class),
-            new \Wtyd\GitHooks\Output\FlowResultRenderer($this->app),
-            $this->app->make(\Wtyd\GitHooks\Output\ConditionsHeaderEmitter::class),
-            $this->app->make(\Wtyd\GitHooks\Output\ConfigWarningsEmitter::class)
-        );
-
-        $kernel = $this->app->make(\Illuminate\Contracts\Console\Kernel::class);
-        $getArtisan = new \ReflectionMethod($kernel, 'getArtisan');
-        $getArtisan->setAccessible(true);
-        $command = $getArtisan->invoke($kernel)->find('flow');
-
-        $runnerProperty = new \ReflectionProperty($command, 'runner');
-        $runnerProperty->setAccessible(true);
-        $runnerProperty->setValue($command, $runner);
+            ->assertExitCode(1)
+            ->containsStringInOutput('flow')
+            ->containsStringInOutput('does not support')
+            ->containsStringInOutput('--')
+            ->notContainsStringInOutput('Settings:');
     }
 }

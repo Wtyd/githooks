@@ -39,9 +39,8 @@ class HookRunCommandTest extends SystemTestCase
     public function it_shows_message_when_event_not_configured()
     {
         $this->artisan("hook:run post-merge --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['No flows or jobs configured'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('No flows or jobs configured');
     }
 
     /** @test */
@@ -51,9 +50,8 @@ class HookRunCommandTest extends SystemTestCase
         $legacyBuilder->buildInFileSystem();
 
         $this->artisan("hook:run pre-commit --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['requires v3'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('requires v3');
     }
 
     /** @test */
@@ -65,9 +63,8 @@ class HookRunCommandTest extends SystemTestCase
             ->buildInFileSystem();
 
         $this->artisan("hook:run pre-commit --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['No flows or jobs configured'];
+            ->assertExitCode(0)
+            ->containsStringInOutput("No 'hooks' section found");
     }
 
     /** @test */

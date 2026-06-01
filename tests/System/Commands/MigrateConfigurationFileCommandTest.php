@@ -25,9 +25,8 @@ class MigrateConfigurationFileCommandTest extends SystemTestCase
         $legacyBuilder->buildInFileSystem();
 
         $this->artisan("conf:migrate --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['Migrated to v3'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('Migrated to v3');
     }
 
     /** @test */
@@ -48,9 +47,8 @@ class MigrateConfigurationFileCommandTest extends SystemTestCase
         $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem();
 
         $this->artisan("conf:migrate --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['already in v3 format'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('already in v3 format');
     }
 
     /** @test */
@@ -58,11 +56,11 @@ class MigrateConfigurationFileCommandTest extends SystemTestCase
     {
         file_put_contents($this->configPath, '<?php return [];');
 
-        $this->artisan("conf:migrate --config=$this->configPath")
-            ->assertExitCode(0);
-
         // Bug #11 fix: empty config now shows errors instead of "already v3"
-        $this->containsStringInOutput = ['has errors', 'jobs'];
+        $this->artisan("conf:migrate --config=$this->configPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput('has errors')
+            ->containsStringInOutput('jobs');
     }
 
     /** @test */

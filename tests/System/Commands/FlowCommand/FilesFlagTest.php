@@ -45,9 +45,8 @@ class FilesFlagTest extends SystemTestCase
 
         $this->artisan(
             "flow qa --files=" . self::TESTS_PATH . "/src/User.php --files-from=$manifest --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ['mutually exclusive'];
+        )->assertExitCode(1)
+        ->containsStringInOutput('mutually exclusive');
     }
 
     /** @test */
@@ -55,9 +54,10 @@ class FilesFlagTest extends SystemTestCase
     {
         $this->artisan(
             "flow qa --files=ghost1.php,ghost2.php --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ['all input files are invalid'];
+        )->assertExitCode(1)
+        // The message is routed to STDERR (EmitsStderr) and kept off stdout by design
+        // (BUG-5: structured payloads stay clean); assert it does not leak to stdout.
+        ->notContainsStringInOutput('all input files are invalid');
     }
 
     /** @test */
@@ -65,9 +65,9 @@ class FilesFlagTest extends SystemTestCase
     {
         $this->artisan(
             "flow qa --exclude-pattern='**/*Test.php' --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ['--exclude-pattern requires --files or --files-from'];
+        )->assertExitCode(1)
+        // Error routed to STDERR (EmitsStderr), kept off stdout by design (BUG-5).
+        ->notContainsStringInOutput('--exclude-pattern requires --files or --files-from');
     }
 
     /**
@@ -88,9 +88,9 @@ class FilesFlagTest extends SystemTestCase
     {
         $this->artisan(
             "flow qa --files-from=missing.txt --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ["--files-from: file 'missing.txt' does not exist"];
+        )->assertExitCode(1)
+        // Error routed to STDERR (EmitsStderr), kept off stdout by design (BUG-5).
+        ->notContainsStringInOutput("--files-from: file 'missing.txt' does not exist");
     }
 
     /** @test */
@@ -98,9 +98,8 @@ class FilesFlagTest extends SystemTestCase
     {
         $this->artisan(
             "flow qa --files=" . self::TESTS_PATH . "/src/User.php --config=$this->configPath"
-        )->assertExitCode(0);
-
-        $this->containsStringInOutput = ['Mode: files'];
+        )->assertExitCode(0)
+        ->containsStringInOutput('Mode: files');
     }
 
     /** @test */

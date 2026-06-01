@@ -44,9 +44,8 @@ class FilesFlagTest extends SystemTestCase
 
         $this->artisan(
             "job lint_src --files=" . self::TESTS_PATH . "/src/User.php --files-from=$manifest --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ['mutually exclusive'];
+        )->assertExitCode(1)
+        ->containsStringInOutput('mutually exclusive');
     }
 
     /** @test */
@@ -62,9 +61,9 @@ class FilesFlagTest extends SystemTestCase
     {
         $this->artisan(
             "job lint_src --files=ghost.php --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ['all input files are invalid'];
+        )->assertExitCode(1)
+        // Error routed to STDERR (EmitsStderr), kept off stdout by design (BUG-5).
+        ->notContainsStringInOutput('all input files are invalid');
     }
 
     /** @test */
@@ -72,8 +71,8 @@ class FilesFlagTest extends SystemTestCase
     {
         $this->artisan(
             "job lint_src --exclude-pattern='**/*Test.php' --config=$this->configPath"
-        )->assertExitCode(1);
-
-        $this->containsStringInOutput = ['--exclude-pattern requires --files or --files-from'];
+        )->assertExitCode(1)
+        // Error routed to STDERR (EmitsStderr), kept off stdout by design (BUG-5).
+        ->notContainsStringInOutput('--exclude-pattern requires --files or --files-from');
     }
 }

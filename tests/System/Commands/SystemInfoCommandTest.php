@@ -22,19 +22,24 @@ class SystemInfoCommandTest extends SystemTestCase
     public function it_shows_cpu_and_processes_info()
     {
         $this->artisan("system:info --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['Available CPUs', 'Configured processes'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('Available CPUs')
+            ->containsStringInOutput('Configured processes');
     }
 
     /** @test */
     public function it_shows_ok_when_processes_within_budget()
     {
-        $this->artisan("system:info --config=$this->configPath")
-            ->assertExitCode(0);
+        // processes=1 prints a "Tip" (under-utilising); the "OK" status needs
+        // 1 < processes <= cpus. Use 2 (every CI/dev box has >= 2 CPUs).
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 2])
+            ->buildInFileSystem();
 
-        // Default is processes=1, which is always within any CPU budget
-        $this->containsStringInOutput = ['OK'];
+        $this->artisan("system:info --config=$this->configPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput('OK');
     }
 
     /** @test */
@@ -46,9 +51,8 @@ class SystemInfoCommandTest extends SystemTestCase
             ->buildInFileSystem();
 
         $this->artisan("system:info --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['exceeds'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('exceeds');
     }
 
     /** @test */

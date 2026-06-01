@@ -25,18 +25,17 @@ class StatusCommandTest extends SystemTestCase
     public function it_shows_status_with_hooks_configured()
     {
         $this->artisan("status --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['GitHooks Status', 'pre-commit'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('GitHooks Status')
+            ->containsStringInOutput('pre-commit');
     }
 
     /** @test */
     public function it_shows_hooks_path_not_configured()
     {
         $this->artisan("status --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['not configured'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('not configured');
     }
 
     /** @test */
@@ -46,9 +45,8 @@ class StatusCommandTest extends SystemTestCase
         $legacyBuilder->buildInFileSystem();
 
         $this->artisan("status --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['requires v3'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('requires v3');
     }
 
     /** @test */
@@ -60,9 +58,8 @@ class StatusCommandTest extends SystemTestCase
             ->buildInFileSystem();
 
         $this->artisan("status --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['No hooks configured'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('No hooks configured');
     }
 
     /** @test */

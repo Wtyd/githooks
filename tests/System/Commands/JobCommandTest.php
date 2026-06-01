@@ -25,27 +25,24 @@ class JobCommandTest extends SystemTestCase
     public function it_runs_a_single_job_successfully()
     {
         $this->artisan("job phpcs_src --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['passed'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('passed');
     }
 
     /** @test */
     public function it_shows_error_for_undefined_job()
     {
         $this->artisan("job nonexistent --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['is not defined'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('is not defined');
     }
 
     /** @test */
     public function it_shows_available_jobs_when_undefined()
     {
         $this->artisan("job nonexistent --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['Available jobs'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('Available jobs');
     }
 
     /** @test */
@@ -55,27 +52,27 @@ class JobCommandTest extends SystemTestCase
         $legacyBuilder->buildInFileSystem();
 
         $this->artisan("job phpcs_src --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['requires v3'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('requires v3');
     }
 
     /** @test */
     public function it_supports_json_output_format()
     {
         $this->artisan("job phpcs_src --format=json --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['"flow"', '"success"', '"jobs"'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('"flow"')
+            ->containsStringInOutput('"success"')
+            ->containsStringInOutput('"jobs"');
     }
 
     /** @test */
     public function it_supports_junit_output_format()
     {
         $this->artisan("job phpcs_src --format=junit --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['<?xml', 'testsuite'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('<?xml')
+            ->containsStringInOutput('testsuite');
     }
 
     /** @test */
@@ -144,16 +141,15 @@ class JobCommandTest extends SystemTestCase
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
             ->buildInFileSystem();
 
-        $fileUtils = $this->app->make(FileUtilsInterface::class);
-        if ($fileUtils instanceof FileUtilsFake) {
-            $fileUtils->setModifiedfiles(['src/Modified.php']);
-            $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Modified.php']);
-        }
+        // Bind a configured fake instance so it reaches the lazily resolved JobRunner.
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Modified.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Modified.php']);
+        $this->app->instance(FileUtilsInterface::class, $fileUtils);
 
         $this->artisan("job lint_job --fast --dry-run --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['src/Modified.php'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('src/Modified.php');
     }
 
     /** @test */
@@ -185,10 +181,9 @@ class JobCommandTest extends SystemTestCase
     public function unknown_long_option_before_dashdash_returns_exit_1_without_losing_config(): void
     {
         $this->artisan("job phpcs_src --foo=bar --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['--foo'];
-        $this->notContainsStringInOutput = ['passed'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('--foo')
+            ->notContainsStringInOutput('passed');
     }
 
     /**
@@ -200,9 +195,8 @@ class JobCommandTest extends SystemTestCase
     public function unknown_option_before_dashdash_still_errors_when_passthrough_exists(): void
     {
         $this->artisan("job phpcs_src --foo=bar --config=$this->configPath -- --filter=X")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['--foo'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('--foo');
     }
 
     /**
@@ -213,9 +207,8 @@ class JobCommandTest extends SystemTestCase
     public function unknown_short_option_returns_exit_1(): void
     {
         $this->artisan("job phpcs_src -x --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->notContainsStringInOutput = ['passed'];
+            ->assertExitCode(1)
+            ->notContainsStringInOutput('passed');
     }
 
     /**

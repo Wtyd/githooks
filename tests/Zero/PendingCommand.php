@@ -492,9 +492,17 @@ class PendingCommand
 
         if (count($this->test->toolDidNotRun)) {
             foreach ($this->test->toolDidNotRun as $key => $tool) {
+                // "did not run" includes "was skipped": a skip notice names the tool
+                // but is not an execution. Strip the skip line before the substring
+                // check (now that the command's OutputInterface output is captured).
+                $withoutSkipNotice = (string) preg_replace(
+                    '/The tool ' . preg_quote($tool, '/') . ' was skipped\.?/',
+                    '',
+                    $this->capturedOutput
+                );
                 $this->test->assertStringNotContainsString(
                     $tool,
-                    $this->capturedOutput,
+                    $withoutSkipNotice,
                     "The tool $tool has been run"
                 );
                 unset($this->test->toolDidNotRun[$key]);
@@ -569,6 +577,17 @@ class PendingCommand
                     $this->test->unexpectedOutput[$output] = true;
                 });
         }
+
+        // Catch-all declared LAST so the specific expectsOutput()/doesntExpectOutput()
+        // expectations above match their exact lines first; every other write is echoed
+        // here so the command's OutputInterface output (summaries, JSON payloads, error
+        // lines via $output->writeln()) lands in the ob_start window in run() and the
+        // string assertions can see it. Without this the v3 renderer's Symfony output is
+        // swallowed and only the Printer's echo (per-job lines) is visible.
+        $mock->shouldReceive('doWrite')
+            ->andReturnUsing(function ($message, $newline) {
+                echo $message . ($newline ? PHP_EOL : '');
+            });
 
         return $mock;
     }

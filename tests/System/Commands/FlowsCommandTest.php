@@ -76,9 +76,8 @@ class FlowsCommandTest extends SystemTestCase
         $this->buildMultiFlowFixture();
 
         $this->artisan("flows qa --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['passed'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('passed');
     }
 
     /** @test */
@@ -285,9 +284,9 @@ class FlowsCommandTest extends SystemTestCase
         $this->buildMultiFlowFixture();
 
         $this->artisan("flows qa nope --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ["Flow 'nope' is not defined", 'Available flows'];
+            ->assertExitCode(1)
+            ->containsStringInOutput("Flow 'nope' is not defined")
+            ->containsStringInOutput('Available flows');
     }
 
     /** @test */
@@ -354,9 +353,8 @@ class FlowsCommandTest extends SystemTestCase
         $this->buildBranchDrivenFixture();
 
         $this->artisan("flows lint --branch=whatever --config=$this->configPath")
-            ->assertExitCode(0);
-
-        $this->containsStringInOutput = ['passed'];
+            ->assertExitCode(0)
+            ->containsStringInOutput('passed');
     }
 
     /** @test T5: `flows qa` resolves the same mode as `flow qa` (the documented equivalence) */
@@ -662,10 +660,9 @@ class FlowsCommandTest extends SystemTestCase
         $this->buildMultiFlowFixture();
 
         $this->artisan("flows qa --foo=bar --config=$this->configPath")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['--foo'];
-        $this->notContainsStringInOutput = ['Settings:'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('--foo')
+            ->notContainsStringInOutput('Settings:');
     }
 
     /**
@@ -678,9 +675,10 @@ class FlowsCommandTest extends SystemTestCase
         $this->buildMultiFlowFixture();
 
         $this->artisan("flows qa --config=$this->configPath -- something")
-            ->assertExitCode(1);
-
-        $this->containsStringInOutput = ['flows', 'does not support', '--'];
-        $this->notContainsStringInOutput = ['Settings:'];
+            ->assertExitCode(1)
+            ->containsStringInOutput('flows')
+            ->containsStringInOutput('does not support')
+            ->containsStringInOutput('--')
+            ->notContainsStringInOutput('Settings:');
     }
 }
