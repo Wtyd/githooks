@@ -244,7 +244,12 @@ class FileUtilsTest extends ZeroTestCase
         $this->assertSame('gh-base', (new FileUtils())->detectMainBranch());
     }
 
-    /** @test */
+    /**
+     * Integration: inits a real git repo on disk (initGitRepoWithMainBranch).
+     *
+     * @test
+     * @group git
+     */
     function detectMainBranch_returns_branch_from_git_symbolic_ref()
     {
         $this->clearCiVars();
@@ -257,7 +262,12 @@ class FileUtilsTest extends ZeroTestCase
         $this->assertSame('custom-main', (new FileUtils())->detectMainBranch());
     }
 
-    /** @test */
+    /**
+     * Integration: inits a real git repo on disk (initGitRepoWithMainBranch).
+     *
+     * @test
+     * @group git
+     */
     function detectMainBranch_falls_back_to_master_when_no_ci_and_no_symbolic_ref()
     {
         $this->clearCiVars();
@@ -266,7 +276,12 @@ class FileUtilsTest extends ZeroTestCase
         $this->assertSame('master', (new FileUtils())->detectMainBranch());
     }
 
-    /** @test */
+    /**
+     * Integration: inits a real git repo on disk (initGitRepoWithMainBranch).
+     *
+     * @test
+     * @group git
+     */
     function detectMainBranch_falls_back_to_main_when_master_not_present()
     {
         $this->clearCiVars();
@@ -275,7 +290,12 @@ class FileUtilsTest extends ZeroTestCase
         $this->assertSame('main', (new FileUtils())->detectMainBranch());
     }
 
-    /** @test */
+    /**
+     * Integration: creates a temp dir, isolates git env and shells out to git.
+     *
+     * @test
+     * @group git
+     */
     function detectMainBranch_returns_null_when_no_detection_succeeds()
     {
         $this->clearCiVars();
