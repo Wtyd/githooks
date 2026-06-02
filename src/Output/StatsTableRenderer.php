@@ -33,7 +33,7 @@ use Wtyd\GitHooks\Execution\Memory\MemoryStats;
  */
 final class StatsTableRenderer
 {
-    public function render(OutputInterface $output, FlowResult $result): void
+    public function render(OutputInterface $output, FlowResult $result, string $sortMode = RenderOptions::STATS_SORT_EXEC): void
     {
         $stats = $result->getMemoryStats();
         if ($stats === null) {
@@ -41,25 +41,34 @@ final class StatsTableRenderer
         }
 
         $output->writeln('');
-        $this->renderTable($output, $result, $stats);
+        $this->renderTable($output, $result, $stats, $sortMode);
         $this->renderAttribution($output, $stats);
     }
 
-    private function renderTable(OutputInterface $output, FlowResult $result, MemoryStats $stats): void
+    private function renderTable(OutputInterface $output, FlowResult $result, MemoryStats $stats, string $sortMode): void
     {
+        // FEAT-4: by default the table follows completion order (exec). With
+        // name/type it is reordered for scannability and a leading `#` column
+        // keeps the execution order visible.
+        $showOrder = $sortMode !== RenderOptions::STATS_SORT_EXEC;
+        $rows = $this->orderedRows($result->getJobResults(), $sortMode);
+
         $table = new Table($output);
-        $table->setHeaders(['Job', 'Status', 'Time', 'Peak Cores', 'Peak Memory']);
+        $headers = ['Job', 'Status', 'Time', 'Peak Cores', 'Peak Memory'];
+        $table->setHeaders($showOrder ? array_merge(['#'], $headers) : $headers);
 
         $coresLimit = $stats->getCoresLimit();
 
-        foreach ($result->getJobResults() as $job) {
-            $table->addRow([
+        foreach ($rows as $entry) {
+            $job = $entry['job'];
+            $cells = [
                 $job->getJobName(),
                 $this->renderJobStatus($job),
                 $this->renderJobTime($job),
                 $this->renderJobCores($job, $stats),
                 $this->renderJobMemory($job, $stats),
-            ]);
+            ];
+            $table->addRow($showOrder ? array_merge([(string) $entry['order']], $cells) : $cells);
         }
 
         $table->addRow(new TableSeparator());
@@ -69,15 +78,46 @@ final class StatsTableRenderer
         $totalCell = $isOk
             ? "<fg=green>$passed/$total ✔</>"
             : "<fg=red>$passed/$total ✗</>";
-        $table->addRow([
+        $totalCells = [
             'TOTAL (flow)',
             $totalCell,
             $result->getTotalTime(),
             $stats->getCoresPeak() . '/' . $coresLimit,
             $stats->isSamplerActive() ? $stats->getMemoryPeak() . ' MB' : 'n/a',
-        ]);
+        ];
+        $table->addRow($showOrder ? array_merge(['-'], $totalCells) : $totalCells);
 
         $table->render();
+    }
+
+    /**
+     * Pair each job with its 1-based execution order (its position in the
+     * result list) and, for name/type sorts, reorder a copy without losing
+     * that order. The execution-order tie-break keeps the result deterministic
+     * on PHP 7.4, whose usort is not stable.
+     *
+     * @param JobResult[] $jobResults
+     * @return array<int, array{order: int, job: JobResult}>
+     */
+    private function orderedRows(array $jobResults, string $sortMode): array
+    {
+        $rows = [];
+        foreach (array_values($jobResults) as $index => $job) {
+            $rows[] = ['order' => $index + 1, 'job' => $job];
+        }
+
+        if ($sortMode === RenderOptions::STATS_SORT_NAME) {
+            usort($rows, function (array $left, array $right): int {
+                return [$left['job']->getJobName(), $left['order']] <=> [$right['job']->getJobName(), $right['order']];
+            });
+        } elseif ($sortMode === RenderOptions::STATS_SORT_TYPE) {
+            usort($rows, function (array $left, array $right): int {
+                return [$left['job']->getType(), $left['job']->getJobName(), $left['order']]
+                    <=> [$right['job']->getType(), $right['job']->getJobName(), $right['order']];
+            });
+        }
+
+        return $rows;
     }
 
     /**

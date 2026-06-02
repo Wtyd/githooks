@@ -9,6 +9,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Execution\Memory\MemoryStats;
+use Wtyd\GitHooks\Output\RenderOptions;
 use Wtyd\GitHooks\Output\StatsTableRenderer;
 
 class StatsTableRendererTest extends TestCase
@@ -278,6 +279,91 @@ class StatsTableRendererTest extends TestCase
     private function buildEmptyStats(): MemoryStats
     {
         return new MemoryStats(true, 100, 0.5, ['a' => 100], ['a' => 100], 4, 1, 0.5, ['a'], ['a' => 1]);
+    }
+
+    // ---------------------------------------------------------------------
+    // FEAT-4: stats table sort modes
+    // ---------------------------------------------------------------------
+
+    /** @test FEAT-4 */
+    public function exec_sort_is_the_default_and_omits_the_order_column(): void
+    {
+        $result = $this->multiJobResult([
+            ['name' => 'zeta', 'type' => 'phpstan'],
+            ['name' => 'alpha', 'type' => 'phpcs'],
+        ]);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result); // default = exec
+        $rendered = $output->fetch();
+
+        // No leading "#" column header.
+        $this->assertDoesNotMatchRegularExpression('/\|\s*#\s*\|\s*Job\s*\|/', $rendered);
+        // Rows keep declaration (completion) order: zeta before alpha.
+        $this->assertLessThan(strpos($rendered, 'alpha'), strpos($rendered, 'zeta'));
+    }
+
+    /** @test FEAT-4 */
+    public function name_sort_orders_rows_alphabetically_and_adds_execution_order_column(): void
+    {
+        $result = $this->multiJobResult([
+            ['name' => 'zeta', 'type' => 'phpstan'],   // exec #1
+            ['name' => 'alpha', 'type' => 'phpcs'],    // exec #2
+            ['name' => 'mike', 'type' => 'phpcs'],     // exec #3
+        ]);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result, RenderOptions::STATS_SORT_NAME);
+        $rendered = $output->fetch();
+
+        // The "#" column header is present.
+        $this->assertMatchesRegularExpression('/\|\s*#\s*\|\s*Job\s*\|/', $rendered);
+        // Rows are alphabetical: alpha < mike < zeta.
+        $this->assertLessThan(strpos($rendered, 'mike'), strpos($rendered, 'alpha'));
+        $this->assertLessThan(strpos($rendered, 'zeta'), strpos($rendered, 'mike'));
+        // The "#" cell carries the original execution order (alpha ran 2nd).
+        $this->assertMatchesRegularExpression('/\|\s*2\s*\|\s*alpha\s*\|/', $rendered);
+        $this->assertMatchesRegularExpression('/\|\s*1\s*\|\s*zeta\s*\|/', $rendered);
+    }
+
+    /** @test FEAT-4 */
+    public function type_sort_groups_by_type_then_name(): void
+    {
+        $result = $this->multiJobResult([
+            ['name' => 'phpstan_b', 'type' => 'phpstan'],
+            ['name' => 'phpcs_a', 'type' => 'phpcs'],
+            ['name' => 'phpstan_a', 'type' => 'phpstan'],
+            ['name' => 'phpcs_b', 'type' => 'phpcs'],
+        ]);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result, RenderOptions::STATS_SORT_TYPE);
+        $rendered = $output->fetch();
+
+        // phpcs_* (type "phpcs") before phpstan_* (type "phpstan"); within a
+        // type, ordered by name.
+        $posPhpcsA = strpos($rendered, 'phpcs_a');
+        $posPhpcsB = strpos($rendered, 'phpcs_b');
+        $posPhpstanA = strpos($rendered, 'phpstan_a');
+        $posPhpstanB = strpos($rendered, 'phpstan_b');
+        $this->assertLessThan($posPhpcsB, $posPhpcsA, 'phpcs_a before phpcs_b');
+        $this->assertLessThan($posPhpstanA, $posPhpcsB, 'all phpcs before any phpstan');
+        $this->assertLessThan($posPhpstanB, $posPhpstanA, 'phpstan_a before phpstan_b');
+    }
+
+    /**
+     * @param array<int, array{name: string, type: string}> $specs
+     */
+    private function multiJobResult(array $specs): FlowResult
+    {
+        $jobs = [];
+        foreach ($specs as $spec) {
+            // JobResult: (name, success, output, time, fixApplied, command, type)
+            $jobs[] = new JobResult($spec['name'], true, '', '1s', false, null, $spec['type']);
+        }
+        $result = new FlowResult('qa', $jobs, '1s');
+        $result->setMemoryStats(new MemoryStats(false, 0, 0.0, [], [], 4, 0, 0.0, [], []));
+        return $result;
     }
 
     // Color tagging — when the OutputInterface is decorated (CI logs that

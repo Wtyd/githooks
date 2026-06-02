@@ -752,4 +752,22 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertArrayHasKey('runtime', $data);
         $this->assertNull($data['runtime']);
     }
+
+    /** @test FEAT-4: every job carries its 1-based execution (completion) order. */
+    function each_job_has_a_one_based_execution_order(): void
+    {
+        $result = new FlowResult('qa', [
+            new JobResult('first', true, '', '1s'),
+            new JobResult('second', true, '', '1s'),
+            new JobResult('third', true, '', '1s'),
+        ], '3s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertSame(1, $data['jobs'][0]['executionOrder']);
+        $this->assertSame(2, $data['jobs'][1]['executionOrder']);
+        $this->assertSame(3, $data['jobs'][2]['executionOrder']);
+        // The JSON keeps execution order regardless of any text --stats sort.
+        $this->assertSame(['first', 'second', 'third'], array_column($data['jobs'], 'name'));
+    }
 }

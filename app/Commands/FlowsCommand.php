@@ -71,6 +71,7 @@ class FlowsCommand extends Command
                             {--no-memory-budget : Disable memory-budget evaluation for this run (per-job and flow)}
                             {--allocator= : Resource admission strategy (fifo|greedy)}
                             {--stats : Print a final stats table with peak cores/memory per job and emit the stats block in JSON v2}
+                            {--stats-sort= : Sort the --stats table: exec (default, completion order), name, or type. Non-exec adds a # column with the execution order}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY}
                             {--diag : Print a runtime diagnostics block (CPU/mem/load/CI/version) before running. Auto-on in CI.}

@@ -37,6 +37,7 @@ Most flags below are CLI overrides for keys declared under `flows.options` or pe
 | `--no-memory-budget` | Disable both per-job and flow-level memory evaluation for this run. |
 | `--allocator=fifo\|greedy` | Override the admission strategy. See [Options: Allocator strategy](../configuration/options.md#allocator-strategy-allocator). |
 | `--stats` | Activate RSS sampling and the 5-column summary table after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
+| `--stats-sort=exec\|name\|type` | Sort the `--stats` table: `exec` (default, completion order), `name`, or `type`. A non-`exec` value adds a leading `#` column with the execution order. Text table only; JSON keeps execution order (see [`executionOrder`](../how-to/output-formats.md#per-job-fields)). |
 | `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--diag` | Print a runtime diagnostics block (githooks version, platform, CPU/cgroup limit, available memory, load averages, start timestamp) before the run. Opt-in locally; **auto-on in CI** regardless of the flag. See [Runtime diagnostics](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps). |

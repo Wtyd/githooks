@@ -33,6 +33,7 @@ Most flags below are CLI overrides for keys declared under `flows.options` or in
 | `--memory-warn-above=N` / `--memory-fail-above=N` | Override per-job RSS thresholds (MB). See [Jobs: Per-job memory threshold](../configuration/jobs.md#per-job-memory-threshold-memory). |
 | `--no-memory-budget` | Disable the per-job memory threshold for this run. |
 | `--stats` | Activate RSS sampling and the summary table after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
+| `--stats-sort=exec\|name\|type` | Sort the `--stats` table: `exec` (default, completion order), `name`, or `type`. A non-`exec` value adds a leading `#` column with the execution order. Text table only. |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
 | `--diag` | Print a runtime diagnostics block (githooks version, platform, CPU/cgroup limit, available memory, load averages, start timestamp) before the run. Opt-in locally; **auto-on in CI**. See [Runtime diagnostics](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps). |
 | `--config=PATH` | Path to configuration file. |

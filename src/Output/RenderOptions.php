@@ -12,6 +12,12 @@ namespace Wtyd\GitHooks\Output;
  */
 class RenderOptions
 {
+    /** Stats table sort modes (FEAT-4). */
+    public const STATS_SORT_EXEC = 'exec';
+    public const STATS_SORT_NAME = 'name';
+    public const STATS_SORT_TYPE = 'type';
+    public const STATS_SORTS = [self::STATS_SORT_EXEC, self::STATS_SORT_NAME, self::STATS_SORT_TYPE];
+
     public string $format;
 
     public ?string $outputPath;
@@ -28,6 +34,9 @@ class RenderOptions
     /** Opt-in runtime diagnostics block in local runs (FEAT-14). Auto-on in CI regardless. */
     public bool $diag;
 
+    /** Stats table sort mode (FEAT-4): one of STATS_SORTS. Default `exec` (completion order). */
+    public string $statsSort;
+
     /**
      * @param array<string, string> $cliReports
      *
@@ -40,7 +49,8 @@ class RenderOptions
         bool $noCI,
         bool $showProgress,
         array $cliReports,
-        bool $diag = false
+        bool $diag = false,
+        string $statsSort = self::STATS_SORT_EXEC
     ) {
         $this->format = $format;
         $this->outputPath = $outputPath;
@@ -49,5 +59,6 @@ class RenderOptions
         $this->showProgress = $showProgress;
         $this->cliReports = $cliReports;
         $this->diag = $diag;
+        $this->statsSort = in_array($statsSort, self::STATS_SORTS, true) ? $statsSort : self::STATS_SORT_EXEC;
     }
 }

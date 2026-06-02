@@ -34,6 +34,10 @@ trait BuildsRenderOptions
 
         $outputPath = $this->hasOption('output') ? $this->option('output') : null;
 
+        $statsSort = $this->hasOption('stats-sort') && $this->option('stats-sort') !== null
+            ? strval($this->option('stats-sort'))
+            : RenderOptions::STATS_SORT_EXEC;
+
         return new RenderOptions(
             strval($this->option('format')),
             $outputPath === null || $outputPath === '' ? null : strval($outputPath),
@@ -41,7 +45,8 @@ trait BuildsRenderOptions
             $this->hasOption('no-ci') && (bool) $this->option('no-ci'),
             $this->hasOption('show-progress') && (bool) $this->option('show-progress'),
             $cliReports,
-            $this->hasOption('diag') && (bool) $this->option('diag')
+            $this->hasOption('diag') && (bool) $this->option('diag'),
+            $statsSort
         );
     }
 }

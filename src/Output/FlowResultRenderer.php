@@ -256,7 +256,7 @@ class FlowResultRenderer
     {
         $this->emitCISummarySectionStart($options);
         try {
-            $this->renderTextSummaryBody($result, $output);
+            $this->renderTextSummaryBody($result, $output, $options->statsSort);
         } finally {
             $this->emitCISummarySectionEnd($options);
         }
@@ -269,7 +269,7 @@ class FlowResultRenderer
      *   Splitting would either inline the same branches in helpers or hide the linear flow of the
      *   summary, neither of which reads better than the current shape.
      */
-    private function renderTextSummaryBody(FlowResult $result, OutputInterface $output): void
+    private function renderTextSummaryBody(FlowResult $result, OutputInterface $output, string $statsSort = RenderOptions::STATS_SORT_EXEC): void
     {
         $total = count($result->getJobResults());
         $passed = $result->getPassedCount();
@@ -308,7 +308,7 @@ class FlowResultRenderer
         $this->emitFlowMemoryBudgetNotice($mbState, $output);
 
         if ($result->getMemoryStats() !== null) {
-            (new StatsTableRenderer())->render($output, $result);
+            (new StatsTableRenderer())->render($output, $result, $statsSort);
         }
     }
 

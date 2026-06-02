@@ -69,6 +69,7 @@ class JobCommand extends Command
                             {--memory-fail-above= : Fail when this job RSS (MB) crosses this threshold}
                             {--no-memory-budget : Disable memory-budget evaluation for this run}
                             {--stats : Print a final stats table with peak cores/memory and emit the stats block in JSON v2}
+                            {--stats-sort= : Sort the --stats table: exec (default, completion order), name, or type. Non-exec adds a # column with the execution order}
                             {--message-file= : Path to the commit message file (commit-msg jobs; provided by the git hook as $1)}
                             {--message= : Literal commit message to validate (commit-msg jobs; mutually exclusive with --message-file)}
                             {--config= : Path to configuration file}';

@@ -22,10 +22,15 @@ class JsonResultFormatter implements ResultFormatter
 
     public function format(FlowResult $result): string
     {
-        $jobs = array_map(function (JobResult $job): array {
+        $jobValues = array_values($result->getJobResults());
+        $jobs = array_map(function (JobResult $job, int $index): array {
             $entry = [
                 'name'              => $job->getJobName(),
                 'type'              => $job->getType(),
+                // FEAT-4: 1-based position in the execution (completion) order,
+                // so consumers can reorder client-side regardless of how the
+                // text --stats table is sorted.
+                'executionOrder'    => $index + 1,
                 'success'           => $job->isSuccess(),
                 'time'              => $job->getExecutionTime(),
                 'duration'          => $job->getDurationSeconds(),
@@ -59,7 +64,7 @@ class JsonResultFormatter implements ResultFormatter
             }
 
             return $entry;
-        }, $result->getJobResults());
+        }, $jobValues, array_keys($jobValues));
 
         $inputFiles = $result->getInputFiles();
 
@@ -96,7 +101,7 @@ class JsonResultFormatter implements ResultFormatter
         $data['warnings']     = $this->buildWarningsBlock($validation);
         $data['deprecations'] = $this->buildDeprecationsBlock($validation);
 
-        $data['jobs'] = array_values($jobs);
+        $data['jobs'] = $jobs;
 
         $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 

@@ -227,6 +227,7 @@ githooks flow qa --format=json
 |---|---|---|
 | `name` | string | Job name as configured. |
 | `type` | string | Job type (`phpstan`, `phpcs`, `custom`, …). |
+| `executionOrder` | integer | 1-based position in the execution (completion) order. Always present. Lets consumers reorder client-side regardless of how the text `--stats` table is sorted (`--stats-sort`). The `jobs[]` array itself stays in execution order. |
 | `success` | boolean | `true` if the job passed AND no per-job `fail-after` / `fail-above` was crossed. |
 | `time` | string | Human-readable execution time. |
 | `duration` | float | Execution time in seconds (raw — useful for sorting / comparisons). |
