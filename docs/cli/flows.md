@@ -32,7 +32,7 @@ Single-flow degenerate runs (`flows qa` with `qa` a normal flow) produce **the s
 
 ## Options
 
-The same flag set as [`flow`](flow.md): `--fail-fast`, `--processes`, `--exclude-jobs`, `--only-jobs`, `--format`, `--output`, `--report-*`, `--no-reports`, `--fast`, `--fast-branch`, `--fast-dirty`, `--fast-branch-fallback`, `--files`, `--files-from`, `--exclude-pattern`, `--monitor`, `--no-ci`, `--show-progress`, `--config`, `--dry-run`. Only the positional argument changes (variadic instead of single).
+The same flag set as [`flow`](flow.md): `--fail-fast`, `--processes`, `--exclude-jobs`, `--only-jobs`, `--format`, `--output`, `--report-*`, `--no-reports`, `--fast`, `--fast-branch`, `--fast-dirty`, `--fast-branch-fallback`, `--files`, `--files-from`, `--exclude-pattern`, `--monitor`, `--diag`, `--no-ci`, `--show-progress`, `--config`, `--dry-run`. Only the positional argument changes (variadic instead of single). `--diag` prints a [runtime diagnostics block](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps) before the run (auto-on in CI).
 
 !!! note "`--branch=X` is `flow`-only"
     The `--branch=X` flag for [branch-driven execution mode (`on`)](../configuration/flows.md#branch-driven-execution-mode-on) is only registered on [`flow`](flow.md#options) in 3.4. Inside `flows`, branch detection falls back to `$GITHOOKS_BRANCH`, CI env vars and `git rev-parse --abbrev-ref HEAD`.

@@ -190,7 +190,7 @@ class FlowsCommandTest extends SystemTestCase
      */
     private function normalizeJobs(array $jobs): array
     {
-        $volatile = ['time', 'duration', 'memoryPeak', 'memoryReserved'];
+        $volatile = ['time', 'duration', 'startedAt', 'endedAt', 'memoryPeak', 'memoryReserved'];
         $byName = [];
         foreach ($jobs as $job) {
             foreach ($volatile as $key) {

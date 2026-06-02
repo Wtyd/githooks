@@ -557,4 +557,27 @@ class FlowCommandTest extends SystemTestCase
             ->containsStringInOutput('--')
             ->notContainsStringInOutput('Settings:');
     }
+
+    /** @test FEAT-14: --diag prints the runtime diagnostics block (text format). */
+    public function it_prints_the_diagnostics_block_with_the_diag_flag(): void
+    {
+        // The block's header starts with "githooks <version> …"; present in both
+        // the compact (local) and multiline (CI) shapes. The normal flow output
+        // never contains "githooks", so this uniquely identifies the diag block.
+        $this->artisan("flow qa --diag --config=$this->configPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput('githooks')
+            ->containsStringInOutput('cpus');
+    }
+
+    /** @test FEAT-14: JSON v2 always carries the runtime node + per-job timestamps. */
+    public function json_output_includes_runtime_node_and_per_job_timestamps(): void
+    {
+        $this->artisan("flow qa --format=json --config=$this->configPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput('"runtime"')
+            ->containsStringInOutput('"githooksVersion"')
+            ->containsStringInOutput('"startedAt"')
+            ->containsStringInOutput('"endedAt"');
+    }
 }

@@ -68,6 +68,12 @@ class JobResult
 
     private ?int $configuredFailAfter;
 
+    /** @var ?string ISO-8601 wall-clock when the job started (FEAT-14); null for skipped jobs. */
+    private ?string $startedAt;
+
+    /** @var ?string ISO-8601 wall-clock when the job ended (FEAT-14); null for skipped jobs. */
+    private ?string $endedAt;
+
     private ?int $memoryPeak = null;
 
     private int $memoryThresholdState = self::MEMORY_THRESHOLD_NONE;
@@ -108,7 +114,9 @@ class JobResult
         int $thresholdState = self::THRESHOLD_NONE,
         ?string $thresholdReason = null,
         ?int $configuredWarnAfter = null,
-        ?int $configuredFailAfter = null
+        ?int $configuredFailAfter = null,
+        ?string $startedAt = null,
+        ?string $endedAt = null
     ) {
         $this->jobName = $jobName;
         $this->success = $success;
@@ -128,6 +136,8 @@ class JobResult
         $this->thresholdReason = $thresholdReason;
         $this->configuredWarnAfter = $configuredWarnAfter;
         $this->configuredFailAfter = $configuredFailAfter;
+        $this->startedAt = $startedAt;
+        $this->endedAt = $endedAt;
     }
 
     /**
@@ -158,6 +168,18 @@ class JobResult
     public function getExecutionTime(): string
     {
         return $this->executionTime;
+    }
+
+    /** ISO-8601 wall-clock when the job started, or null for skipped jobs (FEAT-14). */
+    public function getStartedAt(): ?string
+    {
+        return $this->startedAt;
+    }
+
+    /** ISO-8601 wall-clock when the job ended, or null for skipped jobs (FEAT-14). */
+    public function getEndedAt(): ?string
+    {
+        return $this->endedAt;
     }
 
     public function isFixApplied(): bool

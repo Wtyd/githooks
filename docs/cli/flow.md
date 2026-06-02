@@ -39,6 +39,7 @@ Most flags below are CLI overrides for keys declared under `flows.options` or pe
 | `--stats` | Activate RSS sampling and the 5-column summary table after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
 | `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
+| `--diag` | Print a runtime diagnostics block (githooks version, platform, CPU/cgroup limit, available memory, load averages, start timestamp) before the run. Opt-in locally; **auto-on in CI** regardless of the flag. See [Runtime diagnostics](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps). |
 | `--config=PATH` | Path to configuration file. |
 
 ## Examples
@@ -69,6 +70,7 @@ githooks flow qa --files-from=changed.txt           # Files mode: from manifest
 githooks flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'
                                                     # Drop tests from the manifest
 githooks flow qa --monitor                          # Show thread usage report
+githooks flow qa --diag                             # Print runtime diagnostics block first
 githooks flow qa --no-ci                            # Opt out of CI annotations
 githooks flow qa --config=qa/custom-githooks.php    # Use custom config
 ```

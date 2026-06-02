@@ -25,8 +25,13 @@ class RenderOptions
     /** @var array<string, string> CLI report targets: format ('json'|'junit'|'sarif'|'codeclimate') => path */
     public array $cliReports;
 
+    /** Opt-in runtime diagnostics block in local runs (FEAT-14). Auto-on in CI regardless. */
+    public bool $diag;
+
     /**
      * @param array<string, string> $cliReports
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag)
      */
     public function __construct(
         string $format,
@@ -34,7 +39,8 @@ class RenderOptions
         bool $noReports,
         bool $noCI,
         bool $showProgress,
-        array $cliReports
+        array $cliReports,
+        bool $diag = false
     ) {
         $this->format = $format;
         $this->outputPath = $outputPath;
@@ -42,5 +48,6 @@ class RenderOptions
         $this->noCI = $noCI;
         $this->showProgress = $showProgress;
         $this->cliReports = $cliReports;
+        $this->diag = $diag;
     }
 }

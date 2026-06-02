@@ -18,6 +18,7 @@ use Wtyd\GitHooks\Output\OutputHandler;
 use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
 use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
 use Wtyd\GitHooks\Utils\GitStagerInterface;
+use Wtyd\GitHooks\Utils\IsoTimestamp;
 
 /**
  * Orchestrates flow execution: runs jobs respecting processes limit and fail-fast.
@@ -919,7 +920,8 @@ class FlowExecutor
      */
     private function buildResult(JobAbstract $job, Process $process, float $start): JobResult
     {
-        $elapsed = $this->now() - $start;
+        $end = $this->now();
+        $elapsed = $end - $start;
         $time = $this->formatTime($elapsed);
         $exitCode = $process->getExitCode() ?? 1;
         $stdout = $process->getOutput();
@@ -992,7 +994,9 @@ class FlowExecutor
             $thresholdState,
             $thresholdReason,
             $warnAfter,
-            $failAfter
+            $failAfter,
+            IsoTimestamp::fromMicrotime($start),
+            IsoTimestamp::fromMicrotime($end)
         );
     }
 

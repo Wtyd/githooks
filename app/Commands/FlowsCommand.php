@@ -73,6 +73,7 @@ class FlowsCommand extends Command
                             {--stats : Print a final stats table with peak cores/memory per job and emit the stats block in JSON v2}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY}
+                            {--diag : Print a runtime diagnostics block (CPU/mem/load/CI/version) before running. Auto-on in CI.}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute several flows (or a declarative meta-flow) as a single plan';

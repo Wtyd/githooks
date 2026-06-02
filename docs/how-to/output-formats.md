@@ -157,6 +157,16 @@ githooks flow qa --format=json
       "flowPeak": { "value": 3743, "atSecond": 12.34, "jobsInFlight": [{ "name": "phpstan_src", "value": 3500 }] }
     }
   },
+  "runtime": {
+    "githooksVersion": "3.5.0",
+    "platform": "linux",
+    "ci": "gitlab-ci",
+    "startedAt": "2026-06-02T09:14:07.512+00:00",
+    "endedAt": "2026-06-02T09:14:22.694+00:00",
+    "cpu": { "detected": 8, "cgroupLimit": 4 },
+    "memory": { "availableMb": 5821, "totalMb": 16027 },
+    "load": { "avg1": 1.42, "avg5": 1.10, "avg15": 0.87 }
+  },
   "warnings": [],
   "deprecations": [],
   "jobs": [
@@ -166,6 +176,8 @@ githooks flow qa --format=json
       "success": false,
       "time": "2.34s",
       "duration": 2.34,
+      "startedAt": "2026-06-02T09:14:07.530+00:00",
+      "endedAt": "2026-06-02T09:14:09.871+00:00",
       "exitCode": 1,
       "output": "src/Foo.php:12  Access to undefined property $bar",
       "fixApplied": false,
@@ -202,6 +214,7 @@ githooks flow qa --format=json
 | `timeBudget` | object or null | Flow-level time budget state. `null` when not configured. See [Time budget block](#time-budget-block). |
 | `memoryBudget` | object or null | Flow-level memory budget state. `null` when not configured. See [Memory budget block](#memory-budget-block). |
 | `stats` | object or null | RSS sampling + cores attribution. `null` when `stats: false` (default). See [Stats block](#stats-block). |
+| `runtime` | object or null | Runner snapshot + flow span (version, platform, CI, CPU/cgroup, memory, load, `startedAt`/`endedAt`). Always present in `flow` / `flows` / `job` runs; `null` only on legacy consumers that never attach it. See [Runtime diagnostics block](#runtime-diagnostics-block). |
 | `inputFiles` | object | Present only in files mode (`--files` / `--files-from`). See [Input files block](#input-files-block). |
 | `flows` | array | Present only in multi-flow runs. List of normal flows actually executed after meta-flow expansion. |
 | `effectiveOptions` | object | Always present in `flow` / `flows` / `job` runs. Each option's `value` and resolved `source`. See [Effective options and conditions header](#effective-options-and-conditions-header). |
@@ -217,6 +230,8 @@ githooks flow qa --format=json
 | `success` | boolean | `true` if the job passed AND no per-job `fail-after` / `fail-above` was crossed. |
 | `time` | string | Human-readable execution time. |
 | `duration` | float | Execution time in seconds (raw — useful for sorting / comparisons). |
+| `startedAt` | string or null | ISO-8601 timestamp (millisecond precision, e.g. `2026-06-02T09:14:07.530+00:00`) when the job began. `null` for skipped jobs (never executed). |
+| `endedAt` | string or null | ISO-8601 timestamp when the job finished. `null` for skipped jobs. The pair lets a post-mortem place each job on an absolute timeline — see [Runtime diagnostics block](#runtime-diagnostics-block). |
 | `exitCode` | integer or null | Underlying tool exit code. `null` for skipped jobs. |
 | `output` | string | Captured stdout/stderr of the tool, ANSI escapes stripped. |
 | `fixApplied` | boolean | `true` when the job modified files (fix jobs in non dry-run). |
@@ -376,6 +391,88 @@ When `--fail-fast` cancels the remaining jobs after a failure, the JSON payload 
 ```
 
 This keeps structured consumers honest: the array size equals the declared plan size, and the `skipped` counter at the top level reflects both fast-mode skips and fail-fast cancellations.
+
+## Runtime diagnostics and absolute timestamps
+
+When a CI job hangs for 40 minutes with 39 of them silent, the run log alone cannot tell you whether PHP was blocked, the runner was starved of memory, or the agent's output buffer simply froze. GitHooks answers this with three pieces of **pure observability** (no behaviour change, no intervention): a runner diagnostics block, absolute `startedAt`/`endedAt` timestamps per job and per flow, and a `runtime` node in JSON v2.
+
+### The `--diag` text block
+
+In text mode, `--diag` prints a snapshot of the runner **before** the `Settings:` header:
+
+```bash
+githooks flow qa --diag
+```
+
+```
+githooks 3.5.0 · linux · cpus=8 (cgroup limit: 4) · mem=5821 MB / 16027 MB · load=1.42 / 1.10 / 0.87 · 2026-06-02T09:14:07.512+00:00
+Settings:
+  processes     = 4     (cli)
+  …
+```
+
+The block is **flushed immediately** so that if the run later hangs, the log still carries the snapshot — it is the signal that distinguishes "githooks never started" from "started but blocked".
+
+Emission follows the same factors table as the conditions header:
+
+| Environment | Format | `--show-progress` | Diagnostics block |
+|---|---|---|---|
+| CI (auto-detected) | text | – | **stdout**, multiline |
+| CI | structured / claude-code | on | **stderr**, multiline |
+| CI | structured / claude-code | off | suppressed (clean stdout) |
+| local + `--diag` | text | – | **stdout**, compact (1 line) |
+| local + `--diag` | structured | on | **stderr**, compact |
+| local + `--diag` | structured | off | suppressed |
+| local **without** `--diag` | any | – | not emitted (zero noise) |
+
+In CI the block is **automatic** (no flag needed) and rendered multiline; locally it is opt-in via `--diag` and rendered as a single compact line. The channel rule mirrors the header (BUG-5): text → stdout; clean-stdout formats → stderr only with `--show-progress`, otherwise suppressed so the structured payload stays pristine.
+
+!!! note "The JSON `runtime` node is always present"
+    `--diag` only controls the **text** block. The `runtime` JSON node and the per-job `startedAt`/`endedAt` fields are part of the JSON v2 contract — they are emitted on every `--format=json` run regardless of `--diag`.
+
+### Runtime diagnostics block
+
+`runtime` (root, JSON v2) carries the runner snapshot plus the flow span:
+
+```json
+"runtime": {
+  "githooksVersion": "3.5.0",
+  "platform": "linux",
+  "ci": "gitlab-ci",
+  "startedAt": "2026-06-02T09:14:07.512+00:00",
+  "endedAt": "2026-06-02T09:14:22.694+00:00",
+  "cpu": { "detected": 8, "cgroupLimit": 4 },
+  "memory": { "availableMb": 5821, "totalMb": 16027 },
+  "load": { "avg1": 1.42, "avg5": 1.10, "avg15": 0.87 }
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `githooksVersion` | string | Resolved package version (`unknown` if it cannot be determined). |
+| `platform` | string | Short OS token: `linux`, `darwin`, `windows`. |
+| `ci` | string or null | CI name (`github-actions`, `gitlab-ci`) or `null` outside CI. |
+| `startedAt` / `endedAt` | string | Flow span as ISO-8601 timestamps (millisecond precision). |
+| `cpu.detected` | integer | Effective CPU count used for the thread budget. |
+| `cpu.cgroupLimit` | integer or null | CPU quota from the cgroup (`null` when none / not on Linux). |
+| `memory.availableMb` | integer or null | System memory available to the runner (MB). `null` on platforms that cannot report it. |
+| `memory.totalMb` | integer or null | Total system memory (MB). `null` when unavailable. |
+| `load.avg1` / `avg5` / `avg15` | float or null | 1/5/15-minute load averages. `null` on Windows. |
+
+**Platform availability** (the contract never breaks — unavailable fields are `null`):
+
+| Platform | CPU | cgroup limit | Memory | Load |
+|---|---|---|---|---|
+| Linux | ✅ | ✅ (when set) | ✅ (`/proc/meminfo`, cgroup) | ✅ |
+| macOS | ✅ | – (`null`) | best-effort (`null` if unavailable) | ✅ |
+| Windows | ✅ | – (`null`) | – (`null`) | – (`null`) |
+
+!!! tip "Memory is the runner's, not PHP's"
+    `memory.availableMb` / `totalMb` report **system** memory (the RAM the runner has), not `memory_get_usage()` of the PHP process — the post-mortem question is "did the runner run out of RAM", and per-job RSS already lives in `memoryPeak` and the `stats` block.
+
+### Absolute timestamps
+
+Every executed job carries `startedAt` / `endedAt` (ISO-8601, millisecond precision) alongside the relative `duration`. Skipped jobs report `null` for both (they never ran). Combined with `runtime.startedAt` / `endedAt`, this places the whole plan on an absolute wall-clock timeline — so a 40-minute gap in a CI log can be pinned to the exact job (or the silence *between* jobs) where time was lost.
 
 ## JUnit
 

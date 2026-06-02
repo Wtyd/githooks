@@ -39,6 +39,10 @@ githooks flow qa --no-ci         # plain output even under GITHUB_ACTIONS
 
 Annotations stream on **stdout** alongside the normal text output, so they show up directly in the CI log. When using structured formats (`--format=json` etc.), annotations route to **stderr** so they don't contaminate the stdout payload.
 
+### Runtime diagnostics block (auto-on in CI)
+
+In CI, GitHooks **automatically** prints a runtime diagnostics block before the run — the runner's githooks version, platform, CPU and cgroup limit, available system memory, load averages and an absolute start timestamp. No flag is needed (the `--diag` flag is only required to opt in locally). When a pipeline hangs, this block — flushed immediately — is what distinguishes "githooks never started" from "started but starved", and the per-job `startedAt`/`endedAt` timestamps in `--format=json` pin the lost time to an exact job. See [Runtime diagnostics and absolute timestamps](output-formats.md#runtime-diagnostics-and-absolute-timestamps).
+
 ### ANSI colour in CI logs
 
 Symfony Console disables ANSI decoration off-TTY by default — every `<fg=red>✗ Flow time-budget exceeded…</>` and `<fg=yellow>⚠ Job exceeded memory threshold…</>` would otherwise be stripped before reaching the log, leaving the operator scanning every row to spot the failure. GitHooks **forces decoration on** when running under GitHub Actions or GitLab CI so:

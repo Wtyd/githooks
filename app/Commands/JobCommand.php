@@ -61,6 +61,7 @@ class JobCommand extends Command
                             {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
+                            {--diag : Print a runtime diagnostics block (CPU/mem/load/CI/version) before running. Auto-on in CI.}
                             {--warn-after= : Warn when this single job exceeds this duration (seconds)}
                             {--fail-after= : Fail when this single job exceeds this duration (seconds)}
                             {--no-time-budget : Disable time-budget evaluation for this run}

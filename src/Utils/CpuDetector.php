@@ -20,6 +20,20 @@ class CpuDetector
         return $this->detectUnix();
     }
 
+    /**
+     * The effective cgroup CPU limit in whole CPUs, or null when there is no
+     * limit in force (host execution, unlimited quota, or unreadable files).
+     * Exposed for the diagnostics block (FEAT-14) to record the container cap
+     * alongside the detected count.
+     */
+    public function cgroupLimit(): ?int
+    {
+        if ($this->isWindows()) {
+            return null;
+        }
+        return $this->readCgroupCpuLimit();
+    }
+
     protected function detectWindows(): int
     {
         // Environment variable (fastest, most reliable)

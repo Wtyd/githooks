@@ -13,6 +13,7 @@ use Wtyd\GitHooks\Execution\InputFilesResolution;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Execution\Memory\MemoryStats;
 use Wtyd\GitHooks\Execution\MemoryBudgetState;
+use Wtyd\GitHooks\Execution\RuntimeBlock;
 use Wtyd\GitHooks\Execution\TimeBudgetState;
 
 class JsonResultFormatter implements ResultFormatter
@@ -28,6 +29,8 @@ class JsonResultFormatter implements ResultFormatter
                 'success'           => $job->isSuccess(),
                 'time'              => $job->getExecutionTime(),
                 'duration'          => $job->getDurationSeconds(),
+                'startedAt'         => $job->getStartedAt(),
+                'endedAt'           => $job->getEndedAt(),
                 'exitCode'          => $job->getExitCode(),
                 'output'            => $this->stripAnsi($job->getOutput()),
                 'fixApplied'        => $job->isFixApplied(),
@@ -72,6 +75,7 @@ class JsonResultFormatter implements ResultFormatter
             'timeBudget'    => $this->buildTimeBudgetBlock($result->getTimeBudgetState()),
             'memoryBudget'  => $this->buildMemoryBudgetBlock($result->getMemoryBudgetState()),
             'stats'         => $this->buildStatsBlock($result->getMemoryStats()),
+            'runtime'       => $this->buildRuntimeBlock($result->getRuntime()),
         ];
 
         $expandedFlows = $result->getExpandedFlows();
@@ -258,6 +262,44 @@ class JsonResultFormatter implements ResultFormatter
         }
 
         return $block;
+    }
+
+    /**
+     * Build the root `runtime` block (FEAT-14). Explicit-null pattern: object
+     * with the runner snapshot + flow span when present, null otherwise. CPU is
+     * always known; memory/load fields are null on platforms that cannot report
+     * them (Windows, macOS MemAvailable) — the contract stays stable.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function buildRuntimeBlock(?RuntimeBlock $runtime): ?array
+    {
+        if ($runtime === null) {
+            return null;
+        }
+
+        $diagnostics = $runtime->getDiagnostics();
+
+        return [
+            'githooksVersion' => $diagnostics->getVersion(),
+            'platform'        => $diagnostics->getPlatform(),
+            'ci'              => $diagnostics->getCi(),
+            'startedAt'       => $runtime->getStartedAt(),
+            'endedAt'         => $runtime->getEndedAt(),
+            'cpu'             => [
+                'detected'    => $diagnostics->getCpuDetected(),
+                'cgroupLimit' => $diagnostics->getCpuCgroupLimit(),
+            ],
+            'memory'          => [
+                'availableMb' => $diagnostics->getMemAvailableMb(),
+                'totalMb'     => $diagnostics->getMemTotalMb(),
+            ],
+            'load'            => [
+                'avg1'  => $diagnostics->getLoadAvg1(),
+                'avg5'  => $diagnostics->getLoadAvg5(),
+                'avg15' => $diagnostics->getLoadAvg15(),
+            ],
+        ];
     }
 
     /**

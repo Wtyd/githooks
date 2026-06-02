@@ -37,6 +37,8 @@ class FlowResult
 
     private ?ValidationResult $configValidation = null;
 
+    private ?RuntimeBlock $runtime = null;
+
     /**
      * @param JobResult[] $jobResults
      * @param string[]|null $expandedFlows
@@ -195,6 +197,20 @@ class FlowResult
     public function setMemoryStats(?MemoryStats $stats): void
     {
         $this->memoryStats = $stats;
+    }
+
+    /**
+     * Attach the runtime diagnostics + flow span (FEAT-14) so JsonResultFormatter
+     * serialises the `runtime` node. Null until the runner sets it.
+     */
+    public function setRuntime(?RuntimeBlock $runtime): void
+    {
+        $this->runtime = $runtime;
+    }
+
+    public function getRuntime(): ?RuntimeBlock
+    {
+        return $this->runtime;
     }
 
     /**

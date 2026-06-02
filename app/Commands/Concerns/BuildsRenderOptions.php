@@ -40,7 +40,8 @@ trait BuildsRenderOptions
             $this->hasOption('no-reports') && (bool) $this->option('no-reports'),
             $this->hasOption('no-ci') && (bool) $this->option('no-ci'),
             $this->hasOption('show-progress') && (bool) $this->option('show-progress'),
-            $cliReports
+            $cliReports,
+            $this->hasOption('diag') && (bool) $this->option('diag')
         );
     }
 }

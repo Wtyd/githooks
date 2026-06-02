@@ -66,6 +66,7 @@ class FlowCommand extends Command
                             {--stats : Print a final stats table with peak cores/memory per job and emit the stats block in JSON v2}
                             {--no-ci : Disable auto-detection of CI environment annotations}
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
+                            {--diag : Print a runtime diagnostics block (CPU/mem/load/CI/version) before running. Auto-on in CI.}
                             {--branch= : Override the detected branch name used to evaluate flow.on rules (FEAT-2)}
                             {--config= : Path to configuration file}';
 

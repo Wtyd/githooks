@@ -12,6 +12,8 @@ use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
 use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
 use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
+use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
+use Wtyd\GitHooks\Output\DiagnosticsHeaderEmitter;
 use Wtyd\GitHooks\Output\FlowResultRenderer;
 use Wtyd\GitHooks\Output\HeaderOptions;
 use Wtyd\GitHooks\Output\OutputFormats;
@@ -55,8 +57,14 @@ class FlowsRunner
 
     private ConfigWarningsEmitter $warningsEmitter;
 
+    private DiagnosticsCollector $diagnosticsCollector;
+
+    private DiagnosticsHeaderEmitter $diagnosticsEmitter;
+
     /**
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Seven collaborators by design.
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Collaborators by design;
+     *   the two diagnostics ones default to real instances for backward-compatible
+     *   construction in unit tests.
      */
     public function __construct(
         ConfigurationParser $parser,
@@ -65,7 +73,9 @@ class FlowsRunner
         FlowExecutor $executor,
         FlowResultRenderer $renderer,
         ConditionsHeaderEmitter $headerEmitter,
-        ConfigWarningsEmitter $warningsEmitter
+        ConfigWarningsEmitter $warningsEmitter,
+        ?DiagnosticsCollector $diagnosticsCollector = null,
+        ?DiagnosticsHeaderEmitter $diagnosticsEmitter = null
     ) {
         $this->parser = $parser;
         $this->preparer = $preparer;
@@ -74,6 +84,8 @@ class FlowsRunner
         $this->renderer = $renderer;
         $this->headerEmitter = $headerEmitter;
         $this->warningsEmitter = $warningsEmitter;
+        $this->diagnosticsCollector = $diagnosticsCollector ?? new DiagnosticsCollector();
+        $this->diagnosticsEmitter = $diagnosticsEmitter ?? new DiagnosticsHeaderEmitter();
     }
 
     /**
@@ -103,10 +115,17 @@ class FlowsRunner
             $this->executor->setMemoryBudgetDisabled($request->memoryBudgetDisabled);
 
             $headerOptions = new HeaderOptions($renderOptions->format, $renderOptions->showProgress);
+
+            // FEAT-14: diagnostics block before the Settings header + runtime node.
+            $diagnostics = $this->diagnosticsCollector->collect();
+            $startedAt = $this->diagnosticsCollector->now();
+            $this->diagnosticsEmitter->emit($diagnostics, $startedAt, $renderOptions->diag, $headerOptions, $output);
+
             $this->headerEmitter->emit($resolution, $preparation->expandedFlows, $plan->getInputFiles(), $headerOptions, $output);
 
             $result = $this->executor->execute($plan, $request->dryRun);
             $result->setConfigValidation($config->getValidation());
+            $result->setRuntime(new RuntimeBlock($diagnostics, $startedAt, $this->diagnosticsCollector->now()));
 
             $this->warningsEmitter->emit($config->getValidation(), $output);
 

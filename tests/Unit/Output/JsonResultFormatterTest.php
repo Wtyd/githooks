@@ -8,10 +8,12 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\Deprecation;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\GitHooks\Execution\Diagnostics;
 use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\GitHooks\Execution\RuntimeBlock;
 use Wtyd\GitHooks\Output\JsonResultFormatter;
 
 class JsonResultFormatterTest extends UnitTestCase
@@ -669,5 +671,85 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertSame(['yarn-install'], $data['jobs'][0]['needs']);
         $this->assertTrue($data['jobs'][0]['skipped']);
         $this->assertSame('needs yarn-install failed', $data['jobs'][0]['skipReason']);
+    }
+
+    /** @test FEAT-14: the `runtime` node + per-job startedAt/endedAt are present and well-formed. */
+    function it_emits_the_runtime_node_and_per_job_timestamps(): void
+    {
+        $job = new JobResult(
+            'phpstan_src',
+            true,
+            '',
+            '1.23s',
+            false,
+            null,
+            'phpstan',
+            0,
+            [],
+            false,
+            null,
+            null,
+            null,
+            1.23,
+            JobResult::THRESHOLD_NONE,
+            null,
+            null,
+            null,
+            '2026-05-13T14:23:09.123+00:00',
+            '2026-05-13T14:23:10.353+00:00'
+        );
+        $result = new FlowResult('qa', [$job], '1.23s');
+        $diagnostics = new Diagnostics('3.5.0', 'linux', 'gitlab-ci', 32, null, 1240, 65536, 28.5, 24.1, 21.0);
+        $result->setRuntime(new RuntimeBlock($diagnostics, '2026-05-13T14:23:08+00:00', '2026-05-13T14:24:20+00:00'));
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        // Per-job absolute timestamps alongside the existing relative ones.
+        $this->assertSame('2026-05-13T14:23:09.123+00:00', $data['jobs'][0]['startedAt']);
+        $this->assertSame('2026-05-13T14:23:10.353+00:00', $data['jobs'][0]['endedAt']);
+        $this->assertSame('1.23s', $data['jobs'][0]['time']);     // AC-005: existing fields unchanged
+        $this->assertSame(1.23, $data['jobs'][0]['duration']);
+
+        // Root runtime node (AC-002). assertEquals (not Same): JSON numbers do not
+        // preserve the int/float distinction (21.0 round-trips as 21), same as the
+        // existing `duration` field.
+        $this->assertEquals([
+            'githooksVersion' => '3.5.0',
+            'platform'        => 'linux',
+            'ci'              => 'gitlab-ci',
+            'startedAt'       => '2026-05-13T14:23:08+00:00',
+            'endedAt'         => '2026-05-13T14:24:20+00:00',
+            'cpu'             => ['detected' => 32, 'cgroupLimit' => null],
+            'memory'          => ['availableMb' => 1240, 'totalMb' => 65536],
+            'load'            => ['avg1' => 28.5, 'avg5' => 24.1, 'avg15' => 21.0],
+        ], $data['runtime']);
+    }
+
+    /** @test FEAT-14: unavailable platform fields serialise as null without breaking (AC-004). */
+    function it_nulls_unavailable_runtime_fields(): void
+    {
+        $result = new FlowResult('qa', [new JobResult('phpstan_src', true, '', '1s')], '1s');
+        $windows = new Diagnostics('3.5.0', 'windows', null, 4, null, null, null, null, null, null);
+        $result->setRuntime(new RuntimeBlock($windows, '2026-05-13T14:23:08+00:00', '2026-05-13T14:23:09+00:00'));
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertNull($data['runtime']['ci']);
+        $this->assertNull($data['runtime']['memory']['availableMb']);
+        $this->assertNull($data['runtime']['load']['avg1']);
+        // A skipped/never-run job (no timestamps) emits null, not a missing key.
+        $this->assertNull($data['jobs'][0]['startedAt']);
+        $this->assertNull($data['jobs'][0]['endedAt']);
+    }
+
+    /** @test The `runtime` key is always present (null when the runner did not set it). */
+    function runtime_key_is_always_present(): void
+    {
+        $result = new FlowResult('qa', [new JobResult('x', true, '', '1s')], '1s');
+
+        $data = json_decode((new JsonResultFormatter())->format($result), true);
+
+        $this->assertArrayHasKey('runtime', $data);
+        $this->assertNull($data['runtime']);
     }
 }
