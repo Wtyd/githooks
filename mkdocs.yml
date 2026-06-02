@@ -125,6 +125,7 @@ nav:
     - PHP CS Fixer: tools/phpcsfixer.md
     - Rector: tools/rector.md
     - Custom Jobs: tools/custom.md
+    - Commit Message: tools/commit-msg.md
   - CLI Reference:
     - cli/index.md
     - githooks flow: cli/flow.md

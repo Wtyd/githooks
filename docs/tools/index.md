@@ -1,6 +1,6 @@
 # Tools Reference
 
-GitHooks provides native support for the most common PHP QA tools, plus a `custom` type that can run any command.
+GitHooks provides native support for the most common PHP QA tools, a `custom` type that can run any command, and a `commit-msg` type that validates commit messages.
 
 ## Supported tools
 
@@ -19,6 +19,7 @@ GitHooks provides native support for the most common PHP QA tools, plus a `custo
 | [Rector](rector.md) | `rector` | Yes | No |
 | [Custom Jobs](custom.md) | `custom` | Opt-in | No |
 | [Custom Jobs](custom.md) | `script` | No | No |
+| [Commit Message](commit-msg.md) | `commit-msg` | No | Inline (no process) |
 
 ## Accelerable
 

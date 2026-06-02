@@ -227,6 +227,7 @@ See the [documentation site](https://wtyd.github.io/githooks/) for the full conf
 | [PHP Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd) | `phpcpd` | Duplicate code detection |
 | Inline command | `script` | Run a single shell command (`executable: 'composer audit'`). No path filtering. |
 | Any tool | `custom` | Run any binary with `script` (one-liner) or `executable-path` + `paths` (+ `accelerable: true` to opt into `--fast` / `--fast-branch` filtering) |
+| Commit message | `commit-msg` | Validate the commit-message subject (declarative rules + `conventional-commits` preset), wired to Git's `commit-msg` hook. Runs inline, no shell. |
 
 Two ways to run non-PHP tools:
 

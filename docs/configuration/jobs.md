@@ -29,12 +29,13 @@ A job describes a single QA task. Every job must have a `type` that determines w
 | `paratest` | [Paratest](../tools/paratest.md) | No |
 | `phpcpd` | [PHP Copy Paste Detector](../tools/phpcpd.md) | No |
 | `custom` | [Any command](../tools/custom.md) | Opt-in |
+| `commit-msg` | [Commit message validation](../tools/commit-msg.md) | No |
 
 See the [Tools Reference](../tools/index.md) for the full keyword documentation of each type.
 
 ## Common keywords
 
-The following keywords are available for all job types (except `custom`, which has its own set):
+The following keywords are available for all job types (except `custom` and `commit-msg`, which have their own sets):
 
 | Keyword | Type | Description |
 |---|---|---|
