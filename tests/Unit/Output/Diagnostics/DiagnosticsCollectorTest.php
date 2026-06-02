@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Tests\Doubles\DiagnosticsCollectorStub;
 use Tests\Doubles\MemoryDetectorStub;
 use Tests\Doubles\UnixCpuDetectorStub;
+use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
 
 class DiagnosticsCollectorTest extends TestCase
 {
@@ -69,6 +70,33 @@ class DiagnosticsCollectorTest extends TestCase
         $this->assertNull($d->getLoadAvg1());
         $this->assertNull($d->getCi());
         $this->assertSame(8, $d->getCpuDetected());
+    }
+
+    /**
+     * @test
+     *
+     * BUG-25: on Windows `sys_getloadavg()` is undefined, so calling it is a
+     * fatal "undefined function" error (the diagnostics block is auto-on in CI,
+     * so it aborted every Windows run). The real loadAverage() must short-circuit
+     * to [] when the platform doesn't expose the function, never calling it.
+     * Fails on any platform if the function_exists guard is removed.
+     */
+    public function load_average_short_circuits_when_unsupported(): void
+    {
+        $collector = new class extends DiagnosticsCollector {
+            protected function supportsLoadAverage(): bool
+            {
+                return false;
+            }
+
+            /** @return array<int, float> */
+            public function exposeLoadAverage(): array
+            {
+                return $this->loadAverage();
+            }
+        };
+
+        $this->assertSame([], $collector->exposeLoadAverage());
     }
 
     /** @test */

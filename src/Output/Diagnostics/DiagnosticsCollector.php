@@ -89,14 +89,24 @@ class DiagnosticsCollector
     }
 
     /**
-     * The 1/5/15-minute load averages, or an empty array when unavailable
-     * (Windows: `sys_getloadavg()` returns false).
+     * The 1/5/15-minute load averages, or an empty array when unavailable.
+     * On Windows `sys_getloadavg()` is **not defined** (calling it is a fatal
+     * "undefined function" error, BUG-25), so guard with function_exists first.
      *
      * @return array<int, float>
      */
     protected function loadAverage(): array
     {
+        if (!$this->supportsLoadAverage()) {
+            return [];
+        }
         $load = sys_getloadavg();
         return is_array($load) ? $load : [];
+    }
+
+    /** Whether the platform exposes `sys_getloadavg()` (false on Windows). */
+    protected function supportsLoadAverage(): bool
+    {
+        return function_exists('sys_getloadavg');
     }
 }
