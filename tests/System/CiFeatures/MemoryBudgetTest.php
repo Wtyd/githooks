@@ -161,6 +161,46 @@ class MemoryBudgetTest extends CiFeatureTestCase
         $this->assertFalse($decoded['memoryBudget']['failed']);
     }
 
+    /**
+     * @test
+     *
+     * AC-002 (memory hard-fail): when the observed peak crosses the flow-level
+     * `fail-above`, the runtime flips the flow to failed and exits 1 (killing
+     * jobs in flight). Complements the warn-above test above.
+     */
+    public function memory_budget_failed_is_true_and_exit_code_is_one_when_peak_exceeds_fail_above(): void
+    {
+        if (!$this->samplerExpected) {
+            $this->markTestSkipped('Memory-budget gating requires an active sampler; Windows skipped.');
+        }
+
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions([
+                'memory-budget' => ['fail-above' => 20],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['burner']]])
+            ->setV3Jobs([
+                'burner' => [
+                    'type'   => 'custom',
+                    'script' => "php $this->burnerScript 64 3",
+                ],
+            ]);
+        $this->writeConfig();
+
+        $result = $this->runGithooks("flow qa --format=json --config=$this->configPath");
+
+        $this->assertSame(1, $result['exitCode'], "expected exit 1 when fail-above crossed; stderr:\n{$result['stderr']}");
+        $decoded = $this->decodeJsonOutput($result['stdout']);
+
+        $this->assertIsArray($decoded['memoryBudget'] ?? null, 'memoryBudget block missing');
+        $this->assertTrue(
+            $decoded['memoryBudget']['failed'],
+            'expected memoryBudget.failed=true with 64 MB allocator and fail-above=20; peak='
+                . ($decoded['memoryBudget']['peakObserved'] ?? 'n/a')
+        );
+        $this->assertFalse($decoded['success'], 'flow success must be false when memory-budget fails');
+    }
+
     /** @test */
     public function per_job_memory_threshold_warned_is_true_when_job_peak_exceeds_warn_above(): void
     {

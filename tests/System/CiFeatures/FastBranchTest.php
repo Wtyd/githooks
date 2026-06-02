@@ -110,6 +110,54 @@ class FastBranchTest extends CiFeatureTestCase
         $this->assertTrue($job['skipped'] ?? false, 'expected job skipped when fast-branch diff is empty');
     }
 
+    /**
+     * @test
+     *
+     * AC-001 (rebase scenario): after `main` advances independently and the
+     * feature branch is rebased onto it, fast-branch must diff against the new
+     * merge-base — i.e. report ONLY the feature's own change, not the commit
+     * that now belongs to `main`. A naive base detection would wrongly include
+     * main's file.
+     */
+    public function fast_branch_after_rebase_diffs_against_updated_main(): void
+    {
+        $this->initRepoOnMain();
+        $this->writeFile('src/Foo.php', "<?php\n// foo v1\n");
+        $this->writeFile('src/Bar.php', "<?php\n// bar v1\n");
+        $this->writeRepoConfig();
+        $this->commitAll('initial');
+
+        // Feature branches off and changes Foo.
+        $this->checkoutBranch('feature');
+        $this->writeFile('src/Foo.php', "<?php\n// foo v2 — feature change\n");
+        $this->commitAll('feature change');
+
+        // main advances independently, changing Bar.
+        $this->runGitCommand('checkout main');
+        $this->writeFile('src/Bar.php', "<?php\n// bar v2 — main change\n");
+        $this->commitAll('main advance');
+
+        // Rebase feature onto the updated main: Bar is now part of main, so the
+        // feature's diff vs main is only Foo.
+        $this->runGitCommand('checkout feature');
+        $this->runGitCommand('rebase main');
+
+        $result = $this->runGithooks(
+            "flow qa --fast-branch --format=json --config=$this->repoConfigPath",
+            $this->repoDir
+        );
+
+        $this->assertSame(0, $result['exitCode'], "stderr:\n{$result['stderr']}\nstdout:\n{$result['stdout']}");
+        $decoded = $this->decodeJsonOutput($result['stdout']);
+
+        $this->assertSame('fast-branch', $decoded['executionMode'] ?? null);
+
+        $job = $this->findJob($decoded, 'lint_src');
+        $paths = $job['paths'] ?? [];
+        $this->assertContains('src/Foo.php', $paths, 'expected feature change in effective paths after rebase');
+        $this->assertNotContains('src/Bar.php', $paths, "expected main's file excluded — it is part of the rebase base");
+    }
+
     // ---------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------

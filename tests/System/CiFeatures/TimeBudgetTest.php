@@ -111,6 +111,48 @@ class TimeBudgetTest extends CiFeatureTestCase
         $this->assertFalse($decoded['timeBudget']['failed']);
     }
 
+    /**
+     * @test
+     *
+     * AC-002 (flow time hard-fail): the post-hoc sum of job durations crossing
+     * the flow-level `fail-after` flips the flow to failed and exits 1, even
+     * though each job's own exit was 0. Complements the flow warn-after test.
+     */
+    public function flow_time_budget_failed_is_true_and_exit_code_is_one_when_total_crosses_fail_after(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions([
+                'fail-fast'   => false,
+                'processes'   => 1,
+                'time-budget' => ['fail-after' => 1],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['j1', 'j2']]])
+            ->setV3Jobs([
+                'j1' => [
+                    'type'   => 'custom',
+                    'script' => "php $this->sleepScript 1",
+                ],
+                'j2' => [
+                    'type'   => 'custom',
+                    'script' => "php $this->sleepScript 1",
+                ],
+            ]);
+        $this->writeConfig();
+
+        $result = $this->runGithooks("flow qa --format=json --config=$this->configPath");
+
+        $this->assertSame(1, $result['exitCode'], "expected exit 1 when flow fail-after crossed; stderr:\n{$result['stderr']}");
+        $decoded = $this->decodeJsonOutput($result['stdout']);
+
+        $this->assertIsArray($decoded['timeBudget'] ?? null, 'timeBudget block missing at root');
+        $this->assertTrue(
+            $decoded['timeBudget']['failed'],
+            'expected flow timeBudget.failed=true; totalJobDuration='
+                . ($decoded['timeBudget']['totalJobDuration'] ?? 'n/a')
+        );
+        $this->assertFalse($decoded['success'], 'flow success must be false when time-budget fails');
+    }
+
     /** @test */
     public function threshold_and_time_budget_are_null_when_not_configured(): void
     {
