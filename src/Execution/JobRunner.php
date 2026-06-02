@@ -188,6 +188,18 @@ class JobRunner
             $invocationMode = $request->invocationMode;
         }
 
+        // FEAT-16: attach the commit-message file path for an inline commit-msg
+        // job. For any other type the flag is inert — warn and ignore (§9.14).
+        if ($request->commitMessageFile !== null) {
+            if ($jobConfig->getType() === 'commit-msg') {
+                $context = $context->withCommitMessageFile($request->commitMessageFile);
+            } else {
+                $config->getValidation()->addWarning(
+                    "flag --message-file/--message ignored: target job '{$request->jobName}' is not commit-msg."
+                );
+            }
+        }
+
         // FEAT-13 envelope reporting: pass the job-declared `execution` (and
         // a `jobs.<name>.execution` label) so the JSON envelope's
         // `executionMode` reflects it instead of falling back to `default`.

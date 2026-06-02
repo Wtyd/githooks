@@ -69,6 +69,8 @@ class JobCommand extends Command
                             {--memory-fail-above= : Fail when this job RSS (MB) crosses this threshold}
                             {--no-memory-budget : Disable memory-budget evaluation for this run}
                             {--stats : Print a final stats table with peak cores/memory and emit the stats block in JSON v2}
+                            {--message-file= : Path to the commit message file (commit-msg jobs; provided by the git hook as $1)}
+                            {--message= : Literal commit message to validate (commit-msg jobs; mutually exclusive with --message-file)}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a single job defined in the configuration file';
@@ -89,6 +91,10 @@ class JobCommand extends Command
         }
 
         if (!$this->assertExecutionModeFlagsExclusive()) {
+            return 1;
+        }
+
+        if (!$this->assertMessageFlagsExclusive()) {
             return 1;
         }
 
@@ -126,8 +132,45 @@ class JobCommand extends Command
             $memoryBudget['disabled'],
             $this->resolveStatsFlag(),
             $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null,
-            (bool) $this->option('dry-run')
+            (bool) $this->option('dry-run'),
+            $this->resolveCommitMessageFile()
         );
+    }
+
+    /**
+     * --message and --message-file are mutually exclusive (AC-015). Checked
+     * before anything runs so the error caps the invocation at exit 1.
+     */
+    private function assertMessageFlagsExclusive(): bool
+    {
+        if ($this->option('message') !== null && $this->option('message-file') !== null) {
+            $this->emitStderr('--message and --message-file are mutually exclusive.');
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Resolve the commit-message file path from the CLI flags (FEAT-16):
+     * `--message-file` wins; `--message` is materialised to a temp file so the
+     * rest of the pipeline always deals with a path. Null when neither is given
+     * (the job then falls back to the env var or `.git/COMMIT_EDITMSG`).
+     */
+    private function resolveCommitMessageFile(): ?string
+    {
+        $file = $this->option('message-file');
+        if ($file !== null) {
+            return (string) $file;
+        }
+
+        $message = $this->option('message');
+        if ($message !== null) {
+            $path = (string) tempnam(sys_get_temp_dir(), 'githooks-commit-msg-');
+            file_put_contents($path, (string) $message);
+            return $path;
+        }
+
+        return null;
     }
 
     private function getCliExtraArguments(): string

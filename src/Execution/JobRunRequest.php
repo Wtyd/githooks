@@ -44,6 +44,9 @@ class JobRunRequest
 
     public bool $dryRun;
 
+    /** FEAT-16: resolved commit-message file path for a `commit-msg` job (null otherwise). */
+    public ?string $commitMessageFile;
+
     /**
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 14 pre-resolved CLI inputs;
      *   merging into sub-structs would obscure the JobCommand → JobRunner contract.
@@ -64,7 +67,8 @@ class JobRunRequest
         bool $memoryBudgetDisabled,
         ?bool $statsFlag,
         ?bool $cliFailFast,
-        bool $dryRun = false
+        bool $dryRun = false,
+        ?string $commitMessageFile = null
     ) {
         $this->jobName = $jobName;
         $this->configFile = $configFile;
@@ -80,5 +84,6 @@ class JobRunRequest
         $this->statsFlag = $statsFlag;
         $this->cliFailFast = $cliFailFast;
         $this->dryRun = $dryRun;
+        $this->commitMessageFile = $commitMessageFile;
     }
 }

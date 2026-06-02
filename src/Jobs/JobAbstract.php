@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Jobs;
 
+use LogicException;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\MemoryThreshold;
 use Wtyd\GitHooks\Execution\ExecutionContext;
+use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Execution\ThreadCapability;
 
 /**
@@ -300,6 +302,28 @@ abstract class JobAbstract
     public function setExecutionContext(ExecutionContext $context): void
     {
         $this->context = $context;
+    }
+
+    /**
+     * Whether this job validates in-process (no shell). Inline jobs skip command
+     * generation and process creation; the scheduler calls {@see runInline()}
+     * and uses its JobResult directly (FEAT-16, PAT-001). Default false — only
+     * CommitMsgJob overrides it in v3.5.
+     */
+    public function isInline(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Run the job in-process and return its JobResult, using the execution
+     * context already attached via {@see setExecutionContext()}. Only inline
+     * jobs override this; the base throws so a misconfigured scheduler fails
+     * loudly rather than silently producing an empty result.
+     */
+    public function runInline(): JobResult
+    {
+        throw new LogicException(sprintf("Inline execution is not implemented for job type '%s'.", $this->type));
     }
 
     /**

@@ -121,7 +121,7 @@ class FlowMemoryHandler
     }
 
     /**
-     * @param array<string, array{process: \Symfony\Component\Process\Process, job: JobAbstract, start: float}> $running
+     * @param array<string, array{process: ?\Symfony\Component\Process\Process, job: JobAbstract, start: float}> $running
      */
     public function tick(array $running): void
     {
@@ -134,6 +134,10 @@ class FlowMemoryHandler
         if ($this->sampler !== null && $this->sampler->isAvailable()) {
             $pids = [];
             foreach ($running as $name => $entry) {
+                // FEAT-16: inline jobs carry no process and consume no memory.
+                if ($entry['process'] === null) {
+                    continue;
+                }
                 $pid = $entry['process']->getPid();
                 if ($pid !== null) {
                     $pids[$name] = $pid;

@@ -49,6 +49,13 @@ class ExecutionContext
     private ?string $cwd = null;
 
     /**
+     * FEAT-16: path of the commit-message file for an inline `commit-msg` job.
+     * Set by the CLI (`--message-file` / `--message` materialised to a temp
+     * file) or by the git hook (`$1`). Null outside a commit-msg context.
+     */
+    private ?string $commitMessageFile = null;
+
+    /**
      * @param string[] $stagedFiles
      */
     public function __construct(bool $fastMode, array $stagedFiles = [], ?FileUtilsInterface $fileUtils = null)
@@ -70,6 +77,28 @@ class ExecutionContext
         $clone      = clone $this;
         $clone->cwd = $cwd;
         return $clone;
+    }
+
+    /**
+     * FEAT-16: attach the resolved commit-message file path. Clone pattern so
+     * the context stays immutable, mirroring {@see withCwd()}.
+     */
+    public function withCommitMessageFile(string $commitMessageFile): self
+    {
+        $clone = clone $this;
+        $clone->commitMessageFile = $commitMessageFile;
+        return $clone;
+    }
+
+    public function getCommitMessageFile(): ?string
+    {
+        return $this->commitMessageFile;
+    }
+
+    /** The working directory used to resolve relative paths (CWD when unset). */
+    public function getCwd(): string
+    {
+        return $this->cwd ?? (string) getcwd();
     }
 
     public static function default(): self

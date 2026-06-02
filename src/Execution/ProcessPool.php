@@ -7,6 +7,7 @@ namespace Wtyd\GitHooks\Execution;
 use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Execution\Admission\AdmissionContext;
 use Wtyd\GitHooks\Execution\Admission\AdmissionStrategy;
+use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 
 /**
@@ -37,7 +38,7 @@ class ProcessPool
     /** @var array<string, ?int> jobName → memory reservation in MB (null when not declared in short form) */
     private array $memoryReserveByJob;
 
-    /** @var array<string, array{process: Process, job: JobAbstract, start: float}> */
+    /** @var array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}> */
     private array $running = [];
 
     /** @var array<int, JobAbstract> Sequentially-indexed queue (reindexed on every modification). */
@@ -103,7 +104,7 @@ class ProcessPool
      * Try to fill available pool slots with queued jobs.
      * Returns the newly started entries.
      *
-     * @return array<string, array{process: Process, job: JobAbstract, start: float}>
+     * @return array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}>
      */
     public function fillPool(): array
     {
@@ -136,7 +137,7 @@ class ProcessPool
     }
 
     /**
-     * @param array<string, array{process: Process, job: JobAbstract, start: float}> $started
+     * @param array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}> $started
      */
     private function fillPoolFifo(array &$started): void
     {
@@ -151,10 +152,23 @@ class ProcessPool
     }
 
     /**
-     * @return array{process: Process, job: JobAbstract, start: float}
+     * @return array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}
      */
     protected function startJob(JobAbstract $job): array
     {
+        // FEAT-16: inline jobs (commit-msg) validate in-process — no shell, no
+        // process. Run synchronously here and carry the result on the entry; the
+        // pool then treats it as immediately completed (pollCompleted) and the
+        // executor returns the stored result (collectResult). PAT-001.
+        if ($job->isInline()) {
+            return [
+                'process' => null,
+                'job'     => $job,
+                'start'   => microtime(true),
+                'result'  => $job->runInline(),
+            ];
+        }
+
         $command = $job->buildCommand();
         $process = Process::fromShellCommandLine($command);
         // Disable Symfony's 60s default: QA jobs (phpstan, phpunit over large
@@ -344,14 +358,16 @@ class ProcessPool
      * Returns completed entries, removes them from the running set and
      * releases their reserved cores and memory back to the pool.
      *
-     * @return array<string, array{process: Process, job: JobAbstract, start: float}>
+     * @return array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}>
      */
     public function pollCompleted(): array
     {
         $completed = [];
 
         foreach ($this->running as $name => $entry) {
-            if (!$entry['process']->isRunning()) {
+            // Inline jobs (process === null) ran synchronously at admission and
+            // are complete the moment they enter the pool.
+            if ($entry['process'] === null || !$entry['process']->isRunning()) {
                 $completed[$name] = $entry;
             }
         }
@@ -374,12 +390,12 @@ class ProcessPool
     /**
      * Terminate all running processes and return their entries.
      *
-     * @return array<string, array{process: Process, job: JobAbstract, start: float}>
+     * @return array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}>
      */
     public function terminateAll(): array
     {
         foreach ($this->running as $entry) {
-            if ($entry['process']->isRunning()) {
+            if ($entry['process'] !== null && $entry['process']->isRunning()) {
                 $entry['process']->stop(0);
             }
         }
@@ -421,7 +437,7 @@ class ProcessPool
     }
 
     /**
-     * @return array<string, array{process: Process, job: JobAbstract, start: float}>
+     * @return array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}>
      */
     public function getRunning(): array
     {
@@ -440,6 +456,9 @@ class ProcessPool
     {
         $pids = [];
         foreach ($this->running as $name => $entry) {
+            if ($entry['process'] === null) {
+                continue;
+            }
             $pid = $entry['process']->getPid();
             if ($pid !== null) {
                 $pids[$name] = $pid;

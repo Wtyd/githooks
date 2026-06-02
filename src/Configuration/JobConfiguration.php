@@ -6,6 +6,7 @@ namespace Wtyd\GitHooks\Configuration;
 
 use Wtyd\GitHooks\Configuration\KeySuggestion;
 use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
@@ -119,13 +120,21 @@ class JobConfiguration
 
         if ($type === 'custom') {
             self::validateCustomJobKeys($name, $config, $result);
+        } elseif ($type === 'commit-msg') {
+            self::validateCommitMsgKeys($name, $config, $result);
         } elseif ($jobRegistry !== null) {
             self::validateArguments($name, $type, $config, $jobRegistry, $result);
         }
 
-        self::validateCoresKey($name, $type, $config, $result);
-        self::validateThresholdKeys($name, $config, $result);
-        self::validateMemoryKey($name, $config, $result);
+        // commit-msg is an inline job: cores/memory do not apply and its own
+        // validator already rejects them and validates warn-after/fail-after
+        // (REQ-009/014). Running the generic key validators here would emit
+        // duplicate or contradictory errors.
+        if ($type !== 'commit-msg') {
+            self::validateCoresKey($name, $type, $config, $result);
+            self::validateThresholdKeys($name, $config, $result);
+            self::validateMemoryKey($name, $config, $result);
+        }
 
         return new self($name, $type, $config);
     }
@@ -255,6 +264,153 @@ class JobConfiguration
         }
 
         return $value;
+    }
+
+    /**
+     * Validate a `commit-msg` job (FEAT-16). The type only accepts `rules`,
+     * `preset`, `warn-after` and `fail-after` at top level; every other key is
+     * rejected as not applicable (REQ-009) — including `paths`, `cores`,
+     * `memory` and `executable-path`, which make no sense for an inline,
+     * path-agnostic validator. `preset` and `rules` are validated in depth
+     * (REQ-010..013).
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateCommitMsgKeys(string $name, array $config, ValidationResult $result): void
+    {
+        $allowed = ['rules', 'preset', 'warn-after', 'fail-after'];
+        foreach (array_keys($config) as $key) {
+            if (!in_array($key, $allowed, true)) {
+                $result->addError("Job '$name': key '$key' is not applicable to type 'commit-msg'.");
+            }
+        }
+
+        // warn-after / fail-after keep the common per-job threshold semantics
+        // (REQ-014); validated here so the generic validator can be skipped and
+        // not double-report the rejected keys above.
+        $warnAfter = self::extractPositiveInt($name, 'warn-after', $config, $result);
+        $failAfter = self::extractPositiveInt($name, 'fail-after', $config, $result);
+        if ($warnAfter !== null && $failAfter !== null && $warnAfter >= $failAfter) {
+            $result->addError("Job '$name': 'warn-after' ($warnAfter) must be less than 'fail-after' ($failAfter).");
+        }
+
+        if (array_key_exists('preset', $config)) {
+            self::validateCommitMsgPreset($name, $config['preset'], $result);
+        }
+
+        if (array_key_exists('rules', $config)) {
+            self::validateCommitMsgRules($name, $config['rules'], $result);
+        }
+    }
+
+    /**
+     * @param mixed $preset
+     */
+    private static function validateCommitMsgPreset(string $name, $preset, ValidationResult $result): void
+    {
+        if (is_string($preset) && CommitMessagePresets::isKnown($preset)) {
+            return;
+        }
+
+        $value = is_string($preset) ? $preset : gettype($preset);
+        $available = implode("', '", CommitMessagePresets::names());
+        $result->addError("Job '$name' (commit-msg): unknown preset '$value'. Available: '$available'.");
+    }
+
+    /**
+     * @param mixed $rules
+     */
+    private static function validateCommitMsgRules(string $name, $rules, ValidationResult $result): void
+    {
+        if (!is_array($rules)) {
+            $result->addError("Job '$name' (commit-msg): 'rules' must be an array.");
+            return;
+        }
+
+        $known = [
+            'min-length', 'max-length', 'pattern', 'pattern-message',
+            'forbid-trailing-period', 'subject-case', 'forbid-empty', 'merge-allowed',
+        ];
+        foreach (array_keys($rules) as $key) {
+            if (!in_array($key, $known, true)) {
+                $result->addWarning("Job '$name' (commit-msg): unknown rule '$key'.");
+            }
+        }
+
+        self::validateCommitMsgRuleValues($name, $rules, $result);
+    }
+
+    /**
+     * Per-rule value checks (REQ-013). Each branch is one independent rule
+     * contract; the method only reports, it never throws.
+     *
+     * @param array<string, mixed> $rules
+     * @SuppressWarnings(PHPMD.CyclomaticComplexity) One guard per rule in the closed set.
+     * @SuppressWarnings(PHPMD.NPathComplexity) Same reason.
+     */
+    private static function validateCommitMsgRuleValues(string $name, array $rules, ValidationResult $result): void
+    {
+        $min = self::validateCommitMsgLength($name, 'min-length', $rules, $result);
+        $max = self::validateCommitMsgLength($name, 'max-length', $rules, $result);
+        if ($min !== null && $max !== null && $min >= $max) {
+            $result->addError("Job '$name' (commit-msg): 'min-length' ($min) must be less than 'max-length' ($max).");
+        }
+
+        if (array_key_exists('pattern', $rules)) {
+            if (!is_string($rules['pattern']) || !self::isValidRegex($rules['pattern'])) {
+                $result->addError("Job '$name' (commit-msg): rule 'pattern' is not a valid regular expression.");
+            }
+        }
+
+        if (array_key_exists('pattern-message', $rules) && !array_key_exists('pattern', $rules)) {
+            $result->addWarning("Job '$name' (commit-msg): 'pattern-message' is ignored without 'pattern'.");
+        }
+
+        foreach (['forbid-trailing-period', 'forbid-empty', 'merge-allowed'] as $boolKey) {
+            if (array_key_exists($boolKey, $rules) && !is_bool($rules[$boolKey])) {
+                $result->addError("Job '$name' (commit-msg): rule '$boolKey' must be a boolean.");
+            }
+        }
+
+        if (array_key_exists('subject-case', $rules)) {
+            $case = $rules['subject-case'];
+            if ($case !== null && !in_array($case, ['lowercase', 'sentence'], true)) {
+                $result->addError(
+                    "Job '$name' (commit-msg): rule 'subject-case' must be one of 'lowercase', 'sentence' or null."
+                );
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $rules
+     */
+    private static function validateCommitMsgLength(string $name, string $key, array $rules, ValidationResult $result): ?int
+    {
+        if (!array_key_exists($key, $rules)) {
+            return null;
+        }
+        $value = $rules[$key];
+        if (!is_int($value) || $value < 1) {
+            $result->addError("Job '$name' (commit-msg): rule '$key' must be a positive integer.");
+            return null;
+        }
+        return $value;
+    }
+
+    /**
+     * Whether a string is a valid PCRE pattern, without leaking the PHP warning
+     * that `preg_match` emits on a malformed pattern (the `@` operator is banned
+     * by the project's PHPMD ruleset).
+     */
+    private static function isValidRegex(string $pattern): bool
+    {
+        set_error_handler(static function (): bool {
+            return true;
+        });
+        $matched = preg_match($pattern, '');
+        restore_error_handler();
+        return $matched !== false;
     }
 
     /**

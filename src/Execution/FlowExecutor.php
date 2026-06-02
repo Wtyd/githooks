@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution;
 
+use LogicException;
 use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Configuration\AllocatorStrategy;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -242,7 +243,7 @@ class FlowExecutor
     ): FlowResult {
         $results = [];
         foreach ($jobs as $job) {
-            $command = $job->buildCommand();
+            $command = $job->isInline() ? '(inline commit-msg validation)' : $job->buildCommand();
             $this->outputHandler->onJobDryRun($job->getDisplayName(), $command);
             $results[] = new JobResult(
                 $job->getName(),
@@ -874,6 +875,10 @@ class FlowExecutor
 
     private function runJob(JobAbstract $job): JobResult
     {
+        if ($job->isInline()) {
+            return $this->runJobInline($job);
+        }
+
         $command = $job->buildCommand();
         $start = $this->now();
 
@@ -893,7 +898,46 @@ class FlowExecutor
     }
 
     /**
-     * @param array<string, array{process: Process, job: JobAbstract, start: float}> $running
+     * Run an inline job (FEAT-16): no shell, no process. The job validates
+     * in-process and returns its own JobResult; we only emit the lifecycle
+     * events so the dashboard/streaming output stays consistent (PAT-001).
+     */
+    private function runJobInline(JobAbstract $job): JobResult
+    {
+        $this->outputHandler->onJobStart($job->getDisplayName());
+        $result = $job->runInline();
+        $this->emitJobResult($job, $result);
+        return $result;
+    }
+
+    /**
+     * Emit the success/error/skip lifecycle event matching a finished JobResult.
+     * Shared by the inline path and the parallel pool, which both obtain a
+     * fully-formed JobResult without going through {@see buildResult()}.
+     */
+    private function emitJobResult(JobAbstract $job, JobResult $result): void
+    {
+        $displayName = $job->getDisplayName();
+        if ($result->isSkipped()) {
+            $this->outputHandler->onJobSkipped($displayName, $result->getSkipReason() ?? '');
+            return;
+        }
+        if ($result->isSuccess()) {
+            $this->outputHandler->onJobSuccess($displayName, $result->getExecutionTime());
+            return;
+        }
+        // Inline jobs never stream through Process; push the failure block via
+        // onJobOutput so the streaming handler shows it, then onJobError so the
+        // buffered handler shows it (each handler honours exactly one). Mirrors
+        // how a shell job's output reaches both channels.
+        if ($result->getOutput() !== '') {
+            $this->outputHandler->onJobOutput($displayName, $result->getOutput() . "\n", true);
+        }
+        $this->outputHandler->onJobError($displayName, $result->getExecutionTime(), $result->getOutput());
+    }
+
+    /**
+     * @param array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}> $running
      */
     private function updatePeakThreads(array $running): void
     {
@@ -905,11 +949,24 @@ class FlowExecutor
     }
 
     /**
-     * @param array{process: Process, job: JobAbstract, start: float} $entry
+     * @param array{process: ?Process, job: JobAbstract, start: float, result?: JobResult} $entry
      */
     private function collectResult(array $entry): JobResult
     {
-        return $this->buildResult($entry['job'], $entry['process'], $entry['start']);
+        // FEAT-16: inline jobs carry their pre-computed JobResult (the pool ran
+        // them synchronously at admission, no process); emit the lifecycle event
+        // here so parallel runs surface them like any other completed job.
+        if (isset($entry['result'])) {
+            $this->emitJobResult($entry['job'], $entry['result']);
+            return $entry['result'];
+        }
+
+        $process = $entry['process'];
+        if ($process === null) {
+            throw new LogicException('Non-inline pool entry is missing its process.');
+        }
+
+        return $this->buildResult($entry['job'], $process, $entry['start']);
     }
 
     /**

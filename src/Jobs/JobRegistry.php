@@ -24,6 +24,7 @@ class JobRegistry
         'rector'         => RectorJob::class,
         'script'         => ScriptJob::class,
         'custom'         => CustomJob::class,
+        'commit-msg'     => CommitMsgJob::class,
     ];
 
     public function isSupported(string $type): bool
