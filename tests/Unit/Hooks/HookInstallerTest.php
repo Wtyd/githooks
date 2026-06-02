@@ -41,6 +41,16 @@ class HookInstallerTest extends TestCase
         $this->assertStringContainsString('basename', $content);
     }
 
+    /** @test FEAT-16: script forwards Git's hook arguments ("$@") to the engine. */
+    public function it_propagates_git_hook_arguments()
+    {
+        $installer = new HookInstaller($this->tempDir);
+        $installer->install(['commit-msg']);
+
+        $content = file_get_contents($this->tempDir . '/.githooks/commit-msg');
+        $this->assertStringContainsString('hook:run "$(basename "$0")" "$@"', $content);
+    }
+
     /** @test */
     public function it_makes_hook_files_executable()
     {

@@ -58,7 +58,12 @@ class HookRunner
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Each branch is one class of
      *   pre-execution error or warning the operator must see.
      */
-    public function runEvent(string $event, string $configFile, OutputInterface $output): int
+    /**
+     * @param string[] $hookArgs Positional arguments Git passed to the hook
+     *   (e.g. the message-file path as $1 for commit-msg). Propagated to the
+     *   engine via the ExecutionContext (FEAT-16).
+     */
+    public function runEvent(string $event, string $configFile, OutputInterface $output, array $hookArgs = []): int
     {
         if ($this->parser === null) {
             throw new LogicException(
@@ -87,7 +92,7 @@ class HookRunner
                 return 0;
             }
 
-            $results = $this->run($event, $config);
+            $results = $this->run($event, $config, $hookArgs);
 
             if (empty($results)) {
                 $conditionWarning = $this->extractConditionWarning($config);
@@ -125,9 +130,13 @@ class HookRunner
     /**
      * Run all flows/jobs associated with a hook event.
      *
+     * @param string[] $hookArgs Positional arguments Git passed to the hook.
+     *   The first one (the message-file path for commit-msg) is attached to the
+     *   ExecutionContext so an inline commit-msg job can read it (FEAT-16).
+     *   Inert for events whose jobs do not consume it (REQ-029).
      * @return FlowResult[] One result per flow/job executed
      */
-    public function run(string $event, ConfigurationResult $config): array
+    public function run(string $event, ConfigurationResult $config, array $hookArgs = []): array
     {
         $hooks = $config->getHooks();
 
@@ -145,7 +154,10 @@ class HookRunner
         // Execution mode is determined per-job via config (HookRef, flow, job).
         $mainBranch = $config->getGlobalOptions()->getMainBranch()
             ?? $this->fileUtils->detectMainBranch();
-        $context = ExecutionContext::create($this->fileUtils, $mainBranch);
+        $context = $this->attachMessageFile(
+            ExecutionContext::create($this->fileUtils, $mainBranch),
+            $hookArgs
+        );
 
         $results = [];
         $skippedByConditions = 0;
@@ -169,6 +181,21 @@ class HookRunner
         }
 
         return $results;
+    }
+
+    /**
+     * Attach the commit-message file path (Git's $1, the first hook arg) to the
+     * context so an inline commit-msg job can read it (FEAT-16). No-op when no
+     * argument was passed.
+     *
+     * @param string[] $hookArgs
+     */
+    private function attachMessageFile(ExecutionContext $context, array $hookArgs): ExecutionContext
+    {
+        if (isset($hookArgs[0]) && $hookArgs[0] !== '') {
+            return $context->withCommitMessageFile((string) $hookArgs[0]);
+        }
+        return $context;
     }
 
     /**

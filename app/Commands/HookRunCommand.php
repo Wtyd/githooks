@@ -15,6 +15,7 @@ class HookRunCommand extends Command
 {
     protected $signature = 'hook:run
                             {event : The git hook event (e.g. pre-commit, pre-push)}
+                            {hookArgs?* : Positional arguments Git passes to the hook (e.g. the commit-msg file path)}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute all flows/jobs associated with a git hook event. Called by the hook script.';
@@ -29,10 +30,14 @@ class HookRunCommand extends Command
 
     public function handle(): int
     {
+        /** @var string[] $hookArgs */
+        $hookArgs = (array) $this->argument('hookArgs');
+
         return $this->runner->runEvent(
             strval($this->argument('event')),
             strval($this->option('config')),
-            $this->output
+            $this->output,
+            $hookArgs
         );
     }
 }

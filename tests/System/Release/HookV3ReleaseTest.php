@@ -208,4 +208,58 @@ class HookV3ReleaseTest extends ReleaseTestCase
             'Expected message about no config for event'
         );
     }
+
+    /**
+     * @test
+     *
+     * FEAT-16 / AC-007: the embedded binary propagates Git's positional hook
+     * argument (the message-file path) through `hook:run commit-msg <file>` to
+     * the inline commit-msg job, which validates the file's subject. Fails if
+     * the "$@" propagation or the commit-msg job are not embedded in the .phar.
+     */
+    public function it_validates_commit_message_via_commit_msg_hook()
+    {
+        $this->configurationFileBuilder
+            ->setV3Hooks(['commit-msg' => ['commit-format']])
+            ->addV3Job('commit-format', 'commit-msg', ['preset' => 'conventional-commits']);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $validFile = self::TESTS_PATH . '/commit-msg-ok.txt';
+        $invalidFile = self::TESTS_PATH . '/commit-msg-bad.txt';
+        file_put_contents($validFile, "feat(api): add user endpoint\n");
+        file_put_contents($invalidFile, "Add stuff.\n");
+
+        passthru("$this->githooks hook:run commit-msg $validFile --config=$this->configPath 2>&1", $okExit);
+        $this->assertEquals(0, $okExit, 'Valid conventional message must pass the commit-msg hook');
+
+        passthru("$this->githooks hook:run commit-msg $invalidFile --config=$this->configPath 2>&1", $koExit);
+        $this->assertEquals(1, $koExit, 'Non-conventional message must fail the commit-msg hook');
+        $this->assertStringContainsString("rule 'pattern'", $this->getActualOutput());
+
+        @unlink($validFile);
+        @unlink($invalidFile);
+    }
+
+    /**
+     * @test
+     *
+     * FEAT-16: a merge commit message skips validation (merge-allowed default),
+     * so the hook exits 0 without failing the merge.
+     */
+    public function it_skips_merge_commit_message()
+    {
+        $this->configurationFileBuilder
+            ->setV3Hooks(['commit-msg' => ['commit-format']])
+            ->addV3Job('commit-format', 'commit-msg', ['preset' => 'conventional-commits']);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $mergeFile = self::TESTS_PATH . '/commit-msg-merge.txt';
+        file_put_contents($mergeFile, "Merge branch 'feature/foo'\n");
+
+        passthru("$this->githooks hook:run commit-msg $mergeFile --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+
+        @unlink($mergeFile);
+    }
 }
