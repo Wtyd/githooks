@@ -6,17 +6,65 @@ All notable changes to this project are documented here.
 
 ### Added
 
-- **`--stats-sort` — sort the `--stats` table by name or type.** In flows with many similarly-named jobs (`phpstan_app`, `phpstan_src`, `phpcs_app`, …) the `--stats` table came out in completion order (non-deterministic under `processes > 1`), so finding a specific job meant scanning the whole table. `--stats-sort=exec|name|type` (on `flow`/`flows`/`job`, default `exec` = current behaviour) reorders it so related jobs sit together; a non-`exec` value adds a leading `#` column that preserves the execution order. Only the human text table is affected — JSON/JUnit/SARIF stay in execution order, and JSON v2 now carries a per-job `executionOrder` field so consumers can reorder client-side. See [`githooks flow`](cli/flow.md) and [JSON v2 per-job fields](how-to/output-formats.md#per-job-fields).
+**`--stats-sort=name|type` — order the `--stats` table.** With many similarly-named jobs the table came out in completion order (non-deterministic under `processes > 1`). Sorting groups related jobs and adds a `#` column with the real execution order:
 
-- **Native `commit-msg` job — declarative commit-message validation.** A new job type that validates the commit-message subject against a closed set of declarative rules (`min-length`, `max-length`, `pattern`, `pattern-message`, `forbid-trailing-period`, `subject-case`, `forbid-empty`, `merge-allowed`) plus a `conventional-commits` preset, wired to Git's `commit-msg` hook. It replaces the hand-written shell scripts teams used before: declarative, multiplatform (no bash — Linux/macOS/Windows), validated by `conf:check`, and producing the same output contract as any other job. The job runs **inline** (in-process, no shell spawned) — a new execution mode for native PHP validators — so it costs sub-millisecond instead of a process fork. It validates only; it never creates or rewrites a commit (Git decides based on the exit code). Use the preset for the common case (`'commit-msg' => ['commit-format']` + `['type' => 'commit-msg', 'preset' => 'conventional-commits']`) or `rules` with a custom `pattern` for any other convention. Manual invocation for testing/IDEs: `githooks job <name> --message="feat: x"` / `--message-file=PATH`. **Upgrade note:** repos with hooks installed before this release must run `githooks hook` again so the generated hook script forwards Git's arguments to the engine; until then a `commit-msg` job has no message file to read. See [Commit Message Validation](tools/commit-msg.md).
+```console
+$ githooks flow qa --stats --stats-sort=name
+| # | Job         | Status | Time  |
+| 2 | phpcs_app   | OK     | 10ms  |
+| 4 | phpcs_src   | OK     | 11ms  |
+| 1 | phpstan_app | OK     | 10ms  |
+```
 
-- **Runtime diagnostics block and absolute timestamps for CI post-mortems.** A shared CI runner that hangs for 40 minutes with most of them silent left no way to tell whether PHP was blocked, the runner ran out of memory, or the agent's output buffer froze — the log carried only relative durations and no snapshot of the machine. GitHooks now emits three pieces of pure observability (no behaviour change): (1) a **runtime diagnostics block** — githooks version, platform, CPU count and cgroup limit, available/total **system** memory, 1/5/15 load averages and an absolute ISO-8601 start timestamp — printed before the `Settings:` header and **flushed immediately** so it survives a later hang; (2) **absolute `startedAt`/`endedAt` timestamps** (millisecond precision) per job and per flow, alongside the existing relative `duration`, so a gap in a CI log pins to the exact job; (3) a **`runtime` node** in JSON v2 carrying the same snapshot plus the flow span. The text block is **auto-on in CI** (multiline) and opt-in locally via the new `--diag` flag (compact single line) on `flow`, `flows` and `job`; its channel follows the conditions-header rule (text → stdout, clean-stdout formats → stderr only with `--show-progress`). The JSON `runtime` node and per-job timestamps are part of the JSON v2 contract — always present, independent of `--diag`. Fields unavailable on a platform (cgroup limit and memory off Linux, load on Windows) are `null` under the explicit-null pattern, so the contract never breaks. See [Runtime diagnostics and absolute timestamps](how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps).
+Structured formats (JSON/JUnit/SARIF) stay in execution order; JSON v2 gains a per-job `executionOrder`. See [`githooks flow`](cli/flow.md) and [JSON v2 per-job fields](how-to/output-formats.md#per-job-fields).
 
-- **`--format=claude-code` — native AI agent stop-hook output.** A new output format that emits the [Claude Code](https://claude.com/claude-code) stop-hook protocol directly, available on `flow`, `flows` and `job`. On success it prints nothing and exits 0; on a QA failure it prints a single `{"decision":"block","reason":"## job\n<output>…"}` JSON line **and still exits 0** — the stop-hook protocol only honours the block JSON on a zero exit, so a non-zero code would make the agent surface stderr and confuse it with a native block. The `reason` aggregates the plain-text output of every failed job (ANSI stripped, JSON-escaped) under a Markdown `## <jobName>` heading. A genuine configuration error (bad config, undefined flow) still exits 1. This pairs with `--fast-dirty` (3.4) — the working-tree *input* mode designed for AI agents — to close the loop end to end and replaces the per-repo bash wrapper that integrations previously needed. The format is named after its consumer; other agents will get their own opt-in `--format=<agent>` value when their protocols stabilise. See [AI Agent Hooks (Claude Code)](how-to/ai-hooks.md).
+**Native `commit-msg` job — declarative commit-message validation.** An inline job type (no shell spawned) that checks the commit subject against declarative rules or the `conventional-commits` preset, wired to Git's `commit-msg` hook. It replaces hand-written bash hooks and is validated by `conf:check`:
+
+```console
+$ git commit -m "Add stuff."
+✗ commit-msg: subject failed rule 'pattern'.
+  Subject:   Add stuff.
+  Reason:    Use Conventional Commits: tipo(scope?)!?: descripción.
+  Example:   feat(api): add user endpoint
+```
+
+Configure with `'commit-msg' => ['commit-format']` plus a `commit-format` job (`preset` or custom `rules`). **Upgrade note:** reinstall hooks with `githooks hook` so the script forwards Git's message-file argument. See [Commit Message Validation](tools/commit-msg.md).
+
+**`--diag` — runtime diagnostics for CI post-mortems.** Prints a machine snapshot (version, platform, CPU/cgroup, system memory, load, start timestamp) before the run, so a hung CI job shows whether PHP was blocked or starved. Auto-on in CI, opt-in locally:
+
+```console
+$ githooks flow qa --diag
+githooks 3.5.0 · linux · cpus=20 (cgroup limit: 20) · mem=3791 MB / 8096 MB · load=1.6 / 1.9 / 1.9 · 2026-06-03T23:17:05+00:00
+Settings:
+  ...
+```
+
+JSON v2 also gains a `runtime` node and absolute `startedAt`/`endedAt` per job and flow (always present, independent of `--diag`). See [Runtime diagnostics and absolute timestamps](how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps).
+
+**`--format=claude-code` — AI agent stop-hook output.** Emits the [Claude Code](https://claude.com/claude-code) stop-hook protocol on `flow`/`flows`/`job`. On success it is silent and exits 0; on a QA failure it prints one block line aggregating the failed jobs and **still exits 0** (the protocol only honors the block on a zero exit):
+
+```console
+$ githooks flow qa --fast-dirty --format=claude-code
+{"decision":"block","reason":"## phpcs\nsrc/Foo.php:12 line too long\n\n## phpstan\nsrc/Bar.php:8 undefined variable $x"}
+```
+
+Pairs with `--fast-dirty` (3.4) to close the agent loop; a genuine config error still exits 1. See [AI Agent Hooks (Claude Code)](how-to/ai-hooks.md).
 
 ### Fixed
 
-- **`other-arguments` is now honored by `custom` jobs in simple mode** (without `paths`). Previously a `custom` job that used the verbatim `script` form silently dropped its `other-arguments`, so the `extends` + `other-arguments` pattern (e.g. several test shards sharing a base `script` and adding `--shard N/M`) built the identical command for every variant. `other-arguments` is now appended after the script, in the same order as structured mode (`script → other-arguments → cli passthrough`). Structured mode is unchanged. See [custom tool — simple mode](tools/custom.md#simple-mode).
+**`other-arguments` is now honored by `custom` jobs in simple mode** (without `paths`). The verbatim `script` form silently dropped `other-arguments`, so the `extends` + `other-arguments` pattern built the identical command for every variant. It is now appended after the script:
+
+```console
+$ githooks flow qa --dry-run     # three Jest shards sharing a base via extends
+  jest_ci_shard_1
+     yarn tests:ci --shard 1/3
+  jest_ci_shard_2
+     yarn tests:ci --shard 2/3
+  jest_ci_shard_3
+     yarn tests:ci --shard 3/3
+```
+
+See [custom tool — simple mode](tools/custom.md#simple-mode).
 
 ## [3.4.1]
 
