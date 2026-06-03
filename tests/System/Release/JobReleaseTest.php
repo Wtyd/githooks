@@ -163,4 +163,39 @@ class JobReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('--dry-run', $output);
         $this->assertStringContainsString('src', $output);
     }
+
+    /**
+     * BUG-26 — the literal reproduction: three Jest shards sharing a base via
+     * `extends`, each adding its own `other-arguments`. In legacy mode (custom
+     * job without `paths`) `other-arguments` used to be dropped, so the three
+     * shards built the identical `yarn tests:ci` command. The fix lives in
+     * `src/Jobs/CustomJob.php`, embedded in the `.phar`; without it compiled
+     * into the bundled binary the three commands collapse and this fails.
+     *
+     * Covers AC-004 (extends + other-arguments → 3 distinct commands) and
+     * AC-005 (fix exercised over the `.phar`).
+     *
+     * @test
+     */
+    public function custom_legacy_extends_shards_build_distinct_commands_in_dry_run()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['jest_ci_shard_1', 'jest_ci_shard_2', 'jest_ci_shard_3']]])
+            ->setV3Jobs([
+                'jest_base'       => ['type' => 'custom', 'script' => 'yarn tests:ci'],
+                'jest_ci_shard_1' => ['extends' => 'jest_base', 'other-arguments' => '--shard 1/3'],
+                'jest_ci_shard_2' => ['extends' => 'jest_base', 'other-arguments' => '--shard 2/3'],
+                'jest_ci_shard_3' => ['extends' => 'jest_base', 'other-arguments' => '--shard 3/3'],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $output = $this->getActualOutput();
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('yarn tests:ci --shard 1/3', $output);
+        $this->assertStringContainsString('yarn tests:ci --shard 2/3', $output);
+        $this->assertStringContainsString('yarn tests:ci --shard 3/3', $output);
+    }
 }

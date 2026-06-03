@@ -59,9 +59,23 @@ class CustomJob extends JobAbstract
             return implode(' ', $parts);
         }
 
+        return $this->buildLegacyCommand();
+    }
+
+    /**
+     * Legacy mode (no `paths`): the `script` is the full command, verbatim.
+     * Order matches the structured branch: prefix → script → other-arguments
+     * → cliExtraArguments.
+     */
+    private function buildLegacyCommand(): string
+    {
         $command = $this->executablePrefix !== ''
             ? $this->executablePrefix . ' ' . $this->script
             : $this->script;
+
+        if (!empty($this->args['other-arguments'])) {
+            $command .= ' ' . $this->args['other-arguments'];
+        }
 
         if ($this->cliExtraArguments !== '') {
             $command .= ' ' . $this->cliExtraArguments;

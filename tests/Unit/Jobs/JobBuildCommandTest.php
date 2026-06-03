@@ -278,6 +278,66 @@ class JobBuildCommandTest extends TestCase
         $this->assertEquals('eslint src --fix', $job->buildCommand());
     }
 
+    /**
+     * BUG-26: in legacy mode (custom job without `paths`) `other-arguments` was
+     * dropped silently, breaking the `extends` + `other-arguments` pattern (Jest
+     * shards). Decision table over the three factors that shape the legacy command,
+     * verifying the invariant order `prefix → script → other-arguments → cliExtra`.
+     *
+     * | prefix | other-args | cliExtra | expected                                       |
+     * |--------|-----------|----------|------------------------------------------------|
+     * | no     | no        | no       | yarn tests:ci                                  |
+     * | no     | yes       | no       | yarn tests:ci --shard 1/3                       |
+     * | no     | no        | yes      | yarn tests:ci --x                              |
+     * | no     | yes       | yes      | yarn tests:ci --shard 1/3 --x                   |
+     * | yes    | no        | no       | docker exec app yarn tests:ci                   |
+     * | yes    | yes       | no       | docker exec app yarn tests:ci --shard 1/3       |
+     * | yes    | no        | yes      | docker exec app yarn tests:ci --x               |
+     * | yes    | yes       | yes      | docker exec app yarn tests:ci --shard 1/3 --x   |
+     *
+     * @test
+     * @dataProvider customLegacyCommandCases
+     */
+    public function custom_job_legacy_command_combines_prefix_other_args_and_cli_extra(
+        string $prefix,
+        ?string $otherArguments,
+        string $cliExtraArguments,
+        string $expected
+    ): void {
+        $config = ['script' => 'yarn tests:ci'];
+        if ($otherArguments !== null) {
+            $config['other-arguments'] = $otherArguments;
+        }
+
+        $job = new CustomJob(new JobConfiguration('jest_ci_shard', 'custom', $config));
+        if ($prefix !== '') {
+            $job->applyExecutablePrefix($prefix);
+        }
+        if ($cliExtraArguments !== '') {
+            $job->applyCliExtraArguments($cliExtraArguments);
+        }
+
+        $this->assertSame($expected, $job->buildCommand());
+    }
+
+    /**
+     * @return array<string, array{0: string, 1: ?string, 2: string, 3: string}>
+     */
+    public function customLegacyCommandCases(): array
+    {
+        return [
+            // prefix,             other-arguments, cliExtra, expected
+            'no prefix, no other-args, no cli'    => ['', null, '', 'yarn tests:ci'],
+            'no prefix, other-args, no cli'       => ['', '--shard 1/3', '', 'yarn tests:ci --shard 1/3'],
+            'no prefix, no other-args, cli'       => ['', null, '--x', 'yarn tests:ci --x'],
+            'no prefix, other-args, cli (order)'  => ['', '--shard 1/3', '--x', 'yarn tests:ci --shard 1/3 --x'],
+            'prefix, no other-args, no cli'       => ['docker exec app', null, '', 'docker exec app yarn tests:ci'],
+            'prefix, other-args, no cli'          => ['docker exec app', '--shard 1/3', '', 'docker exec app yarn tests:ci --shard 1/3'],
+            'prefix, no other-args, cli'          => ['docker exec app', null, '--x', 'docker exec app yarn tests:ci --x'],
+            'prefix, other-args, cli (order)'     => ['docker exec app', '--shard 1/3', '--x', 'docker exec app yarn tests:ci --shard 1/3 --x'],
+        ];
+    }
+
     /** @test */
     public function job_registry_reports_accelerable_types()
     {
