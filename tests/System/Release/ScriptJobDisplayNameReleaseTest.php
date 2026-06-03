@@ -65,6 +65,13 @@ class ScriptJobDisplayNameReleaseTest extends ReleaseTestCase
     public function two_parallel_script_jobs_with_same_executable_are_distinguishable(): void
     {
         $this->configurationFileBuilder
+            // enableV3Mode() seeds a default `pre-commit => qa` hook plus a `qa`
+            // flow. setV3Flows() below replaces the flows with `shards` only, so
+            // the default hook would dangle (`references 'qa' which is not a
+            // defined flow`) and `flow shards` would exit 1 before running. This
+            // test exercises parallel script-job display names, not hooks — drop
+            // them so the redefined flow set stays self-consistent.
+            ->setV3Hooks([])
             ->setV3Flows(['shards' => ['jobs' => ['shard_a', 'shard_b']]])
             ->setV3Jobs([
                 'shard_a' => [
