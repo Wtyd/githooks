@@ -7,6 +7,7 @@ namespace Tests\Unit\Output;
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\GitHooks\Execution\MemoryBudgetState;
 use Wtyd\GitHooks\Execution\TimeBudgetState;
 use Wtyd\GitHooks\Output\ClaudeCodeResultFormatter;
 
@@ -113,6 +114,32 @@ class ClaudeCodeResultFormatterTest extends TestCase
         $this->assertSame('block', $data['decision']);
         $this->assertStringContainsString('time-budget exceeded', $data['reason']);
         $this->assertStringContainsString('limit 30s', $data['reason']);
+    }
+
+    /**
+     * @test
+     *
+     * A present-but-not-failed time budget must NOT add a time reason, while a
+     * failed memory budget must add its own. This pins both budget guards:
+     * it kills the `time && → ||` mutant (which would wrongly add the time
+     * reason) and the `memory && → && !` mutant (which would drop the memory
+     * reason).
+     */
+    function it_only_reports_the_budget_that_actually_failed()
+    {
+        $timePresentNotFailed = new TimeBudgetState(null, 30, 20.0, false, false);
+        $memoryFailed = new MemoryBudgetState(null, 100, 250, 5.0, [], false, true);
+
+        $result = new FlowResult('qa', [
+            new JobResult('phpstan_src', true, 'ok', '5s', false, null, 'phpstan', 0),
+        ], '5s', 0, 0, 'full', null, null, null, $timePresentNotFailed);
+        $result->setMemoryBudgetState($memoryFailed);
+
+        $data = json_decode($this->formatter()->format($result), true);
+
+        $this->assertSame('block', $data['decision']);
+        $this->assertStringContainsString('memory-budget exceeded', $data['reason']);
+        $this->assertStringNotContainsString('time-budget exceeded', $data['reason']);
     }
 
     /** @test The payload is a single compact line (a stop hook reads stdout as one JSON value). */

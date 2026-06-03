@@ -85,6 +85,9 @@ class CommitMessageValidatorTest extends TestCase
             // subject-case null disables
             'subject-case null disables check'          => ['MiXeD CaSe', ['subject-case' => null], null],
 
+            // sentence-case: only the FIRST char counts (kills the /^[A-Z]/ → /[A-Z]/ mutant)
+            'sentence fails when only a later char is capital' => ['add Endpoint here', ['subject-case' => 'sentence'], 'subject-case'],
+
             // corporate convention via custom pattern (tipo (equipo) ID título)
             'corporate pattern passes'                  => ['feat (backend) PROJ-42 add user endpoint', ['pattern' => '/^(feat|fix) \([\w-]+\) [A-Z]+-\d+ .+/'], null],
             'corporate pattern fails missing id'        => ['feat (backend) add user endpoint', ['pattern' => '/^(feat|fix) \([\w-]+\) [A-Z]+-\d+ .+/'], 'pattern'],
@@ -199,5 +202,33 @@ class CommitMessageValidatorTest extends TestCase
         $outcome = $this->validator->validate('feat: add endpoint', []);
 
         $this->assertSame(18, $outcome->getSubjectLength());
+    }
+
+    /**
+     * @test
+     *
+     * Length is UTF-8 code points, not bytes (CON-005). '🚀🚀🚀' is 3 code
+     * points but 12 bytes; with `strlen` the min-length check would not fire
+     * and `subjectLength` would be 12 — both assertions kill the mb_strlen mutant.
+     */
+    public function length_is_counted_in_utf8_code_points(): void
+    {
+        $outcome = $this->validator->validate('🚀🚀🚀', ['min-length' => 5]);
+
+        $this->assertSame(3, $outcome->getSubjectLength());
+        $this->assertSame('min-length', $outcome->getFailedRule(), '3 code points < min-length 5 must fail');
+    }
+
+    /**
+     * @test
+     *
+     * Counterpart on max-length: '🚀🚀' is 2 code points (8 bytes); a
+     * `max-length` of 3 must pass — `strlen` (8 > 3) would wrongly fail it.
+     */
+    public function max_length_uses_code_points_not_bytes(): void
+    {
+        $outcome = $this->validator->validate('🚀🚀', ['max-length' => 3]);
+
+        $this->assertTrue($outcome->isPassed(), '2 code points <= max-length 3 must pass');
     }
 }

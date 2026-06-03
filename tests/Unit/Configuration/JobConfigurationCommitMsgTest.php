@@ -163,6 +163,25 @@ class JobConfigurationCommitMsgTest extends TestCase
         );
     }
 
+    /** @test Boundary: length of exactly 1 is valid (kills the `< 1` → `<= 1` mutant). */
+    public function length_of_one_is_valid(): void
+    {
+        $result = $this->validate(['type' => 'commit-msg', 'rules' => ['min-length' => 1]]);
+
+        $this->assertFalse($result->hasErrors(), implode(' | ', $result->getErrors()));
+    }
+
+    /** @test Boundary: min == max must error (kills the `>=` → `>` mutant). */
+    public function equal_min_and_max_length_is_an_error(): void
+    {
+        $result = $this->validate(['type' => 'commit-msg', 'rules' => ['min-length' => 20, 'max-length' => 20]]);
+
+        $this->assertContains(
+            "Job 'commit-format' (commit-msg): 'min-length' (20) must be less than 'max-length' (20).",
+            $result->getErrors()
+        );
+    }
+
     /** @test */
     public function invalid_subject_case_is_an_error(): void
     {

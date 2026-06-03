@@ -133,6 +133,7 @@ class CommitMsgJobTest extends TestCase
         $result = $this->runWithContext($job, $context);
 
         $this->assertFalse($result->isSuccess());
+        $this->assertFalse($result->isSkipped(), 'a read failure is a failure, not a skip');
         $this->assertStringContainsString('cannot read message file', $result->getOutput());
     }
 
@@ -149,6 +150,7 @@ class CommitMsgJobTest extends TestCase
 
         rmdir($emptyDir);
         $this->assertFalse($result->isSuccess());
+        $this->assertFalse($result->isSkipped(), 'a missing-message failure is a failure, not a skip');
         $this->assertStringContainsString('no message file available', $result->getOutput());
     }
 }

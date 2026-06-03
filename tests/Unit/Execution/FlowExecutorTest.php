@@ -16,6 +16,7 @@ use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
 use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
+use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
@@ -32,6 +33,53 @@ use Wtyd\GitHooks\Output\OutputHandler;
  */
 class FlowExecutorTest extends TestCase
 {
+    /**
+     * @test
+     *
+     * FEAT-16 inline emission contract: a passing inline job emits only
+     * onJobSuccess (kills the missing-return mutant that would also emit an
+     * error), while a failing inline job streams its block via onJobOutput AND
+     * emits onJobError (kills the onJobError-removal mutant).
+     */
+    public function inline_job_emits_success_only_for_pass_and_error_block_for_fail()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $okJob = new class (new JobConfiguration('inline_ok', 'custom', ['script' => 'true'])) extends CustomJob {
+            public function isInline(): bool
+            {
+                return true;
+            }
+            public function runInline(): JobResult
+            {
+                return new JobResult('inline_ok', true, '', '0ms', false, null, 'custom', 0);
+            }
+        };
+        $koJob = new class (new JobConfiguration('inline_ko', 'custom', ['script' => 'true'])) extends CustomJob {
+            public function isInline(): bool
+            {
+                return true;
+            }
+            public function runInline(): JobResult
+            {
+                return new JobResult('inline_ko', false, 'boom reason', '0ms', false, null, 'custom', 1);
+            }
+        };
+
+        $plan = new FlowPlan('test', [$okJob, $koJob], new OptionsConfiguration(false, 1));
+        $executor->execute($plan);
+
+        // Passing inline job → onJobSuccess, never onJobError.
+        $this->assertContains('inline_ok', array_column($spy->successfulJobs, 'job'));
+        $this->assertNotContains('inline_ok', array_column($spy->errorJobs, 'job'));
+
+        // Failing inline job → onJobError (with its output) and onJobOutput stream.
+        $this->assertContains('inline_ko', array_column($spy->errorJobs, 'job'));
+        $this->assertContains('inline_ko', array_column($spy->outputs, 'job'));
+        $this->assertNotContains('inline_ko', array_column($spy->successfulJobs, 'job'));
+    }
+
     // Dry-run mode
 
     /** @test */

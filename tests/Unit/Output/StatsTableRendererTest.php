@@ -324,6 +324,9 @@ class StatsTableRendererTest extends TestCase
         // The "#" cell carries the original execution order (alpha ran 2nd).
         $this->assertMatchesRegularExpression('/\|\s*2\s*\|\s*alpha\s*\|/', $rendered);
         $this->assertMatchesRegularExpression('/\|\s*1\s*\|\s*zeta\s*\|/', $rendered);
+        // The TOTAL row keeps the leading "#" column filled with "-" so it stays
+        // aligned under the 6-column header (kills the TOTAL-row composition mutants).
+        $this->assertMatchesRegularExpression('/\|\s*-\s*\|\s*TOTAL \(flow\)\s*\|/', $rendered);
     }
 
     /** @test FEAT-4 */

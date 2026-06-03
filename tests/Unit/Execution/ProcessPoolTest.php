@@ -8,6 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
 use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
+use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Execution\ProcessPool;
 use Wtyd\GitHooks\Jobs\CustomJob;
 
@@ -53,6 +54,26 @@ class ProcessPoolTest extends TestCase
         $this->assertCount(1, $pool->getQueuedJobs());
 
         $pool->terminateAll();
+    }
+
+    /**
+     * @test
+     *
+     * FEAT-16: an inline job's pool entry carries no process (it ran in-process
+     * at admission). terminateAll() must skip it via the null guard, not call
+     * ->isRunning() on null. Kills the `&& → ||` mutant in terminateAll().
+     */
+    function terminate_all_tolerates_inline_entries_without_a_process()
+    {
+        $pool = new ProcessPool(2);
+        $pool->enqueue([$this->makeInlineJob('inline_a'), $this->makeJob('shell_b', 'sleep 0.3')]);
+        $pool->fillPool();
+
+        // Must not throw on the null-process inline entry.
+        $terminated = $pool->terminateAll();
+
+        $this->assertArrayHasKey('inline_a', $terminated);
+        $this->assertArrayHasKey('shell_b', $terminated);
     }
 
     /** @test */
@@ -694,6 +715,22 @@ class ProcessPoolTest extends TestCase
     private function makeJob(string $name, string $script): CustomJob
     {
         return new CustomJob(new JobConfiguration($name, 'custom', ['script' => $script]));
+    }
+
+    /** An inline job (FEAT-16): runs in-process, so its pool entry has no process. */
+    private function makeInlineJob(string $name): CustomJob
+    {
+        return new class (new JobConfiguration($name, 'custom', ['script' => 'true'])) extends CustomJob {
+            public function isInline(): bool
+            {
+                return true;
+            }
+
+            public function runInline(): JobResult
+            {
+                return new JobResult($this->name, true, '', '0ms', false, null, 'custom', 0);
+            }
+        };
     }
 
     private function makeJobWithMemory(string $name, string $script, int $memoryMb): CustomJob
