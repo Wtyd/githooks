@@ -8,6 +8,7 @@ use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Hooks\HookStatusInspector;
+use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
 use Tests\Doubles\FileReaderFake;
@@ -46,6 +47,15 @@ class AppServiceProvider extends ServiceProvider
             \LaravelZero\Framework\Commands\BuildCommand::class,
             \Wtyd\GitHooks\App\Commands\Zero\BuildCommand::class
         );
+
+        // Feed the runtime diagnostics block (FEAT-14) the same version source
+        // as `--version` (app('git.version'), stamped into the .phar by the
+        // build). Without this the collector falls back to PrettyVersions, which
+        // reports 'unknown' when githooks runs as a distributed dependency.
+        $this->app->bind(DiagnosticsCollector::class, function () {
+            return new DiagnosticsCollector(null, null, (string) config('app.version'));
+        });
+
         $this->testsRegister();
     }
 

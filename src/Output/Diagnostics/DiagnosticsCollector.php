@@ -30,10 +30,13 @@ class DiagnosticsCollector
 
     private MemoryDetector $memory;
 
-    public function __construct(?CpuDetector $cpu = null, ?MemoryDetector $memory = null)
+    private ?string $version;
+
+    public function __construct(?CpuDetector $cpu = null, ?MemoryDetector $memory = null, ?string $version = null)
     {
         $this->cpu = $cpu ?? new CpuDetector();
         $this->memory = $memory ?? new MemoryDetector();
+        $this->version = $version;
     }
 
     public function collect(): Diagnostics
@@ -68,6 +71,14 @@ class DiagnosticsCollector
 
     protected function version(): string
     {
+        // Prefer the version injected by the app layer (the same source as
+        // `--version`: app('git.version'), which the build stamps into the
+        // .phar). PrettyVersions resolves the *consumer's* root package when
+        // githooks runs as a dependency, yielding 'unknown' in the distributed
+        // binary — so it is only a last-resort fallback for manual construction.
+        if ($this->version !== null && $this->version !== '') {
+            return $this->version;
+        }
         try {
             return PrettyVersions::getRootPackageVersion()->getPrettyVersion();
         } catch (Throwable $e) {

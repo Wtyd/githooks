@@ -99,6 +99,33 @@ class DiagnosticsCollectorTest extends TestCase
         $this->assertSame([], $collector->exposeLoadAverage());
     }
 
+    /**
+     * The version injected by the app layer (app('git.version'), the same source
+     * as `--version`) must win over the PrettyVersions fallback. This is the fix
+     * for the runtime block reporting 'unknown' in the distributed .phar.
+     *
+     * @test
+     */
+    public function uses_the_injected_version_over_the_composer_fallback(): void
+    {
+        $collector = new DiagnosticsCollector($this->cpu(), new MemoryDetectorStub('linux'), '9.9.9-test');
+
+        $this->assertSame('9.9.9-test', $collector->collect()->getVersion());
+    }
+
+    /**
+     * An empty/absent injected version must fall through to the fallback, never
+     * surface as an empty version string.
+     *
+     * @test
+     */
+    public function falls_back_when_the_injected_version_is_empty(): void
+    {
+        $collector = new DiagnosticsCollector($this->cpu(), new MemoryDetectorStub('linux'), '');
+
+        $this->assertNotSame('', $collector->collect()->getVersion());
+    }
+
     /** @test */
     public function now_formats_an_iso8601_timestamp_with_milliseconds(): void
     {
