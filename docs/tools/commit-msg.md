@@ -28,7 +28,7 @@ return [
 Then install the hooks so Git runs the job on every commit:
 
 ```bash
-githooks hook:install
+githooks hook
 ```
 
 Now a commit whose subject does not follow [Conventional Commits](https://www.conventionalcommits.org/) is rejected:
@@ -44,7 +44,7 @@ $ git commit -m "Add stuff."
 A valid one (`git commit -m "feat(api): add user endpoint"`) passes silently and the commit is created.
 
 !!! warning "Upgrading from an earlier version"
-    The `commit-msg` job needs the message-file path that Git passes to the hook. If you installed your hooks **before this feature existed**, the generated hook script discards that argument. **Run `githooks hook:install` again** after upgrading so the script forwards Git's arguments; until then a `commit-msg` job reports *"no message file available"*. Reinstalling is safe and idempotent.
+    The `commit-msg` job needs the message-file path that Git passes to the hook. If you installed your hooks **before this feature existed**, the generated hook script discards that argument. **Run `githooks hook` again** after upgrading so the script forwards Git's arguments; until then a `commit-msg` job reports *"no message file available"*. Reinstalling is safe and idempotent.
 
 ## The `conventional-commits` preset
 
