@@ -426,7 +426,7 @@ Emission follows the same factors table as the conditions header:
 | local + `--diag` | structured | off | suppressed |
 | local **without** `--diag` | any | – | not emitted (zero noise) |
 
-In CI the block is **automatic** (no flag needed) and rendered multiline; locally it is opt-in via `--diag` and rendered as a single compact line. The channel rule mirrors the header (BUG-5): text → stdout; clean-stdout formats → stderr only with `--show-progress`, otherwise suppressed so the structured payload stays pristine.
+In CI the block is **automatic** (no flag needed) and rendered multiline; locally it is opt-in via `--diag` and rendered as a single compact line. The channel rule mirrors the header: text → stdout; clean-stdout formats → stderr only with `--show-progress`, otherwise suppressed so the structured payload stays pristine.
 
 !!! note "The JSON `runtime` node is always present"
     `--diag` only controls the **text** block. The `runtime` JSON node and the per-job `startedAt`/`endedAt` fields are part of the JSON v2 contract — they are emitted on every `--format=json` run regardless of `--diag`.

@@ -62,9 +62,9 @@ When the agent stops:
   the `reason`, keeps the turn open, and the agent fixes the reported issues.
 
 !!! tip "Before vs after"
-    Previously this required a per-repo bash wrapper (`static-analysis.sh`) that
-    captured stdout + exit code and re-emitted the JSON. With `--format=claude-code`
-    that wrapper disappears — the `settings.json` command is the whole integration.
+    Previously this required a per-repo bash wrapper that captured stdout + exit code
+    and re-emitted the JSON. With `--format=claude-code` that wrapper disappears — the
+    `settings.json` command is the whole integration.
 
 ## Works with `flow`, `flows` and `job`
 
