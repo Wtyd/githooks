@@ -21,6 +21,19 @@ Use the `script` key for the full command. Simple and direct, but does not suppo
 ],
 ```
 
+`other-arguments` is also honored in simple mode: it is appended after the
+`script`. This pairs well with `extends` to share a base command across
+variants without repeating it — for example, sharding a test suite:
+
+```php
+'jest_base'       => ['type' => 'custom', 'script' => 'yarn tests:ci'],
+'jest_ci_shard_1' => ['extends' => 'jest_base', 'other-arguments' => '--shard 1/3'],
+'jest_ci_shard_2' => ['extends' => 'jest_base', 'other-arguments' => '--shard 2/3'],
+'jest_ci_shard_3' => ['extends' => 'jest_base', 'other-arguments' => '--shard 3/3'],
+```
+
+Each shard runs `yarn tests:ci --shard N/3`.
+
 ## Structured mode (with paths)
 
 Use `executable-path` + `paths` + optional `other-arguments`. This mode supports `--fast` acceleration when `accelerable: true`.
@@ -44,7 +57,7 @@ In normal mode, this runs: `npx eslint resources/js --fix`. With `--fast`, it ru
 | `script` | Simple | The full command to execute. Required if `executable-path` is not set. |
 | `executable-path` | Structured | Path to the executable. Required if `script` is not set. |
 | `paths` | Structured | Directories or files to analyze. |
-| `other-arguments` | Structured | Extra CLI flags appended after paths. |
+| `other-arguments` | Both | Extra CLI flags. Appended after `paths` in structured mode, after the `script` in simple mode. |
 | `accelerable` | Structured | Boolean. Opt-in for `--fast` path filtering. Default `false`. |
 | `execution` | Both | Per-job execution mode override (`full`, `fast`, `fast-branch`). |
 | `ignore-errors-on-exit` | Both | Job returns exit 0 even with problems. |
