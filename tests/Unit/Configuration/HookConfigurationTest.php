@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\HookConfiguration;
 use Wtyd\GitHooks\Configuration\HookRef;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
 class HookConfigurationTest extends TestCase
 {
+    use AssertWarningsTrait;
+
     /** @test */
     public function it_parses_valid_hooks()
     {
@@ -56,7 +59,10 @@ class HookConfigurationTest extends TestCase
         );
 
         $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('nonexistent_flow', $result->getErrors()[0]);
+        $this->assertErrorEquals(
+            "Hook 'pre-commit' references 'nonexistent_flow' which is not a defined flow or job.",
+            $result
+        );
     }
 
     /** @test */
@@ -439,6 +445,52 @@ class HookConfigurationTest extends TestCase
         $this->assertTrue($result->hasErrors());
         $this->assertTargets(['qa'], $hooks->resolve('pre-push'));
         $this->assertSame(['pre-push'], $hooks->getEvents());
+    }
+
+    /**
+     * Decision table for the hook target-reference guard
+     * (HookConfiguration::fromArray, the `!in_array(flows) && !in_array(jobs)`
+     * check). The error is raised iff the target belongs to NEITHER pool. The
+     * (F,F) row is the pathogenic class that produced
+     * "Hook 'pre-commit' references 'qa' which is not a defined flow or job."
+     * in the release pipeline when a config redefined its flows and orphaned a
+     * default hook. See tests/Unit/Configuration/factors.md.
+     *
+     * @test
+     * @dataProvider hookTargetReferenceCases
+     * @param string[] $flows
+     * @param string[] $jobs
+     */
+    public function hook_target_reference_error_iff_target_in_neither_pool(
+        array $flows,
+        array $jobs,
+        bool $expectError
+    ): void {
+        $result = new ValidationResult();
+
+        HookConfiguration::fromArray(['pre-commit' => ['qa']], $flows, $jobs, $result);
+
+        $error = "Hook 'pre-commit' references 'qa' which is not a defined flow or job.";
+        if ($expectError) {
+            $this->assertErrorEquals($error, $result);
+        } else {
+            $this->assertFalse($result->hasErrors());
+            $this->assertNotContains($error, $result->getErrors());
+        }
+    }
+
+    /**
+     * @return array<string, array{0: string[], 1: string[], 2: bool}>
+     */
+    public function hookTargetReferenceCases(): array
+    {
+        return [
+            // flows,    jobs,     expectError
+            'target in both flows and jobs'      => [['qa'], ['qa'], false],
+            'target in flows only'               => [['qa'], [],     false],
+            'target in jobs only'                => [[],     ['qa'], false],
+            'target in neither (pathogenic F,F)' => [[],     [],     true],
+        ];
     }
 
     /**
