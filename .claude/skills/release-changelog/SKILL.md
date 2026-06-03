@@ -15,9 +15,23 @@ description: >
 
 Esta skill destila la sección `[X.Y.Z]` de [docs/changelog.md](../../../docs/changelog.md) hacia `CHANGELOG-X.Y.Z.md` en la raíz del repo, listo para pegar en GitHub Releases.
 
-`docs/changelog.md` es el changelog "interno" (rico, con detalle técnico, mantenido durante el desarrollo). El archivo de release notes es el destilado externo: compacto, en inglés, sin internals, con ejemplos de código seleccionados y enlaces al sitio MkDocs.
-
 Plantilla canónica: [`references/template.md`](references/template.md). Referencia viva: [CHANGELOG-3.2.0.md](../../../CHANGELOG-3.2.0.md).
+
+## Modelo de tres niveles (divulgación progresiva)
+
+La documentación de cada feature vive en tres niveles, cada uno con un lector y una pregunta distintos. **La regla dura que separa el nivel 1 del 2 es input vs output**: el nivel 1 enseña como mucho el comando (input); el nivel 2 enseña además **qué imprime** (output).
+
+| Nivel | Fichero | Lector / pregunta | Contenido | Ejemplo |
+|---|---|---|---|---|
+| **1 · GitHub release** | `CHANGELOG-X.Y.Z.md` (raíz) | "¿me actualizo?" (escaneo 30 s) | feature + 1 frase de beneficio | **solo input** (el comando) o ninguno — **nunca output** |
+| **2 · Changelog de la doc** | `docs/changelog.md` `[X.Y.Z]` | "ya actualicé, ¿cómo se ve?" | qué + por qué intermedio | **input + output**, UN ejemplo |
+| **3 · Página de feature** | `docs/{tools,how-to,cli}/*.md` | "¿cómo lo exprimo?" | mecanismo completo | múltiples, edge cases |
+
+**Esta skill destila nivel 2 → nivel 1**: lee `docs/changelog.md` (nivel 2, que ya trae su ejemplo de *output*) y produce `CHANGELOG-X.Y.Z.md` (nivel 1) **quitando el bloque de output** y comprimiendo la explicación a lo mínimo. La skill **no** escribe el nivel 2 ni el 3 (se mantienen a mano durante el dev). El nivel 2 es el que se mantiene en caliente por tarea; el nivel 1 se destila al cerrar la release.
+
+**Qué NO es cada nivel** (el error que motivó esta regla): el nivel 2 no es "el nivel 1 con más adjetivos" — se gana el sitio **mostrando la salida**. El nivel 2 tampoco es el "Quijote": el mecanismo profundo (patrones de null, routing de canal, racional de exit codes, semántica interna) es **nivel 3**, no va en el changelog.
+
+**Anti-deriva del nivel 2**: los ejemplos de *output* son el contenido que más se queda obsoleto (cambias un formato y nadie revisa el changelog; no está testeado). Al escribir el nivel 2, pega solo la parte **estable** del output (columnas/estructura, no timings ni rutas volátiles) y, cuando exista, cópialo del catálogo `qa-tester` (`/var/www/html3/docs/TESTS-vX.Y.md`), donde esas salidas son reales y verificadas contra el binario.
 
 ## Cuándo usarla
 
@@ -55,6 +69,7 @@ Y leer desde esa línea hasta el siguiente `## [` (o EOF). Si la sección está 
 - **"Internal Improvements" / "Build Improvements"** salvo que el usuario final los note.
 - **Bugs internos cerrados durante el dev** que nunca llegaron a una versión publicada.
 - **Comentarios de QA, PHPStan, PHPMD, mensajes de tests**.
+- **IDs de kanban (`BUG-N`, `FEAT-N`)**. Son internos: van **solo** en commits y en el kanban, **nunca** en `CHANGELOG-X.Y.Z.md` (nivel 1) ni en `docs/changelog.md` (nivel 2). Si el changelog interno los trae, **quítalos** al destilar; describe el cambio por su efecto, no por su ticket.
 
 ### Reformular
 
@@ -72,14 +87,14 @@ Y leer desde esa línea hasta el siguiente `## [` (o EOF). Si la sección está 
 
 Reglas: quitar `.md`, añadir `/` final antes del `#anchor`, prefijar `https://wtyd.github.io/githooks/`. **Nunca** enlazar a `github.com/Wtyd/githooks/blob/master/docs/...`.
 
-### Ejemplos de código
+### Ejemplos de código (nivel 1: solo input)
 
-Añadir bloque ` ```bash ` o ` ```php ` cuando aclare uso:
+En `CHANGELOG-X.Y.Z.md` (nivel 1) un ejemplo es como mucho **el comando** (input): el flag o la sintaxis nueva. **Nunca el output** — la salida renderizada (tabla `--stats`, JSON, bloque de diagnóstico) es el diferenciador del nivel 2 y no se duplica aquí.
 
-- **Sí**: opciones nuevas (`--format=sarif`, `--output=PATH`), keywords de configuración, sintaxis de un nuevo job type.
-- **No**: features descriptivas que se entienden sin ver código ("dashboard interactivo en TTY", "live streaming").
+- **Sí** (input mínimo): opciones nuevas (`--format=sarif`, `--output=PATH`), keyword de configuración, sintaxis de un job type nuevo.
+- **No**: bloques de salida; features descriptivas que se entienden sin código ("dashboard interactivo en TTY", "live streaming").
 
-Un ejemplo por feature como mucho. Mínimo y autoexplicativo. No copiar bloques largos del changelog interno.
+Un ejemplo (input) por feature como mucho, autoexplicativo. Si dudas entre incluir un comando o no, **no lo incluyas**: en el nivel 1 el lector solo decide si actualiza; el "cómo se ve" lo encuentra en el enlace al nivel 2/3.
 
 ## Estructura del output
 
@@ -120,6 +135,13 @@ Tras crear el archivo, confirmar al usuario:
 - **No incluir refactors, clases internas, mejoras de cobertura ni cambios de CI propios**. Aunque estén en `docs/changelog.md`. La regla es "qué se nota desde fuera del proyecto".
 - **No inventar features no presentes en `docs/changelog.md`** — si crees que falta algo, parar y avisar al usuario; no recopilar de git log.
 - **No actualizar `docs/changelog.md`** — la skill solo lee. El changelog interno se mantiene a mano durante el desarrollo.
+- **No filtrar IDs de kanban** (`BUG-N`/`FEAT-N`) al output. Verificación obligatoria antes de cerrar (debe devolver vacío):
+
+  ```bash
+  grep -nE '\b(BUG|FEAT)-[0-9]+' CHANGELOG-X.Y.Z.md
+  ```
+
+  Si sale algo, reescribe esa línea por el efecto observable del cambio. Mismo grep vale para auditar `docs/changelog.md` (nivel 2).
 
 ## Checklist de verificación
 
@@ -136,5 +158,7 @@ Antes de reportar terminado:
 - [ ] Footer presente: `**Full changelog**: https://wtyd.github.io/githooks/changelog/`.
 - [ ] No hay sección "Installation/upgrade" salvo que aplique por matiz real.
 - [ ] No quedan referencias a clases internas, refactors, MSI, cobertura ni cambios de CI propios.
-- [ ] Los ejemplos de código son mínimos y autoexplicativos (un bloque por feature como mucho).
+- [ ] **Sin IDs de kanban**: `grep -nE '\b(BUG|FEAT)-[0-9]+' CHANGELOG-X.Y.Z.md` devuelve vacío (también conviene en `docs/changelog.md`).
+- [ ] Los ejemplos de código son mínimos (un bloque por feature como mucho) y son **solo input/comando — ningún bloque de output** (el output es del nivel 2).
+- [ ] Cada feature enlaza a su página de feature (nivel 3) para el detalle; el mecanismo profundo NO está en el changelog.
 - [ ] Verificación informal: comparar output con [CHANGELOG-3.2.0.md](../../../CHANGELOG-3.2.0.md); el patrón debe ser consistente.
