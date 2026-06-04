@@ -90,8 +90,16 @@ class FlowResultRenderer
             // Text format: use streaming for sequential, keep buffered for parallel
             $handler = new StreamingTextOutputHandler($this->container->make(Printer::class));
         } else {
-            // Parallel text: use dashboard with live timers
-            $handler = new DashboardOutputHandler();
+            // Parallel text: use the live dashboard only when the output is
+            // *both* a TTY and ANSI-decorated. Decoration off (`--no-ansi`,
+            // `NO_COLOR`) or a non-TTY stream falls back to the append-only
+            // renderer — BUG-27: the live dashboard redraws with cursor-up
+            // escapes that are no-ops when ANSI is not honoured, which made
+            // every completed line repeat once per refresh tick. We never
+            // force the live mode on (passing `false`, never `true` from a
+            // forced-decorated CI stream), so CI keeps degrading to
+            // append-only via its own `posix_isatty` = false.
+            $handler = new DashboardOutputHandler($this->liveDashboardEnabled($output));
         }
 
         if ($this->needsToolJsonOutput($format, $plan, $options)) {
@@ -208,6 +216,30 @@ class FlowResultRenderer
         }
 
         return new ProgressOutputHandler(null, $options->showProgress);
+    }
+
+    /**
+     * Whether the live parallel dashboard may be used: the stream must be both
+     * a TTY *and* ANSI-decorated. Decoration off (`--no-ansi`, `NO_COLOR`, a
+     * `dumb`/unset `TERM`) means the cursor-up escapes the dashboard emits
+     * would be no-ops, so we fall back to append-only — BUG-27.
+     *
+     * @param OutputInterface $output See {@see applyFormat()} for the duck-typed contract.
+     */
+    private function liveDashboardEnabled(OutputInterface $output): bool
+    {
+        return $output->isDecorated() && $this->stdoutIsTty();
+    }
+
+    /**
+     * Whether stdout is an interactive terminal. Wrapped in a method so the
+     * live-dashboard decision (BUG-27) is unit-testable without a real TTY —
+     * `posix_isatty(STDOUT)` is false under PHPUnit, which would otherwise
+     * pin every test to append-only mode.
+     */
+    protected function stdoutIsTty(): bool
+    {
+        return defined('STDOUT') && function_exists('posix_isatty') && posix_isatty(STDOUT);
     }
 
     /**

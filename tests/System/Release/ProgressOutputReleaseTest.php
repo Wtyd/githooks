@@ -166,4 +166,52 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('a - OK', $output);
         $this->assertDoesNotMatchRegularExpression('/\x1b\[\d+A/', $output, 'non-TTY output must not contain cursor-up escapes');
     }
+
+    /** @test */
+    public function dashboard_does_not_repeat_completion_lines_on_a_tty_without_ansi_support(): void
+    {
+        // BUG-27: the live parallel dashboard redraws with cursor-up escapes
+        // (\e[NA). On a stream that reports as a TTY (posix_isatty=true) but
+        // does not honour those escapes, the cursor never moves up, so every
+        // completed job line was re-appended once per ~200ms refresh tick.
+        // The fix gates the live dashboard on `isDecorated() && tty`, so a TTY
+        // with colour support disabled degrades to the append-only renderer.
+        //
+        // We allocate a pseudo-TTY with `script` (posix_isatty=true) and turn
+        // colour support off with NO_COLOR (isDecorated=false) — the exact
+        // mismatch the bug describes. `--no-ci` keeps the assertion independent
+        // of the CI runner forcing decoration back on.
+        if (trim((string) shell_exec('command -v script')) === '') {
+            $this->markTestSkipped('`script` (util-linux) is required to allocate a pseudo-TTY.');
+        }
+
+        $this->configurationFileBuilder
+            ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 2])
+            ->setV3Flows(['qa' => ['jobs' => ['j_fast', 'j_slow']]])
+            ->setV3Jobs([
+                'j_fast' => ['type' => 'custom', 'script' => 'true'],
+                'j_slow' => ['type' => 'custom', 'script' => 'sleep 1'],
+            ]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $inner = sprintf(
+            'NO_COLOR=1 %s flow qa --processes=2 --no-ci --config=%s',
+            $this->githooks,
+            $this->configPath
+        );
+        passthru(sprintf('script -qc %s /dev/null 2>&1', escapeshellarg($inner)), $exitCode);
+
+        $output = str_replace("\r", '', $this->getActualOutput());
+
+        $this->assertDoesNotMatchRegularExpression(
+            '/\x1b\[\d+A/',
+            $output,
+            'a TTY without ANSI colour support must use the append-only renderer (no cursor-up escapes)'
+        );
+        $this->assertSame(
+            1,
+            substr_count($output, 'j_fast - OK'),
+            'each completion line must be printed exactly once, not repeated per refresh tick'
+        );
+    }
 }
