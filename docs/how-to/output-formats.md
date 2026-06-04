@@ -51,7 +51,7 @@ When running a flow with `processes > 1` in an interactive terminal (TTY), the t
 
 On completion, the dashboard collapses to a clean summary.
 
-**Activation is automatic** via `posix_isatty(STDOUT)`. No flag is needed. In non-TTY environments (CI, redirected stdout, pipes) it falls back to append-only streaming text so logs stay parseable.
+**Activation is automatic**: the live dashboard turns on only when stdout is **both** a TTY *and* ANSI-decorated. No flag is needed. When stdout is not a TTY (CI, redirected stdout, pipes) **or** is a TTY without ANSI support (`NO_COLOR`, `TERM=dumb` or unset, terminals and IDE panels that don't render escape sequences), it falls back to append-only streaming text so logs stay parseable — the dashboard redraws in place with cursor escapes, which are no-ops on a stream that can't honour them and would otherwise re-print each completed line on every refresh tick.
 
 !!! tip "`--monitor` is a separate feature"
     `--monitor` adds a **thread-usage report at the end of execution** (peak estimated threads, warning if the budget was exceeded). It is independent of the dashboard — you can combine them (`--monitor` on top of the dashboard) or use it in CI with the plain output.

@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here.
 
+## [3.5.1]
+
+### Fixed
+
+**The parallel dashboard no longer repeats completed-job lines on a TTY without ANSI support.** The live dashboard redraws in place with cursor-up escapes. On a stream that reports as a TTY but does not honour them — `NO_COLOR`, `TERM=dumb` or unset, IDE output panels — the cursor never moved, so each finished job's line was re-printed once per ~200 ms refresh tick (a fast job could stack dozens of copies while a slow one kept running). The live dashboard is now gated on ANSI decoration as well as the TTY check, so those streams degrade to the clean append-only renderer — one line per job:
+
+```console
+$ NO_COLOR=1 githooks flow qa     # a TTY that does not support ANSI
+  ⏳ phpcpd...
+  ⏳ phpstan-src...
+  phpcpd - OK. Time: 0.31s
+  phpstan-src - OK. Time: 1.06s
+  ...
+Results: 8/8 passed in 9.20s ✔️
+```
+
+Color-capable terminals are unaffected — the live, in-place dashboard is preserved. See [Interactive parallel dashboard](how-to/output-formats.md#interactive-parallel-dashboard).
+
 ## [3.5]
 
 ### Added
