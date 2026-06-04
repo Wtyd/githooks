@@ -181,8 +181,15 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
         // colour support off with NO_COLOR (isDecorated=false) — the exact
         // mismatch the bug describes. `--no-ci` keeps the assertion independent
         // of the CI runner forcing decoration back on.
-        if (trim((string) shell_exec('command -v script')) === '') {
-            $this->markTestSkipped('`script` (util-linux) is required to allocate a pseudo-TTY.');
+        //
+        // Gated to Linux: this uses GNU `script -qc` (util-linux). macOS ships
+        // BSD `script`, whose CLI is incompatible (no `-c`, command is
+        // positional) and produces no usable output here. The .phar payload is
+        // identical across platforms, so Linux coverage is sufficient; the fix
+        // itself is platform-independent PHP and is covered everywhere by the
+        // unit FlowResultRendererTtyModeTest (no pty needed).
+        if (PHP_OS_FAMILY !== 'Linux' || trim((string) shell_exec('command -v script')) === '') {
+            $this->markTestSkipped('Requires GNU `script` (util-linux) to allocate a pseudo-TTY; Linux-only.');
         }
 
         $this->configurationFileBuilder
