@@ -15,6 +15,7 @@ Responde siempre en castellano (español de España).
 1. **Verificar rama:** Asegúrate de estar en una rama de tarea con formato `gh-{ID}` (ej: `gh-42`). Si estás en `master`, pregunta al usuario antes de continuar.
 2. **Leer antes de escribir:** No propongas cambios en código que no hayas leído.
 3. **Tabla de factores (estrategia de tests):** Si la tarea toca un componente con varios factores interactuando — scheduler/admission, parsers de config con guards compuestos, resolvers de input files, matchers de condiciones, validadores, mergers de options — redacta la tabla de factores **antes** de escribir código o tests. Identifica factores con poder de cambiar el output, sus clases de equivalencia, valores en frontera (AVL), y la decision table o el pairwise mínimo. Sin esto, los tests acaban siendo "un escenario, un test" y dejan clases adversarias sin cubrir. Ver `.claude/skills/php-test-creator/SKILL.md` capítulo **"Diseño de tests por factores"**.
+4. **Ediciones mínimas:** Toca solo lo que el requisito exige. No reformatees, renombres ni refactorices de paso código no relacionado con la tarea, aunque "ya que estás". Respeta los patrones e idioms del fichero que editas en vez de imponer un estilo nuevo. Los cambios oportunistas inflan el diff, ocultan el cambio real en la review y son la causa típica de regresiones colaterales.
 
 ### Tareas grandes (nueva feature, nueva tool, refactor)
 
@@ -194,6 +195,7 @@ return [
 - **`ToolsFactory`** — factory que instancia las tools desde la configuración.
 - **`src/Tools/Process/`** excluido de PHPStan — wraps de Symfony Process.
 - **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.4 githooks tool all full`.
+- **Implementación mínima, sin especular.** Escribe solo el código que resuelve lo pedido. Nada de features, parámetros, flags de config o abstracciones "por si acaso" que no estén en el requisito. No introduzcas capas de indirección, interfaces o puntos de extensión hasta que haya un segundo caso real que los justifique — en una CLI distribuida como `.phar`, cada abstracción prematura es superficie que hay que mantener, testear y compilar sin demanda que la respalde.
 
 ## Skills disponibles
 
