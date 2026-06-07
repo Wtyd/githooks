@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
 
 /**
@@ -13,7 +13,7 @@ use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
  * platform. The integration test that actually shells out to `ps` lives
  * in MacOsRssSamplerIntegrationTest with @group macos.
  */
-class MacOsRssSamplerTest extends TestCase
+class MacOsRssSamplerTest extends UnitTestCase
 {
     /** @test */
     public function it_returns_empty_for_empty_pid_set(): void

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
 use Wtyd\GitHooks\Utils\Printer;
 
-class StreamingTextOutputHandlerTest extends TestCase
+class StreamingTextOutputHandlerTest extends UnitTestCase
 {
     use CapturesStdout;
 

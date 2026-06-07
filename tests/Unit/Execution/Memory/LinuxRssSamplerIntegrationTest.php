@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
 
@@ -22,7 +22,7 @@ use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
  * @group linux
  * @group integration
  */
-class LinuxRssSamplerIntegrationTest extends TestCase
+class LinuxRssSamplerIntegrationTest extends UnitTestCase
 {
     protected function setUp(): void
     {

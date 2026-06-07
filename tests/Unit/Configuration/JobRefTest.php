@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\JobRef;
 use Wtyd\GitHooks\Configuration\ValidationResult;
@@ -16,7 +16,7 @@ use Wtyd\GitHooks\Configuration\ValidationResult;
  * The override semantics (Group D) live in JobRefLocalOverrideTest because they
  * exercise array_replace_recursive end-to-end.
  */
-class JobRefTest extends TestCase
+class JobRefTest extends UnitTestCase
 {
     use AssertWarningsTrait;
 

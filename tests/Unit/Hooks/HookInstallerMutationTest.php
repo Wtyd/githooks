@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hooks;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Hooks\HookInstaller;
 
 /**
  * Tests targeting escaped mutants in HookInstaller:
  * install, installLegacy, clean, cleanLegacy, buildScript, chmod.
  */
-class HookInstallerMutationTest extends TestCase
+class HookInstallerMutationTest extends UnitTestCase
 {
     private string $tempDir;
 

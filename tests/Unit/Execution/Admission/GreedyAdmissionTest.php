@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Admission;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\Admission\AdmissionContext;
 use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 
-class GreedyAdmissionTest extends TestCase
+class GreedyAdmissionTest extends UnitTestCase
 {
     /** @test */
     public function picks_head_when_head_fits(): void

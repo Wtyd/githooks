@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Commands\Concerns;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 
 /**
  * Unit tests for the BUG-21 concern. Cover the adversarial casillas of the
@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  * production path (the trait reads tokens from `$this->input`, not from
  * `$_SERVER['argv']`).
  */
-class ValidatesUnknownOptionsBeforeDashDashTest extends TestCase
+class ValidatesUnknownOptionsBeforeDashDashTest extends UnitTestCase
 {
     private const BIN = ['githooks', 'job', 'phpcs_src'];
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Windows;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
@@ -16,7 +16,7 @@ use Wtyd\GitHooks\Jobs\RectorJob;
  * These run on all platforms — they verify that jobs handle various path
  * formats correctly in buildCommand().
  */
-class PathHandlingTest extends TestCase
+class PathHandlingTest extends UnitTestCase
 {
     /** @test */
     public function phpstan_handles_backslash_paths_in_config()

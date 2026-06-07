@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Utils;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Utils\ComposerUpdater;
 
-class ComposerUpdaterTest extends TestCase
+class ComposerUpdaterTest extends UnitTestCase
 {
     /** @test */
     function pathToBuild_returns_empty_string_for_php_81_or_higher()

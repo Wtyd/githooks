@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
 use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
 use Wtyd\GitHooks\Execution\Memory\MemorySamplerFactory;
 use Wtyd\GitHooks\Execution\Memory\NullRssSampler;
 
-class MemorySamplerFactoryTest extends TestCase
+class MemorySamplerFactoryTest extends UnitTestCase
 {
     /** @test */
     public function it_returns_linux_sampler_when_platform_is_linux_with_proc(): void

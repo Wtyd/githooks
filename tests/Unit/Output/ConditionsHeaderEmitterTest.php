@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\StreamOutput;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
 use Wtyd\GitHooks\Execution\ExecutionMode;
@@ -36,7 +36,7 @@ use Wtyd\GitHooks\Output\HeaderOptions;
  * Clase patógena cubierta: cada fila DEBE llevar su `(source)` — incluido
  * `(default)` — y el `=` alinearse en una sola columna.
  */
-class ConditionsHeaderEmitterTest extends TestCase
+class ConditionsHeaderEmitterTest extends UnitTestCase
 {
     private function makeResolution(string $modeSource = 'default', string $modeValue = 'full'): EffectiveOptionsResolution
     {

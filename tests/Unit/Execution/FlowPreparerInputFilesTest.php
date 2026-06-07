@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
@@ -22,7 +22,7 @@ use Wtyd\GitHooks\Jobs\JobRegistry;
  * forInputFiles() as if it were FAST mode with a custom staged list.
  * Spec coverage: AC-001, AC-009, AC-020, AC-021.
  */
-class FlowPreparerInputFilesTest extends TestCase
+class FlowPreparerInputFilesTest extends UnitTestCase
 {
     private FlowPreparer $preparer;
 

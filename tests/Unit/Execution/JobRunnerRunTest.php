@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Tests\Unit\Output\RoutingBufferedOutput;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
@@ -34,7 +34,7 @@ use Wtyd\GitHooks\Output\RenderOptions;
  * `prepare()` is exercised at the integration boundary (each case feeds a
  * parser fake so prepare()'s output flows naturally into run()).
  */
-class JobRunnerRunTest extends TestCase
+class JobRunnerRunTest extends UnitTestCase
 {
     private FileUtilsFake $fileUtils;
 

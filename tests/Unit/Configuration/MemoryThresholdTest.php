@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\MemoryThreshold;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
-class MemoryThresholdTest extends TestCase
+class MemoryThresholdTest extends UnitTestCase
 {
     /** @test */
     public function from_int_creates_short_form_threshold_with_warn_above_only(): void

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
@@ -24,7 +24,7 @@ use Wtyd\GitHooks\Jobs\PhpstanJob;
  *
  * La tabla de factores que cubre vive en {@see factors-empty-input.md}.
  */
-class ToolOutputFixturesRegressionTest extends TestCase
+class ToolOutputFixturesRegressionTest extends UnitTestCase
 {
     private const FIXTURES = __DIR__ . '/../../fixtures/tool-outputs';
 

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Utils;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\UnixCpuDetectorStub;
 
 /**
  * `CpuDetector::cgroupLimit()` exposes the container CPU cap for the diagnostics
  * block (FEAT-14), separate from the effective `detect()` count.
  */
-class CpuDetectorCgroupLimitTest extends TestCase
+class CpuDetectorCgroupLimitTest extends UnitTestCase
 {
     private const NPROC = ['nproc 2>/dev/null' => ['output' => ['20'], 'exit' => 0]];
 

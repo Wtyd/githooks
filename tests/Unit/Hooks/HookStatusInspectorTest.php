@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hooks;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\HookConfiguration;
 use Wtyd\GitHooks\Configuration\HookRef;
@@ -14,7 +14,7 @@ use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Hooks\HookEventStatus;
 use Wtyd\GitHooks\Hooks\HookStatusInspector;
 
-class HookStatusInspectorTest extends TestCase
+class HookStatusInspectorTest extends UnitTestCase
 {
     private string $tempDir;
 

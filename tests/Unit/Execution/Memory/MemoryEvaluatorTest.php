@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
 use Wtyd\GitHooks\Execution\Memory\MemoryEvaluator;
 use Wtyd\GitHooks\Execution\Memory\MemorySample;
 
-class MemoryEvaluatorTest extends TestCase
+class MemoryEvaluatorTest extends UnitTestCase
 {
     /** @test */
     public function tracks_per_job_peak_across_samples(): void

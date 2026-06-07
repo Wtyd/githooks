@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 
@@ -14,7 +14,7 @@ use Wtyd\GitHooks\Jobs\PhpstanJob;
  * PhpstanCacheResolverTest. Aqui solo validamos el cableado job <-> resolver
  * y los caminos de fallback.
  */
-class PhpstanJobTest extends TestCase
+class PhpstanJobTest extends UnitTestCase
 {
     /** @var string[] */
     private array $paths = [];

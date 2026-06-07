@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Utils;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\MemoryDetectorStub;
 
 /**
@@ -14,7 +14,7 @@ use Tests\Doubles\MemoryDetectorStub;
  * cgroup limit present/absent, vm_stat present/absent). Unavailable → null,
  * never throws (AC-004).
  */
-class MemoryDetectorTest extends TestCase
+class MemoryDetectorTest extends UnitTestCase
 {
     /** @test */
     public function windows_reports_both_fields_null(): void

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\MemoryThreshold;
 use Wtyd\GitHooks\Execution\Memory\MemoryThresholdEvaluator;
 
-class MemoryThresholdEvaluatorTest extends TestCase
+class MemoryThresholdEvaluatorTest extends UnitTestCase
 {
     /** @test */
     public function returns_none_when_below_warn_above(): void

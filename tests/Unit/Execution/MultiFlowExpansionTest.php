@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -24,7 +24,7 @@ use Wtyd\GitHooks\Execution\MultiFlowExpansion;
  * Observables: merged ref order, preserved attributes per ref, reconstructed
  * `needs` graph.
  */
-class MultiFlowExpansionTest extends TestCase
+class MultiFlowExpansionTest extends UnitTestCase
 {
     // ─── expandFlowNames (F1) ────────────────────────────────────────
 

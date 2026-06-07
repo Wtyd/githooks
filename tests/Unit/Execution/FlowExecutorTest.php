@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\GitStagerFake;
 use Tests\Doubles\InjectableFlowExecutor;
@@ -31,7 +31,7 @@ use Wtyd\GitHooks\Output\OutputHandler;
  * Tests targeting escaped mutants in FlowExecutor:
  * dry-run, sequential, buildResult, formatTime, parallel, ignoreErrorsOnExit.
  */
-class FlowExecutorTest extends TestCase
+class FlowExecutorTest extends UnitTestCase
 {
     /**
      * @test

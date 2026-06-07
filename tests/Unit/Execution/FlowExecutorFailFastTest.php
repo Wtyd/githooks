@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\InjectableFlowExecutor;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
@@ -27,7 +27,7 @@ use Wtyd\GitHooks\Output\NullOutputHandler;
  * is in play), and every queued job emits an `onJobSkipped` event so
  * structured formats still report the full plan.
  */
-class FlowExecutorFailFastTest extends TestCase
+class FlowExecutorFailFastTest extends UnitTestCase
 {
     /**
      * @test

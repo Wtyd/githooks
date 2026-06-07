@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hooks;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Hooks\HookInstaller;
 
-class HookInstallerTest extends TestCase
+class HookInstallerTest extends UnitTestCase
 {
     private string $tempDir;
 

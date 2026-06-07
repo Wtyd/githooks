@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Commands\Concerns;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 
 /**
  * Direct tests for the ResolvesTimeBudgetFlags trait.
@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  * regresses to calling `getErrorOutput()`, every assertion that exercises
  * the warning path will fail loudly.
  */
-class ResolvesTimeBudgetFlagsTest extends TestCase
+class ResolvesTimeBudgetFlagsTest extends UnitTestCase
 {
     // Happy paths
 

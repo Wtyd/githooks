@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Execution\Memory\MemoryStats;
 use Wtyd\GitHooks\Output\RenderOptions;
 use Wtyd\GitHooks\Output\StatsTableRenderer;
 
-class StatsTableRendererTest extends TestCase
+class StatsTableRendererTest extends UnitTestCase
 {
     /** @test */
     public function it_renders_nothing_when_memory_stats_are_absent(): void

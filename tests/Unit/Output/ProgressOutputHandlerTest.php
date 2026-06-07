@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\ProgressOutputHandler;
 
-class ProgressOutputHandlerTest extends TestCase
+class ProgressOutputHandlerTest extends UnitTestCase
 {
     /** @test */
     public function on_job_success_writes_progress_to_stream()

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\ToolOutputParser\Concerns;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\ToolOutputParser\Concerns\ExtractsJsonDocument;
 
 /**
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Output\ToolOutputParser\Concerns\ExtractsJsonDocument;
  * private extractJsonDocument() method is reachable. The trait is shared
  * across PHPStan / Psalm / Rector parsers; bugs here propagate.
  */
-class ExtractsJsonDocumentTest extends TestCase
+class ExtractsJsonDocumentTest extends UnitTestCase
 {
     /** @var object */
     private $host;

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Output\DashboardOutputHandler;
 
-class DashboardOutputHandlerTest extends TestCase
+class DashboardOutputHandlerTest extends UnitTestCase
 {
     use CapturesStdout;
 

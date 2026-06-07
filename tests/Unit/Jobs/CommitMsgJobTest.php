@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Jobs\CommitMsgJob;
@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Jobs\CommitMsgJob;
  * presets and resolver have their own unit tests; here we check the wiring and
  * the JobResult contract (REQ-016/017/018, AC-001/002/003/009/010).
  */
-class CommitMsgJobTest extends TestCase
+class CommitMsgJobTest extends UnitTestCase
 {
     /** @var string[] */
     private array $tmpFiles = [];

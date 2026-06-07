@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\CI;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\CI\CIEnvironment;
 
-class CIEnvironmentTest extends TestCase
+class CIEnvironmentTest extends UnitTestCase
 {
     private array $originalEnv = [];
 

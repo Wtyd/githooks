@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Utils;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Utils\BranchResolution;
 use Wtyd\GitHooks\Utils\BranchResolver;
@@ -22,7 +22,7 @@ use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
  *   4. $fileUtils->getCurrentBranch() (git rev-parse)
  *   5. Detached HEAD or empty → DetachedHeadException
  */
-class BranchResolverTest extends TestCase
+class BranchResolverTest extends UnitTestCase
 {
     private const CI_VARS = [
         'GITHOOKS_BRANCH',

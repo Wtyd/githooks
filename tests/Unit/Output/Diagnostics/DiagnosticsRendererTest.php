@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\Diagnostics;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Diagnostics;
 use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsRenderer;
 
-class DiagnosticsRendererTest extends TestCase
+class DiagnosticsRendererTest extends UnitTestCase
 {
     private DiagnosticsRenderer $renderer;
 

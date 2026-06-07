@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs\CommitMessage;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Jobs\CommitMessage\MessageFileResolver;
 
 /**
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Jobs\CommitMessage\MessageFileResolver;
  * the null-on-no-source case (REQ-005) and raw reading (REQ-006). Disk is
  * stubbed via protected seams.
  */
-class MessageFileResolverTest extends TestCase
+class MessageFileResolverTest extends UnitTestCase
 {
     private function resolver(bool $fallbackExists = false, ?string $fileContents = null): MessageFileResolver
     {

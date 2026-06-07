@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
@@ -29,7 +29,7 @@ use Wtyd\GitHooks\Output\FlowResultRenderer;
  * `FileUtilsFake`, and stub `ConfigurationParser` via a small in-test fake
  * to keep each case <5 ms.
  */
-class JobRunnerTest extends TestCase
+class JobRunnerTest extends UnitTestCase
 {
     private FileUtilsFake $fileUtils;
 

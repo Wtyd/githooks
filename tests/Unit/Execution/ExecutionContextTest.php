@@ -6,14 +6,14 @@ namespace Tests\Unit\Execution;
 
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Execution\ExecutionContext;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\InputFilesResolution;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
-class ExecutionContextTest extends TestCase
+class ExecutionContextTest extends UnitTestCase
 {
     use MockeryPHPUnitIntegration;
 

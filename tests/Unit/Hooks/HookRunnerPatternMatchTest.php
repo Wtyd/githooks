@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hooks;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\HookConfiguration;
@@ -21,7 +21,7 @@ use Wtyd\GitHooks\Hooks\HookRunner;
  * Tests targeting escaped mutants in HookRunner's pattern matching logic:
  * globToRegex, matchesBranch, matchesFiles, shouldExecute, exitCode.
  */
-class HookRunnerPatternMatchTest extends TestCase
+class HookRunnerPatternMatchTest extends UnitTestCase
 {
     private FileUtilsFake $fileUtils;
 

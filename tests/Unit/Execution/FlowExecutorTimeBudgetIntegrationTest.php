@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
@@ -25,7 +25,7 @@ use Wtyd\GitHooks\Output\NullOutputHandler;
  *
  * @group integration
  */
-class FlowExecutorTimeBudgetIntegrationTest extends TestCase
+class FlowExecutorTimeBudgetIntegrationTest extends UnitTestCase
 {
     /** @test */
     public function job_marks_warned_when_warn_after_crossed(): void

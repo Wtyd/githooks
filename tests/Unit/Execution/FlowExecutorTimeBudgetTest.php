@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
@@ -25,7 +25,7 @@ use Wtyd\GitHooks\Output\NullOutputHandler;
  * The end-to-end path (real Symfony Process + real microtime) is covered
  * by FlowExecutorTimeBudgetIntegrationTest under @group integration.
  */
-class FlowExecutorTimeBudgetTest extends TestCase
+class FlowExecutorTimeBudgetTest extends UnitTestCase
 {
     // Per-job thresholds
 

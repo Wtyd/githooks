@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\PhpunitJob;
 
-class PhpunitJobTest extends TestCase
+class PhpunitJobTest extends UnitTestCase
 {
     /** @var string[] */
     private array $paths = [];

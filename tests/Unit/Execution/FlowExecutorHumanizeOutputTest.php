@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\OutputHandlerSpy;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -30,7 +30,7 @@ use Wtyd\GitHooks\Jobs\PhpstanJob;
  *     structuredFormat = true AND a parser is registered for the job type;
  *     otherwise it sees the raw output (unchanged from pre-BUG-18 behaviour).
  */
-class FlowExecutorHumanizeOutputTest extends TestCase
+class FlowExecutorHumanizeOutputTest extends UnitTestCase
 {
     /**
      * Row A — structuredFormat=true, parser registered.

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Commands\Concerns;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 
-class ResolvesAllocatorFlagTest extends TestCase
+class ResolvesAllocatorFlagTest extends UnitTestCase
 {
     /** @test */
     public function it_returns_null_when_flag_absent(): void

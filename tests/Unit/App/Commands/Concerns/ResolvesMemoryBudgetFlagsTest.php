@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Commands\Concerns;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 
 /**
  * Direct tests for the ResolvesMemoryBudgetFlags trait.
  */
-class ResolvesMemoryBudgetFlagsTest extends TestCase
+class ResolvesMemoryBudgetFlagsTest extends UnitTestCase
 {
     /** @test */
     public function it_returns_all_nulls_when_no_flags_provided(): void

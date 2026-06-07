@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Style\SymfonyStyle;
@@ -22,7 +22,7 @@ use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
  *  - preserves the `<comment>Warning:</comment> X` formatting.
  *  - falls back to writeln on the raw output when not a SymfonyStyle.
  */
-class ConfigWarningsEmitterTest extends TestCase
+class ConfigWarningsEmitterTest extends UnitTestCase
 {
     private function makeStyle(BufferedOutput $buffer): SymfonyStyle
     {

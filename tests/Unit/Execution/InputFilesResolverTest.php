@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Exception\InputFilesException;
 use Wtyd\GitHooks\Execution\InputFilesResolution;
 use Wtyd\GitHooks\Execution\InputFilesResolver;
@@ -14,7 +14,7 @@ use Wtyd\GitHooks\Utils\FileUtils;
 /**
  * Spec coverage: spec-design-files-flag.md REQ-001..036, AC-001..086.
  */
-class InputFilesResolverTest extends TestCase
+class InputFilesResolverTest extends UnitTestCase
 {
     private string $tmpDir;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\PhpmdJob;
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Jobs\PhpmdJob;
 /**
  * Direct coverage for PhpmdJob. Infection report 2026-04-20 — L47, L67, L68, L91.
  */
-class PhpmdJobTest extends TestCase
+class PhpmdJobTest extends UnitTestCase
 {
     /** @test */
     public function phpmd_is_a_supported_accelerable_job_type()

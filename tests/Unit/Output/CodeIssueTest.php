@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\CodeIssue;
 
-class CodeIssueTest extends TestCase
+class CodeIssueTest extends UnitTestCase
 {
     /** @test */
     public function it_stores_all_fields()

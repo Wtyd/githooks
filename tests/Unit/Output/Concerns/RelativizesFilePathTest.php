@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\Concerns;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
 
 /**
@@ -19,7 +19,7 @@ use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
  *
  * Plus the rtrim normalisation of the CWD trailing separator.
  */
-class RelativizesFilePathTest extends TestCase
+class RelativizesFilePathTest extends UnitTestCase
 {
     /** @var object */
     private $host;

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
-class FlowConfigurationTest extends TestCase
+class FlowConfigurationTest extends UnitTestCase
 {
     use AssertWarningsTrait;
 

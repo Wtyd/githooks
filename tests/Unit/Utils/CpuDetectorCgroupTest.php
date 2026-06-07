@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Utils;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\UnixCpuDetectorStub;
 
 /**
@@ -19,7 +19,7 @@ use Tests\Doubles\UnixCpuDetectorStub;
  * Expected: detect() returns min(nproc, ceil(quota / period)) when a quota is
  * in force, otherwise nproc verbatim. v2 takes precedence over v1.
  */
-class CpuDetectorCgroupTest extends TestCase
+class CpuDetectorCgroupTest extends UnitTestCase
 {
     private const NPROC_RESPONSE = ['nproc 2>/dev/null' => ['output' => ['20'], 'exit' => 0]];
     private const V2_PATH = '/sys/fs/cgroup/cpu.max';

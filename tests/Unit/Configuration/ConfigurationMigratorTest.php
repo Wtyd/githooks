@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationMigrator;
 
-class ConfigurationMigratorTest extends TestCase
+class ConfigurationMigratorTest extends UnitTestCase
 {
     private ConfigurationMigrator $migrator;
 

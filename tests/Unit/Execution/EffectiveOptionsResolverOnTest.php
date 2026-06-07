@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\FlowOnRule;
@@ -25,7 +25,7 @@ use Wtyd\GitHooks\Utils\BranchResolution;
  *    4. flows.options.execution →                  source `flows.options`
  *    5. default →                                  source `default`
  */
-class EffectiveOptionsResolverOnTest extends TestCase
+class EffectiveOptionsResolverOnTest extends UnitTestCase
 {
     private EffectiveOptionsResolver $resolver;
 

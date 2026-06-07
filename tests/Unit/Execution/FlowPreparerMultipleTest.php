@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
@@ -13,7 +13,7 @@ use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 
-class FlowPreparerMultipleTest extends TestCase
+class FlowPreparerMultipleTest extends UnitTestCase
 {
     private FlowPreparer $preparer;
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Windows;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Utils\Platform;
 
-class PlatformTest extends TestCase
+class PlatformTest extends UnitTestCase
 {
     /** @test */
     public function is_windows_returns_bool()

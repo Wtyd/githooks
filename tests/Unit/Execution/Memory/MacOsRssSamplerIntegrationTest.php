@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
 
 /**
@@ -13,7 +13,7 @@ use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
  * Real ps invocation; only runs on macOS. The Linux CI matrix excludes
  * @group macos via phpunit.xml; the macOS leg (when added) opts in.
  */
-class MacOsRssSamplerIntegrationTest extends TestCase
+class MacOsRssSamplerIntegrationTest extends UnitTestCase
 {
     protected function setUp(): void
     {

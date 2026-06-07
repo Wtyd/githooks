@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\HookRef;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
-class HookRefTest extends TestCase
+class HookRefTest extends UnitTestCase
 {
     use AssertWarningsTrait;
 

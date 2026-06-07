@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Execution\MemoryBudgetState;
 use Wtyd\GitHooks\Execution\TimeBudgetState;
 use Wtyd\GitHooks\Output\ClaudeCodeResultFormatter;
 
-class ClaudeCodeResultFormatterTest extends TestCase
+class ClaudeCodeResultFormatterTest extends UnitTestCase
 {
     private function formatter(): ClaudeCodeResultFormatter
     {

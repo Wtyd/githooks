@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hooks;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Hooks\PatternMatcher;
 
 /**
  * Direct unit tests for PatternMatcher extracted from HookRunner.
  * Tests each method independently without full HookRunner setup.
  */
-class PatternMatcherTest extends TestCase
+class PatternMatcherTest extends UnitTestCase
 {
     private PatternMatcher $matcher;
 

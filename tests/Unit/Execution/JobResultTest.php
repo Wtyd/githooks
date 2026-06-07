@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\JobResult;
 
-class JobResultTest extends TestCase
+class JobResultTest extends UnitTestCase
 {
     /** @test */
     public function it_stores_new_fields_from_constructor()

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\EffectiveOptionsResolver;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 
-class EffectiveOptionsResolverTest extends TestCase
+class EffectiveOptionsResolverTest extends UnitTestCase
 {
     private EffectiveOptionsResolver $resolver;
 

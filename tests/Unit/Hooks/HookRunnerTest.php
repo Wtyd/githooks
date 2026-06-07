@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hooks;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\HookConfiguration;
@@ -17,7 +17,7 @@ use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Hooks\HookRunner;
 
-class HookRunnerTest extends TestCase
+class HookRunnerTest extends UnitTestCase
 {
     private FileUtilsFake $fileUtils;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\JobRegistry;
@@ -20,7 +20,7 @@ use Wtyd\GitHooks\Jobs\PsalmJob;
 use Wtyd\GitHooks\Jobs\RectorJob;
 use Wtyd\GitHooks\Jobs\ScriptJob;
 
-class JobBuildCommandTest extends TestCase
+class JobBuildCommandTest extends UnitTestCase
 {
     /** @test */
     public function phpstan_builds_correct_command()

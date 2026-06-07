@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
 
 /**
@@ -20,7 +20,7 @@ use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
  *
  * @group linux
  */
-class LinuxRssSamplerTest extends TestCase
+class LinuxRssSamplerTest extends UnitTestCase
 {
     // Smoke tests against the real /proc — Linux only
 

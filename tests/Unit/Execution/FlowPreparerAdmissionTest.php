@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\FlowConfiguration;
@@ -24,7 +24,7 @@ use Wtyd\GitHooks\Jobs\JobRegistry;
  * evaluated BEFORE the accelerable check, so all job types (accelerable,
  * non-accelerable, custom) honour the rule.
  */
-class FlowPreparerAdmissionTest extends TestCase
+class FlowPreparerAdmissionTest extends UnitTestCase
 {
     private FlowPreparer $preparer;
 

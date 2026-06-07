@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\HumanIssueFormatter;
 use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
 
@@ -23,7 +23,7 @@ use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
  *   - trim(raw) === ''                     → return ''
  *   - parser returns >=1 issue             → render human text
  */
-class HumanIssueFormatterTest extends TestCase
+class HumanIssueFormatterTest extends UnitTestCase
 {
     private HumanIssueFormatter $formatter;
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\ToolOutputParser;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\ToolOutputParser\ParallelLintOutputParser;
 
-class ParallelLintOutputParserTest extends TestCase
+class ParallelLintOutputParserTest extends UnitTestCase
 {
     private ParallelLintOutputParser $parser;
 

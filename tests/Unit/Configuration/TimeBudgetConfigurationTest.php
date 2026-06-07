@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
-class TimeBudgetConfigurationTest extends TestCase
+class TimeBudgetConfigurationTest extends UnitTestCase
 {
     /** @test */
     public function it_returns_null_when_raw_is_not_an_array(): void

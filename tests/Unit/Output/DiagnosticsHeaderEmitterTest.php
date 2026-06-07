@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Wtyd\GitHooks\Execution\Diagnostics;
 use Wtyd\GitHooks\Output\DiagnosticsHeaderEmitter;
 use Wtyd\GitHooks\Output\HeaderOptions;
 
-class DiagnosticsHeaderEmitterTest extends TestCase
+class DiagnosticsHeaderEmitterTest extends UnitTestCase
 {
     private DiagnosticsHeaderEmitter $emitter;
 

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\Deprecation;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Output\SarifResultFormatter;
 
-class SarifResultFormatterTest extends TestCase
+class SarifResultFormatterTest extends UnitTestCase
 {
     /** @test */
     function it_produces_valid_sarif_structure()

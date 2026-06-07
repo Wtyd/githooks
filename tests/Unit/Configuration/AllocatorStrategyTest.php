@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\AllocatorStrategy;
 
-class AllocatorStrategyTest extends TestCase
+class AllocatorStrategyTest extends UnitTestCase
 {
     /** @test */
     public function fifo_is_valid(): void

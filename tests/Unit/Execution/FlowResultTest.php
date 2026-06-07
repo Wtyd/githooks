@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 
-class FlowResultTest extends TestCase
+class FlowResultTest extends UnitTestCase
 {
     /** @test */
     public function it_stores_execution_mode()

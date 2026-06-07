@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\OutputHandlerSpy;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -24,7 +24,7 @@ use Wtyd\GitHooks\Output\NullOutputHandler;
  * exit-code + output combination of the real tool, without requiring PHPStan
  * or PHPCS to be installed on the test runner.
  */
-class FlowExecutorEmptyInputTest extends TestCase
+class FlowExecutorEmptyInputTest extends UnitTestCase
 {
     /** @test */
     public function phpstan_job_returning_no_files_found_marker_is_reinterpreted_as_skipped()

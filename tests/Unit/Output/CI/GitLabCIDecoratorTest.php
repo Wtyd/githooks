@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\CI;
 
 use Closure;
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Concerns\AssertsOutputBody;
 use Tests\Concerns\CapturesStdout;
 use Tests\Doubles\CountingFlushOutputHandler;
@@ -33,7 +33,7 @@ use Wtyd\GitHooks\Output\OutputHandler;
  *  - inner.flush() suppression so framed errors don't leak outside sections
  *  - parallel interleaving (start A → start B → end B → end A): no overlap
  */
-class GitLabCIDecoratorTest extends TestCase
+class GitLabCIDecoratorTest extends UnitTestCase
 {
     use CapturesStdout;
     use AssertsOutputBody;

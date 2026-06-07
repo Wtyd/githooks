@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\JobRegistry;
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Jobs\PhpcsJob;
 
 /**
  */
-class PhpcsJobTest extends TestCase
+class PhpcsJobTest extends UnitTestCase
 {
     /** @test */
     public function phpcs_is_a_supported_accelerable_job_type()

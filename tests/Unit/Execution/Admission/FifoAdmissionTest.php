@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Admission;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\Admission\AdmissionContext;
 use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 
-class FifoAdmissionTest extends TestCase
+class FifoAdmissionTest extends UnitTestCase
 {
     /** @test */
     public function picks_the_head_when_it_fits(): void

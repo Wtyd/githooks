@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Tests\Unit\Output\RoutingBufferedOutput;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
@@ -30,7 +30,7 @@ use Wtyd\GitHooks\Output\RenderOptions;
  * multi-flow variant that handles the four invocation modes (single-flow
  * degenerate, declarative meta-flow, ad-hoc, mixed).
  */
-class FlowsRunnerTest extends TestCase
+class FlowsRunnerTest extends UnitTestCase
 {
     private FileUtilsFake $fileUtils;
 

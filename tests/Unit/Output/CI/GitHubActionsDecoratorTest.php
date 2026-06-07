@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\CI;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
 use Wtyd\GitHooks\Output\OutputHandler;
 
-class GitHubActionsDecoratorTest extends TestCase
+class GitHubActionsDecoratorTest extends UnitTestCase
 {
     use CapturesStdout;
 

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 
-class ValidationResultTest extends TestCase
+class ValidationResultTest extends UnitTestCase
 {
     /** @test */
     public function it_starts_empty()

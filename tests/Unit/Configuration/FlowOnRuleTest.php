@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\FlowOnRule;
 use Wtyd\GitHooks\Configuration\ValidationResult;
@@ -16,7 +16,7 @@ use Wtyd\GitHooks\Configuration\ValidationResult;
  * shape errors (Group A's A4, A5, A10) live in FlowConfigurationTest because
  * they belong to the surrounding section, not to a single rule.
  */
-class FlowOnRuleTest extends TestCase
+class FlowOnRuleTest extends UnitTestCase
 {
     use AssertWarningsTrait;
 

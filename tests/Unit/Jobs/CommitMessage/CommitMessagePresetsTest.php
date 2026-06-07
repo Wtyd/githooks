@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs\CommitMessage;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
 
 /**
  * Preset catalogue + per-key override resolution (REQ-012, FEAT-16).
  */
-class CommitMessagePresetsTest extends TestCase
+class CommitMessagePresetsTest extends UnitTestCase
 {
     /** @test */
     public function conventional_commits_is_known(): void

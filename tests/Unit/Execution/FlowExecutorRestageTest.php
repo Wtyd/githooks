@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\GitStagerFake;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -14,7 +14,7 @@ use Wtyd\GitHooks\Jobs\PhpcbfJob;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Output\NullOutputHandler;
 
-class FlowExecutorRestageTest extends TestCase
+class FlowExecutorRestageTest extends UnitTestCase
 {
     /** @test */
     public function it_restages_files_when_a_job_applies_a_fix()

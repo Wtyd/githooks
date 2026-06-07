@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 
-class ExecutionModeTest extends TestCase
+class ExecutionModeTest extends UnitTestCase
 {
     /** @test */
     public function full_is_valid()

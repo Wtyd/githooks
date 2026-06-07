@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Illuminate\Container\Container;
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Output\OutputInterface;
 use Tests\Concerns\CapturesStdout;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
@@ -39,7 +39,7 @@ use Wtyd\GitHooks\Output\RenderOptions;
  *
  * Live mode is the AND of both factors; every other combination is append-only.
  */
-class FlowResultRendererTtyModeTest extends TestCase
+class FlowResultRendererTtyModeTest extends UnitTestCase
 {
     use CapturesStdout;
 

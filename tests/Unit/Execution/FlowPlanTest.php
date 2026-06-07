@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowPlan;
 
-class FlowPlanTest extends TestCase
+class FlowPlanTest extends UnitTestCase
 {
     /** @test */
     public function it_stores_the_execution_mode()

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Tools;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Tools\Errors;
 
-class ErrorsTest extends TestCase
+class ErrorsTest extends UnitTestCase
 {
     /** @test */
     function it_starts_empty()

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Windows;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\UnixCpuDetectorStub;
 use Tests\Doubles\WindowsCpuDetectorNoExecStub;
 use Tests\Doubles\WindowsCpuDetectorScriptedExecStub;
@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Utils\CpuDetector;
  * Tests CPU detection logic including Windows paths.
  * Uses stubs to test Windows code paths on Linux.
  */
-class CpuDetectorTest extends TestCase
+class CpuDetectorTest extends UnitTestCase
 {
     /** @test */
     function it_detects_cpus_on_current_platform()

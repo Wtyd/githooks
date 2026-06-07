@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\JobRegistry;
@@ -14,7 +14,7 @@ use Wtyd\GitHooks\Jobs\ParatestJob;
  * Paratest is the parallel driver for PHPUnit. It wraps the same CLI and
  * adds `--processes=N` to control worker count.
  */
-class ParatestJobTest extends TestCase
+class ParatestJobTest extends UnitTestCase
 {
     /** @test */
     public function paratest_is_a_supported_job_type()

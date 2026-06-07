@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs\CommitMessage;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
 use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessageValidator;
 
@@ -14,7 +14,7 @@ use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessageValidator;
  * with/without Conventional-Commits prefix, merge/squash/fixup detection, and
  * subject extraction (BOM, CRLF, multibyte length).
  */
-class CommitMessageValidatorTest extends TestCase
+class CommitMessageValidatorTest extends UnitTestCase
 {
     private CommitMessageValidator $validator;
 

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
-class ConfigurationParserTest extends TestCase
+class ConfigurationParserTest extends UnitTestCase
 {
     private string $fixturesPath;
 

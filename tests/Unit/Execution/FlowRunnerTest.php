@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Tests\Unit\Output\RoutingBufferedOutput;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
@@ -30,7 +30,7 @@ use Wtyd\GitHooks\Output\RenderOptions;
  * pure-orchestration entry point that replaced the FlowCommand::handle()
  * body in Phase 2c.
  */
-class FlowRunnerTest extends TestCase
+class FlowRunnerTest extends UnitTestCase
 {
     private FileUtilsFake $fileUtils;
 

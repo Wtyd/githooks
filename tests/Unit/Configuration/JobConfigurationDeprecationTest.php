@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\Deprecation;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Registry\ToolRegistry;
  * Acceptance criteria for v3.3 step 1 of the camelCase → kebab-case migration
  * for keys inside `jobs.<name>` (spec: spec-design-kebab-case-keys-deprecation).
  */
-class JobConfigurationDeprecationTest extends TestCase
+class JobConfigurationDeprecationTest extends UnitTestCase
 {
     private ToolRegistry $toolRegistry;
 

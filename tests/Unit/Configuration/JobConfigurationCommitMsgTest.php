@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Jobs\JobRegistry;
@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Registry\ToolRegistry;
  * rejected keys (REQ-009), preset (REQ-011), rules and per-rule values
  * (REQ-010..013). Errors fail `conf:check` (exit 1); warnings do not.
  */
-class JobConfigurationCommitMsgTest extends TestCase
+class JobConfigurationCommitMsgTest extends UnitTestCase
 {
     private ToolRegistry $toolRegistry;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Commands;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationChecker;
 
 /**
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Configuration\ConfigurationChecker;
  * {@see ConfigurationChecker::truncateCommand()} (pure function) so it no
  * longer needs reflection on CheckConfigurationFileCommand to be exercised.
  */
-class TruncateCommandTest extends TestCase
+class TruncateCommandTest extends UnitTestCase
 {
     private ConfigurationChecker $checker;
 

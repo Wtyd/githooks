@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs\CacheResolver;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Jobs\CacheResolver\PhpConfigCacheResolver;
 
 /**
@@ -16,7 +16,7 @@ use Wtyd\GitHooks\Jobs\CacheResolver\PhpConfigCacheResolver;
  *   - quotes: single / double
  *   - file presence: missing / present
  */
-class PhpConfigCacheResolverTest extends TestCase
+class PhpConfigCacheResolverTest extends UnitTestCase
 {
     /** @var string[] */
     private array $paths = [];

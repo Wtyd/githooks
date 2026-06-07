@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\OutputFormats;
 
-class OutputFormatsTest extends TestCase
+class OutputFormatsTest extends UnitTestCase
 {
     /** @test claude-code is accepted by --format but is not a report-file target. */
     function claude_code_is_supported_but_not_structured()

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Admission;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Admission\AdmissionContext;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 
-class AdmissionContextTest extends TestCase
+class AdmissionContextTest extends UnitTestCase
 {
     /** @test */
     public function fits_passes_when_cores_available_and_no_memory_budget(): void

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\ProcessPool;
 use Wtyd\GitHooks\Jobs\JobAbstract;
@@ -18,7 +18,7 @@ use Wtyd\GitHooks\Jobs\PhpcsJob;
  * exercised by the integration test suite — this file isolates the pure
  * primitives so they can be unit-tested fast.
  */
-class ProcessPoolNeedsTest extends TestCase
+class ProcessPoolNeedsTest extends UnitTestCase
 {
     /** @test */
     public function drainBlockedByFailedDeps_returns_empty_when_no_deps_have_failed(): void

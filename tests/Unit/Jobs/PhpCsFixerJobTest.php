@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
 
-class PhpCsFixerJobTest extends TestCase
+class PhpCsFixerJobTest extends UnitTestCase
 {
     /** @var string[] */
     private array $sandboxPaths = [];

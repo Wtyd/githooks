@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
 use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Execution\ProcessPool;
 use Wtyd\GitHooks\Jobs\CustomJob;
 
-class ProcessPoolTest extends TestCase
+class ProcessPoolTest extends UnitTestCase
 {
     /** @test */
     function constructor_clamps_max_processes_to_at_least_one()

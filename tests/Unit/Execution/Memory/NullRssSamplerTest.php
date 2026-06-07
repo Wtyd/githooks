@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution\Memory;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Memory\NullRssSampler;
 
-class NullRssSamplerTest extends TestCase
+class NullRssSamplerTest extends UnitTestCase
 {
     /** @test */
     public function it_always_returns_an_empty_sample(): void

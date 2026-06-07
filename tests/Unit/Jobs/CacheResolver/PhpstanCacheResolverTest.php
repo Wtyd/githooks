@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs\CacheResolver;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Jobs\CacheResolver\PhpstanCacheResolver;
 
 /**
@@ -15,7 +15,7 @@ use Wtyd\GitHooks\Jobs\CacheResolver\PhpstanCacheResolver;
  *   - includes: 0 / 1 / N / nested / cyclic / override-by-child / override-by-last-include
  *   - placement: in-line comment / commented-out
  */
-class PhpstanCacheResolverTest extends TestCase
+class PhpstanCacheResolverTest extends UnitTestCase
 {
     /** @var string[] */
     private array $paths = [];

@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Output\CodeClimateResultFormatter;
 
-class CodeClimateResultFormatterTest extends TestCase
+class CodeClimateResultFormatterTest extends UnitTestCase
 {
     /** @test */
     function it_produces_valid_code_climate_json()

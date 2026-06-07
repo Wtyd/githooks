@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output\ToolOutputParser;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Output\ToolOutputParser\PhpcsOutputParser;
 use Wtyd\GitHooks\Output\ToolOutputParser\PhpmdOutputParser;
 use Wtyd\GitHooks\Output\ToolOutputParser\PhpstanOutputParser;
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Output\ToolOutputParser\PsalmOutputParser;
 use Wtyd\GitHooks\Output\ToolOutputParser\ParallelLintOutputParser;
 use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
 
-class ToolOutputParserRegistryTest extends TestCase
+class ToolOutputParserRegistryTest extends UnitTestCase
 {
     private ToolOutputParserRegistry $registry;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationChecker;
 
 /**
@@ -16,7 +16,7 @@ use Wtyd\GitHooks\Configuration\ConfigurationChecker;
  * `truncateCommand` lives in {@see TruncateCommandTest} (kept in its own
  * file for historical reasons — same target class).
  */
-class ConfigurationCheckerTest extends TestCase
+class ConfigurationCheckerTest extends UnitTestCase
 {
     private ConfigurationChecker $checker;
 

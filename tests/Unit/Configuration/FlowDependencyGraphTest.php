@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Configuration;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
 use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
 use Wtyd\GitHooks\Configuration\JobRef;
@@ -17,7 +17,7 @@ use Wtyd\GitHooks\Configuration\ValidationResult;
  * unknown targets, cycles of any length (n ≥ 1 including self-loop), duplicate
  * job declarations, and the topological order used by the executor.
  */
-class FlowDependencyGraphTest extends TestCase
+class FlowDependencyGraphTest extends UnitTestCase
 {
     use AssertWarningsTrait;
 

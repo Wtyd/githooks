@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Mockery;
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Process\Process;
 use Tests\Doubles\FakeMemorySampler;
 use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
@@ -24,7 +24,7 @@ use Wtyd\GitHooks\Jobs\JobAbstract;
  * handler through a subclass that injects a FakeMemorySampler via the
  * `buildSampler()` seam, so every branch is reachable on any platform.
  */
-class FlowMemoryHandlerTest extends TestCase
+class FlowMemoryHandlerTest extends UnitTestCase
 {
     protected function tearDown(): void
     {

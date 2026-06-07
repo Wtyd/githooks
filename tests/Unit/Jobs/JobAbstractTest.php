@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Jobs;
 
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
@@ -23,7 +23,7 @@ use Wtyd\GitHooks\Jobs\ScriptJob;
 /**
  * Direct coverage for JobAbstract logic that was only exercised indirectly.
  */
-class JobAbstractTest extends TestCase
+class JobAbstractTest extends UnitTestCase
 {
     /** @test */
     public function repeat_type_wraps_scalar_value_into_single_iteration()

@@ -6,7 +6,7 @@ namespace Tests\Unit\Output;
 
 use JsonSchema\Constraints\Constraint;
 use JsonSchema\Validator;
-use PHPUnit\Framework\TestCase;
+use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\JobResult;
 use Wtyd\GitHooks\Output\SarifResultFormatter;
@@ -27,7 +27,7 @@ use Wtyd\GitHooks\Output\SarifResultFormatter;
  *
  * @SuppressWarnings(PHPMD)
  */
-class SarifResultFormatterSchemaTest extends TestCase
+class SarifResultFormatterSchemaTest extends UnitTestCase
 {
     private const SCHEMA_PATH = __DIR__ . '/../../Fixtures/sarif/sarif-schema-2.1.0.json';
     private const GOLDEN_PATH = __DIR__ . '/../../Fixtures/sarif/golden-with-violations.json';
