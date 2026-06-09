@@ -310,6 +310,53 @@ class JobRunnerTest extends UnitTestCase
         ];
     }
 
+    /**
+     * BUG-29: `--ignore-errors-on-exit` must reach the job exactly like the time
+     * and memory overrides. The flag is presence-only (it can only force `true`);
+     * when absent the configured value is preserved.
+     *
+     * @test
+     * @dataProvider ignoreErrorsOverrideCases
+     */
+    public function ignore_errors_on_exit_cli_override_propagates_to_each_job(
+        ?bool $cliFlag,
+        ?bool $configValue,
+        bool $expected
+    ): void {
+        $jobArgs = ['script' => 'true'];
+        if ($configValue !== null) {
+            $jobArgs['ignore-errors-on-exit'] = $configValue;
+        }
+        $config = $this->configWithJobs([
+            'phpcs_src' => new JobConfiguration('phpcs_src', 'custom', $jobArgs),
+        ]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = ($this->makeRunner($parser))
+            ->prepare($this->req([
+                'jobName' => 'phpcs_src',
+                'ignoreErrorsOnExit' => $cliFlag,
+            ]));
+
+        $this->assertTrue($prep->success);
+        $this->assertSame($expected, $prep->plan->getJobs()[0]->isIgnoreErrorsOnExit());
+    }
+
+    /**
+     * @return array<string, array{0: ?bool, 1: ?bool, 2: bool}>
+     */
+    public function ignoreErrorsOverrideCases(): array
+    {
+        // cliFlag, configValue, expected isIgnoreErrorsOnExit()
+        return [
+            'no flag, no config → false'              => [null, null, false],
+            'no flag, config true → preserved'        => [null, true, true],
+            'flag present, no config → override true' => [true, null, true],
+            'flag present, config false → override'   => [true, false, true],
+            'flag present, config true → true'        => [true, true, true],
+        ];
+    }
+
     // ───────── Helpers ─────────
 
     /**
@@ -377,6 +424,9 @@ class JobRunnerTest extends UnitTestCase
             'memoryBudgetDisabled' => false,
             'statsFlag' => null,
             'cliFailFast' => null,
+            'dryRun' => false,
+            'commitMessageFile' => null,
+            'ignoreErrorsOnExit' => null,
         ];
         $f = array_merge($defaults, $overrides);
         return new JobRunRequest(
@@ -392,7 +442,10 @@ class JobRunnerTest extends UnitTestCase
             $f['memoryFailAbove'],
             $f['memoryBudgetDisabled'],
             $f['statsFlag'],
-            $f['cliFailFast']
+            $f['cliFailFast'],
+            $f['dryRun'],
+            $f['commitMessageFile'],
+            $f['ignoreErrorsOnExit']
         );
     }
 }

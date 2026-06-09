@@ -14,6 +14,8 @@ All notable changes to this project are documented here.
 
 **`githooks job --memory-warn-above` / `--memory-fail-above` now take effect.** The flags were parsed but never applied to the job's memory threshold, so they silently did nothing — unlike `--warn-after` / `--fail-after`, which always worked. They now override the per-job memory threshold (replacing any `memory` declared in config) exactly as documented in [Job command](cli/job.md), so a single-job run can warn or fail on RSS without editing the config file.
 
+**`githooks job --ignore-errors-on-exit` now takes effect.** The flag was declared and documented but never read from the CLI, so a failing job still exited non-zero. It now overrides the job's `ignore-errors-on-exit` for the run (CLI wins over config), letting you execute a job whose failure must not break the command without editing the config file.
+
 ## [3.5.1]
 
 ### Fixed

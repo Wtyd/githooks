@@ -205,6 +205,39 @@ class JobReleaseTest extends ReleaseTestCase
     }
 
     /**
+     * BUG-29 — `--ignore-errors-on-exit` on the `job` command was declared but
+     * never read from the CLI (inert), unlike the config key. The fix wires it
+     * through JobRunner::prepare to the job, embedded in the `.phar`. Without it
+     * compiled into the bundled binary the flag vanishes and a failing job still
+     * exits 1 here. Covers AC-001/AC-003.
+     *
+     * @test
+     */
+    public function ignore_errors_on_exit_cli_flag_forces_exit_zero_over_the_phar()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['failing']]])
+            ->setV3Jobs(['failing' => ['type' => 'custom', 'script' => 'false']]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        // Baseline: the failing job exits non-zero without the flag.
+        passthru("$this->githooks job failing --config=$this->configPath 2>/dev/null", $withoutFlag);
+        $this->assertNotEquals(0, $withoutFlag, 'a failing job must exit non-zero without the flag');
+
+        // With the flag the command tolerates the job's failure and exits 0.
+        passthru(
+            "$this->githooks job failing --ignore-errors-on-exit --config=$this->configPath 2>/dev/null",
+            $withFlag
+        );
+        $this->assertSame(
+            0,
+            $withFlag,
+            '--ignore-errors-on-exit must force exit 0 — BUG-29: the flag was inert on `job`.'
+        );
+    }
+
+    /**
      * BUG-26 — the literal reproduction: three Jest shards sharing a base via
      * `extends`, each adding its own `other-arguments`. In legacy mode (custom
      * job without `paths`) `other-arguments` used to be dropped, so the three

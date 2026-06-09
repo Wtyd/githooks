@@ -134,7 +134,8 @@ class JobCommand extends Command
             $this->resolveStatsFlag(),
             $this->hasOption('fail-fast') && (bool) $this->option('fail-fast') ? true : null,
             (bool) $this->option('dry-run'),
-            $this->resolveCommitMessageFile()
+            $this->resolveCommitMessageFile(),
+            $this->hasOption('ignore-errors-on-exit') && (bool) $this->option('ignore-errors-on-exit') ? true : null
         );
     }
 

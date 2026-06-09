@@ -13,6 +13,10 @@ namespace Wtyd\GitHooks\Execution;
  * Public properties (not `readonly`) by PHP 7.4 compatibility (the tier
  * `builds/php7.4/` ships on PHP 7.4/8.0). Treat as immutable at the consumer
  * boundary — do not mutate after construction.
+ *
+ * @SuppressWarnings(PHPMD.TooManyFields) Pure DTO: one field per pre-resolved CLI input.
+ *   Grouping into sub-structs would only spread the JobCommand → JobRunner contract across
+ *   more types without removing any input.
  */
 class JobRunRequest
 {
@@ -47,6 +51,9 @@ class JobRunRequest
     /** FEAT-16: resolved commit-message file path for a `commit-msg` job (null otherwise). */
     public ?string $commitMessageFile;
 
+    /** BUG-29: `--ignore-errors-on-exit` CLI override. null = no override (keep config). */
+    public ?bool $ignoreErrorsOnExit;
+
     /**
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 14 pre-resolved CLI inputs;
      *   merging into sub-structs would obscure the JobCommand → JobRunner contract.
@@ -68,7 +75,8 @@ class JobRunRequest
         ?bool $statsFlag,
         ?bool $cliFailFast,
         bool $dryRun = false,
-        ?string $commitMessageFile = null
+        ?string $commitMessageFile = null,
+        ?bool $ignoreErrorsOnExit = null
     ) {
         $this->jobName = $jobName;
         $this->configFile = $configFile;
@@ -85,5 +93,6 @@ class JobRunRequest
         $this->cliFailFast = $cliFailFast;
         $this->dryRun = $dryRun;
         $this->commitMessageFile = $commitMessageFile;
+        $this->ignoreErrorsOnExit = $ignoreErrorsOnExit;
     }
 }

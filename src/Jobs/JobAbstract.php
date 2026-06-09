@@ -28,6 +28,9 @@ use Wtyd\GitHooks\Execution\ThreadCapability;
  *   key_value — --key=value (flag equals the config key name)
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Base for every job type: config parsing + args consumption + ARGUMENT_MAP dispatch + threading + structured output
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) Base for every job type: the public surface is the
+ *   job contract (build/run + the CLI-override appliers for time/memory/ignore-errors); each is a
+ *   distinct capability the scheduler and runner need, not an accidental accretion.
  */
 abstract class JobAbstract
 {
@@ -411,6 +414,17 @@ abstract class JobAbstract
     public function applyMemoryThresholdOverride(?int $warnAbove, ?int $failAbove): void
     {
         $this->memoryThreshold = MemoryThreshold::fromOverride($warnAbove, $failAbove);
+    }
+
+    /**
+     * Override the configured `ignore-errors-on-exit` (used by the
+     * `githooks job --ignore-errors-on-exit` CLI flag, BUG-29). The flag is
+     * presence-only, so it can only force the job to tolerate its own failure
+     * (true); absence leaves the configured value untouched (handled by the caller).
+     */
+    public function applyIgnoreErrorsOverride(bool $ignoreErrorsOnExit): void
+    {
+        $this->ignoreErrorsOnExit = $ignoreErrorsOnExit;
     }
 
     /**

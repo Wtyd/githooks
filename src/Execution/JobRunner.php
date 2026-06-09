@@ -258,6 +258,14 @@ class JobRunner
             }
         }
 
+        // BUG-29: mirror the threshold overrides for --ignore-errors-on-exit.
+        // null = no flag → keep the configured value untouched.
+        if ($request->ignoreErrorsOnExit !== null) {
+            foreach ($plan->getJobs() as $jobAbstract) {
+                $jobAbstract->applyIgnoreErrorsOverride($request->ignoreErrorsOnExit);
+            }
+        }
+
         // Re-pack the plan with the resolution attached. `FlowPreparer::prepareSingleJob`
         // does not know about the resolution trace; the Command-era code did
         // this rewrap inline, we keep the same shape so consumers (header,
