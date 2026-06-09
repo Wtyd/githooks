@@ -153,7 +153,7 @@ class StatsTableRendererTest extends UnitTestCase
         (new StatsTableRenderer())->render($output, $result);
         $rendered = $output->fetch();
 
-        $this->assertStringContainsString('OK ⚠', $rendered);
+        $this->assertStringContainsString('OK ▤', $rendered);
         $this->assertStringContainsString('KO', $rendered);
     }
 
@@ -648,7 +648,7 @@ class StatsTableRendererTest extends UnitTestCase
         $rendered = $output->fetch();
 
         // ANSI escape for yellow: \033[33m...\033[39m
-        $this->assertMatchesRegularExpression('/\e\[33m.*OK.*⚠.*\e\[39m/u', $rendered);
+        $this->assertMatchesRegularExpression('/\e\[33m.*OK.*▤.*\e\[39m/u', $rendered);
     }
 
     /** @test */
@@ -687,6 +687,111 @@ class StatsTableRendererTest extends UnitTestCase
         (new StatsTableRenderer())->render($output2, $passing);
         $rendered2 = $output2->fetch();
         $this->assertMatchesRegularExpression('/\e\[32m.*1\/1\s*✔.*\e\[39m/u', $rendered2);
+    }
+
+    /**
+     * FEAT-18: the Status column shows per-dimension warn icons — ⏱ (time
+     * warn-after), ▤ (memory warn-above), combinable in the fixed order
+     * time-before-memory. Precedence is skip → KO → warns; a KO job shows no
+     * warn icons. This dataProvider walks the full Status decision table.
+     *
+     * @test
+     * @dataProvider statusDecisionTableProvider
+     */
+    public function status_column_renders_per_dimension_warn_icons(
+        bool $success,
+        bool $timeWarn,
+        bool $memoryWarn,
+        string $expectedStatus
+    ): void {
+        $job = new JobResult('a', $success, '', '1s');
+        if ($timeWarn) {
+            $job = $job->withThreshold(JobResult::THRESHOLD_WARNED, JobResult::THRESHOLD_REASON_WARN);
+        }
+        if ($memoryWarn) {
+            $job = $job->withMemoryThreshold(
+                JobResult::MEMORY_THRESHOLD_WARNED,
+                JobResult::MEMORY_REASON_WARN,
+                600,
+                1500
+            );
+        }
+        $result = new FlowResult('qa', [$job], '1s');
+        $result->setMemoryStats($this->buildEmptyStats());
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        $this->assertStringContainsString($expectedStatus, $rendered);
+        // Single-job flow: the Status cell is the only place an icon can come
+        // from, so a missing icon in $expectedStatus must be absent globally.
+        if (strpos($expectedStatus, '⏱') === false) {
+            $this->assertStringNotContainsString('⏱', $rendered);
+        }
+        if (strpos($expectedStatus, '▤') === false) {
+            $this->assertStringNotContainsString('▤', $rendered);
+        }
+    }
+
+    /**
+     * @return array<string, array{0: bool, 1: bool, 2: bool, 3: string}>
+     */
+    public function statusDecisionTableProvider(): array
+    {
+        // [success, timeWarn, memoryWarn, expectedStatus]
+        // Icons carry their text variation selector (⏱ = U+23F1 U+FE0E) exactly
+        // as the renderer emits them, so the fixed time-before-memory order is pinned.
+        return [
+            'AC-001 time warn only'         => [true, true, false, "OK \u{23F1}\u{FE0E}"],
+            'AC-002 memory warn only'       => [true, false, true, "OK \u{25A4}"],
+            'AC-003 both warns fixed order' => [true, true, true, "OK \u{23F1}\u{FE0E}\u{25A4}"],
+            'AC-004 no warns'               => [true, false, false, 'OK'],
+            'AC-005 KO masks warns'         => [false, true, true, 'KO'],
+        ];
+    }
+
+    /**
+     * FEAT-18 (AC-006): the TOTAL-row Peak Cores cell is marked with ⚙ in
+     * yellow only on real over-subscription (coresPeak > coresLimit). Saturation
+     * (peak == limit) and under-use (peak < limit) stay plain.
+     *
+     * @test
+     * @dataProvider totalCoresProvider
+     */
+    public function total_row_marks_cores_over_subscription(
+        int $coresPeak,
+        int $coresLimit,
+        bool $expectMark
+    ): void {
+        $stats = new MemoryStats(true, 100, 0.5, ['a' => 100], ['a' => 100], $coresLimit, $coresPeak, 0.5, ['a'], ['a' => 1]);
+        $result = new FlowResult('qa', [(new JobResult('a', true, '', '1s'))->withMemoryPeak(100)], '1s');
+        $result->setMemoryStats($stats);
+
+        $output = new BufferedOutput(BufferedOutput::VERBOSITY_NORMAL, true);
+        (new StatsTableRenderer())->render($output, $result);
+        $rendered = $output->fetch();
+
+        $this->assertStringContainsString($coresPeak . '/' . $coresLimit, $rendered);
+        if ($expectMark) {
+            // ⚙ inside a yellow span on the TOTAL cell: \e[33m...⚙...\e[39m
+            $this->assertMatchesRegularExpression('/\e\[33m[^\e]*⚙[^\e]*\e\[39m/u', $rendered);
+        } else {
+            $this->assertStringNotContainsString('⚙', $rendered);
+        }
+    }
+
+    /**
+     * @return array<string, array{0: int, 1: int, 2: bool}>
+     */
+    public function totalCoresProvider(): array
+    {
+        // [coresPeak, coresLimit, expectMark]
+        return [
+            'over-subscription marks'  => [10, 8, true],
+            'saturation stays plain'   => [8, 8, false],
+            'under-use stays plain'    => [3, 8, false],
+        ];
     }
 
     /** @test */

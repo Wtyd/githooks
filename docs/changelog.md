@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.6]
+
+### Added
+
+**Per-dimension warn icons in the `--stats` Status column.** A warned job used to show a single generic `OK ⚠`, triggered only by the memory threshold — the operator could not tell *which* resource crossed its warn level. The Status column now distinguishes the dimension and combines them: `OK ⏱` (time `warn-after`), `OK ▤` (memory `warn-above`), `OK ⏱▤` (both, time before memory). The TOTAL row's Peak Cores cell is marked with `⚙` in yellow on real over-subscription (`peak > limit`). See [Parallel execution → Calibrating with `--stats`](how-to/parallel-execution.md#calibrating-with-stats).
+
 ## [3.5.1]
 
 ### Fixed

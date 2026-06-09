@@ -145,11 +145,18 @@ under CI — see [CI/CD → ANSI colour in CI logs](ci-cd.md#ansi-colour-in-ci-l
 | Cell | Colour | Meaning |
 |---|---|---|
 | `OK` | default | Job passed cleanly. |
-| `OK ⚠` | yellow | Job passed but crossed a `warn-above` / `warn-after` threshold. |
+| `OK ⏱` | yellow | Job passed but crossed its `warn-after` (time) threshold. |
+| `OK ▤` | yellow | Job passed but crossed its `warn-above` (memory) threshold. |
+| `OK ⏱▤` | yellow | Job passed but crossed both warn thresholds (icons are combinable, time before memory). |
 | `KO` | red | Job failed (tool exit code `≠ 0`, or `fail-above` / `fail-after` crossed). |
 | `⏭` | blue | Job was skipped (no input files match, fail-fast cancellation, killed by flow guard). |
 | `TOTAL ✔` | green | Flow passed. |
 | `TOTAL ✗` | red | Flow failed (any job KO, or flow-level budget exceeded). |
+
+The TOTAL row's **Peak Cores** cell shows `peak/limit`, marked with `⚙` in yellow when the
+simultaneous cores peak exceeded the budget (`peak > limit` — a job declared more cores than the
+budget and the pool admitted it). A peak equal to the limit is exploited parallelism, not a warning,
+so it stays plain.
 
 ### FIFO vs greedy
 

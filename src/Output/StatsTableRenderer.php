@@ -33,6 +33,15 @@ use Wtyd\GitHooks\Execution\Memory\MemoryStats;
  */
 final class StatsTableRenderer
 {
+    /** Time warn (warn-after). U+FE0E forces the text presentation: monochrome, single-width. */
+    private const ICON_TIME = "\u{23F1}\u{FE0E}";
+
+    /** Memory warn (warn-above). U+25A4 is text by default — no variation selector needed. */
+    private const ICON_MEMORY = "\u{25A4}";
+
+    /** Cores over-subscription on the TOTAL row. U+FE0E forces the text presentation. */
+    private const ICON_CORES = "\u{2699}\u{FE0E}";
+
     public function render(OutputInterface $output, FlowResult $result, string $sortMode = RenderOptions::STATS_SORT_EXEC): void
     {
         $stats = $result->getMemoryStats();
@@ -57,8 +66,6 @@ final class StatsTableRenderer
         $headers = ['Job', 'Status', 'Time', 'Peak Cores', 'Peak Memory'];
         $table->setHeaders($showOrder ? array_merge(['#'], $headers) : $headers);
 
-        $coresLimit = $stats->getCoresLimit();
-
         foreach ($rows as $entry) {
             $job = $entry['job'];
             $cells = [
@@ -82,7 +89,7 @@ final class StatsTableRenderer
             'TOTAL (flow)',
             $totalCell,
             $result->getTotalTime(),
-            $stats->getCoresPeak() . '/' . $coresLimit,
+            $this->renderTotalCores($stats),
             $stats->isSamplerActive() ? $stats->getMemoryPeak() . ' MB' : 'n/a',
         ];
         $table->addRow($showOrder ? array_merge(['-'], $totalCells) : $totalCells);
@@ -134,10 +141,43 @@ final class StatsTableRenderer
         if ($job->isMemoryFailed() || !$job->isSuccess()) {
             return '<fg=red>KO</>';
         }
-        if ($job->isMemoryWarned()) {
-            return '<fg=yellow>OK ⚠</>';
+        $icons = $this->warnIcons($job);
+        if ($icons !== '') {
+            return "<fg=yellow>OK $icons</>";
         }
         return 'OK';
+    }
+
+    /**
+     * Combinable warn icons for the Status column, in a fixed order: time (⏱)
+     * before memory (▤). These are the only two dimensions with a per-job warn
+     * state in the model. Empty string when the job crossed no warn threshold.
+     */
+    private function warnIcons(JobResult $job): string
+    {
+        $icons = '';
+        if ($job->isThresholdWarned()) {
+            $icons .= self::ICON_TIME;
+        }
+        if ($job->isMemoryWarned()) {
+            $icons .= self::ICON_MEMORY;
+        }
+        return $icons;
+    }
+
+    /**
+     * TOTAL-row Peak Cores cell: `peak/limit`, marked with ⚙ in yellow only on
+     * real over-subscription (coresPeak > coresLimit) — a job declared more
+     * cores than the budget and ProcessPool admitted it. Saturation
+     * (peak == limit) is exploited parallelism, not a warn, so it stays plain.
+     */
+    private function renderTotalCores(MemoryStats $stats): string
+    {
+        $cell = $stats->getCoresPeak() . '/' . $stats->getCoresLimit();
+        if ($stats->getCoresPeak() > $stats->getCoresLimit()) {
+            return '<fg=yellow>' . $cell . ' ' . self::ICON_CORES . '</>';
+        }
+        return $cell;
     }
 
     private function renderJobTime(JobResult $job): string
