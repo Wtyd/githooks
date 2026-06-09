@@ -56,7 +56,6 @@ class FlowsCommand extends Command
                             {--dry-run : Show commands without executing}
                             {--fast : Fast mode — accelerable jobs analyze only staged files instead of full paths}
                             {--fast-branch : Fast-branch mode — accelerable jobs analyze branch diff files instead of full paths}
-                            {--fast-branch-fallback= : Fallback strategy (fast|full)}
                             {--fast-dirty : Fast-dirty mode — accelerable jobs analyze the entire working tree (staged, unstaged, and untracked non-ignored files)}
                             {--branch= : Override the detected branch name used to evaluate flow.on rules (single-flow runs only)}
                             {--files= : CSV of files to filter accelerable jobs by (mutually exclusive with --files-from)}

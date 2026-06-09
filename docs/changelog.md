@@ -16,6 +16,8 @@ All notable changes to this project are documented here.
 
 **`githooks job --ignore-errors-on-exit` now takes effect.** The flag was declared and documented but never read from the CLI, so a failing job still exited non-zero. It now overrides the job's `ignore-errors-on-exit` for the run (CLI wins over config), letting you execute a job whose failure must not break the command without editing the config file.
 
+**Removed the inert `--fast-branch-fallback` CLI flag from `flows`.** It was declared and documented but never read — only the `fast-branch-fallback` config option ever took effect. Passing it on the CLI silently did nothing; it now errors as an unknown option. Set the strategy via `options.fast-branch-fallback: fast|full` in config (or a `githooks.local.php` override), which is unchanged.
+
 ## [3.5.1]
 
 ### Fixed

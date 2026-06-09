@@ -47,6 +47,22 @@ class UnknownOptionReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('--foo', $this->getActualOutput());
     }
 
+    /**
+     * `--fast-branch-fallback` was an inert CLI flag on `flows` (declared but
+     * never read; only the `fast-branch-fallback` config option works). It was
+     * removed, so passing it must now be rejected like any unknown option. The
+     * config option keeps working (covered by ExecutionModesReleaseTest).
+     *
+     * @test
+     */
+    public function flows_rejects_removed_fast_branch_fallback_cli_flag(): void
+    {
+        passthru("$this->githooks flows qa --fast-branch-fallback=fast --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(1, $exitCode);
+        $this->assertStringContainsString('--fast-branch-fallback', $this->getActualOutput());
+    }
+
     /** @test */
     public function job_rejects_unknown_long_option_before_dashdash_with_exit_1(): void
     {

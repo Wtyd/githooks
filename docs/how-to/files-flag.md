@@ -106,7 +106,7 @@ githooks flow qa --files=src/User.php --fast
 # ⚠ --files takes precedence over --fast (--fast ignored)
 ```
 
-`--fast-branch-fallback` is silently ignored when files mode is in effect.
+The [`fast-branch-fallback`](../configuration/options.md#available-options) option is moot when files mode is in effect: the file set is supplied directly, so there is no branch diff to compute and nothing to fall back from.
 
 ## What the JSON v2 output adds
 
