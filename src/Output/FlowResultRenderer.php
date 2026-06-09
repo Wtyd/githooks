@@ -36,6 +36,9 @@ use Wtyd\GitHooks\Utils\Printer;
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Inherits the surface of the 478 LoC FormatsOutput
  *   trait. Splitting the class would only move logic across files without reducing the conceptual
  *   surface and would break the 1:1 mapping with the legacy tests that are still alive in 2a.
+ * @SuppressWarnings(PHPMD.TooManyMethods) One over the 25 threshold after extracting selectOutputHandler()
+ *   to keep applyFormat() under the cyclomatic-complexity limit — the extraction lowers complexity, so
+ *   the method count is the lesser concern; the class stays a single cohesive renderer.
  */
 class FlowResultRenderer
 {
@@ -80,27 +83,7 @@ class FlowResultRenderer
         // shares their handler and skips the CI ANSI decorator (FEAT-15).
         $cleanStdout = OutputFormats::hasCleanStdout($format);
 
-        if ($cleanStdout) {
-            $handler = $this->resolveProgressHandler($options);
-        } elseif (
-            $plan === null
-            || $plan->getOptions()->getProcesses() <= 1
-            || count($plan->getJobs()) <= 1
-        ) {
-            // Text format: use streaming for sequential, keep buffered for parallel
-            $handler = new StreamingTextOutputHandler($this->container->make(Printer::class));
-        } else {
-            // Parallel text: use the live dashboard only when the output is
-            // *both* a TTY and ANSI-decorated. Decoration off (`--no-ansi`,
-            // `NO_COLOR`) or a non-TTY stream falls back to the append-only
-            // renderer — BUG-27: the live dashboard redraws with cursor-up
-            // escapes that are no-ops when ANSI is not honoured, which made
-            // every completed line repeat once per refresh tick. We never
-            // force the live mode on (passing `false`, never `true` from a
-            // forced-decorated CI stream), so CI keeps degrading to
-            // append-only via its own `posix_isatty` = false.
-            $handler = new DashboardOutputHandler($this->liveDashboardEnabled($output));
-        }
+        $handler = $this->selectOutputHandler($plan, $options, $output, $cleanStdout);
 
         if ($this->needsToolJsonOutput($format, $plan, $options)) {
             $executor->setStructuredFormat(true);
@@ -111,6 +94,37 @@ class FlowResultRenderer
             $handler = $this->wrapWithCIDecorator($handler, $options);
         }
         $executor->setOutputHandler($handler);
+    }
+
+    /**
+     * Pick the progress/output handler for the run from the format and the
+     * execution context. Clean-stdout formats use the progress handler; a
+     * single job in an interactive terminal gets the live dashboard (spinner +
+     * timer) instead of the silent streaming handler — otherwise the wait is
+     * unindicated until the tool finishes; off-TTY (pipe / CI / `--no-ansi`)
+     * keeps streaming so logs receive the tool's incremental output; parallel
+     * text uses the live dashboard only when the output is *both* a TTY and
+     * ANSI-decorated (BUG-27: the cursor-up escapes are no-ops off-ANSI and
+     * repeat every completed line), degrading to append-only otherwise.
+     *
+     * @param OutputInterface $output See {@see applyFormat()} for the duck-typed contract.
+     */
+    private function selectOutputHandler(
+        ?FlowPlan $plan,
+        RenderOptions $options,
+        OutputInterface $output,
+        bool $cleanStdout
+    ): OutputHandler {
+        if ($cleanStdout) {
+            return $this->resolveProgressHandler($options);
+        }
+        if ($plan !== null && count($plan->getJobs()) <= 1 && $this->liveDashboardEnabled($output)) {
+            return new DashboardOutputHandler(true);
+        }
+        if ($plan === null || $plan->getOptions()->getProcesses() <= 1 || count($plan->getJobs()) <= 1) {
+            return new StreamingTextOutputHandler($this->container->make(Printer::class));
+        }
+        return new DashboardOutputHandler($this->liveDashboardEnabled($output));
     }
 
     /**

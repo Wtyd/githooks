@@ -416,6 +416,12 @@ class FlowExecutor
         $skippedNames = $preSkippedNames; // FEAT-3 + BUG-19: include plan-skipped upstreams
         $consumed = $preSkippedNames;     // jobs already processed (executed or skipped)
 
+        // Register the job names for dashboard display so the running lane has a
+        // row to animate. Only a single-job TTY run reaches the sequential path
+        // with a dashboard (multi-job sequential uses the streaming handler);
+        // without this the dashboard's allJobs stays empty and renders nothing.
+        $this->registerJobsOnDashboard($jobs);
+
         foreach ($jobs as $job) {
             $name = $job->getName();
             $consumed[] = $name;
@@ -873,6 +879,24 @@ class FlowExecutor
         }
     }
 
+    /**
+     * Register the job names on the dashboard (when the active handler is one)
+     * so the running lane has rows to animate. No-op for any other handler.
+     *
+     * @param JobAbstract[] $jobs
+     */
+    private function registerJobsOnDashboard(array $jobs): void
+    {
+        $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;
+        if ($dashboard === null) {
+            return;
+        }
+        $names = array_map(function (JobAbstract $job): string {
+            return $job->getDisplayName();
+        }, $jobs);
+        $dashboard->registerJobs($names);
+    }
+
     private function runJob(JobAbstract $job): JobResult
     {
         if ($job->isInline()) {
@@ -889,10 +913,27 @@ class FlowExecutor
 
         $displayName = $job->getDisplayName();
         $handler = $this->outputHandler;
+        $dashboard = $handler instanceof DashboardOutputHandler ? $handler : null;
 
-        $process->run(function (string $type, string $buffer) use ($displayName, $handler): void {
+        $process->start(function (string $type, string $buffer) use ($displayName, $handler): void {
             $handler->onJobOutput($displayName, $buffer, $type === Process::ERR);
         });
+
+        // Poll while the job runs so the dashboard spinner/timer animate in
+        // place at the same 0.2s cadence as the parallel pool. Without a
+        // dashboard the loop just waits out the process — output still streams
+        // through the start() callback, so the streaming handler is unaffected.
+        // now() is only read when a dashboard is present so non-dashboard runs
+        // keep their exact clock-call count (timing tests script a fixed clock).
+        $lastTick = $dashboard !== null ? $this->now() : 0.0;
+        while ($process->isRunning()) {
+            if ($dashboard !== null && ($this->now() - $lastTick) >= 0.2) {
+                $dashboard->tick();
+                $lastTick = $this->now();
+            }
+            usleep(10000);
+        }
+        $process->wait();
 
         return $this->buildResult($job, $process, $start);
     }

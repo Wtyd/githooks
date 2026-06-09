@@ -8,6 +8,8 @@ All notable changes to this project are documented here.
 
 **Per-dimension warn icons in the `--stats` Status column.** A warned job used to show a single generic `OK ⚠`, triggered only by the memory threshold — the operator could not tell *which* resource crossed its warn level. The Status column now distinguishes the dimension and combines them: `OK ⏱` (time `warn-after`), `OK ▤` (memory `warn-above`), `OK ⏱▤` (both, time before memory). The TOTAL row's Peak Cores cell is marked with `⚙` in yellow on real over-subscription (`peak > limit`). See [Parallel execution → Calibrating with `--stats`](how-to/parallel-execution.md#calibrating-with-stats).
 
+**Animated spinner while jobs run.** The running-job lane now shows a braille spinner (`⠋⠙⠹…`) that rotates in place instead of a static hourglass, making it obvious at a glance that a job is actively working. Monochrome and single-width, so the line never shifts between frames. This now also covers **single-job runs** (`githooks job <name>`) in an interactive terminal — previously a single tool ran with no on-screen progress until it finished. Non-TTY / CI output is unchanged (no spinner — it would be log noise; piped runs keep the tool's streamed output).
+
 ## [3.5.1]
 
 ### Fixed

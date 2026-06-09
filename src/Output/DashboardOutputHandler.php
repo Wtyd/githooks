@@ -9,11 +9,12 @@ namespace Wtyd\GitHooks\Output;
  *
  * Shows three states per job:
  *   ⏺ job_name           — queued (waiting for slot)
- *   ⏳ job_name [3.2s]    — running (timer updates in place)
+ *   ⠹ job_name [3.2s]    — running (braille spinner + timer update in place)
  *   ✓ job_name - OK/KO   — completed (permanent line)
  *
- * Uses ANSI cursor movement to update running timers in place.
- * Falls back to append-only output in non-TTY (CI) environments.
+ * Uses ANSI cursor movement to spin the running glyph and update the timers
+ * in place. Falls back to append-only output in non-TTY (CI) environments,
+ * where the start marker stays a static ⏳ (a spinner would be log noise).
  *
  * Testing notes:
  *   - Emitted ANSI sequences (\e[33m, \e[90m, \e[42m…, \033[NA, \033[2K),
@@ -22,9 +23,9 @@ namespace Wtyd\GitHooks\Output;
  *     via `$forceTty=true` + `php://memory` stream injection.
  *   - What those unit tests cannot cover, and which a human still validates
  *     through the qa-tester skill (TESTS.md V32-017):
- *     glyph rendering (⏳/⏺/✓/✗ look like emojis, not `?`), color perception,
- *     visual fluidity of the timer tick, and the perceived "redraw in place"
- *     of cursor movement on a real terminal.
+ *     glyph rendering (spinner ⠹/⏺/✓/✗ render as glyphs, not `?`), color
+ *     perception, the visual fluidity of the spinner rotation and timer tick,
+ *     and the perceived "redraw in place" of cursor movement on a real terminal.
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) OutputHandler interface (8) + registerJobs + tick
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) FEAT-3 added the waiting-state lane (onJobWaiting +
@@ -34,6 +35,16 @@ namespace Wtyd\GitHooks\Output;
  */
 class DashboardOutputHandler implements OutputHandler
 {
+    /**
+     * Braille spinner frames for the running lane. Single-width, monochrome
+     * (no emoji presentation), so the line width stays stable across frames.
+     * The active frame is derived from the job's own elapsed time (see
+     * runningLines()), so the animation is stateless and tick-rate independent.
+     *
+     * @var string[]
+     */
+    private const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
     /** @var string[] Job names in original order */
     private array $allJobs = [];
 
@@ -249,10 +260,24 @@ class DashboardOutputHandler implements OutputHandler
             if (isset($this->running[$jobName])) {
                 $elapsed = $now - $this->running[$jobName];
                 $timer = number_format($elapsed, 1) . 's';
-                $lines[] = "  \e[33m⏳\e[0m $jobName [\e[33m{$timer}\e[0m]";
+                $glyph = $this->spinnerGlyph($elapsed);
+                $lines[] = "  \e[33m{$glyph}\e[0m $jobName [\e[33m{$timer}\e[0m]";
             }
         }
         return $lines;
+    }
+
+    /**
+     * Pick the braille frame for a running job from its elapsed time. One frame
+     * per ~0.2s tick (FlowExecutor poll cadence, hence *5) so the rotation is
+     * even instead of skipping frames between renders, wrapping around the
+     * 10-frame cycle. Pure function of $elapsed — extracted as a protected seam
+     * so the frame-advance logic is unit-testable without controlling the wall
+     * clock (the running timer derives the same $elapsed from microtime()).
+     */
+    protected function spinnerGlyph(float $elapsed): string
+    {
+        return self::SPINNER_FRAMES[((int) round($elapsed * 5)) % count(self::SPINNER_FRAMES)];
     }
 
     /**

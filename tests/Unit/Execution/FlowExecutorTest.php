@@ -80,6 +80,37 @@ class FlowExecutorTest extends UnitTestCase
         $this->assertNotContains('inline_ko', array_column($spy->successfulJobs, 'job'));
     }
 
+    /**
+     * @test
+     *
+     * A single job run through the sequential path must register itself on the
+     * DashboardOutputHandler so the running lane has a row to animate. Without
+     * the registerJobs() call in executeSequential the dashboard's `allJobs`
+     * stays empty and nothing for the job is ever rendered in TTY mode — no
+     * queued marker up-front and no collapsed result on flush. A non-inline
+     * CustomJob (`true`) exercises runJob's start()+poll+wait loop end to end.
+     */
+    public function single_job_registers_on_the_dashboard_and_collapses_to_a_result()
+    {
+        $stream = fopen('php://memory', 'wb');
+        $dashboard = new DashboardOutputHandler(true, $stream);
+        $executor = new FlowExecutor($dashboard);
+
+        $job = new CustomJob(new JobConfiguration('quickjob', 'custom', ['script' => 'true']));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1));
+
+        $executor->execute($plan);
+
+        rewind($stream);
+        $rendered = stream_get_contents($stream);
+
+        // registerJobs() rendered the queued lane up-front.
+        $this->assertStringContainsString('⏺ quickjob', $rendered);
+        // The job ran to completion through runJob's poll loop and the dashboard
+        // collapsed to the final OK line (only reachable if `quickjob` is in allJobs).
+        $this->assertStringContainsString('quickjob - OK', $rendered);
+    }
+
     // Dry-run mode
 
     /** @test */

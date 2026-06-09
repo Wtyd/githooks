@@ -251,6 +251,55 @@ class DashboardOutputHandlerTest extends UnitTestCase
         $this->assertStringContainsString("\e[90m⏺ job_c\e[0m", $output);
     }
 
+    /**
+     * The running spinner advances exactly one braille frame per ~0.2s tick
+     * (the FlowExecutor poll cadence, hence the *5 factor) and wraps around the
+     * 10-frame cycle. Pinning the frame for each elapsed boundary kills mutants
+     * on the *5 multiplier, the `% count` wrap, and the SPINNER_FRAMES order.
+     *
+     * @test
+     * @dataProvider spinnerFrameCases
+     */
+    function spinner_glyph_advances_one_frame_per_tick_and_wraps(float $elapsed, string $expectedFrame)
+    {
+        $probe = new class extends DashboardOutputHandler {
+            public function __construct()
+            {
+                parent::__construct(true, fopen('php://memory', 'wb'));
+            }
+
+            public function glyphFor(float $elapsed): string
+            {
+                return $this->spinnerGlyph($elapsed);
+            }
+        };
+
+        $this->assertSame($expectedFrame, $probe->glyphFor($elapsed));
+    }
+
+    /**
+     * @return array<string, array{0: float, 1: string}>
+     */
+    public function spinnerFrameCases(): array
+    {
+        // elapsed (s) chosen on 0.2s tick boundaries so elapsed*5 lands on an
+        // exact integer (no rounding ambiguity). Keyed by the equivalence class.
+        return [
+            'elapsed 0.0s -> frame 0'             => [0.0, '⠋'],
+            'elapsed 0.2s -> frame 1 (kills *5)'  => [0.2, '⠙'],
+            'elapsed 0.4s -> frame 2'             => [0.4, '⠹'],
+            'elapsed 0.6s -> frame 3'             => [0.6, '⠸'],
+            'elapsed 0.8s -> frame 4'             => [0.8, '⠼'],
+            'elapsed 1.0s -> frame 5'             => [1.0, '⠴'],
+            'elapsed 1.2s -> frame 6'             => [1.2, '⠦'],
+            'elapsed 1.4s -> frame 7'             => [1.4, '⠧'],
+            'elapsed 1.6s -> frame 8'             => [1.6, '⠇'],
+            'elapsed 1.8s -> frame 9 (last)'      => [1.8, '⠏'],
+            'elapsed 2.0s -> wraps to frame 0'    => [2.0, '⠋'],
+            'elapsed 2.2s -> frame 1 (post-wrap)' => [2.2, '⠙'],
+        ];
+    }
+
     /** @test */
     function tty_on_job_start_transitions_job_from_queued_to_running_with_timer()
     {
@@ -266,7 +315,10 @@ class DashboardOutputHandlerTest extends UnitTestCase
 
         // job_a transitioned: no longer queued, now running with a timer.
         $this->assertStringNotContainsString('⏺ job_a', $output);
-        $this->assertStringContainsString('⏳', $output);
+        // Running glyph is a yellow braille spinner frame (not the old ⏳),
+        // independent of which frame the elapsed time lands on.
+        $this->assertMatchesRegularExpression('/\x1b\[33m[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]\x1b\[0m job_a/u', $output, 'running job must render a yellow braille spinner glyph');
+        $this->assertStringNotContainsString('⏳', $output, 'the static hourglass is replaced by the spinner in TTY mode');
         $this->assertStringContainsString('job_a', $output);
         $this->assertMatchesRegularExpression('/job_a \[\x1b\[33m\d+\.\d+s\x1b\[0m\]/', $output, 'running job must render a live timer in [N.Ns] format');
         // job_b remains queued.
@@ -309,7 +361,7 @@ class DashboardOutputHandlerTest extends UnitTestCase
 
         $this->assertStringContainsString('only_job - OK. Time: 750ms', $output);
         $this->assertStringNotContainsString('⏺', $output, 'no job should be shown as queued after flush');
-        $this->assertStringNotContainsString('⏳', $output, 'no job should be shown as running after flush');
+        $this->assertDoesNotMatchRegularExpression('/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/u', $output, 'no spinner (running) glyph should remain after flush');
     }
 
     /** @test */
