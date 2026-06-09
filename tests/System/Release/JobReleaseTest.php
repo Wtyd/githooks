@@ -165,6 +165,46 @@ class JobReleaseTest extends ReleaseTestCase
     }
 
     /**
+     * BUG-28 — `--memory-warn-above` / `--memory-fail-above` on the `job` command
+     * used to be parsed into the request but never applied (inert), unlike the
+     * working `--warn-after` / `--fail-after`. The fix wires them to the job's
+     * memory threshold in `JobRunner::prepare()`, embedded in the `.phar`.
+     * Without it compiled into the bundled binary the flags vanish and the
+     * job's `memoryThreshold` stays null here.
+     *
+     * Asserts the threshold reaches the job (warnAbove/failAbove surface
+     * unconditionally once configured, so this is deterministic even for an
+     * instant job whose RSS never crosses the limit). Covers AC-001/AC-002.
+     *
+     * @test
+     */
+    public function memory_threshold_cli_overrides_reach_the_job_over_the_phar()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['qjob']]])
+            ->setV3Jobs(['qjob' => ['type' => 'custom', 'script' => 'true']]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru(
+            "$this->githooks job qjob --memory-warn-above=1 --memory-fail-above=2 --stats --format=json --config=$this->configPath 2>/dev/null",
+            $exitCode
+        );
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertNotNull($decoded, 'Output is not valid JSON: ' . $this->getActualOutput());
+
+        $threshold = $decoded['jobs'][0]['memoryThreshold'] ?? null;
+        $this->assertNotNull(
+            $threshold,
+            'CLI memory overrides did not reach the job — BUG-28: the flags were inert on `job`.'
+        );
+        $this->assertSame(1, $threshold['warnAbove']);
+        $this->assertSame(2, $threshold['failAbove']);
+    }
+
+    /**
      * BUG-26 — the literal reproduction: three Jest shards sharing a base via
      * `extends`, each adding its own `other-arguments`. In legacy mode (custom
      * job without `paths`) `other-arguments` used to be dropped, so the three

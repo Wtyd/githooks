@@ -246,6 +246,18 @@ class JobRunner
             }
         }
 
+        // BUG-28: mirror the time override for memory — without this the
+        // `--memory-warn-above` / `--memory-fail-above` flags are parsed into the
+        // request but never reach the job's threshold (they were inert on `job`).
+        if ($request->memoryWarnAbove !== null || $request->memoryFailAbove !== null) {
+            foreach ($plan->getJobs() as $jobAbstract) {
+                $jobAbstract->applyMemoryThresholdOverride(
+                    $request->memoryWarnAbove,
+                    $request->memoryFailAbove
+                );
+            }
+        }
+
         // Re-pack the plan with the resolution attached. `FlowPreparer::prepareSingleJob`
         // does not know about the resolution trace; the Command-era code did
         // this rewrap inline, we keep the same shape so consumers (header,

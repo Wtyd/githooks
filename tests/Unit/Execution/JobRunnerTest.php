@@ -249,6 +249,67 @@ class JobRunnerTest extends UnitTestCase
         $this->assertNotNull($job);
     }
 
+    /**
+     * BUG-28: `--memory-warn-above` / `--memory-fail-above` must reach the job's
+     * memory threshold exactly like `--warn-after` / `--fail-after` reach the
+     * time threshold. The CLI override replaces any per-job `memory` config; when
+     * no memory flag is passed the configured threshold is preserved untouched.
+     *
+     * @test
+     * @dataProvider memoryOverrideCases
+     */
+    public function memory_budget_overrides_propagate_to_each_job_in_the_plan(
+        ?int $memWarn,
+        ?int $memFail,
+        ?array $configMemory,
+        bool $expectNullThreshold,
+        ?int $expectedWarn,
+        ?int $expectedFail
+    ): void {
+        $jobArgs = ['script' => 'true'];
+        if ($configMemory !== null) {
+            $jobArgs['memory'] = $configMemory;
+        }
+        $config = $this->configWithJobs([
+            'phpcs_src' => new JobConfiguration('phpcs_src', 'custom', $jobArgs),
+        ]);
+        $parser = $this->fakeParser(fn() => $config);
+
+        $prep = ($this->makeRunner($parser))
+            ->prepare($this->req([
+                'jobName' => 'phpcs_src',
+                'memoryWarnAbove' => $memWarn,
+                'memoryFailAbove' => $memFail,
+            ]));
+
+        $this->assertTrue($prep->success);
+        $threshold = $prep->plan->getJobs()[0]->getMemoryThreshold();
+
+        if ($expectNullThreshold) {
+            $this->assertNull($threshold);
+            return;
+        }
+
+        $this->assertNotNull($threshold);
+        $this->assertSame($expectedWarn, $threshold->getWarnAbove());
+        $this->assertSame($expectedFail, $threshold->getFailAbove());
+    }
+
+    /**
+     * @return array<string, array{0: ?int, 1: ?int, 2: ?array<string,int>, 3: bool, 4: ?int, 5: ?int}>
+     */
+    public function memoryOverrideCases(): array
+    {
+        // memWarn, memFail, configMemory, expectNullThreshold, expectedWarn, expectedFail
+        return [
+            'no flags, no config → no threshold'    => [null, null, null, true, null, null],
+            'no flags → config threshold preserved' => [null, null, ['warn-above' => 500, 'fail-above' => 800], false, 500, 800],
+            'warn flag only (no config)'            => [300, null, null, false, 300, null],
+            'fail flag only replaces config'        => [null, 900, ['warn-above' => 500, 'fail-above' => 800], false, null, 900],
+            'both flags replace config'             => [300, 900, ['warn-above' => 500, 'fail-above' => 800], false, 300, 900],
+        ];
+    }
+
     // ───────── Helpers ─────────
 
     /**

@@ -403,6 +403,17 @@ abstract class JobAbstract
     }
 
     /**
+     * Override the configured per-job memory threshold (used by the
+     * `githooks job --memory-warn-above` / `--memory-fail-above` CLI flags).
+     * Mirrors {@see applyThresholdOverride()} for time: replaces the configured
+     * threshold with the CLI values (BUG-28).
+     */
+    public function applyMemoryThresholdOverride(?int $warnAbove, ?int $failAbove): void
+    {
+        $this->memoryThreshold = MemoryThreshold::fromOverride($warnAbove, $failAbove);
+    }
+
+    /**
      * Apply thread limit from budget allocator.
      * Override in subclasses that support internal parallelism.
      *

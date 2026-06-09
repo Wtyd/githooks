@@ -10,6 +10,10 @@ All notable changes to this project are documented here.
 
 **Animated spinner while jobs run.** The running-job lane now shows a braille spinner (`⠋⠙⠹…`) that rotates in place instead of a static hourglass, making it obvious at a glance that a job is actively working. Monochrome and single-width, so the line never shifts between frames. This now also covers **single-job runs** (`githooks job <name>`) in an interactive terminal — previously a single tool ran with no on-screen progress until it finished. Non-TTY / CI output is unchanged (no spinner — it would be log noise; piped runs keep the tool's streamed output).
 
+### Fixed
+
+**`githooks job --memory-warn-above` / `--memory-fail-above` now take effect.** The flags were parsed but never applied to the job's memory threshold, so they silently did nothing — unlike `--warn-after` / `--fail-after`, which always worked. They now override the per-job memory threshold (replacing any `memory` declared in config) exactly as documented in [Job command](cli/job.md), so a single-job run can warn or fail on RSS without editing the config file.
+
 ## [3.5.1]
 
 ### Fixed

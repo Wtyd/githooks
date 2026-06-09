@@ -85,6 +85,20 @@ final class MemoryThreshold
     }
 
     /**
+     * CLI override (`githooks job --memory-warn-above` / `--memory-fail-above`).
+     * Extended form (shortForm=false → never participates in the 2D scheduler
+     * reservation, only thresholding). Returns null when neither flag was given,
+     * so the caller leaves the configured threshold untouched.
+     */
+    public static function fromOverride(?int $warnAbove, ?int $failAbove): ?self
+    {
+        if ($warnAbove === null && $failAbove === null) {
+            return null;
+        }
+        return new self($warnAbove, $failAbove, false);
+    }
+
+    /**
      * @param array<string, mixed> $raw
      */
     private static function parsePositiveInt(
