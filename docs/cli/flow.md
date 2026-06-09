@@ -18,7 +18,7 @@ Most flags below are CLI overrides for keys declared under `flows.options` or pe
 | `--processes=N` | Number of parallel processes. Overrides config value. `N` is a thread budget that is distributed across internally-parallel tools — see [Options: Thread budget](../configuration/options.md#thread-budget). |
 | `--exclude-jobs=a,b` | Comma-separated list of jobs to skip. |
 | `--only-jobs=a,b` | Comma-separated list of jobs to run (others skipped). Cannot combine with `--exclude-jobs`. |
-| `--dry-run` | Show commands without executing. Works with all `--format` options. |
+| `--dry-run` | Show the **full plan** without executing — the jobs that would run (with their resolved command) **and** the ones the mode discards (as `skipped` with a reason), with parity to a real run. The payload is marked `dryRun: true`. Combine with `--fast`/`--fast-branch`/`--fast-dirty` to preview "what would this flow run in that mode?". Works with all `--format` options. |
 | `--format=FORMAT` | Output format: `text` (default), `json`, `junit`, `codeclimate`, `sarif`. See [How-To: Output Formats](../how-to/output-formats.md). |
 | `--output=PATH` | Write the structured payload to `PATH` (only for `json` / `junit` / `codeclimate` / `sarif`). Default: stdout. See [Writing a report to a file](../how-to/output-formats.md#writing-a-report-to-a-file). |
 | `--report-FORMAT=PATH` | Emit an extra report file alongside whatever `--format` writes. One flag per format: `--report-json`, `--report-junit`, `--report-sarif`, `--report-codeclimate`. CLI overrides config entry by entry. See [Multi-report](../configuration/options.md#multi-report). |
@@ -50,8 +50,9 @@ githooks flow qa                                    # Run the 'qa' flow
 githooks flow lint --fail-fast                      # Run with fail-fast
 githooks flow qa --exclude-jobs=phpunit,phpcpd      # Skip specific jobs
 githooks flow qa --only-jobs=phpstan_src,phpmd_src  # Run only these jobs
-githooks flow qa --dry-run                          # Show commands without running
-githooks flow qa --dry-run --format=json            # Dry-run with JSON output
+githooks flow qa --dry-run                          # Full plan (would-run + skipped), no execution
+githooks flow qa --dry-run --format=json            # Dry-run plan as JSON (dryRun: true)
+githooks flow qa --fast --dry-run                   # Preview which jobs fast mode would run vs skip
 githooks flow qa --processes=4                      # Run with 4 parallel processes
 githooks flow qa --format=json                      # JSON v2 (AI / CI / scripts), to stdout
 githooks flow qa --format=junit                     # JUnit XML for test reporting, to stdout

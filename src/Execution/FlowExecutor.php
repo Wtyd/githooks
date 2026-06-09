@@ -148,7 +148,8 @@ class FlowExecutor
                 $plan->getExecutionMode(),
                 $inputFiles,
                 $plan->getExpandedFlows(),
-                $plan->getEffectiveOptions()
+                $plan->getEffectiveOptions(),
+                $plan->getSkippedJobs()
             );
         }
 
@@ -162,19 +163,8 @@ class FlowExecutor
         // `needs: [<plan-skipped>]` then propagate the skip instead of running.
         // The emit-order swap is intentional: discards first, runtime work
         // second — matches the actual cronology of decisions.
-        $preSkipped = [];
-        $preSkippedNames = [];
-        foreach ($plan->getSkippedJobs() as $name => $info) {
-            $this->outputHandler->onJobSkipped($name, $info['reason']);
-            $skippedResult = JobResult::skipped($name, $info['type'], $info['reason'], $info['paths']);
-            if ($inputFiles !== null && ($info['accelerable'] ?? false)) {
-                $skippedResult = $skippedResult->withInputFiles(
-                    new InputFilesPerJob([], $inputFiles->getTotalValid())
-                );
-            }
-            $preSkipped[] = $skippedResult;
-            $preSkippedNames[] = $name;
-        }
+        $preSkipped = $this->emitPlanSkipped($plan->getSkippedJobs(), $inputFiles);
+        $preSkippedNames = array_keys($plan->getSkippedJobs());
 
         if (($maxProcesses <= 1 || count($jobs) <= 1) && !$this->shouldSampleMemory($jobs, $plan->getOptions())) {
             $results = $this->executeSequential(
@@ -229,8 +219,34 @@ class FlowExecutor
     }
 
     /**
+     * Emit and build JobResults for the plan-level skipped jobs (fast-mode
+     * filtering, propagated needs, etc.). Shared by execute() and
+     * executeDryRun() so a dry-run reaches parity with a real run (FEAT-6):
+     * the plan already carries the discards, both paths must surface them.
+     *
+     * @param array<string, array{reason: string, type: string, paths: string[], accelerable?: bool}> $skippedJobs
+     * @return JobResult[]
+     */
+    private function emitPlanSkipped(array $skippedJobs, ?InputFilesResolution $inputFiles): array
+    {
+        $results = [];
+        foreach ($skippedJobs as $name => $info) {
+            $this->outputHandler->onJobSkipped($name, $info['reason']);
+            $skippedResult = JobResult::skipped($name, $info['type'], $info['reason'], $info['paths']);
+            if ($inputFiles !== null && ($info['accelerable'] ?? false)) {
+                $skippedResult = $skippedResult->withInputFiles(
+                    new InputFilesPerJob([], $inputFiles->getTotalValid())
+                );
+            }
+            $results[] = $skippedResult;
+        }
+        return $results;
+    }
+
+    /**
      * @param JobAbstract[] $jobs
      * @param string[]|null $expandedFlows
+     * @param array<string, array{reason: string, type: string, paths: string[], accelerable?: bool}> $skippedJobs
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Mirrors the FlowResult constructor for dry-run output.
      */
     private function executeDryRun(
@@ -239,8 +255,12 @@ class FlowExecutor
         string $executionMode,
         ?InputFilesResolution $inputFiles,
         ?array $expandedFlows = null,
-        ?EffectiveOptionsResolution $effectiveOptions = null
+        ?EffectiveOptionsResolution $effectiveOptions = null,
+        array $skippedJobs = []
     ): FlowResult {
+        // FEAT-6: surface the plan-level discards first (parity with execute()),
+        // then the jobs that would run with their resolved command.
+        $skipped = $this->emitPlanSkipped($skippedJobs, $inputFiles);
         $results = [];
         foreach ($jobs as $job) {
             $command = $job->isInline() ? '(inline commit-msg validation)' : $job->buildCommand();
@@ -261,9 +281,9 @@ class FlowExecutor
                 $this->buildPerJobInputFiles($job)
             );
         }
-        return new FlowResult(
+        $flowResult = new FlowResult(
             $flowName,
-            $results,
+            array_merge($skipped, $results),
             '0ms',
             0,
             0,
@@ -272,6 +292,8 @@ class FlowExecutor
             $expandedFlows,
             $effectiveOptions
         );
+        $flowResult->markDryRun();
+        return $flowResult;
     }
 
     /**

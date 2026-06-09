@@ -39,6 +39,9 @@ class FlowResult
 
     private ?RuntimeBlock $runtime = null;
 
+    /** FEAT-6: true when this result describes a `--dry-run` plan, not an executed run. */
+    private bool $dryRun = false;
+
     /**
      * @param JobResult[] $jobResults
      * @param string[]|null $expandedFlows
@@ -148,6 +151,17 @@ class FlowResult
     public function getExecutionMode(): string
     {
         return $this->executionMode;
+    }
+
+    /** FEAT-6: whether this result is a `--dry-run` plan (no processes executed). */
+    public function isDryRun(): bool
+    {
+        return $this->dryRun;
+    }
+
+    public function markDryRun(): void
+    {
+        $this->dryRun = true;
     }
 
     public function getSkippedCount(): int

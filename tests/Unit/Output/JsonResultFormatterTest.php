@@ -42,6 +42,25 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertTrue($data['jobs'][0]['success']);
     }
 
+    /**
+     * FEAT-6: the envelope header carries `dryRun` so a consumer (IA / CI) can
+     * tell a `--dry-run` plan from an executed run. A real run reports false.
+     *
+     * @test
+     */
+    function header_carries_the_dry_run_flag()
+    {
+        $result = new FlowResult('qa', [new JobResult('a', true, '', '1s')], '1s');
+        $formatter = new JsonResultFormatter();
+
+        $normal = json_decode($formatter->format($result), true);
+        $this->assertFalse($normal['dryRun'], 'a real run reports dryRun:false');
+
+        $result->markDryRun();
+        $dry = json_decode($formatter->format($result), true);
+        $this->assertTrue($dry['dryRun'], 'a dry-run plan reports dryRun:true');
+    }
+
     /** @test */
     function it_formats_a_failed_flow_with_output()
     {

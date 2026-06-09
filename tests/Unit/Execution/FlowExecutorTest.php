@@ -14,6 +14,7 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
 use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\JobResult;
@@ -112,6 +113,52 @@ class FlowExecutorTest extends UnitTestCase
     }
 
     // Dry-run mode
+
+    /**
+     * FEAT-6: a dry-run must reach parity with a real run — the plan-level
+     * discards (fast-mode filtering, etc.) surface as `skipped` jobs alongside
+     * the jobs that would run, and the result is marked `dryRun`. Before the
+     * fix `executeDryRun()` ignored `getSkippedJobs()`, so a fast dry-run with a
+     * clean tree produced an empty payload.
+     *
+     * @test
+     */
+    public function dry_run_surfaces_plan_skipped_jobs_and_marks_the_result()
+    {
+        $spy = new OutputHandlerSpy();
+        $executor = new FlowExecutor($spy);
+
+        $runnable = new CustomJob(new JobConfiguration('runs', 'custom', ['script' => 'true']));
+        $plan = new FlowPlan(
+            'qa',
+            [$runnable],
+            new OptionsConfiguration(false, 1),
+            null,
+            ['skipped_job' => ['reason' => 'no changes to validate', 'type' => 'phpcs', 'paths' => [], 'accelerable' => true]],
+            ExecutionMode::FAST
+        );
+
+        $result = $executor->execute($plan, true); // dry-run
+
+        $this->assertTrue($result->isDryRun(), 'a dry-run result must be marked dryRun');
+        $this->assertCount(2, $result->getJobResults(), 'discarded job must appear next to the runnable one');
+
+        $skipped = $result->getJobResult('skipped_job');
+        $this->assertNotNull($skipped);
+        $this->assertTrue($skipped->isSkipped());
+        $this->assertSame('no changes to validate', $skipped->getSkipReason());
+
+        $would = $result->getJobResult('runs');
+        $this->assertNotNull($would);
+        $this->assertFalse($would->isSkipped());
+        $this->assertNotNull($would->getCommand(), 'runnable job shows its resolved command');
+
+        // The discard was emitted to the handler (parity with a real run); the
+        // runnable one went through the dry-run channel, and nothing executed.
+        $this->assertContains('skipped_job', array_column($spy->skippedJobs, 'job'));
+        $this->assertContains('runs', array_column($spy->dryRunJobs, 'job'));
+        $this->assertSame([], $spy->successfulJobs, 'dry-run must not execute any job');
+    }
 
     /** @test */
     public function dry_run_returns_all_jobs_as_success()

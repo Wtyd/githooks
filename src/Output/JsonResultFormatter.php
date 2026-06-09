@@ -74,6 +74,7 @@ class JsonResultFormatter implements ResultFormatter
             'success'       => $result->isSuccess(),
             'totalTime'     => $result->getTotalTime(),
             'executionMode' => $inputFiles !== null ? 'files' : $result->getExecutionMode(),
+            'dryRun'        => $result->isDryRun(),
             'passed'        => $result->getPassedCount(),
             'failed'        => $result->getFailedCount(),
             'skipped'       => $result->getSkippedCount(),
