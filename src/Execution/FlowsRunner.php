@@ -369,7 +369,11 @@ class FlowsRunner
         }
 
         $flow = $config->getFlow($unique[0]);
-        if ($flow === null || $flow->isMetaFlow() || $flow->getOn() === null) {
+        // BUG-30: a meta-flow invoked alone honours its `on` exactly like a normal
+        // flow — the resolver is meta-agnostic, so the only thing needed is to
+        // resolve the branch. (Mirrors how a meta-flow's `options` already apply
+        // when invoked alone.) `on` is only resolved for a lone flow either way.
+        if ($flow === null || $flow->getOn() === null) {
             return null;
         }
 

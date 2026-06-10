@@ -18,6 +18,8 @@ All notable changes to this project are documented here.
 
 **`githooks job --ignore-errors-on-exit` now takes effect.** The flag was declared and documented but never read from the CLI, so a failing job still exited non-zero. It now overrides the job's `ignore-errors-on-exit` for the run (CLI wins over config), letting you execute a job whose failure must not break the command without editing the config file.
 
+**`on` declared on a meta-flow is now honoured when the meta-flow is invoked alone.** A meta-flow that declared `on` (per-branch execution) silently ran in `full` regardless of the branch — the rule was validated but never evaluated, unlike a meta-flow's `options` (which already applied when invoked alone). A meta-flow invoked alone (`githooks flows ci-pack`) now resolves the branch and applies the matching execution mode, propagating it to the expanded flows, exactly like a normal flow. Mixed/ad-hoc runs are unchanged (meta-level `on`/`options` stay ignored there).
+
 **Removed the inert `--fast-branch-fallback` CLI flag from `flows`.** It was declared and documented but never read — only the `fast-branch-fallback` config option ever took effect. Passing it on the CLI silently did nothing; it now errors as an unknown option. Set the strategy via `options.fast-branch-fallback: fast|full` in config (or a `githooks.local.php` override), which is unchanged.
 
 ## [3.5.1]

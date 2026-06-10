@@ -14,6 +14,7 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Exception\ExitException;
+use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\FlowResult;
@@ -252,6 +253,57 @@ class FlowsRunnerTest extends UnitTestCase
             new RoutingBufferedOutput(),
             $this->renderOpts()
         );
+    }
+
+    /**
+     * BUG-30: a meta-flow that declares `on` and is invoked alone must honour it
+     * — the branch is resolved and the matching rule sets the execution mode,
+     * exactly like a normal flow. The bug was a stray `isMetaFlow()` guard in
+     * resolveBranchForSingleFlow() that dropped the branch, leaving mode at full.
+     *
+     * @test
+     */
+    public function meta_flow_on_is_honored_when_invoked_alone(): void
+    {
+        $validation = new ValidationResult();
+        $ci = FlowConfiguration::fromArray('ci', [
+            'flows' => ['qa'],
+            'on'    => ['feature/*' => ['execution' => 'fast-branch'], '*' => ['execution' => 'full']],
+        ], [], $validation);
+        $config = new ConfigurationResult(
+            '/tmp/githooks.php',
+            new OptionsConfiguration(false, 1),
+            ['phpcs_src' => new JobConfiguration('phpcs_src', 'custom', ['script' => 'true'])],
+            ['qa' => new FlowConfiguration('qa', ['phpcs_src']), 'ci' => $ci],
+            null,
+            $validation
+        );
+        $this->fileUtils->setCurrentBranch('feature/x');
+
+        $prep = $this->makeRunner($this->fakeParser(fn() => $config), $this->createMock(FlowExecutor::class))
+            ->prepare($this->req(['flowNames' => ['ci']]), new RoutingBufferedOutput());
+
+        $this->assertTrue($prep->success);
+        $this->assertSame(ExecutionMode::FAST_BRANCH, $prep->resolution->getExecutionMode());
+        $this->assertSame(ExecutionMode::FAST_BRANCH, $prep->plan->getExecutionMode());
+    }
+
+    /**
+     * AC-003: a meta-flow without `on` resolves no branch and stays full — no
+     * regression, no exception, even on a feature branch.
+     *
+     * @test
+     */
+    public function meta_flow_without_on_stays_full(): void
+    {
+        $config = $this->configWith(['qa'], ['phpcs_src'], ['ci'], ['ci' => ['qa']]);
+        $this->fileUtils->setCurrentBranch('feature/x');
+
+        $prep = $this->makeRunner($this->fakeParser(fn() => $config), $this->createMock(FlowExecutor::class))
+            ->prepare($this->req(['flowNames' => ['ci']]), new RoutingBufferedOutput());
+
+        $this->assertTrue($prep->success);
+        $this->assertSame(ExecutionMode::FULL, $prep->resolution->getExecutionMode());
     }
 
     private function makeRunner(ConfigurationParser $parser, FlowExecutor $executor): FlowsRunner

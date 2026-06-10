@@ -312,6 +312,70 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
     }
 
     /**
+     * BUG-30 — a meta-flow that declares `on` and is invoked alone must honour
+     * it over the `.phar`: on a branch matching a `fast-branch` rule the
+     * resolved executionMode is `fast-branch`, not the default `full`. The fix
+     * drops the stray `isMetaFlow()` guard in
+     * FlowsRunner::resolveBranchForSingleFlow(); without it embedded in the
+     * bundled binary the meta-flow stays `full`. Covers AC-001/AC-006.
+     *
+     * @test
+     */
+    public function phar_honors_on_declared_on_a_meta_flow_invoked_alone(): void
+    {
+        $tests = self::TESTS_PATH;
+        $sandbox = "$tests/sandbox-metaflow-on";
+        $cwd = (string) getcwd();
+        @mkdir("$sandbox/src", 0777, true);
+
+        chdir($sandbox);
+        try {
+            shell_exec('git init --quiet');
+            shell_exec('git symbolic-ref HEAD refs/heads/feature-x');
+            shell_exec('git config user.email "bug30-release@example.com"');
+            shell_exec('git config user.name "BUG30 Release Test"');
+            shell_exec('git config commit.gpgsign false');
+            file_put_contents('src/Clean.php', "<?php\n");
+            shell_exec('git add -A');
+            shell_exec('git commit --quiet -m baseline');
+
+            $configFile = 'githooks.php';
+            $config = [
+                'flows' => [
+                    'qa' => ['jobs' => ['lint_src']],
+                    'ci' => [
+                        'flows' => ['qa'],
+                        'on'    => ['feature-*' => ['execution' => 'fast-branch'], '*' => ['execution' => 'full']],
+                    ],
+                ],
+                'jobs' => [
+                    'lint_src' => ['type' => 'custom', 'script' => 'true', 'paths' => ['src']],
+                ],
+            ];
+            file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+
+            passthru(
+                sprintf('%s flows ci --dry-run --format=json --config=%s 2>/dev/null', $binary, $configFile),
+                $exitCode
+            );
+
+            $this->assertSame(0, $exitCode);
+            $decoded = json_decode($this->getActualOutput(), true);
+            $this->assertIsArray($decoded);
+            $this->assertSame(
+                'fast-branch',
+                $decoded['executionMode'],
+                'BUG-30: a meta-flow invoked alone must honour its `on` (was silently ignored → full)'
+            );
+        } finally {
+            chdir($cwd);
+            shell_exec('rm -rf ' . escapeshellarg($sandbox));
+        }
+    }
+
+    /**
      * @param array<int, array<string, mixed>> $jobs
      * @return array<string, array<string, mixed>>
      */
