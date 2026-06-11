@@ -439,9 +439,10 @@ class FlowExecutor
         $consumed = $preSkippedNames;     // jobs already processed (executed or skipped)
 
         // Register the job names for dashboard display so the running lane has a
-        // row to animate. Only a single-job TTY run reaches the sequential path
-        // with a dashboard (multi-job sequential uses the streaming handler);
-        // without this the dashboard's allJobs stays empty and renders nothing.
+        // row to animate. A sequential run on an interactive TTY (single job or
+        // `processes: 1`) reaches this path with a dashboard; without this the
+        // dashboard's allJobs stays empty and renders nothing. Off-TTY uses the
+        // streaming handler, where this is a harmless no-op.
         $this->registerJobsOnDashboard($jobs);
 
         foreach ($jobs as $job) {

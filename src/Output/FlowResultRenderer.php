@@ -118,10 +118,24 @@ class FlowResultRenderer
         if ($cleanStdout) {
             return $this->resolveProgressHandler($options);
         }
-        if ($plan !== null && count($plan->getJobs()) <= 1 && $this->liveDashboardEnabled($output)) {
+
+        // Sequential: a single job, an explicit processes<=1, or a one-job plan
+        // — in all three exactly one job runs at a time.
+        $sequential = $plan === null
+            || $plan->getOptions()->getProcesses() <= 1
+            || count($plan->getJobs()) <= 1;
+
+        // Interactive TTY: route the sequential path to the live dashboard so the
+        // running job shows a spinner + timer. Covers both a single job and a
+        // multi-job sequential flow (`processes: 1`) — without it a long job
+        // (composer-update, infection…) leaves the terminal silent for minutes,
+        // because most tools suppress their own progress under a pipe. Off-TTY
+        // (pipe / CI / --no-ansi) keeps streaming so logs receive the tool's
+        // incremental output.
+        if ($plan !== null && $sequential && $this->liveDashboardEnabled($output)) {
             return new DashboardOutputHandler(true);
         }
-        if ($plan === null || $plan->getOptions()->getProcesses() <= 1 || count($plan->getJobs()) <= 1) {
+        if ($sequential) {
             return new StreamingTextOutputHandler($this->container->make(Printer::class));
         }
         return new DashboardOutputHandler($this->liveDashboardEnabled($output));
