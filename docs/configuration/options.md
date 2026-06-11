@@ -17,6 +17,7 @@ Execution options control how flows run their jobs. They can be set globally (fo
 | `memory-budget` | Object | `null` | Flow-level `warn-above` / `fail-above` thresholds (MB) over the simultaneous RSS sum across jobs in flight. See [Memory budget](#memory-budget-memory-budget). |
 | `allocator` | String | `'fifo'` | Admission strategy when the pool fills: `fifo` (strict order) or `greedy` (first-fit scan). See [Allocator strategy](#allocator-strategy-allocator). |
 | `stats` | Boolean | `false` | Activate RSS sampling and emit the `--stats` summary table. See [Stats](#stats-stats). |
+| `history-size` | Integer | `0` | Persist each run under `.githooks/history/` and keep the last N per flow (FIFO) for [`profile`](../cli/profile.md). `0` disables it. See [`githooks profile`](../cli/profile.md#enabling-history). |
 
 ## Priority
 

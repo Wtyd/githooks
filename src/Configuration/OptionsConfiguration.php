@@ -40,6 +40,9 @@ class OptionsConfiguration
 
     private bool $stats;
 
+    /** Number of runs to keep in `.githooks/history/` per flow. 0 disables persistence (FEAT-5). */
+    private int $historySize;
+
     /** @var array<string, true> Keys explicitly declared in raw config (used by EffectiveOptionsResolver) */
     private array $declaredKeys = [];
 
@@ -58,7 +61,8 @@ class OptionsConfiguration
         ?TimeBudgetConfiguration $timeBudget = null,
         ?MemoryBudgetConfiguration $memoryBudget = null,
         string $allocator = AllocatorStrategy::FIFO,
-        bool $stats = false
+        bool $stats = false,
+        int $historySize = 0
     ) {
         $this->failFast = $failFast;
         $this->processes = $processes;
@@ -70,6 +74,7 @@ class OptionsConfiguration
         $this->memoryBudget = $memoryBudget;
         $this->allocator = $allocator;
         $this->stats = $stats;
+        $this->historySize = $historySize;
     }
 
     /**
@@ -138,6 +143,7 @@ class OptionsConfiguration
         $memoryBudget = self::parseMemoryBudget($raw, $result);
         $allocator = self::parseAllocator($raw, $result);
         $stats = self::parseStats($raw, $result);
+        $historySize = self::parseHistorySize($raw, $result);
 
         self::reportUnknownAndCliOnlyKeys($raw, $result);
 
@@ -151,7 +157,8 @@ class OptionsConfiguration
             $timeBudget,
             $memoryBudget,
             $allocator,
-            $stats
+            $stats,
+            $historySize
         );
         foreach (self::knownTopLevelKeys() as $key) {
             if (array_key_exists($key, $raw)) {
@@ -210,6 +217,7 @@ class OptionsConfiguration
             MemoryBudgetConfiguration::KEY,
             'allocator',
             'stats',
+            'history-size',
         ];
     }
 
@@ -259,6 +267,24 @@ class OptionsConfiguration
             return false;
         }
         return $raw['stats'];
+    }
+
+    /**
+     * Number of runs to retain in `.githooks/history/` per flow (FEAT-5). 0 (the
+     * default) disables persistence; any positive integer activates it.
+     *
+     * @param array<string, mixed> $raw
+     */
+    private static function parseHistorySize(array $raw, ValidationResult $result): int
+    {
+        if (!array_key_exists('history-size', $raw)) {
+            return 0;
+        }
+        if (!is_int($raw['history-size']) || $raw['history-size'] < 0) {
+            $result->addError("'history-size' must be a non-negative integer.");
+            return 0;
+        }
+        return $raw['history-size'];
     }
 
     /**
@@ -350,6 +376,11 @@ class OptionsConfiguration
         return $this->stats;
     }
 
+    public function getHistorySize(): int
+    {
+        return $this->historySize;
+    }
+
     public static function defaults(): self
     {
         return new self();
@@ -399,7 +430,8 @@ class OptionsConfiguration
             $flow->timeBudget,
             $flow->memoryBudget,
             $flow->allocator,
-            $flow->stats
+            $flow->stats,
+            $flow->historySize
         );
     }
 }

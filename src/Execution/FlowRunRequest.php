@@ -14,7 +14,7 @@ namespace Wtyd\GitHooks\Execution;
  * Public properties not readonly by PHP 7.4 compatibility — treat as
  * immutable at the consumer boundary.
  *
- * @SuppressWarnings(PHPMD.TooManyFields) DTO surfaces the 18 pre-resolved CLI inputs
+ * @SuppressWarnings(PHPMD.TooManyFields) DTO surfaces the 19 pre-resolved CLI inputs
  *   1:1; merging into sub-structs would obscure the FlowCommand → FlowRunner contract.
  */
 class FlowRunRequest
@@ -59,13 +59,16 @@ class FlowRunRequest
 
     public bool $monitor;
 
+    /** FEAT-5: persist this run to .githooks/history/ regardless of config. */
+    public bool $saveHistory;
+
     /**
      * @param string[] $excludeJobs
      * @param string[] $onlyJobs
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 18 pre-resolved CLI inputs;
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 19 pre-resolved CLI inputs;
      *   merging into sub-structs would obscure the FlowCommand → FlowRunner contract.
-     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The `disabled` / `dryRun` / `monitor`
-     *   booleans are configuration toggles pre-resolved by the Command.
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The `disabled` / `dryRun` / `monitor` /
+     *   `saveHistory` booleans are configuration toggles pre-resolved by the Command.
      */
     public function __construct(
         string $flowName,
@@ -86,7 +89,8 @@ class FlowRunRequest
         ?bool $cliStats,
         ?string $cliBranch,
         bool $dryRun,
-        bool $monitor
+        bool $monitor,
+        bool $saveHistory = false
     ) {
         $this->flowName = $flowName;
         $this->configFile = $configFile;
@@ -107,5 +111,6 @@ class FlowRunRequest
         $this->cliBranch = $cliBranch;
         $this->dryRun = $dryRun;
         $this->monitor = $monitor;
+        $this->saveHistory = $saveHistory;
     }
 }

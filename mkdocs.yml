@@ -131,6 +131,7 @@ nav:
     - githooks flow: cli/flow.md
     - githooks flows: cli/flows.md
     - githooks job: cli/job.md
+    - githooks profile: cli/profile.md
     - githooks hook: cli/hook.md
     - githooks status: cli/status.md
     - githooks conf init: cli/conf-init.md

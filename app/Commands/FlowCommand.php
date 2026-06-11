@@ -56,6 +56,7 @@ class FlowCommand extends Command
                             {--files-from= : Path to a manifest file with one path per line (mutually exclusive with --files)}
                             {--exclude-pattern= : CSV of glob patterns excluded from --files / --files-from input}
                             {--monitor : Show thread usage report after execution}
+                            {--save-history : Persist this run to .githooks/history/ for `profile` (FEAT-5)}
                             {--warn-after= : Warn when total job time (seconds) reaches this threshold}
                             {--fail-after= : Fail when total job time (seconds) reaches this threshold}
                             {--no-time-budget : Disable time-budget evaluation for this run (per-job and flow)}
@@ -141,7 +142,8 @@ class FlowCommand extends Command
             $this->resolveStatsFlag(),
             is_string($cliBranch) && $cliBranch !== '' ? $cliBranch : null,
             (bool) $this->option('dry-run'),
-            (bool) $this->option('monitor')
+            (bool) $this->option('monitor'),
+            (bool) $this->option('save-history')
         );
     }
 

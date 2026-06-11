@@ -39,11 +39,34 @@ class CreateConfigurationFileCommand extends Command
             // OK — no config exists, we can create one
         }
 
-        if (!$this->input->isInteractive() || $this->option('legacy')) {
-            return $this->copyDistFile();
+        $result = (!$this->input->isInteractive() || $this->option('legacy'))
+            ? $this->copyDistFile()
+            : $this->interactive();
+
+        if ($result === 0) {
+            $this->ensureGitignoreEntry();
         }
 
-        return $this->interactive();
+        return $result;
+    }
+
+    /**
+     * FEAT-5: keep the local run history out of version control. Appends
+     * `.githooks/history/` to `.gitignore` (creating the file if needed), only
+     * when the line is not already present.
+     */
+    private function ensureGitignoreEntry(): void
+    {
+        $line = '.githooks/history/';
+        $existing = Storage::exists('.gitignore') ? Storage::get('.gitignore') : '';
+
+        $present = in_array($line, array_map('trim', preg_split('/\R/', $existing) ?: []), true);
+        if ($present) {
+            return;
+        }
+
+        $separator = ($existing !== '' && substr($existing, -1) !== "\n") ? "\n" : '';
+        Storage::put('.gitignore', $existing . $separator . $line . "\n");
     }
 
     /** @SuppressWarnings(PHPMD.CyclomaticComplexity) Interactive flow with multiple user prompts */

@@ -32,6 +32,10 @@ return [
             // phpcs, psalm) spawn their own worker processes internally, so actual OS
             // processes may be higher than this value. Keep low on machines with few cores.
             'processes' => 1,
+            // Persist each run as JSON under .githooks/history/ and keep the last N per
+            // flow, for `profile`/`profile:list`. 0 (default) disables it; use
+            // `flow <name> --save-history` for a one-off without enabling it here.
+            // 'history-size' => 100,
         ],
         'lint' => [
             // 'options' => ['fail-fast' => true],  // Override global options per flow

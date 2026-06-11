@@ -41,6 +41,50 @@ class OptionsConfigurationTest extends UnitTestCase
     }
 
     /** @test */
+    public function it_defaults_history_size_to_zero()
+    {
+        $this->assertSame(0, (new OptionsConfiguration())->getHistorySize());
+
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['fail-fast' => false], $result);
+        $this->assertSame(0, $options->getHistorySize());
+        $this->assertFalse($result->hasErrors());
+    }
+
+    /**
+     * FEAT-5 · history-size validation factor table.
+     *
+     * @test
+     * @dataProvider historySizeProvider
+     * @param mixed $value
+     */
+    public function it_validates_history_size($value, bool $expectError, int $expectValue)
+    {
+        $result = new ValidationResult();
+        $options = OptionsConfiguration::fromArray(['history-size' => $value], $result);
+
+        $this->assertSame($expectError, $result->hasErrors());
+        $this->assertSame($expectValue, $options->getHistorySize());
+        if ($expectError) {
+            $this->assertStringContainsString('history-size', $result->getErrors()[0]);
+        }
+    }
+
+    public function historySizeProvider(): array
+    {
+        return [
+            'zero is valid (disabled)'   => [0, false, 0],
+            'one is the minimum active'  => [1, false, 1],
+            'hundred is valid'           => [100, false, 100],
+            'negative is rejected'       => [-1, true, 0],
+            'string is rejected'         => ['5', true, 0],
+            'float is rejected'          => [1.5, true, 0],
+            'null is rejected'           => [null, true, 0],
+            'bool is rejected'           => [true, true, 0],
+        ];
+    }
+
+    /** @test */
     public function it_reports_error_for_non_integer_processes()
     {
         $result = new ValidationResult();

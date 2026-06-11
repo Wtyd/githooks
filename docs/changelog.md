@@ -6,6 +6,19 @@ All notable changes to this project are documented here.
 
 ### Added
 
+**Run history + `profile` — temporal trends per flow.** Until now every `--stats` was an isolated snapshot, so "is `phpstan_src` slower this week, and since when?" had no answer. A run can now persist its full JSON v2 payload under `.githooks/history/<timestamp>-<flow>.json`, opt-in via `flow <name> --save-history` or `flows.options.history-size: N` in config (kept to the last N runs per flow, FIFO; 0 disables). Two new commands query that history:
+
+```console
+$ githooks profile qa --job=phpstan-src
+phpstan-src · last 30 runs · time
+  ▁▃▆▆█▆▃▁▂▃▆█▇▆▅▅▆▆▆▇█▇▆▆▅▅▆▆▆▇
+  min: 1.8s · p50: 4.0s · p95: 5.6s · max: 6.1s · trend: ↑ +18.0% vs prev 15
+
+$ githooks profile:list qa          # timestamp · total time · passed · failed per run
+```
+
+`profile` charts `time` (default), `peak-memory` or `peak-cores` (the last two only for runs recorded with `--stats`), filterable with `--job=`, `--since=YYYY-MM-DD` and `--last=N`, and `--format=json` for tooling. `conf:init` adds `.githooks/history/` to `.gitignore` — the history is local by design and never travels to the repo. See [`githooks profile`](cli/profile.md).
+
 **Per-dimension warn icons in the `--stats` Status column.** A warned job used to show a single generic `OK ⚠`, triggered only by the memory threshold — the operator could not tell *which* resource crossed its warn level. The Status column now distinguishes the dimension and combines them: `OK ⏱` (time `warn-after`), `OK ▤` (memory `warn-above`), `OK ⏱▤` (both, time before memory). The TOTAL row's Peak Cores cell is marked with `⚙` in yellow on real over-subscription (`peak > limit`). See [Parallel execution → Calibrating with `--stats`](how-to/parallel-execution.md#calibrating-with-stats).
 
 **`flow --dry-run` now shows the full plan, including discarded jobs.** A dry-run used to list only the jobs that *would run* and silently omit the ones the mode discards — so `flow qa --fast --dry-run` on a clean tree produced an empty payload, while a real `--fast` run reported all 8 jobs as skipped. The dry-run now reaches parity with a real run: discarded jobs surface as `skipped` with their reason alongside the would-run jobs, and the payload carries `dryRun: true` so a consumer (AI / CI) can tell a plan from an execution. Combine with `--fast`/`--fast-branch`/`--fast-dirty` to preview exactly what a flow would run in that mode. See [Flow command](cli/flow.md).

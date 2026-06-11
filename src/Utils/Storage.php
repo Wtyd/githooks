@@ -72,6 +72,18 @@ class Storage
     }
 
     /**
+     * List the files (non-recursively) of a directory. Returns paths relative
+     * to the disk root. Yields an empty array when the directory is absent.
+     *
+     * @param  string  $directory
+     * @return string[]
+     */
+    public static function files($directory)
+    {
+        return FacadesStorage::disk(self::$disk)->files($directory);
+    }
+
+    /**
      * Create a directory.
      *
      * @param  string  $path

@@ -8,6 +8,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
+use Wtyd\GitHooks\History\RunHistoryStore;
 use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
 use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
 use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
@@ -52,9 +53,11 @@ class FlowRunner
 
     private DiagnosticsHeaderEmitter $diagnosticsEmitter;
 
+    private RunHistoryStore $historyStore;
+
     /**
      * @SuppressWarnings(PHPMD.ExcessiveParameterList) Collaborators by design;
-     *   the two diagnostics ones default to real instances for backward-compatible
+     *   the trailing ones default to real instances for backward-compatible
      *   construction in unit tests.
      */
     public function __construct(
@@ -66,7 +69,8 @@ class FlowRunner
         ConditionsHeaderEmitter $headerEmitter,
         ConfigWarningsEmitter $warningsEmitter,
         ?DiagnosticsCollector $diagnosticsCollector = null,
-        ?DiagnosticsHeaderEmitter $diagnosticsEmitter = null
+        ?DiagnosticsHeaderEmitter $diagnosticsEmitter = null,
+        ?RunHistoryStore $historyStore = null
     ) {
         $this->parser = $parser;
         $this->preparer = $preparer;
@@ -77,6 +81,7 @@ class FlowRunner
         $this->warningsEmitter = $warningsEmitter;
         $this->diagnosticsCollector = $diagnosticsCollector ?? new DiagnosticsCollector();
         $this->diagnosticsEmitter = $diagnosticsEmitter ?? new DiagnosticsHeaderEmitter();
+        $this->historyStore = $historyStore ?? new RunHistoryStore();
     }
 
     /**
@@ -126,6 +131,8 @@ class FlowRunner
 
             $this->renderer->renderFormattedResult($result, $plan->getOptions(), $renderOptions, $output);
 
+            $this->persistHistory($result, $plan->getOptions()->getHistorySize(), $request->saveHistory, $request->dryRun, $startedAt);
+
             if ($request->monitor) {
                 $this->renderer->renderMonitorReport($result, $output);
             }
@@ -135,6 +142,32 @@ class FlowRunner
             // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
             $this->emitStderr($output, $e->getMessage());
             return 1;
+        }
+    }
+
+    /**
+     * FEAT-5: persist the run to `.githooks/history/` when enabled. Activation is
+     * opt-in (--save-history OR history-size > 0) and never on dry-run. When the
+     * flag is set without a configured size, the window defaults to 100. A
+     * history write must never break the run, so any failure is swallowed.
+     *
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Pre-resolved CLI toggles.
+     */
+    private function persistHistory(
+        FlowResult $result,
+        int $historySize,
+        bool $saveHistory,
+        bool $dryRun,
+        string $startedAt
+    ): void {
+        if ($dryRun || (!$saveHistory && $historySize <= 0)) {
+            return;
+        }
+        $size = $historySize > 0 ? $historySize : 100;
+        try {
+            $this->historyStore->persist($result, $startedAt, true, $size);
+        } catch (\Throwable $e) {
+            return; // history is best-effort; a failed write never fails the run
         }
     }
 

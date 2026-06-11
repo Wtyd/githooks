@@ -665,7 +665,8 @@ final class EffectiveOptionsResolver
             $timeBudget,
             $memoryBudget,
             $allocator,
-            $stats
+            $stats,
+            $base->getHistorySize()
         );
     }
 }

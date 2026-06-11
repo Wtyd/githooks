@@ -46,6 +46,32 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     }
 
     /** @test */
+    function it_appends_the_history_dir_to_gitignore_when_creating_config()
+    {
+        $templatePath = $this->path . '/qa/';
+        mkdir($templatePath, 0777, true);
+        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+
+        $this->artisan('conf:init', ['--no-interaction' => true])->assertExitCode(0);
+
+        $this->assertStringContainsString('.githooks/history/', file_get_contents($this->path . '/.gitignore'));
+    }
+
+    /** @test */
+    function it_does_not_duplicate_the_history_dir_in_an_existing_gitignore()
+    {
+        $templatePath = $this->path . '/qa/';
+        mkdir($templatePath, 0777, true);
+        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+        Storage::put('.gitignore', "vendor/\n.githooks/history/\n");
+
+        $this->artisan('conf:init', ['--no-interaction' => true])->assertExitCode(0);
+
+        $contents = file_get_contents($this->path . '/.gitignore');
+        $this->assertSame(1, substr_count($contents, '.githooks/history/'));
+    }
+
+    /** @test */
     function it_prints_an_error_message_when_dist_file_not_found()
     {
         $this->artisan('conf:init', ['--no-interaction' => true])
