@@ -37,10 +37,37 @@ class FlowsRunnerTest extends UnitTestCase
 
     private FlowPreparer $preparer;
 
+    /**
+     * Env vars BranchResolver inspects before falling back to the FileUtils fake.
+     * Cleared around each test so a real CI run (where GITHUB_REF_NAME et al. are
+     * set) does not override the branch the test pins via setCurrentBranch().
+     */
+    private const CI_BRANCH_VARS = [
+        'GITHOOKS_BRANCH',
+        'CI_COMMIT_REF_NAME',
+        'GITHUB_REF_NAME',
+        'BUILDKITE_BRANCH',
+        'BITBUCKET_BRANCH',
+        'CIRCLE_BRANCH',
+        'DRONE_COMMIT_BRANCH',
+        'TRAVIS_PULL_REQUEST_BRANCH',
+        'TRAVIS_BRANCH',
+    ];
+
     protected function setUp(): void
     {
+        foreach (self::CI_BRANCH_VARS as $var) {
+            putenv($var);
+        }
         $this->fileUtils = new FileUtilsFake();
         $this->preparer = new FlowPreparer(new JobRegistry());
+    }
+
+    protected function tearDown(): void
+    {
+        foreach (self::CI_BRANCH_VARS as $var) {
+            putenv($var);
+        }
     }
 
     /** @test */
