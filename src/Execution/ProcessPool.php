@@ -437,6 +437,16 @@ class ProcessPool
     }
 
     /**
+     * The 2D bin-packing memory budget in MB, or null when admission runs in
+     * 1D mode (no memory-budget, or no job declared a `memory:` reservation).
+     * Lets callers/tests observe whether the pool was wired for 2D admission.
+     */
+    public function getMemoryBudget(): ?int
+    {
+        return $this->memoryBudget;
+    }
+
+    /**
      * @return array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}>
      */
     public function getRunning(): array
