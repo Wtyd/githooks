@@ -178,6 +178,71 @@ class FlowExecutorFailFastTest extends UnitTestCase
 
     /**
      * @test
+     * Two jobs that finish within the SAME `pollCompleted()` batch (both
+     * `releaseAfterPolls = 0`): the first in iteration order fails under
+     * fail-fast. The second already completed — its result must still reach
+     * `$results`. Regression guard for the same-batch loss: the fail-fast
+     * `break` exits the `foreach (pollCompleted() as ...)` loop, but
+     * `pollCompleted()` already removed the second entry from `running`, so a
+     * naive `break` drops its JobResult entirely (missing from JSON/report).
+     */
+    public function parallel_fail_fast_keeps_results_of_jobs_completing_in_the_same_poll(): void
+    {
+        $fastFail = new CustomJob(new JobConfiguration('fast_fail', 'custom', ['script' => 'unused-by-fake']));
+        $sameBatchPass = new CustomJob(new JobConfiguration('same_batch_pass', 'custom', ['script' => 'unused-by-fake']));
+
+        // Both release on the first poll → pollCompleted() returns them together.
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('fast_fail', 1, 'fail output');
+        $pool->programResult('same_batch_pass', 0, 'passing output');
+
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
+
+        $plan = new FlowPlan('test', [$fastFail, $sameBatchPass], new OptionsConfiguration(true, 2));
+        $result = $executor->execute($plan);
+
+        $sameBatchResult = $result->getJobResult('same_batch_pass');
+        $this->assertNotNull($sameBatchResult, 'same_batch_pass completed in the failing batch but its result was dropped');
+        $this->assertTrue($sameBatchResult->isSuccess());
+        $this->assertCount(2, $result->getJobResults());
+    }
+
+    /**
+     * @test
+     * Two jobs that BOTH fail in the same `pollCompleted()` batch under
+     * fail-fast. Exercises the one-shot drain guard (`!$failFastTriggered`):
+     * the drain runs once, both failures are collected, and the third
+     * (queued) job is skipped exactly once — not drained twice.
+     */
+    public function parallel_fail_fast_two_failures_in_same_poll_drain_queue_once(): void
+    {
+        $failA = new CustomJob(new JobConfiguration('fail_a', 'custom', ['script' => 'unused-by-fake']));
+        $failB = new CustomJob(new JobConfiguration('fail_b', 'custom', ['script' => 'unused-by-fake']));
+        $queued = new CustomJob(new JobConfiguration('queued', 'custom', ['script' => 'unused-by-fake']));
+
+        // Both failing jobs release on the first poll → same batch. processes=2
+        // keeps `queued` in the queue until fail-fast drains it.
+        $pool = new FakeProcessPool(2);
+        $pool->programResult('fail_a', 1, 'a output');
+        $pool->programResult('fail_b', 1, 'b output');
+
+        $executor = new InjectableFlowExecutor(new NullOutputHandler());
+        $executor->injectPool($pool);
+
+        $plan = new FlowPlan('test', [$failA, $failB, $queued], new OptionsConfiguration(true, 2));
+        $result = $executor->execute($plan);
+
+        $this->assertFalse($result->getJobResult('fail_a')->isSuccess());
+        $this->assertFalse($result->getJobResult('fail_b')->isSuccess());
+        $queuedResult = $result->getJobResult('queued');
+        $this->assertTrue($queuedResult->isSkipped());
+        // Drained once → exactly three results, no duplicate skip for `queued`.
+        $this->assertCount(3, $result->getJobResults());
+    }
+
+    /**
+     * @test
      * Parallel-mode queued job preserves its type/paths in the skipped
      * JobResult so structured formatters (JSON, JUnit, SARIF, CodeClimate)
      * can emit the full plan, not just the subset that actually ran.

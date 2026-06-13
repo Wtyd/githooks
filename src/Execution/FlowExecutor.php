@@ -783,11 +783,17 @@ class FlowExecutor
                 $results[] = $result;
                 $pool->notifyResult($result->getJobName(), $result->isSuccess(), false);
 
-                if ($failFast && !$result->isSuccess()) {
+                if ($failFast && !$result->isSuccess() && !$failFastTriggered) {
                     $failFastTriggered = true;
                     // FEAT-3 (D6): jobs in running terminate naturally; we no
                     // longer terminateAll(). The remaining queue is drained
                     // with descendant-aware skip reasons.
+                    // We must NOT `break` here: pollCompleted() already removed
+                    // every entry of this batch from `running`, so abandoning
+                    // the foreach would drop the JobResults of jobs that
+                    // finished in the SAME poll as the failing one (missing from
+                    // the report/JSON). The `!$failFastTriggered` guard keeps the
+                    // drain a one-shot; the rest of the batch is still collected.
                     $descendants = $dependencyGraph !== null
                         ? $dependencyGraph->descendantsOf($result->getJobName())
                         : [];
@@ -808,10 +814,6 @@ class FlowExecutor
                         $pool->notifyResult($skippedJob->getName(), false, true);
                     }
                     $pool->clearQueue();
-                    // Break out of the current poll loop — the outer while keeps
-                    // polling the running jobs (whose results we still collect)
-                    // until they finish naturally. We no longer terminateAll().
-                    break;
                 }
             }
 
