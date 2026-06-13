@@ -101,4 +101,60 @@ class MemoryDetectorTest extends UnitTestCase
         $this->assertSame(8192, $out['totalMb']);
         $this->assertNull($out['availableMb']);
     }
+
+    /**
+     * macOS detection factor table (Infection hardening). Each row pins a single
+     * equivalence class of the compound guards so the logical mutants die:
+     *  - `detectMacOS` total guard L81: `$exit === 0 && isset($output[0]) && is_numeric(trim(...))`
+     *  - `readMacOSAvailableMb` gate L93: `$exit !== 0 || $output === []`
+     *  - `readMacOSAvailableMb` free/inactive gate L104: `$free === null && $inactive === null`
+     *
+     * The page accumulation defaults L107 (`?? 0`) are intentionally NOT pinned:
+     * a single page (4 KB) is invisible after `/1024/1024` to MB — those mutants
+     * are equivalent at MB granularity.
+     *
+     * @test
+     * @dataProvider macosDetectionProvider
+     * @param array{output: array<int,string>, exit: int} $sysctl
+     * @param array{output: array<int,string>, exit: int} $vmStat
+     */
+    public function macos_detection_factor_table(array $sysctl, array $vmStat, ?int $expectedTotal, ?int $expectedAvailable): void
+    {
+        $detector = new MemoryDetectorStub('macos', [], [
+            'sysctl -n hw.memsize 2>/dev/null' => $sysctl,
+            'vm_stat 2>/dev/null'              => $vmStat,
+        ]);
+
+        $this->assertSame(
+            ['availableMb' => $expectedAvailable, 'totalMb' => $expectedTotal],
+            $detector->detect()
+        );
+    }
+
+    public function macosDetectionProvider(): array
+    {
+        $okSysctl = ['output' => [(string) (16 * 1024 * 1024 * 1024)], 'exit' => 0]; // 16384 MB
+        // page size 4096: free=100000 → 390 MB; free+inactive(200000) → 1171 MB; inactive=200000 → 781 MB
+        $vm = function (array $lines): array {
+            return ['output' => array_merge(['Mach Virtual Memory Statistics: (page size of 4096 bytes)'], $lines), 'exit' => 0];
+        };
+        $okVm = $vm(['Pages free:                          100000.']);
+
+        return [
+            // --- total guard (sysctl, L81) ---
+            'sysctl exit != 0 → total null'        => [['output' => [(string) (16 * 1024 * 1024 * 1024)], 'exit' => 1], $okVm, null, 390],
+            'sysctl no output[0] → total null'     => [['output' => [], 'exit' => 0], $okVm, null, 390],
+            'sysctl non-numeric → total null'      => [['output' => ['not-a-number'], 'exit' => 0], $okVm, null, 390],
+            'sysctl ok → total set'                => [$okSysctl, $okVm, 16384, 390],
+
+            // --- available gate (vm_stat, L93) ---
+            'vm_stat exit != 0 → available null'   => [$okSysctl, ['output' => ['whatever'], 'exit' => 1], 16384, null],
+            'vm_stat empty output → available null' => [$okSysctl, ['output' => [], 'exit' => 0], 16384, null],
+
+            // --- free/inactive gate (L104) ---
+            'only free present → counts'           => [$okSysctl, $vm(['Pages free:                          100000.']), 16384, 390],
+            'only inactive present → counts'       => [$okSysctl, $vm(['Pages inactive:                      200000.']), 16384, 781],
+            'neither free nor inactive → null'     => [$okSysctl, $vm(['Pages speculative:                    50000.']), 16384, null],
+        ];
+    }
 }
