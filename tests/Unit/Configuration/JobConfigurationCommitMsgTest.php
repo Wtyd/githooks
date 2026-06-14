@@ -232,4 +232,90 @@ class JobConfigurationCommitMsgTest extends UnitTestCase
 
         $this->assertContains("Job 'commit-format' (commit-msg): 'rules' must be an array.", $result->getErrors());
     }
+
+    /**
+     * Each boolean-flag rule must be validated. The existing test only covered
+     * `merge-allowed`; this pins every entry of the `['forbid-trailing-period',
+     * 'forbid-empty', 'merge-allowed']` list so removing any one (ArrayItemRemoval
+     * L369) is caught — that key would otherwise silently skip its bool check.
+     *
+     * @test
+     * @dataProvider booleanFlagKeys
+     */
+    public function non_boolean_value_for_each_flag_rule_is_an_error(string $key): void
+    {
+        $result = $this->validate(['type' => 'commit-msg', 'rules' => [$key => 'yes']]);
+
+        $this->assertContains(
+            "Job 'commit-format' (commit-msg): rule '$key' must be a boolean.",
+            $result->getErrors()
+        );
+    }
+
+    /** @return array<string, array{0: string}> */
+    public function booleanFlagKeys(): array
+    {
+        return [
+            'forbid-trailing-period' => ['forbid-trailing-period'],
+            'forbid-empty'           => ['forbid-empty'],
+            'merge-allowed'          => ['merge-allowed'],
+        ];
+    }
+
+    /**
+     * `pattern-message` WITH `pattern` must NOT warn. Pins the other side of the
+     * `&&` guard (LogicalAnd L365): mutating it to `||` would warn even when the
+     * pattern is present.
+     *
+     * @test
+     */
+    public function pattern_message_with_pattern_is_not_a_warning(): void
+    {
+        $result = $this->validate([
+            'type'  => 'commit-msg',
+            'rules' => ['pattern' => '/^\w+/', 'pattern-message' => 'Use a word'],
+        ]);
+
+        $this->assertNotContains(
+            "Job 'commit-format' (commit-msg): 'pattern-message' is ignored without 'pattern'.",
+            $result->getWarnings()
+        );
+    }
+
+    /**
+     * Every known rule key must NOT be reported as unknown. Pins each entry of
+     * the `$known` list (ArrayItemRemoval L330) — dropping one would make that
+     * legitimate key warn as "unknown rule".
+     *
+     * @test
+     * @dataProvider knownRuleKeys
+     * @param mixed $value
+     */
+    public function known_rule_key_is_not_reported_as_unknown(string $key, $value): void
+    {
+        $result = $this->validate(['type' => 'commit-msg', 'rules' => [$key => $value]]);
+
+        $unknownWarnings = array_values(array_filter(
+            $result->getWarnings(),
+            static function (string $warning) use ($key): bool {
+                return strpos($warning, "unknown rule '$key'") !== false;
+            }
+        ));
+        $this->assertSame([], $unknownWarnings);
+    }
+
+    /** @return array<string, array{0: string, 1: mixed}> */
+    public function knownRuleKeys(): array
+    {
+        return [
+            'min-length'             => ['min-length', 5],
+            'max-length'             => ['max-length', 50],
+            'pattern'                => ['pattern', '/^\w+/'],
+            'pattern-message'        => ['pattern-message', 'msg'],
+            'forbid-trailing-period' => ['forbid-trailing-period', true],
+            'subject-case'           => ['subject-case', 'lowercase'],
+            'forbid-empty'           => ['forbid-empty', true],
+            'merge-allowed'          => ['merge-allowed', true],
+        ];
+    }
 }
