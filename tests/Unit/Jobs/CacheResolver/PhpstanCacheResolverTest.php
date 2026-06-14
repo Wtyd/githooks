@@ -357,6 +357,45 @@ class PhpstanCacheResolverTest extends UnitTestCase
         $this->assertTrue($reflection->invoke(null, "x\tnot-indented"));
     }
 
+    /**
+     * Discriminating tests for the includes/parameters section-marker anchors.
+     * The previous `neonAnchorAndFlagProvider` rows put the tmpDir in the entry
+     * file itself, which `extractTmpDir` captures independently of the includes
+     * block — so dropping the anchor did NOT change the result and the mutants
+     * survived. These use a "sneaky" auxiliary file: its tmpDir reaches the
+     * result ONLY if the (wrongly-anchored) marker opens the section.
+     */
+
+    /** @test */
+    public function commented_includes_marker_does_not_open_the_section(): void
+    {
+        // Kills caret L80 `/^includes:/`: "# includes:" must not activate.
+        $this->writeNeon('sneaky.neon', "parameters:\n    tmpDir: /tmp/sneaky\n");
+        $entry = $this->writeNeon('caret-includes.neon', "# includes:\n    - sneaky.neon\n");
+
+        $this->assertNull(PhpstanCacheResolver::resolve($entry));
+    }
+
+    /** @test */
+    public function includes_marker_with_trailing_content_does_not_open_the_section(): void
+    {
+        // Kills dollar L80 `includes:\s*$`: "includes: junk" is not the marker.
+        $this->writeNeon('sneaky.neon', "parameters:\n    tmpDir: /tmp/sneaky\n");
+        $entry = $this->writeNeon('dollar-includes.neon', "includes: inline-junk\n    - sneaky.neon\n");
+
+        $this->assertNull(PhpstanCacheResolver::resolve($entry));
+    }
+
+    /** @test */
+    public function parameters_marker_with_trailing_content_does_not_open_the_block(): void
+    {
+        // Kills dollar L119 `parameters:\s*$`: "parameters: junk" must not open
+        // the block, so the tmpDir below stays uncaptured.
+        $path = $this->writeNeon('dollar-parameters.neon', "parameters: inline-junk\n    tmpDir: /should-not-capture\n");
+
+        $this->assertNull(PhpstanCacheResolver::resolve($path));
+    }
+
     private function writeNeon(string $name, string $content): string
     {
         $path = $this->sandbox . '/' . $name;
