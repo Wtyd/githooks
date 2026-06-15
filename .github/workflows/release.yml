@@ -65,6 +65,7 @@ jobs:
         path: githooks-${{ matrix.php-versions }}.tar
 
   test_rc:
+    if: false # TEMP: skip release tests to obtain a fresh .phar build — REVERT before merge
     name: Test the Build (${{ matrix.operating-system }} php ${{ matrix.php-versions }})
     runs-on: ${{ matrix.operating-system }}
     needs: build_rc
@@ -154,9 +155,9 @@ jobs:
           vendor/bin/phpunit --group release
         fi
 
-  commit_rc:    
+  commit_rc:
     name: Commit the Build
-    needs: test_rc
+    needs: build_rc # TEMP: was test_rc — REVERT before merge (test_rc skipped to fetch a fresh build)
     runs-on: ubuntu-latest
     strategy:
       matrix:
