@@ -161,6 +161,78 @@ class FlowReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('0ms', $output);
     }
 
+    /**
+     * 3.6 — a full dry-run emits the COMPLETE plan over the .phar: every declared
+     * job is present, the envelope stamps `dryRun: true`, no job is marked
+     * skipped, and each job carries its resolved `command`. This is the `full`
+     * row of the dry-run decision table and guards that the `dryRun` payload
+     * field is embedded in the bundled binary.
+     *
+     * @test
+     */
+    public function dry_run_full_plan_emits_every_job_with_command_and_no_skips()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint_a', 'lint_b']]])
+            ->setV3Jobs([
+                'lint_a' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_b' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --dry-run --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+        $this->assertTrue($decoded['dryRun'], 'a dry-run envelope must stamp dryRun: true');
+        $this->assertSame('full', $decoded['executionMode']);
+
+        $this->assertSame(['lint_a', 'lint_b'], array_column($decoded['jobs'], 'name'), 'dry-run must list the full plan');
+        foreach ($decoded['jobs'] as $job) {
+            $this->assertFalse($job['skipped'], "{$job['name']} must not be skipped in a full dry-run");
+            $this->assertNotSame('', (string) $job['command'], "{$job['name']} must carry its resolved command");
+        }
+    }
+
+    /**
+     * 3.6 (headline) — `--fast --dry-run` on a clean tree used to produce an
+     * EMPTY payload: the mode discarded every accelerable job and the dry-run
+     * omitted discarded jobs. It now reaches parity with a real `--fast` run —
+     * every discarded job surfaces as `skipped: true` with its reason, while the
+     * envelope still stamps `dryRun: true` and the real `executionMode`. This is
+     * the pathogenic `fast` row of the dry-run decision table.
+     *
+     * @test
+     */
+    public function fast_dry_run_lists_discarded_accelerable_jobs_as_skipped_with_reason()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['lint_a', 'lint_b']]])
+            ->setV3Jobs([
+                'lint_a' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_b' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --fast --dry-run --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+
+        $this->assertSame(0, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded);
+        $this->assertTrue($decoded['dryRun'], 'a dry-run envelope must stamp dryRun: true');
+        $this->assertSame('fast', $decoded['executionMode'], 'executionMode must reflect --fast, not full');
+
+        $this->assertSame(['lint_a', 'lint_b'], array_column($decoded['jobs'], 'name'), 'discarded jobs must still appear in the dry-run plan');
+        $this->assertSame(2, $decoded['skipped'], 'both accelerable jobs are discarded on a clean tree');
+        foreach ($decoded['jobs'] as $job) {
+            $this->assertTrue($job['skipped'], "{$job['name']} must be skipped in fast mode with no staged files");
+            $this->assertSame('no changes to validate', $job['skipReason']);
+        }
+    }
+
     /** @test */
     public function it_shows_monitor_report()
     {
