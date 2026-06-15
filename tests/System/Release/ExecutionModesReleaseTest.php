@@ -356,8 +356,15 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
 
             $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
 
+            // --branch=feature-x is mandatory here: BranchResolver puts the CI
+            // env vars (GITHUB_REF_NAME, CI_COMMIT_REF_NAME, …) ahead of the git
+            // working dir, so on a CI runner the ambient branch (e.g. rc-3.6.0)
+            // would shadow the sandbox's `feature-x` and the `on` rule would fall
+            // through to `*` → full. The flag forces the resolution (cascade
+            // step 1) so the test is deterministic locally and in CI alike, while
+            // still exercising the BUG-30 fix (meta-flow honouring `on` at all).
             passthru(
-                sprintf('%s flows ci --dry-run --format=json --config=%s 2>/dev/null', $binary, $configFile),
+                sprintf('%s flows ci --branch=feature-x --dry-run --format=json --config=%s 2>/dev/null', $binary, $configFile),
                 $exitCode
             );
 
