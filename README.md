@@ -249,6 +249,8 @@ Two ways to run non-PHP tools:
 | `githooks conf:check` | Validate configuration with deep checks (paths, executables, configs, deprecations, did-you-mean for typos). |
 | `githooks conf:migrate` | Migrate v2 config to v3 format. |
 | `githooks system:info` | Show CPU detection (cgroup-aware) and process configuration. |
+| `githooks profile <flow>` | Chart a metric (`time`, `peak-memory`, `peak-cores`) across the flow's run history as a sparkline with min/p50/p95/max and a trend. Requires recorded runs (see `--save-history` / `history-size`). |
+| `githooks profile:list <flow>` | List the runs persisted under `.githooks/history/` for a flow. |
 
 ### Common flags for `flow` / `flows` / `job`
 
@@ -263,6 +265,7 @@ Two ways to run non-PHP tools:
 | `--output=PATH` | Write the `--format=…` payload to a file instead of stdout. |
 | `--show-progress` | Force progress to stderr even with a structured `--format` (CI dashboards). |
 | `--stats` | Print a 5-column table (Job / Status / Time / Peak Cores / Peak Memory) plus temporal attribution at the end of the flow. Also exposes `stats` block in JSON v2. |
+| `--save-history` *(`flow` / `flows`)* | Persist this run under `.githooks/history/` so `profile` can chart its trend (opt-in; never on `--dry-run`). |
 | `--warn-after=N`, `--fail-after=N`, `--no-time-budget` | Override flow time-budget thresholds (seconds). |
 | `--memory-warn-above=MB`, `--memory-fail-above=MB`, `--no-memory-budget`, `--allocator=fifo\|greedy` | Override memory-budget thresholds and 2D allocator strategy. |
 
