@@ -7,18 +7,18 @@ name: CI Features (cross-OS E2E)
 # child process durations, RSS sampling and `git` actually run — no mocks.
 #
 # Trigger policy:
-#   - Iteration phase: push to gh-50-ci-features (the task branch).
-#   - Once cross-OS green, the trigger should switch to push:[rc**] so
-#     each release candidate runs the full E2E matrix once.
+#   - push to an rc** branch runs the full cross-OS E2E matrix once per
+#     release candidate.
 #   - workflow_dispatch is always available for ad-hoc runs.
+#   - While iterating on the workflow it can be pointed at a task branch
+#     temporarily, but that MUST be reverted to rc** before merge.
 #
 # Cost note: macOS minutes on GHA are ~10× the price of Linux. The matrix
 # pins macOS to PHP 8.5 only; Linux/Windows cover 7.4 and 8.5 (the build
 # tier boundary).
 on:
   push:
-    branches:
-      - gh-50-ci-features
+    branches: [ rc** ]
   workflow_dispatch:
 
 jobs:
