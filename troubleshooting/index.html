@@ -1,0 +1,3484 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Standalone CLI tool for managing git hooks and running QA tools in PHP projects. One config file. Every QA tool. Every git hook.">
+      
+      
+      
+        <link rel="canonical" href="https://wtyd.github.io/githooks/troubleshooting/">
+      
+      
+        <link rel="prev" href="../migration/from-captainhook/">
+      
+      
+        <link rel="next" href="../comparison/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Troubleshooting - GitHooks</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#troubleshooting" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GitHooks" class="md-header__button md-logo" aria-label="GitHooks" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GitHooks
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Troubleshooting
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Wtyd/githooks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Wtyd/githooks
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Configuration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tools/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Tools Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../cli/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  CLI Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../how-to/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  How-To Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../migration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Migration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Resources
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GitHooks" class="md-nav__button md-logo" aria-label="GitHooks" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GitHooks
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Wtyd/githooks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Wtyd/githooks
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/first-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Your First Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/first-hook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Your First Hook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../configuration/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../execution-modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glob-syntax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glob Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tools/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tools Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpstan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHPStan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpcs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP CodeSniffer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpmd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP Mess Detector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpunit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHPUnit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/paratest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paratest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/psalm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Psalm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/parallel-lint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Lint
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpcpd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP Copy Paste Detector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpcsfixer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP CS Fixer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/rector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/custom/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/commit-msg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commit Message
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../cli/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CLI Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks flows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/job/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks job
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/hook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks hook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/conf-init/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks conf init
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/conf-check/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks conf check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/conf-migrate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks conf migrate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/cache-clear/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks cache clear
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/system-info/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks system info
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../how-to/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-To Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-To Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/parallel-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Execution & Thread Budget
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/conditional-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditional Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/files-flag/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    --files / --files-from
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/ci-cd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/frontend-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/job-inheritance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Job Inheritance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/output-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/ai-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Agent Hooks (Claude Code)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/docker-local-override/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker & Local Override
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/automate-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automating Hook Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../migration/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Migration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/v2-to-v3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From v2 to v3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/v33-deprecations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v3.3 deprecations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/from-grumphp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From GrumPHP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/from-captainhook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From CaptainHook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resources
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Resources
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#confcheck-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conf:check errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="conf:check errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#branch-driven-execution-mode-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch-driven execution mode (on)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-entry-admission-only-files-exclude-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-entry admission (only-files / exclude-files)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job-dependencies-needs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job dependencies (needs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options-and-budgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options and budgets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unknown-keys-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unknown keys (warnings)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-conflicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI conflicts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-why-a-job-was-skipped-skipreason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime — why a job was skipped (skipReason)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hook-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-file-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration file loading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci-and-environment-specific" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI- and environment-specific
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CI- and environment-specific">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-fast-branch-with-shallow-clones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --fast-branch with shallow clones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#detached-head-with-flowsxon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detached HEAD with flows.&lt;X&gt;.on
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-budget-on-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory budget on Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#surprising-behaviours-and-how-to-avoid-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Surprising behaviours and how to avoid them
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Surprising behaviours and how to avoid them">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skip-cascades-from-needs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skip cascades from needs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fail-fast-in-34-no-longer-terminates-running-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fail-fast in 3.4 no longer terminates running jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-flow-options-ignored-in-multi-flow-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-flow options ignored in multi-flow runs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#confcheck-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        conf:check errors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="conf:check errors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#flows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flows
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#branch-driven-execution-mode-on" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Branch-driven execution mode (on)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-entry-admission-only-files-exclude-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-entry admission (only-files / exclude-files)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#job-dependencies-needs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Job dependencies (needs)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#options-and-budgets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Options and budgets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#unknown-keys-warnings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unknown keys (warnings)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-conflicts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI conflicts
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#runtime-why-a-job-was-skipped-skipreason" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime — why a job was skipped (skipReason)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hook-installation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hook installation
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration-file-loading" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Configuration file loading
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ci-and-environment-specific" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CI- and environment-specific
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="CI- and environment-specific">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#-fast-branch-with-shallow-clones" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        --fast-branch with shallow clones
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#detached-head-with-flowsxon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Detached HEAD with flows.&lt;X&gt;.on
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#memory-budget-on-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Memory budget on Windows
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#surprising-behaviours-and-how-to-avoid-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Surprising behaviours and how to avoid them
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Surprising behaviours and how to avoid them">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#skip-cascades-from-needs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Skip cascades from needs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fail-fast-in-34-no-longer-terminates-running-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        fail-fast in 3.4 no longer terminates running jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#per-flow-options-ignored-in-multi-flow-runs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Per-flow options ignored in multi-flow runs
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h1>
+<p>Common error and warning messages emitted by <a href="../cli/conf-check/"><code>conf:check</code></a>, by the runtime when executing a flow or job, and by the hook installer. Look up the literal text you got in the snippets below.</p>
+<h2 id="confcheck-errors"><code>conf:check</code> errors<a class="headerlink" href="#confcheck-errors" title="Permanent link">&para;</a></h2>
+<p>Run <a href="../cli/conf-check/"><code>githooks conf:check</code></a> to validate your configuration without executing any tool. The command exits 1 on the first error and lists warnings inline.</p>
+<h3 id="flows">Flows<a class="headerlink" href="#flows" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Flow 'X' declares both 'jobs' and 'flows'; pick one.</code></td>
+<td>A flow has both keys. A flow is either a regular flow (<code>jobs</code>) or a meta-flow (<code>flows</code>).</td>
+<td>Remove the one you don't need. See <a href="../configuration/flows/#meta-flows">Meta-flows</a>.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' has neither 'jobs' nor 'flows'.</code></td>
+<td>The flow entry is empty.</td>
+<td>Declare <code>jobs: [...]</code> (regular) or <code>flows: [...]</code> (meta-flow).</td>
+</tr>
+<tr>
+<td><code>Flow 'X' must have a non-empty 'jobs' array.</code></td>
+<td><code>jobs: []</code> or wrong type.</td>
+<td>Add at least one job ref.</td>
+</tr>
+<tr>
+<td><code>Meta-flow 'X' must have a 'flows' array.</code> / <code>'flows' must be a list of non-empty strings.</code></td>
+<td>Wrong shape for a meta-flow.</td>
+<td>Use <code>'flows' =&gt; ['qa', 'lint']</code> referencing existing regular flows.</td>
+</tr>
+<tr>
+<td><code>Flow 'X': 'execution' must be one of: full, fast, fast-branch, fast-dirty.</code></td>
+<td>Unknown value in <code>flows.&lt;X&gt;.execution</code>.</td>
+<td>Pick a valid <a href="../execution-modes/">execution mode</a>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="branch-driven-execution-mode-on">Branch-driven execution mode (<code>on</code>)<a class="headerlink" href="#branch-driven-execution-mode-on" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Flow 'X': 'on' must be an array of branch patterns.</code></td>
+<td><code>on</code> is not a map.</td>
+<td>Use <code>'on' =&gt; ['master' =&gt; ['execution' =&gt; 'full'], '*' =&gt; ['execution' =&gt; 'fast-branch']]</code>.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' on rule: branch pattern must not be empty.</code></td>
+<td>Empty key in the <code>on</code> map.</td>
+<td>Remove the empty entry.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' on rule for 'pattern': attributes must be an object.</code></td>
+<td>The value next to a branch pattern is not an array.</td>
+<td>Wrap attributes in an array: <code>'master' =&gt; ['execution' =&gt; 'full']</code>.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' on rule for 'pattern': 'execution' must be one of: …. Did you mean '…'?</code></td>
+<td>Typo in the mode name.</td>
+<td>Apply the suggestion.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' on rule for 'pattern': unknown attribute 'foo'. Did you mean 'execution'?</code></td>
+<td>Unknown attribute under <code>on.&lt;pattern&gt;</code>.</td>
+<td>Today only <code>execution</code> is supported.</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../configuration/flows/#branch-driven-execution-mode-on">Branch-driven execution mode (<code>on</code>)</a>.</p>
+<h3 id="per-entry-admission-only-files-exclude-files">Per-entry admission (<code>only-files</code> / <code>exclude-files</code>)<a class="headerlink" href="#per-entry-admission-only-files-exclude-files" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Flow 'X' job ref 'Y': 'only-files' must be a string, array of strings, or null.</code></td>
+<td>Wrong type.</td>
+<td>Use an array of glob strings, or <code>null</code> to cancel an inherited rule.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' job ref 'Y': 'only-files' must not be empty. Use null to disable an inherited rule.</code></td>
+<td><code>'only-files' =&gt; []</code>.</td>
+<td>Use <code>null</code> to disable inheritance; an empty list is meaningless.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' job ref 'Y': 'only-files' contains an empty pattern.</code></td>
+<td>One element is <code>''</code>.</td>
+<td>Remove or replace with a real glob.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' job ref 'Y': 'only-files' contains duplicate pattern 'P'.</code></td>
+<td>Same pattern listed twice.</td>
+<td>Deduplicate.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' job ref 'Y': unknown key 'K'. Did you mean '…'?</code></td>
+<td>A flow-entry object accepts only <code>job</code>, <code>needs</code>, <code>only-files</code>, <code>exclude-files</code>.</td>
+<td>Fix the typo.</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../configuration/flows/#per-entry-admission-rules-only-files-exclude-files">Per-entry admission rules</a>.</p>
+<h3 id="job-dependencies-needs">Job dependencies (<code>needs</code>)<a class="headerlink" href="#job-dependencies-needs" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Flow 'X': 'needs' has a cycle: A -&gt; B -&gt; A.</code></td>
+<td>The dependency graph contains a cycle.</td>
+<td>Break the cycle. Self-loops (<code>A -&gt; A</code>) and transitive cycles are both reported.</td>
+</tr>
+<tr>
+<td><code>Flow 'X': job 'Y' is declared more than once.</code></td>
+<td>The same job appears twice under <code>flows.&lt;X&gt;.jobs</code>.</td>
+<td>Keep one entry; merge <code>needs</code> / admission rules into it.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' job ref 'Y': 'needs' must be a string, array of strings, or null.</code></td>
+<td>Wrong type.</td>
+<td>Use an array of job names, or <code>null</code> to cancel an inherited rule.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' job ref 'Y': 'needs' must not be empty. Use null to disable an inherited rule.</code></td>
+<td><code>'needs' =&gt; []</code>.</td>
+<td>Use <code>null</code> instead.</td>
+</tr>
+<tr>
+<td><code>Flow 'X' job ref 'Y': 'needs' contains an empty job name.</code> / <code>duplicate job name 'Z'.</code></td>
+<td>Bad item in the list.</td>
+<td>Fix or remove the offending entry.</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../configuration/flows/#job-dependencies-needs">Job dependencies (<code>needs</code>)</a>.</p>
+<h3 id="options-and-budgets">Options and budgets<a class="headerlink" href="#options-and-budgets" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'warn-after' (N) must be less than 'fail-after' (M).</code></td>
+<td>Inverted thresholds.</td>
+<td><code>warn-after</code> must trigger before <code>fail-after</code>.</td>
+</tr>
+<tr>
+<td><code>'warn-above' (N) must be less than 'fail-above' (M).</code></td>
+<td>Inverted memory thresholds.</td>
+<td>Same rule.</td>
+</tr>
+<tr>
+<td><code>'fail-after' must be a positive integer (seconds).</code></td>
+<td>Zero, negative or non-integer.</td>
+<td>Use a positive integer.</td>
+</tr>
+<tr>
+<td><code>'warn-above' must be a positive integer (MB).</code></td>
+<td>Same family for memory budgets.</td>
+<td>Use a positive integer in megabytes.</td>
+</tr>
+<tr>
+<td><code>'memory' must be either a positive integer (MB) or an object …</code></td>
+<td>Wrong shape on per-job <code>memory</code>.</td>
+<td>Use <code>'memory' =&gt; 1500</code> (short form) or <code>'memory' =&gt; ['reserved' =&gt; N, 'warn-above' =&gt; …, 'fail-above' =&gt; …]</code>.</td>
+</tr>
+<tr>
+<td><code>'reports' must be a map of format =&gt; path.</code></td>
+<td>Wrong shape.</td>
+<td>Use <code>'reports' =&gt; ['sarif' =&gt; 'reports/qa.sarif']</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>See <a href="../configuration/options/">Options reference</a>.</p>
+<h3 id="unknown-keys-warnings">Unknown keys (warnings)<a class="headerlink" href="#unknown-keys-warnings" title="Permanent link">&para;</a></h3>
+<p>Unknown keys never block execution — they always surface as <strong>warnings</strong> with a <em>did-you-mean</em> suggestion when the typo is close to a known key. Example:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>⚠ Flow &#39;qa&#39; job ref &#39;phpstan_src&#39;: unknown key &#39;only_files&#39;. Did you mean &#39;only-files&#39;?
+</span></code></pre></div>
+<p>Apply the suggestion; the canonical keys use kebab-case.</p>
+<h2 id="cli-conflicts">CLI conflicts<a class="headerlink" href="#cli-conflicts" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--files and --files-from are mutually exclusive</code></td>
+<td>Both flags supplied.</td>
+<td>Pick one — CSV list or manifest file.</td>
+</tr>
+<tr>
+<td><code>--fast-dirty and --fast are mutually exclusive</code> (or any other pair from <code>--fast</code> / <code>--fast-branch</code> / <code>--fast-dirty</code> / <code>--files</code> / <code>--files-from</code>)</td>
+<td>More than one input-set flag.</td>
+<td>Each flag defines a different "what to analyse" semantics; pick one.</td>
+</tr>
+<tr>
+<td><code>Options --exclude-jobs and --only-jobs cannot be used together.</code></td>
+<td>Both flags supplied.</td>
+<td>Use one or the other.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="runtime-why-a-job-was-skipped-skipreason">Runtime — why a job was skipped (<code>skipReason</code>)<a class="headerlink" href="#runtime-why-a-job-was-skipped-skipreason" title="Permanent link">&para;</a></h2>
+<p>When a job has <code>skipped: true</code> in <code>--format=json</code> (or appears with the <code>⏭</code> annotation in text mode), the <code>skipReason</code> field tells you why. Reference of the values you can see:</p>
+<table>
+<thead>
+<tr>
+<th><code>skipReason</code></th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>no changes to validate</code></td>
+<td><code>--fast</code> / <code>--fast-branch</code> / <code>--fast-dirty</code> produced an empty input set (clean working tree, branch matches base, no staged files). The mode intentionally does <strong>not</strong> fall back to <code>full</code>.</td>
+</tr>
+<tr>
+<td><code>no staged files match its paths</code></td>
+<td><code>--fast</code>: the change set is non-empty but no staged file falls under the job's <code>paths</code>.</td>
+</tr>
+<tr>
+<td><code>no input files match its paths</code></td>
+<td><code>--files</code> / <code>--files-from</code>: no file in the supplied list matches the job's <code>paths</code>.</td>
+</tr>
+<tr>
+<td><code>no input files provided</code></td>
+<td><code>--files</code> empty after CSV split, or <code>--files-from</code> manifest empty after stripping blanks / comments.</td>
+</tr>
+<tr>
+<td><code>tool reported no input files after applying internal exclusions</code></td>
+<td>PHPStan (<code>No files found to analyse</code>) or PHPCS (<code>All specified files were excluded</code>) dropped 100 % of the input through its own ruleset. Tolerated since 3.3.3.</td>
+</tr>
+<tr>
+<td><code>&lt;rule&gt; filter excluded all files</code></td>
+<td>A per-entry <code>only-files</code> / <code>exclude-files</code> rule emptied the admission set. The rule name appears in the message.</td>
+</tr>
+<tr>
+<td><code>needs X failed</code></td>
+<td>Upstream dependency in <code>needs</code> failed.</td>
+</tr>
+<tr>
+<td><code>needs X was skipped</code></td>
+<td>Upstream dependency was skipped (e.g. by <code>only-files</code> or by an earlier <code>needs</code> propagation).</td>
+</tr>
+<tr>
+<td><code>needs A, B failed</code></td>
+<td>Multiple upstream failures.</td>
+</tr>
+<tr>
+<td><code>needs A failed, B was skipped</code></td>
+<td>Mixed causes.</td>
+</tr>
+<tr>
+<td><code>skipped by fail-fast</code></td>
+<td>A previous job in the flow failed while <code>fail-fast: true</code> was active and this job had not yet started.</td>
+</tr>
+<tr>
+<td><code>flow memory-budget exceeded</code></td>
+<td>The flow-level memory budget fired <code>fail-above</code>; the job was either killed or never admitted.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="hook-installation">Hook installation<a class="headerlink" href="#hook-installation" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>No hooks defined in configuration. Nothing to install.</code></td>
+<td>The config file has no <code>hooks</code> block or it is empty.</td>
+<td>Declare at least one hook event under <code>hooks</code>. See <a href="../configuration/hooks/">Configuration: Hooks</a>.</td>
+</tr>
+<tr>
+<td><code>Could not delete $hook hook</code> / <code>Error installing hook $hook</code></td>
+<td>Permission issue writing to <code>.githooks/</code>.</td>
+<td>Check filesystem permissions; ensure <code>.githooks/</code> is writable.</td>
+</tr>
+<tr>
+<td>Existing hooks from another tool</td>
+<td><code>githooks hook</code> backs up pre-existing hook scripts to <code>&lt;hook&gt;.bak</code> before overwriting.</td>
+<td>Inspect the <code>.bak</code> file and decide whether to keep the GitHooks install or restore the original.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="configuration-file-loading">Configuration file loading<a class="headerlink" href="#configuration-file-loading" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Message</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Configuration file not found: $path</code></td>
+<td><code>--config=PATH</code> points at a non-existent file.</td>
+<td>Verify the path.</td>
+</tr>
+<tr>
+<td><code>PHP configuration file does not return an array.</code></td>
+<td>The <code>.php</code> config file is missing <code>return [ ... ];</code>.</td>
+<td>Ensure the file ends with <code>return $config;</code> or similar.</td>
+</tr>
+<tr>
+<td><code>GitHooks only supports php 7.4 or greater.</code></td>
+<td>PHP version too old.</td>
+<td>Upgrade PHP.</td>
+</tr>
+<tr>
+<td><code>There must be at least one tool configured.</code></td>
+<td>Empty <code>jobs</code> block.</td>
+<td>Declare at least one job.</td>
+</tr>
+<tr>
+<td><code>Could not read legacy configuration.</code></td>
+<td>v2 YAML configuration is malformed.</td>
+<td>Run <a href="../cli/conf-migrate/"><code>conf:migrate</code></a> to convert to v3 PHP format, or fix the YAML.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ci-and-environment-specific">CI- and environment-specific<a class="headerlink" href="#ci-and-environment-specific" title="Permanent link">&para;</a></h2>
+<h3 id="-fast-branch-with-shallow-clones"><code>--fast-branch</code> with shallow clones<a class="headerlink" href="#-fast-branch-with-shallow-clones" title="Permanent link">&para;</a></h3>
+<p><code>actions/checkout@v4</code> defaults to <code>fetch-depth: 1</code>, which leaves no history to diff against the base branch. The job will fall back according to <a href="../configuration/options/#available-options"><code>fast-branch-fallback</code></a> (defaults to <code>full</code>). To use a real diff in CI:</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">actions/checkout@v4</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">with</span><span class="p">:</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">fetch-depth</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span><span class="w">   </span><span class="c1"># full history</span>
+</span></code></pre></div>
+<h3 id="detached-head-with-flowsxon">Detached HEAD with <code>flows.&lt;X&gt;.on</code><a class="headerlink" href="#detached-head-with-flowsxon" title="Permanent link">&para;</a></h3>
+<p>If a flow declares an <a href="../configuration/flows/#branch-driven-execution-mode-on"><code>on</code></a> map and the run happens on a detached HEAD (<code>git rev-parse --abbrev-ref HEAD</code> returns <code>HEAD</code>), the resolver errors out and points you at:</p>
+<ul>
+<li><code>--branch=X</code> (CLI flag on <code>githooks flow</code>)</li>
+<li><code>$GITHOOKS_BRANCH</code> (environment variable)</li>
+</ul>
+<p>Set one of those when running on detached HEAD. Flows without <code>on</code> continue to work on detached HEAD unchanged.</p>
+<h3 id="memory-budget-on-windows">Memory budget on Windows<a class="headerlink" href="#memory-budget-on-windows" title="Permanent link">&para;</a></h3>
+<p>RSS sampling is not available on Windows. The runtime emits a one-time warning:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>⚠ Memory budget disabled: RSS sampling not available on Windows
+</span></code></pre></div>
+<p>…and disables <code>memory-budget</code> and per-job <code>memory:</code> thresholds. The 2D allocator still schedules using reservations; <code>--stats</code> still reports cores info.</p>
+<h2 id="surprising-behaviours-and-how-to-avoid-them">Surprising behaviours and how to avoid them<a class="headerlink" href="#surprising-behaviours-and-how-to-avoid-them" title="Permanent link">&para;</a></h2>
+<h3 id="skip-cascades-from-needs">Skip cascades from <code>needs</code><a class="headerlink" href="#skip-cascades-from-needs" title="Permanent link">&para;</a></h3>
+<p>Declaring <code>only-files</code> on an upstream job but not on its dependents propagates as <code>skipReason: 'needs X was skipped'</code>. This is correct but can surprise. To make both skip in lockstep (the intended pattern in monorepos), declare the <strong>same</strong> <code>only-files</code> on the dependent:</p>
+<div class="language-php highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="x">&#39;jobs&#39; =&gt; [</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="x">    [&#39;job&#39; =&gt; &#39;yarn_install&#39;, &#39;only-files&#39; =&gt; [&#39;**/*.{js,ts,vue,json}&#39;]],</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="x">    [&#39;job&#39; =&gt; &#39;eslint&#39;,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="x">     &#39;needs&#39;      =&gt; [&#39;yarn_install&#39;],</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="x">     &#39;only-files&#39; =&gt; [&#39;**/*.{js,ts,vue,json}&#39;],   // mirror the upstream</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="x">    ],</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="x">],</span>
+</span></code></pre></div>
+<p>See <a href="../configuration/flows/#composition-with-only-files-exclude-files">Composition with <code>only-files</code> / <code>exclude-files</code></a>.</p>
+<h3 id="fail-fast-in-34-no-longer-terminates-running-jobs"><code>fail-fast</code> in 3.4 no longer terminates running jobs<a class="headerlink" href="#fail-fast-in-34-no-longer-terminates-running-jobs" title="Permanent link">&para;</a></h3>
+<p>Jobs already running when another fails are allowed to finish naturally. <code>fail-fast</code> cancels <strong>pending</strong> work, not in-flight work. Direct or transitive descendants in the <code>needs</code> DAG receive <code>skipReason: 'needs X failed'</code>; siblings receive <code>skipped by fail-fast</code>. Previous releases sent SIGTERM to running jobs — that behaviour is gone.</p>
+<h3 id="per-flow-options-ignored-in-multi-flow-runs">Per-flow options ignored in multi-flow runs<a class="headerlink" href="#per-flow-options-ignored-in-multi-flow-runs" title="Permanent link">&para;</a></h3>
+<p>When you invoke <code>githooks flows X Y</code> (two normal flows) or a mixed meta-flow + extra flows run, per-flow <code>options:</code> blocks are intentionally ignored. The cascade collapses to <code>cli &gt; flows.options &gt; default</code>. A one-line stderr notice names the ignored sources so you know what is not being applied.</p>
+<p>See <a href="../cli/flows/#invocation-modes"><code>githooks flows</code> invocation modes</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2020-2026 Wtyd/GitHooks contributors
+    </div>
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Wtyd/githooks" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

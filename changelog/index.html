@@ -1,0 +1,4010 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Standalone CLI tool for managing git hooks and running QA tools in PHP projects. One config file. Every QA tool. Every git hook.">
+      
+      
+      
+        <link rel="canonical" href="https://wtyd.github.io/githooks/changelog/">
+      
+      
+        <link rel="prev" href="../comparison/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Changelog - GitHooks</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="GitHooks" class="md-header__button md-logo" aria-label="GitHooks" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            GitHooks
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="amber"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/Wtyd/githooks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Wtyd/githooks
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../getting-started/installation/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Getting Started
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../configuration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Configuration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tools/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Tools Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../cli/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  CLI Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../how-to/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  How-To Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../migration/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Migration
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../troubleshooting/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  Resources
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="GitHooks" class="md-nav__button md-logo" aria-label="GitHooks" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    GitHooks
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/Wtyd/githooks" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    Wtyd/githooks
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Getting Started
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/first-config/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Your First Config
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../getting-started/first-hook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Running Your First Hook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../configuration/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Configuration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Flows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/options/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Options
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration/file/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration File
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../execution-modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execution Modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../glob-syntax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glob Syntax
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../tools/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tools Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_4" id="__nav_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tools Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpstan/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHPStan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpcs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP CodeSniffer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpmd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP Mess Detector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpunit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHPUnit
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/paratest/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paratest
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/psalm/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Psalm
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/parallel-lint/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Lint
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpcpd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP Copy Paste Detector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/phpcsfixer/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    PHP CS Fixer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/rector/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rector
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/custom/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Custom Jobs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tools/commit-msg/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Commit Message
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../cli/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_5" id="__nav_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    CLI Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks flow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/flows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks flows
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/job/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks job
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/hook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks hook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/status/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks status
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/conf-init/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks conf init
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/conf-check/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks conf check
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/conf-migrate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks conf migrate
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/cache-clear/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks cache clear
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/system-info/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    githooks system info
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../how-to/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How-To Guides
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    How-To Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/parallel-execution/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parallel Execution & Thread Budget
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/conditional-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Conditional Hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/files-flag/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    --files / --files-from
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/ci-cd/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CI/CD Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/frontend-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/job-inheritance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Job Inheritance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/output-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Output Formats
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/ai-hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Agent Hooks (Claude Code)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/docker-local-override/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker & Local Override
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/automate-install/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automating Hook Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../migration/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_7" id="__nav_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Migration
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/v2-to-v3/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From v2 to v3
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/v33-deprecations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    v3.3 deprecations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/from-grumphp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From GrumPHP
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../migration/from-captainhook/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    From CaptainHook
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Resources
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Resources
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../comparison/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#36" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.6]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.6]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#351" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.5.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.5]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#341" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.4.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.4.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.4]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.4]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#333" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.3]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.3]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#332-do-not-use-broken-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.2] ⚠️ Do not use — broken release
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.2] ⚠️ Do not use — broken release">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#331" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#330" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.0]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.0]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#320" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.2.0]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.2.0]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#310" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.1.0]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.1.0]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#300-2026-04-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.0.0] - 2026-04-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.0.0] - 2026-04-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-architecture-hooks-flows-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Architecture — Hooks, Flows, Jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updated-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updated Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-job-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Job Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-modes-and-structured-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Modes and Structured Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#developer-experience" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developer Experience
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#36" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.6]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.6]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#351" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.5.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.5]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.5]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#341" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.4.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.4.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#34" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.4]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.4]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#added_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Added
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#333" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.3]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.3]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#332-do-not-use-broken-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.2] ⚠️ Do not use — broken release
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.2] ⚠️ Do not use — broken release">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#improved" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Improved
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#331" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.1]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.1]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#fixed_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#330" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.3.0]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.3.0]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#deprecations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Deprecations
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#320" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.2.0]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.2.0]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#310" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.1.0]
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.1.0]">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#new-features_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Features
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bug-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bug Fixes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#300-2026-04-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        [3.0.0] - 2026-04-10
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="[3.0.0] - 2026-04-10">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#breaking-changes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Breaking Changes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-architecture-hooks-flows-jobs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Architecture — Hooks, Flows, Jobs
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#updated-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Updated Commands
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-job-types" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New Job Types
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#execution-modes-and-structured-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Modes and Structured Output
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#developer-experience" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Developer Experience
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conditional-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Conditional Execution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Permanent link">&para;</a></h1>
+<p>All notable changes to this project are documented here.</p>
+<h2 id="36">[3.6]<a class="headerlink" href="#36" title="Permanent link">&para;</a></h2>
+<h3 id="added">Added<a class="headerlink" href="#added" title="Permanent link">&para;</a></h3>
+<p><strong>Run history + <code>profile</code> — temporal trends per flow.</strong> Until now every <code>--stats</code> was an isolated snapshot, so "is <code>phpstan_src</code> slower this week, and since when?" had no answer. A run can now persist its full JSON v2 payload under <code>.githooks/history/&lt;timestamp&gt;-&lt;flow&gt;.json</code>, opt-in via <code>flow &lt;name&gt; --save-history</code> or <code>flows.options.history-size: N</code> in config (kept to the last N runs per flow, FIFO; 0 disables). Two new commands query that history:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="gp">$ </span>githooks<span class="w"> </span>profile<span class="w"> </span>qa<span class="w"> </span>--job<span class="o">=</span>phpstan-src
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="go">phpstan-src · last 30 runs · time</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">  ▁▃▆▆█▆▃▁▂▃▆█▇▆▅▅▆▆▆▇█▇▆▆▅▅▆▆▆▇</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">  min: 1.8s · p50: 4.0s · p95: 5.6s · max: 6.1s · trend: ↑ +18.0% vs prev 15</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gp">$ </span>githooks<span class="w"> </span>profile:list<span class="w"> </span>qa<span class="w">          </span><span class="c1"># timestamp · total time · passed · failed per run</span>
+</span></code></pre></div>
+<p><code>profile</code> charts <code>time</code> (default), <code>peak-memory</code> or <code>peak-cores</code> (the last two only for runs recorded with <code>--stats</code>), filterable with <code>--job=</code>, <code>--since=YYYY-MM-DD</code> and <code>--last=N</code>, and <code>--format=json</code> for tooling. <code>conf:init</code> adds <code>.githooks/history/</code> to <code>.gitignore</code> — the history is local by design and never travels to the repo. See <a href="../cli/profile/"><code>githooks profile</code></a>.</p>
+<p><strong>Per-dimension warn icons in the <code>--stats</code> Status column.</strong> A warned job used to show a single generic <code>OK ⚠</code>, triggered only by the memory threshold — the operator could not tell <em>which</em> resource crossed its warn level. The Status column now distinguishes the dimension and combines them: <code>OK ⏱</code> (time <code>warn-after</code>), <code>OK ▤</code> (memory <code>warn-above</code>), <code>OK ⏱▤</code> (both, time before memory). The TOTAL row's Peak Cores cell is marked with <code>⚙</code> in yellow on real over-subscription (<code>peak &gt; limit</code>). See <a href="../how-to/parallel-execution/#calibrating-with-stats">Parallel execution → Calibrating with <code>--stats</code></a>.</p>
+<p><strong><code>flow --dry-run</code> now shows the full plan, including discarded jobs.</strong> A dry-run used to list only the jobs that <em>would run</em> and silently omit the ones the mode discards — so <code>flow qa --fast --dry-run</code> on a clean tree produced an empty payload, while a real <code>--fast</code> run reported all 8 jobs as skipped. The dry-run now reaches parity with a real run: discarded jobs surface as <code>skipped</code> with their reason alongside the would-run jobs, and the payload carries <code>dryRun: true</code> so a consumer (AI / CI) can tell a plan from an execution. Combine with <code>--fast</code>/<code>--fast-branch</code>/<code>--fast-dirty</code> to preview exactly what a flow would run in that mode. See <a href="../cli/flow/">Flow command</a>.</p>
+<p><strong>Animated spinner while jobs run.</strong> The running-job lane now shows a braille spinner (<code>⠋⠙⠹…</code>) that rotates in place instead of a static hourglass, making it obvious at a glance that a job is actively working. Monochrome and single-width, so the line never shifts between frames. This now also covers <strong>single-job runs</strong> (<code>githooks job &lt;name&gt;</code>) in an interactive terminal — previously a single tool ran with no on-screen progress until it finished. Non-TTY / CI output is unchanged (no spinner — it would be log noise; piped runs keep the tool's streamed output).</p>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<p><strong><code>githooks job --memory-warn-above</code> / <code>--memory-fail-above</code> now take effect.</strong> The flags were parsed but never applied to the job's memory threshold, so they silently did nothing — unlike <code>--warn-after</code> / <code>--fail-after</code>, which always worked. They now override the per-job memory threshold (replacing any <code>memory</code> declared in config) exactly as documented in <a href="../cli/job/">Job command</a>, so a single-job run can warn or fail on RSS without editing the config file.</p>
+<p><strong><code>githooks job --ignore-errors-on-exit</code> now takes effect.</strong> The flag was declared and documented but never read from the CLI, so a failing job still exited non-zero. It now overrides the job's <code>ignore-errors-on-exit</code> for the run (CLI wins over config), letting you execute a job whose failure must not break the command without editing the config file.</p>
+<p><strong><code>on</code> declared on a meta-flow is now honoured when the meta-flow is invoked alone.</strong> A meta-flow that declared <code>on</code> (per-branch execution) silently ran in <code>full</code> regardless of the branch — the rule was validated but never evaluated, unlike a meta-flow's <code>options</code> (which already applied when invoked alone). A meta-flow invoked alone (<code>githooks flows ci-pack</code>) now resolves the branch and applies the matching execution mode, propagating it to the expanded flows, exactly like a normal flow. Mixed/ad-hoc runs are unchanged (meta-level <code>on</code>/<code>options</code> stay ignored there).</p>
+<p><strong>Removed the inert <code>--fast-branch-fallback</code> CLI flag from <code>flows</code>.</strong> It was declared and documented but never read — only the <code>fast-branch-fallback</code> config option ever took effect. Passing it on the CLI silently did nothing; it now errors as an unknown option. Set the strategy via <code>options.fast-branch-fallback: fast|full</code> in config (or a <code>githooks.local.php</code> override), which is unchanged.</p>
+<p><strong>Parallel <code>--fail-fast</code> no longer drops jobs that finished in the same poll as the failure.</strong> Under parallel execution with <code>--fail-fast</code>, a job that completed in the same poll batch <em>after</em> the first failing job had its result silently discarded — it ran but was missing from the report and the JSON/JUnit payload. The whole batch is now collected before the queue drains, so every job that actually executed appears in the output.</p>
+<h2 id="351">[3.5.1]<a class="headerlink" href="#351" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_1">Fixed<a class="headerlink" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<p><strong>The parallel dashboard no longer repeats completed-job lines on a TTY without ANSI support.</strong> The live dashboard redraws in place with cursor-up escapes. On a stream that reports as a TTY but does not honour them — <code>NO_COLOR</code>, <code>TERM=dumb</code> or unset, IDE output panels — the cursor never moved, so each finished job's line was re-printed once per ~200 ms refresh tick (a fast job could stack dozens of copies while a slow one kept running). The live dashboard is now gated on ANSI decoration as well as the TTY check, so those streams degrade to the clean append-only renderer — one line per job:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="gp">$ </span><span class="nv">NO_COLOR</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>githooks<span class="w"> </span>flow<span class="w"> </span>qa<span class="w">     </span><span class="c1"># a TTY that does not support ANSI</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="go">  ⏳ phpcpd...</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">  ⏳ phpstan-src...</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">  phpcpd - OK. Time: 0.31s</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="go">  phpstan-src - OK. Time: 1.06s</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">  ...</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">Results: 8/8 passed in 9.20s ✔️</span>
+</span></code></pre></div>
+<p>Color-capable terminals are unaffected — the live, in-place dashboard is preserved. See <a href="../how-to/output-formats/#interactive-parallel-dashboard">Interactive parallel dashboard</a>.</p>
+<h2 id="35">[3.5]<a class="headerlink" href="#35" title="Permanent link">&para;</a></h2>
+<h3 id="added_1">Added<a class="headerlink" href="#added_1" title="Permanent link">&para;</a></h3>
+<p><strong><code>--stats-sort=name|type</code> — order the <code>--stats</code> table.</strong> With many similarly-named jobs the table came out in completion order (non-deterministic under <code>processes &gt; 1</code>). Sorting groups related jobs and adds a <code>#</code> column with the real execution order:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="gp">$ </span>githooks<span class="w"> </span>flow<span class="w"> </span>qa<span class="w"> </span>--stats<span class="w"> </span>--stats-sort<span class="o">=</span>name
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">| # | Job         | Status | Time  |</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">| 2 | phpcs_app   | OK     | 10ms  |</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="go">| 4 | phpcs_src   | OK     | 11ms  |</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="go">| 1 | phpstan_app | OK     | 10ms  |</span>
+</span></code></pre></div>
+<p>Structured formats (JSON/JUnit/SARIF) stay in execution order; JSON v2 gains a per-job <code>executionOrder</code>. See <a href="../cli/flow/"><code>githooks flow</code></a> and <a href="../how-to/output-formats/#per-job-fields">JSON v2 per-job fields</a>.</p>
+<p><strong>Native <code>commit-msg</code> job — declarative commit-message validation.</strong> An inline job type (no shell spawned) that checks the commit subject against declarative rules or the <code>conventional-commits</code> preset, wired to Git's <code>commit-msg</code> hook. It replaces hand-written bash hooks and is validated by <code>conf:check</code>:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="gp">$ </span>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s2">&quot;Add stuff.&quot;</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="go">✗ commit-msg: subject failed rule &#39;pattern&#39;.</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="go">  Subject:   Add stuff.</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="go">  Reason:    Use Conventional Commits: tipo(scope?)!?: descripción.</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="go">  Example:   feat(api): add user endpoint</span>
+</span></code></pre></div>
+<p>Configure with <code>'commit-msg' =&gt; ['commit-format']</code> plus a <code>commit-format</code> job (<code>preset</code> or custom <code>rules</code>). <strong>Upgrade note:</strong> reinstall hooks with <code>githooks hook</code> so the script forwards Git's message-file argument. See <a href="../tools/commit-msg/">Commit Message Validation</a>.</p>
+<p><strong><code>--diag</code> — runtime diagnostics for CI post-mortems.</strong> Prints a machine snapshot (version, platform, CPU/cgroup, system memory, load, start timestamp) before the run, so a hung CI job shows whether PHP was blocked or starved. Auto-on in CI, opt-in locally:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="gp">$ </span>githooks<span class="w"> </span>flow<span class="w"> </span>qa<span class="w"> </span>--diag
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="go">githooks 3.5.0 · linux · cpus=20 (cgroup limit: 20) · mem=3791 MB / 8096 MB · load=1.6 / 1.9 / 1.9 · 2026-06-03T23:17:05+00:00</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="go">Settings:</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="go">  ...</span>
+</span></code></pre></div>
+<p>JSON v2 also gains a <code>runtime</code> node and absolute <code>startedAt</code>/<code>endedAt</code> per job and flow (always present, independent of <code>--diag</code>). See <a href="../how-to/output-formats/#runtime-diagnostics-and-absolute-timestamps">Runtime diagnostics and absolute timestamps</a>.</p>
+<p><strong><code>--format=claude-code</code> — AI agent stop-hook output.</strong> Emits the <a href="https://claude.com/claude-code">Claude Code</a> stop-hook protocol on <code>flow</code>/<code>flows</code>/<code>job</code>. On success it is silent and exits 0; on a QA failure it prints one block line aggregating the failed jobs and <strong>still exits 0</strong> (the protocol only honors the block on a zero exit):</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="gp">$ </span>githooks<span class="w"> </span>flow<span class="w"> </span>qa<span class="w"> </span>--fast-dirty<span class="w"> </span>--format<span class="o">=</span>claude-code
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="go">{&quot;decision&quot;:&quot;block&quot;,&quot;reason&quot;:&quot;## phpcs\nsrc/Foo.php:12 line too long\n\n## phpstan\nsrc/Bar.php:8 undefined variable $x&quot;}</span>
+</span></code></pre></div>
+<p>Pairs with <code>--fast-dirty</code> (3.4) to close the agent loop; a genuine config error still exits 1. See <a href="../how-to/ai-hooks/">AI Agent Hooks (Claude Code)</a>.</p>
+<h3 id="fixed_2">Fixed<a class="headerlink" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<p><strong><code>other-arguments</code> is now honored by <code>custom</code> jobs in simple mode</strong> (without <code>paths</code>). The verbatim <code>script</code> form silently dropped <code>other-arguments</code>, so the <code>extends</code> + <code>other-arguments</code> pattern built the identical command for every variant. It is now appended after the script:</p>
+<div class="language-console highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="gp">$ </span>githooks<span class="w"> </span>flow<span class="w"> </span>qa<span class="w"> </span>--dry-run<span class="w">     </span><span class="c1"># three Jest shards sharing a base via extends</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">  jest_ci_shard_1</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">     yarn tests:ci --shard 1/3</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">  jest_ci_shard_2</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="go">     yarn tests:ci --shard 2/3</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="go">  jest_ci_shard_3</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="go">     yarn tests:ci --shard 3/3</span>
+</span></code></pre></div>
+<p>See <a href="../tools/custom/#simple-mode">custom tool — simple mode</a>.</p>
+<h2 id="341">[3.4.1]<a class="headerlink" href="#341" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_3">Fixed<a class="headerlink" href="#fixed_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong>Unknown CLI options no longer silently shift the parser</strong> in <code>flow</code>, <code>flows</code> and <code>job</code>. The three execution commands keep <code>ignoreValidationErrors()</code> on so that <code>job &lt;name&gt; -- &lt;args&gt;</code> keeps forwarding extra args to the underlying tool, but a typo such as <code>flow qa --foo=bar --config=/path/x.php</code> would previously make Symfony swallow <code>--foo</code> <em>and</em> silently drop <code>--config</code>, then fall back to <code>qa/githooks.php</code> — wrong config, wrong jobs, no error. A new <code>ValidatesUnknownOptionsBeforeDashDash</code> concern now inspects the input tokens before either command reads <code>--config</code>, rejects unknown long options and short shortcuts (cluster-aware), and emits a Symfony-style <code>The "--foo" option does not exist.</code> per offender; <code>flow</code> and <code>flows</code> additionally emit a custom error if <code>--</code> itself is present (neither command supports passthrough). The new behaviour caps any input-validation typo at exit 1 <em>before</em> the configuration file is resolved, so a typo can no longer accidentally execute the project-wide QA flow.</p>
+</li>
+<li>
+<p><strong><code>script</code>-typed jobs now report their job key in OK/KO/SKIP logs instead of the executable path</strong>. <code>ScriptJob::getDisplayName()</code> historically overrode the parent and returned <code>$this-&gt;executable</code>, so two parallel jobs of <code>type: script</code> sharing the same <code>executable-path</code> (e.g. two shards invoking the same <code>./run-tests</code> runner with different <code>other-arguments</code>) printed two identical <code>./run-tests - OK. Time: …</code> lines, making them indistinguishable in the dashboard, JSON v2 dry-run and stats. The override was undocumented and inconsistent with every other Job type (Phpstan, Phpunit, Phpcs, Phpmd, Psalm, ParallelLint, Rector, PhpCsFixer, Phpcpd, Paratest, Custom, all of which inherit <code>JobAbstract::getDisplayName()</code> returning <code>$this-&gt;name</code>). Removed. The JSON v2 envelope is unaffected — its <code>name</code>/<code>type</code> fields come from <code>getName()</code>/<code>getType()</code>, not <code>getDisplayName()</code>.</p>
+</li>
+</ul>
+<h2 id="34">[3.4]<a class="headerlink" href="#34" title="Permanent link">&para;</a></h2>
+<h3 id="added_2">Added<a class="headerlink" href="#added_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong><code>--fast-dirty</code> execution mode.</strong> Fourth execution mode targeting the <strong>unified working tree</strong>: tracked files modified vs <code>HEAD</code> (staged or unstaged, excluding deletions) ∪ untracked files honouring <code>.gitignore</code>. Fills the gap between <code>--fast</code> (staged only) and <code>--fast-branch</code> (branch diff). Designed for <strong>AI agentic hooks</strong> (Claude Code, Cursor, Cline, Copilot agent…) — the agent touches files without staging and we want the same pre-commit flow with <code>--format=json</code>. Available as <code>--fast-dirty</code> on <code>flow</code>/<code>flows</code>/<code>job</code> and as <code>execution: 'fast-dirty'</code> in flow/job declarations. Mutually exclusive with <code>--fast</code>/<code>--fast-branch</code>/<code>--files</code>/<code>--files-from</code>. Clean working tree → accelerable jobs skipped, exit 0 (no fallback to <code>full</code>). See <a href="../execution-modes/#fast-dirty-mode-fast-dirty">Fast-dirty mode</a>.</p>
+</li>
+<li>
+<p><strong>Intra-flow dependencies with <code>needs: [&lt;job&gt;, ...]</code>.</strong> A flow entry can declare other jobs in the same flow it depends on:
+    <div class="language-php highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="x">&#39;qa&#39; =&gt; [</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="x">    &#39;jobs&#39; =&gt; [</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="x">        &#39;yarn_install&#39;,</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="x">        [&#39;job&#39; =&gt; &#39;eslint&#39;,   &#39;needs&#39; =&gt; [&#39;yarn_install&#39;]],</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="x">        [&#39;job&#39; =&gt; &#39;prettier&#39;, &#39;needs&#39; =&gt; [&#39;yarn_install&#39;]],</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="x">        &#39;phpstan_src&#39;,  // independent — parallel with yarn_install</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="x">    ],</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a><span class="x">],</span>
+</span></code></pre></div>
+    Jobs wait until all their <code>needs</code> complete successfully; skip propagation is visible end-to-end (<code>needs X failed</code>, <code>needs X was skipped</code>). The TTY dashboard gains a <code>⏸ jobName (waiting X, Y)</code> lane and JSON v2 emits <code>needs: [...]</code>. <code>conf:check</code> validates the DAG statically (cycles, missing references, duplicates, empty list). <strong>Behaviour change</strong>: <code>fail-fast</code> now lets jobs in <code>running</code> finish naturally instead of terminating them — it cancels pending work, not in-flight work. See <a href="../configuration/flows/#job-dependencies-needs">Job dependencies (<code>needs</code>)</a>.</p>
+</li>
+<li>
+<p><strong>Per-flow execution mode by branch with <code>on =&gt; [branch_pattern =&gt; attrs]</code>.</strong> A flow picks its execution mode based on the current branch:
+    <div class="language-php highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="x">&#39;ci&#39; =&gt; [</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="x">    &#39;on&#39; =&gt; [</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="x">        &#39;master&#39; =&gt; [&#39;execution&#39; =&gt; &#39;full&#39;],</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="x">        &#39;*&#39;      =&gt; [&#39;execution&#39; =&gt; &#39;fast-branch&#39;],</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="x">    ],</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="x">    &#39;jobs&#39; =&gt; [/* ... */],</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="x">],</span>
+</span></code></pre></div>
+    The execution mode lives <strong>inside the flow declaration</strong>, so a single CI step (<code>script: vendor/bin/githooks flows ci</code>) covers both protected and feature branches without branch-aware conditionals in the CI definition or duplicated jobs. Pattern matching is <strong>first declared wins</strong>. Branch detection cascades from a new <code>--branch=X</code> flag on <code>githooks flow</code> through <code>$GITHOOKS_BRANCH</code>, CI env vars and <code>git rev-parse</code>. The <code>Settings:</code> header reports <code>mode = X (flows.&lt;X&gt;.on)</code> when the branch match wins. See <a href="../configuration/flows/#branch-driven-execution-mode-on">Branch-driven execution mode (<code>on</code>)</a>.</p>
+</li>
+<li>
+<p><strong>Declarative per-flow-entry admission with <code>only-files</code> / <code>exclude-files</code>.</strong> Flow entries in <code>flows.&lt;X&gt;.jobs</code> now accept the existing string form <strong>or</strong> an object <code>{job, only-files?, exclude-files?}</code> that gates whether the job runs based on the change set, independently of the job's own <code>paths</code> filtering. The decision is binary (<code>skipped: true</code> with <code>skipReason</code> vs run) and applies to all job types. In <code>full</code> mode the rules are no-op. Replaces the <code>type: custom</code> + <code>git diff … grep -qE …; exit 0</code> workaround that surfaces as <code>passed</code> and breaks on POSIX-less runners. Same glob semantics as hook-level <code>only-files</code>. Combined with <code>on</code> (above), the flow declaration decides both <strong>which mode</strong> runs per branch and <strong>which jobs</strong> are admitted per change set — the CI pipeline stays a single <code>flows</code> invocation without branch-aware conditionals or per-job rules duplicated in the CI YAML, and the admission logic is exercised the same way locally and in CI (GitLab CI's <code>rules:</code> / <code>changes:</code> and GitHub Actions's <code>paths:</code> filters can be coarse and pipeline-dependent). See <a href="../configuration/flows/#per-entry-admission-rules-only-files-exclude-files">Per-entry admission rules</a>.</p>
+</li>
+</ul>
+<h3 id="fixed_4">Fixed<a class="headerlink" href="#fixed_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>
+<p><strong><code>executable-prefix</code>, <code>fast-branch-fallback</code> and <code>reports</code> now cascade per-key from <code>flows.options</code></strong> when a flow declares its own <code>options</code> block. When a flow declared its own <code>options</code> to override an unrelated key (e.g. <code>processes</code>), the three keys above were read block-level instead of per-key and silently dropped their global value. Now they inherit per-key like <code>fail-fast</code> / <code>processes</code> / <code>time-budget</code> / <code>memory-budget</code> / <code>allocator</code> / <code>stats</code> already did. See <a href="../configuration/options/#per-key-cascade">Per-key cascade</a>.</p>
+</li>
+<li>
+<p><strong>GitLab CI / GitHub Actions sections no longer leak raw tool JSON when <code>--format=codeclimate</code> or <code>--format=sarif</code></strong> (or <code>reports.codeclimate</code> / <code>reports.sarif</code> in config) is active. Structured formats reconfigure each tool to emit JSON so the file-based formatters can parse it; the side effect was that failing jobs printed the raw JSON blob as the visible body of their CI section. A new humanising display layer translates the per-tool JSON into a familiar <code>file  line N  message  [rule]</code> listing while the raw payload stays available unchanged for file-based reports and JSON v2 <code>output</code>. See <a href="../how-to/ci-cd/#human-readable-ko-body-under-formatcodeclimate-formatsarif">Human-readable KO body</a>.</p>
+</li>
+<li>
+<p><strong><code>githooks job &lt;name&gt; --format=json</code> now reflects the job's declared <code>execution</code> in the envelope.</strong> When a job declared <code>execution: fast</code> / <code>fast-branch</code> (or the new <code>fast-dirty</code>), the JSON v2 envelope still reported <code>executionMode: "full"</code> / <code>source: "default"</code> even though the file-set filtering already honoured the declared mode — CI dashboards and AI consumers read the wrong mode. The <code>executionMode</code> value and its <code>effectiveOptions</code> <code>source</code> line now reflect <code>jobs.&lt;name&gt;.execution</code>.</p>
+</li>
+</ul>
+<h2 id="333">[3.3.3]<a class="headerlink" href="#333" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_5">Fixed<a class="headerlink" href="#fixed_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Fast-branch / fast no longer fail with spurious "no files" errors when a job's tool config strips every input via its internal exclusion list.</strong> Repro: a branch touches only files under one subtree (e.g. <code>src/foo/...</code>); the wrapper hands those files to a job whose <code>.neon</code> declares <code>excludePaths.analyse: [src/foo]</code> (PHPStan) or whose <code>--ignore</code> CSV covers them (PHPCS). The tool drops 100 % of the input and exits non-zero with <code>[ERROR] No files found to analyse.</code> (PHPStan, exit 1) or <code>ERROR: All specified files were excluded or did not match filtering rules.</code> (PHPCS, exit 16 on older versions and the PHPCSStandards fork). Before this fix the wrapper reported the job as failed, breaking MRs in projects that split coverage across complementary jobs. PHPStan and PHPCS now recognise these "empty after filtering" exits, reinterpret them as <code>skipped: true</code> with <code>skipReason</code> instead of <code>success: false</code>, and bypass threshold evaluation (the tool didn't do real work, so timing it would be meaningless). PHPMD already tolerates this case natively (<code>exit 0</code> when its <code>--exclude</code> empties the set); the other accelerable tools (parallel-lint, psalm, rector, php-cs-fixer) silently ignore non-matching inputs and do not need an override.</li>
+</ul>
+<h2 id="332-do-not-use-broken-release">[3.3.2] ⚠️ Do not use — broken release<a class="headerlink" href="#332-do-not-use-broken-release" title="Permanent link">&para;</a></h2>
+<p><strong>This release is functionally identical to 3.3.1.</strong> The git tag <code>v3.3.2</code> was published against a master commit whose bundled <code>.phar</code> binaries (<code>builds/githooks</code>, <code>builds/php7.4/githooks</code>) had never been updated from the <code>rc-3.3.2</code> branch where CI compiled them. Since GitHooks runs as a standalone <code>.phar</code>, installing <code>wtyd/githooks:3.3.2</code> ships the v3.3.1 binary under the v3.3.2 tag name. The fixes listed below are present in the source code of the tag but <strong>not</strong> in the executed binary.</p>
+<p><strong>Use v3.3.3</strong> — same fixes, correctly bundled.</p>
+<h3 id="fixed_6">Fixed<a class="headerlink" href="#fixed_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Code Climate and SARIF reports requested via <code>flows.options.reports.codeclimate</code> / <code>reports.sarif</code> in config or via <code>--report-codeclimate=PATH</code> / <code>--report-sarif=PATH</code> CLI flags came out empty (<code>[]</code> / no findings) when the primary <code>--format</code> was anything other than <code>codeclimate</code> / <code>sarif</code>. The flag that asks each tool for JSON output only activated on <code>--format=codeclimate|sarif</code>, so every tool ran with its default human-text format and the report parsers (which all do <code>json_decode()</code> over stdout) found nothing to extract. Affects every tool with a JSON-dependent parser: PHPStan (<code>--error-format=json</code>), PHPCS (<code>--report=json</code>), PHPMD (positional <code>json</code> format), Psalm (<code>--output-format=json</code>) and parallel-lint (<code>--json</code>). Fixed: tool-level JSON output is now requested whenever a codeclimate or sarif payload will be produced, regardless of how it was requested.</li>
+</ul>
+<h3 id="improved">Improved<a class="headerlink" href="#improved" title="Permanent link">&para;</a></h3>
+<ul>
+<li>JUnit <code>&lt;failure&gt;</code> payloads now pretty-print embedded JSON so GitLab/Jenkins viewers render each finding on its own indented block. PHPMD already emits <code>JSON_PRETTY_PRINT</code> natively; PHPStan/PHPCS/Psalm/parallel-lint emit compact one-liner JSON. When a pipeline triggers tool JSON output (typical GitLab setup pairs JUnit + Code Climate), the JUnit <code>&lt;failure&gt;</code> arrived as a single 1000+ char line. The formatter now detects a parseable JSON span inside <code>&lt;failure&gt;</code> and re-encodes it with indentation; non-JSON outputs (custom jobs, scripts) and JSON with prologue/epilogue (PHPStan's "Instructions for interpreting errors" stderr block) are preserved verbatim except for the JSON span itself. Idempotent for already-pretty payloads (semantics preserved; bytes may differ because <code>JSON_UNESCAPED_SLASHES</code> turns <code>\/</code> into <code>/</code>).</li>
+</ul>
+<h2 id="331">[3.3.1]<a class="headerlink" href="#331" title="Permanent link">&para;</a></h2>
+<h3 id="fixed_7">Fixed<a class="headerlink" href="#fixed_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>--fast</code> / <code>--fast-branch</code> no longer leave non-accelerable jobs (<code>phpunit</code>, <code>paratest</code>, <code>phpcpd</code>, <code>script</code>, <code>custom</code>, <code>composer-*</code>) running their full suites when the effective input set is empty (no staged files / no diff vs base). The skip is now universal: any job — accelerable or not, with or without <code>paths</code> declared — is skipped with reason <code>no changes to validate</code> when the mode produced no input. Restores parity with the v2.x contract ("nothing changed = nothing to run").</li>
+<li><code>cache:clear</code> now resolves the <strong>effective</strong> cache path for each job instead of relying on hard-coded defaults. Previously the command read a regex on the top-level <code>.neon</code> (PHPStan, ignoring <code>includes:</code> and placeholders) and used hard-coded literals for every other tool — <code>cache:clear</code> silently reported "not found" while the real cache lived elsewhere. After the fix:<ul>
+<li>PHPStan: <code>tmpDir:</code> is followed through <code>includes:</code> recursively (cycle-safe) and <code>%currentWorkingDirectory%</code> / <code>%rootDir%</code> are expanded.</li>
+<li>Psalm: reads <code>cacheDirectory</code> from <code>psalm.xml</code>, resolved relative to the XML.</li>
+<li>PHPCS: reads job arg <code>cache</code>, then <code>&lt;arg name="cache" value="..."/&gt;</code> from the ruleset.</li>
+<li>PHPUnit: reads <code>cacheResultFile</code> and <code>cacheDirectory</code> (10+) from <code>phpunit.xml</code> / <code>phpunit.xml.dist</code>.</li>
+<li>Rector: best-effort regex over <code>cacheDirectory(...)</code> in <code>rector.php</code> (literal, <code>__DIR__ . '/literal'</code>, <code>sys_get_temp_dir() . '/literal'</code>). Default fixed to <code>sys_get_temp_dir() . '/rector_cached_files'</code> (was incorrect <code>/tmp/rector</code>, also non-portable on Windows).</li>
+<li>PHP-CS-Fixer: best-effort regex over <code>setCacheFile(...)</code> in <code>.php-cs-fixer.php</code>; respects job arg <code>cache-file</code> over the config (matching what php-cs-fixer itself does).</li>
+<li>PHPMD: default fixed to <code>.phpmd.result.cache</code> (was incorrect <code>.phpmd.cache</code>).</li>
+</ul>
+</li>
+<li>When Rector / PHP-CS-Fixer config uses a dynamic expression for the cache path (variable, helper, env), <code>cache:clear</code> falls back to the default and surfaces a warning explaining why and how to override. Last-resort meta-arg <code>cache-dir</code> on the Rector job lets users force a path; PHP-CS-Fixer relies on its existing <code>cache-file</code> arg (which the tool itself respects as <code>--cache-file</code>). See <a href="../cli/cache-clear/"><code>cache:clear</code></a>.</li>
+<li>PHPUnit cache precedence: when <code>phpunit.xml</code> declared both <code>cacheResultFile</code> (legacy) and <code>cacheDirectory</code> (PHPUnit 10+), GitHooks picked the legacy one and ignored the modern attribute. PHPUnit itself does the opposite — <code>cacheDirectory</code> wins. Users migrating to PHPUnit 10 with both attributes for transitional reasons saw <code>cache:clear</code> deleting the wrong path. Now <code>cacheDirectory</code> takes precedence, with <code>cacheResultFile</code> as fallback.</li>
+<li>PHPStan <code>tmpDir:</code> inside <code>services:</code> was misread as the root <code>parameters.tmpDir</code>. A NEON service constructor argument named <code>tmpDir</code> would be returned as the PHPStan tmpDir, leading <code>cache:clear</code> to delete a path the user never declared as cache. The resolver now requires <code>tmpDir:</code> to live directly under a top-level <code>parameters:</code> block.</li>
+<li>Meta-args with whitespace-only values (<code>'cache-dir' =&gt; '   '</code>, <code>'cache-file' =&gt; '   '</code>, <code>'cache' =&gt; '   '</code>) were accepted as literal paths. Now trimmed before validation; whitespace-only falls back to the default rather than producing <code>rm -rf "   "</code>.</li>
+</ul>
+<h2 id="330">[3.3.0]<a class="headerlink" href="#330" title="Permanent link">&para;</a></h2>
+<h3 id="new-features">New Features<a class="headerlink" href="#new-features" title="Permanent link">&para;</a></h3>
+<h4 id="combined-flow-runs-flows-command-meta-flows">Combined flow runs (<code>flows</code> command + meta-flows)<a class="headerlink" href="#combined-flow-runs-flows-command-meta-flows" title="Permanent link">&para;</a></h4>
+<p>A new <code>flows</code> command runs <strong>several flows in a single plan</strong> — one PHP runtime, one shared thread budget, one combined <code>FlowResult</code> — replacing the typical "two CI steps that each spin up <code>composer install</code>" pattern with a single invocation.</p>
+<ul>
+<li><strong>Four invocation modes</strong> (auto-detected from the args):</li>
+<li><code>flows qa</code> (single normal flow) — equivalent to <code>flow qa</code>, identical <code>FlowResult</code>.</li>
+<li><code>flows qa lint</code> (≥ 2 normal flows) — ad-hoc combination, jobs deduped by first-occurrence order.</li>
+<li><code>flows ci-pack</code> (1 meta-flow declared in config) — declarative composition with the meta-flow's own options.</li>
+<li><code>flows ci-pack deploy</code> (mixed) — meta-flow + extra flows, where per-flow / per-alias options are deliberately ignored.</li>
+<li><strong>Meta-flows in config</strong> (<a href="../configuration/flows/#meta-flows"><code>flows.&lt;alias&gt;.flows</code></a>): a flow that lists other flows instead of jobs. Declares its own <code>options</code> and <code>reports</code>. <code>conf:check</code> validates the new shape: each <code>flows.&lt;X&gt;</code> declares exactly one of <code>jobs</code> or <code>flows</code>, references must point at existing normal flows (no nesting in v3.3), and the jobs/flows/meta-flows namespace must stay flat.</li>
+<li><strong><code>flows.options</code> cascade per key</strong>: <code>cli &gt; flows.&lt;X&gt;.options &gt; flows.options &gt; default</code> (single-flow / declarative) collapses to <code>cli &gt; flows.options &gt; default</code> for ad-hoc and mixed runs (per-flow/alias options are intentionally ignored — see <a href="https://wtyd.github.io/githooks/configuration/flows/#meta-flows">why</a>).</li>
+<li><strong>Ignored-options warning</strong>: when a flow or alias's <code>options</code> block is ignored because of the run mode, <code>flows</code> emits a one-line notice naming the ignored sources so the operator knows what is and isn't being applied.</li>
+</ul>
+<h4 id="cross-cutting-conditions-header-effectiveoptions">Cross-cutting conditions header + <code>effectiveOptions</code><a class="headerlink" href="#cross-cutting-conditions-header-effectiveoptions" title="Permanent link">&para;</a></h4>
+<p>A new conditions header is emitted at the start of every <code>flow</code>, <code>flows</code> and <code>job</code> run to make the active options visible at a glance:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>Settings:
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>  processes     = 4    (cli)
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  fail-fast     = true (flows.ci-pack.options)
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>  mode          = full (default)
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  time-budget   = none (default)
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>  memory-budget = none (default)
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>  allocator     = fifo (default)
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>  stats         = false (default)
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>Flows: qa, lint
+</span></code></pre></div>
+<p>Every row carries its <code>(source)</code> parenthesis — <code>(default)</code> included — so the column stays aligned and the audit trail is complete.</p>
+<ul>
+<li><strong>Channels</strong>: stdout in text mode (default); stderr when a structured format is combined with <code>--show-progress</code>. Silent for plain <code>--format=json|junit|sarif|codeclimate</code> so stdout payloads stay clean.</li>
+<li><strong>JSON v2 contract</strong> (always present in <code>flow</code> / <code>flows</code> / <code>job</code> runs): a new root <code>effectiveOptions</code> block listing each option's <code>value</code> and <code>source</code>. <code>source</code> ∈ <code>{cli, flows.&lt;X&gt;.options, flows.&lt;alias&gt;.options, flows.options, default}</code>.</li>
+<li><strong><code>flows[]</code> root field</strong> (multi-flow only): the list of normal flows actually executed after meta-flow expansion. Absent in <code>flow X</code> and single-flow degenerate runs (so existing single-flow consumers ignore it).</li>
+</ul>
+<p>Both fields are additive. Consumers that read v2 today keep working unchanged; modern consumers (CI dashboards, AI tools) can now show the precise option resolution without cross-referencing config + CLI.</p>
+<h4 id="files-mode-files-files-from-exclude-pattern">Files mode (<code>--files</code> / <code>--files-from</code> / <code>--exclude-pattern</code>)<a class="headerlink" href="#files-mode-files-files-from-exclude-pattern" title="Permanent link">&para;</a></h4>
+<p><code>flow</code> and <code>job</code> accept three new flags that drive a flow against an <strong>explicit list of files</strong> supplied by the user. Covers IDE on-save (single-file analysis), CIs with shallow checkouts where <code>--fast-branch</code> cannot compute a diff, and any external tool that already produced a list of paths.</p>
+<ul>
+<li><strong><code>--files=a,b,c</code></strong> — CSV. Paths resolve against CWD; absolute paths are accepted as-is. Directories expand recursively to <code>.php</code> / <code>.phtml</code>.</li>
+<li><strong><code>--files-from=PATH</code></strong> — manifest with one path per line. Comments (<code>#</code>), blanks, CRLF and UTF-8 BOM are tolerated. Use this to bypass the shell <code>ARG_MAX</code> limit (<code>git diff --name-only origin/main...HEAD &gt; /tmp/changed.txt &amp;&amp; githooks flow qa --files-from=/tmp/changed.txt</code>).</li>
+<li><strong><code>--exclude-pattern=glob1,glob2</code></strong> — drop matching paths from the input list (post-expansion). Same glob syntax as hook config (<code>*</code>, <code>**</code>, <code>?</code>). Requires <code>--files</code> / <code>--files-from</code>.</li>
+<li><strong>Behaviour</strong>: accelerable jobs (phpstan, phpcs, phpcbf, phpmd, psalm, parallel-lint, php-cs-fixer, rector, custom with <code>accelerable: true</code>) run only on the intersection of input files and their configured <code>paths</code>; jobs with no match are skipped with reason <code>"no input files match its paths"</code>. Non-accelerable jobs (phpunit, phpcpd, composer-*, script) ignore the list and run with their original <code>paths</code>.</li>
+<li><strong>JSON v2</strong>: when files mode is active, <code>executionMode</code> is <code>"files"</code> and a new root <code>inputFiles</code> block plus per-job <code>inputFiles</code> slice (accelerable jobs only) are emitted. Backward-compatible — fields are absent in the legacy modes.</li>
+<li><strong>Mixing</strong>: <code>--files</code> / <code>--files-from</code> win over <code>--fast</code> / <code>--fast-branch</code> with a warning. The two file flags are mutually exclusive.</li>
+<li><strong>CLI-only</strong>: <code>conf:check</code> rejects <code>files</code> / <code>files-from</code> keys declared in <code>flow.options</code> or in a job (volatile by design). See <a href="../how-to/files-flag/">How-To: --files / --files-from</a>.</li>
+</ul>
+<h4 id="multi-report-reports-report-">Multi-report (<a href="../configuration/options/#multi-report"><code>reports</code></a> / <code>--report-*</code>)<a class="headerlink" href="#multi-report-reports-report-" title="Permanent link">&para;</a></h4>
+<p>PHPUnit-style multi-report: a single <code>flow</code> (or <code>job</code>) run can emit several report files at once instead of being executed once per format. Pipelines that need SARIF (Code Scanning) plus JUnit (test dashboards) plus Code Climate (GitLab MR widgets) no longer have to re-analyse everything 3 times.</p>
+<ul>
+<li><strong>CLI flags</strong>: <code>--report-json=PATH</code>, <code>--report-junit=PATH</code>, <code>--report-sarif=PATH</code>, <code>--report-codeclimate=PATH</code>. Each one writes the corresponding format to the given path. Combine as needed.</li>
+<li><strong>Declarative config</strong>: new <code>reports</code> map under <code>flows.options</code> and per-flow <code>options</code>:
+  <div class="language-php highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="x">&#39;options&#39; =&gt; [&#39;reports&#39; =&gt; [&#39;sarif&#39; =&gt; &#39;reports/qa.sarif&#39;, &#39;junit&#39; =&gt; &#39;reports/junit.xml&#39;]]</span>
+</span></code></pre></div></li>
+<li><strong>Precedence</strong>: CLI overrides config <strong>format by format</strong>. <code>--report-sarif=other.sarif</code> only overrides the SARIF entry; other formats keep config values.</li>
+<li><strong><code>--no-reports</code></strong>: PHPUnit <code>--no-coverage</code>-style flag that skips the config <code>reports</code> section without cancelling CLI <code>--report-*</code> flags. Lets a consumer (an AI tool, an ad-hoc script) read clean JSON from stdout without dropping side-effect files declared by the project's config:
+  <div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>githooks<span class="w"> </span>flow<span class="w"> </span>qa<span class="w"> </span>--format<span class="o">=</span>json<span class="w"> </span>--no-reports
+</span></code></pre></div></li>
+<li><strong><code>--format</code> is unchanged</strong>: still governs <strong>stdout</strong> the same way as in 3.2. <code>--format=sarif --report-sarif=foo.sarif</code> is legal and produces both stdout SARIF and the file.</li>
+<li><strong><code>conf:check</code> validation</strong>: rejects unsupported format keys, non-string paths and unwritable target locations; warns when the parent directory does not exist (it gets created on run).</li>
+</ul>
+<h4 id="performance-monitor-flow-time-budget-per-job-warn-after-fail-after">Performance monitor — flow <code>time-budget</code> + per-job <code>warn-after</code> / <code>fail-after</code><a class="headerlink" href="#performance-monitor-flow-time-budget-per-job-warn-after-fail-after" title="Permanent link">&para;</a></h4>
+<p>Two parallel, independent systems that watch the temporal health of every QA run:</p>
+<ul>
+<li><strong>Per-job thresholds</strong> (<code>jobs.&lt;name&gt;.warn-after</code> / <code>fail-after</code>, seconds): catch local regressions of a specific job. Crossing <code>warn-after</code> annotates <code>⚠</code>; crossing <code>fail-after</code> flips a passing job to KO with exit <code>1</code>.</li>
+<li><strong>Flow time-budget</strong> (<code>flows.options.time-budget</code> or <code>flows.&lt;name&gt;.options.time-budget</code>): catch accumulated drift across the whole flow. The post-hoc sum of executed-job durations is compared with <code>warn-after</code> / <code>fail-after</code> declared at the flow level. <strong>A flow that crosses <code>fail-after</code> exits 1 even when every job passed individually</strong> — the conceptual key of the feature.</li>
+<li><strong>Independence</strong>: declaring <code>time-budget</code> at the flow level does NOT propagate <code>warn-after</code> / <code>fail-after</code> to individual jobs. The two layers answer different questions ("is this job regressing?" vs. "is the pipeline as a whole regressing?") and remain decoupled.</li>
+<li><strong>CLI overrides</strong>: <code>--warn-after=N</code>, <code>--fail-after=N</code> (flow-level on <code>flow</code> / <code>flows</code>; job-level on <code>job</code>). <code>--no-time-budget</code> disables both layers for that run; mixing it with <code>--warn-after</code> emits a warning on stderr.</li>
+<li><strong>JSON v2 (explicit-null pattern)</strong>: a new root <code>timeBudget</code> field (object or <code>null</code>) and per-job <code>threshold</code> field (object or <code>null</code>) are always present. Consumers can write <code>if (job.threshold) { … }</code> without existence checks. <code>reason</code> is a string when warned/failed is <code>true</code>, <code>null</code> otherwise.</li>
+<li><strong>Conditions header</strong>: extended with a <code>time-budget=...</code> segment showing the effective values and their origin (<code>flows.options</code>, <code>flows.&lt;X&gt;.options</code>, <code>cli</code>, <code>default</code>).</li>
+<li><strong><code>conf:check</code> validation</strong>: rejects non-positive integers, <code>warn-after &gt;= fail-after</code>, <code>time-budget</code> placed inside a job; warns on unknown keys with did-you-mean suggestions.</li>
+</ul>
+<h4 id="memory-budget-2d-allocator-rss-sampler-linux">Memory budget + 2D allocator + RSS sampler (Linux)<a class="headerlink" href="#memory-budget-2d-allocator-rss-sampler-linux" title="Permanent link">&para;</a></h4>
+<p>GitHooks now declaratively watches RSS consumption per job and across the whole flow, schedules admissions in 2D (cores + memory) when both axes are constrained, and surfaces peaks in a canonical <code>--stats</code> table — none of GrumPHP, CaptainHook, lefthook, pre-commit or golangci-lint expose this combination.</p>
+<ul>
+<li><strong>Per-job memory threshold</strong> (<code>jobs.&lt;name&gt;.memory</code>): two equivalent forms.</li>
+<li>Short form <code>memory: 2000</code> (MB) — single warn threshold AND scheduler reservation when a flow <code>memory-budget</code> is declared.</li>
+<li>Extended form <code>memory: { warn-above: 1500, fail-above: 2000 }</code> — explicit thresholds, no reservation.</li>
+<li>Crossing <code>warn-above</code> annotates <code>⚠</code>; crossing <code>fail-above</code> flips the job to KO with exit <code>1</code> even when the tool itself returned <code>0</code>.</li>
+<li><strong>Flow <code>memory-budget</code></strong> (<code>flows.options.memory-budget</code> or per-flow): observational watchdog over the simultaneous RSS sum across jobs in flight. Crossing <code>fail-above</code> <strong>kills jobs in flight</strong> (<code>process-&gt;stop(0)</code>) and skips the queued ones with reason <code>"flow memory-budget exceeded"</code>. The flow exits 1 even if every individual job had passed (the conceptual key of the feature).</li>
+<li><strong>2D allocator</strong> (<code>flows.options.allocator: fifo|greedy</code>): when a <code>memory-budget</code> is declared <strong>and</strong> at least one job has a short-form <code>memory:</code> reservation, the pool admits jobs only when both cores and memory fit. FIFO blocks the entire queue when the head does not fit; greedy scans for the first fitting job. 1D mode (cores only) is preserved when either side of the precondition is missing.</li>
+<li><strong>RSS sampler</strong>: Linux via <code>/proc/&lt;PID&gt;/status</code> walked across the process tree (root + descendants — Symfony's shell wrapper alone is ~1 MB; the actual analyzers are children); macOS via a single <code>ps -o pid=,ppid=,rss= -ax</code> invocation per tick. Polled every 1 second while jobs are in flight. Windows degrades gracefully — a short stderr warning (<code>⚠ Memory budget disabled: RSS sampling not available on Windows</code>) disables thresholds; the 2D allocator still schedules from declared <code>memory:</code> reservations and <code>--stats</code> still emits the cores axis.</li>
+<li><strong><code>--stats</code> table</strong>: 5-column summary (Job / Status / Time / Peak Cores / Peak Memory) with a TOTAL row + temporal attribution lines <code>Memory peak at Xs: jobA Pmb + jobB Pmb...</code> and <code>Cores peak at Xs:  jobA + jobB...</code>. Active when <code>--stats</code> (CLI) or <code>stats: true</code> (config).</li>
+<li><strong>CLI overrides</strong>: <code>--memory-warn-above=N</code>, <code>--memory-fail-above=N</code>, <code>--no-memory-budget</code>, <code>--allocator=fifo|greedy</code>, <code>--stats</code>. Apply flow-level except in <code>githooks job</code> where they apply to the single job.</li>
+<li><strong>JSON v2</strong>: new root-level <code>memoryBudget</code> and <code>stats</code> blocks (always present under the explicit-null pattern), per-job <code>memoryReserved</code>, <code>memoryPeak</code>, <code>memoryThreshold</code> and <code>killedReason</code>. SARIF / JUnit / Code Climate are unchanged in this iteration.</li>
+<li><strong>Conditions header</strong>: extended with <code>memory-budget=warn-above=WMB,fail-above=FMB (origin)</code>, <code>allocator=fifo|greedy (origin)</code> and <code>stats=true|false (origin)</code> segments alongside <code>time-budget</code>.</li>
+<li><strong><code>conf:check</code> validation</strong>: positive-integer guards, warn/fail ordering, <code>memory &gt; memory-budget.warn-above</code> (could-never-run), unknown allocator values, <code>memory-budget</code> typo suggestions.</li>
+</ul>
+<h4 id="cores-native-thread-flag-interchangeability"><code>cores</code> ↔ native thread flag interchangeability<a class="headerlink" href="#cores-native-thread-flag-interchangeability" title="Permanent link">&para;</a></h4>
+<p><code>cores: N</code> and the tool's native threading flag (<code>parallel</code> on phpcs/phpcbf, <code>threads</code> on psalm, <code>jobs</code> on parallel-lint, <code>processes</code> on paratest) now work identically in both directions: declaring <strong>either</strong> one reserves N cores in the budget and emits the right CLI flag at runtime. Until v3.3 declaring only the native flag (without <code>cores</code>) was silently dropped in parallel mode and the allocator distributed the budget evenly instead.</p>
+<ul>
+<li><strong>No config change required</strong>: the existing pattern of pinning with <code>cores: N</code> keeps working unchanged.</li>
+<li><strong><code>conf:check</code> warning — single-threaded tools</strong>: declaring <code>cores &gt; 1</code> on <code>phpmd</code>, <code>phpunit</code> or <code>phpcpd</code> now emits a warning ("<code>&lt;tool&gt;</code> is single-threaded; <code>cores</code> reserves slots in the budget without benefit"). The tool only uses one core, so reserving more slows admission of other jobs without gain. <code>cores: 1</code> and absence of <code>cores</code> are silent. <code>type: custom</code> is exempt — user scripts may have their own concurrency the system can't inspect.</li>
+<li><strong><code>conf:check</code> fix — phpcbf</strong>: the conflict warning between <code>cores</code> and <code>parallel</code> (already emitted for phpcs) now applies to phpcbf as well.</li>
+<li><strong><code>conf:check</code> validation — native flag</strong>: when declared without <code>cores</code>, the native threading flag (<code>parallel</code> / <code>threads</code> / <code>jobs</code> / <code>processes</code>) is validated as a positive integer — symmetric with <code>cores</code>. A <code>parallel: -1</code> or <code>threads: '4'</code> now warns instead of silently degrading at the allocator.</li>
+<li><strong>Symmetric clamp</strong>: a native flag value &gt; <code>processes</code> is clamped to the budget at runtime, the same way <code>cores: N &gt; processes</code> was clamped before.</li>
+<li><strong>The flow rules — args clamp at every path</strong>: until v3.3 a job declaring more cores than the flow's <code>processes</code> budget still spawned its declared workers in the SO (the pool's accounting was clamped, but <code>args['parallel']</code> / <code>args['threads']</code> / etc. were not). Same job in two flows ("local" with <code>processes: 4</code>, "ci" with <code>processes: 16</code>) had to choose one of the two budgets in its declaration. Now <code>applyThreadLimit()</code> clamps the override to the flow's budget before reaching the tool, in both the explicit-override and the sequential-default paths. Declare the maximum your job can use; each flow caps it.</li>
+<li><strong><code>conf:check</code> cross-flow warning for uncontrollable jobs</strong>: phpstan reads its workers from <code>.neon</code> and custom jobs are opaque scripts — GitHooks cannot force either to honour the flow budget at runtime. When <code>phpstan.maximumNumberOfProcesses</code> (read from the configured <code>.neon</code>) or <code>cores: N</code> declared on a <code>type: custom</code> job exceeds a flow's <code>processes</code>, <code>conf:check</code> now emits a warning per affected flow naming both values and explaining that other jobs will wait in serial while the offending one runs. Same job referenced by multiple flows is validated against each flow's budget independently; flows that fit are silent. Warning, not error — the user may know their machine can absorb it.</li>
+</ul>
+<h3 id="deprecations">Deprecations<a class="headerlink" href="#deprecations" title="Permanent link">&para;</a></h3>
+<h4 id="kebab-case-keys-for-jobsname-step-1-of-3">kebab-case keys for <code>jobs.&lt;name&gt;</code> (step 1 of 3)<a class="headerlink" href="#kebab-case-keys-for-jobsname-step-1-of-3" title="Permanent link">&para;</a></h4>
+<p>The four legacy camelCase keys inherited from v2 inside <code>jobs.&lt;name&gt;</code> are deprecated in favour of their kebab-case counterparts. Both forms keep working in v3.3.x; the camelCase forms will be <strong>removed in v4.0</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>camelCase (deprecated)</th>
+<th>kebab-case (canonical)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>executablePath</code></td>
+<td><code>executable-path</code></td>
+</tr>
+<tr>
+<td><code>otherArguments</code></td>
+<td><code>other-arguments</code></td>
+</tr>
+<tr>
+<td><code>ignoreErrorsOnExit</code></td>
+<td><code>ignore-errors-on-exit</code></td>
+</tr>
+<tr>
+<td><code>failFast</code></td>
+<td><code>fail-fast</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Runtime warning</strong>: every command that loads the config (<code>flow</code>, <code>flows</code>, <code>job</code>, <code>conf:check</code>, <code>system:info</code>) emits a <code>Deprecated: 'X' is renamed to 'Y'. Will be removed in v4.0.</code> line on stderr per camelCase key found.</li>
+<li><strong>Structured output</strong>: a new root-level <code>deprecations[]</code> block in JSON v2 (and <code>runs[0].properties.deprecations</code> in SARIF) lists each detection as <code>{job, oldKey, newKey, removalVersion, kind}</code>. As a side-effect, the JSON v2 also gains a root <code>warnings[]</code> field (always present, empty when no warnings) — useful for CI dashboards and AI consumers.</li>
+<li><strong>Conflict</strong>: declaring both forms for the same key in the same job aborts that job with an error (<code>conflicting keys '...' and '...'</code>). Pick one.</li>
+<li><strong>Out of scope for v3.3</strong>: <code>conf:migrate</code> is <strong>not</strong> updated yet — that is step 2 of the deprecation plan, in a later v3.x. The camelCase removal itself is step 3, in v4.0.</li>
+</ul>
+<p>Migration guide: <a href="../migration/v33-deprecations/">Migration → v3.3 deprecations</a>.</p>
+<hr />
+<h2 id="320">[3.2.0]<a class="headerlink" href="#320" title="Permanent link">&para;</a></h2>
+<h3 id="new-features_1">New Features<a class="headerlink" href="#new-features_1" title="Permanent link">&para;</a></h3>
+<h4 id="redesigned-output-system">Redesigned output system<a class="headerlink" href="#redesigned-output-system" title="Permanent link">&para;</a></h4>
+<p>The output behaviour now depends on the format and the execution context. The unifying rule: <strong>the format decides whether the output streams live or is buffered and emitted at the end.</strong></p>
+<ul>
+<li><strong>Live streaming in <code>githooks job X</code> (single job)</strong>: tool output (phpstan, phpcs, etc.) is now streamed in real time instead of buffered. Long-running jobs (phpmd, phpunit with coverage) no longer look frozen — you see the tool's actual progress as it happens.</li>
+<li><strong>Live streaming in <code>githooks flow</code> with <code>processes=1</code></strong>: each job is streamed with a header separator between jobs (like <code>make</code> or <code>docker compose up</code>). You see each tool's output as it runs instead of only <code>OK/KO</code> lines at the end.</li>
+<li><strong>Interactive parallel dashboard in <code>githooks flow</code> with <code>processes &gt; 1</code></strong>: when running in a TTY, the output upgrades to a live dashboard with three states — ⏺ queued, ⏳ running (with a live timer), ✓/✗ done. On completion it collapses to a clean summary. In non-TTY environments (CI, piped stdout) it falls back to append-only streaming text so logs remain parseable. Activated automatically via <code>posix_isatty(STDOUT)</code>; no flag needed.</li>
+<li><strong>stdout/stderr split for structured formats</strong>: for <code>json</code>, <code>junit</code>, <code>codeclimate</code> and <code>sarif</code>, progress lines (<code>OK job (Xms) [Y/Z]</code>, <code>Done.</code>, colours) route to stderr and the structured payload stays on stdout. Enables <code>githooks flow qa --format=json &gt; report.json</code> without contamination.</li>
+<li><strong>TTY-aware progress with <code>--show-progress</code> override</strong>: the stderr progress handler only emits when stderr is a TTY, so <code>flow|job --format=json | jq ...</code> works off pipes, CI and agents <strong>without <code>2&gt;/dev/null</code></strong>. Pass <code>--show-progress</code> to force progress even off a TTY — useful for long-running CI pipelines. <code>--dry-run</code> never emits progress.</li>
+</ul>
+<h4 id="output-formats">Output formats<a class="headerlink" href="#output-formats" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>JSON schema v2 (<a href="../how-to/output-formats/#json-v2"><code>--format=json</code></a>)</strong>: enriched per-job fields (<code>type</code>, <code>exitCode</code>, <code>paths</code>, <code>skipped</code>, <code>skipReason</code>, <code>fixApplied</code>) plus top-level <code>version: 2</code>, <code>executionMode</code>, <code>passed</code>, <code>failed</code>, <code>skipped</code> counters. Stable contract for AI tools, CI dashboards and scripts.</li>
+<li><strong>JUnit <code>&lt;skipped&gt;</code> support</strong>: skipped jobs now emit <code>&lt;skipped&gt;</code> elements with a reason attribute.</li>
+<li><strong>Code Climate format (<a href="../how-to/output-formats/#code-climate"><code>--format=codeclimate</code></a>)</strong>: GitLab-compatible Code Quality report.</li>
+<li><strong>SARIF format (<a href="../how-to/output-formats/#sarif"><code>--format=sarif</code></a>)</strong>: SARIF 2.1.0 report for GitHub Code Scanning, Azure DevOps and other static-analysis consumers.</li>
+<li><strong>Unified output target for structured formats</strong>: <code>json</code>, <code>junit</code>, <code>codeclimate</code> and <code>sarif</code> all print to stdout by default; pass <code>--output=PATH</code> to write the payload to a file. Shell redirection (<code>&gt; file</code>) remains equivalent.</li>
+</ul>
+<h4 id="ci-integration">CI integration<a class="headerlink" href="#ci-integration" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Native CI annotations (<a href="../how-to/ci-cd/#ci-annotations">CI/CD Integration</a>)</strong>: auto-detects <code>GITHUB_ACTIONS=true</code> or <code>GITLAB_CI</code> and wraps job output in <code>::group::</code>/<code>::endgroup::</code> plus <code>::error file=…,line=…::</code> annotations (GitHub) or <code>section_start:</code>/<code>section_end:</code> markers (GitLab). Parses <code>file.php:LINE</code> patterns from tool output.</li>
+<li><strong><code>--no-ci</code> flag</strong>: opt out of the auto-detection when a CI env var is set but you want plain output (running <code>act</code> locally, custom CI where those markers aren't parsed, or scripting on top of GitHooks).</li>
+</ul>
+<h4 id="new-native-job-types">New native job types<a class="headerlink" href="#new-native-job-types" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong><a href="../tools/phpcsfixer/">PHP CS Fixer (<code>type: php-cs-fixer</code>)</a></strong>: native support with <code>config</code>, <code>rules</code>, <code>dry-run</code>, <code>diff</code>, <code>allow-risky</code>, <code>using-cache</code>, <code>cache-file</code> keywords. Accelerable.</li>
+<li><strong><a href="../tools/rector/">Rector (<code>type: rector</code>)</a></strong>: native support with <code>config</code>, <code>dry-run</code>, <code>clear-cache</code>, <code>no-progress-bar</code> keywords. Accelerable.</li>
+<li><strong><a href="../tools/paratest/">Paratest (<code>type: paratest</code>)</a></strong>: first-class support for <a href="https://github.com/paratestphp/paratest">paratest</a>, the parallel driver for PHPUnit. Inherits every PHPUnit keyword and adds <code>processes</code> (linked to <code>cores</code>).</li>
+</ul>
+<h4 id="thread-budget">Thread budget<a class="headerlink" href="#thread-budget" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong>Per-job <code>cores</code> reservation (<a href="../configuration/jobs/#reserving-cores-cores-or-the-tools-native-flag"><code>cores</code></a>)</strong>: every job can declare <code>cores: N</code> to reserve N slots in the thread budget. Controllable tools (phpcs, psalm, parallel-lint, paratest) automatically receive their native threading flag (<code>--parallel</code>, <code>--threads</code>, <code>-j</code>, <code>--processes</code>) with the same value, so you configure parallelism once per job regardless of the tool. Budget-only tools (phpstan, custom jobs) use <code>cores</code> to keep the <code>--monitor</code> peak accurate without forcing worker count. <code>conf:check</code> warns when <code>cores</code> coexists with a tool's native threading flag.</li>
+</ul>
+<h4 id="other">Other<a class="headerlink" href="#other" title="Permanent link">&para;</a></h4>
+<ul>
+<li><strong><code>conf:check</code> command truncation</strong>: long generated commands are truncated to 80 chars (with <code>…</code>) in the job table to keep the output readable on narrow terminals. <code>githooks job X --dry-run</code> still shows the full command.</li>
+<li><strong>All supported tools ship as dev dependencies</strong>: <code>brianium/paratest</code>, <code>friendsofphp/php-cs-fixer</code>, <code>rector/rector</code> and <code>sebastian/phpcpd</code> are now declared in <code>require-dev</code>, and <code>psalm</code> is correctly stripped from the <code>.phar</code> at build time (it was being embedded by mistake). Running <code>composer install</code> in the repo gives every supported tool a binary under <code>vendor/bin/</code>, and the distributed <code>.phar</code> no longer ships QA tools internally.</li>
+</ul>
+<hr />
+<h2 id="310">[3.1.0]<a class="headerlink" href="#310" title="Permanent link">&para;</a></h2>
+<h3 id="new-features_2">New Features<a class="headerlink" href="#new-features_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Local override (<code>githooks.local.php</code>)</strong>: GitHooks looks for a <code>githooks.local.php</code> file alongside <code>githooks.php</code>. If found, its contents are merged over the main config using <code>array_replace_recursive</code>. Allows per-developer environment customization without modifying the shared config. Add <code>githooks.local.php</code> to <code>.gitignore</code>. See <a href="../how-to/docker-local-override/">Docker &amp; Local Override</a>.</li>
+<li><strong><code>executable-prefix</code> option</strong>: New option at global, flow, and job level. Prepends a command to all job executables (e.g. <code>'docker exec -i app'</code>). Per-job override with <code>''</code> or <code>null</code> to opt out. Enables Docker, Laravel Sail, and remote environments from a single config. See <a href="../configuration/options/#executable-prefix">Options: executable-prefix</a>.</li>
+<li><strong>Extra arguments via <code>--</code> for <code>job</code> command</strong>: <code>githooks job phpunit_all -- --filter=testFoo</code> passes extra flags to the underlying tool. Enables dynamic execution from AI tools, scripts, or quick debugging without modifying configuration. See <a href="../cli/job/"><code>githooks job</code></a>.</li>
+<li><strong>External documentation site</strong>: Full MkDocs Material site with getting started guide, configuration reference, CLI reference, tool docs, how-to guides, migration guides, and comparison page.</li>
+</ul>
+<h3 id="bug-fixes">Bug Fixes<a class="headerlink" href="#bug-fixes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Fix skipped job warnings not showing orange color in terminal output.</li>
+<li>Fix parallel execution deadlock when a job's reserved cores exceeded the total <code>processes</code> budget. The thread allocator now clamps both explicit <code>cores: N</code> overrides and uncontrollable tools' default workers (e.g. PHPStan reading 4 from <code>.neon</code> while <code>processes: 2</code>) to the budget, so the admission queue can always admit the head instead of rejecting it forever and spinning the executor at 100% CPU.</li>
+</ul>
+<hr />
+<h2 id="300-2026-04-10">[3.0.0] - 2026-04-10<a class="headerlink" href="#300-2026-04-10" title="Permanent link">&para;</a></h2>
+<h3 id="breaking-changes">Breaking Changes<a class="headerlink" href="#breaking-changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>PHP minimum raised to 7.4</strong>. Dropped support for PHP 7.0-7.3.</li>
+<li><strong>SecurityChecker tool removed</strong>. Use a <a href="../tools/custom/"><code>custom</code> job with <code>composer audit</code></a> as replacement.</li>
+<li><strong>New configuration format: hooks/flows/jobs</strong>. Replaces the previous <code>Options</code>/<code>Tools</code> format. The old format still works but emits a deprecation warning.</li>
+<li><strong><code>tool</code> command deprecated</strong>. Replaced by <a href="../cli/flow/"><code>flow</code></a> and <a href="../cli/job/"><code>job</code></a> commands. Will be removed in v4.0.</li>
+<li><strong>YAML configuration deprecated</strong>. PHP format is now the primary format. YAML still works but emits a deprecation warning. Will be removed in v4.0.</li>
+</ul>
+<h3 id="new-architecture-hooks-flows-jobs">New Architecture — Hooks, Flows, Jobs<a class="headerlink" href="#new-architecture-hooks-flows-jobs" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="../configuration/hooks/">Hooks</a></strong>: Map git events (<code>pre-commit</code>, <code>pre-push</code>, etc.) to flows and jobs. Uses <code>core.hooksPath</code> with a universal script instead of copying files to <code>.git/hooks/</code>.</li>
+<li><strong><a href="../configuration/flows/">Flows</a></strong>: Named groups of jobs with shared options (<code>fail-fast</code>, <code>processes</code>). Reusable across hooks and directly executable from CLI/CI.</li>
+<li><strong><a href="../configuration/jobs/">Jobs</a></strong>: Individual QA tasks with declarative configuration. Each job declares a <code>type</code> (phpstan, phpcs, phpunit, custom, etc.) and its arguments.</li>
+</ul>
+<h3 id="new-commands">New Commands<a class="headerlink" href="#new-commands" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="../cli/flow/"><code>githooks flow &lt;name&gt;</code></a> — Run a flow by name. Supports <code>--fail-fast</code>, <code>--processes=N</code>, <code>--exclude-jobs</code>, <code>--only-jobs</code>, <code>--dry-run</code>, <code>--format=json|junit</code>, <code>--fast</code>, <code>--fast-branch</code>, <code>--monitor</code>.</li>
+<li><a href="../cli/job/"><code>githooks job &lt;name&gt;</code></a> — Run a single job by name. Supports <code>--dry-run</code>, <code>--format=json|junit</code>, <code>--fast</code>, <code>--fast-branch</code>.</li>
+<li><a href="../cli/hook/"><code>githooks hook:run &lt;event&gt;</code></a> — Run all flows/jobs associated with a git hook event (called by the universal hook script).</li>
+<li><a href="../cli/status/"><code>githooks status</code></a> — Show installed hooks, their sync state with config (synced/missing/orphan), and target flows/jobs.</li>
+<li><a href="../cli/system-info/"><code>githooks system:info</code></a> — Show detected CPUs and current <code>processes</code> configuration with budget warning.</li>
+<li><a href="../cli/conf-migrate/"><code>githooks conf:migrate</code></a> — Migrate v2 configuration to v3 format with automatic backup.</li>
+<li><a href="../cli/cache-clear/"><code>githooks cache:clear</code></a> — Clear cache files generated by QA tools. Accepts job names, flow names, or a mix.</li>
+</ul>
+<h3 id="updated-commands">Updated Commands<a class="headerlink" href="#updated-commands" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="../cli/hook/"><code>githooks hook</code></a> — Now uses <code>core.hooksPath</code> + <code>.githooks/</code> directory instead of copying scripts to <code>.git/hooks/</code>. <code>--legacy</code> flag preserves old behavior (Git &lt; 2.9).</li>
+<li><code>githooks hook:clean</code> — Default now removes <code>.githooks/</code> + unsets <code>core.hooksPath</code>. <code>--legacy</code> flag removes individual hooks from <code>.git/hooks/</code>.</li>
+<li><a href="../cli/conf-init/"><code>githooks conf:init</code></a> — Now supports <code>--legacy</code> flag to generate v2 format.</li>
+<li><a href="../cli/conf-check/"><code>githooks conf:check</code></a> — Updated for v3: shows Options, Hooks, Flows, and Jobs tables with the full command each job will execute. Deep validation: verifies executables exist, paths are valid, and config files are accessible.</li>
+</ul>
+<h3 id="new-job-types">New Job Types<a class="headerlink" href="#new-job-types" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="../tools/custom/">Custom</a></strong>: Replaces the v2 <code>script</code> tool. Supports <code>script</code> key (simple mode) and a new structured mode via <code>executablePath</code> + <code>paths</code> + <code>otherArguments</code>. Structured mode enables <code>--fast</code> acceleration identical to standard tools.</li>
+</ul>
+<h3 id="execution-modes-and-structured-output">Execution Modes and Structured Output<a class="headerlink" href="#execution-modes-and-structured-output" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="../how-to/output-formats/"><code>--format=json</code> and <code>--format=junit</code></a></strong>: Structured output for <code>flow</code> and <code>job</code> commands. JSON for machine-readable results; JUnit XML for CI test reporting.</li>
+<li><strong><a href="../execution-modes/"><code>fast-branch</code> execution mode</a></strong>: New third mode alongside <code>full</code> and <code>fast</code>. Analyzes files that differ between the current branch and the main branch. Ideal for CI/CD. Non-accelerable jobs always run with full paths. Per-job <code>accelerable</code> key overrides the default. Deleted files are excluded automatically.</li>
+<li><strong><code>fast-branch-fallback</code> option</strong>: Controls behavior when <code>fast-branch</code> cannot compute the diff (e.g. shallow clone). Values: <code>full</code> (default) or <code>fast</code>.</li>
+<li><strong><code>main-branch</code> option</strong>: Configure the main branch name for <code>fast-branch</code> diff computation. Auto-detected if not specified.</li>
+<li><strong><a href="../how-to/parallel-execution/">Thread budget</a></strong>: <code>processes</code> now controls total CPU cores, not just parallel jobs. GitHooks distributes threads across jobs respecting each tool's capabilities (phpcs <code>--parallel</code>, parallel-lint <code>-j</code>, psalm <code>--threads</code>). PHPStan workers detected from <code>.neon</code> config.</li>
+<li><strong><code>--monitor</code> flag</strong>: Shows peak estimated thread usage after flow execution, with warning if budget was exceeded.</li>
+<li><strong>Job argument validation</strong>: <code>conf:check</code> and <code>flow</code>/<code>job</code> commands validate job configuration keys and types at parse time.</li>
+</ul>
+<h3 id="developer-experience">Developer Experience<a class="headerlink" href="#developer-experience" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><code>--dry-run</code> flag</strong>: Shows the exact shell command each job would execute without running anything. Works with all output formats — <code>--format=json</code> includes a <code>command</code> field per job.</li>
+<li><strong><code>--only-jobs</code> flag</strong>: Inverse of <code>--exclude-jobs</code> for the <code>flow</code> command. Run only the specified jobs: <code>githooks flow qa --only-jobs=phpstan_src,phpmd_src</code>.</li>
+<li><strong>Deep validation in <code>conf:check</code></strong>: Checks that executables exist, that configured <code>paths</code> are real directories, and that referenced config files are accessible.</li>
+<li><strong>Auto-detection of <code>executablePath</code></strong>: When omitted, GitHooks looks for <code>vendor/bin/{tool}</code> before falling back to system PATH.</li>
+</ul>
+<h3 id="conditional-execution">Conditional Execution<a class="headerlink" href="#conditional-execution" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong><a href="../configuration/hooks/#condition-keys"><code>exclude-files</code></a></strong>: Excludes staged files matching glob patterns from triggering execution. Always prevails over <code>only-files</code>.</li>
+<li><strong><a href="../configuration/hooks/#condition-keys"><code>exclude-on</code></a></strong>: Excludes branches matching glob patterns. Always prevails over <code>only-on</code>.</li>
+<li><strong>Double-star (<code>**</code>) glob support</strong>: File patterns now support <code>**</code> for recursive directory matching. <code>src/**/*.php</code> matches all PHP files under <code>src/</code> at any depth.</li>
+<li><strong><code>hooks.command</code> config key</strong>: Customize the command used in generated hook scripts (e.g. <code>'command' =&gt; 'php7.4 vendor/bin/githooks'</code>).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2020-2026 Wtyd/GitHooks contributors
+    </div>
+  
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/Wtyd/githooks" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.instant.progress", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.indexes", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate", "content.tabs.link", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
