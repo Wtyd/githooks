@@ -35,6 +35,8 @@ $ githooks profile:list qa          # timestamp · total time · passed · faile
 
 **Removed the inert `--fast-branch-fallback` CLI flag from `flows`.** It was declared and documented but never read — only the `fast-branch-fallback` config option ever took effect. Passing it on the CLI silently did nothing; it now errors as an unknown option. Set the strategy via `options.fast-branch-fallback: fast|full` in config (or a `githooks.local.php` override), which is unchanged.
 
+**Parallel `--fail-fast` no longer drops jobs that finished in the same poll as the failure.** Under parallel execution with `--fail-fast`, a job that completed in the same poll batch *after* the first failing job had its result silently discarded — it ran but was missing from the report and the JSON/JUnit payload. The whole batch is now collected before the queue drains, so every job that actually executed appears in the output.
+
 ## [3.5.1]
 
 ### Fixed
