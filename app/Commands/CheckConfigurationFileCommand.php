@@ -4,9 +4,12 @@ namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesDiagnosticFormat;
 use Wtyd\GitHooks\Configuration\ConfigurationChecker;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
+use Wtyd\GitHooks\Configuration\HookConfiguration;
+use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
@@ -14,6 +17,8 @@ use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\ConfigurationFile\Printer\OptionsTable;
 use Wtyd\GitHooks\ConfigurationFile\Printer\ToolsTable;
+use Wtyd\GitHooks\Output\Inspection\ConfigCheckJsonFormatter;
+use Wtyd\GitHooks\Output\Inspection\ConfigCheckResult;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 use Wtyd\GitHooks\Tools\Errors;
 use Wtyd\GitHooks\Tools\ToolsPreparer;
@@ -22,8 +27,11 @@ use Wtyd\GitHooks\Utils\Printer;
 class CheckConfigurationFileCommand extends Command
 {
     use EmitsStderr;
+    use ResolvesDiagnosticFormat;
 
-    protected $signature = 'conf:check  {--config= : Path to configuration file}';
+    protected $signature = 'conf:check
+                            {--config= : Path to configuration file}
+                            {--format= : Output format (text, json)}';
     protected $description = 'Check that the configuration file exists and that it is in the proper format.';
 
     protected FileReader $fileReader;
@@ -66,6 +74,10 @@ class CheckConfigurationFileCommand extends Command
 
     public function handle()
     {
+        if ($this->resolveDiagnosticFormat() === 'json') {
+            return $this->handleJson(strval($this->option('config')));
+        }
+
         $configFile = strval($this->option('config'));
 
         // Read the raw config via FileReader (respects testing fakes)
@@ -93,6 +105,208 @@ class CheckConfigurationFileCommand extends Command
         }
 
         return $this->handleLegacy($configFile);
+    }
+
+    private function handleJson(string $configFile): int
+    {
+        try {
+            $rawFile = $this->fileReader->readfile($configFile);
+        } catch (\Throwable $e) {
+            return $this->emitJsonError($e->getMessage());
+        }
+
+        $filePath = $this->fileReader->getRelativeConfigurationFilePath();
+
+        if ($this->configParser->isLegacyFormat($rawFile)) {
+            return $this->emitLegacyJson($rawFile, $filePath);
+        }
+
+        try {
+            $config = $this->configParser->parse($filePath);
+        } catch (\Throwable $e) {
+            return $this->emitJsonError($e->getMessage());
+        }
+
+        $result = $this->buildResult($config);
+        $this->output->writeln((new ConfigCheckJsonFormatter())->format($result));
+
+        return $result->isValid() ? 0 : 1;
+    }
+
+    /**
+     * Emit a minimal structured error (read/parse failure) keeping stdout
+     * parseable, and signal failure with exit 1 — same as the text path.
+     */
+    private function emitJsonError(string $message): int
+    {
+        $this->output->writeln((string) json_encode([
+            'version' => 1,
+            'valid' => false,
+            'errors' => [$message],
+            'warnings' => [],
+            'deprecations' => [],
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+
+        return 1;
+    }
+
+    /**
+     * @param array<string, mixed> $rawConfig the parsed config array from FileReader::readfile
+     */
+    private function emitLegacyJson(array $rawConfig, string $filePath): int
+    {
+        $errors = [];
+        $warnings = [];
+
+        try {
+            $configurationFile = new ConfigurationFile($rawConfig, ConfigurationFile::ALL_TOOLS, $this->toolRegistry);
+            $this->toolsPreparer->__invoke($configurationFile);
+            $warnings = $configurationFile->getWarnings();
+        } catch (ConfigurationFileException $e) {
+            $errors = $e->getConfigurationFile()->getErrors();
+            $warnings = $e->getConfigurationFile()->getWarnings();
+        }
+
+        $result = ConfigCheckResult::legacy($filePath, null, [
+            'errors' => array_values($errors),
+            'warnings' => array_values($warnings),
+            'deprecations' => [],
+            'hint' => "Run 'githooks conf:migrate' to upgrade to v3.",
+        ]);
+
+        $this->output->writeln((new ConfigCheckJsonFormatter())->format($result));
+
+        return $result->isValid() ? 0 : 1;
+    }
+
+    private function buildResult(ConfigurationResult $config): ConfigCheckResult
+    {
+        $options = $config->getGlobalOptions();
+
+        $errors = $config->getValidation()->getErrors();
+        $warnings = $config->getValidation()->getWarnings();
+
+        // Report-path checks (global options) — mirror the text path's filesystem-level validation.
+        $reportCheck = $this->checker->validateReportsPaths($options->getReports(), 'flows.options');
+        $errors = array_merge($errors, $reportCheck['errors']);
+        $warnings = array_merge($warnings, $reportCheck['warnings']);
+
+        $flowsPayload = [];
+        foreach ($config->getFlows() as $name => $flow) {
+            $flowsPayload[] = [
+                'name' => $name,
+                'meta' => $flow->isMetaFlow(),
+                'jobs' => $flow->getJobs(),
+                'flows' => $flow->getFlowReferences(),
+            ];
+            $flowOptions = $flow->getOptions();
+            if ($flowOptions !== null) {
+                $flowCheck = $this->checker->validateReportsPaths($flowOptions->getReports(), "flows.$name.options");
+                $errors = array_merge($errors, $flowCheck['errors']);
+                $warnings = array_merge($warnings, $flowCheck['warnings']);
+            }
+        }
+
+        $deprecations = [];
+        foreach ($config->getValidation()->getDeprecations() as $deprecation) {
+            $deprecations[] = $deprecation->toArray();
+        }
+
+        return ConfigCheckResult::forV3(
+            $config->getFilePath(),
+            $config->getLocalFilePath(),
+            $this->buildOptionsPayload($options),
+            $this->buildHooksPayload($config->getHooks()),
+            $flowsPayload,
+            $this->buildJobsPayload($config->getJobs()),
+            [
+                'errors' => array_values($errors),
+                'warnings' => array_values($warnings),
+                'deprecations' => $deprecations,
+                'hint' => null,
+            ]
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildOptionsPayload(OptionsConfiguration $options): array
+    {
+        $memoryBudget = $options->getMemoryBudget();
+
+        return [
+            'processes' => $options->getProcesses(),
+            'failFast' => $options->isFailFast(),
+            'executablePrefix' => $options->getExecutablePrefix(),
+            'reports' => $options->getReports(),
+            'memoryBudget' => $memoryBudget === null ? null : [
+                'warnAbove' => $memoryBudget->getWarnAbove(),
+                'failAbove' => $memoryBudget->getFailAbove(),
+            ],
+            'allocator' => $options->getAllocator(),
+            'stats' => $options->isStats(),
+        ];
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildHooksPayload(?HookConfiguration $hooks): array
+    {
+        if ($hooks === null) {
+            return [];
+        }
+
+        $payload = [];
+        foreach ($hooks->getAll() as $event => $refs) {
+            $targets = [];
+            foreach ($refs as $ref) {
+                $targets[] = [
+                    'target' => $ref->getTarget(),
+                    'onlyOn' => $ref->getOnlyOnBranches(),
+                    'excludeOn' => $ref->getExcludeOnBranches(),
+                    'onlyFiles' => $ref->getOnlyFiles(),
+                    'excludeFiles' => $ref->getExcludeFiles(),
+                ];
+            }
+            $payload[] = ['event' => $event, 'targets' => $targets];
+        }
+
+        return $payload;
+    }
+
+    /**
+     * @param array<string, \Wtyd\GitHooks\Configuration\JobConfiguration> $jobs
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildJobsPayload(array $jobs): array
+    {
+        $payload = [];
+        foreach ($jobs as $name => $job) {
+            try {
+                $jobInstance = $this->jobRegistry->create($job);
+                $coresOverride = $jobInstance->getCoresOverride();
+                if ($coresOverride !== null) {
+                    $jobInstance->applyThreadLimit($coresOverride);
+                }
+                $command = $jobInstance->buildCommand();
+                $issues = $this->checker->validateJob($jobInstance, $job);
+                $status = empty($issues) ? 'ok' : 'warning';
+            } catch (\Throwable $e) {
+                $command = '(error: ' . $e->getMessage() . ')';
+                $issues = [$e->getMessage()];
+                $status = 'error';
+            }
+            $payload[] = [
+                'name' => $name,
+                'command' => $command,
+                'status' => $status,
+                'issues' => array_values($issues),
+            ];
+        }
+
+        return $payload;
     }
 
     protected function handleV3(ConfigurationResult $config): int

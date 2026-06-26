@@ -115,6 +115,8 @@ Grupos de test excluidos por defecto: `@group release`, `@group git`, `@group wi
 
 **Regla obligatoria**: cuando Claude ejecuta `githooks flow`, `githooks job`, `githooks conf:check`, etc. como parte de una tarea (no para probar el output humano), usar **siempre** `--format=json` y parsear la respuesta.
 
+Los comandos de **diagnóstico** (`conf:check`, `status`, `system:info`) también aceptan `--format=text|json` (FEAT-20). Su payload tiene **schema propio por comando** con su propio `version` (hoy `1`), distinto del JSON v2 de los comandos de ejecución: `conf:check` → `{version, valid, legacy, file, options, hooks, flows, jobs[{name, command, status, issues[]}], errors[], warnings[], deprecations[]}`; `status` → `{version, hooksPath{configured,value}, events[{event, status, executable, targets[]}]}`; `system:info` → `{version, cpus, processes, warning}`. Un `--format` inválido avisa por stderr y cae a `text` (mismo comportamiento que `flow`).
+
 Razones:
 - **stdout limpio y parseable** — sin ANSI, sin barras de progreso, sin mensajes `⏩` mezclados.
 - **stderr silencioso sin TTY** — el progreso solo aparece cuando hay un terminal interactivo o con `-v`. Ejecutado desde Claude, CI o un pipe, stderr está vacío por defecto. No hace falta `2>/dev/null`.

@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here.
 
+## [3.7]
+
+### Added
+
+**`--format=text|json` for the diagnostic commands (`conf:check`, `status`, `system:info`).** These commands only spoke human-readable tables and text, so non-human consumers (AI assistants, CI, scripts) had to scrape ASCII tables with colors — and `conf:check`, despite being the command most often run by tooling, did not accept the flag at all. All three now emit a clean, parseable JSON document on stdout (no ANSI, no tables) with a per-command schema versioned independently (`version: 1`):
+
+```console
+$ githooks conf:check --format=json | jq '.jobs[] | select(.status != "ok")'
+$ githooks status --format=json | jq '.events[] | select(.status != "synced")'
+$ githooks system:info --format=json
+```
+
+`conf:check` reports `valid`, global `options`, `hooks`, `flows` and a `jobs` array (each with its resolved `command`, a `status` of `ok`/`warning`/`error` and its `issues`), plus top-level `errors`, `warnings` and `deprecations`; a legacy configuration is flagged with `legacy: true` and a hint to run `conf:migrate`. `status` reports the hooks path and per-event `status`/`targets`. `system:info` reports `{cpus, processes, warning}`. The exit code is unchanged from text mode, and an unknown `--format` value warns on stderr and falls back to `text` (same behavior as `flow`). See [`conf:check`](cli/conf-check.md), [`status`](cli/status.md) and [`system:info`](cli/system-info.md).
+
 ## [3.6]
 
 ### Added

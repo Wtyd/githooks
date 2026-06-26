@@ -5,8 +5,15 @@ Validate the configuration file with deep checks.
 ## Synopsis
 
 ```
-githooks conf:check [--config=PATH]
+githooks conf:check [--config=PATH] [--format=text|json]
 ```
+
+## Options
+
+| Option | Description |
+|---|---|
+| `--config=PATH` | Path to configuration file. |
+| `--format=text\|json` | Output format: `text` (default, tables) or `json` (machine-readable, clean stdout). An unknown value warns on stderr and falls back to `text`. The exit code is the same in both formats (invalid config exits non-zero). |
 
 ## What it checks
 
@@ -43,11 +50,41 @@ The output includes tables with Options, Hooks, Flows, Jobs and the full command
 - **Errors** prevent execution.
 - **Warnings** allow execution but indicate potential issues.
 
+## JSON output
+
+`--format=json` emits the full check as a single parseable document: global
+`options`, `hooks`, `flows`, and a `jobs` array where each job carries its
+resolved `command`, a `status` (`ok` / `warning` / `error`) and the list of
+`issues`. Top-level `errors`, `warnings` and `deprecations` mirror the text
+report; `valid` is `true` only when there are no errors (same exit code as text
+mode).
+
+```json
+{
+  "version": 1,
+  "valid": true,
+  "legacy": false,
+  "file": { "path": "githooks.php", "localPath": null },
+  "options": { "processes": 8, "failFast": false, "...": "..." },
+  "hooks": [ { "event": "pre-commit", "targets": [ { "target": "qa", "onlyOn": [], "excludeOn": [], "onlyFiles": [], "excludeFiles": [] } ] } ],
+  "flows": [ { "name": "qa", "meta": false, "jobs": ["phpstan", "phpcs"], "flows": [] } ],
+  "jobs": [ { "name": "phpstan", "command": "…", "status": "ok", "issues": [] } ],
+  "errors": [],
+  "warnings": [],
+  "deprecations": []
+}
+```
+
+A legacy (v2) configuration is reported as `{"version":1,"valid":…,"legacy":true,…}`
+with a `hint` to run [`conf:migrate`](conf-migrate.md) instead of the v3 blocks.
+
 ## Examples
 
 ```bash
 githooks conf:check
 githooks conf:check --config=qa/custom-githooks.php
+githooks conf:check --format=json                              # machine-readable, clean stdout
+githooks conf:check --format=json | jq '.jobs[] | select(.status != "ok")'
 ```
 
 ## See also
