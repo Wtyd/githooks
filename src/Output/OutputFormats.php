@@ -24,6 +24,14 @@ final class OutputFormats
     /** Formats accepted by `--format=` (structured set + plain text + AI stop-hook). */
     public const SUPPORTED = ['text', 'json', 'junit', 'sarif', 'codeclimate', self::CLAUDE_CODE];
 
+    /**
+     * Formats accepted by the diagnostic commands (`conf:check`, `status`,
+     * `system:info`). These commands expose only `text` and `json`: the
+     * report-file formats (junit/sarif/codeclimate) and the `claude-code`
+     * stop-hook protocol describe execution results, not diagnostics.
+     */
+    public const DIAGNOSTIC = ['text', 'json'];
+
     private function __construct()
     {
     }

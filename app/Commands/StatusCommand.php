@@ -5,14 +5,22 @@ declare(strict_types=1);
 namespace Wtyd\GitHooks\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
+use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesDiagnosticFormat;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Hooks\HookEventStatus;
 use Wtyd\GitHooks\Hooks\HookStatusInspector;
+use Wtyd\GitHooks\Hooks\HookStatusReport;
+use Wtyd\GitHooks\Output\Inspection\StatusJsonFormatter;
 
 class StatusCommand extends Command
 {
+    use EmitsStderr;
+    use ResolvesDiagnosticFormat;
+
     protected $signature = 'status
-                            {--config= : Path to configuration file}';
+                            {--config= : Path to configuration file}
+                            {--format= : Output format (text, json)}';
 
     protected $description = 'Show the status of installed hooks and their synchronization with the configuration';
 
@@ -29,58 +37,85 @@ class StatusCommand extends Command
 
     public function handle(): int
     {
+        $format = $this->resolveDiagnosticFormat();
         $configFile = strval($this->option('config'));
 
         try {
             $config = $this->parser->parse($configFile);
 
             if ($config->isLegacy()) {
-                $this->error("The 'status' command requires v3 configuration format (hooks/flows/jobs).");
-                return 1;
+                return $this->fail($format, "The 'status' command requires v3 configuration format (hooks/flows/jobs).");
             }
 
             $report = $this->inspector->inspect($config);
-
-            $this->line('');
-            $this->info('GitHooks Status');
-            $this->line('');
-
-            // Hooks path status
-            if ($report->isHooksPathConfigured()) {
-                $this->line("  hooks path: <fg=green>.githooks</> (configured via core.hooksPath)");
-            } elseif ($report->getHooksPathValue() !== '') {
-                $this->line("  hooks path: <fg=yellow>" . $report->getHooksPathValue() . "</> (not .githooks — run 'githooks hook' to fix)");
-            } else {
-                $this->line("  hooks path: <fg=red>not configured</> (run 'githooks hook' to install)");
-            }
-
-            $this->line('');
-
-            // Events table
-            $events = $report->getEvents();
-
-            if (empty($events)) {
-                $this->line("  No hooks configured or installed.");
-                return 0;
-            }
-
-            $rows = [];
-            foreach ($events as $eventStatus) {
-                $status = $this->formatStatus($eventStatus->getStatus());
-                $targets = $this->formatTargets($eventStatus);
-                $rows[] = [$eventStatus->getEvent(), $status, $targets];
-            }
-
-            $this->table(['Event', 'Status', 'Targets'], $rows);
-
-            $this->line('');
-            $this->line("  Legend: <fg=green>synced</> = installed & configured, <fg=red>missing</> = configured but not installed, <fg=yellow>orphan</> = installed but not configured");
-
-            return 0;
         } catch (\Throwable $e) {
-            $this->error($e->getMessage());
-            return 1;
+            return $this->fail($format, $e->getMessage());
         }
+
+        if ($format === 'json') {
+            $this->output->writeln((new StatusJsonFormatter())->format($report));
+            return 0;
+        }
+
+        return $this->renderText($report);
+    }
+
+    private function renderText(HookStatusReport $report): int
+    {
+        $this->line('');
+        $this->info('GitHooks Status');
+        $this->line('');
+
+        // Hooks path status
+        if ($report->isHooksPathConfigured()) {
+            $this->line("  hooks path: <fg=green>.githooks</> (configured via core.hooksPath)");
+        } elseif ($report->getHooksPathValue() !== '') {
+            $this->line("  hooks path: <fg=yellow>" . $report->getHooksPathValue() . "</> (not .githooks — run 'githooks hook' to fix)");
+        } else {
+            $this->line("  hooks path: <fg=red>not configured</> (run 'githooks hook' to install)");
+        }
+
+        $this->line('');
+
+        // Events table
+        $events = $report->getEvents();
+
+        if (empty($events)) {
+            $this->line("  No hooks configured or installed.");
+            return 0;
+        }
+
+        $rows = [];
+        foreach ($events as $eventStatus) {
+            $status = $this->formatStatus($eventStatus->getStatus());
+            $targets = $this->formatTargets($eventStatus);
+            $rows[] = [$eventStatus->getEvent(), $status, $targets];
+        }
+
+        $this->table(['Event', 'Status', 'Targets'], $rows);
+
+        $this->line('');
+        $this->line("  Legend: <fg=green>synced</> = installed & configured, <fg=red>missing</> = configured but not installed, <fg=yellow>orphan</> = installed but not configured");
+
+        return 0;
+    }
+
+    /**
+     * Report a failure honouring the output format: a structured error on
+     * stdout for `json` (so the payload stays parseable), the plain message
+     * for `text`. Exit code is unchanged across formats.
+     */
+    private function fail(string $format, string $message): int
+    {
+        if ($format === 'json') {
+            $this->output->writeln(
+                (string) json_encode(['version' => 1, 'error' => $message], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+            );
+        } else {
+            $this->error($message);
+        }
+
+        return 1;
     }
 
     private function formatStatus(string $status): string

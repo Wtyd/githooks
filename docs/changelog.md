@@ -8,6 +8,16 @@ All notable changes to this project are documented here.
 
 **`re-stage` on `custom` jobs — auto-stage fixes from any fixer.** The automatic re-staging that the native fixer types (`phpcbf`, `php-cs-fixer`, `rector`) apply after fixing staged files was out of reach for `custom` jobs: to auto-fix and re-add files in a `pre-commit` hook you had to hand-roll `... && git add <files>` in the `script`, with all its edge cases (path quoting, the no-op case, partially staged files). A `custom` job can now declare `re-stage: true`: a successful run (exit code 0) is treated as a fix and its changes to the staged files are re-staged automatically — the same behaviour the native fixers get, now available to any fixer run via `custom` (Pint, Duster, npm formatters…). Opt-in (default off, so linters/checkers are unaffected), and a non-zero exit never re-stages, so a failing tool can't slip partial output into the commit. See [Custom jobs → Auto-staging fixes](tools/custom.md#auto-staging-fixes-re-stage).
 
+**`--format=text|json` for the diagnostic commands (`conf:check`, `status`, `system:info`).** These commands only spoke human-readable tables and text, so non-human consumers (AI assistants, CI, scripts) had to scrape ASCII tables with colors — and `conf:check`, despite being the command most often run by tooling, did not accept the flag at all. All three now emit a clean, parseable JSON document on stdout (no ANSI, no tables) with a per-command schema versioned independently (`version: 1`):
+
+```console
+$ githooks conf:check --format=json | jq '.jobs[] | select(.status != "ok")'
+$ githooks status --format=json | jq '.events[] | select(.status != "synced")'
+$ githooks system:info --format=json
+```
+
+`conf:check` reports `valid`, global `options`, `hooks`, `flows` and a `jobs` array (each with its resolved `command`, a `status` of `ok`/`warning`/`error` and its `issues`), plus top-level `errors`, `warnings` and `deprecations`; a legacy configuration is flagged with `legacy: true` and a hint to run `conf:migrate`. `status` reports the hooks path and per-event `status`/`targets`. `system:info` reports `{cpus, processes, warning}`. The exit code is unchanged from text mode, and an unknown `--format` value warns on stderr and falls back to `text` (same behavior as `flow`). See [`conf:check`](cli/conf-check.md), [`status`](cli/status.md) and [`system:info`](cli/system-info.md).
+
 ## [3.6]
 
 ### Added
