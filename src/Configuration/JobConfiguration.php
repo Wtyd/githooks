@@ -24,6 +24,7 @@ class JobConfiguration
         'psalm'         => 'threads',
         'parallel-lint' => 'jobs',
         'paratest'      => 'processes',
+        'pest'          => 'processes',
     ];
 
     /**

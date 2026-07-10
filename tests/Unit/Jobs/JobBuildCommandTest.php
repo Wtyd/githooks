@@ -9,6 +9,7 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
+use Wtyd\GitHooks\Jobs\PestJob;
 use Wtyd\GitHooks\Jobs\PhpcbfJob;
 use Wtyd\GitHooks\Jobs\PhpcpdJob;
 use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
@@ -229,6 +230,7 @@ class JobBuildCommandTest extends UnitTestCase
         $this->assertTrue($registry->isSupported('custom'));
         $this->assertTrue($registry->isSupported('php-cs-fixer'));
         $this->assertTrue($registry->isSupported('rector'));
+        $this->assertTrue($registry->isSupported('pest'));
         $this->assertFalse($registry->isSupported('nonexistent'));
 
         $job = $registry->create(new JobConfiguration('test', 'phpstan', ['paths' => ['src']]));
@@ -239,6 +241,9 @@ class JobBuildCommandTest extends UnitTestCase
 
         $job = $registry->create(new JobConfiguration('test', 'php-cs-fixer', ['paths' => ['src']]));
         $this->assertInstanceOf(PhpCsFixerJob::class, $job);
+
+        $job = $registry->create(new JobConfiguration('test', 'pest', ['coverage' => true]));
+        $this->assertInstanceOf(PestJob::class, $job);
 
         $job = $registry->create(new JobConfiguration('test', 'rector', ['paths' => ['src']]));
         $this->assertInstanceOf(RectorJob::class, $job);

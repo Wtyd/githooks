@@ -57,6 +57,36 @@ class JobConfigurationTest extends UnitTestCase
     }
 
     /** @test */
+    public function it_parses_a_pest_job_with_runner_and_flags()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('pest_suite', [
+            'type'     => 'pest',
+            'runner'   => 'artisan',
+            'parallel' => true,
+            'coverage' => true,
+            'min'      => 90,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings());
+        $this->assertNotNull($job);
+        $this->assertEquals('pest', $job->getType());
+    }
+
+    /** @test */
+    public function it_warns_on_unknown_key_for_a_pest_job()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('pest_suite', [
+            'type'      => 'pest',
+            'inventado' => true,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertStringContainsString('inventado', implode("\n", $result->getWarnings()));
+    }
+
+    /** @test */
     public function it_reports_error_when_type_is_missing()
     {
         $result = new ValidationResult();
