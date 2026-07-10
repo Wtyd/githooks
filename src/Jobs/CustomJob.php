@@ -22,15 +22,30 @@ class CustomJob extends JobAbstract
 
     private string $script;
 
+    private bool $reStage;
+
     public function __construct(JobConfiguration $config)
     {
         parent::__construct($config);
         $this->script = $config->getConfig()['script'] ?? '';
+        $this->reStage = (bool) ($config->getConfig()['re-stage'] ?? false);
     }
 
     public static function getDefaultExecutable(): string
     {
         return '';
+    }
+
+    /**
+     * With `re-stage: true`, a successful run (exit 0) is treated as a fix so the
+     * scheduler re-stages the tracked files — the same auto-stage the native fixer
+     * types get. A non-zero exit means the script failed: never re-stage, never
+     * mask the failure. Opt-in only; a plain custom job (linter/checker) is
+     * unaffected because the flag defaults to false.
+     */
+    public function isFixApplied(int $exitCode): bool
+    {
+        return $this->reStage && $exitCode === 0;
     }
 
     public function buildCommand(): string

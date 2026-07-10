@@ -598,7 +598,7 @@ class JobConfiguration
      */
     private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
     {
-        $knownKeys = ['script', 'executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
+        $knownKeys = ['script', 'executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 're-stage', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
 
         foreach (array_keys($config) as $key) {
             if (!in_array($key, $knownKeys, true)) {

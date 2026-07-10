@@ -231,6 +231,35 @@ class JobConfigurationTest extends UnitTestCase
         $this->assertStringContainsString('otra clave', $result->getWarnings()[1]);
     }
 
+    /** @test */
+    public function it_accepts_the_re_stage_key_for_custom_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('formateo', [
+            'type'     => 'custom',
+            'script'   => 'vendor/bin/pint',
+            're-stage' => true,
+        ], $this->registry, $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings());
+    }
+
+    /** @test */
+    public function it_warns_with_suggestion_on_re_stage_typo_for_custom_jobs()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('formateo', [
+            'type'    => 'custom',
+            'script'  => 'vendor/bin/pint',
+            'restage' => true,
+        ], $this->registry, $result);
+
+        $this->assertCount(1, $result->getWarnings());
+        $this->assertStringContainsString("unknown key 'restage'", $result->getWarnings()[0]);
+        $this->assertStringContainsString("Did you mean 're-stage'?", $result->getWarnings()[0]);
+    }
+
     /**
      * @test
      * Anchors CON-007 of spec-design-files-flag.md (revised by BUG-9):

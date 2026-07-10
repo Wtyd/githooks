@@ -50,6 +50,24 @@ Use `executable-path` + `paths` + optional `other-arguments`. This mode supports
 
 In normal mode, this runs: `npx eslint resources/js --fix`. With `--fast`, it runs against only the staged files within `resources/js/` instead of the entire directory.
 
+## Auto-staging fixes (`re-stage`)
+
+Fixer tools rewrite files on disk. In a `pre-commit` hook (which runs in `--fast` mode) you usually want those fixes **added back to the commit** automatically — exactly what the native fixer types (`phpcbf`, `php-cs-fixer`, `rector`) do. A plain `custom` job does not, so you would have to append `&& git add ...` to the `script` by hand.
+
+Set `re-stage: true` so a successful run (exit code **0**) is treated as a fix and its changes to the staged files are re-staged automatically:
+
+```php
+'pint' => [
+    'type'     => 'custom',
+    'script'   => 'vendor/bin/pint',
+    're-stage' => true,
+],
+```
+
+- Only a **zero exit code** re-stages. A non-zero exit means the tool failed: nothing is re-staged and the job fails (unless `ignore-errors-on-exit`). `re-stage` never turns a failure into a success.
+- Opt-in: without `re-stage` (or with `re-stage: false`) a `custom` job never re-stages — the right default for linters/checkers.
+- Use it only with **fixers**. Re-staging runs `git add` over the whole index, so it also captures unrelated working-tree edits to files that were already staged (the same behaviour as the native fixer types).
+
 ## Keywords
 
 | Keyword | Mode | Description |
@@ -62,6 +80,7 @@ In normal mode, this runs: `npx eslint resources/js --fix`. With `--fast`, it ru
 | `execution` | Both | Per-job execution mode override (`full`, `fast`, `fast-branch`). |
 | `ignore-errors-on-exit` | Both | Job returns exit 0 even with problems. |
 | `fail-fast` | Both | Stop remaining jobs if this one fails. |
+| `re-stage` | Both | Boolean. When the job exits 0, re-stage the fixed files (for fixers like Pint). Default `false`. |
 
 !!! note
     The legacy camelCase keys (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) are still accepted in v3.3 with a deprecation warning. They will be removed in v4.0. See [v3.3 deprecations](../migration/v33-deprecations.md).

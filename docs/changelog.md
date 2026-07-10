@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.7]
+
+### Added
+
+**`re-stage` on `custom` jobs — auto-stage fixes from any fixer.** The automatic re-staging that the native fixer types (`phpcbf`, `php-cs-fixer`, `rector`) apply after fixing staged files was out of reach for `custom` jobs: to auto-fix and re-add files in a `pre-commit` hook you had to hand-roll `... && git add <files>` in the `script`, with all its edge cases (path quoting, the no-op case, partially staged files). A `custom` job can now declare `re-stage: true`: a successful run (exit code 0) is treated as a fix and its changes to the staged files are re-staged automatically — the same behaviour the native fixers get, now available to any fixer run via `custom` (Pint, Duster, npm formatters…). Opt-in (default off, so linters/checkers are unaffected), and a non-zero exit never re-stages, so a failing tool can't slip partial output into the commit. See [Custom jobs → Auto-staging fixes](tools/custom.md#auto-staging-fixes-re-stage).
+
 ## [3.6]
 
 ### Added
