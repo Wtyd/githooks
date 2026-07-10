@@ -78,6 +78,21 @@ class OptionsConfiguration
     }
 
     /**
+     * Single-source domain rule for `processes` (owner of the concept), invoked
+     * by both the config path ({@see fromArray}) and the CLI path
+     * (ResolvesProcessesFlag): a positive integer (>= 1). Config passes its typed
+     * int; the CLI parses the argv token to int first. Config therefore keeps its
+     * strict type contract (a string is a config error) while both share the >= 1
+     * boundary.
+     *
+     * @param mixed $value
+     */
+    public static function isValidProcesses($value): bool
+    {
+        return is_int($value) && $value >= 1;
+    }
+
+    /**
      * Build from raw config array. Validates and collects errors/warnings.
      *
      * @param array<string, mixed> $raw The 'options' section (from flows level or per-flow)
@@ -100,7 +115,7 @@ class OptionsConfiguration
         }
 
         if (array_key_exists('processes', $raw)) {
-            if (!is_int($raw['processes']) || $raw['processes'] < 1) {
+            if (!self::isValidProcesses($raw['processes'])) {
                 $result->addError("'processes' must be a positive integer.");
             } else {
                 $processes = $raw['processes'];

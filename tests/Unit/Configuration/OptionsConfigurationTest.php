@@ -103,6 +103,39 @@ class OptionsConfigurationTest extends UnitTestCase
         $this->assertTrue($result->hasErrors());
     }
 
+    /**
+     * The `processes` domain rule (positive integer >= 1) is single-sourced here
+     * and shared with the CLI path (ResolvesProcessesFlag). It is strict on type
+     * (a real int), so config keeps its contract — a string is a config error;
+     * the CLI parses the argv token to int before calling this. Both share the
+     * >= 1 boundary.
+     *
+     * @test
+     * @dataProvider processesValidity
+     *
+     * @param mixed $value
+     */
+    public function is_valid_processes_shares_the_boundary_across_origins($value, bool $expected): void
+    {
+        $this->assertSame($expected, OptionsConfiguration::isValidProcesses($value));
+    }
+
+    /** @return array<string, array{mixed, bool}> */
+    public function processesValidity(): array
+    {
+        return [
+            'int >= 1'          => [4, true],
+            'int 1'             => [1, true],
+            'int 0'             => [0, false],
+            'negative int'      => [-1, false],
+            'digit-string'      => ['4', false],
+            'non-numeric'       => ['many', false],
+            'float'             => [1.5, false],
+            'bool'              => [true, false],
+            'null'              => [null, false],
+        ];
+    }
+
     /** @test */
     public function it_warns_about_unknown_keys()
     {

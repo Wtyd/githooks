@@ -109,6 +109,28 @@ class FlowCommandTest extends SystemTestCase
             ->assertExitCode(0);
     }
 
+    /**
+     * CLI = best-effort: an invalid `--processes` warns on stderr and is ignored
+     * (the cascade falls back to the configured value / default), so the command
+     * still runs instead of aborting — unlike the config path, which hard-errors.
+     * The exact stderr warning is asserted in ResolvesProcessesFlagTest.
+     *
+     * @test
+     */
+    public function it_tolerates_invalid_processes_via_cli_and_still_runs()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['job1']]])
+            ->setV3Jobs([
+                'job1' => ['type' => 'custom', 'script' => 'true'],
+            ])
+            ->buildInFileSystem();
+
+        $this->artisan("flow qa --processes=0 --config=$this->configPath")
+            ->assertExitCode(0);
+    }
+
     /** @test */
     public function it_supports_json_output_format()
     {

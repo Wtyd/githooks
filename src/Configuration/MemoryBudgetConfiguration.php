@@ -74,6 +74,20 @@ final class MemoryBudgetConfiguration
     }
 
     /**
+     * Single-source domain rule for a budget value in MB (owner of the concept),
+     * invoked by both the config path ({@see parsePositiveInt}) and the CLI path
+     * (ResolvesMemoryBudgetFlags): a positive integer (>= 1). Config passes its
+     * typed int (a string is a config error); the CLI parses the argv token to int
+     * first. Both share the >= 1 boundary.
+     *
+     * @param mixed $value
+     */
+    public static function isValidMb($value): bool
+    {
+        return is_int($value) && $value >= 1;
+    }
+
+    /**
      * @param array<string, mixed> $raw
      */
     private static function parsePositiveInt(string $key, array $raw, ValidationResult $result): ?int
@@ -83,7 +97,7 @@ final class MemoryBudgetConfiguration
         }
 
         $value = $raw[$key];
-        if (!is_int($value) || $value < 1) {
+        if (!self::isValidMb($value)) {
             $result->addError("'$key' must be a positive integer (MB).");
             return null;
         }

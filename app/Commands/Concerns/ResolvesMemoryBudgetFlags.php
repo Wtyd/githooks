@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\App\Commands\Concerns;
 
+use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
+
 /**
  * Reads `--memory-warn-above`, `--memory-fail-above` and `--no-memory-budget`
  * from the Laravel-Zero command and normalises them for EffectiveOptionsResolver.
@@ -62,7 +64,7 @@ trait ResolvesMemoryBudgetFlags
         if ($raw === null || $raw === '') {
             return null;
         }
-        if (!ctype_digit((string) $raw) || (int) $raw < 1) {
+        if (!ctype_digit((string) $raw) || !MemoryBudgetConfiguration::isValidMb((int) $raw)) {
             $this->writeMemoryBudgetStderrWarning(
                 "--$name expects a positive integer (MB); got '$raw'. Ignoring."
             );

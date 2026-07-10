@@ -75,6 +75,20 @@ final class TimeBudgetConfiguration
     }
 
     /**
+     * Single-source domain rule for a budget value in seconds (owner of the
+     * concept), invoked by both the config path ({@see parsePositiveInt}) and the
+     * CLI path (ResolvesTimeBudgetFlags): a positive integer (>= 1). Config passes
+     * its typed int (a string is a config error); the CLI parses the argv token to
+     * int first. Both share the >= 1 boundary.
+     *
+     * @param mixed $value
+     */
+    public static function isValidSeconds($value): bool
+    {
+        return is_int($value) && $value >= 1;
+    }
+
+    /**
      * @param array<string, mixed> $raw
      */
     private static function parsePositiveInt(string $key, array $raw, ValidationResult $result): ?int
@@ -84,7 +98,7 @@ final class TimeBudgetConfiguration
         }
 
         $value = $raw[$key];
-        if (!is_int($value) || $value < 1) {
+        if (!self::isValidSeconds($value)) {
             $result->addError("'$key' must be a positive integer (seconds).");
             return null;
         }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\App\Commands\Concerns;
 
+use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
+
 /**
  * Reads `--warn-after`, `--fail-after` and `--no-time-budget` from the
  * Laravel-Zero command and normalises them for the EffectiveOptionsResolver.
@@ -57,7 +59,7 @@ trait ResolvesTimeBudgetFlags
         if ($raw === null || $raw === '') {
             return null;
         }
-        if (!ctype_digit((string) $raw) || (int) $raw < 1) {
+        if (!ctype_digit((string) $raw) || !TimeBudgetConfiguration::isValidSeconds((int) $raw)) {
             $this->writeStderrWarning("--$name expects a positive integer (seconds); got '$raw'. Ignoring.");
             return null;
         }

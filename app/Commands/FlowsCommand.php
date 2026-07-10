@@ -11,6 +11,7 @@ use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesProcessesFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
@@ -36,6 +37,7 @@ class FlowsCommand extends Command
     use ResolvesAllocatorFlag;
     use ResolvesInputFiles;
     use ResolvesMemoryBudgetFlags;
+    use ResolvesProcessesFlag;
     use ResolvesStatsFlag;
     use ResolvesTimeBudgetFlags;
     use ValidatesUnknownOptionsBeforeDashDash;
@@ -131,7 +133,7 @@ class FlowsCommand extends Command
             $argNames,
             strval($this->option('config')),
             $this->option('fail-fast') ? true : null,
-            $this->option('processes') !== null ? (int) $this->option('processes') : null,
+            $this->resolveProcessesFlag(),
             $this->csvOption('exclude-jobs'),
             $this->csvOption('only-jobs'),
             $this->resolveInputFilesFlags(true),

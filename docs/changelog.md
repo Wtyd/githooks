@@ -18,6 +18,10 @@ $ githooks system:info --format=json
 
 `conf:check` reports `valid`, global `options`, `hooks`, `flows` and a `jobs` array (each with its resolved `command`, a `status` of `ok`/`warning`/`error` and its `issues`), plus top-level `errors`, `warnings` and `deprecations`; a legacy configuration is flagged with `legacy: true` and a hint to run `conf:migrate`. `status` reports the hooks path and per-event `status`/`targets`. `system:info` reports `{cpus, processes, warning}`. The exit code is unchanged from text mode, and an unknown `--format` value warns on stderr and falls back to `text` (same behavior as `flow`). See [`conf:check`](cli/conf-check.md), [`status`](cli/status.md) and [`system:info`](cli/system-info.md).
 
+### Changed
+
+**Option validation is now consistent across config and CLI.** The same validity criterion for each execution option is single-sourced and applied from both origins, with a uniform policy: a **config file** is a contract — an invalid value (`processes`, `time-budget`, `memory-budget`, `allocator`) is a hard error via `conf:check` — while a **CLI flag** is best-effort — an invalid value warns on stderr and is ignored, falling back to the configured value or default. In particular, `flow`/`flows --processes=0` (or a negative/non-numeric value) now emits a warning and falls back instead of being **silently clamped** to `1`, matching how `--allocator` and the budget flags already behaved. Valid values are unaffected. See [Options → Validation](configuration/options.md#validation-of-invalid-values).
+
 ## [3.6]
 
 ### Added

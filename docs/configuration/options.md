@@ -68,6 +68,15 @@ The cascade is evaluated **key by key**, not as a whole block. When a per-flow `
 
 > Versions before 3.4 read `executable-prefix`, `fast-branch-fallback` and `reports` block-level (`flow.options ?? globals`), so declaring a single per-flow key silently dropped those three. Fixed in 3.4 — see the [3.4 changelog entry](../changelog.md#34).
 
+## Validation of invalid values
+
+The validity criterion for each option is single-sourced (it lives in the option's owning class and is shared by both origins), but the **action taken on an invalid value depends on where it came from**:
+
+- **Config file — a contract.** An invalid value (`processes: 0`, `time-budget: {warn-after: 'x'}`, `allocator: 'random'`) is a **hard error**: [`conf:check`](../cli/conf-check.md) reports it and the run aborts. Config values are also strictly typed — a string where an integer is expected (`processes: '2'`) is an error.
+- **CLI flag — best-effort.** An invalid value (`--processes=0`, `--warn-after=x`, `--allocator=random`) emits a **warning on stderr and is ignored**: the cascade falls back to the configured value or the default and the run continues.
+
+This mirrors the existing `--allocator` behaviour across every option, so an invalid flag never silently changes what runs.
+
 ## Thread budget
 
 The `processes` option controls the **total CPU cores** available — not just the number of parallel jobs, and not just a soft hint. It is the **absolute ceiling**: no individual job can spawn more workers than `processes` allows. When `processes > 1`, GitHooks distributes threads across jobs that support internal parallelism:
