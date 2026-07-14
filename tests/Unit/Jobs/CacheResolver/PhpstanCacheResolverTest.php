@@ -396,6 +396,116 @@ class PhpstanCacheResolverTest extends UnitTestCase
         $this->assertNull(PhpstanCacheResolver::resolve($path));
     }
 
+    /**
+     * @test
+     * Kills L85 `continue`->`break` on `!$inIncludes`. A pre-includes line must
+     * NOT abort the scan: with `break` the loop stops at the first line and the
+     * later `includes:` block (whose sole include carries the tmpDir) is never
+     * parsed. The entry file has no own tmpDir, so the result depends entirely
+     * on the include being reached.
+     */
+    public function content_before_the_includes_block_does_not_abort_the_scan(): void
+    {
+        $this->writeNeon('sneaky-precontent.neon', "parameters:\n    tmpDir: /tmp/precontent\n");
+        $entry = $this->writeNeon(
+            'pre-includes.neon',
+            "services:\n    foo: bar\nincludes:\n    - sneaky-precontent.neon\n"
+        );
+
+        $this->assertSame('/tmp/precontent', PhpstanCacheResolver::resolve($entry));
+    }
+
+    /**
+     * @test
+     * Kills L87 caret on the entry regex `^\s+-\s+`. Dropping the caret lets a
+     * mid-line " - " match anywhere, so a non-entry line like "fake: - sneaky"
+     * would be mis-parsed as an include. The real include carries no tmpDir, so
+     * only the (wrongly-matched) sneaky file would produce one.
+     */
+    public function mid_line_dash_is_not_treated_as_an_include_entry(): void
+    {
+        $this->writeNeon('real-noTmp.neon', "parameters:\n    level: 8\n");
+        $this->writeNeon('sneaky-midline.neon', "parameters:\n    tmpDir: /tmp/midline\n");
+        $entry = $this->writeNeon(
+            'midline-dash.neon',
+            "includes:\n    - real-noTmp.neon\nfake: - sneaky-midline.neon\n"
+        );
+
+        $this->assertNull(PhpstanCacheResolver::resolve($entry));
+    }
+
+    /**
+     * @test
+     * Kills L94 UnwrapLtrim in extractIncludes' exit branch. An indented comment
+     * inside the includes block must keep the block open: without ltrim, its
+     * leading space makes the comment check fail and the block closes early,
+     * dropping the second include (the one carrying the tmpDir).
+     */
+    public function indented_comment_inside_includes_block_does_not_close_it(): void
+    {
+        $this->writeNeon('first-noTmp.neon', "parameters:\n    level: 8\n");
+        $this->writeNeon('second-tmp.neon', "parameters:\n    tmpDir: /tmp/second-include\n");
+        $entry = $this->writeNeon(
+            'indented-comment-includes.neon',
+            "includes:\n    - first-noTmp.neon\n    # a comment\n    - second-tmp.neon\n"
+        );
+
+        $this->assertSame('/tmp/second-include', PhpstanCacheResolver::resolve($entry));
+    }
+
+    /**
+     * @test
+     * Kills L98 `$inIncludes = false`->true on the exit-includes branch. A
+     * top-level non-entry line must close the includes block; if the flag stays
+     * true, a later indented " - " line under another section is wrongly parsed
+     * as an include.
+     */
+    public function top_level_key_closes_includes_so_later_dash_lines_are_ignored(): void
+    {
+        $this->writeNeon('first-noTmp.neon', "parameters:\n    level: 8\n");
+        $this->writeNeon('sneaky-afterexit.neon', "parameters:\n    tmpDir: /tmp/after-exit\n");
+        $entry = $this->writeNeon(
+            'exit-includes-flag.neon',
+            "includes:\n    - first-noTmp.neon\ndummy: value\n    - sneaky-afterexit.neon\n"
+        );
+
+        $this->assertNull(PhpstanCacheResolver::resolve($entry));
+    }
+
+    /**
+     * @test
+     * Kills L112 `$insideParameters = false` initial value. An indented tmpDir
+     * BEFORE any parameters block must not be captured; with the flag initialised
+     * to true it would leak. The parameters block that follows has no tmpDir, so
+     * a non-null result can only come from the leaked early line.
+     */
+    public function indented_tmpdir_before_any_parameters_block_is_not_captured(): void
+    {
+        $path = $this->writeNeon(
+            'early-tmpdir.neon',
+            "    tmpDir: /tmp/early-leak\nparameters:\n    level: 8\n"
+        );
+
+        $this->assertNull(PhpstanCacheResolver::resolve($path));
+    }
+
+    /**
+     * @test
+     * Kills L119 caret on `^parameters:\s*$`. Without the caret, a top-level key
+     * ending in "parameters:" (e.g. "moreparameters:") matches as a substring and
+     * wrongly opens the block. The genuine parameters tmpDir comes first, the
+     * decoy last, so only the mutant surfaces the decoy value.
+     */
+    public function top_level_key_ending_in_parameters_does_not_open_the_block(): void
+    {
+        $path = $this->writeNeon(
+            'moreparameters.neon',
+            "parameters:\n    tmpDir: /right\nmoreparameters:\n    tmpDir: /wrong\n"
+        );
+
+        $this->assertSame('/right', PhpstanCacheResolver::resolve($path));
+    }
+
     private function writeNeon(string $name, string $content): string
     {
         $path = $this->sandbox . '/' . $name;

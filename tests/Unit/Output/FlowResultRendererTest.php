@@ -221,6 +221,57 @@ class FlowResultRendererTest extends UnitTestCase
         $this->assertInstanceOf(ProgressOutputHandler::class, $handler);
     }
 
+    /**
+     * Run applyFormat and report whether the output stream was forced-decorated.
+     */
+    private function decoratedAfterApplyFormat(bool $noCI): bool
+    {
+        $executor = $this->createMock(FlowExecutor::class);
+        $planOptions = $this->createMock(OptionsConfiguration::class);
+        $planOptions->method('getProcesses')->willReturn(1);
+        $planOptions->method('getReports')->willReturn([]);
+        $plan = $this->createMock(FlowPlan::class);
+        $plan->method('getOptions')->willReturn($planOptions);
+        $plan->method('getJobs')->willReturn(['job']);
+
+        $output = new BufferedOutput();
+        $output->setDecorated(false);
+        $options = new RenderOptions('text', null, true, $noCI, false, []);
+
+        (new FlowResultRenderer(new Container()))->applyFormat($executor, $plan, $options, $output);
+
+        return $output->isDecorated();
+    }
+
+    /**
+     * @test
+     * Under CI, the renderer forces ANSI decoration on so warning colours reach
+     * the CI log. Kills L201 MethodCallRemoval on `$output->setDecorated(true)`
+     * (without it decoration stays off) and L201 TrueValue `true`→`false`
+     * (the mutant explicitly disables it). The existing CI tests only assert the
+     * DECORATOR class chosen, never the stream's decorated flag.
+     */
+    public function ci_environment_forces_output_decoration_on(): void
+    {
+        putenv('GITLAB_CI=true');
+
+        $this->assertTrue($this->decoratedAfterApplyFormat(false));
+    }
+
+    /**
+     * @test
+     * The `--no-ci` flag short-circuits CI decoration forcing. Kills L196
+     * ReturnRemoval on the `if ($options->noCI) return;` guard: without the
+     * early return the method proceeds and would force decoration on even though
+     * the operator opted out.
+     */
+    public function no_ci_flag_prevents_forced_decoration_under_ci(): void
+    {
+        putenv('GITLAB_CI=true');
+
+        $this->assertFalse($this->decoratedAfterApplyFormat(true));
+    }
+
     // ---- renderFormattedResult dispatch ----
 
     private function successResult(): FlowResult
@@ -399,6 +450,62 @@ class FlowResultRendererTest extends UnitTestCase
             "   <fg=yellow>↳ also exceeded time threshold (took 12.0s, warn-after 10s)</>",
             $lines
         );
+    }
+
+    /**
+     * @test
+     * @dataProvider secondaryThresholdLineCases
+     *
+     * Decision table for the "secondary (indented) vs primary" branch at
+     * FlowResultRenderer:435, whose guard is
+     *   !isSuccess && exitCode !== null && exitCode !== 0
+     * The indented "↳ also exceeded" line is reserved for a REAL tool failure
+     * (non-zero exit) that ALSO breached the threshold. Every other threshold
+     * notice must be the standalone primary line. Asserting the presence of one
+     * line AND the absence of the other kills:
+     *   - L435 LogicalAnd `&&`→`||` (both operators): a success-with-nonzero-exit
+     *     or a failure-with-null-exit would wrongly take the secondary branch.
+     *   - L435 `!== 0`→`!== -1` (DecrementInteger): a failure with exitCode 0
+     *     would wrongly take the secondary branch.
+     *   - L437 ReturnRemoval: a real KO would emit BOTH the secondary and the
+     *     primary line (the absence assert catches the duplicate).
+     *
+     * @param bool     $success
+     * @param int|null $exitCode
+     */
+    public function secondary_threshold_line_only_for_real_ko_with_nonzero_exit(
+        bool $success,
+        ?int $exitCode,
+        bool $expectSecondary
+    ): void {
+        $job = $this->jobWithTimeThreshold($success, $exitCode, JobResult::THRESHOLD_WARNED, 12.0, 10, null);
+
+        $lines = $this->render(new FlowResult('qa', [$job], '1s'), 'text')->lines;
+
+        $secondary = "   <fg=yellow>↳ also exceeded time threshold (took 12.0s, warn-after 10s)</>";
+        $primary    = "<fg=yellow>⚠ Job 'slow' exceeded time threshold (took 12.0s, warn-after 10s)</>";
+
+        if ($expectSecondary) {
+            $this->assertContains($secondary, $lines, 'real KO must show the indented secondary line');
+            $this->assertNotContains($primary, $lines, 'real KO must NOT also show the primary line (L437 return)');
+        } else {
+            $this->assertContains($primary, $lines, 'non-(KO+nonzero) threshold must show the primary line');
+            $this->assertNotContains($secondary, $lines, 'only a real KO with nonzero exit gets the secondary line');
+        }
+    }
+
+    /**
+     * @return array<string, array{0: bool, 1: int|null, 2: bool}>
+     */
+    public function secondaryThresholdLineCases(): array
+    {
+        return [
+            // isSuccess, exitCode, expectSecondary
+            'real KO nonzero exit → secondary'        => [false, 1, true],
+            'failed but exit 0 → primary (kills !==-1)' => [false, 0, false],
+            'failed but null exit → primary (kills &&)' => [false, null, false],
+            'success + warned → primary'               => [true, 0, false],
+        ];
     }
 
     /** @test */

@@ -50,6 +50,27 @@ class PercentilesTest extends UnitTestCase
         $this->assertSame(10.0, $stats['max']);
     }
 
+    /**
+     * @test
+     * Pins the exact percentile ranks with a 100-value series, where a ±1 shift
+     * in the rank multiplier lands on a different element. On the 1..10 series
+     * the ceil() collapses ranks 49/50 and 95/96 onto the same index, so those
+     * off-by-one mutants survived; at count=100 they diverge:
+     *   - p50: ceil(0.50*100)=50 → index 49 → 50.0 (mutant rank 49 → 49.0)
+     *   - p95: ceil(0.95*100)=95 → index 94 → 95.0 (mutant rank 96 → 96.0)
+     */
+    public function nearest_rank_ranks_are_exact_on_a_hundred_value_series(): void
+    {
+        $values = array_map('floatval', range(1, 100));
+
+        $stats = Percentiles::compute($values);
+
+        $this->assertSame(1.0, $stats['min']);
+        $this->assertSame(50.0, $stats['p50']);
+        $this->assertSame(95.0, $stats['p95']);
+        $this->assertSame(100.0, $stats['max']);
+    }
+
     /** @test */
     public function percentiles_are_order_independent(): void
     {

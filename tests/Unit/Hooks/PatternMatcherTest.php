@@ -46,6 +46,29 @@ class PatternMatcherTest extends UnitTestCase
         $this->assertDoesNotMatchRegularExpression($regex, 'vendor/File.php');
     }
 
+    /**
+     * @test
+     * Exercises the `leftEndsSlash && !rightStartsSlash` branch (line 123) with
+     * a NON-EMPTY suffix — the only existing coverage of it uses `src/**` whose
+     * right side is empty, so the ordering and both operands are invisible.
+     * Kills L123 Concat `'.*' . $right`→`$right . '.*'` (a 'src/FooTest.php' would
+     * stop matching) and ConcatOperandRemoval dropping `$right` (a bare
+     * 'src/README.md' would start matching).
+     */
+    public function globToRegex_doublestar_before_suffix_without_trailing_slash()
+    {
+        $regex = $this->matcher->globToRegex('src/**Test.php');
+
+        // Correct semantics: anything under src/ whose path ends in Test.php.
+        $this->assertMatchesRegularExpression($regex, 'src/FooTest.php');
+        $this->assertMatchesRegularExpression($regex, 'src/a/b/BarTest.php');
+        // Suffix must be honoured (kills the operand-removal mutant).
+        $this->assertDoesNotMatchRegularExpression($regex, 'src/README.md');
+        // Suffix must stay anchored at the end (kills the reorder mutant, which
+        // would produce `src/Test.php.*` and match trailing garbage).
+        $this->assertDoesNotMatchRegularExpression($regex, 'src/Test.phpX');
+    }
+
     /** @test */
     public function globToRegex_doublestar_at_start()
     {

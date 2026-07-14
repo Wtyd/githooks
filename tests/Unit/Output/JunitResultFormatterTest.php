@@ -533,6 +533,56 @@ class JunitResultFormatterTest extends UnitTestCase
     }
 
     /**
+     * @test
+     * Kills the json_decode-failure guard mutants at line 94-95 (Identical
+     * `===`→`!==`, NotIdentical on json_last_error, and ReturnRemoval of
+     * `return $text`). The existing invalid-JSON test uses `{"broken": ` which
+     * has NO closing brace, so findJsonBounds returns null and the method exits
+     * early at line 88 — never reaching the decode guard. This fixture has valid
+     * BOUNDS (`{`…`}`) but invalid CONTENT between them, so the guard is the only
+     * thing standing between the input and a bogus `json_encode(null)` → "null".
+     */
+    public function pretty_print_returns_verbatim_when_bounds_contain_invalid_json(): void
+    {
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'prettyJsonIfApplicable');
+        $reflection->setAccessible(true);
+        $formatter = new JunitResultFormatter();
+
+        // Balanced braces so findJsonBounds returns [0, 10], but the span is not
+        // decodable JSON. The guard must return the input untouched; every mutant
+        // on it falls through and emits the literal string "null".
+        $malformed = '{"broken":}';
+        $this->assertSame($malformed, $reflection->invoke($formatter, $malformed));
+    }
+
+    /**
+     * @test
+     * Kills L92 IncrementInteger on `substr($text, $start, $end - $start + 1)`
+     * (`+1`→`+2`). The extra byte only changes behaviour when a NON-whitespace
+     * character immediately follows the closing brace: `+2` pulls it into the
+     * decoded span, json_decode then fails on the trailing garbage, and the
+     * whole text is returned verbatim (compact, no newline). The existing
+     * prologue/epilogue test uses an epilogue starting with "\n", which
+     * json_decode tolerates, so `+2` stayed invisible there.
+     */
+    public function pretty_print_span_excludes_the_character_after_the_closing_brace(): void
+    {
+        $reflection = new \ReflectionMethod(JunitResultFormatter::class, 'prettyJsonIfApplicable');
+        $reflection->setAccessible(true);
+        $formatter = new JunitResultFormatter();
+
+        // 'Z' sits right after '}' with no separator. Correct (+1): the span is
+        // exactly '{"a":1}', pretty-printed, and 'Z' is preserved as epilogue.
+        // Mutant (+2): span becomes '{"a":1}Z' → decode fails → verbatim, no newline.
+        $out = $reflection->invoke($formatter, '{"a":1}Z');
+
+        $this->assertStringContainsString("\n", $out);
+        $this->assertStringEndsWith('Z', $out);
+        $jsonEnd = strrpos($out, '}');
+        $this->assertSame(['a' => 1], json_decode(trim(substr($out, 0, $jsonEnd + 1)), true));
+    }
+
+    /**
      * JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES`). With `&` the combined
      * flag is 0 → json_encode produces a single-line, escaped output.
      *

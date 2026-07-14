@@ -216,6 +216,53 @@ class MemoryThresholdTest extends UnitTestCase
 
     /**
      * @test
+     * @dataProvider fromOverrideScenarios
+     *
+     * A CLI memory override (`githooks job --memory-warn-above / --memory-fail-above`)
+     * builds an EXTENDED-form threshold: it only thresholds the sampled peak and
+     * must never participate in the 2D scheduler reservation, so `isShortForm()`
+     * stays false and `getReserve()` stays null regardless of which flag(s) were
+     * given. Pins MemoryThreshold:98 (`shortForm=false` in fromOverride): the
+     * short-form flag on an override object is a documented invariant — nothing
+     * reads its reserve today, and this test guarantees a future wiring can't
+     * silently turn a CLI threshold into a slot reservation.
+     *
+     * @param int|null $warnAbove
+     * @param int|null $failAbove
+     */
+    public function from_override_builds_extended_form_that_never_reserves(
+        ?int $warnAbove,
+        ?int $failAbove
+    ): void {
+        $threshold = MemoryThreshold::fromOverride($warnAbove, $failAbove);
+
+        $this->assertNotNull($threshold);
+        $this->assertSame($warnAbove, $threshold->getWarnAbove());
+        $this->assertSame($failAbove, $threshold->getFailAbove());
+        $this->assertFalse($threshold->isShortForm());
+        $this->assertNull($threshold->getReserve());
+    }
+
+    /**
+     * @return array<string, array{0: int|null, 1: int|null}>
+     */
+    public function fromOverrideScenarios(): array
+    {
+        return [
+            'warn-above only'      => [1500, null],
+            'fail-above only'      => [null, 2500],
+            'both warn and fail'   => [1500, 2000],
+        ];
+    }
+
+    /** @test */
+    public function from_override_returns_null_when_no_flag_is_given(): void
+    {
+        $this->assertNull(MemoryThreshold::fromOverride(null, null));
+    }
+
+    /**
+     * @test
      * Kills MemoryThreshold:118 LessThan `<` -> `<=` on the suggestKey()
      * helper. The needle 'vain-above' is at exact distance 2 from BOTH
      * known keys, so iteration order decides the winner: original picks
