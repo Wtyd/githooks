@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\System\CiFeatures;
 
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
+use Symfony\Component\Process\Process;
 use Tests\Utils\TestCase\CiFeatureTestCase;
 
 /**
@@ -107,6 +109,10 @@ class MemoryBudgetRegressionTest extends CiFeatureTestCase
      */
     public function bug002_memory_warn_above_below_reserve_does_not_deadlock(): void
     {
+        if (PHP_OS_FAMILY === 'Windows') {
+            $this->markTestSkipped('Exercises the RSS-sampler admission path (memory reserve vs --memory-warn-above); Windows ships no sampler and is covered by the null-sampler test.');
+        }
+
         $this->configurationFileBuilder
             ->setV3GlobalOptions(['fail-fast' => false, 'processes' => 1])
             ->setV3Flows(['qa' => ['jobs' => ['heavy_reservation']]])
@@ -120,29 +126,28 @@ class MemoryBudgetRegressionTest extends CiFeatureTestCase
         $this->writeConfig();
 
         $entrypoint = $this->projectRoot . DIRECTORY_SEPARATOR . 'githooks';
-        $cmd = sprintf(
-            'timeout 30 %s %s flow qa --memory-warn-above=200 --format=json --config=%s 2>/dev/null',
-            escapeshellarg(PHP_BINARY),
-            escapeshellarg($entrypoint),
-            escapeshellarg($this->configPath)
+
+        // Deadlock sentinel: a regression of the clamp fix spins the
+        // executeParallel loop at 100% CPU forever. Symfony's process timeout
+        // throws ProcessTimedOutException (and kills the child) instead of
+        // hanging the whole PHPUnit run — a portable replacement for GNU
+        // `timeout`, which ships on neither macOS nor Windows. The array form
+        // avoids shell quoting, and stdout/stderr stay separated so getOutput()
+        // is clean JSON without needing a `2>/dev/null` redirection.
+        $process = new Process(
+            [PHP_BINARY, $entrypoint, 'flow', 'qa', '--memory-warn-above=200', '--format=json', '--config=' . $this->configPath],
+            $this->projectRoot
         );
+        $process->setTimeout(30);
 
         $start = microtime(true);
-        $output = shell_exec($cmd . '; echo "EXIT_CODE=$?"');
+        try {
+            $process->run();
+        } catch (ProcessTimedOutException $e) {
+            $this->fail('BUG-002 regression: the executeParallel loop deadlocked — the binary did not terminate within the 30s sentinel');
+        }
         $elapsed = microtime(true) - $start;
 
-        // shell_exec returns the combined stdout (with our marker on the last line).
-        if (!is_string($output) || preg_match('/EXIT_CODE=(\d+)/', $output, $m) !== 1) {
-            $this->fail('Could not extract exit code from binary output: ' . var_export($output, true));
-        }
-        $exitCode = (int) $m[1];
-        $jsonOutput = preg_replace('/EXIT_CODE=\d+\s*$/', '', $output);
-
-        $this->assertNotSame(
-            124,
-            $exitCode,
-            'BUG-002 regression: the executeParallel loop deadlocked — `timeout 30` killed the binary at the 30s sentinel'
-        );
         $this->assertLessThan(
             10.0,
             $elapsed,
@@ -150,8 +155,8 @@ class MemoryBudgetRegressionTest extends CiFeatureTestCase
                 . 'After the fix the binary terminates in <2s; >10s indicates the clamp is missing or partially regressed'
         );
 
-        $decoded = json_decode($jsonOutput, true);
-        $this->assertNotNull($decoded, 'Output is not valid JSON: ' . $jsonOutput);
+        $decoded = json_decode($process->getOutput(), true);
+        $this->assertNotNull($decoded, 'Output is not valid JSON: ' . $process->getOutput());
         $this->assertSame('qa', $decoded['flow']);
     }
 }
