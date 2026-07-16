@@ -233,19 +233,27 @@ class CheckConfigurationFileCommand extends Command
      */
     private function buildOptionsPayload(OptionsConfiguration $options): array
     {
+        $timeBudget = $options->getTimeBudget();
         $memoryBudget = $options->getMemoryBudget();
 
         return [
             'processes' => $options->getProcesses(),
             'failFast' => $options->isFailFast(),
+            'mainBranch' => $options->getMainBranch(),
+            'fastBranchFallback' => $options->getFastBranchFallback(),
             'executablePrefix' => $options->getExecutablePrefix(),
             'reports' => $options->getReports(),
+            'timeBudget' => $timeBudget === null ? null : [
+                'warnAfter' => $timeBudget->getWarnAfter(),
+                'failAfter' => $timeBudget->getFailAfter(),
+            ],
             'memoryBudget' => $memoryBudget === null ? null : [
                 'warnAbove' => $memoryBudget->getWarnAbove(),
                 'failAbove' => $memoryBudget->getFailAbove(),
             ],
             'allocator' => $options->getAllocator(),
             'stats' => $options->isStats(),
+            'historySize' => $options->getHistorySize(),
         ];
     }
 

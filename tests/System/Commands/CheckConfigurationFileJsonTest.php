@@ -59,6 +59,36 @@ class CheckConfigurationFileJsonTest extends SystemTestCase
         $this->assertArrayHasKey('options', $payload);
         $this->assertArrayHasKey('hooks', $payload);
         $this->assertArrayHasKey('flows', $payload);
+        // The `options` object exposes the full execution-option set with a stable
+        // shape — the two budgets are serialised symmetrically (null when unset),
+        // so a consumer never has to guess whether a key is simply absent.
+        foreach (
+            ['processes', 'failFast', 'mainBranch', 'fastBranchFallback', 'executablePrefix',
+                'reports', 'timeBudget', 'memoryBudget', 'allocator', 'stats', 'historySize'
+            ] as $key
+        ) {
+            $this->assertArrayHasKey($key, $payload['options'], "options must expose '$key'");
+        }
+        $this->assertNull($payload['options']['timeBudget']);
+        $this->assertNull($payload['options']['memoryBudget']);
+    }
+
+    /** @test The budgets serialise symmetrically as objects when both are configured */
+    public function it_serialises_both_budgets_as_objects_when_set()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'time-budget' => ['warn-after' => 10, 'fail-after' => 20],
+                'memory-budget' => ['warn-above' => 256, 'fail-above' => 512],
+            ])
+            ->buildInFileSystem();
+
+        $payload = $this->runJsonCommand("conf:check --format=json --config=$this->configPath");
+
+        $this->assertSame(['warnAfter' => 10, 'failAfter' => 20], $payload['options']['timeBudget']);
+        $this->assertArrayHasKey('warnAbove', $payload['options']['memoryBudget']);
+        $this->assertArrayHasKey('failAbove', $payload['options']['memoryBudget']);
     }
 
     /** @test AC-002 — errors are structured and the exit code matches text mode (1) */
