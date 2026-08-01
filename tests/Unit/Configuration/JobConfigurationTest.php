@@ -291,6 +291,103 @@ class JobConfigurationTest extends UnitTestCase
     }
 
     /**
+     * Factor table — key validation per `type`. `script` was the only supported
+     * type reaching no validator at all (its empty ARGUMENT_MAP short-circuits
+     * validateArguments), so a job with no `executable-path` built an empty
+     * command, passed conf:check as `ok` and was counted as a passing job while
+     * running nothing. Keys it does not understand (`script`, `re-stage`) were
+     * accepted in silence.
+     *
+     * | config                          | expected                                |
+     * |---------------------------------|-----------------------------------------|
+     * | no keys                         | error: requires 'executable-path'       |
+     * | executable-path                 | valid, no warnings                      |
+     * | executable-path + other-args    | valid, no warnings                      |
+     * | executable-path + script        | warning: unknown key 'script'           |
+     * | executable-path + re-stage      | warning: unknown key 're-stage'         |
+     * | executable-path + files         | error: CLI-only key                     |
+     * | executable-path + near-miss key | warning + did-you-mean suggestion       |
+     *
+     * @test
+     * @dataProvider scriptJobKeyCases
+     *
+     * @param array<string, mixed> $config
+     */
+    public function it_validates_the_keys_of_script_jobs(
+        array $config,
+        ?string $expectedError,
+        ?string $expectedWarning
+    ) {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('runner', ['type' => 'script'] + $config, $this->registry, $result, new JobRegistry());
+
+        if ($expectedError !== null) {
+            $this->assertTrue($result->hasErrors(), 'Expected a hard error for this config');
+            $this->assertStringContainsString($expectedError, implode(' | ', $result->getErrors()));
+            return;
+        }
+
+        $this->assertFalse($result->hasErrors(), 'Unexpected error: ' . implode(' | ', $result->getErrors()));
+        $this->assertNotNull($job);
+
+        if ($expectedWarning === null) {
+            $this->assertEmpty($result->getWarnings(), 'Unexpected warning: ' . implode(' | ', $result->getWarnings()));
+            return;
+        }
+        $this->assertStringContainsString($expectedWarning, implode(' | ', $result->getWarnings()));
+    }
+
+    /** @return array<string, array{array<string, mixed>, ?string, ?string}> */
+    public function scriptJobKeyCases(): array
+    {
+        return [
+            'no keys at all' => [
+                [], "script jobs require an 'executable-path' key.", null,
+            ],
+            'executable-path only' => [
+                ['executable-path' => './run-tests'], null, null,
+            ],
+            'executable-path + other-arguments' => [
+                ['executable-path' => './run-tests', 'other-arguments' => '--shard=1'], null, null,
+            ],
+            'script key is not understood by this type' => [
+                ['executable-path' => './run-tests', 'script' => 'echo hi'],
+                null,
+                "unknown key 'script' for type 'script'.",
+            ],
+            're-stage belongs to custom jobs' => [
+                ['executable-path' => './run-tests', 're-stage' => true],
+                null,
+                "unknown key 're-stage' for type 'script'.",
+            ],
+            'CLI-only key is a hard error' => [
+                ['executable-path' => './run-tests', 'files' => ['src']],
+                "key 'files' is CLI-only",
+                null,
+            ],
+            'near-miss key gets a suggestion' => [
+                ['executable-path' => './run-tests', 'other-argument' => '--x'],
+                null,
+                "Did you mean 'other-arguments'?",
+            ],
+        ];
+    }
+
+    /** @test A CLI-only key on a custom job is the same misconfiguration as on any other type */
+    public function it_errors_when_a_custom_job_declares_a_cli_only_key()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('formateo', [
+            'type'   => 'custom',
+            'script' => 'vendor/bin/pint',
+            'files'  => ['src'],
+        ], $this->registry, $result);
+
+        $this->assertTrue($result->hasErrors());
+        $this->assertStringContainsString("key 'files' is CLI-only", implode(' | ', $result->getErrors()));
+    }
+
+    /**
      * @test
      * Anchors CON-007 of spec-design-files-flag.md (revised by BUG-9):
      * declaring `files`, `files-from` or `exclude-pattern` as a static job

@@ -109,6 +109,14 @@ class JobConfiguration
             return null;
         }
 
+        // A `script` job is its executable plus arguments — with neither key it
+        // builds an empty command that exits 0, so the job would be reported as
+        // passing while running nothing.
+        if ($type === 'script' && !array_key_exists('executable-path', $raw)) {
+            $result->addError("Job '$name': script jobs require an 'executable-path' key.");
+            return null;
+        }
+
         $config = $raw;
         unset($config['type']);
 
@@ -119,8 +127,8 @@ class JobConfiguration
             }
         }
 
-        if ($type === 'custom') {
-            self::validateCustomJobKeys($name, $config, $result);
+        if ($type === 'custom' || $type === 'script') {
+            self::validateMapLessJobKeys($name, $type, $config, $result);
         } elseif ($type === 'commit-msg') {
             self::validateCommitMsgKeys($name, $config, $result);
         } elseif ($jobRegistry !== null) {
@@ -593,20 +601,29 @@ class JobConfiguration
     }
 
     /**
-     * Validate keys for custom jobs (no ARGUMENT_MAP, only known keys).
+     * Validate keys for the two types with no ARGUMENT_MAP — `custom` and
+     * `script`. validateArguments() short-circuits on an empty map, so these
+     * types need their own known-key list; routing both through
+     * {@see reportUnknownAndCliOnlyJobKeys()} keeps a single implementation of
+     * the unknown-key / CLI-only distinction for every type.
+     *
+     * `script` is the executable-plus-arguments type: it understands neither
+     * `script` (that is `custom`) nor `re-stage` (only the fixers re-stage).
      *
      * @param array<string, mixed> $config
      */
-    private static function validateCustomJobKeys(string $name, array $config, ValidationResult $result): void
-    {
-        $knownKeys = ['script', 'executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 're-stage', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
+    private static function validateMapLessJobKeys(
+        string $name,
+        string $type,
+        array $config,
+        ValidationResult $result
+    ): void {
+        $sharedKeys = ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
+        $knownKeys = $type === 'custom'
+            ? array_merge(['script', 're-stage'], $sharedKeys)
+            : $sharedKeys;
 
-        foreach (array_keys($config) as $key) {
-            if (!in_array($key, $knownKeys, true)) {
-                $suggestion = KeySuggestion::suggestionFor((string) $key, $knownKeys);
-                $result->addWarning("Job '$name': unknown key '$key' for type 'custom'.{$suggestion}");
-            }
-        }
+        self::reportUnknownAndCliOnlyJobKeys($name, $type, $config, $knownKeys, $result);
     }
 
     /**
