@@ -321,17 +321,31 @@ class ConfigurationParser
             return $jobs;
         }
 
+        // Checked against the raw input: resolveJobInheritance() drops non-array
+        // entries, so by the time inheritance is resolved the job is gone and the
+        // malformed declaration would go unreported — leaving a job that never
+        // runs inside a configuration reported as valid.
+        foreach ($jobsRaw as $jobName => $jobData) {
+            if (!is_array($jobData)) {
+                $message = "Job '$jobName' must be an array.";
+                $result->addError($message);
+                $result->addRejectedJob((string) $jobName, [$message]);
+            }
+        }
+
         $jobsRaw = $this->resolveJobInheritance($jobsRaw, $result);
 
         foreach ($jobsRaw as $jobName => $jobData) {
-            if (!is_array($jobData)) {
-                $result->addError("Job '$jobName' must be an array.");
-                continue;
-            }
+            // The errors JobConfiguration adds while rejecting a job are the
+            // reason it was rejected; capturing the delta keeps them tied to the
+            // job so conf:check can report it instead of dropping it silently.
+            $errorsBefore = count($result->getErrors());
             $job = JobConfiguration::fromArray($jobName, $jobData, $this->toolRegistry, $result, $this->jobRegistry);
             if ($job !== null) {
                 $jobs[$jobName] = $job;
+                continue;
             }
+            $result->addRejectedJob((string) $jobName, array_slice($result->getErrors(), $errorsBefore));
         }
         return $jobs;
     }

@@ -172,10 +172,37 @@ class ConfigurationChecker
         if (file_exists($executable)) {
             return true;
         }
+
+        // A declared executable can be a command line rather than a filename —
+        // `php artisan` (Pest's artisan runner), `sh -c`, `npm run`. Only the
+        // first token is the binary; passing the whole string to `which` never
+        // resolves, which reported every such job as broken. The remaining
+        // tokens are the tool's own arguments and are not ours to validate:
+        // guessing which of them is a file produces false positives
+        // (`npm run lint`), so resolution stops at the first token.
+        $binary = $this->firstToken($executable);
+        if ($binary === '') {
+            return false;
+        }
+        if ($binary !== $executable && file_exists($binary)) {
+            return true;
+        }
+
         $output = [];
         $code = 0;
-        exec('which ' . escapeshellarg($executable) . ' 2>/dev/null', $output, $code);
+        exec('which ' . escapeshellarg($binary) . ' 2>/dev/null', $output, $code);
         return $code === 0;
+    }
+
+    /**
+     * First whitespace-separated token of a declared executable, or the empty
+     * string when there is none.
+     */
+    private function firstToken(string $executable): string
+    {
+        $tokens = preg_split('/\s+/', trim($executable), -1, PREG_SPLIT_NO_EMPTY);
+
+        return is_array($tokens) && $tokens !== [] ? $tokens[0] : '';
     }
 
     /**

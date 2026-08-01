@@ -262,6 +262,61 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             );
     }
 
+    /**
+     * The text table hardcoded 7 rows, so four declared options were invisible
+     * in the very command whose job is to show your effective configuration —
+     * including a `time-budget` that can fail the flow. The JSON payload
+     * exposes the full set; the table must not disagree with it.
+     *
+     * @test
+     */
+    function shows_every_declared_option_in_the_table()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions([
+                'processes' => 3,
+                'fail-fast' => true,
+                'main-branch' => 'master',
+                'fast-branch-fallback' => 'fast',
+                'time-budget' => ['warn-after' => 5, 'fail-after' => 60],
+                'history-size' => 4,
+            ])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsTable(
+                ['Option', 'Value'],
+                [
+                    ['processes', '3'],
+                    ['fail-fast', 'true'],
+                    ['main-branch', 'master'],
+                    ['fast-branch-fallback', 'fast'],
+                    ['time-budget.warn-after', '5s'],
+                    ['time-budget.fail-after', '60s'],
+                    ['history-size', '4'],
+                ]
+            );
+    }
+
+    /** @test Options left undeclared stay out of the table — it reports the config, not the defaults */
+    function omits_undeclared_optional_rows_from_the_table()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3GlobalOptions(['processes' => 1, 'fail-fast' => false])
+            ->buildInFileSystem();
+
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("conf:check --config=$configPath")
+            ->assertExitCode(0)
+            ->expectsTable(['Option', 'Value'], [['processes', '1'], ['fail-fast', 'false']]);
+    }
+
     /** @test */
     function check_does_not_crash_when_phpmd_rules_file_path_is_missing()
     {

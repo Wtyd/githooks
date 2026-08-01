@@ -69,6 +69,41 @@ class ConfigurationCheckerTest extends UnitTestCase
         $this->assertSame("executable '/nonexistent/binary' not found", $warning);
     }
 
+    /**
+     * A multi-word executable (`php artisan`, the Pest artisan runner) is a
+     * command line, not a filename: `which 'php artisan'` can never resolve it,
+     * so the whole string was reported missing on every machine. Only the first
+     * token is a binary; the rest are the tool's own arguments.
+     *
+     * @test
+     * @dataProvider multiWordExecutables
+     */
+    public function validate_executable_only_resolves_the_first_token(string $executable, bool $expectsWarning): void
+    {
+        $warning = $this->checker->validateExecutable($executable);
+
+        if ($expectsWarning) {
+            $this->assertSame("executable '$executable' not found", $warning);
+            return;
+        }
+        $this->assertNull($warning, "'$executable' should resolve through its first token");
+    }
+
+    /** @return array<string, array{string, bool}> */
+    public function multiWordExecutables(): array
+    {
+        $missing = 'definitely-not-a-real-binary-4f2a';
+
+        return [
+            'single token on PATH'          => ['sh', false],
+            'single token missing'          => [$missing, true],
+            'interpreter + script'          => ['sh -c', false],
+            'interpreter + script + subcmd' => ['php artisan test', false],
+            'surrounding whitespace'        => ['  sh   -c  ', false],
+            'missing interpreter'           => ["$missing artisan", true],
+        ];
+    }
+
     // ───────── validatePaths ─────────
 
     /** @test */

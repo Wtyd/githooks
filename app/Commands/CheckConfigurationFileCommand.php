@@ -218,7 +218,7 @@ class CheckConfigurationFileCommand extends Command
             $this->buildOptionsPayload($options),
             $this->buildHooksPayload($config->getHooks()),
             $flowsPayload,
-            $this->buildJobsPayload($config->getJobs()),
+            $this->buildJobsPayload($config->getJobs(), $config->getValidation()->getRejectedJobs()),
             [
                 'errors' => array_values($errors),
                 'warnings' => array_values($warnings),
@@ -242,7 +242,9 @@ class CheckConfigurationFileCommand extends Command
             'mainBranch' => $options->getMainBranch(),
             'fastBranchFallback' => $options->getFastBranchFallback(),
             'executablePrefix' => $options->getExecutablePrefix(),
-            'reports' => $options->getReports(),
+            // Cast so the shape does not depend on the content: an empty PHP array
+            // would encode as `[]` and break consumers unmarshalling a map.
+            'reports' => (object) $options->getReports(),
             'timeBudget' => $timeBudget === null ? null : [
                 'warnAfter' => $timeBudget->getWarnAfter(),
                 'failAfter' => $timeBudget->getFailAfter(),
@@ -286,11 +288,25 @@ class CheckConfigurationFileCommand extends Command
 
     /**
      * @param array<string, \Wtyd\GitHooks\Configuration\JobConfiguration> $jobs
+     * @param array<string, string[]> $rejectedJobs jobs the parser refused to build
      * @return array<int, array<string, mixed>>
      */
-    private function buildJobsPayload(array $jobs): array
+    private function buildJobsPayload(array $jobs, array $rejectedJobs = []): array
     {
         $payload = [];
+
+        // A rejected job never became a JobConfiguration, so it has no command to
+        // report — but it is the most broken job in the file and must not be the
+        // only one missing from the list a consumer iterates.
+        foreach ($rejectedJobs as $name => $errors) {
+            $payload[] = [
+                'name' => $name,
+                'command' => '',
+                'status' => 'error',
+                'issues' => array_values($errors),
+            ];
+        }
+
         foreach ($jobs as $name => $job) {
             try {
                 $jobInstance = $this->jobRegistry->create($job);
@@ -342,12 +358,27 @@ class CheckConfigurationFileCommand extends Command
             ['processes', (string) $options->getProcesses()],
             ['fail-fast', $options->isFailFast() ? 'true' : 'false'],
         ];
+        if ($options->hasKey('main-branch') && $options->getMainBranch() !== null) {
+            $optionRows[] = ['main-branch', $options->getMainBranch()];
+        }
+        if ($options->hasKey('fast-branch-fallback')) {
+            $optionRows[] = ['fast-branch-fallback', $options->getFastBranchFallback()];
+        }
         if ($options->getExecutablePrefix() !== '') {
             $optionRows[] = ['executable-prefix', $options->getExecutablePrefix()];
         }
         if (!empty($options->getReports())) {
             foreach ($options->getReports() as $format => $path) {
                 $optionRows[] = ["reports.$format", $path];
+            }
+        }
+        $timeBudget = $options->getTimeBudget();
+        if ($timeBudget !== null) {
+            if ($timeBudget->getWarnAfter() !== null) {
+                $optionRows[] = ['time-budget.warn-after', $timeBudget->getWarnAfter() . 's'];
+            }
+            if ($timeBudget->getFailAfter() !== null) {
+                $optionRows[] = ['time-budget.fail-after', $timeBudget->getFailAfter() . 's'];
             }
         }
         $memoryBudget = $options->getMemoryBudget();
@@ -364,6 +395,9 @@ class CheckConfigurationFileCommand extends Command
         }
         if ($options->hasKey('stats')) {
             $optionRows[] = ['stats', $options->isStats() ? 'true' : 'false'];
+        }
+        if ($options->hasKey('history-size')) {
+            $optionRows[] = ['history-size', (string) $options->getHistorySize()];
         }
         $this->table(['Option', 'Value'], $optionRows);
 
@@ -434,8 +468,16 @@ class CheckConfigurationFileCommand extends Command
         // Jobs table with command and validation status
         $hasValidationWarnings = false;
         $jobs = $config->getJobs();
-        if (!empty($jobs)) {
+        $rejectedJobs = $config->getValidation()->getRejectedJobs();
+        if (!empty($jobs) || !empty($rejectedJobs)) {
             $jobRows = [];
+            // Jobs the parser refused to build have no command; listing them
+            // keeps the table in step with the JSON payload instead of hiding
+            // the file's worst offenders behind the error block alone.
+            foreach ($rejectedJobs as $name => $errors) {
+                $jobRows[] = [$name, '—', '<fg=red>' . implode('; ', $errors) . '</>'];
+                $hasValidationWarnings = true;
+            }
             foreach ($jobs as $name => $job) {
                 try {
                     $jobInstance = $this->jobRegistry->create($job);

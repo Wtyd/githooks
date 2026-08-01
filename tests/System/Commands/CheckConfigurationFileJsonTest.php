@@ -91,6 +91,59 @@ class CheckConfigurationFileJsonTest extends SystemTestCase
         $this->assertArrayHasKey('failAbove', $payload['options']['memoryBudget']);
     }
 
+    /**
+     * `reports` is a map of format => path. An empty PHP array encodes as `[]`,
+     * so a consumer that unmarshals the field into a map breaks on exactly the
+     * configs that declare no reports. The shape must not depend on the content.
+     *
+     * @test
+     */
+    public function it_serialises_an_empty_reports_map_as_an_object()
+    {
+        $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem();
+
+        ob_start();
+        $this->artisan("conf:check --format=json --config=$this->configPath")->run();
+        $raw = trim((string) ob_get_clean());
+
+        $this->assertStringContainsString('"reports": {}', $raw);
+        $this->assertStringNotContainsString('"reports": []', $raw);
+    }
+
+    /**
+     * A job the parser rejects is the most broken entry in the file, yet it was
+     * the only one missing from `jobs[]` — so the documented recipe
+     * `jq '.jobs[] | select(.status != "ok")'` reported nothing wrong with it.
+     *
+     * @test
+     */
+    public function it_lists_rejected_jobs_with_error_status()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Jobs([
+                'good'     => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+                'bad_type' => ['type' => 'inventado', 'paths' => ['src']],
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['good', 'bad_type']]])
+            ->buildInFileSystem();
+
+        $payload = $this->runJsonCommand("conf:check --format=json --config=$this->configPath");
+
+        $this->assertSame(1, $this->lastExit);
+        $this->assertFalse($payload['valid']);
+
+        $byName = [];
+        foreach ($payload['jobs'] as $job) {
+            $byName[$job['name']] = $job;
+        }
+
+        $this->assertArrayHasKey('bad_type', $byName, 'A rejected job must still be listed in jobs[]');
+        $this->assertSame('error', $byName['bad_type']['status']);
+        $this->assertStringContainsString('is not a supported tool', implode(' ', $byName['bad_type']['issues']));
+        $this->assertSame('ok', $byName['good']['status']);
+    }
+
     /** @test AC-002 — errors are structured and the exit code matches text mode (1) */
     public function it_reports_errors_structured_and_exits_nonzero()
     {

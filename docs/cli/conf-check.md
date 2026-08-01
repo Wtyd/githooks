@@ -65,7 +65,7 @@ mode).
   "valid": true,
   "legacy": false,
   "file": { "path": "githooks.php", "localPath": null },
-  "options": { "processes": 8, "failFast": false, "...": "..." },
+  "options": { "processes": 8, "failFast": false, "timeBudget": null, "memoryBudget": null, "...": "..." },
   "hooks": [ { "event": "pre-commit", "targets": [ { "target": "qa", "onlyOn": [], "excludeOn": [], "onlyFiles": [], "excludeFiles": [] } ] } ],
   "flows": [ { "name": "qa", "meta": false, "jobs": ["phpstan", "phpcs"], "flows": [] } ],
   "jobs": [ { "name": "phpstan", "command": "…", "status": "ok", "issues": [] } ],
@@ -75,8 +75,24 @@ mode).
 }
 ```
 
-A legacy (v2) configuration is reported as `{"version":1,"valid":…,"legacy":true,…}`
-with a `hint` to run [`conf:migrate`](conf-migrate.md) instead of the v3 blocks.
+The `options` object always carries the **full execution-option set** with a
+stable shape — `processes`, `failFast`, `mainBranch`, `fastBranchFallback`,
+`executablePrefix`, `reports`, `timeBudget`, `memoryBudget`, `allocator`,
+`stats`, `historySize`. The two budgets are serialised **symmetrically**: `null`
+when unset, or an object (`timeBudget: {warnAfter, failAfter}`,
+`memoryBudget: {warnAbove, failAbove}`) when declared — so a consumer never has
+to guess whether a key is simply absent. `reports` is always an object, `{}`
+when no report is configured.
+
+Every job declared in the file appears in `jobs[]`, including the ones the
+parser rejected: those carry `"status": "error"`, an empty `command` and the
+rejection reasons in `issues`, so `jobs[] | select(.status != "ok")` never
+misses the most broken entries.
+
+A legacy (v2) configuration is reported as `{"version":1,"valid":…,"legacy":true,…}`:
+the v3 blocks (`options`, `hooks`, `flows`, `jobs`) are **omitted** and a top-level
+`hint` to run [`conf:migrate`](conf-migrate.md) is added instead. Branch on `legacy`
+before reading those blocks.
 
 ## Examples
 

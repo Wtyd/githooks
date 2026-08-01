@@ -133,6 +133,66 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->assertStringContainsString('on: main', $this->getActualOutput());
     }
 
+    // ─── 3.7 · script-type validation and the complete options table ──
+
+    /**
+     * 3.7 — a `script` job with no `executable-path` builds an empty command
+     * that exits 0, so the flow counted it as passing while running nothing.
+     * The type reached no key validator at all (empty ARGUMENT_MAP), which also
+     * let it silently accept keys it ignores.
+     *
+     * @test
+     */
+    function conf_check_rejects_a_script_job_without_executable_path()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['runner']]])
+            ->setV3Jobs(['runner' => ['type' => 'script', 'script' => 'echo hi']]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString(
+            "script jobs require an 'executable-path' key",
+            $this->getActualOutput()
+        );
+    }
+
+    /**
+     * 3.7 — the options table hardcoded seven rows, hiding four declared
+     * options — among them a `time-budget` that can fail the flow — from the
+     * command whose purpose is to show the effective configuration.
+     *
+     * @test
+     */
+    function conf_check_table_lists_every_declared_option()
+    {
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3GlobalOptions([
+                'processes'            => 3,
+                'main-branch'          => 'master',
+                'fast-branch-fallback' => 'fast',
+                'time-budget'          => ['warn-after' => 5, 'fail-after' => 60],
+                'history-size'         => 4,
+            ])
+            ->setV3Flows(['qa' => ['jobs' => ['noop']]])
+            ->setV3Jobs(['noop' => ['type' => 'custom', 'script' => 'true']]);
+
+        $configPath = self::TESTS_PATH . '/githooks.php';
+        file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        $output = $this->getActualOutput();
+
+        $this->assertSame(0, $exitCode);
+        foreach (['main-branch', 'fast-branch-fallback', 'time-budget.warn-after', 'time-budget.fail-after', 'history-size'] as $row) {
+            $this->assertStringContainsString($row, $output, "The options table must show '$row'");
+        }
+    }
+
     // ─── 3.2 · command rendering / cores conflict warning ─────────────
 
     /**

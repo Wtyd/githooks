@@ -44,6 +44,59 @@ class ConfigurationParserTest extends UnitTestCase
         ]));
     }
 
+    /**
+     * A job the parser refuses to build used to vanish without trace: it was
+     * absent from getJobs() and only present as a free-text error string, so
+     * `conf:check` could not list it among the jobs it reports on and the
+     * documented `status: "error"` was unreachable. A non-array declaration was
+     * worse still — dropped during inheritance resolution with no error at all.
+     *
+     * @test
+     */
+    public function it_records_the_jobs_it_rejects_with_their_errors()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => ['qa' => ['jobs' => ['good', 'bad_type', 'not_an_array']]],
+    'jobs' => [
+        'good'         => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12'],
+        'bad_type'     => ['type' => 'inventado', 'paths' => ['src']],
+        'not_an_array' => 'nope',
+    ],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $result = (new ConfigurationParser($this->registry, $this->fixturesPath))->parse();
+        $rejected = $result->getValidation()->getRejectedJobs();
+
+        $rejectedNames = array_keys($rejected);
+        sort($rejectedNames);
+
+        $this->assertSame(['good'], array_keys($result->getJobs()));
+        $this->assertSame(['bad_type', 'not_an_array'], $rejectedNames);
+        $this->assertStringContainsString("type 'inventado' is not a supported tool", $rejected['bad_type'][0]);
+        $this->assertStringContainsString('must be an array', $rejected['not_an_array'][0]);
+    }
+
+    /** @test A config whose jobs all parse records no rejections */
+    public function it_records_no_rejected_jobs_for_a_valid_config()
+    {
+        $config = <<<'PHP'
+<?php
+return [
+    'flows' => ['qa' => ['jobs' => ['good']]],
+    'jobs' => ['good' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12']],
+];
+PHP;
+        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+
+        $result = (new ConfigurationParser($this->registry, $this->fixturesPath))->parse();
+
+        $this->assertSame([], $result->getValidation()->getRejectedJobs());
+    }
+
     /** @test */
     public function it_parses_a_complete_v3_config()
     {
