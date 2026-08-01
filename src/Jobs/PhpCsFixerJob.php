@@ -31,6 +31,11 @@ class PhpCsFixerJob extends JobAbstract
         return 'fix';
     }
 
+    public function mayApplyFixes(): bool
+    {
+        return empty($this->args['dry-run']);
+    }
+
     /**
      * In non-dry-run mode, exit code 0 means the tool ran successfully and may
      * have applied fixes. Re-staging is safe (idempotent).

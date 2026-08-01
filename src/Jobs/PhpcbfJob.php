@@ -21,6 +21,11 @@ class PhpcbfJob extends PhpcsJob
         return 'phpcbf';
     }
 
+    public function mayApplyFixes(): bool
+    {
+        return true;
+    }
+
     /**
      * phpcbf exit code 1 means fixes were applied.
      */

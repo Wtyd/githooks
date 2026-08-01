@@ -41,6 +41,15 @@ class FlowExecutor
 
     private ?GitStagerInterface $gitStager;
 
+    /**
+     * Fingerprints of the staged files as they were before any job started, or
+     * null when no job in the flow can rewrite files. Scopes the re-stage to
+     * what the run actually changed.
+     *
+     * @var array<string, string>|null
+     */
+    private ?array $stagedBaseline = null;
+
     private HumanIssueFormatter $humanFormatter;
 
     private bool $structuredFormat = false;
@@ -116,6 +125,7 @@ class FlowExecutor
     {
         $start = $this->now();
         $this->memoryHandler = null;
+        $this->stagedBaseline = null;
         $coresBudget = $plan->getOptions()->getProcesses();
         $maxProcesses = $coresBudget;
         $failFast = $plan->getOptions()->isFailFast();
@@ -126,6 +136,8 @@ class FlowExecutor
         foreach ($jobs as $job) {
             $this->propagateContext($job, $context);
         }
+
+        $this->captureStagedBaseline($jobs, $dryRun);
 
         if ($this->structuredFormat) {
             foreach ($jobs as $job) {
@@ -316,6 +328,33 @@ class FlowExecutor
 
         $this->fillSequentialAllocations($jobs, $maxProcesses);
         return $maxProcesses;
+    }
+
+    /**
+     * Fingerprint the index before the first job starts, so a fixer's changes
+     * can be told apart from edits the author already had in the working tree.
+     *
+     * One baseline per run rather than one per job: it predates every job, so
+     * pre-existing unstaged work is excluded whatever the concurrency, and the
+     * parallel pool (which knows nothing about the stager) stays untouched.
+     * Skipped when no job can rewrite files — hashing the index would be pure
+     * cost — and in dry-run, where nothing is executed.
+     *
+     * @param JobAbstract[] $jobs
+     * @SuppressWarnings(PHPMD.BooleanArgumentFlag) dry-run is the caller's mode toggle, not a branch selector
+     */
+    private function captureStagedBaseline(array $jobs, bool $dryRun): void
+    {
+        if ($dryRun || $this->gitStager === null) {
+            return;
+        }
+
+        foreach ($jobs as $job) {
+            if ($job->mayApplyFixes()) {
+                $this->stagedBaseline = $this->gitStager->snapshotStagedFiles();
+                return;
+            }
+        }
     }
 
     /**
@@ -1057,9 +1096,11 @@ class FlowExecutor
             $success = true;
         }
 
-        // Re-stage fixed files so the commit includes the auto-fixes (e.g. phpcbf)
+        // Re-stage fixed files so the commit includes the auto-fixes (e.g. phpcbf).
+        // Only the files this run rewrote: re-staging the whole index would also
+        // commit edits the author deliberately left unstaged.
         if ($fixApplied && $this->gitStager !== null) {
-            $this->gitStager->stageTrackedFiles();
+            $this->gitStager->stageModifiedSince($this->stagedBaseline ?? []);
         }
 
         // Skip threshold for empty-input-tolerated jobs: the tool didn't do real

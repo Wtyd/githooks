@@ -66,7 +66,7 @@ Set `re-stage: true` so a successful run (exit code **0**) is treated as a fix a
 
 - Only a **zero exit code** re-stages. A non-zero exit means the tool failed: nothing is re-staged and the job fails (unless `ignore-errors-on-exit`). `re-stage` never turns a failure into a success.
 - Opt-in: without `re-stage` (or with `re-stage: false`) a `custom` job never re-stages — the right default for linters/checkers.
-- Use it only with **fixers**. Re-staging runs `git add` over the whole index, so it also captures unrelated working-tree edits to files that were already staged (the same behaviour as the native fixer types).
+- Use it only with **fixers**. Re-staging covers the staged files **the job rewrote while it ran** — files it never touched keep whatever you deliberately left unstaged (the same behaviour as the native fixer types). Note that `git add` cannot stage part of a file: if the tool rewrites a file that *also* carried unstaged edits of yours, those edits are staged along with the fix.
 
 ## Keywords
 

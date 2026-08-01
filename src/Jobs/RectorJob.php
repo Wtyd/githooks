@@ -28,6 +28,11 @@ class RectorJob extends JobAbstract
         return 'process';
     }
 
+    public function mayApplyFixes(): bool
+    {
+        return empty($this->args['dry-run']);
+    }
+
     /**
      * In non-dry-run mode, exit code 0 means the tool ran successfully and may
      * have applied refactorings. Re-staging is safe (idempotent).

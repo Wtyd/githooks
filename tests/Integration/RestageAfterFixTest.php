@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration;
 
 use Tests\Utils\TestCase\SystemTestCase;
+use Tests\Utils\Traits\GitSandboxTrait;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
@@ -15,85 +16,126 @@ use Wtyd\GitHooks\Utils\GitStager;
 
 /**
  * Verifies that when a fix-applying job (phpcbf) modifies staged files,
- * those changes are automatically re-staged so the commit includes the fixes.
+ * those changes are automatically re-staged so the commit includes the fixes —
+ * and that files the job never touched keep whatever the author left unstaged.
+ *
+ * Runs against a sandboxed git repo in /tmp (GitSandboxTrait). It previously
+ * ran `git reset --hard HEAD` against the project's own repository in setUp and
+ * tearDown, which destroyed any uncommitted work in the checkout whenever the
+ * git group was executed.
  *
  * @group git
  */
 class RestageAfterFixTest extends SystemTestCase
 {
-    protected static $gitFilesPathTest = __DIR__ . '/../../' . SystemTestCase::TESTS_PATH . '/gitTests';
+    use GitSandboxTrait;
 
-    /** @var string */
-    protected $headBeforeTest;
+    /** @var string Absolute path inside the sandbox. */
+    private $gitFilesPathTest;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        shell_exec('git reset --hard HEAD 2>/dev/null');
-        shell_exec('git config user.email "test@test.com" 2>/dev/null');
-        shell_exec('git config user.name "Test" 2>/dev/null');
+        $this->setUpGitSandbox();
 
-        mkdir(self::$gitFilesPathTest, 0777, true);
-
-        $this->headBeforeTest = trim(shell_exec('git rev-parse HEAD'));
+        $this->gitFilesPathTest = $this->sandboxDir
+            . DIRECTORY_SEPARATOR
+            . SystemTestCase::TESTS_PATH
+            . DIRECTORY_SEPARATOR
+            . 'gitTests';
+        mkdir($this->gitFilesPathTest, 0755, true);
     }
 
     protected function tearDown(): void
     {
-        $currentHead = trim(shell_exec('git rev-parse HEAD'));
-        if ($currentHead !== $this->headBeforeTest) {
-            shell_exec('git reset --hard ' . $this->headBeforeTest);
-        } else {
-            shell_exec('git reset --hard HEAD 2>/dev/null');
-        }
+        putenv('PHPCBF_FAKE_TARGET');
+
+        $this->tearDownGitSandbox();
 
         parent::tearDown();
+    }
+
+    /**
+     * phpcbf simulator: exits 1 (= fixes applied) and rewrites the file named by
+     * PHPCBF_FAKE_TARGET, so the change happens *while the job runs* — which is
+     * what the re-stage scope is computed from.
+     */
+    private function phpcbfJob(string $target): PhpcbfJob
+    {
+        putenv('PHPCBF_FAKE_TARGET=' . $target);
+
+        return new PhpcbfJob(new JobConfiguration('phpcbf_test', 'phpcbf', [
+            'executable-path' => __DIR__ . '/../Fixtures/scripts/phpcbf-fake-fix.sh',
+        ]));
+    }
+
+    private function execute(PhpcbfJob $job)
+    {
+        $executor = new FlowExecutor(new NullOutputHandler(), new GitStager());
+
+        return $executor->execute(new FlowPlan('test', [$job], new OptionsConfiguration()));
     }
 
     /** @test */
     function it_restages_files_modified_by_a_fix_job()
     {
-        // 1. Create a PHP file with bad formatting, force-stage it (testsDir is in .gitignore)
-        $filePath = self::$gitFilesPathTest . '/Fixable.php';
-        $badCode = "<?php\nclass Fixable { public function a(){} }\n";
-        file_put_contents($filePath, $badCode);
+        $filePath = $this->gitFilesPathTest . '/Fixable.php';
+        file_put_contents($filePath, "<?php\nclass Fixable { public function a(){} }\n");
         shell_exec('git add -f ' . escapeshellarg($filePath));
 
-        // 2. Verify: file is staged with bad code
-        $stagedBefore = shell_exec('git diff --cached --name-only') ?? '';
-        $this->assertStringContainsString('Fixable.php', $stagedBefore, 'File should be staged');
+        $this->assertStringContainsString(
+            'Fixable.php',
+            (string) shell_exec('git diff --cached --name-only'),
+            'File should be staged'
+        );
 
-        // 3. Simulate phpcbf fixing the file on disk (this is what happens during pre-commit:
-        //    the file is staged with bad code, phpcbf runs and fixes the working tree copy)
-        $fixedCode = "<?php\n\nclass Fixable\n{\n    public function a()\n    {\n    }\n}\n";
-        file_put_contents($filePath, $fixedCode);
+        $result = $this->execute($this->phpcbfJob($filePath));
 
-        // 4. Verify: the fix is NOT staged yet (working tree differs from index)
-        $unstagedBefore = trim(shell_exec('git diff --name-only') ?? '');
-        $this->assertNotEmpty($unstagedBefore, 'Fixed file should appear as unstaged change');
-
-        // 5. Execute FlowExecutor with GitStager — phpcbf job that exits 1 (= fix applied).
-        //    The fake script ignores any args the executor may inject (e.g. --parallel=N
-        //    from applyThreadLimit) so the test stays decoupled from phpcs/phpcbf flag evolution.
-        $executor = new FlowExecutor(new NullOutputHandler(), new GitStager());
-        $job = new PhpcbfJob(new JobConfiguration('phpcbf_test', 'phpcbf', [
-            'executable-path' => __DIR__ . '/../Fixtures/scripts/phpcbf-fake-fix.sh',
-        ]));
-
-        $plan = new FlowPlan('test', [$job], new OptionsConfiguration());
-        $result = $executor->execute($plan);
-
-        // 6. Job should be treated as success (fix applied)
         $this->assertTrue($result->isSuccess(), 'phpcbf fix should be treated as success');
         $this->assertTrue($result->getJobResults()[0]->isFixApplied(), 'fixApplied should be true');
+        $this->assertEmpty(
+            trim((string) shell_exec('git diff --name-only')),
+            'No unstaged changes should remain — fixes must be re-staged'
+        );
+        $this->assertStringContainsString(
+            'public function a()',
+            (string) shell_exec('git diff --cached -- ' . escapeshellarg($filePath)),
+            'The staged content must be the fixed version'
+        );
+    }
 
-        // 7. The working tree fix should now be staged (re-staged by GitStager)
-        $unstagedAfter = trim(shell_exec('git diff --name-only') ?? '');
-        $this->assertEmpty($unstagedAfter, 'No unstaged changes should remain — fixes must be re-staged');
+    /**
+     * The re-stage covers what the fixer rewrote, not the whole index: an edit
+     * the author staged nothing of must not be dragged into the commit by an
+     * unrelated fixer run.
+     *
+     * @test
+     */
+    function it_leaves_untouched_files_out_of_the_restage()
+    {
+        $fixable = $this->gitFilesPathTest . '/Fixable.php';
+        file_put_contents($fixable, "<?php\nclass Fixable { public function a(){} }\n");
 
-        // 8. Verify the staged content is the FIXED version, not the original bad code
-        $stagedContent = shell_exec('git diff --cached -- ' . escapeshellarg($filePath)) ?? '';
-        $this->assertStringContainsString('public function a()', $stagedContent);
+        $bystander = $this->gitFilesPathTest . '/Bystander.php';
+        file_put_contents($bystander, "<?php\n// staged version\n");
+
+        shell_exec('git add -f ' . escapeshellarg($fixable) . ' ' . escapeshellarg($bystander));
+
+        // The author keeps working on the bystander but does not stage it.
+        file_put_contents($bystander, "<?php\n// staged version\n// NOT meant for this commit\n");
+
+        $this->execute($this->phpcbfJob($fixable));
+
+        $this->assertStringNotContainsString(
+            '// NOT meant for this commit',
+            (string) shell_exec('git show :' . self::TESTS_PATH . '/gitTests/Bystander.php'),
+            'An edit the fixer never made must not reach the index'
+        );
+        $this->assertStringContainsString(
+            'Bystander.php',
+            trim((string) shell_exec('git diff --name-only')),
+            'The untouched file keeps its unstaged edit'
+        );
     }
 }

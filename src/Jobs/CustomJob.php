@@ -36,6 +36,11 @@ class CustomJob extends JobAbstract
         return '';
     }
 
+    public function mayApplyFixes(): bool
+    {
+        return $this->reStage;
+    }
+
     /**
      * With `re-stage: true`, a successful run (exit 0) is treated as a fix so the
      * scheduler re-stages the tracked files — the same auto-stage the native fixer

@@ -438,6 +438,17 @@ abstract class JobAbstract
         // no-op by default
     }
 
+    /**
+     * Whether this job can rewrite the files it analyses. Known before the job
+     * runs, unlike {@see isFixApplied()}, which needs the exit code — the
+     * executor uses it to decide whether a pre-run snapshot of the index is
+     * needed to scope the re-stage.
+     */
+    public function mayApplyFixes(): bool
+    {
+        return false;
+    }
+
     /** @SuppressWarnings(PHPMD.UnusedFormalParameter) */
     public function isFixApplied(int $exitCode): bool
     {
