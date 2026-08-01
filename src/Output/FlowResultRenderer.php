@@ -618,8 +618,32 @@ class FlowResultRenderer
      */
     private function writeWarn(OutputInterface $output, string $message): void
     {
-        $target = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+        $target = $this->resolveErrorStream($output) ?? $output;
 
         $target->writeln("<comment>$message</comment>");
+    }
+
+    /**
+     * The console's STDERR channel, or null when the caller handed us a stream
+     * with no error side.
+     *
+     * Commands pass their Illuminate OutputStyle, which wraps the ConsoleOutput
+     * without implementing ConsoleOutputInterface itself — checking the
+     * interface alone silently leaves every production run writing to stdout.
+     *
+     * @param OutputInterface $output
+     */
+    private function resolveErrorStream(OutputInterface $output): ?OutputInterface
+    {
+        if ($output instanceof SymfonyOutputStyle) {
+            $underlying = $this->extractUnderlyingOutput($output);
+            return $underlying instanceof ConsoleOutputInterface ? $underlying->getErrorOutput() : null;
+        }
+
+        if ($output instanceof ConsoleOutputInterface) {
+            return $output->getErrorOutput();
+        }
+
+        return null;
     }
 }

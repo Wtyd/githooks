@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Output;
 
+use Illuminate\Console\OutputStyle;
 use Illuminate\Container\Container;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\ConsoleSectionOutput;
@@ -146,7 +148,22 @@ class FlowResultRendererTest extends UnitTestCase
     public function unknown_format_warning_goes_to_stderr_when_a_console_is_available()
     {
         $stderr = new BufferedOutput();
-        $stdout = new class ($stderr) extends BufferedOutput implements ConsoleOutputInterface {
+        $stdout = $this->consoleOutputWithErrorStream($stderr);
+
+        $this->applyFormatTo('csv', $stdout);
+
+        $this->assertStringContainsString("Unknown format 'csv'", $stderr->fetch());
+        $this->assertStringNotContainsString('Unknown format', $stdout->fetch());
+    }
+
+    /**
+     * A buffered stand-in for ConsoleOutput: captures stdout like any
+     * BufferedOutput while exposing the separate error stream the renderer is
+     * supposed to route advisories to.
+     */
+    private function consoleOutputWithErrorStream(OutputInterface $stderr): BufferedOutput
+    {
+        return new class ($stderr) extends BufferedOutput implements ConsoleOutputInterface {
             private OutputInterface $errorOutput;
 
             public function __construct(OutputInterface $errorOutput)
@@ -170,11 +187,26 @@ class FlowResultRendererTest extends UnitTestCase
                 throw new \LogicException('Not needed by this test.');
             }
         };
+    }
 
-        $this->applyFormatTo('csv', $stdout);
+    /**
+     * The production shape: commands hand the renderer their Illuminate
+     * OutputStyle, which *wraps* a ConsoleOutput without implementing
+     * ConsoleOutputInterface. Checking the interface alone left every real run
+     * writing the advisory to stdout while the unit test above passed.
+     *
+     * @test
+     */
+    public function unknown_format_warning_goes_to_stderr_through_an_output_style_wrapper()
+    {
+        $stderr = new BufferedOutput();
+        $console = $this->consoleOutputWithErrorStream($stderr);
+        $style = new OutputStyle(new ArrayInput([]), $console);
+
+        $this->applyFormatTo('csv', $style);
 
         $this->assertStringContainsString("Unknown format 'csv'", $stderr->fetch());
-        $this->assertStringNotContainsString('Unknown format', $stdout->fetch());
+        $this->assertStringNotContainsString('Unknown format', $console->fetch());
     }
 
     /** @test A plain buffer has no error stream: the advisory still surfaces, it does not vanish */

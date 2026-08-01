@@ -116,11 +116,15 @@ class JobReleaseTest extends ReleaseTestCase
      */
     public function pest_cores_only_emits_processes_when_parallel_is_on()
     {
+        // The flow's `processes` is the absolute ceiling for `cores`, so the
+        // budget has to leave room for 3 or the assertion would be measuring
+        // the clamp instead of the guard under test.
         $this->configurationFileBuilder
+            ->setV3GlobalOptions(['processes' => 4])
             ->setV3Flows(['qa' => ['jobs' => ['pest_serial', 'pest_parallel']]])
             ->setV3Jobs([
-                'pest_serial'   => ['type' => 'pest', 'executablePath' => '/bin/echo', 'cores' => 2],
-                'pest_parallel' => ['type' => 'pest', 'executablePath' => '/bin/echo', 'parallel' => true, 'cores' => 3],
+                'pest_serial'   => ['type' => 'pest', 'executable-path' => '/bin/echo', 'cores' => 2],
+                'pest_parallel' => ['type' => 'pest', 'executable-path' => '/bin/echo', 'parallel' => true, 'cores' => 3],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
