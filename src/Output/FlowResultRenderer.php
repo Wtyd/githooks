@@ -608,10 +608,18 @@ class FlowResultRenderer
      * Emit a `<comment>`-styled warning line, matching the Illuminate
      * Command::warn() output (yellow text via the 'comment' style).
      *
+     * Advisories are not payload, so they go to stderr whenever the run has a
+     * real console — same contract as the diagnostic commands' EmitsStderr, and
+     * what `--format=json|junit|sarif` needs to keep stdout parseable. A stream
+     * with no error channel (test buffers, custom writeln-only doubles) keeps
+     * receiving the message: dropping it would hide the advisory entirely.
+     *
      * @param OutputInterface $output
      */
     private function writeWarn(OutputInterface $output, string $message): void
     {
-        $output->writeln("<comment>$message</comment>");
+        $target = $output instanceof ConsoleOutputInterface ? $output->getErrorOutput() : $output;
+
+        $target->writeln("<comment>$message</comment>");
     }
 }

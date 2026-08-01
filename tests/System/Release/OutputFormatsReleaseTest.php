@@ -27,6 +27,37 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder->enableV3Mode();
     }
 
+    /**
+     * 3.7 — an unknown `--format` is an advisory, not payload. It was written to
+     * stdout, so it landed in the middle of whatever the caller was capturing;
+     * the diagnostic commands already routed it to stderr.
+     *
+     * @test
+     */
+    public function unknown_format_warning_goes_to_stderr_and_leaves_stdout_clean(): void
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['ok_job']]])
+            ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => 'true']]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        $stdoutFile = tempnam(sys_get_temp_dir(), 'gh-out');
+        $stderrFile = tempnam(sys_get_temp_dir(), 'gh-err');
+
+        exec("$this->githooks flow qa --format=csv --config=$this->configPath > $stdoutFile 2> $stderrFile", $ignored, $exitCode);
+
+        $stdout = (string) file_get_contents($stdoutFile);
+        $stderr = (string) file_get_contents($stderrFile);
+        @unlink($stdoutFile);
+        @unlink($stderrFile);
+
+        $this->assertSame(0, $exitCode, 'An unknown format falls back to text; the exit code is unaffected');
+        $this->assertStringContainsString("Unknown format 'csv'", $stderr);
+        $this->assertStringNotContainsString('Unknown format', $stdout);
+        $this->assertStringContainsString('Results:', $stdout, 'stdout still carries the text report');
+    }
+
     /** @test */
     public function json_v2_schema_includes_enriched_fields_per_job(): void
     {

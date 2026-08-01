@@ -6,6 +6,9 @@ namespace Tests\Unit\Output;
 
 use Illuminate\Container\Container;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\ConsoleSectionOutput;
+use Symfony\Component\Console\Output\OutputInterface;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
@@ -108,6 +111,80 @@ class FlowResultRendererTest extends UnitTestCase
         (new FlowResultRenderer(new Container()))->applyFormat($executor, $plan, $options, $output);
 
         return ['handler' => $captured, 'structured' => $structured];
+    }
+
+    /**
+     * Same call as {@see applyFormat()} but against a caller-supplied stream, so
+     * a test can observe which stream the renderer writes advisories to.
+     */
+    private function applyFormatTo(string $format, OutputInterface $output): void
+    {
+        $planOptions = $this->createMock(OptionsConfiguration::class);
+        $planOptions->method('getProcesses')->willReturn(1);
+        $planOptions->method('getReports')->willReturn([]);
+
+        $plan = $this->createMock(FlowPlan::class);
+        $plan->method('getOptions')->willReturn($planOptions);
+        $plan->method('getJobs')->willReturn(['job']);
+
+        (new FlowResultRenderer(new Container()))->applyFormat(
+            $this->createMock(FlowExecutor::class),
+            $plan,
+            new RenderOptions($format, null, true, true, false, []),
+            $output
+        );
+    }
+
+    /**
+     * An unknown `--format` is an advisory, not payload: it must reach stderr so
+     * stdout stays exactly what the caller asked for. The diagnostic commands
+     * (`conf:check`, `status`, `system:info`) already behave this way; the
+     * execution commands were writing it to stdout.
+     *
+     * @test
+     */
+    public function unknown_format_warning_goes_to_stderr_when_a_console_is_available()
+    {
+        $stderr = new BufferedOutput();
+        $stdout = new class ($stderr) extends BufferedOutput implements ConsoleOutputInterface {
+            private OutputInterface $errorOutput;
+
+            public function __construct(OutputInterface $errorOutput)
+            {
+                parent::__construct();
+                $this->errorOutput = $errorOutput;
+            }
+
+            public function getErrorOutput(): OutputInterface
+            {
+                return $this->errorOutput;
+            }
+
+            public function setErrorOutput(OutputInterface $error): void
+            {
+                $this->errorOutput = $error;
+            }
+
+            public function section(): ConsoleSectionOutput
+            {
+                throw new \LogicException('Not needed by this test.');
+            }
+        };
+
+        $this->applyFormatTo('csv', $stdout);
+
+        $this->assertStringContainsString("Unknown format 'csv'", $stderr->fetch());
+        $this->assertStringNotContainsString('Unknown format', $stdout->fetch());
+    }
+
+    /** @test A plain buffer has no error stream: the advisory still surfaces, it does not vanish */
+    public function unknown_format_warning_falls_back_to_the_only_stream_available()
+    {
+        $output = new BufferedOutput();
+
+        $this->applyFormatTo('csv', $output);
+
+        $this->assertStringContainsString("Unknown format 'csv'", $output->fetch());
     }
 
     // ---- handler selection ----
