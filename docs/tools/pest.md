@@ -76,7 +76,7 @@ Mutation testing on a subset:
 
 ## Parallelism
 
-Pest parallelises with `--parallel --processes=N`. As with [Paratest](paratest.md), declare `cores: N` (or `parallel: true` + `cores: N`) so the [thread budget](../configuration/options.md#thread-budget) reserves the right amount and passes the matching `--processes` to Pest. Without `parallel`, Pest runs single-process and the `processes` value is ignored.
+Pest parallelises with `--parallel --processes=N`. As with [Paratest](paratest.md), declare `cores: N` (or `parallel: true` + `cores: N`) so the [thread budget](../configuration/options.md#thread-budget) reserves the right amount and passes the matching `--processes` to Pest. Without `parallel`, Pest runs single-process: neither `processes` nor `cores` emits a `--processes` flag, since Pest cannot honour it on its own.
 
 ## Pass/fail
 

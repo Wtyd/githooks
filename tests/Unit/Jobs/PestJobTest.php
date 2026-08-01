@@ -115,6 +115,23 @@ class PestJobTest extends UnitTestCase
         $this->assertSame('vendor/bin/pest --parallel --processes=8', $job->buildCommand());
     }
 
+    /**
+     * `cores: N` reaches applyThreadLimit() through
+     * FlowExecutor::applyExplicitCoresOverrides(), which pins the allocation for
+     * every job that declares it — including jobs whose capability is null.
+     * Without `--parallel` there is nothing to allocate, so emitting
+     * `--processes=N` alone builds a command Pest cannot honour.
+     *
+     * @test
+     */
+    public function apply_thread_limit_is_a_no_op_when_parallel_is_off()
+    {
+        $job = $this->pest(['executable-path' => 'vendor/bin/pest']);
+        $job->applyThreadLimit(2);
+
+        $this->assertSame('vendor/bin/pest', $job->buildCommand());
+    }
+
     /** @test */
     public function executable_prefix_is_prepended_for_both_runners()
     {

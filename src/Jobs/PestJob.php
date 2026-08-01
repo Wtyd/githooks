@@ -82,8 +82,19 @@ class PestJob extends PhpunitJob
         return new ThreadCapability('processes', $current);
     }
 
+    /**
+     * Same guard as {@see getThreadCapability()}: `--processes` is only
+     * meaningful next to `--parallel`. The allocator reaches this method by two
+     * routes — the capability plan, which already skips non-parallel Pest jobs,
+     * and `cores: N`, which FlowExecutor pins unconditionally for every job that
+     * declares it. Without the guard the second route emits a lone
+     * `--processes=N` that Pest cannot honour.
+     */
     public function applyThreadLimit(int $threads): void
     {
+        if (empty($this->args['parallel'])) {
+            return;
+        }
         $this->args['processes'] = $threads;
     }
 }

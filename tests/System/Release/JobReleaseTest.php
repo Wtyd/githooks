@@ -107,6 +107,37 @@ class JobReleaseTest extends ReleaseTestCase
     // ─── 3.2 · new native job types (php-cs-fixer, rector) ────────────
 
     /**
+     * 3.7 — `cores: N` on a `pest` job only means something alongside
+     * `--parallel`: the flag is ParaTest's and Pest ignores it on its own. The
+     * allocator pins `cores` for every job that declares it, so without a guard
+     * the binary emitted a lone `--processes=N`.
+     *
+     * @test
+     */
+    public function pest_cores_only_emits_processes_when_parallel_is_on()
+    {
+        $this->configurationFileBuilder
+            ->setV3Flows(['qa' => ['jobs' => ['pest_serial', 'pest_parallel']]])
+            ->setV3Jobs([
+                'pest_serial'   => ['type' => 'pest', 'executablePath' => '/bin/echo', 'cores' => 2],
+                'pest_parallel' => ['type' => 'pest', 'executablePath' => '/bin/echo', 'parallel' => true, 'cores' => 3],
+            ]);
+
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+
+        $output = $this->getActualOutput();
+        $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('/bin/echo --parallel --processes=3', $output);
+        $this->assertDoesNotMatchRegularExpression(
+            '#/bin/echo --processes=\d#',
+            $output,
+            'A non-parallel pest job must not carry --processes'
+        );
+    }
+
+    /**
      * 3.2 — `type: php-cs-fixer` builds a command that calls the binary's
      * `fix` subcommand against the configured `paths`.
      *
