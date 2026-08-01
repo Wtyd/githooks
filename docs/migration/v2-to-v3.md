@@ -27,9 +27,15 @@ This command:
 
 1. Creates a backup (`.v2.bak`) of the original file.
 2. Converts YAML to PHP if needed (removes the `.yml` file).
-3. Converts `script` tool to `custom` job type.
-4. Drops `usePhpcsConfiguration`.
-5. Generates a v3 file with a `qa` flow containing all original tools as jobs.
+3. Converts the `script` tool to a `custom` job type, whether it is listed in
+   `Tools` as `script` or under the custom `name` you gave it.
+4. Renames the deprecated camelCase keys (`executablePath`, `otherArguments`,
+   `ignoreErrorsOnExit`, `failFast`) to their canonical kebab-case form.
+5. Drops `usePhpcsConfiguration`.
+6. Generates a v3 file with a `qa` flow containing all original tools as jobs.
+7. Validates the result: if the generated file is not a valid v3 configuration,
+   the command reports the errors and exits **1**. The generated file and the
+   `.v2.bak` backup are both kept so you can inspect or restore them.
 
 !!! warning
     Review the generated file after migration. You may want to:

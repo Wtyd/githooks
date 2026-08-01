@@ -9,6 +9,20 @@ namespace Wtyd\GitHooks\Configuration;
  */
 class ConfigurationMigrator
 {
+    public const SCRIPT_TOOL = 'script';
+
+    /**
+     * Legacy camelCase keys and their canonical v3 form. Mirrors
+     * JobConfiguration::DEPRECATED_KEY_MAP: migrating them verbatim produces a
+     * v3 file that warns about deprecations the moment it is first read.
+     */
+    private const DEPRECATED_KEY_MAP = [
+        'executablePath'     => 'executable-path',
+        'otherArguments'     => 'other-arguments',
+        'ignoreErrorsOnExit' => 'ignore-errors-on-exit',
+        'failFast'           => 'fail-fast',
+    ];
+
     /**
      * @param array<string, mixed> $legacyConfig
      */
@@ -22,6 +36,7 @@ class ConfigurationMigrator
 
         $jobEntries = [];
         $jobNames = [];
+        $scriptAlias = $this->scriptAlias($legacyConfig);
 
         foreach ($tools as $toolName) {
             if (!is_string($toolName)) {
@@ -29,11 +44,31 @@ class ConfigurationMigrator
             }
             $jobName = $this->toJobName($toolName);
             $jobNames[] = $jobName;
-            $toolConfig = $legacyConfig[$toolName] ?? [];
-            $jobEntries[$jobName] = $this->buildJobEntry($toolName, $toolConfig);
+
+            // A named script is listed in `Tools` by its alias while its
+            // configuration stays under the `script` key, so the alias has to be
+            // mapped back to that section before the entry is built.
+            $isScript = $toolName === self::SCRIPT_TOOL || $toolName === $scriptAlias;
+            $sourceKey = $isScript ? self::SCRIPT_TOOL : $toolName;
+            $toolConfig = $legacyConfig[$sourceKey] ?? [];
+
+            $jobEntries[$jobName] = $this->buildJobEntry($sourceKey, $toolConfig);
         }
 
         return $this->renderPhp($processes, $failFast, $jobNames, $jobEntries);
+    }
+
+    /**
+     * Custom name the v2 `script` tool is listed under in `Tools`, or null when
+     * the section is absent or unnamed.
+     *
+     * @param array<string, mixed> $legacyConfig
+     */
+    private function scriptAlias(array $legacyConfig): ?string
+    {
+        $name = $legacyConfig[self::SCRIPT_TOOL]['name'] ?? null;
+
+        return is_string($name) && $name !== '' ? $name : null;
     }
 
     private function toJobName(string $toolName): string
@@ -49,8 +84,10 @@ class ConfigurationMigrator
     {
         $entry = ['type' => $toolName];
 
-        // Special handling for script tool with custom name
-        if ($toolName === 'script' && isset($toolConfig['name'])) {
+        // The v2 `script` tool has no v3 counterpart: it becomes a custom job
+        // whose command is executablePath + otherArguments. Named or not — an
+        // unnamed one is listed in `Tools` as plain `script`.
+        if ($toolName === self::SCRIPT_TOOL) {
             $entry['type'] = 'custom';
             if (isset($toolConfig['executablePath'])) {
                 $script = $toolConfig['executablePath'];
@@ -71,7 +108,7 @@ class ConfigurationMigrator
             if ($key === 'usePhpcsConfiguration') {
                 continue;
             }
-            $entry[$key] = $value;
+            $entry[self::DEPRECATED_KEY_MAP[$key] ?? $key] = $value;
         }
 
         return $entry;

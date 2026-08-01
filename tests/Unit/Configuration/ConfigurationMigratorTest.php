@@ -37,6 +37,65 @@ class ConfigurationMigratorTest extends UnitTestCase
         $this->assertStringContainsString("'type' => 'phpcs'", $output);
     }
 
+    /**
+     * The canonical v2 declaration of a named script lists the **alias** in
+     * `Tools` and keeps the configuration under the `script` key (that is what
+     * ToolRegistry::resolveScriptName() resolves, and what the v2 engine runs).
+     * The migrator looked up `$legacy['my-script']`, found nothing, and emitted
+     * `type: 'my-script'` — an unsupported type — silently dropping the command.
+     *
+     * @test
+     */
+    public function it_converts_a_script_tool_declared_by_its_alias()
+    {
+        $legacy = [
+            'Tools' => ['phpcs', 'my-script'],
+            'phpcs' => ['standard' => 'PSR12'],
+            'script' => [
+                'name' => 'my-script',
+                'executablePath' => 'echo',
+                'otherArguments' => 'Script tool works!',
+            ],
+        ];
+
+        $output = $this->migrator->migrate($legacy);
+
+        $this->assertStringContainsString("'my_script' => [", $output);
+        $this->assertStringContainsString("'type' => 'custom'", $output);
+        $this->assertStringContainsString("'script' => 'echo Script tool works!'", $output);
+        $this->assertStringNotContainsString("'type' => 'my-script'", $output);
+    }
+
+    /**
+     * @test
+     * @dataProvider deprecatedKeyPairs
+     *
+     * @param mixed $value
+     */
+    public function it_emits_the_canonical_kebab_case_key(string $camelCase, string $kebabCase, $value)
+    {
+        $legacy = [
+            'Tools' => ['phpstan'],
+            'phpstan' => ['paths' => ['src'], $camelCase => $value],
+        ];
+
+        $output = $this->migrator->migrate($legacy);
+
+        $this->assertStringContainsString("'$kebabCase' =>", $output);
+        $this->assertStringNotContainsString("'$camelCase' =>", $output);
+    }
+
+    /** @return array<string, array{string, string, mixed}> */
+    public function deprecatedKeyPairs(): array
+    {
+        return [
+            'executablePath'     => ['executablePath', 'executable-path', 'vendor/bin/phpstan'],
+            'otherArguments'     => ['otherArguments', 'other-arguments', '--no-progress'],
+            'ignoreErrorsOnExit' => ['ignoreErrorsOnExit', 'ignore-errors-on-exit', false],
+            'failFast'           => ['failFast', 'fail-fast', true],
+        ];
+    }
+
     /** @test */
     public function it_converts_script_tool_to_custom_job()
     {

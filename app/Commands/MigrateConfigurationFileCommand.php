@@ -72,6 +72,10 @@ class MigrateConfigurationFileCommand extends Command
                 $this->line("  Removed YAML file: $filePath");
             }
 
+            if (!$this->generatedConfigIsValid($newPath, $backupPath)) {
+                return 1;
+            }
+
             $this->info("  Migrated to v3: $newPath");
             $this->line('');
             $this->warn('  Review the generated file — hook and flow names may need adjustment.');
@@ -81,5 +85,34 @@ class MigrateConfigurationFileCommand extends Command
             $this->error($e->getMessage());
             return 1;
         }
+    }
+
+    /**
+     * Re-read the file just written. A migration that reports success over a
+     * configuration every later command rejects leaves the user with a broken
+     * setup and no signal; the generated file and its backup are both kept so
+     * the original is recoverable and the output is inspectable.
+     */
+    private function generatedConfigIsValid(string $newPath, string $backupPath): bool
+    {
+        try {
+            $migrated = $this->parser->parse($newPath);
+        } catch (\Throwable $e) {
+            $this->error('  Migration produced an unreadable configuration: ' . $e->getMessage());
+            $this->line("  The original is preserved at $backupPath");
+            return false;
+        }
+
+        if (!$migrated->hasErrors()) {
+            return true;
+        }
+
+        $this->error('  Migration produced an invalid v3 configuration:');
+        foreach ($migrated->getValidation()->getErrors() as $error) {
+            $this->error("    $error");
+        }
+        $this->line("  The generated file is at $newPath and the original at $backupPath");
+
+        return false;
     }
 }

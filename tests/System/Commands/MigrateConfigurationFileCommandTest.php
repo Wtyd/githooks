@@ -94,6 +94,51 @@ class MigrateConfigurationFileCommandTest extends SystemTestCase
         $this->assertStringContainsString("'hooks'", file_get_contents($this->configPath));
     }
 
+    /**
+     * The migration is only done when its result is usable. Reporting
+     * "Migrated to v3" and exiting 0 over a file that every later command
+     * rejects sends the user off with a broken configuration and no signal.
+     *
+     * @test
+     */
+    public function it_fails_when_the_generated_v3_config_is_not_valid()
+    {
+        $legacyPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+        file_put_contents(
+            $legacyPath,
+            "<?php\nreturn ['Tools' => ['not-a-real-tool'], 'not-a-real-tool' => ['paths' => ['src']]];\n"
+        );
+
+        $this->artisan("conf:migrate --config=$legacyPath")
+            ->assertExitCode(1)
+            ->containsStringInOutput('is not a supported tool');
+
+        // The backup survives so the original is recoverable.
+        $this->assertFileExists($legacyPath . '.v2.bak');
+    }
+
+    /** @test A named script tool migrates into a runnable custom job, not an unsupported type */
+    public function it_migrates_a_named_script_tool_into_a_valid_v3_config()
+    {
+        $legacyPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+        file_put_contents($legacyPath, "<?php\nreturn " . var_export([
+            'Tools' => ['my-script'],
+            'script' => [
+                'name' => 'my-script',
+                'executablePath' => 'echo',
+                'otherArguments' => 'Script tool works!',
+            ],
+        ], true) . ";\n");
+
+        $this->artisan("conf:migrate --config=$legacyPath")
+            ->assertExitCode(0)
+            ->containsStringInOutput('Migrated to v3');
+
+        $migrated = strval(file_get_contents($legacyPath));
+        $this->assertStringContainsString("'type' => 'custom'", $migrated);
+        $this->assertStringContainsString("'script' => 'echo Script tool works!'", $migrated);
+    }
+
     /** @test */
     public function handles_parser_exception_and_exits_with_error_code()
     {
