@@ -17,7 +17,6 @@
     "mutators": {
         "@default": true,
         "@function_signature": false,
-
         "IncrementInteger": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows",
@@ -30,7 +29,15 @@
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::47",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::54",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204",
-                "Wtyd\\GitHooks\\Utils\\FileUtils::getCurrentBranch::73"
+                "Wtyd\\GitHooks\\Utils\\FileUtils::getCurrentBranch::73",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::buildProcessPool::646",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::399",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::150",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::154",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::155",
+                "Wtyd\\GitHooks\\Jobs\\CommitMsgJob::formatTime::167",
+                "Wtyd\\GitHooks\\Output\\ClaudeCodeResultFormatter::timeBudgetReason::107",
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::48"
             ]
         },
         "DecrementInteger": {
@@ -57,7 +64,22 @@
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::buildAdmissionContext::152",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::111",
                 "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::44",
-                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::49"
+                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::49",
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationChecker::executableExists::192",
+                "Wtyd\\GitHooks\\Execution\\Admission\\AdmissionContext::fits::91",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::applyExplicitCoresOverrides::375",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::buildAdmissionContext::199",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::399",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::155",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::156",
+                "Wtyd\\GitHooks\\Jobs\\PsalmJob::getThreadCapability::70",
+                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::emitErrorAnnotations::49",
+                "Wtyd\\GitHooks\\Output\\ClaudeCodeResultFormatter::timeBudgetReason::107",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds::151",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::countCpusetEntries::191",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::countCpusetSegment::210",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::detectMacOS::79",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::readMacOSAvailableMb::91"
             ]
         },
         "UnwrapStrToUpper": {
@@ -77,19 +99,35 @@
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::102",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::111",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::112",
-                "Wtyd\\GitHooks\\Execution\\EffectiveOptionsResolver::cascadeInt::517"
+                "Wtyd\\GitHooks\\Execution\\EffectiveOptionsResolver::cascadeInt::517",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::allInvocationOffsets::70",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::152",
+                "Wtyd\\GitHooks\\Jobs\\CommitMessage\\CommitMessageValidator::validate::67",
+                "Wtyd\\GitHooks\\Jobs\\PestJob::getThreadCapability::81",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::boundsFor::134",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds::151",
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::48",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::41"
             ]
         },
         "CastBool": {
             "ignore": [
-                "Wtyd\\GitHooks\\Jobs\\JobAbstract::__construct::59"
+                "Wtyd\\GitHooks\\Jobs\\JobAbstract::__construct::59",
+                "Wtyd\\GitHooks\\Jobs\\CommitMessage\\CommitMessageValidator::validate::52"
             ]
         },
         "CastString": {
             "ignore": [
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::46",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::49",
-                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::205"
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::205",
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationChecker::validateConfigFiles::100",
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::265",
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::normaliseToCwdRelative::401",
+                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::readManifest::158",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::155",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::156",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::78"
             ]
         },
         "ArrayItemRemoval": {
@@ -102,7 +140,9 @@
         },
         "UnwrapArrayValues": {
             "ignore": [
-                "Wtyd\\GitHooks\\Execution\\ExecutionContext::getBranchDiffFilesLazy"
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::getBranchDiffFilesLazy",
+                "Wtyd\\GitHooks\\Configuration\\ValidationResult::addRejectedJob::57",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::orderedRows::112"
             ]
         },
         "TrueValue": {
@@ -115,14 +155,20 @@
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::132",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::143",
                 "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::211",
-                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::222"
+                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::222",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::836",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::863",
+                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::213",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpstanCacheResolver::resolveRecursive::46"
             ]
         },
         "FalseValue": {
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::685",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::777",
-                "Wtyd\\GitHooks\\Execution\\ExecutionContext::getBranchDiffFilesLazy::275"
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::getBranchDiffFilesLazy::275",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::770",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::863"
             ]
         },
         "SharedCaseRemoval": {
@@ -134,7 +180,10 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
-                "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94"
+                "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetPlan::__construct::40",
+                "Wtyd\\GitHooks\\Output\\HumanIssueFormatter::renderIssues::92",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTotalCores::178"
             ]
         },
         "ConcatOperandRemoval": {
@@ -144,7 +193,12 @@
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
                 "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
                 "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::45",
-                "Wtyd\\GitHooks\\Output\\CI\\GitLabCIDecorator::onJobError::92"
+                "Wtyd\\GitHooks\\Output\\CI\\GitLabCIDecorator::onJobError::92",
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationChecker::executableExists::193",
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetPlan::__construct::40",
+                "Wtyd\\GitHooks\\Hooks\\HookInstaller::exec::156",
+                "Wtyd\\GitHooks\\Output\\HumanIssueFormatter::renderIssues::92",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTotalCores::178"
             ]
         },
         "MethodCallRemoval": {
@@ -153,7 +207,10 @@
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::propagateContext::249",
                 "Wtyd\\GitHooks\\Output\\StatsTableRenderer::render::43",
                 "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::65",
-                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderAttribution::124"
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderAttribution::124",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::863",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::render::52",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::81"
             ]
         },
         "Identical": {
@@ -180,7 +237,8 @@
         },
         "Assignment": {
             "ignore": [
-                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::39"
+                "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::39",
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::warnIcons::160"
             ]
         },
         "ReturnRemoval": {
@@ -195,13 +253,33 @@
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::85",
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::120",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationParser::resolveOneJob::375",
-                "Wtyd\\GitHooks\\Execution\\Admission\\AdmissionContext::isJobReady::104"
+                "Wtyd\\GitHooks\\Execution\\Admission\\AdmissionContext::isJobReady::104",
+                "Wtyd\\GitHooks\\Configuration\\JobConfiguration::validateCoresKey::463",
+                "Wtyd\\GitHooks\\Execution\\ExecutionContext::filterFilesForMode::245",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::captureStagedBaseline::355",
+                "Wtyd\\GitHooks\\Execution\\FlowPreparer::filterJobForMode::372",
+                "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::115",
+                "Wtyd\\GitHooks\\Hooks\\HookRunner::run::150",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpstanCacheResolver::resolveRecursive::40",
+                "Wtyd\\GitHooks\\Jobs\\CommitMessage\\CommitMessageValidator::validateSubjectCase::131",
+                "Wtyd\\GitHooks\\Jobs\\PhpcsJob::extractCacheFromRuleset::81",
+                "Wtyd\\GitHooks\\Output\\Concerns\\RelativizesFilePath::relativizePath::21",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::prettyJsonIfApplicable::83",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::readCgroupQuotaLimit::143",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::countCpusetEntries::191",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::countCpusetSegment::210",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::readFileContents::222",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::detect::33",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::readMacOSAvailableMb::94",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::readCgroupMemoryMaxMb::125"
             ]
         },
         "Coalesce": {
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::updatePeakThreads::280",
-                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::withOverrides::355"
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::withOverrides::355",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::buildResult::1113",
+                "Wtyd\\GitHooks\\Output\\CI\\GitLabCIDecorator::onJobStart::62"
             ]
         },
         "Break_": {
@@ -213,7 +291,8 @@
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::101",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetAllocator::calculateMaxParallel::111",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::228",
-                "Wtyd\\GitHooks\\Execution\\FlowMemoryHandler::setup::71"
+                "Wtyd\\GitHooks\\Execution\\FlowMemoryHandler::setup::71",
+                "Wtyd\\GitHooks\\Execution\\FlowMemoryHandler::setup::72"
             ]
         },
         "Continue_": {
@@ -227,7 +306,8 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel",
                 "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::205",
-                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseReports::249"
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseReports::249",
+                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::265"
             ]
         },
         "IfNegation": {
@@ -259,19 +339,34 @@
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::235",
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22",
-                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectUnix::55"
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectUnix::55",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::buildProcessPool::673",
+                "Wtyd\\GitHooks\\Jobs\\CommitMessage\\MessageFileResolver::fileExists::66",
+                "Wtyd\\GitHooks\\Jobs\\PhpCsFixerJob::locateConfigFile::95",
+                "Wtyd\\GitHooks\\Jobs\\PhpunitJob::locateConfigFile::62",
+                "Wtyd\\GitHooks\\Jobs\\PsalmJob::getCachePaths::45",
+                "Wtyd\\GitHooks\\Jobs\\PsalmJob::getCachePaths::50",
+                "Wtyd\\GitHooks\\Jobs\\RectorJob::locateConfigFile::91",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::prettyJsonIfApplicable::94",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::boundsFor::134"
             ]
         },
         "GreaterThan": {
             "ignore": [
-                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22"
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::22",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::buildProcessPool::673",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::boundsFor::134"
             ]
         },
         "UnwrapTrim": {
             "ignore": [
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::50",
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::emitErrorAnnotations::50",
-                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::123"
+                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::123",
+                "Wtyd\\GitHooks\\Configuration\\ConfigurationChecker::firstToken::203",
+                "Wtyd\\GitHooks\\Utils\\CpuDetector::readCgroupQuotaLimit::157",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::detectMacOS::81",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::detectMacOS::82"
             ]
         },
         "UnwrapStrReplace": {
@@ -286,7 +381,37 @@
         },
         "LogicalOr": {
             "ignore": [
-                "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::47"
+                "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::47",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpstanCacheResolver::resolveRecursive::39",
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::readMacOSAvailableMb::93"
+            ]
+        },
+        "BitwiseOr": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\Inspection\\ConfigCheckJsonFormatter::format::41"
+            ]
+        },
+        "LessThan": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::findJsonBounds::119",
+                "Wtyd\\GitHooks\\Output\\ToolOutputParser\\Concerns\\ExtractsJsonDocument::extractJsonDocument::24"
+            ]
+        },
+        "LogicalAndAllSubExprNegation": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Output\\FlowResultRenderer::stdoutIsTty::270"
+            ]
+        },
+        "PregQuote": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::resolve::40",
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::declaresUnresolvable::181"
+            ]
+        },
+        "UnwrapRtrim": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Jobs\\CommitMessage\\MessageFileResolver::resolve::46",
+                "Wtyd\\GitHooks\\Output\\Concerns\\RelativizesFilePath::relativizePath::23"
             ]
         }
     }
