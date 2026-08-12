@@ -222,10 +222,11 @@ See the [documentation site](https://wtyd.github.io/githooks/) for the full conf
 | [Parallel-lint](https://github.com/php-parallel-lint/PHP-Parallel-Lint) | `parallel-lint` | Syntax checking |
 | [PHPUnit](https://phpunit.de/) | `phpunit` | Unit testing |
 | [Paratest](https://github.com/paratestphp/paratest) | `paratest` | Parallel PHPUnit driver |
+| [Pest](https://pestphp.com/) | `pest` | PHPUnit-based testing framework, Laravel's default runner (`vendor/bin/pest` or `php artisan test`) |
 | [PHP CS Fixer](https://cs.symfony.com/) | `php-cs-fixer` | Code style auto-fixing |
 | [Rector](https://getrector.com/) | `rector` | Automated code refactoring |
 | [PHP Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd) | `phpcpd` | Duplicate code detection |
-| Inline command | `script` | Run a single shell command (`executable: 'composer audit'`). No path filtering. |
+| Inline command | `script` | Run one executable with fixed arguments (`executable-path` + `other-arguments`). No path filtering. |
 | Any tool | `custom` | Run any binary with `script` (one-liner) or `executable-path` + `paths` (+ `accelerable: true` to opt into `--fast` / `--fast-branch` filtering) |
 | Commit message | `commit-msg` | Validate the commit-message subject (declarative rules + `conventional-commits` preset), wired to Git's `commit-msg` hook. Runs inline, no shell. |
 
