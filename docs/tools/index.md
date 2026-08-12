@@ -19,7 +19,7 @@ GitHooks provides native support for the most common PHP QA tools, a `custom` ty
 | [PHP CS Fixer](phpcsfixer.md) | `php-cs-fixer` | Yes | No |
 | [Rector](rector.md) | `rector` | Yes | No |
 | [Custom Jobs](custom.md) | `custom` | Opt-in | No |
-| [Custom Jobs](custom.md) | `script` | No | No |
+| [Script](custom.md#the-script-type) | `script` | No | No |
 | [Commit Message](commit-msg.md) | `commit-msg` | No | Inline (no process) |
 
 ## Accelerable

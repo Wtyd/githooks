@@ -85,6 +85,35 @@ Set `re-stage: true` so a successful run (exit code **0**) is treated as a fix a
 !!! note
     The legacy camelCase keys (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) are still accepted in v3.3 with a deprecation warning. They will be removed in v4.0. See [v3.3 deprecations](../migration/v33-deprecations.md).
 
+## The `script` type
+
+A minimal sibling of `custom`: one executable plus fixed arguments, with no path handling.
+
+- **Type:** `script`
+- **Accelerable:** No
+
+```php
+'tests_shard_1' => [
+    'type'            => 'script',
+    'executable-path' => './run-tests',
+    'other-arguments' => '--shard 1/2',
+],
+```
+
+The command is `executable-path` + `other-arguments` (plus anything after `--` when run via `githooks job`). `executable-path` is **required**: without it the job would build an empty command and be reported as passing while running nothing, so since 3.7 it is rejected as a configuration error.
+
+How it differs from `custom`:
+
+| | `script` | `custom` |
+|---|---|---|
+| Command source | `executable-path` + `other-arguments` | `script` verbatim (simple mode) or `executable-path` + `paths` + `other-arguments` (structured mode) |
+| `paths` / `--fast` | Not supported | Structured mode, opt-in via `accelerable` |
+| `re-stage` | Not supported | Supported |
+
+The [common keywords](../configuration/jobs.md#common-keywords) (`executable-prefix`, `ignore-errors-on-exit`, `fail-fast`, `cores`, `warn-after`/`fail-after`, `memory`) apply as in any other type.
+
+For new configurations prefer `custom`, which covers the same case (simple mode) and more. `script` remains useful for its minimal shape: several jobs sharing one runner with different arguments via [`extends`](../configuration/jobs.md), each reported under its own job name.
+
 ## Examples
 
 ### Run a shell script
