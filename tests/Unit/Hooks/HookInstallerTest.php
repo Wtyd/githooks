@@ -71,6 +71,34 @@ class HookInstallerTest extends UnitTestCase
         $this->assertFileDoesNotExist($this->tempDir . '/.githooks/not-a-real-hook');
     }
 
+    /**
+     * Two-elements rule on the install loop: with the invalid event in the
+     * MIDDLE, `continue` and `break` diverge — the events after the skip must
+     * still be installed and the returned list must be complete. Kills the
+     * escaped Continue_→break (HookInstaller:82) and ArrayOneItem (:90)
+     * mutants, which `it_skips_invalid_event_names` (invalid event LAST)
+     * cannot distinguish.
+     *
+     * @test
+     */
+    public function it_keeps_installing_after_skipping_an_invalid_event_in_the_middle()
+    {
+        $installer = new HookInstaller($this->tempDir);
+
+        $created = $installer->install(['pre-commit', 'not-a-real-hook', 'pre-push']);
+
+        $this->assertSame(
+            [
+                $this->tempDir . '/.githooks/pre-commit',
+                $this->tempDir . '/.githooks/pre-push',
+            ],
+            $created,
+            'both valid events must be installed and reported, in order'
+        );
+        $this->assertFileExists($this->tempDir . '/.githooks/pre-push');
+        $this->assertFileDoesNotExist($this->tempDir . '/.githooks/not-a-real-hook');
+    }
+
     /** @test */
     public function it_installs_single_event()
     {

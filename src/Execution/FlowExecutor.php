@@ -686,6 +686,21 @@ class FlowExecutor
         );
     }
 
+    /**
+     * Seam for tests (same pattern as buildProcessPool): the memory handler
+     * drives the BUG-7 tick contract of the parallel loop, so tests inject a
+     * spy to pin that ticks fire while jobs run and once after the loop.
+     */
+    protected function createMemoryHandler(OptionsConfiguration $options): FlowMemoryHandler
+    {
+        return new FlowMemoryHandler(
+            $options,
+            $this->memoryBudgetDisabled,
+            $this->now(),
+            $this->threadAllocations
+        );
+    }
+
     private function resolveAdmissionStrategy(OptionsConfiguration $options): AdmissionStrategy
     {
         return $options->getAllocator() === AllocatorStrategy::GREEDY
@@ -759,12 +774,7 @@ class FlowExecutor
         $dashboard = $this->outputHandler instanceof DashboardOutputHandler ? $this->outputHandler : null;
         $lastTick = $this->now();
 
-        $memoryHandler = new FlowMemoryHandler(
-            $options,
-            $this->memoryBudgetDisabled,
-            $this->now(),
-            $this->threadAllocations
-        );
+        $memoryHandler = $this->createMemoryHandler($options);
         $memoryHandler->setup($jobs);
         $this->memoryHandler = $memoryHandler;
 

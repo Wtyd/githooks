@@ -318,4 +318,45 @@ class JobConfigurationCommitMsgTest extends UnitTestCase
             'merge-allowed'          => ['merge-allowed', true],
         ];
     }
+
+    /**
+     * AVL boundary of the `warn-after < fail-after` invariant (REQ-014) at
+     * the commit-msg validation site (JobConfiguration:302) — a DIFFERENT
+     * code path from the generic per-job validator covered in
+     * JobConfigurationTest. Kills the two escaped NotIdentical mutants on
+     * the null-guards of that condition (with either guard inverted the
+     * error never fires).
+     *
+     * @test
+     * @dataProvider warnFailBoundaryCases
+     * @param string[] $expectedErrors
+     */
+    public function warn_after_must_be_less_than_fail_after(int $warnAfter, int $failAfter, array $expectedErrors): void
+    {
+        $result = $this->validate([
+            'type'       => 'commit-msg',
+            'warn-after' => $warnAfter,
+            'fail-after' => $failAfter,
+        ]);
+
+        $this->assertSame($expectedErrors, $result->getErrors());
+    }
+
+    /** @return array<string, array{0: int, 1: int, 2: string[]}> */
+    public function warnFailBoundaryCases(): array
+    {
+        return [
+            'warn < fail (valid)' => [59, 60, []],
+            'warn == fail (boundary, error)' => [
+                60,
+                60,
+                ["Job 'commit-format': 'warn-after' (60) must be less than 'fail-after' (60)."],
+            ],
+            'warn > fail (error)' => [
+                61,
+                60,
+                ["Job 'commit-format': 'warn-after' (61) must be less than 'fail-after' (60)."],
+            ],
+        ];
+    }
 }

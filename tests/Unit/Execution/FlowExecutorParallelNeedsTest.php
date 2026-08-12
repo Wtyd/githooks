@@ -6,6 +6,7 @@ namespace Tests\Unit\Execution;
 
 use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\InjectableFlowExecutor;
+use Tests\Doubles\OutputHandlerSpy;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
@@ -57,6 +58,95 @@ class FlowExecutorParallelNeedsTest extends UnitTestCase
         $this->assertFalse($dependentResult->isSkipped(), 'dependent must run, not be drained as skipped');
         $this->assertTrue($dependentResult->isSuccess());
         $this->assertNull($dependentResult->getSkipReason());
+    }
+
+    /**
+     * D2 (FEAT-3): a dependent drained because its need FAILED must be
+     * announced to the output handler with the propagated reason — not the
+     * generic fallback. Kills the mutants at FlowExecutor:786 (Coalesce
+     * hardcoding 'needs were not satisfied') and :787 (onJobSkipped removal).
+     *
+     * @test
+     */
+    public function drained_dependent_skip_is_announced_with_the_propagated_reason(): void
+    {
+        $root = new CustomJob(new JobConfiguration('root', 'custom', ['script' => 'unused-by-fake']));
+        $dependent = new CustomJob(new JobConfiguration('dependent', 'custom', ['script' => 'unused-by-fake']));
+
+        $pool = new FakeProcessPool(2, new FifoAdmission());
+        $pool->programResult('root', 1, 'root failed');
+
+        $spy = new OutputHandlerSpy();
+        $executor = new InjectableFlowExecutor($spy);
+        $executor->injectPool($pool);
+
+        $graph = $this->graphFor([$this->ref('root'), $this->ref('dependent', ['root'])]);
+        $executor->execute($this->parallelPlan([$root, $dependent], $graph));
+
+        $this->assertSame(
+            [['job' => 'dependent', 'reason' => 'needs root failed']],
+            $spy->skippedJobs,
+            'the drained dependent must surface exactly once, with the propagated (not generic) reason'
+        );
+    }
+
+    /**
+     * FEAT-3: a queued dependent waiting for its need is announced ONCE while
+     * the blocker set stays the same (re-announcing every loop iteration is
+     * spam; never announcing hides the wait). Kills the mutants at
+     * FlowExecutor:795 (NotIdentical inverting the dedup) and :796
+     * (onJobWaiting removal).
+     *
+     * @test
+     */
+    public function waiting_dependent_is_announced_once_while_blockers_are_unchanged(): void
+    {
+        $root = new CustomJob(new JobConfiguration('root', 'custom', ['script' => 'unused-by-fake']));
+        $dependent = new CustomJob(new JobConfiguration('dependent', 'custom', ['script' => 'unused-by-fake']));
+
+        // root stays in-flight for 2 polls → the executor loops ≥2 times with
+        // dependent queued and the same blocker set.
+        $pool = new FakeProcessPool(2, new FifoAdmission());
+        $pool->programResult('root', 0, 'root ok', '', 2);
+        $pool->programResult('dependent', 0, 'dependent ok');
+
+        $spy = new OutputHandlerSpy();
+        $executor = new InjectableFlowExecutor($spy);
+        $executor->injectPool($pool);
+
+        $graph = $this->graphFor([$this->ref('root'), $this->ref('dependent', ['root'])]);
+        $executor->execute($this->parallelPlan([$root, $dependent], $graph));
+
+        $this->assertSame(
+            [['job' => 'dependent', 'waitingFor' => ['root']]],
+            $spy->waitingJobs,
+            'exactly one waiting announcement per unchanged blocker set'
+        );
+    }
+
+    /**
+     * The parallel loop must announce every started job to the handler.
+     * Kills the mutant at FlowExecutor:807 (onJobStart removal).
+     *
+     * @test
+     */
+    public function started_jobs_are_announced_in_execution_order(): void
+    {
+        $root = new CustomJob(new JobConfiguration('root', 'custom', ['script' => 'unused-by-fake']));
+        $dependent = new CustomJob(new JobConfiguration('dependent', 'custom', ['script' => 'unused-by-fake']));
+
+        $pool = new FakeProcessPool(2, new FifoAdmission());
+        $pool->programResult('root', 0, 'root ok');
+        $pool->programResult('dependent', 0, 'dependent ok');
+
+        $spy = new OutputHandlerSpy();
+        $executor = new InjectableFlowExecutor($spy);
+        $executor->injectPool($pool);
+
+        $graph = $this->graphFor([$this->ref('root'), $this->ref('dependent', ['root'])]);
+        $executor->execute($this->parallelPlan([$root, $dependent], $graph));
+
+        $this->assertSame(['root', 'dependent'], $spy->startedJobs);
     }
 
     /**

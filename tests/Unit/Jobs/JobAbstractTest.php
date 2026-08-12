@@ -6,8 +6,11 @@ namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Jobs\CommitMsgJob;
 use Wtyd\GitHooks\Jobs\CustomJob;
+use Wtyd\GitHooks\Jobs\JobAbstract;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
+use Wtyd\GitHooks\Jobs\PestJob;
 use Wtyd\GitHooks\Jobs\ParatestJob;
 use Wtyd\GitHooks\Jobs\PhpcbfJob;
 use Wtyd\GitHooks\Jobs\PhpcpdJob;
@@ -551,5 +554,46 @@ class JobAbstractTest extends UnitTestCase
 
         // Non-empty non-bool → not empty.
         $this->assertFalse($ref->invoke($job, 'value'), 'non-empty string is not empty');
+    }
+
+    /**
+     * Cross-type contract behind the scoped re-stage (3.7): mayApplyFixes()
+     * is the flag FlowExecutor::captureStagedBaseline reads to snapshot the
+     * index before running. A fixer losing it re-stages the whole index
+     * (committing edits the author left unstaged); a checker gaining it pays
+     * a snapshot for nothing. Walks the FULL job catalog so a new type wired
+     * without deciding this contract fails its row here.
+     *
+     * @test
+     * @dataProvider mayApplyFixesContractProvider
+     */
+    public function may_apply_fixes_matches_the_fixer_contract_per_job_type(JobAbstract $job, bool $expected): void
+    {
+        $this->assertSame($expected, $job->mayApplyFixes());
+    }
+
+    /** @return array<string, array{0: JobAbstract, 1: bool}> */
+    public function mayApplyFixesContractProvider(): array
+    {
+        return [
+            // Fixers — must snapshot the staged baseline.
+            'phpcbf (fixer)'                => [new PhpcbfJob(new JobConfiguration('j', 'phpcbf', [])), true],
+            'php-cs-fixer (fixer)'          => [new PhpCsFixerJob(new JobConfiguration('j', 'php-cs-fixer', [])), true],
+            'rector (fixer)'                => [new RectorJob(new JobConfiguration('j', 'rector', [])), true],
+            'custom with re-stage (fixer)'  => [new CustomJob(new JobConfiguration('j', 'custom', ['script' => 'true', 're-stage' => true])), true],
+            // Checkers — must NOT trigger the baseline snapshot.
+            'custom without re-stage'       => [new CustomJob(new JobConfiguration('j', 'custom', ['script' => 'true'])), false],
+            'phpcs'                         => [new PhpcsJob(new JobConfiguration('j', 'phpcs', [])), false],
+            'phpstan'                       => [new PhpstanJob(new JobConfiguration('j', 'phpstan', [])), false],
+            'phpmd'                         => [new PhpmdJob(new JobConfiguration('j', 'phpmd', [])), false],
+            'phpcpd'                        => [new PhpcpdJob(new JobConfiguration('j', 'phpcpd', [])), false],
+            'phpunit'                       => [new PhpunitJob(new JobConfiguration('j', 'phpunit', [])), false],
+            'paratest'                      => [new ParatestJob(new JobConfiguration('j', 'paratest', [])), false],
+            'pest'                          => [new PestJob(new JobConfiguration('j', 'pest', [])), false],
+            'psalm'                         => [new PsalmJob(new JobConfiguration('j', 'psalm', [])), false],
+            'parallel-lint'                 => [new ParallelLintJob(new JobConfiguration('j', 'parallel-lint', [])), false],
+            'script'                        => [new ScriptJob(new JobConfiguration('j', 'script', ['executable-path' => 'true'])), false],
+            'commit-msg'                    => [new CommitMsgJob(new JobConfiguration('j', 'commit-msg', [])), false],
+        ];
     }
 }

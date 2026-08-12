@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Hooks;
 
+use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\HookConfiguration;
 use Wtyd\GitHooks\Configuration\HookRef;
@@ -626,5 +628,40 @@ class HookRunnerTest extends UnitTestCase
             $config->getValidation()->getWarnings(),
             'no warning should appear when nothing was skipped by conditions'
         );
+    }
+
+    /**
+     * runEvent() with an invalid config must EMIT every validation error, not
+     * just exit 1 — a hook failing silently leaves the user with no clue.
+     * Kills the escaped Foreach_ mutant at HookRunner:84 (the loop emitting
+     * the errors emptied out while the exit code stayed 1).
+     *
+     * @test
+     */
+    public function run_event_emits_every_config_error_before_failing()
+    {
+        $validation = new ValidationResult();
+        $validation->addError("Job 'a': 'processes' must be a positive integer.");
+        $validation->addError("Job 'b': unknown type 'nope'.");
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            [],
+            [],
+            null,
+            $validation
+        );
+
+        $parser = $this->createMock(ConfigurationParser::class);
+        $parser->method('parse')->willReturn($config);
+        $runner = new HookRunner($this->preparer, $this->executor, $this->fileUtils, null, $parser);
+
+        $output = new BufferedOutput();
+        $exitCode = $runner->runEvent('pre-commit', 'githooks.php', $output);
+
+        $this->assertSame(1, $exitCode);
+        $emitted = $output->fetch();
+        $this->assertStringContainsString("Job 'a': 'processes' must be a positive integer.", $emitted);
+        $this->assertStringContainsString("Job 'b': unknown type 'nope'.", $emitted);
     }
 }

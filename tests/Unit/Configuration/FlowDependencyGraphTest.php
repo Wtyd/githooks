@@ -229,6 +229,55 @@ class FlowDependencyGraphTest extends UnitTestCase
     }
 
     /**
+     * Pathogenic shape for the DFS dep loop (Infection Continue_→break at
+     * FlowDependencyGraph:176): a node whose `needs` lists an ALREADY VISITED
+     * dep BEFORE the dep that closes a cycle. With `break`, the deps after
+     * the visited one are never examined and the cycle escapes to runtime
+     * (deadlock class). Two-elements rule: [visited, cycling] in that order.
+     *
+     * @test
+     */
+    public function B6_cycle_behind_an_already_visited_dep_is_still_detected()
+    {
+        // V (no needs) is visited first; X needs [V, C]; C needs X → cycle X → C → X.
+        $refs = [
+            $this->ref('V'),
+            $this->ref('X', ['V', 'C']),
+            $this->ref('C', ['X']),
+        ];
+        $result = new ValidationResult();
+
+        $graph = FlowDependencyGraph::build('qa', $refs, $result);
+
+        $this->assertNull($graph);
+        $this->assertErrorEquals(
+            "Flow 'qa': 'needs' has a cycle: X -> C -> X.",
+            $result
+        );
+    }
+
+    /**
+     * Diamond WITH join (a node converging on 2 needs) — the fan-out shape
+     * was covered but no node had multiple needs. Verifies the stable
+     * topological order across the join.
+     *
+     * @test
+     */
+    public function C4_diamond_with_join_keeps_topological_order()
+    {
+        // build → {lint, unit} → package
+        $refs = [
+            $this->ref('package', ['lint', 'unit']),
+            $this->ref('lint', ['build']),
+            $this->ref('unit', ['build']),
+            $this->ref('build'),
+        ];
+        $graph = $this->buildExpectNoErrors('qa', $refs);
+
+        $this->assertSame(['build', 'lint', 'unit', 'package'], $graph->getOrderedNames());
+    }
+
+    /**
      * @param string[] $needs
      */
     private function ref(string $name, array $needs = []): JobRef

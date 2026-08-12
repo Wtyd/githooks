@@ -75,6 +75,23 @@ class HistoryPersistenceTest extends SystemTestCase
         $this->assertSame(1, $this->historyCount());
     }
 
+    /**
+     * Per-command variant of `save_history_flag_persists_without_config`:
+     * the `flows` runner resolves the default size in its own code path
+     * (FlowsRunner:170) — the escaped GreaterThan mutant there broke
+     * `--save-history` with no configured history-size ONLY for `flows`.
+     *
+     * @test
+     */
+    public function save_history_flag_persists_without_config_in_flows_command(): void
+    {
+        $this->buildConfig();
+
+        $this->artisan("flows qa --save-history --config=$this->configPath")->assertExitCode(0);
+
+        $this->assertSame(1, $this->historyCount());
+    }
+
     /** @test */
     public function dry_run_never_persists_even_with_flag(): void
     {

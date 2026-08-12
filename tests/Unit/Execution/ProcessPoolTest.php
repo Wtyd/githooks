@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Execution;
 
+use Tests\Doubles\InlineJobFake;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
@@ -710,6 +711,37 @@ class ProcessPoolTest extends UnitTestCase
             $failedProp->getValue($pool),
             'A successful result must not leak into failedJobs — the early return guards the disjointness.'
         );
+    }
+
+    /**
+     * FEAT-16: an inline job admitted into the pool completes via its own
+     * runInline() result and never spawns a shell process. Kills the escaped
+     * mutants on the inline early-return of the pool entry builder
+     * (ProcessPool:164-168 — ReturnRemoval and ArrayItem on the 'result' key).
+     *
+     * @test
+     */
+    function inline_job_completes_with_its_run_inline_result_and_no_process()
+    {
+        $pool = new ProcessPool(2);
+        $pool->enqueue([new InlineJobFake('commitlint', true, 'inline ran')]);
+
+        $started = $pool->fillPool();
+        $this->assertCount(1, $started);
+
+        $completed = $pool->pollCompleted();
+        $this->assertArrayHasKey('commitlint', $completed);
+
+        $entry = $completed['commitlint'];
+        $this->assertNull($entry['process'], 'inline entries must not spawn a Process');
+        $this->assertArrayHasKey('result', $entry, 'inline entries must carry the runInline() result');
+
+        $result = $entry['result'];
+        $this->assertInstanceOf(JobResult::class, $result);
+        $this->assertSame('commitlint', $result->getJobName());
+        $this->assertTrue($result->isSuccess());
+        $this->assertSame('inline ran', $result->getOutput());
+        $this->assertSame(0, $result->getExitCode());
     }
 
     private function makeJob(string $name, string $script): CustomJob

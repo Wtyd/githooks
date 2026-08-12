@@ -61,7 +61,7 @@ antiguo, los posteriores del lote se perdían. Cubierto por
 `FlowExecutorFailFastTest::parallel_fail_fast_keeps_results_of_jobs_completing_in_the_same_poll`
 (+ `..._two_failures_in_same_poll_drain_queue_once` para el guard one-shot del drain).
 
-## 4. `buildProcessPool()` — gating de admisión 2D (mutante 612, pendiente)
+## 4. `buildProcessPool()` — gating de admisión 2D (mutante 612)
 
 Factor A: ¿algún job declara `memoryReserve !== null`? (→ `hasReservation`).
 Factor B: ¿`options.memoryBudget !== null` y no deshabilitado?
@@ -73,6 +73,30 @@ Factor B: ¿`options.memoryBudget !== null` y no deshabilitado?
 | T | no-null | `budget.binPackingReference` | **2D** |
 
 Clase patógena (mutante 612, TrueValue `hasReservation=true`→`false`): con reservas + budget,
-el pool debería entrar en 2D; el mutante lo deja en 1D (ignora memoria). Hueco: `fits()` 2D
-está testeado, pero que `buildProcessPool` **conecte** el budget no. Pendiente de harness
-(buildProcessPool es protected; requiere exponerlo o un test de comportamiento observable).
+el pool debería entrar en 2D; el mutante lo deja en 1D (ignora memoria). **Cubierto** por
+`FlowExecutorBuildPoolMemoryTest` (expone `buildProcessPool` vía subclase anónima y asserta
+`getMemoryBudget()` en ambas direcciones de la tabla).
+
+## 5. Reparto del thread budget — `resolveThreadBudget()` y sus tres loops
+
+Componentes: `applyExplicitCoresOverrides` (FlowExecutor:370), `allocateParallelBudget`
+(:388), `fillSequentialAllocations` (:417). INVARIANTE: `1 ≤ threadAllocations[job] ≤
+coresBudget` y **todo** job del plan recibe asignación (los loops con `continue` sobre jobs
+ya asignados deben seguir procesando los posteriores).
+
+| Factor | Clases | AVL |
+|---|---|---|
+| `cores` override | ausente, `=1` (frontera inferior), `> budget` | 1, budget, budget+1 |
+| posición del job con override | primero, último | orden [con, sin] |
+| modo | paralelo (`processes>1` y ≥2 jobs), secuencial (resto) | — |
+
+Clases patógenas (Infection 2026-08-12):
+- **clamp==1** (IncrementInteger en `max(1, …)` :375): sin la fila `cores: 1`, el suelo
+  podría subir a 2 en silencio.
+- **continue→break** (:394 paralelo, :421 secuencial): con un solo job (o el job con
+  override al final), `break` y `continue` son indistinguibles — hace falta el orden
+  [override, sin-override] y assertar la asignación del **segundo**.
+
+Cubierto por `FlowExecutorThreadAllocationTest` (observable: `buildCommand()` tras dry-run —
+`resolveThreadBudget` corre antes del branch dry-run y `applyThreadLimit` reescribe el flag
+nativo del tool).

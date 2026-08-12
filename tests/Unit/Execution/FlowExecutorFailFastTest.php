@@ -7,6 +7,7 @@ namespace Tests\Unit\Execution;
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\InjectableFlowExecutor;
+use Tests\Doubles\OutputHandlerSpy;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Execution\FlowExecutor;
@@ -271,5 +272,67 @@ class FlowExecutorFailFastTest extends UnitTestCase
         $this->assertTrue($queuedResult->isSkipped());
         $this->assertSame('custom', $queuedResult->getType());
         $this->assertSame(['src/queued'], $queuedResult->getPaths());
+    }
+
+    /**
+     * Decision table of the fail-fast trigger (FlowExecutor:825, factors.md
+     * §fail-fast). INVARIANT: the queue is drained as skipped ONLY when
+     * fail-fast is on AND a job failed. The two pathogenic rows (on+pass,
+     * off+fail) kill the LogicalAnd mutant (`&&→||`) that would drain the
+     * queue on any first result. Pool of 1 slot keeps the second job queued
+     * while the first resolves.
+     *
+     * @test
+     * @dataProvider failFastTriggerCases
+     * @param array<int, array{job: string, reason: string}> $expectedSkips
+     */
+    public function queue_is_drained_only_when_fail_fast_is_on_and_a_job_failed(
+        bool $failFast,
+        int $firstExitCode,
+        array $expectedSkips,
+        bool $secondMustRun
+    ): void {
+        $first = new CustomJob(new JobConfiguration('first', 'custom', ['script' => 'unused-by-fake']));
+        $second = new CustomJob(new JobConfiguration('second', 'custom', ['script' => 'unused-by-fake']));
+
+        $pool = new FakeProcessPool(1);
+        $pool->programResult('first', $firstExitCode, 'first output');
+        $pool->programResult('second', 0, 'second output');
+
+        $spy = new OutputHandlerSpy();
+        $executor = new InjectableFlowExecutor($spy);
+        $executor->injectPool($pool);
+
+        $plan = new FlowPlan('test', [$first, $second], new OptionsConfiguration($failFast, 2));
+        $result = $executor->execute($plan);
+
+        $this->assertSame($expectedSkips, $spy->skippedJobs);
+        $this->assertCount(2, $result->getJobResults(), 'every planned job must appear in the results');
+
+        $secondResult = $result->getJobResult('second');
+        $this->assertNotNull($secondResult);
+        if ($secondMustRun) {
+            $this->assertFalse($secondResult->isSkipped(), 'the queued job must run, not be drained');
+            $this->assertTrue($secondResult->isSuccess());
+        } else {
+            $this->assertTrue($secondResult->isSkipped());
+        }
+    }
+
+    /** @return array<string, array{0: bool, 1: int, 2: array<int, array{job: string, reason: string}>, 3: bool}> */
+    public function failFastTriggerCases(): array
+    {
+        return [
+            // failFast, firstExitCode, expectedSkips, secondMustRun
+            'on + failure → queue drained (covered row)' => [
+                true,
+                1,
+                [['job' => 'second', 'reason' => 'skipped by fail-fast']],
+                false,
+            ],
+            'on + success → nothing skipped (pathogenic)' => [true, 0, [], true],
+            'off + failure → nothing skipped (pathogenic)' => [false, 1, [], true],
+            'off + success → nothing skipped' => [false, 0, [], true],
+        ];
     }
 }
