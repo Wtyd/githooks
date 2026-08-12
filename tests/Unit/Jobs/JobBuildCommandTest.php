@@ -17,6 +17,7 @@ use Wtyd\GitHooks\Jobs\PhpcsJob;
 use Wtyd\GitHooks\Jobs\PhpmdJob;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 use Wtyd\GitHooks\Jobs\PhpunitJob;
+use Wtyd\GitHooks\Jobs\PintJob;
 use Wtyd\GitHooks\Jobs\PsalmJob;
 use Wtyd\GitHooks\Jobs\RectorJob;
 use Wtyd\GitHooks\Jobs\ScriptJob;
@@ -231,6 +232,7 @@ class JobBuildCommandTest extends UnitTestCase
         $this->assertTrue($registry->isSupported('php-cs-fixer'));
         $this->assertTrue($registry->isSupported('rector'));
         $this->assertTrue($registry->isSupported('pest'));
+        $this->assertTrue($registry->isSupported('pint'));
         $this->assertFalse($registry->isSupported('nonexistent'));
 
         $job = $registry->create(new JobConfiguration('test', 'phpstan', ['paths' => ['src']]));
@@ -244,6 +246,9 @@ class JobBuildCommandTest extends UnitTestCase
 
         $job = $registry->create(new JobConfiguration('test', 'pest', ['coverage' => true]));
         $this->assertInstanceOf(PestJob::class, $job);
+
+        $job = $registry->create(new JobConfiguration('test', 'pint', ['paths' => ['app']]));
+        $this->assertInstanceOf(PintJob::class, $job);
 
         $job = $registry->create(new JobConfiguration('test', 'rector', ['paths' => ['src']]));
         $this->assertInstanceOf(RectorJob::class, $job);
@@ -355,6 +360,7 @@ class JobBuildCommandTest extends UnitTestCase
         $this->assertTrue($registry->isAccelerable('parallel-lint'));
         $this->assertTrue($registry->isAccelerable('psalm'));
         $this->assertTrue($registry->isAccelerable('php-cs-fixer'));
+        $this->assertTrue($registry->isAccelerable('pint'));
         $this->assertTrue($registry->isAccelerable('rector'));
 
         $this->assertFalse($registry->isAccelerable('phpunit'));

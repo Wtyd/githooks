@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [3.8]
 
+### Added
+
+**Native `pint` job type.** Laravel Pint — Laravel's default code-style fixer, built on PHP CS Fixer — is now a first-class fixer job instead of a `custom` script, completing the Symfony/Laravel fixer pair (`php-cs-fixer` / `pint`). It plugs into the fixer pipeline the native types share: fixes applied to staged files are automatically re-staged (scoped to the files the tool rewrote), `--fast` mode feeds it only the staged files under its `paths`, and `test: true` maps to `--test` for check-only runs (the job fails on style issues, nothing is rewritten, no re-stage). Exit-code semantics verified against Pint 1.30: fix mode exits 0 whether or not it fixed anything (`fixApplied: true`), `--test` normalizes the dirty verdict to exit 1, and Pint's `--dirty` selection stays deliberately unmapped — file selection belongs to GitHooks. Like Pest, Pint is installed in the target project: GitHooks builds and runs its command but does not ship it. See [Laravel Pint](tools/pint.md).
+
 ### Fixed
 
 - **`memory-budget.fail-above` killed the shell, not the job.** The kill that fires when the simultaneous RSS sum crosses `fail-above` only reached the `sh -c` wrapper Symfony Process spawns for each job; the real analyzer underneath — and its own workers, such as `artisan test --parallel` — was reparented to PID 1 and kept running, still holding the very memory the budget was meant to reclaim. The runtime now enumerates each job's process tree **before** signalling and terminates it leaf-to-root: `SIGTERM` to every descendant and then to the wrapper, `SIGKILL` after a 5-second grace to anything still alive (zombies do not count as survivors). Linux (`/proc`) and macOS (`ps`) are covered; without `ext-posix` the runtime falls back to the previous `Process::stop()` behaviour and says so on stderr. Reported from a CI incident where a parallel test suite outlived the flow that had "killed" it. See [Memory budget](configuration/options.md#memory-budget-memory-budget).
