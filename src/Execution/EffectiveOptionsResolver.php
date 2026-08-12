@@ -199,6 +199,65 @@ final class EffectiveOptionsResolver
             $globalOptions
         );
 
+        $runtime = $this->cascadeRuntimeOptions(
+            $cliAllocator,
+            $cliStats,
+            $flowOptions,
+            $flowSourceLabel,
+            $globalOptions
+        );
+
+        $merged = $this->mergeOptionsBlock(
+            $globalOptions,
+            $flowOptions,
+            $core['failFast'],
+            $core['processes'],
+            $core['mainBranch'],
+            $timeBudget,
+            $memoryBudget,
+            $runtime['allocator'],
+            $runtime['stats']
+        );
+
+        $trace = [
+            'processes'     => ['value' => $core['processes'],     'source' => $core['processesSource']],
+            'failFast'      => ['value' => $core['failFast'],      'source' => $core['failFastSource']],
+            'executionMode' => ['value' => $core['executionMode'], 'source' => $core['executionModeSource']],
+            'timeBudget'    => ['value' => $this->traceTimeBudget($timeBudget), 'source' => $timeBudgetSource],
+            'memoryBudget'  => ['value' => $this->traceMemoryBudget($memoryBudget), 'source' => $memoryBudgetSource],
+            'allocator'     => ['value' => $runtime['allocator'],   'source' => $runtime['allocatorSource']],
+            'stats'         => ['value' => $runtime['stats'],       'source' => $runtime['statsSource']],
+            'historySize'   => ['value' => $runtime['historySize'], 'source' => $runtime['historySizeSource']],
+        ];
+
+        if ($core['executionMode'] === ExecutionMode::FAST_BRANCH || $core['mainBranch'] !== null) {
+            $trace['mainBranch'] = ['value' => $core['mainBranch'], 'source' => $core['mainBranchSource']];
+        }
+
+        return new EffectiveOptionsResolution($merged, $core['executionMode'], $trace);
+    }
+
+    /**
+     * Run the cascade for the runtime options added after 3.5 (allocator,
+     * stats, history-size). Returns a struct to keep `resolve()` below the
+     * PHPMD 100-line threshold, mirroring `cascadeCoreOptions()`.
+     * `history-size` (BUG-34) has no CLI layer — `--save-history` is a
+     * separate opt-in gate — so its cascade is flow.options > flows.options
+     * > default.
+     *
+     * @return array{
+     *   allocator: string, allocatorSource: string,
+     *   stats: bool, statsSource: string,
+     *   historySize: int, historySizeSource: string
+     * }
+     */
+    private function cascadeRuntimeOptions(
+        ?string $cliAllocator,
+        ?bool $cliStats,
+        ?OptionsConfiguration $flowOptions,
+        string $flowSourceLabel,
+        OptionsConfiguration $globalOptions
+    ): array {
         [$allocator, $allocatorSource] = $this->cascadeAllocator(
             $cliAllocator,
             $flowOptions,
@@ -215,33 +274,23 @@ final class EffectiveOptionsResolver
             fn(OptionsConfiguration $opts) => $opts->isStats()
         );
 
-        $merged = $this->mergeOptionsBlock(
-            $globalOptions,
+        [$historySize, $historySizeSource] = $this->cascadeInt(
+            'history-size',
+            null,
             $flowOptions,
-            $core['failFast'],
-            $core['processes'],
-            $core['mainBranch'],
-            $timeBudget,
-            $memoryBudget,
-            $allocator,
-            $stats
+            $flowSourceLabel,
+            $globalOptions,
+            fn(OptionsConfiguration $opts) => $opts->getHistorySize()
         );
 
-        $trace = [
-            'processes'     => ['value' => $core['processes'],     'source' => $core['processesSource']],
-            'failFast'      => ['value' => $core['failFast'],      'source' => $core['failFastSource']],
-            'executionMode' => ['value' => $core['executionMode'], 'source' => $core['executionModeSource']],
-            'timeBudget'    => ['value' => $this->traceTimeBudget($timeBudget), 'source' => $timeBudgetSource],
-            'memoryBudget'  => ['value' => $this->traceMemoryBudget($memoryBudget), 'source' => $memoryBudgetSource],
-            'allocator'     => ['value' => $allocator,     'source' => $allocatorSource],
-            'stats'         => ['value' => $stats,         'source' => $statsSource],
+        return [
+            'allocator' => $allocator,
+            'allocatorSource' => $allocatorSource,
+            'stats' => $stats,
+            'statsSource' => $statsSource,
+            'historySize' => $historySize,
+            'historySizeSource' => $historySizeSource,
         ];
-
-        if ($core['executionMode'] === ExecutionMode::FAST_BRANCH || $core['mainBranch'] !== null) {
-            $trace['mainBranch'] = ['value' => $core['mainBranch'], 'source' => $core['mainBranchSource']];
-        }
-
-        return new EffectiveOptionsResolution($merged, $core['executionMode'], $trace);
     }
 
     /**

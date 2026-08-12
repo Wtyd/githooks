@@ -46,7 +46,7 @@ Running `githooks flow qa --processes=4` would use `fail-fast=true` (from flow) 
 
 ### Per-key cascade
 
-The cascade is evaluated **key by key**, not as a whole block. When a per-flow `options` block declares one key, the other keys still inherit from `flows.options`. Declaring `'options' => ['fail-fast' => true]` for a flow does **not** drop globally declared `executable-prefix`, `fast-branch-fallback`, `processes`, `reports`, budgets, allocator, stats, etc. — every key is resolved independently against the cascade above.
+The cascade is evaluated **key by key**, not as a whole block. When a per-flow `options` block declares one key, the other keys still inherit from `flows.options`. Declaring `'options' => ['fail-fast' => true]` for a flow does **not** drop globally declared `executable-prefix`, `fast-branch-fallback`, `processes`, `reports`, budgets, allocator, stats, `history-size`, etc. — every key is resolved independently against the cascade above. This applies equally to declarative meta-flows with their own `options` block.
 
 ```php
 'flows' => [

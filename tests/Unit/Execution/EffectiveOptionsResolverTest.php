@@ -866,6 +866,145 @@ class EffectiveOptionsResolverTest extends UnitTestCase
     }
 
     /**
+     * BUG-34 decision table: `history-size` cascade per-key. Same factor space
+     * as the BUG-20 keys (global declared?, flow declares options?, flow
+     * declares the key?) plus the trace source, because the missing
+     * `historySize` entry in effectiveOptions is what hid the bug. Row #2 is
+     * the pathogenic class: a flow options block declaring an unrelated key
+     * used to silently reset history-size to 0.
+     *
+     * @return array<string, array{0: array<string,mixed>, 1: ?array<string,mixed>, 2: int, 3: string}>
+     */
+    public function historySizeCascadeProvider(): array
+    {
+        return [
+            // [globalRaw, flowOptsRaw, expectedValue, expectedSource]
+            'row1 — global set, flow has no options'                     => [['history-size' => 5], null, 5, 'flows.options'],
+            'row2 — global set, flow declares options without the key'   => [['history-size' => 5], ['processes' => 2], 5, 'flows.options'],
+            'row3 — global set, flow overrides history-size'             => [['history-size' => 5], ['history-size' => 10], 10, 'flows.qa.options'],
+            'row4 — global unset, flow declares options without the key' => [[], ['processes' => 2], 0, 'default'],
+            'row5 — global unset, flow declares history-size'            => [[], ['history-size' => 10], 10, 'flows.qa.options'],
+            'row6 — neither side declares the key'                       => [[], null, 0, 'default'],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider historySizeCascadeProvider
+     * @param array<string, mixed> $globalRaw
+     * @param array<string, mixed>|null $flowOptsRaw
+     */
+    public function single_cascades_history_size_per_key_and_traces_source(
+        array $globalRaw,
+        ?array $flowOptsRaw,
+        int $expected,
+        string $expectedSource
+    ): void {
+        [$config, $flow] = $this->buildConfig($globalRaw, $flowOptsRaw);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame($expected, $resolution->getOptions()->getHistorySize());
+        $this->assertSame($expected, $resolution->getTrace()['historySize']['value']);
+        $this->assertSame($expectedSource, $resolution->getTrace()['historySize']['source']);
+    }
+
+    /**
+     * BUG-34 as first reported in production: a declarative meta-flow with its
+     * own options block (for an unrelated key) must inherit the global
+     * history-size through the same `resolveSingle` cascade.
+     *
+     * @test
+     */
+    public function single_inherits_global_history_size_for_meta_flow_with_partial_options(): void
+    {
+        $validation = new ValidationResult();
+        $globals = OptionsConfiguration::fromArray(['history-size' => 5], $validation);
+        $metaOpts = OptionsConfiguration::fromArray(['processes' => 4], $validation);
+        $metaFlow = new FlowConfiguration('ci-validation', [], $metaOpts, null, ['qa']);
+
+        $config = new ConfigurationResult('githooks.php', $globals, [], ['ci-validation' => $metaFlow], null, $validation);
+
+        $resolution = $this->resolver->resolveSingle($config, $metaFlow, null, null, null);
+
+        $this->assertSame(5, $resolution->getOptions()->getHistorySize());
+        $this->assertSame('flows.options', $resolution->getTrace()['historySize']['source']);
+    }
+
+    /**
+     * Guardrail: in ad-hoc / mixed runs per-flow options stay ignored
+     * (CON-001/002) — history-size comes from globals only.
+     *
+     * @test
+     */
+    public function multiple_history_size_uses_globals_only(): void
+    {
+        [$config] = $this->buildConfig(['history-size' => 5], ['history-size' => 10]);
+
+        $resolution = $this->resolver->resolveMultiple($config, null, null, null);
+
+        $this->assertSame(5, $resolution->getOptions()->getHistorySize());
+        $this->assertSame('flows.options', $resolution->getTrace()['historySize']['source']);
+    }
+
+    /**
+     * Regression harness for the recurring per-key cascade gap (3.4:
+     * executable-prefix/fast-branch-fallback/reports; 3.6: history-size).
+     * Walks the FULL catalog of execution options: each key declared only at
+     * the global level must survive a flow that declares an options block
+     * with an unrelated key. A future option wired like history-size was
+     * (read verbatim from the flow block) fails its row here.
+     *
+     * @return array<string, array{0: array<string,mixed>, 1: callable, 2: mixed}>
+     */
+    public function executionOptionsCatalogProvider(): array
+    {
+        return [
+            'fail-fast'            => [['fail-fast' => true], fn(OptionsConfiguration $o) => $o->isFailFast(), true],
+            'processes'            => [['processes' => 8], fn(OptionsConfiguration $o) => $o->getProcesses(), 8],
+            'main-branch'          => [['main-branch' => 'develop'], fn(OptionsConfiguration $o) => $o->getMainBranch(), 'develop'],
+            'fast-branch-fallback' => [['fast-branch-fallback' => 'fast'], fn(OptionsConfiguration $o) => $o->getFastBranchFallback(), 'fast'],
+            'executable-prefix'    => [['executable-prefix' => 'docker exec app'], fn(OptionsConfiguration $o) => $o->getExecutablePrefix(), 'docker exec app'],
+            'reports'              => [['reports' => ['junit' => 'qa.xml']], fn(OptionsConfiguration $o) => $o->getReports(), ['junit' => 'qa.xml']],
+            'time-budget'          => [
+                ['time-budget' => ['warn-after' => 120, 'fail-after' => 300]],
+                fn(OptionsConfiguration $o) => $o->getTimeBudget() === null
+                    ? null
+                    : [$o->getTimeBudget()->getWarnAfter(), $o->getTimeBudget()->getFailAfter()],
+                [120, 300],
+            ],
+            'memory-budget'        => [
+                ['memory-budget' => ['warn-above' => 3500]],
+                fn(OptionsConfiguration $o) => $o->getMemoryBudget() === null ? null : $o->getMemoryBudget()->getWarnAbove(),
+                3500,
+            ],
+            'allocator'            => [['allocator' => 'greedy'], fn(OptionsConfiguration $o) => $o->getAllocator(), 'greedy'],
+            'stats'                => [['stats' => true], fn(OptionsConfiguration $o) => $o->isStats(), true],
+            'history-size'         => [['history-size' => 5], fn(OptionsConfiguration $o) => $o->getHistorySize(), 5],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider executionOptionsCatalogProvider
+     * @param array<string, mixed> $globalRaw
+     * @param mixed $expected
+     */
+    public function every_global_option_survives_a_flow_declaring_unrelated_options(
+        array $globalRaw,
+        callable $reader,
+        $expected
+    ): void {
+        // The unrelated key must differ from the key under test.
+        $unrelated = array_key_exists('fail-fast', $globalRaw) ? ['processes' => 3] : ['fail-fast' => true];
+        [$config, $flow] = $this->buildConfig($globalRaw, $unrelated);
+
+        $resolution = $this->resolver->resolveSingle($config, $flow, null, null, null);
+
+        $this->assertSame($expected, $reader($resolution->getOptions()));
+    }
+
+    /**
      * Guardrail for `resolveMultiple` (CON-001/002): the fix must not change
      * the ad-hoc / mixed cascade, where per-flow options are ignored entirely
      * and the three keys come from globals only.

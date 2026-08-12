@@ -411,13 +411,15 @@ class OptionsConfiguration
     }
 
     /**
-     * Cascade the three block-level keys — `executable-prefix`,
-     * `fast-branch-fallback` and `reports` — from `$flow` into `$global`
-     * per-key (BUG-20). When `$flow` declares the key the flow value wins;
-     * when it doesn't, the global value is inherited. The remaining fields
-     * are taken from `$flow` verbatim (callers that need the full per-key
-     * cascade for `fail-fast`, `processes`, etc. — i.e. EffectiveOptionsResolver —
-     * overwrite them with the CLI-aware cascade afterwards).
+     * Cascade the block-level keys — `executable-prefix`,
+     * `fast-branch-fallback` and `reports` (BUG-20), plus `history-size`
+     * (BUG-34) — from `$flow` into `$global` per-key. When `$flow` declares
+     * the key the flow value wins; when it doesn't, the global value is
+     * inherited. The remaining fields are taken from `$flow` verbatim
+     * (callers that need the full per-key cascade for `fail-fast`,
+     * `processes`, etc. — i.e. EffectiveOptionsResolver — overwrite them
+     * with the CLI-aware cascade afterwards). `history-size` has no CLI
+     * layer, so this cascade is its final value on every path.
      *
      * Returns `$global` unchanged when `$flow` is null.
      */
@@ -434,6 +436,9 @@ class OptionsConfiguration
         $cascadeArray = static function (string $key, callable $reader) use ($flow, $global): array {
             return (array) ($flow->hasKey($key) ? $reader($flow) : $reader($global));
         };
+        $cascadeInt = static function (string $key, callable $reader) use ($flow, $global): int {
+            return (int) ($flow->hasKey($key) ? $reader($flow) : $reader($global));
+        };
 
         return new self(
             $flow->failFast,
@@ -446,7 +451,7 @@ class OptionsConfiguration
             $flow->memoryBudget,
             $flow->allocator,
             $flow->stats,
-            $flow->historySize
+            $cascadeInt('history-size', fn(self $opts) => $opts->getHistorySize())
         );
     }
 }

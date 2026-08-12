@@ -95,4 +95,87 @@ class HistoryPersistenceTest extends SystemTestCase
             ->containsStringInOutput('Passed')
             ->assertExitCode(0);
     }
+
+    /**
+     * BUG-34: a flow declaring its own options block (for an unrelated key)
+     * must still inherit the global history-size per-key.
+     *
+     * @test
+     */
+    public function history_size_cascades_to_flow_with_own_options_block(): void
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['options' => ['processes' => 2], 'jobs' => ['ok']]])
+            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => 'true']])
+            ->setV3GlobalOptions(['history-size' => 30]);
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        $this->artisan("flow qa --config=$this->configPath")->assertExitCode(0);
+
+        $this->assertSame(1, $this->historyCount());
+    }
+
+    /**
+     * BUG-34 as reported in production: declarative meta-flow with its own
+     * options block — the aggregate run must persist with the global size.
+     *
+     * @test
+     */
+    public function history_size_cascades_to_declarative_meta_flow_with_own_options_block(): void
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows([
+                'qa' => ['jobs' => ['ok']],
+                'ci' => ['flows' => ['qa'], 'options' => ['processes' => 2]],
+            ])
+            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => 'true']])
+            ->setV3GlobalOptions(['history-size' => 30]);
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        $this->artisan("flows ci --config=$this->configPath")->assertExitCode(0);
+
+        $this->assertSame(1, $this->historyCount());
+    }
+
+    /**
+     * BUG-34: `effectiveOptions` (JSON v2) exposes historySize with its source.
+     * Its absence from the trace is what hid the silent reset to 0.
+     *
+     * @test
+     */
+    public function effective_options_json_exposes_history_size_with_source(): void
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['options' => ['processes' => 2], 'jobs' => ['ok']]])
+            ->setV3Jobs(['ok' => ['type' => 'custom', 'script' => 'true']])
+            ->setV3GlobalOptions(['history-size' => 30]);
+        $this->configurationFileBuilder->buildInFileSystem();
+
+        $output = $this->runJson("flow qa --format=json --config=$this->configPath");
+
+        $this->assertSame(30, $output['effectiveOptions']['historySize']['value']);
+        $this->assertSame('flows.options', $output['effectiveOptions']['historySize']['source']);
+    }
+
+    /**
+     * Run a command whose stdout is JSON and decode it.
+     *
+     * @return array<string, mixed>
+     */
+    private function runJson(string $command): array
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'historyjson_');
+        try {
+            $this->artisan(trim("$command --output=$tmp"));
+            $payload = (string) file_get_contents($tmp);
+            $decoded = json_decode($payload, true);
+            $this->assertIsArray($decoded, "Expected JSON output at $tmp, got:\n$payload");
+            return $decoded;
+        } finally {
+            @unlink($tmp);
+        }
+    }
 }
