@@ -224,6 +224,7 @@ See the [documentation site](https://wtyd.github.io/githooks/) for the full conf
 | [Paratest](https://github.com/paratestphp/paratest) | `paratest` | Parallel PHPUnit driver |
 | [Pest](https://pestphp.com/) | `pest` | PHPUnit-based testing framework, Laravel's default runner (`vendor/bin/pest` or `php artisan test`) |
 | [PHP CS Fixer](https://cs.symfony.com/) | `php-cs-fixer` | Code style auto-fixing |
+| [Laravel Pint](https://laravel.com/docs/pint) | `pint` | Laravel's default code-style fixer, built on PHP CS Fixer (`--test` check mode, auto re-stage of fixes) |
 | [Rector](https://getrector.com/) | `rector` | Automated code refactoring |
 | [PHP Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd) | `phpcpd` | Duplicate code detection |
 | Inline command | `script` | Run one executable with fixed arguments (`executable-path` + `other-arguments`). No path filtering. |

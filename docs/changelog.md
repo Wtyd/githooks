@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.8]
+
+### Added
+
+**Native `pint` job type.** Laravel Pint — Laravel's default code-style fixer, built on PHP CS Fixer — is now a first-class fixer job instead of a `custom` script, completing the Symfony/Laravel fixer pair (`php-cs-fixer` / `pint`). It plugs into the fixer pipeline the native types share: fixes applied to staged files are automatically re-staged (scoped to the files the tool rewrote), `--fast` mode feeds it only the staged files under its `paths`, and `test: true` maps to `--test` for check-only runs (the job fails on style issues, nothing is rewritten, no re-stage). Exit-code semantics verified against Pint 1.30: fix mode exits 0 whether or not it fixed anything (`fixApplied: true`), `--test` normalizes the dirty verdict to exit 1, and Pint's `--dirty` selection stays deliberately unmapped — file selection belongs to GitHooks. Like Pest, Pint is installed in the target project: GitHooks builds and runs its command but does not ship it. See [Laravel Pint](tools/pint.md).
+
 ## [3.7]
 
 ### Added

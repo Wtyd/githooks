@@ -87,6 +87,37 @@ class JobConfigurationTest extends UnitTestCase
     }
 
     /** @test */
+    public function it_parses_a_pint_job_with_config_and_test_mode()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('pint_app', [
+            'type'   => 'pint',
+            'config' => 'pint.json',
+            'test'   => true,
+            'paths'  => ['app', 'tests'],
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings());
+        $this->assertNotNull($job);
+        $this->assertEquals('pint', $job->getType());
+    }
+
+    /** @test */
+    public function it_warns_on_unknown_key_for_a_pint_job()
+    {
+        // `dirty` is Pint's own flag, deliberately not mapped: file selection
+        // belongs to GitHooks (fast mode), so it must warn like any unknown key.
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('pint_app', [
+            'type'  => 'pint',
+            'dirty' => true,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertStringContainsString('dirty', implode("\n", $result->getWarnings()));
+    }
+
+    /** @test */
     public function it_reports_error_when_type_is_missing()
     {
         $result = new ValidationResult();

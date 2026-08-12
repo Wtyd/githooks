@@ -22,6 +22,7 @@ class JobRegistry
         'parallel-lint'  => ParallelLintJob::class,
         'phpcpd'         => PhpcpdJob::class,
         'php-cs-fixer'   => PhpCsFixerJob::class,
+        'pint'           => PintJob::class,
         'rector'         => RectorJob::class,
         'script'         => ScriptJob::class,
         'custom'         => CustomJob::class,
