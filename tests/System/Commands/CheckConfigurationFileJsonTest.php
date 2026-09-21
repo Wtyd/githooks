@@ -198,4 +198,20 @@ class CheckConfigurationFileJsonTest extends SystemTestCase
             ->assertExitCode(0)
             ->containsStringInOutput('Configuration file:');
     }
+
+    /**
+     * @test
+     * BUG-32: same CLI message as the text path lands in `errors[0]`; no
+     * `require(` leaks into the payload and the exit code stays 1.
+     */
+    public function it_reports_a_missing_config_file_as_a_cli_error_in_the_payload()
+    {
+        $missing = getcwd() . '/' . self::TESTS_PATH . '/no-such-config.php';
+
+        $payload = $this->runJsonCommand("conf:check --format=json --config=$missing");
+
+        $this->assertSame(1, $this->lastExit);
+        $this->assertFalse($payload['valid']);
+        $this->assertSame(["Configuration file not found: $missing"], $payload['errors']);
+    }
 }

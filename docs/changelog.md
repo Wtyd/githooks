@@ -7,6 +7,7 @@ All notable changes to this project are documented here.
 ### Fixed
 
 - **`memory-budget.fail-above` killed the shell, not the job.** The kill that fires when the simultaneous RSS sum crosses `fail-above` only reached the `sh -c` wrapper Symfony Process spawns for each job; the real analyzer underneath — and its own workers, such as `artisan test --parallel` — was reparented to PID 1 and kept running, still holding the very memory the budget was meant to reclaim. The runtime now enumerates each job's process tree **before** signalling and terminates it leaf-to-root: `SIGTERM` to every descendant and then to the wrapper, `SIGKILL` after a 5-second grace to anything still alive (zombies do not count as survivors). Linux (`/proc`) and macOS (`ps`) are covered; without `ext-posix` the runtime falls back to the previous `Process::stop()` behaviour and says so on stderr. Reported from a CI incident where a parallel test suite outlived the flow that had "killed" it. See [Memory budget](configuration/options.md#memory-budget-memory-budget).
+- **A missing `--config` file surfaced PHP's own `require(...): failed to open stream` error** in `conf:check`, both in text and in the JSON `errors[0]`, while `flow` and `job` already said `Configuration file not found: <path>`. All commands now give that same message with the resolved path; exit code unchanged (`1`). Other read failures (permissions, a PHP syntax error inside the file) still propagate the real error.
 
 ## [3.7]
 

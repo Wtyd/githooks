@@ -31,15 +31,9 @@ class FileReader
     public function readFile(string $configFile = ''): array
     {
         $this->configurationFilePath = '';
-        if (!empty($configFile)) {
-            if ($configFile[0] === '/' || preg_match('/^[a-zA-Z]:[\\\\\/]/', $configFile)) {
-                $this->configurationFilePath = $configFile;
-            } else {
-                $this->configurationFilePath = $this->rootPath . DIRECTORY_SEPARATOR . $configFile;
-            }
-        } else {
-            $this->configurationFilePath = $this->findConfigurationFile();
-        }
+        $this->configurationFilePath = !empty($configFile)
+            ? $this->resolveExplicitPath($configFile)
+            : $this->findConfigurationFile();
 
         try {
             $fileExtension = pathinfo($this->configurationFilePath, PATHINFO_EXTENSION);
@@ -58,6 +52,26 @@ class FileReader
         }
 
         return $configurationFile;
+    }
+
+    /**
+     * Resolve an explicit `--config` value (absolute, or relative to the root
+     * path) and require it to exist. Same message ConfigurationParser gives:
+     * without this guard `require` surfaces PHP's own "failed to open stream".
+     *
+     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
+     */
+    private function resolveExplicitPath(string $configFile): string
+    {
+        $path = ($configFile[0] === '/' || preg_match('/^[a-zA-Z]:[\\\\\/]/', $configFile))
+            ? $configFile
+            : $this->rootPath . DIRECTORY_SEPARATOR . $configFile;
+
+        if (!file_exists($path)) {
+            throw new ConfigurationFileNotFoundException("Configuration file not found: $path");
+        }
+
+        return $path;
     }
 
     protected function getConfigurationFilePath(): string

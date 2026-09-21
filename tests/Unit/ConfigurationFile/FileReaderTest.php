@@ -107,6 +107,34 @@ class FileReaderTest extends UnitTestCase
 
     /**
      * @test
+     * @dataProvider missingExplicitConfigPaths
+     * BUG-32: an explicit `--config` pointing at a missing file used to reach
+     * `require` and surface PHP's own "failed to open stream" error. The
+     * reader must say what the parser already says, with the resolved path.
+     */
+    function it_names_the_missing_file_when_an_explicit_config_path_does_not_exist(string $configFile, string $expectedPath)
+    {
+        $this->createFileSystem([]);
+
+        try {
+            $this->fileReader->readFile($configFile);
+            $this->fail('ConfigurationFileNotFoundException was not thrown');
+        } catch (ConfigurationFileNotFoundException $exception) {
+            $this->assertSame("Configuration file not found: $expectedPath", $exception->getMessage());
+        }
+    }
+
+    public function missingExplicitConfigPaths(): array
+    {
+        $root = $this->getUrl('');
+        return [
+            'relative path (resolved against the root)' => ['missing.php', $root . DIRECTORY_SEPARATOR . 'missing.php'],
+            'absolute path (kept as is)'                => ['/tmp/githooks-missing.yml', '/tmp/githooks-missing.yml'],
+        ];
+    }
+
+    /**
+     * @test
      * @expectedException \Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException
      */
     function it_throws_exception_when_yaml_file_is_invalid()

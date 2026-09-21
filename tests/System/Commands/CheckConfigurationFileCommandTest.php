@@ -810,4 +810,24 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(0)
             ->expectsOutput('The configuration file has the correct format.');
     }
+
+    /**
+     * @test
+     * BUG-32: a missing `--config` file is reported by the CLI, not by PHP's
+     * `require(...): failed to open stream` warning.
+     */
+    function reports_a_missing_config_file_with_its_path_instead_of_the_raw_require_error()
+    {
+        $missing = getcwd() . '/' . self::TESTS_PATH . '/no-such-config.php';
+
+        // Printer echoes straight to stdout (with ANSI colours), so the
+        // message is captured with an output buffer, not with expectsOutput().
+        ob_start();
+        $exitCode = $this->artisan("conf:check --config=$missing")->run();
+        $output = (string) ob_get_clean();
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString("Configuration file not found: $missing", $output);
+        $this->assertStringNotContainsString('require(', $output);
+    }
 }
