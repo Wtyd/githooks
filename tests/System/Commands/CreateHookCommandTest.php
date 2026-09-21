@@ -197,6 +197,74 @@ class CreateHookCommandTest extends SystemTestCase
         $this->assertSame(1, $installer->configureHooksPathCalls);
     }
 
+    /**
+     * @test
+     * BUG-31: the scripts carry the install config, relative to the repository
+     * root, so every trigger runs that configuration and a committed .githooks/
+     * still works for other clones.
+     */
+    function v3_mode_bakes_the_config_path_relative_to_the_repository_root_into_the_hook_scripts()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa']])
+            ->buildInFileSystem();
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("hook pre-commit --config=$configPath")
+            ->containsStringInOutput('config: githooks.php (baked into the hook scripts as --config)')
+            ->assertExitCode(0);
+
+        $this->assertStringContainsString(
+            " hook:run --config='githooks.php' \"$(basename \"$0\")\" \"$@\"",
+            (string) file_get_contents($this->path . '/.githooks/pre-commit')
+        );
+    }
+
+    /** @test BUG-31: a config outside the repository is baked absolute — and the install says so. */
+    function v3_mode_warns_and_bakes_an_absolute_path_when_the_config_is_outside_the_repository()
+    {
+        $outside = sys_get_temp_dir() . '/githooks_outside_' . uniqid();
+        mkdir($outside, 0755, true);
+        $outsideConfig = "$outside/githooks.php";
+        file_put_contents(
+            $outsideConfig,
+            $this->configurationFileBuilder->enableV3Mode()->setV3Hooks(['pre-commit' => ['qa']])->buildV3Php()
+        );
+        $baked = (string) realpath($outsideConfig);
+
+        try {
+            $this->artisan("hook pre-commit --config=$outsideConfig")
+                ->containsStringInOutput("--config '$outsideConfig' is outside the repository: the hooks reference the absolute path '$baked' and will not work for other clones.")
+                ->assertExitCode(0);
+
+            $this->assertStringContainsString(
+                " hook:run --config='$baked' \"$(basename",
+                (string) file_get_contents($this->path . '/.githooks/pre-commit')
+            );
+        } finally {
+            unlink($outsideConfig);
+            rmdir($outside);
+        }
+    }
+
+    /** @test BUG-31: without --config the script is the same as before — default lookup at run time. */
+    function v3_mode_without_config_flag_leaves_the_script_unchanged()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Hooks(['pre-commit' => ['qa']])
+            ->buildInFileSystem();
+
+        // The command resolves the default lookup from the CWD (repo root, which
+        // has qa/githooks.php); the installer fake writes under testsDir.
+        $this->artisan('hook pre-commit')->assertExitCode(0);
+
+        $content = (string) file_get_contents($this->path . '/.githooks/pre-commit');
+        $this->assertStringNotContainsString('--config', $content);
+        $this->assertStringContainsString(" hook:run \"$(basename \"$0\")\" \"$@\"", $content);
+    }
+
     /** @test */
     function v3_mode_falls_back_to_legacy_when_config_path_does_not_exist()
     {

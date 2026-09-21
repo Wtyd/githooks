@@ -15,14 +15,17 @@ For each event defined in the [`hooks` section of the configuration](../configur
 
 The generated scripts are universal and identical — each one calls `githooks hook:run <event>`, which resolves the event to its configured flows/jobs. The command prefix is taken from [`hooks.command`](../configuration/hooks.md) in the config (defaults to `php vendor/bin/githooks`).
 
+When you install with `--config=<file>`, the scripts also carry `--config` with that file's path **relative to the repository root**, so every trigger runs the configuration the hooks were installed from — not whatever `githooks.php` the current directory resolves to. Git runs hooks from the top level of the working tree, so the relative path works in every clone that commits `.githooks/`. A file outside the repository can only be baked as an absolute path; the install warns that other clones will not have it.
+
 ```bash
 githooks hook                  # Install all configured hooks
+githooks hook --config=qa/githooks.php   # Hooks run qa/githooks.php on every trigger
 githooks hook --legacy         # Install pre-commit in .git/hooks/ (Git < 2.9)
 githooks hook pre-push --legacy  # Install specific hook in .git/hooks/
 ```
 
 !!! tip
-    The `.githooks/` directory should be committed to version control. The scripts are universal — they never need to be regenerated after config changes.
+    The `.githooks/` directory should be committed to version control. The scripts are universal — they never need to be regenerated after config changes, only if you move or rename the file they were installed with via `--config`.
 
 ### Legacy mode
 
@@ -49,7 +52,7 @@ Without `--legacy`, removes the entire `.githooks/` directory and unsets `core.h
 ## Internal: hook:run
 
 ```
-githooks hook:run <event>
+githooks hook:run <event> [--config=<file>]
 ```
 
 Executes all flows and jobs associated with a git hook event. This is the command that the universal hook script calls internally — you normally don't need to run it manually.

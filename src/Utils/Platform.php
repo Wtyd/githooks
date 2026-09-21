@@ -11,6 +11,14 @@ class Platform
         return strtoupper(substr(PHP_OS, 0, 3)) === 'WIN';
     }
 
+    /**
+     * Absolute on POSIX (`/…`) or Windows (`C:\…`, `C:/…`).
+     */
+    public static function isAbsolutePath(string $path): bool
+    {
+        return $path !== '' && ($path[0] === '/' || preg_match('/^[a-zA-Z]:[\\\\\/]/', $path) === 1);
+    }
+
     public static function normalizePath(string $path): string
     {
         return str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);

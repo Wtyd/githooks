@@ -7,6 +7,7 @@ use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Hooks;
 use Wtyd\GitHooks\Hooks\HookInstaller;
+use Wtyd\GitHooks\Utils\Platform;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Utils\Storage;
 
@@ -82,7 +83,8 @@ class CreateHookCommand extends Command
 
         $events = $hooks->getEvents();
         $command = $hooks->getCommand();
-        $created = $this->installer->install($events, $command);
+        $scriptConfig = $this->scriptConfigPath($configFile);
+        $created = $this->installer->install($events, $command, $scriptConfig);
 
         foreach ($created as $path) {
             $event = basename($path);
@@ -90,8 +92,35 @@ class CreateHookCommand extends Command
         }
 
         $this->info("  hooks path: .githooks (configured via core.hooksPath)");
+        if ($scriptConfig !== '') {
+            $this->info("  config: $scriptConfig (baked into the hook scripts as --config)");
+        }
 
         return 0;
+    }
+
+    /**
+     * BUG-31: the scripts must run the configuration they were installed from,
+     * not whatever githooks.php the CWD resolves to at each trigger. Empty when
+     * no --config was given (default lookup, unchanged). A file outside the
+     * repository can only be baked as an absolute path other clones will not
+     * have — say so.
+     */
+    private function scriptConfigPath(string $configFile): string
+    {
+        if ($configFile === '') {
+            return '';
+        }
+
+        $scriptConfig = $this->installer->scriptConfigPath($configFile);
+        if (Platform::isAbsolutePath($scriptConfig)) {
+            $this->printer->warning(
+                "--config '$configFile' is outside the repository: the hooks reference the absolute path "
+                . "'$scriptConfig' and will not work for other clones."
+            );
+        }
+
+        return $scriptConfig;
     }
 
     private function handleLegacy(): int

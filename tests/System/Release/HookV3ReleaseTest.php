@@ -262,4 +262,58 @@ class HookV3ReleaseTest extends ReleaseTestCase
 
         @unlink($mergeFile);
     }
+
+    /**
+     * @test
+     * BUG-31: `hook --config=<file>` bakes the file into the scripts, relative to
+     * the repository root, so every trigger runs that configuration.
+     */
+    public function it_bakes_the_install_config_into_the_hook_scripts_relative_to_the_repository_root()
+    {
+        passthru("$this->githooks hook --config=$this->configPath 2>&1", $exitCode);
+
+        $this->assertEquals(0, $exitCode);
+        $this->assertStringContainsString(
+            " hook:run --config='$this->configPath' \"$(basename \"$0\")\" \"$@\"",
+            (string) file_get_contents('.githooks/pre-commit')
+        );
+    }
+
+    /**
+     * @test
+     * BUG-31, end to end: the installed script runs the configuration it was
+     * installed from. Verified where the old behaviour cannot get lucky — the
+     * hook is triggered from a directory with no githooks.php at all, using a
+     * config outside the repository (baked absolute), and the job leaves a
+     * marker. Without the fix hook:run finds no configuration and exits 1.
+     */
+    public function installed_hook_runs_the_configuration_it_was_installed_from()
+    {
+        $outside = sys_get_temp_dir() . '/githooks_release_outside_' . uniqid();
+        mkdir($outside, 0755, true);
+        $marker = "$outside/hook-ran.marker";
+        $config = [
+            // Absolute command: the hook is triggered from $outside, not from the repo.
+            'hooks' => ['command' => PHP_BINARY . ' ' . realpath($this->githooks), 'pre-push' => ['mark']],
+            'flows' => ['mark' => ['jobs' => ['touch_marker']]],
+            'jobs'  => ['touch_marker' => ['type' => 'custom', 'script' => "touch $marker"]],
+        ];
+        file_put_contents("$outside/githooks.php", "<?php\nreturn " . var_export($config, true) . ";\n");
+
+        try {
+            passthru("$this->githooks hook --config=$outside/githooks.php 2>&1", $installExit);
+            $this->assertEquals(0, $installExit);
+            $this->assertStringContainsString('is outside the repository', $this->getActualOutput());
+            $hook = (string) realpath('.githooks/pre-push');
+
+            passthru("cd $outside && sh $hook 2>&1", $hookExit);
+
+            $this->assertEquals(0, $hookExit, 'the hook must find the configuration it was installed from');
+            $this->assertFileExists($marker, 'the job of the baked configuration never ran');
+        } finally {
+            @unlink($marker);
+            @unlink("$outside/githooks.php");
+            @rmdir($outside);
+        }
+    }
 }
