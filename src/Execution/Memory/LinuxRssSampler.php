@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution\Memory;
 
+use Wtyd\GitHooks\Execution\Concerns\ReadsProcFiles;
+use Wtyd\GitHooks\Execution\Process\LinuxProcessTree;
+
 /**
  * Linux RSS sampler backed by /proc/<PID>/status. Sums VmRSS across the
  * entire process tree rooted at the given PID, so values reflect the
@@ -12,12 +15,20 @@ namespace Wtyd\GitHooks\Execution\Memory;
  * silently ignored — processes can vanish between the children listing
  * and the status read.
  *
- * Tree walk uses /proc/<PID>/task/<PID>/children (Linux 3.5+), which is
- * O(descendants) per sample — much cheaper than scanning /proc.
+ * The tree walk is LinuxProcessTree's (/proc/<PID>/task/<PID>/children,
+ * Linux 3.5+) — the same one ProcessTerminator uses to kill a job's
+ * descendants, so what gets measured is exactly what gets killed.
  */
 class LinuxRssSampler implements MemorySampler
 {
-    private const MAX_TREE_DEPTH = 16;
+    use ReadsProcFiles;
+
+    private LinuxProcessTree $tree;
+
+    public function __construct(?LinuxProcessTree $tree = null)
+    {
+        $this->tree = $tree ?? new LinuxProcessTree();
+    }
 
     public function sample(array $jobNameToPid): array
     {
@@ -60,24 +71,10 @@ class LinuxRssSampler implements MemorySampler
         }
 
         $totalKb = $rootKb;
-        $queue = [[$rootPid, 0]];
-        $visited = [$rootPid => true];
-
-        while (!empty($queue)) {
-            [$pid, $depth] = array_shift($queue);
-            if ($depth >= self::MAX_TREE_DEPTH) {
-                continue;
-            }
-            foreach ($this->readChildren($pid) as $childPid) {
-                if (isset($visited[$childPid])) {
-                    continue;
-                }
-                $visited[$childPid] = true;
-                $childKb = $this->readVmRssKb($childPid);
-                if ($childKb !== null) {
-                    $totalKb += $childKb;
-                }
-                $queue[] = [$childPid, $depth + 1];
+        foreach ($this->tree->descendants($rootPid) as $childPid) {
+            $childKb = $this->readVmRssKb($childPid);
+            if ($childKb !== null) {
+                $totalKb += $childKb;
             }
         }
 
@@ -104,65 +101,5 @@ class LinuxRssSampler implements MemorySampler
             return null;
         }
         return (int) $matches[1];
-    }
-
-    /**
-     * Read direct children of a PID via /proc/<PID>/task/<PID>/children
-     * (Linux 3.5+). Returns an empty array when the file is unreadable or
-     * the process has gone.
-     *
-     * @return int[]
-     */
-    private function readChildren(int $pid): array
-    {
-        $contents = $this->readProcFile("/proc/{$pid}/task/{$pid}/children");
-        if ($contents === null || $contents === '') {
-            return [];
-        }
-        $pids = [];
-        foreach (preg_split('/\s+/', trim($contents)) ?: [] as $token) {
-            if ($token === '') {
-                continue;
-            }
-            if (ctype_digit($token)) {
-                $pids[] = (int) $token;
-            }
-        }
-        return $pids;
-    }
-
-    /**
-     * Best-effort read of a /proc pseudo-file. Returns null on any failure
-     * (file gone, permission denied, transient I/O error). The error
-     * control operator is intentional and necessary here:
-     *
-     *  - With `@`, error_reporting() drops to 0 inside the expression and
-     *    the standard Symfony/Laravel-Zero error handler short-circuits
-     *    its warning-to-ErrorException upgrade, so the read fails quietly
-     *    by returning false. This is the hot path each second under
-     *    --threads=10 mutation testing — keeping it allocation-free and
-     *    throw-free matters.
-     *  - The try/catch is the safety net for the rarer case of a strict
-     *    handler that ignores error_reporting() and throws anyway. We
-     *    catch \Throwable so any vendor-specific exception type gets
-     *    swallowed too.
-     *
-     * PHPMD's ErrorControlOperator rule is correct in general but not for
-     * race-prone reads against procfs that we explicitly want to swallow.
-     *
-     * Protected (non-static) seam: tests subclass LinuxRssSampler to feed
-     * synthetic /proc content through this method without spawning real
-     * subprocesses. Mirrors the override pattern of MacOsRssSampler.
-     *
-     * @SuppressWarnings(PHPMD.ErrorControlOperator)
-     */
-    protected function readProcFile(string $path): ?string
-    {
-        try {
-            $contents = @file_get_contents($path);
-        } catch (\Throwable $e) {
-            return null;
-        }
-        return $contents === false ? null : $contents;
     }
 }

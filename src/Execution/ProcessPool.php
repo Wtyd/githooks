@@ -8,6 +8,8 @@ use Symfony\Component\Process\Process;
 use Wtyd\GitHooks\Execution\Admission\AdmissionContext;
 use Wtyd\GitHooks\Execution\Admission\AdmissionStrategy;
 use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\GitHooks\Execution\Process\ProcessTerminator;
+use Wtyd\GitHooks\Execution\Process\ProcessTreeFactory;
 use Wtyd\GitHooks\Jobs\JobAbstract;
 
 /**
@@ -60,6 +62,9 @@ class ProcessPool
     /** @var string[] FEAT-3: jobs that were skipped (only-files, fail-fast, or upstream propagation) */
     private array $skippedJobs = [];
 
+    /** BUG-35: kills the whole process tree of each job; built lazily from the platform factory. */
+    private ?ProcessTerminator $terminator;
+
     /**
      * @param int $maxProcesses Slot limit: how many jobs may run in parallel.
      *                          Typically `ThreadBudgetPlan::getMaxParallelJobs()`.
@@ -72,6 +77,8 @@ class ProcessPool
      *                              would spin forever.
      * @param array<string, int>  $coresByJob
      * @param array<string, ?int> $memoryReserveByJob
+     * @param ProcessTerminator|null $terminator Seam for tests; production resolves the
+     *                                           platform tree via ProcessTreeFactory.
      */
     public function __construct(
         int $maxProcesses,
@@ -79,7 +86,8 @@ class ProcessPool
         ?int $memoryBudget = null,
         array $coresByJob = [],
         array $memoryReserveByJob = [],
-        ?int $coresBudget = null
+        ?int $coresBudget = null,
+        ?ProcessTerminator $terminator = null
     ) {
         $this->maxProcesses = max(1, $maxProcesses);
         $this->coresBudget = max(1, $coresBudget ?? $this->maxProcesses);
@@ -87,6 +95,7 @@ class ProcessPool
         $this->memoryBudget = $memoryBudget;
         $this->coresByJob = $coresByJob;
         $this->memoryReserveByJob = $memoryReserveByJob;
+        $this->terminator = $terminator;
     }
 
     /**
@@ -390,15 +399,21 @@ class ProcessPool
     /**
      * Terminate all running processes and return their entries.
      *
+     * BUG-35: `Process::stop()` alone only reached the `sh -c` wrapper and
+     * left the real analyzer (and its workers) orphaned; the terminator
+     * enumerates each job's tree and signals it leaf-to-root first.
+     *
      * @return array<string, array{process: ?Process, job: JobAbstract, start: float, result?: JobResult}>
      */
     public function terminateAll(): array
     {
+        $processes = [];
         foreach ($this->running as $entry) {
             if ($entry['process'] !== null && $entry['process']->isRunning()) {
-                $entry['process']->stop(0);
+                $processes[] = $entry['process'];
             }
         }
+        $this->terminator()->terminate($processes);
 
         $terminated = $this->running;
         $this->running = [];
@@ -406,6 +421,14 @@ class ProcessPool
         $this->memoryReservedInUse = 0;
 
         return $terminated;
+    }
+
+    private function terminator(): ProcessTerminator
+    {
+        if ($this->terminator === null) {
+            $this->terminator = new ProcessTerminator((new ProcessTreeFactory())->create());
+        }
+        return $this->terminator;
     }
 
     /**

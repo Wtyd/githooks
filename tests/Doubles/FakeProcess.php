@@ -37,6 +37,9 @@ class FakeProcess extends Process
     // real running state is set AFTER the parent constructor returns.
     private bool $finished = true;
 
+    /** BUG-35: a fake with a PID lets ProcessTerminator enumerate its tree. */
+    private ?int $pid = null;
+
     public function __construct(int $exitCode = 0, string $output = '', string $errorOutput = '', bool $startFinished = false)
     {
         // Dummy command; we never start the process.
@@ -45,6 +48,12 @@ class FakeProcess extends Process
         $this->programmedOutput = $output;
         $this->programmedErrorOutput = $errorOutput;
         $this->finished = $startFinished;
+    }
+
+    public function withPid(int $pid): self
+    {
+        $this->pid = $pid;
+        return $this;
     }
 
     public function markFinished(): void
@@ -74,7 +83,7 @@ class FakeProcess extends Process
 
     public function getPid(): ?int
     {
-        return null;
+        return $this->pid;
     }
 
     /**

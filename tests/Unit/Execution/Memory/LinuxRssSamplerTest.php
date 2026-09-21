@@ -6,6 +6,7 @@ namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
+use Wtyd\GitHooks\Execution\Process\LinuxProcessTree;
 
 /**
  * Parser-only tests for LinuxRssSampler. They drive the sampler through
@@ -371,14 +372,35 @@ class LinuxRssSamplerTest extends UnitTestCase
     /**
      * @param array<string, string> $procMap path => synthetic content
      */
+    /**
+     * The sampler reads `/proc/<pid>/status` itself and delegates the tree
+     * walk (`/proc/<pid>/task/<pid>/children`) to LinuxProcessTree (BUG-35),
+     * so both get the same synthetic /proc map.
+     */
     private function fakeSamplerWith(array $procMap): LinuxRssSampler
     {
-        return new class ($procMap) extends LinuxRssSampler {
+        $tree = new class ($procMap) extends LinuxProcessTree {
             /** @var array<string, string> */
             private $procMap;
 
             public function __construct(array $procMap)
             {
+                $this->procMap = $procMap;
+            }
+
+            protected function readProcFile(string $path): ?string
+            {
+                return $this->procMap[$path] ?? null;
+            }
+        };
+
+        return new class ($procMap, $tree) extends LinuxRssSampler {
+            /** @var array<string, string> */
+            private $procMap;
+
+            public function __construct(array $procMap, LinuxProcessTree $tree)
+            {
+                parent::__construct($tree);
                 $this->procMap = $procMap;
             }
 

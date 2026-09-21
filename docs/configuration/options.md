@@ -332,7 +332,7 @@ job leaking?" vs. "is the runner about to OOM?").
 | Threshold | Action |
 |---|---|
 | `warn-above` | `⚠` annotation, exit `0` |
-| `fail-above` | **Kills jobs in flight** (`process->stop`), skips queued jobs with reason `"flow memory-budget exceeded"`, exit `1` even if every job had passed |
+| `fail-above` | **Kills jobs in flight** — the whole process tree of each job (`SIGTERM` leaf-to-root, then `SIGKILL` after a 5 s grace), skips queued jobs with reason `"flow memory-budget exceeded"`, exit `1` even if every job had passed |
 
 CLI overrides: `--memory-warn-above=N`, `--memory-fail-above=N`,
 `--no-memory-budget`. The last disables both the per-job and flow-level

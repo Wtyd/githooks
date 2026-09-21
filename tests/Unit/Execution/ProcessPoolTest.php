@@ -6,15 +6,20 @@ namespace Tests\Unit\Execution;
 
 use Tests\Doubles\InlineJobFake;
 use Tests\Utils\TestCase\UnitTestCase;
+use Tests\Utils\Traits\ProcessTreeFixtureTrait;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
 use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
 use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\GitHooks\Execution\Process\NullProcessTree;
+use Wtyd\GitHooks\Execution\Process\ProcessTerminator;
 use Wtyd\GitHooks\Execution\ProcessPool;
 use Wtyd\GitHooks\Jobs\CustomJob;
 
 class ProcessPoolTest extends UnitTestCase
 {
+    use ProcessTreeFixtureTrait;
+
     /** @test */
     function constructor_clamps_max_processes_to_at_least_one()
     {
@@ -174,6 +179,74 @@ class ProcessPoolTest extends UnitTestCase
         $pool = new ProcessPool(2);
 
         $this->assertSame([], $pool->terminateAll());
+    }
+
+    /**
+     * @test
+     * BUG-35: the kill goes through ProcessTerminator with exactly the running
+     * shell processes — inline entries (no process) are not handed over.
+     */
+    function terminateAll_hands_the_running_processes_to_the_terminator_and_skips_inline_entries()
+    {
+        $spy = new class (new NullProcessTree('spy')) extends ProcessTerminator {
+            /** @var \Symfony\Component\Process\Process[] */
+            public $received = [];
+
+            public function terminate(array $processes): void
+            {
+                $this->received = $processes;
+                parent::terminate($processes);
+            }
+
+            protected function emitWarning(string $message): void
+            {
+            }
+        };
+        $pool = new ProcessPool(2, null, null, [], [], null, $spy);
+        $pool->enqueue([$this->makeInlineJob('inline_a'), $this->makeJob('shell_b', 'sleep 10')]);
+        $pool->fillPool();
+        $shellProcess = $pool->getRunning()['shell_b']['process'];
+
+        $pool->terminateAll();
+
+        $this->assertSame([$shellProcess], $spy->received);
+        $this->assertFalse($shellProcess->isRunning());
+    }
+
+    /**
+     * @test
+     * BUG-35 regression against real processes. The job is a 3-level tree —
+     * Symfony's `sh -c` → inner `sh -c` → `sleep 30` (the trailing `true` keeps
+     * the inner shell from exec-ing sleep in its place). Before the fix,
+     * `Process::stop(0)` killed the wrapper and left the rest orphaned to
+     * PID 1 for 30 s; liveness is checked without the SUT and zombies do
+     * not count. If this test passes without the fix, it measures nothing.
+     */
+    function terminateAll_kills_the_descendants_of_the_shell_wrapper_not_only_the_shell()
+    {
+        $this->skipUnlessTreeKillSupported();
+
+        $pool = new ProcessPool(1);
+        $pool->enqueue([$this->makeJob('tree', "sh -c 'sleep 30; true'")]);
+        $pool->fillPool();
+        $root = $pool->getRunning()['tree']['process']->getPid();
+        $this->assertNotNull($root);
+        $descendants = $this->waitForDescendants($root, 1);
+
+        try {
+            $this->assertNotEmpty($descendants, 'the fixture shell never forked a descendant');
+
+            $pool->terminateAll();
+
+            $this->assertProcessGone($root, 'shell wrapper');
+            foreach ($descendants as $pid) {
+                $this->assertProcessGone($pid, 'descendant');
+            }
+        } finally {
+            foreach ($descendants as $pid) {
+                $this->killIfAlive($pid);
+            }
+        }
     }
 
     /** @test */

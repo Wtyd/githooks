@@ -124,9 +124,15 @@ analyzers do not start simultaneously even when cores are free.
 ```
 
 When the simultaneous RSS sum crosses `fail-above`, the runtime kills
-the jobs in flight (`process->stop`) and skips the queued ones. The
-flow exits `1` even if every individual job had passed up to that
-point — that is the conceptual key of the feature.
+the jobs in flight and skips the queued ones. The kill covers the
+**whole process tree** of each job, not only the shell wrapper that
+launched it: every descendant is enumerated first, then signalled
+leaf-to-root with `SIGTERM`, and anything still alive after a 5-second
+grace period gets `SIGKILL`. The flow exits `1` even if every individual
+job had passed up to that point — that is the conceptual key of the
+feature. Without `ext-posix` (or on a platform whose process tree cannot
+be walked) the runtime falls back to stopping the wrapper only and says
+so on stderr.
 
 ### Calibrating with `--stats`
 

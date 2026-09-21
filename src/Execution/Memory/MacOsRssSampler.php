@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Execution\Memory;
 
+use Wtyd\GitHooks\Execution\Process\ProcessTreeWalk;
+
 /**
  * macOS RSS sampler. Reads the entire process listing once per sample with
  * `ps -o pid=,ppid=,rss= -ax` (RSS in kB), then walks the tree rooted at
@@ -16,8 +18,6 @@ namespace Wtyd\GitHooks\Execution\Memory;
  */
 class MacOsRssSampler implements MemorySampler
 {
-    private const MAX_TREE_DEPTH = 16;
-
     public function sample(array $jobNameToPid): array
     {
         if (empty($jobNameToPid)) {
@@ -120,7 +120,9 @@ class MacOsRssSampler implements MemorySampler
     }
 
     /**
-     * BFS sum of VmRSS-equivalent kB across the subtree rooted at $rootPid.
+     * Sum of VmRSS-equivalent kB across the subtree rooted at $rootPid,
+     * walked with the shared ProcessTreeWalk (same depth cap and cycle
+     * guard as the Linux sampler and the process-tree kill).
      *
      * @param array<int, array{ppid: int, rss: int}> $procs
      * @param array<int, int[]>                       $children
@@ -128,23 +130,12 @@ class MacOsRssSampler implements MemorySampler
     private function sumTreeKb(int $rootPid, array $procs, array $children): int
     {
         $totalKb = $procs[$rootPid]['rss'];
-        $queue = [[$rootPid, 0]];
-        $visited = [$rootPid => true];
-
-        while (!empty($queue)) {
-            [$pid, $depth] = array_shift($queue);
-            if ($depth >= self::MAX_TREE_DEPTH) {
-                continue;
-            }
-            foreach ($children[$pid] ?? [] as $childPid) {
-                if (isset($visited[$childPid])) {
-                    continue;
-                }
-                $visited[$childPid] = true;
-                if (isset($procs[$childPid])) {
-                    $totalKb += $procs[$childPid]['rss'];
-                }
-                $queue[] = [$childPid, $depth + 1];
+        $descendants = ProcessTreeWalk::descendants($rootPid, function (int $pid) use ($children): array {
+            return $children[$pid] ?? [];
+        });
+        foreach ($descendants as $childPid) {
+            if (isset($procs[$childPid])) {
+                $totalKb += $procs[$childPid]['rss'];
             }
         }
         return $totalKb;
