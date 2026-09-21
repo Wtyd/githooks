@@ -48,6 +48,9 @@ class JobConfiguration
         'failFast'           => 'fail-fast',
     ];
 
+    /** Values `runner` accepts on a `pest` job; anything else falls back to 'binary' (PestJob). */
+    private const PEST_RUNNERS = ['binary', 'artisan'];
+
     private string $name;
 
     private string $type;
@@ -571,6 +574,36 @@ class JobConfiguration
 
         // Validate common keys not in ARGUMENT_MAP but used by the system
         self::validateCommonKeys($name, $config, $argumentMap, $result);
+
+        if ($type === 'pest') {
+            self::validatePestRunner($name, $config, $result);
+        }
+    }
+
+    /**
+     * `runner` is consumed by PestJob's constructor before any generic
+     * validation — anything other than 'artisan' silently selects the binary
+     * runner, so a typo (`artizan`) went unnoticed by conf:check and at run
+     * time. Warn (not error: the fallback still runs) with the did-you-mean
+     * suggestion the unknown-key path already offers.
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validatePestRunner(string $name, array $config, ValidationResult $result): void
+    {
+        if (!array_key_exists('runner', $config)) {
+            return;
+        }
+        $runner = $config['runner'];
+        if (is_string($runner) && in_array($runner, self::PEST_RUNNERS, true)) {
+            return;
+        }
+        $shown = is_scalar($runner) ? (string) $runner : gettype($runner);
+        $suggestion = is_string($runner) ? KeySuggestion::suggestionFor($runner, self::PEST_RUNNERS) : '';
+        $result->addWarning(
+            "Job '$name': unknown value '$shown' for 'runner' (valid: " . implode(', ', self::PEST_RUNNERS)
+            . "); falling back to 'binary'." . $suggestion
+        );
     }
 
     /**

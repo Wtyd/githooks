@@ -214,4 +214,31 @@ class CheckConfigurationFileJsonTest extends SystemTestCase
         $this->assertFalse($payload['valid']);
         $this->assertSame(["Configuration file not found: $missing"], $payload['errors']);
     }
+
+    /**
+     * @test
+     * BUG-33: a typo in a pest job's `runner` used to pass conf:check without a
+     * word while the job silently ran the binary runner. Like every other
+     * JobConfiguration validation warning it lands in the top-level
+     * `warnings[]` (per-job `issues` come from ConfigurationChecker, e.g.
+     * a missing executable) and the config stays valid.
+     */
+    public function it_flags_an_unknown_pest_runner_as_a_warning_with_a_suggestion()
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['tests']]])
+            ->setV3Jobs(['tests' => ['type' => 'pest', 'runner' => 'artizan']])
+            ->buildInFileSystem();
+
+        $payload = $this->runJsonCommand("conf:check --format=json --config=$this->configPath");
+
+        $this->assertSame(0, $this->lastExit, 'an unknown runner is a warning, not an error');
+        $this->assertTrue($payload['valid']);
+        $this->assertContains(
+            "Job 'tests': unknown value 'artizan' for 'runner' (valid: binary, artisan); falling back to 'binary'. Did you mean 'artisan'?",
+            $payload['warnings']
+        );
+        $this->assertSame('tests', $payload['jobs'][0]['name']);
+    }
 }

@@ -21,7 +21,7 @@ An explicit `executable-path` always wins over `runner`.
 
 | Keyword | Type | Description | Example |
 |---|---|---|---|
-| `runner` | String | `binary` (default) or `artisan`. | `'artisan'` |
+| `runner` | String | `binary` (default) or `artisan`. Any other value is reported by `conf:check` as a warning (with a did-you-mean suggestion) and falls back to `binary`. | `'artisan'` |
 | `parallel` | Boolean | Run tests in parallel (`--parallel`). | `true` |
 | `processes` | Integer | Worker count (`--processes=N`); only with `parallel`. Prefer [`cores`](../configuration/jobs.md#reserving-cores-cores-or-the-tools-native-flag). | `4` |
 | `coverage` | Boolean | Enable coverage (`--coverage`). | `true` |

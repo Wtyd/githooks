@@ -53,6 +53,19 @@ class PestJobTest extends UnitTestCase
         $this->assertStringNotContainsString('artisan', $command);
     }
 
+    /**
+     * @test
+     * BUG-33: an unknown runner is reported by JobConfiguration as a warning;
+     * the job itself keeps the documented fallback to the binary runner.
+     */
+    public function unknown_runner_falls_back_to_the_binary_runner()
+    {
+        $command = $this->pest(['runner' => 'artizan', 'paths' => ['tests']])->buildCommand();
+
+        $this->assertMatchesRegularExpression('#^(vendor/bin/)?pest #', $command);
+        $this->assertStringNotContainsString('artisan', $command);
+    }
+
     /** @test */
     public function runner_key_never_leaks_into_the_command()
     {

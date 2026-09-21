@@ -227,6 +227,61 @@ class JobConfigurationTest extends UnitTestCase
     }
 
     /**
+     * BUG-33 — `runner` on a `pest` job. PestJob consumes the key in its
+     * constructor and anything other than 'artisan' silently selects the
+     * binary runner, so a typo went unnoticed by conf:check.
+     *
+     * | runner            | warning                                              |
+     * |-------------------|------------------------------------------------------|
+     * | absent            | none                                                 |
+     * | 'binary'          | none                                                 |
+     * | 'artisan'         | none                                                 |
+     * | near-miss typo    | unknown value + did-you-mean                         |
+     * | unrelated string  | unknown value, no suggestion                         |
+     * | non-string        | unknown value (plus the generic type warning)        |
+     *
+     * @test
+     * @dataProvider pestRunnerCases
+     *
+     * @param array<string, mixed> $config
+     * @param string[] $expectedWarnings
+     */
+    public function pest_runner_value_is_validated_with_a_warning_and_a_suggestion(array $config, array $expectedWarnings)
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('tests', ['type' => 'pest'] + $config, $this->registry, $result, new JobRegistry());
+
+        $this->assertNotNull($job, 'an unknown runner is a warning, not an error');
+        $this->assertSame([], $result->getErrors());
+        $this->assertSame($expectedWarnings, $result->getWarnings());
+    }
+
+    /** @return array<string, array{array<string, mixed>, string[]}> */
+    public function pestRunnerCases(): array
+    {
+        return [
+            'runner absent'              => [[], []],
+            'runner = binary'            => [['runner' => 'binary'], []],
+            'runner = artisan'           => [['runner' => 'artisan'], []],
+            'near-miss typo (artizan)'   => [
+                ['runner' => 'artizan'],
+                ["Job 'tests': unknown value 'artizan' for 'runner' (valid: binary, artisan); falling back to 'binary'. Did you mean 'artisan'?"],
+            ],
+            'unrelated string (phpunit)' => [
+                ['runner' => 'phpunit'],
+                ["Job 'tests': unknown value 'phpunit' for 'runner' (valid: binary, artisan); falling back to 'binary'."],
+            ],
+            'non-string (true)'          => [
+                ['runner' => true],
+                [
+                    "Job 'tests': key 'runner' expects a string or integer.",
+                    "Job 'tests': unknown value '1' for 'runner' (valid: binary, artisan); falling back to 'binary'.",
+                ],
+            ],
+        ];
+    }
+
+    /**
      * @test
      * unknown keys on tool-typed jobs (non-custom) must iterate the config.
      * Emptying the loop would silently accept arbitrary typos.
