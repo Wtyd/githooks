@@ -119,6 +119,32 @@ class HookInstallerTest extends UnitTestCase
         $this->assertFileExists($this->tempDir . '/.git/hooks/pre-commit');
     }
 
+    /**
+     * Same contract as `install()`, on the legacy `.git/hooks` path: an
+     * invalid event in the middle is skipped, not a stop sign, and every
+     * valid one is reported. A single-event fixture cannot tell `continue`
+     * from `break`, nor a full list from a truncated one.
+     *
+     * @test
+     */
+    public function legacy_install_keeps_going_after_an_invalid_event_and_reports_every_hook()
+    {
+        $installer = new HookInstaller($this->tempDir);
+
+        $created = $installer->installLegacy(['pre-commit', 'not-a-real-hook', 'pre-push']);
+
+        $this->assertSame(
+            [
+                $this->tempDir . '/.git/hooks/pre-commit',
+                $this->tempDir . '/.git/hooks/pre-push',
+            ],
+            $created,
+            'both valid events must be installed and reported, in order'
+        );
+        $this->assertFileExists($this->tempDir . '/.git/hooks/pre-push');
+        $this->assertFileDoesNotExist($this->tempDir . '/.git/hooks/not-a-real-hook');
+    }
+
     /** @test */
     public function it_cleans_githooks_dir()
     {

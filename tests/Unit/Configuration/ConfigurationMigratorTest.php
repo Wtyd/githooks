@@ -168,6 +168,29 @@ class ConfigurationMigratorTest extends UnitTestCase
         $this->assertSame('parallel-lint', $result['jobs']['parallel_lint']['type']);
     }
 
+    /**
+     * `flows.options` is assembled line by line into a PHP literal, so only
+     * an assertion over the *evaluated* block pins both the values and the
+     * shape of each line. `fail-fast` has no legacy counterpart — the
+     * migration always emits `false` — and every other test here matches on
+     * substrings, which neither a flipped default nor a mangled line would
+     * disturb.
+     *
+     * @test
+     */
+    public function migrated_flow_options_keep_fail_fast_off_and_carry_the_legacy_process_count()
+    {
+        $legacy = [
+            'Options'  => ['processes' => 8],
+            'Tools'    => ['phpstan'],
+            'phpstan'  => ['paths' => ['src']],
+        ];
+
+        $result = $this->evalConfig($this->migrator->migrate($legacy));
+
+        $this->assertSame(['fail-fast' => false, 'processes' => 8], $result['flows']['options']);
+    }
+
     /** @test */
     public function it_produces_valid_php_output()
     {

@@ -1770,6 +1770,36 @@ class FlowExecutorTest extends UnitTestCase
     }
 
     /**
+     * The per-job clause of shouldSampleMemory() is a disjunction:
+     * `reserve !== null || threshold !== null`. Every row of the table above
+     * declares `memory: <int>`, which populates BOTH — and `getMemoryReserve()`
+     * derives from the threshold, so a reserve never exists on its own. The
+     * only class that tells `||` from `&&` is therefore the extended form
+     * with no reserve (`memory: {warn-above: N}`): threshold set, reserve
+     * null. Under `&&` the sampler never runs and the job comes back without
+     * a memory peak, silently disabling `--memory-*` reporting for that job.
+     *
+     * @test
+     */
+    public function a_job_declaring_only_a_memory_threshold_still_gets_sampled(): void
+    {
+        $job = new CustomJob(new JobConfiguration('only', 'custom', [
+            'script' => 'sleep 0.1',
+            'memory' => ['warn-above' => 4_000_000],
+        ]));
+        $plan = new FlowPlan('test', [$job], new OptionsConfiguration(false, 1, null, 'full', '', []));
+
+        $result = (new FlowExecutor(new NullOutputHandler()))->execute($plan);
+
+        $jobResult = $result->getJobResults()[0];
+        $this->assertNull($jobResult->getMemoryReserved(), 'the extended form declares no reserve');
+        $this->assertNotNull(
+            $jobResult->getMemoryPeak(),
+            'a declared memory threshold must force the sampler even without a reserve'
+        );
+    }
+
+    /**
      * Cross-component contract (CRUZADO) — FlowExecutor:440 Ternary swap on
      * `resolveAdmissionStrategy()` (`GREEDY ? new GreedyAdmission() : new FifoAdmission()`
      * → operands swapped). The mutant pairs each allocator with the wrong

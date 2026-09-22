@@ -329,6 +329,37 @@ class StatsTableRendererTest extends UnitTestCase
         $this->assertMatchesRegularExpression('/\|\s*-\s*\|\s*TOTAL \(flow\)\s*\|/', $rendered);
     }
 
+    /**
+     * @test FEAT-4
+     *
+     * Name sort has to be a total order, not "roughly alphabetical". The
+     * comparator builds a tuple on each side, and a malformed one (a tuple of
+     * a different arity) degenerates into a constant: every pair reports
+     * "greater", and `usort` shuffles the rows into whatever its algorithm
+     * lands on. That shuffle happens to reproduce the expected order for the
+     * three-job fixture above, so it needs a set where the degenerate
+     * comparator is visibly wrong — jobs that ran in alphabetical order, whose
+     * sorted output must be the input untouched.
+     */
+    public function name_sort_is_a_total_order_not_an_accident_of_the_fixture(): void
+    {
+        $result = $this->multiJobResult([
+            ['name' => 'alpha', 'type' => 'phpcs'],
+            ['name' => 'bravo', 'type' => 'phpcs'],
+            ['name' => 'charlie', 'type' => 'phpcs'],
+            ['name' => 'delta', 'type' => 'phpcs'],
+            ['name' => 'echo', 'type' => 'phpcs'],
+        ]);
+
+        $output = new BufferedOutput();
+        (new StatsTableRenderer())->render($output, $result, RenderOptions::STATS_SORT_NAME);
+
+        preg_match_all('/\|\s*(\d+)\s*\|\s*(\w+)\s*\|/', $output->fetch(), $matches);
+
+        $this->assertSame(['alpha', 'bravo', 'charlie', 'delta', 'echo'], $matches[2]);
+        $this->assertSame(['1', '2', '3', '4', '5'], $matches[1], 'the # column keeps the execution order');
+    }
+
     /** @test FEAT-4 */
     public function type_sort_groups_by_type_then_name(): void
     {

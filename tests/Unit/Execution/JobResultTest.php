@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
+use Wtyd\GitHooks\Execution\InputFilesPerJob;
 use Wtyd\GitHooks\Execution\JobResult;
 
 class JobResultTest extends UnitTestCase
@@ -314,6 +315,26 @@ class JobResultTest extends UnitTestCase
         $this->assertNotSame($original, $copy, 'withNeeds must return a new instance');
         $this->assertSame(['phpstan_src', 'phpunit'], $copy->getNeeds(), 'copy carries the new needs');
         $this->assertSame([], $original->getNeeds(), 'original needs must NOT be mutated');
+    }
+
+    /**
+     * @test
+     *
+     * Same contract for `withInputFiles()`. Without the clone the pool
+     * mutates a result it has already published, and an earlier job's
+     * envelope picks up the file slice of a later one.
+     */
+    public function with_input_files_returns_a_clone_without_mutating_original(): void
+    {
+        $original = new JobResult('phpcs_src', true, '', '1.0s');
+        $this->assertNull($original->getInputFiles(), 'original starts without an input-files slice');
+
+        $slice = new InputFilesPerJob(['src/Foo.php'], 3);
+        $copy = $original->withInputFiles($slice);
+
+        $this->assertNotSame($original, $copy, 'withInputFiles must return a new instance');
+        $this->assertSame($slice, $copy->getInputFiles(), 'copy carries the new slice');
+        $this->assertNull($original->getInputFiles(), 'original slice must NOT be mutated');
     }
 
     /**

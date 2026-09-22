@@ -109,9 +109,11 @@ class MemoryDetectorTest extends UnitTestCase
      *  - `readMacOSAvailableMb` gate L93: `$exit !== 0 || $output === []`
      *  - `readMacOSAvailableMb` free/inactive gate L104: `$free === null && $inactive === null`
      *
-     * The page accumulation defaults L107 (`?? 0`) are intentionally NOT pinned:
-     * a single page (4 KB) is invisible after `/1024/1024` to MB — those mutants
-     * are equivalent at MB granularity.
+     *  - `readMacOSAvailableMb` page accumulation L107: the `?? 0` default of
+     *    each counter. One page (4 KB) is invisible after `/1024/1024` for a
+     *    mid-range page count, so the boundary rows below sit exactly on and
+     *    exactly below a whole MB (256 pages at 4 KB) — that is the only place
+     *    where `?? 0` is distinguishable from `?? 1` and `?? -1`.
      *
      * @test
      * @dataProvider macosDetectionProvider
@@ -155,6 +157,25 @@ class MemoryDetectorTest extends UnitTestCase
             'only free present → counts'           => [$okSysctl, $vm(['Pages free:                          100000.']), 16384, 390],
             'only inactive present → counts'       => [$okSysctl, $vm(['Pages inactive:                      200000.']), 16384, 781],
             'neither free nor inactive → null'     => [$okSysctl, $vm(['Pages speculative:                    50000.']), 16384, null],
+
+            // --- page accumulation defaults (L107), on the MB boundary ---
+            // 256 pages × 4 KB = exactly 1 MB. An absent counter contributing
+            // -1 page drops the result to 0 MB; contributing +1 to the row
+            // below lifts it to 1 MB. Anywhere else the truncation hides it.
+            'free on the MB boundary, others absent'      => [$okSysctl, $vm(['Pages free:                             256.']), 16384, 1],
+            'free one page below the boundary'            => [$okSysctl, $vm(['Pages free:                             255.']), 16384, 0],
+            'inactive on the MB boundary, free absent'    => [$okSysctl, $vm(['Pages inactive:                         256.']), 16384, 1],
+            'inactive one page below, free absent'        => [$okSysctl, $vm(['Pages inactive:                         255.']), 16384, 0],
+
+            // --- total is an int, not a float (L82 outer cast) ---
+            // A memsize that is not a whole number of MiB keeps the division
+            // in float territory, so dropping the cast changes the type.
+            'memsize not a whole MiB → truncated int'     => [
+                ['output' => [(string) (16 * 1024 * 1024 * 1024 + 1)], 'exit' => 0],
+                $okVm,
+                16384,
+                390,
+            ],
         ];
     }
 }

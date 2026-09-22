@@ -21,6 +21,28 @@ class SystemInfoJsonFormatterTest extends UnitTestCase
         );
     }
 
+    /**
+     * `json_decode` throws away the formatting, so a decoded assertion cannot
+     * see the encoding flags at all. The payload is meant to be readable in a
+     * terminal, which is what JSON_PRETTY_PRINT is there for — pin the bytes.
+     *
+     * @test
+     */
+    public function it_serialises_as_pretty_printed_json()
+    {
+        $json = (new SystemInfoJsonFormatter())->format(new SystemInfo(8, 4));
+
+        $this->assertSame(
+            "{\n"
+            . "    \"version\": 1,\n"
+            . "    \"cpus\": 8,\n"
+            . "    \"processes\": 4,\n"
+            . "    \"warning\": null\n"
+            . '}',
+            $json
+        );
+    }
+
     /** @test */
     public function it_serialises_over_subscription_with_warning_message()
     {

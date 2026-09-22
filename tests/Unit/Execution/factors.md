@@ -162,3 +162,85 @@ fila 6 (TERM ignorado sin KILL → superviviente). La fila 9 protege I2.
 100→118 devuelve 101..116), PID repetido en el fichero `children`, diamante, ciclo (un hijo
 lista a un ancestro), raíz ≤ 0 → `[]`. Compartido por `LinuxProcessTree`, `MacOsProcessTree`,
 `LinuxRssSampler` y `MacOsRssSampler` — un solo BFS.
+
+---
+
+## 7. `FlowPreparer` — precedencia del modo de ejecución (Infection 2026-09-21)
+
+Dos `??` encadenados resuelven el modo de un job suelto: `prepareSingleJob()` para el modo
+que se reporta en el plan (línea 232) y `applyExecutionModeSingleJob()` para el filtrado
+real de ficheros (línea 310). Ambos deben leerse igual: **CLI > config del job > FULL**.
+
+| `--execution` (CLI) | `execution:` del job | modo efectivo |
+|---|---|---|
+| — | — | full |
+| — | fast | fast |
+| — | full | full |
+| fast | — | fast |
+| **fast** | **full** | **fast** |
+| **full** | **fast** | **full** |
+
+**Clase patógena**: las dos últimas filas, las únicas donde ambos orígenes están presentes
+**y discrepan**. Con un solo lado poblado, intercambiar los operandos del `??` es invisible
+— por eso el test que ya existía (`plan_preserves_explicit_invocation_mode`, con un job sin
+`execution`) dejaba vivos los dos mutantes Coalesce. El modo se observa en dos sitios
+distintos y hay que assertar los dos: `FlowPlan::getExecutionMode()` (lo que sale en el
+envelope) y el comando construido (si filtró a los ficheros modificados o no).
+
+## 8. `JobRunner` — override de budgets desde la CLI (Infection 2026-09-21)
+
+Guard `warn !== null || fail !== null` seguido de un `foreach` que aplica el override a cada
+job del plan. El override **reemplaza** el par completo: un solo flag limpia el otro.
+
+| `--warn-after` | `--fail-after` | warn efectivo | fail efectivo |
+|---|---|---|---|
+| — | — | el de la config | el de la config |
+| 5 | — | 5 | null |
+| — | 10 | null | 10 |
+| **5** | **10** | 5 | 10 |
+
+**Clase patógena**: el job bajo test tiene que traer `warn-after`/`fail-after` **en su
+config**. Sin esa línea base, "el override no corrió" y "el override corrió" dejan ambos el
+job a `null`, y sobreviven los tres mutantes de la zona (el guard, el `foreach` y la
+llamada). La fila con los dos flags a la vez es la que mata la negación del `||`.
+
+## 9. `AdmissionContext::getBlockingNeeds()` — buckets terminales
+
+Tres guards consecutivos (`completedJobs`, `failedJobs`, `skippedJobs`), cada uno con su
+`continue`. Un need en cualquiera de los tres está resuelto y no bloquea.
+
+| bucket del 1er need | 2º need | `getBlockingNeeds()` |
+|---|---|---|
+| completed | pendiente | `[2º]` |
+| failed | pendiente | `[2º]` |
+| skipped | pendiente | `[2º]` |
+
+**Clase patógena**: hacen falta **dos** needs con el primero en el bucket bajo test — con
+uno solo, `continue` y `break` devuelven lo mismo. Y hace falta **una fila por bucket**: un
+test que solo cubra `completed` no distingue el `continue` de los guards de debajo.
+
+## 10. `MacOsProcessTree` — parseo de `ps` (Infection 2026-09-21)
+
+Dos parsers línea a línea: `parseChildren()` sobre `ps -o pid=,ppid= -ax` y `parseStates()`
+sobre `ps -o pid=,stat= -p …`. Sólo cuenta una línea con la forma exacta
+`^\s*<pid>\s+<campo>`; las demás se saltan sin abortar el recorrido.
+
+| Factor | Clases de equivalencia | Valores |
+|---|---|---|
+| forma de la línea | válida / basura **antes** de los dígitos (viola `^`) / basura **después** (viola `$`, sólo `parseChildren`) / cabecera / vacía | `"  200 100"` / `"xx 300 100"` / `"300 100 extra"` / `"PID PPID"` / `""` |
+| posición de la inválida | primera / **intermedia** / última | — |
+| cardinal del resultado | 0 / 1 / **≥2** | — |
+| estado del proceso | vivo (`S+`, `R`) / zombi (`Z`) / sin entrada | — |
+
+**Clase patógena**: línea inválida **intermedia** (distingue `continue` de `break`) con un
+resultado de **≥2** elementos (distingue `ArrayOneItem` en `parseStates()` y en `alive()`).
+Los fixtures anteriores tenían un único PID vivo, así que las tres mutaciones sobrevivían
+con el mismo listado.
+
+Dos trampas al construir el fixture:
+
+- Para el ancla de `parseStates()` el estado tiene que ser **vivo**: con `"cmd 300 Z"` el
+  filtro de zombis descarta el PID igual que si no se hubiera parseado, y el mutante
+  sobrevive. Con `"cmd 300 S+"` la diferencia sí se ve.
+- Un zombi **antes** que un proceso vivo distingue "estado `Z`" de "PID ausente", que es lo
+  que el truncado a un elemento convierte en indistinguible.

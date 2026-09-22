@@ -152,7 +152,14 @@ class FlowResultRendererTest extends UnitTestCase
 
         $this->applyFormatTo('csv', $stdout);
 
-        $this->assertStringContainsString("Unknown format 'csv'", $stderr->fetch());
+        // The whole sentence: what makes the advisory useful is the list of
+        // formats that WOULD have worked, and a substring match on the first
+        // half cannot tell a well-formed message from a scrambled one.
+        $this->assertStringContainsString(
+            "Unknown format 'csv'. Using text output. "
+            . 'Valid formats: text, json, junit, sarif, codeclimate, claude-code.',
+            $stderr->fetch()
+        );
         $this->assertStringNotContainsString('Unknown format', $stdout->fetch());
     }
 
@@ -483,6 +490,10 @@ class FlowResultRendererTest extends UnitTestCase
             'cli overrides config same format'     => [['json' => 'c.json'], false, ['json' => 'cli.json'], ['json' => 'cli.json']],
             'cli adds when config empty'           => [[], false, ['sarif' => 's.sarif'], ['sarif' => 's.sarif']],
             'empty cli value is skipped'           => [[], false, ['json' => ''], []],
+            // `json` precedes `sarif` in OutputFormats::STRUCTURED, so a lone
+            // empty value cannot tell `continue` from `break`: the skipped
+            // format has to be followed by one that must still be collected.
+            'empty cli value skips only itself'    => [[], false, ['json' => '', 'sarif' => 's.sarif'], ['sarif' => 's.sarif']],
             '--no-reports keeps cli (no-coverage)' => [['json' => 'c.json'], true, ['sarif' => 's.sarif'], ['sarif' => 's.sarif']],
         ];
     }
@@ -701,6 +712,59 @@ class FlowResultRendererTest extends UnitTestCase
             }
         }
         $this->tmpFiles = [];
+    }
+
+    /**
+     * @test
+     * @dataProvider ciSummarySectionCases
+     *
+     * The GitLab "Summary" collapsible wraps the final results table so it is
+     * not swallowed by whichever per-job section happened to be open last.
+     * It is emitted with a bare `echo`, and nothing exercised it: both the
+     * `--no-ci` guard and the environment guard could be removed without a
+     * single test noticing.
+     */
+    public function text_summary_is_wrapped_in_a_gitlab_section_unless_ci_decoration_is_off(
+        bool $underGitlab,
+        bool $noCI,
+        bool $expectSection
+    ): void {
+        if ($underGitlab) {
+            putenv('GITLAB_CI=true');
+        }
+
+        ob_start();
+        try {
+            (new FlowResultRenderer(new Container()))->renderFormattedResult(
+                $this->successResult(),
+                null,
+                new RenderOptions('text', null, true, $noCI, false, []),
+                new RoutingBufferedOutput()
+            );
+        } finally {
+            $echoed = (string) ob_get_clean();
+        }
+
+        if ($expectSection) {
+            $this->assertMatchesRegularExpression('/\033\[0Ksection_start:\d+:githooks_summary\[collapsed=false\]/', $echoed);
+            $this->assertMatchesRegularExpression('/\033\[0Ksection_end:\d+:githooks_summary/', $echoed);
+            return;
+        }
+
+        $this->assertStringNotContainsString('githooks_summary', $echoed);
+    }
+
+    /**
+     * @return array<string, array{0: bool, 1: bool, 2: bool}>
+     */
+    public function ciSummarySectionCases(): array
+    {
+        return [
+            // under GitLab, --no-ci, section emitted
+            'gitlab without --no-ci'  => [true, false, true],
+            'gitlab with --no-ci'     => [true, true, false],
+            'outside gitlab'          => [false, false, false],
+        ];
     }
 
     /** @test */

@@ -788,6 +788,106 @@ class FlowPreparerTest extends UnitTestCase
         $this->assertCount(1, $plan->getJobs());
     }
 
+    /**
+     * @test
+     * @dataProvider singleJobModePrecedenceCases
+     *
+     * Decision table of the mode resolution for a single job: the CLI
+     * invocation wins over the job-declared `execution`, which in turn wins
+     * over the FULL default. The two rows where both are declared *and
+     * disagree* are the ones that pin the priority — with only one side
+     * populated, swapping the two operands of the `??` is invisible.
+     */
+    public function single_job_plan_mode_puts_the_cli_invocation_over_the_declared_execution(
+        ?string $invocationMode,
+        ?string $declaredExecution,
+        string $expectedMode
+    ) {
+        $config = ['paths' => ['src']];
+        if ($declaredExecution !== null) {
+            $config['execution'] = $declaredExecution;
+        }
+        $jobConfig = new JobConfiguration('phpstan_src', 'phpstan', $config);
+
+        $plan = $this->preparer->prepareSingleJob(
+            $jobConfig,
+            new OptionsConfiguration(),
+            $this->fastCapableContext(),
+            $invocationMode
+        );
+
+        $this->assertSame($expectedMode, $plan->getExecutionMode());
+    }
+
+    /**
+     * @return array<string, array{0: ?string, 1: ?string, 2: string}>
+     */
+    public function singleJobModePrecedenceCases(): array
+    {
+        return [
+            // invocation,            declared execution,     effective mode
+            'neither declared'     => [null, null, ExecutionMode::FULL],
+            'config fast only'     => [null, ExecutionMode::FAST, ExecutionMode::FAST],
+            'config full only'     => [null, ExecutionMode::FULL, ExecutionMode::FULL],
+            'cli fast only'        => [ExecutionMode::FAST, null, ExecutionMode::FAST],
+            'cli fast beats full'  => [ExecutionMode::FAST, ExecutionMode::FULL, ExecutionMode::FAST],
+            'cli full beats fast'  => [ExecutionMode::FULL, ExecutionMode::FAST, ExecutionMode::FULL],
+        ];
+    }
+
+    /**
+     * The same priority has to drive the *filtering*, not just the reported
+     * mode: `--execution=full` on a job declaring `execution: fast` must hand
+     * the tool its configured paths, and `--execution=fast` on a job
+     * declaring `execution: full` must narrow them to the modified files.
+     *
+     * @test
+     */
+    public function single_job_file_filtering_follows_the_cli_invocation_not_the_declared_execution()
+    {
+        $declaredFast = new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths'     => ['src'],
+            'execution' => ExecutionMode::FAST,
+        ]);
+        $declaredFull = new JobConfiguration('phpstan_src', 'phpstan', [
+            'paths'     => ['src'],
+            'execution' => ExecutionMode::FULL,
+        ]);
+
+        $overriddenToFull = $this->preparer->prepareSingleJob(
+            $declaredFast,
+            new OptionsConfiguration(),
+            $this->fastCapableContext(),
+            ExecutionMode::FULL
+        );
+        $overriddenToFast = $this->preparer->prepareSingleJob(
+            $declaredFull,
+            new OptionsConfiguration(),
+            $this->fastCapableContext(),
+            ExecutionMode::FAST
+        );
+
+        $this->assertStringNotContainsString(
+            'src/Foo.php',
+            $overriddenToFull->getJobs()[0]->buildCommand(),
+            '--execution=full must keep the configured paths'
+        );
+        $this->assertStringContainsString(
+            'src/Foo.php',
+            $overriddenToFast->getJobs()[0]->buildCommand(),
+            '--execution=fast must narrow to the modified files'
+        );
+    }
+
+    private function fastCapableContext(): ExecutionContext
+    {
+        $fileUtils = new FileUtilsFake();
+        $fileUtils->setModifiedfiles(['src/Foo.php']);
+        $fileUtils->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+
+        return ExecutionContext::create($fileUtils, 'master');
+    }
+
     /** @test */
     public function single_job_respects_invocation_mode()
     {

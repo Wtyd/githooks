@@ -889,4 +889,23 @@ class ExecutionContextTest extends UnitTestCase
             'empty cwd must short-circuit before the rtrim/str_replace chain'
         );
     }
+
+    /**
+     * `withCommitMessageFile()` is a wither: it hands back a copy and leaves
+     * the receiver untouched. Without the clone the assignment mutates the
+     * context in place, so every holder of the shared instance — including
+     * jobs already prepared — starts seeing the commit-msg path.
+     *
+     * @test
+     */
+    function with_commit_message_file_returns_a_copy_and_leaves_the_original_untouched()
+    {
+        $original = ExecutionContext::default();
+
+        $derived = $original->withCommitMessageFile('/tmp/COMMIT_EDITMSG');
+
+        $this->assertNotSame($original, $derived, 'the wither must return a new instance');
+        $this->assertSame('/tmp/COMMIT_EDITMSG', $derived->getCommitMessageFile());
+        $this->assertNull($original->getCommitMessageFile(), 'original must NOT be mutated');
+    }
 }

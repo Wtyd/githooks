@@ -17,6 +17,7 @@ use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Hooks\HookRunner;
 
 class HookRunnerTest extends UnitTestCase
@@ -37,6 +38,48 @@ class HookRunnerTest extends UnitTestCase
         $this->preparer = $this->createMock(FlowPreparer::class);
         $this->executor = $this->createMock(FlowExecutor::class);
         $this->runner = new HookRunner($this->preparer, $this->executor, $this->fileUtils);
+    }
+
+    /**
+     * @test
+     * @dataProvider hookArgumentCases
+     *
+     * git hands the `commit-msg` hook exactly ONE argument: the path of the
+     * message file. It travels to the inline job through the execution
+     * context, and nothing asserted it — the hook arguments were never even
+     * passed in this suite, so the index the guard reads was free to drift
+     * off the only slot git ever fills.
+     *
+     * @param string[] $hookArgs
+     */
+    public function the_first_hook_argument_becomes_the_commit_message_file(
+        array $hookArgs,
+        ?string $expectedFile
+    ): void {
+        $captured = null;
+        $this->preparer->method('prepareSingleJob')
+            ->willReturnCallback(function ($jobConfig, $options, $context) use (&$captured) {
+                $captured = $context;
+                return $this->createMock(FlowPlan::class);
+            });
+        $this->executor->method('execute')->willReturn(new FlowResult('phpcs', [], '0.00s'));
+
+        $this->runner->run('pre-commit', $this->buildConfigWithJobRef('phpcs', [], []), $hookArgs);
+
+        $this->assertNotNull($captured, 'the runner must reach the preparer');
+        $this->assertSame($expectedFile, $captured->getCommitMessageFile());
+    }
+
+    /**
+     * @return array<string, array{0: string[], 1: ?string}>
+     */
+    public function hookArgumentCases(): array
+    {
+        return [
+            'the single argument git passes' => [['/tmp/COMMIT_EDITMSG'], '/tmp/COMMIT_EDITMSG'],
+            'no arguments at all'            => [[], null],
+            'an empty argument'              => [[''], null],
+        ];
     }
 
     /** @test */

@@ -160,6 +160,26 @@ class FileReaderTest extends UnitTestCase
         $this->fileReader->readFile();
     }
 
+    /**
+     * The test above never reaches the extension dispatch: an unsupported
+     * extension is not part of the auto-discovery set, so `githooks.txt` is
+     * reported as "not found" long before. Only an explicit `--config`
+     * pointing at an existing file with an unknown extension falls through to
+     * the `else` — and without that throw the reader returns whatever the
+     * uninitialised variable holds and the run continues on an empty config.
+     *
+     * @test
+     */
+    function an_explicit_config_with_an_unsupported_extension_is_rejected()
+    {
+        $this->createFileSystem(['githooks.txt' => 'unsupported content']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported file type.');
+
+        $this->fileReader->readFile('githooks.txt');
+    }
+
     /** @test */
     function it_prioritizes_php_files_over_yml()
     {

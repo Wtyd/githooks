@@ -207,10 +207,9 @@ class CodeClimateResultFormatterTest extends UnitTestCase
     /** @test */
     function it_skips_jobs_whose_tool_type_has_no_registered_parser()
     {
-        // Kills Continue_ at line 39 in CodeClimateResultFormatter:
-        // when getParser() returns null for an unknown type, the
-        // formatter must skip the job — without the continue, the
-        // function would call parse() on a null object and crash.
+        // When getParser() returns null for an unknown type, the formatter
+        // must skip the job — without the guard, the function would call
+        // parse() on a null object and crash.
         $result = new FlowResult('qa', [
             new JobResult('custom_unknown', false, 'output', '1s', false, null, 'unknown_tool', 1, [], false, null, '{"some":"data"}'),
         ], '1s');
@@ -220,6 +219,32 @@ class CodeClimateResultFormatterTest extends UnitTestCase
         $data = json_decode($json, true);
 
         $this->assertSame([], $data);
+    }
+
+    /**
+     * The parser-less job is stepped over, not a stop sign: a job declared
+     * after it still contributes its issues. A lone unparseable job cannot
+     * tell `continue` from `break` — both yield an empty report — so the
+     * fixture puts the unknown type *first* and a parseable one behind it.
+     *
+     * @test
+     */
+    function a_job_without_parser_does_not_drop_the_issues_of_the_jobs_after_it()
+    {
+        $phpstanStdout = json_encode([
+            'files' => ['src/User.php' => ['messages' => [['message' => 'Method not found', 'line' => 14]]]],
+        ]);
+
+        $result = new FlowResult('qa', [
+            new JobResult('custom_unknown', false, '', '1s', false, null, 'unknown_tool', 1, [], false, null, '{"some":"data"}'),
+            new JobResult('phpstan_src', false, '', '1s', false, null, 'phpstan', 1, [], false, null, $phpstanStdout),
+        ], '1s');
+
+        $data = json_decode((new CodeClimateResultFormatter())->format($result), true);
+
+        $this->assertCount(1, $data);
+        $this->assertSame('Method not found', $data[0]['description']);
+        $this->assertSame('src/User.php', $data[0]['location']['path']);
     }
 
     /** @test */

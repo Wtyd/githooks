@@ -73,6 +73,59 @@ class MacOsProcessTreeTest extends UnitTestCase
         $this->assertSame(['ps -o pid=,stat= -p 200,300,400'], $tree->commands);
     }
 
+    /**
+     * A malformed line in the MIDDLE of the `ps -o pid=,stat=` listing is
+     * skipped, not a stop sign, and every live PID behind it is reported.
+     *
+     * Three mutants share this fixture, and all three need >= 2 survivors:
+     * `continue` -> `break` in parseStates (the second PID never gets a
+     * state), and ArrayOneItem on both `parseStates()` and `alive()`
+     * (the result is truncated to its first entry).
+     *
+     * @test
+     */
+    public function alive_keeps_parsing_after_a_malformed_state_line_and_returns_every_live_pid(): void
+    {
+        $tree = $this->fakeTreeWith([
+            'ps -o pid=,stat= -p 200,300' => "  200 S+\nPID STAT\n  300 R\n",
+        ]);
+
+        $this->assertSame([200, 300], $tree->alive([200, 300]));
+    }
+
+    /**
+     * The `^` anchor in the pid/ppid pattern is load-bearing: a line whose
+     * digits are preceded by anything else is not a process record. Without
+     * it, `xx 300 100` registers 300 as a child of 100 and the caller kills
+     * a process that was never in the tree.
+     *
+     * @test
+     */
+    public function descendants_ignore_lines_whose_pid_is_not_at_the_start(): void
+    {
+        $tree = $this->fakeTreeWith([
+            'ps -o pid=,ppid= -ax' => "  200   100\nxx 300   100\n",
+        ]);
+
+        $this->assertSame([200], $tree->descendants(100));
+    }
+
+    /**
+     * Same anchor, on the pid/state pattern: `cmd 300 S+` must not make 300
+     * look alive. Note the state has to be a live one — a `Z` would be
+     * dropped by the zombie filter anyway and the mutant would survive.
+     *
+     * @test
+     */
+    public function alive_ignores_state_lines_whose_pid_is_not_at_the_start(): void
+    {
+        $tree = $this->fakeTreeWith([
+            'ps -o pid=,stat= -p 300' => "cmd 300 S+\n",
+        ]);
+
+        $this->assertSame([], $tree->alive([300]));
+    }
+
     /** @test */
     public function alive_with_no_pids_does_not_invoke_ps(): void
     {

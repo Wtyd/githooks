@@ -151,6 +151,44 @@ class CommitMsgJobTest extends UnitTestCase
         rmdir($emptyDir);
         $this->assertFalse($result->isSuccess());
         $this->assertFalse($result->isSkipped(), 'a missing-message failure is a failure, not a skip');
-        $this->assertStringContainsString('no message file available', $result->getOutput());
+        // The whole sentence, not a substring: the half that matters to the
+        // committer is the one listing the three ways to supply a message.
+        $this->assertSame(
+            "commit-msg: no message file available. Provide --message-file, --message, "
+            . "or run via the 'commit-msg' git hook.",
+            $result->getOutput()
+        );
+    }
+
+    /**
+     * @test
+     *
+     * The failure block echoes the offending subject back so the committer can
+     * see what was rejected. It is a `mb_substr` window, and an off-by-one on
+     * its offset silently eats the first character of every rejected subject.
+     */
+    public function the_failure_block_echoes_the_whole_subject_back(): void
+    {
+        $job = $this->job(['preset' => 'conventional-commits']);
+
+        $result = $this->runWithContext($job, $this->contextWithMessage('Add stuff.'));
+
+        $this->assertStringContainsString("\n  Subject:   Add stuff.\n", $result->getOutput());
+    }
+
+    /**
+     * @test
+     *
+     * Sub-second runs report milliseconds; the seconds format is reserved for
+     * runs at or over 1s. An inline validation never reaches a second, so an
+     * inverted threshold would label every commit-msg run as `0.00s`.
+     */
+    public function a_sub_second_validation_reports_its_time_in_milliseconds(): void
+    {
+        $job = $this->job(['preset' => 'conventional-commits']);
+
+        $result = $this->runWithContext($job, $this->contextWithMessage('feat: add endpoint'));
+
+        $this->assertMatchesRegularExpression('/^\d+ms$/', $result->getExecutionTime());
     }
 }

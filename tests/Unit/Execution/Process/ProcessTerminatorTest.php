@@ -185,6 +185,33 @@ class ProcessTerminatorTest extends UnitTestCase
     }
 
     /**
+     * Row 3b — the pid-less process must be *skipped*, not treated as a stop
+     * sign: a forked process listed after it still gets enumerated and
+     * signalled. With `break` in place of `continue` the whole victim list
+     * comes back empty and the live tree leaks.
+     *
+     * @test
+     */
+    public function a_process_without_pid_does_not_stop_the_termination_of_the_ones_after_it(): void
+    {
+        $tree = new FakeProcessTree([100 => [200]], [100, 200]);
+        $terminator = new RecordingProcessTerminator($tree, 5000);
+        $notForked = new FakeProcess();
+        $forked = (new FakeProcess())->withPid(100);
+
+        $terminator->terminate([$notForked, $forked]);
+
+        $this->assertSame([
+            'descendants:100',
+            'signal:200:' . self::TERM,
+            'signal:100:' . self::TERM,
+            'alive',
+        ], $tree->calls);
+        $this->assertFalse($notForked->isRunning());
+        $this->assertFalse($forked->isRunning());
+    }
+
+    /**
      * Rows 1 and 2 — degraded path: no tree or no ext-posix → previous behaviour plus one stderr warning.
      *
      * @test

@@ -110,13 +110,34 @@ class PestJobTest extends UnitTestCase
         $this->assertNull($this->pest(['coverage' => true])->getThreadCapability());
     }
 
-    /** @test */
-    public function thread_capability_is_offered_when_parallel_is_on()
+    /**
+     * @test
+     * @dataProvider parallelProcessesCases
+     *
+     * Both sides of the `?? 4` fallback. The declared value is what the
+     * budget allocator divides up, so the documented default is part of the
+     * contract: asserting only the argument key leaves it free to drift.
+     *
+     * @param array<string, mixed> $config
+     */
+    public function thread_capability_is_offered_when_parallel_is_on(array $config, int $expectedThreads)
     {
-        $capability = $this->pest(['parallel' => true, 'processes' => 6])->getThreadCapability();
+        $capability = $this->pest($config)->getThreadCapability();
 
         $this->assertInstanceOf(ThreadCapability::class, $capability);
         $this->assertSame('processes', $capability->getArgumentKey());
+        $this->assertSame($expectedThreads, $capability->getDefaultThreads());
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: int}>
+     */
+    public function parallelProcessesCases(): array
+    {
+        return [
+            'processes declared' => [['parallel' => true, 'processes' => 6], 6],
+            'processes absent'   => [['parallel' => true], 4],
+        ];
     }
 
     /** @test */

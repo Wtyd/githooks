@@ -402,7 +402,8 @@ class JobConfigurationTest extends UnitTestCase
     public function it_validates_the_keys_of_script_jobs(
         array $config,
         ?string $expectedError,
-        ?string $expectedWarning
+        ?string $expectedWarning,
+        bool $expectsRejection = false
     ) {
         $result = new ValidationResult();
         $job = JobConfiguration::fromArray('runner', ['type' => 'script'] + $config, $this->registry, $result, new JobRegistry());
@@ -410,6 +411,17 @@ class JobConfigurationTest extends UnitTestCase
         if ($expectedError !== null) {
             $this->assertTrue($result->hasErrors(), 'Expected a hard error for this config');
             $this->assertStringContainsString($expectedError, implode(' | ', $result->getErrors()));
+            // Two shapes of error, and the difference is the point: the shape
+            // guards (missing `executable-path`) REJECT the config and return
+            // null, while the key validation records the error and still hands
+            // back the job. A rejected shape that yielded an instance anyway
+            // would build an empty command that exits 0 — the job would be
+            // reported as passing while running nothing.
+            if ($expectsRejection) {
+                $this->assertNull($job, 'a rejected config must not produce a job');
+            } else {
+                $this->assertNotNull($job, 'a key-level error still yields the job');
+            }
             return;
         }
 
@@ -428,7 +440,7 @@ class JobConfigurationTest extends UnitTestCase
     {
         return [
             'no keys at all' => [
-                [], "script jobs require an 'executable-path' key.", null,
+                [], "script jobs require an 'executable-path' key.", null, true,
             ],
             'executable-path only' => [
                 ['executable-path' => './run-tests'], null, null,

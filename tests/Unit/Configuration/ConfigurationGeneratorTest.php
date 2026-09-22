@@ -29,6 +29,24 @@ class ConfigurationGeneratorTest extends UnitTestCase
         $this->assertSame('phpcs', $config['jobs']['phpcs_src']['type']);
     }
 
+    /**
+     * `paths` is emitted for every job EXCEPT phpunit, which is driven by its
+     * own configuration file. A fixture without phpunit cannot tell that rule
+     * from its negation — under the flipped guard phpstan and phpcs silently
+     * lose their paths and the generated config analyses nothing.
+     *
+     * @test
+     */
+    public function generated_config_gives_paths_to_every_job_but_phpunit(): void
+    {
+        $content = (new ConfigurationGenerator())->generate(['phpstan', 'phpunit'], ['src'], ['pre-commit']);
+
+        $config = $this->evaluateGenerated($content);
+
+        $this->assertSame(['src'], $config['jobs']['phpstan_src']['paths']);
+        $this->assertArrayNotHasKey('paths', $config['jobs']['phpunit_src']);
+    }
+
     /** @test */
     public function generated_config_maps_each_hook_event_to_the_qa_flow(): void
     {

@@ -281,6 +281,39 @@ class FastExecutionTest extends UnitTestCase
     }
 
     /**
+     * A non-accelerable tool is stepped over, not a stop sign: the
+     * accelerable tool declared *after* it still gets its paths narrowed to
+     * the modified files. With `break` the loop bails on the first
+     * non-accelerable tool and every tool behind it drops out of the run.
+     *
+     * @test
+     */
+    function processTools_keeps_accelerating_the_tools_declared_after_a_non_accelerable_one()
+    {
+        $gitFiles = new FileUtilsFake();
+        $gitFiles->setModifiedfiles(['src/File.php']);
+        $gitFiles->setFilesThatShouldBeFoundInDirectories(['src/File.php']);
+
+        $toolsFactorySpy = Mockery::spy(ToolsFactory::class);
+
+        $configurationFile = [
+            'Tools'  => ['phpcpd', 'phpcs'],
+            'phpcpd' => ['paths' => ['src']],
+            'phpcs'  => ['paths' => ['src']],
+        ];
+        $registry = new ToolRegistry();
+        $configFile = new ConfigurationFile($configurationFile, 'all', $registry);
+
+        $expectedPhpcpd = new ToolConfiguration('phpcpd', ['paths' => ['src']], new ToolRegistry());
+        $expectedPhpcs = new ToolConfiguration('phpcs', ['paths' => ['src/File.php']], new ToolRegistry());
+
+        $fastExecution = new FastExecution($gitFiles, $toolsFactorySpy, $registry);
+        $fastExecution->processTools($configFile->getToolsConfiguration(), $configFile);
+
+        $toolsFactorySpy->shouldHaveReceived('__invoke', [[$expectedPhpcpd, $expectedPhpcs]]);
+    }
+
+    /**
      * @test
      * @dataProvider noAcelerableTools2Provider
      */

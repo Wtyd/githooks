@@ -173,6 +173,21 @@ class CommitMessageValidatorTest extends UnitTestCase
 
     /**
      * @test
+     *
+     * With no `pattern-message` the reason is built from a fixed prefix plus
+     * the pattern itself, which is the only thing telling the committer what
+     * shape the subject was supposed to have. It is the reason printed in the
+     * hook's failure block, so pin it whole rather than by substring.
+     */
+    public function a_custom_pattern_without_its_own_message_reports_the_pattern_in_the_reason(): void
+    {
+        $outcome = $this->validator->validate('nope', ['pattern' => '/^feat: /']);
+
+        $this->assertSame('Subject must match pattern: /^feat: /', $outcome->getReason());
+    }
+
+    /**
+     * @test
      * @dataProvider subjectExtractionCases
      */
     public function extracts_subject(string $raw, string $expectedSubject, int $expectedLength): void

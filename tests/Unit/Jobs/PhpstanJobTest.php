@@ -6,6 +6,7 @@ namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\PhpstanJob;
 
 /**
@@ -368,6 +369,26 @@ class PhpstanJobTest extends UnitTestCase
         ]));
 
         $this->assertSame(7, $job->getDeclaredNeonWorkers());
+    }
+
+    /**
+     * phpstan owns its own parallelism through the .neon, so the capability
+     * is declared non-controllable with a floor of one worker: the allocator
+     * may account for it but must never hand it a different number. A test
+     * that only checks the worker count leaves both traits free to drift.
+     *
+     * @test
+     */
+    public function thread_capability_is_a_non_controllable_slot_with_a_floor_of_one_worker()
+    {
+        $job = new PhpstanJob(new JobConfiguration("phpstan_src", "phpstan", ["paths" => ["src"]]));
+
+        $capability = $job->getThreadCapability();
+
+        $this->assertInstanceOf(ThreadCapability::class, $capability);
+        $this->assertSame("_phpstan_internal", $capability->getArgumentKey());
+        $this->assertSame(1, $capability->getMinimumThreads());
+        $this->assertFalse($capability->isControllable());
     }
 
     private function writeNeon(string $name, string $content): string

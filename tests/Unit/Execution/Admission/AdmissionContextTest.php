@@ -277,42 +277,43 @@ class AdmissionContextTest extends UnitTestCase
 
     /**
      * @test
+     * @dataProvider resolvedBucketCases
      *
-     * Multiple needs where the FIRST is in completedJobs and the second
-     * is blocking. With `continue`, the foreach proceeds to evaluate the
-     * second dep and appends it. With `break`, the second dep is never
-     * scanned and the blocking list is empty.
+     * Decision table over the three terminal buckets scanned by
+     * `getBlockingNeeds()`. The FIRST need sits in the bucket under test and
+     * the second is pending: with `continue`, the foreach proceeds and
+     * appends the second dep; with `break`, the second dep is never scanned
+     * and the blocking list comes back empty.
+     *
+     * One row per bucket — a single-bucket test cannot distinguish the
+     * `continue` of its own guard from `break` on the guards below it.
+     *
+     * @param string[] $completed
+     * @param string[] $failed
+     * @param string[] $skipped
      */
-    public function blocking_needs_continues_past_completed_dependencies(): void
-    {
-        $ctx = $this->contextWithNeeds(
-            ['j' => ['a', 'b']],
-            ['a'],   // completed
-            [],      // failed
-            []       // skipped
-        );
+    public function blocking_needs_continues_past_each_resolved_bucket(
+        array $completed,
+        array $failed,
+        array $skipped
+    ): void {
+        $ctx = $this->contextWithNeeds(['j' => ['a', 'b']], $completed, $failed, $skipped);
 
         $job = $this->buildJob('j');
         $this->assertSame(['b'], $ctx->getBlockingNeeds($job));
     }
 
     /**
-     * @test
-     *
-     * Multiple needs where the FIRST is in failedJobs and the second is
-     * blocking. Same rationale as above but for the failed-jobs bucket.
+     * @return array<string, array{0: string[], 1: string[], 2: string[]}>
      */
-    public function blocking_needs_continues_past_failed_dependencies(): void
+    public function resolvedBucketCases(): array
     {
-        $ctx = $this->contextWithNeeds(
-            ['j' => ['a', 'b']],
-            [],      // completed
-            ['a'],   // failed
-            []       // skipped
-        );
-
-        $job = $this->buildJob('j');
-        $this->assertSame(['b'], $ctx->getBlockingNeeds($job));
+        return [
+            // completed, failed,  skipped
+            'first need completed' => [['a'], [], []],
+            'first need failed'    => [[], ['a'], []],
+            'first need skipped'   => [[], [], ['a']],
+        ];
     }
 
     /**

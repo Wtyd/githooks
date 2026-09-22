@@ -265,8 +265,14 @@ class CpuDetectorTest extends UnitTestCase
     }
 
     /**
-     * pads its output with whitespace on some Windows hosts. Without trim,
-     * is_numeric('  8  ') is false and the detector falls through to return 1.
+     * pads its output with whitespace on some Windows hosts.
+     *
+     * The trim is load-bearing on PHP 7.4, the minimum this package supports:
+     * there `is_numeric('  8  ')` is false and the detector falls through to
+     * the sentinel 1. PHP 8.0 started accepting trailing whitespace, so on 8.x
+     * this test passes with or without the trim — which is why the mutation
+     * run (which uses 8.x) reports the `trim()` as an equivalent mutant. Do
+     * not remove it on the strength of that report.
      *
      * @test
      */

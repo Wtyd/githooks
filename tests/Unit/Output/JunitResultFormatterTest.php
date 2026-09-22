@@ -45,6 +45,11 @@ class JunitResultFormatterTest extends UnitTestCase
         $this->assertSame('lint', $testsuite->getAttribute('name'));
         $this->assertSame('1', $testsuite->getAttribute('tests'));
         $this->assertSame('0', $testsuite->getAttribute('failures'));
+
+        // The job name is what a CI report lists the case under; asserting
+        // only the suite leaves every `<testcase>` free to come back unnamed.
+        $testcase = $dom->getElementsByTagName('testcase')->item(0);
+        $this->assertSame('phpcs_all', $testcase->getAttribute('name'));
     }
 
     /** @test */

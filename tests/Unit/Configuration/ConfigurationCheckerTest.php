@@ -217,6 +217,62 @@ class ConfigurationCheckerTest extends UnitTestCase
         }
     }
 
+    /**
+     * A non-writable report file is skipped, not a stop sign: the next entry
+     * of the `reports` map still gets validated. With `break` the first
+     * locked file hides every problem declared behind it.
+     *
+     * @test
+     */
+    public function validate_reports_paths_keeps_checking_the_entries_after_a_locked_file(): void
+    {
+        $locked = $this->tmpDir . '/locked.json';
+        file_put_contents($locked, '{}');
+        chmod($locked, 0444);
+
+        if (is_writable($locked)) {
+            $this->markTestSkipped('running as a user that bypasses file permissions');
+        }
+
+        try {
+            $result = $this->checker->validateReportsPaths(
+                ['json' => $locked, 'sarif' => $this->tmpDir . '/nope/qa.sarif'],
+                'flows.options'
+            );
+
+            $this->assertCount(1, $result['errors']);
+            $this->assertStringContainsString("'$locked' is not writable", $result['errors'][0]);
+            $this->assertCount(1, $result['warnings'], 'the sarif entry must still be reached');
+            $this->assertStringContainsString('flows.options.reports.sarif', $result['warnings'][0]);
+        } finally {
+            chmod($locked, 0644);
+        }
+    }
+
+    /**
+     * Both filesystem checks of `validateConfigFiles` accumulate: a job may
+     * declare a missing `config` AND a missing `rules` file, and the caller
+     * must see both. A fixture with a single missing file cannot tell a full
+     * list from one truncated to its first entry.
+     *
+     * @test
+     */
+    public function validate_config_files_reports_every_missing_file_not_just_the_first(): void
+    {
+        $warnings = $this->checker->validateConfigFiles([
+            'config' => '/nope.neon',
+            'rules'  => 'qa/missing.xml',
+        ]);
+
+        $this->assertSame(
+            [
+                "config file '/nope.neon' not found",
+                "rules file 'qa/missing.xml' not found",
+            ],
+            $warnings
+        );
+    }
+
     /** @test */
     public function validate_reports_paths_emits_context_in_messages(): void
     {

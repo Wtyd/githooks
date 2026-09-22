@@ -227,26 +227,55 @@ class JobRunnerTest extends UnitTestCase
         // FileUtils::detectMainBranch().
     }
 
-    /** @test */
-    public function time_budget_overrides_propagate_to_each_job_in_the_plan(): void
-    {
-        $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
-        $parser = $this->fakeParser(fn() => $config);
+    /**
+     * @test
+     * @dataProvider timeOverrideCases
+     *
+     * Decision table of the `warn !== null || fail !== null` guard, read off
+     * the job's own thresholds. The job starts with `warn-after: 1` /
+     * `fail-after: 2` in its config, so "the override did not run" is
+     * distinguishable from "it ran": without a configured baseline both
+     * branches leave the job at `null` and every mutant on the guard, the
+     * loop and the call survives.
+     */
+    public function time_budget_overrides_propagate_to_each_job_in_the_plan(
+        ?int $cliWarn,
+        ?int $cliFail,
+        ?int $expectedWarn,
+        ?int $expectedFail
+    ): void {
+        $jobConfig = new JobConfiguration('phpcs_src', 'custom', [
+            'script'     => 'true',
+            'warn-after' => 1,
+            'fail-after' => 2,
+        ]);
+        $parser = $this->fakeParser(fn() => $this->configWithJobs(['phpcs_src' => $jobConfig]));
 
         $prep = ($this->makeRunner($parser))
             ->prepare($this->req([
                 'jobName' => 'phpcs_src',
-                'timeBudgetWarn' => 5,
-                'timeBudgetFail' => 10,
+                'timeBudgetWarn' => $cliWarn,
+                'timeBudgetFail' => $cliFail,
             ]));
 
         $this->assertTrue($prep->success);
         $job = $prep->plan->getJobs()[0];
-        // Smoke test the override took effect — JobAbstract exposes thresholds
-        // through getter only via inspection so we trust no exception thrown.
-        // The behavioural assertion lives in system tests for `--warn-after`
-        // / `--fail-after`.
-        $this->assertNotNull($job);
+        $this->assertSame($expectedWarn, $job->getWarnAfter());
+        $this->assertSame($expectedFail, $job->getFailAfter());
+    }
+
+    /**
+     * @return array<string, array{0: ?int, 1: ?int, 2: ?int, 3: ?int}>
+     */
+    public function timeOverrideCases(): array
+    {
+        return [
+            // cli warn, cli fail,  effective warn, effective fail
+            'no flag keeps the configured pair' => [null, null, 1, 2],
+            'only --warn-after clears the fail' => [5, null, 5, null],
+            'only --fail-after clears the warn' => [null, 10, null, 10],
+            'both flags replace both'           => [5, 10, 5, 10],
+        ];
     }
 
     /**

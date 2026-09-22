@@ -6,6 +6,7 @@ namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\GitHooks\Execution\ThreadCapability;
 use Wtyd\GitHooks\Jobs\PsalmJob;
 
 class PsalmJobTest extends UnitTestCase
@@ -295,5 +296,37 @@ XML);
             $ref->invoke($job, '/abs/cache', '/etc/psalm.xml'),
             'unix absolute path returned verbatim'
         );
+    }
+
+    /**
+     * @test
+     * @dataProvider threadsCases
+     *
+     * Both sides of the `?? 1` fallback. The declared value is what the
+     * thread budget allocator divides up, so the documented default belongs
+     * to the contract — not just the argument key.
+     *
+     * @param array<string, mixed> $args
+     */
+    public function thread_capability_reports_the_declared_threads_or_the_default(array $args, int $expected)
+    {
+        $job = new PsalmJob(new JobConfiguration("psalm_src", "psalm", $args));
+
+        $capability = $job->getThreadCapability();
+
+        $this->assertInstanceOf(ThreadCapability::class, $capability);
+        $this->assertSame("threads", $capability->getArgumentKey());
+        $this->assertSame($expected, $capability->getDefaultThreads());
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: int}>
+     */
+    public function threadsCases(): array
+    {
+        return [
+            "threads declared" => [["paths" => ["src"], "threads" => 8], 8],
+            "threads absent"   => [["paths" => ["src"]], 1],
+        ];
     }
 }
