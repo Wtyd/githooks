@@ -39,7 +39,8 @@
                 "Wtyd\\GitHooks\\Output\\ClaudeCodeResultFormatter::timeBudgetReason::107",
                 "Wtyd\\GitHooks\\Output\\ToolOutputParser\\PhpmdOutputParser::parse::48",
                 "Wtyd\\GitHooks\\Configuration\\KeySuggestion::suggestionFor",
-                "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch"
+                "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch",
+                "Wtyd\\GitHooks\\Execution\\Process\\ProcessTerminator::waitForExit"
             ]
         },
         "DecrementInteger": {
@@ -85,7 +86,10 @@
                 "Wtyd\\GitHooks\\Execution\\Process\\MacOsProcessTree::parseChildren",
                 "Wtyd\\GitHooks\\Execution\\Process\\MacOsProcessTree::parseStates",
                 "Wtyd\\GitHooks\\History\\Percentiles::nearestRank",
-                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches"
+                "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches",
+                "Wtyd\\GitHooks\\History\\RunRecord::getTimestampLabel",
+                "Wtyd\\GitHooks\\Execution\\Process\\ProcessTerminator::__construct",
+                "Wtyd\\GitHooks\\Jobs\\CommitMsgJob::formatTime"
             ]
         },
         "UnwrapStrToUpper": {
@@ -116,7 +120,9 @@
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::41",
                 "Wtyd\\GitHooks\\Execution\\Process\\MacOsProcessTree::parseChildren",
                 "Wtyd\\GitHooks\\Execution\\Process\\MacOsProcessTree::parseStates",
-                "Wtyd\\GitHooks\\Utils\\MemoryDetector::detectMacOS"
+                "Wtyd\\GitHooks\\Utils\\MemoryDetector::detectMacOS",
+                "Wtyd\\GitHooks\\Jobs\\CommitMessage\\CommitMessageValidator::validate",
+                "Wtyd\\GitHooks\\Output\\JunitResultFormatter::parseSeconds"
             ]
         },
         "CastBool": {
@@ -137,7 +143,11 @@
                 "Wtyd\\GitHooks\\Execution\\InputFilesResolver::readManifest::158",
                 "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::155",
                 "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpConfigCacheResolver::collectMatches::156",
-                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::78"
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::78",
+                "Wtyd\\GitHooks\\Jobs\\CommitMessage\\CommitMessageValidator::validate",
+                "Wtyd\\GitHooks\\Jobs\\CommitMsgJob::__construct",
+                "Wtyd\\GitHooks\\Execution\\Process\\LinuxProcessTree::isAlive",
+                "Wtyd\\GitHooks\\Configuration\\JobConfiguration::validatePestRunner"
             ]
         },
         "ArrayItemRemoval": {
@@ -172,7 +182,9 @@
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::863",
                 "Wtyd\\GitHooks\\Execution\\InputFilesResolver::expandAndValidate::213",
                 "Wtyd\\GitHooks\\Jobs\\CacheResolver\\PhpstanCacheResolver::resolveRecursive::46",
-                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::readManifest"
+                "Wtyd\\GitHooks\\Execution\\InputFilesResolver::readManifest",
+                "Wtyd\\GitHooks\\Execution\\Process\\ProcessTerminator::signalable",
+                "Wtyd\\GitHooks\\Execution\\Process\\ProcessTreeWalk::descendants"
             ]
         },
         "FalseValue": {
@@ -196,7 +208,8 @@
                 "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetPlan::__construct::40",
                 "Wtyd\\GitHooks\\Output\\HumanIssueFormatter::renderIssues::92",
-                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTotalCores::178"
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTotalCores::178",
+                "Wtyd\\GitHooks\\Execution\\FlowExecutor::triggerMemoryBudgetKill"
             ]
         },
         "ConcatOperandRemoval": {
@@ -223,7 +236,8 @@
                 "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderAttribution::124",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::863",
                 "Wtyd\\GitHooks\\Output\\StatsTableRenderer::render::52",
-                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::81"
+                "Wtyd\\GitHooks\\Output\\StatsTableRenderer::renderTable::81",
+                "Wtyd\\GitHooks\\Output\\DiagnosticsHeaderEmitter::emit"
             ]
         },
         "Identical": {
@@ -245,7 +259,8 @@
                 "Wtyd\\GitHooks\\Jobs\\PhpcsJob::extractCacheFromRuleset::85",
                 "Wtyd\\GitHooks\\Jobs\\PhpcsJob::extractCacheFromRuleset::86",
                 "Wtyd\\GitHooks\\Jobs\\PsalmJob::getCachePaths::48",
-                "Wtyd\\GitHooks\\Jobs\\PsalmJob::getCachePaths::49"
+                "Wtyd\\GitHooks\\Jobs\\PsalmJob::getCachePaths::49",
+                "Wtyd\\GitHooks\\Utils\\FileUtils::getCurrentBranch"
             ]
         },
         "Assignment": {
@@ -287,7 +302,8 @@
                 "Wtyd\\GitHooks\\Utils\\MemoryDetector::readCgroupMemoryMaxMb::125",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool",
                 "Wtyd\\GitHooks\\History\\RunHistoryReader::extractJobMetric",
-                "Wtyd\\GitHooks\\Hooks\\HookRunner::shouldExecute"
+                "Wtyd\\GitHooks\\Hooks\\HookRunner::shouldExecute",
+                "Wtyd\\GitHooks\\Configuration\\JobConfiguration::validateCoresKey"
             ]
         },
         "Coalesce": {
@@ -443,6 +459,11 @@
         "LogicalAndSingleSubExprNegation": {
             "ignore": [
                 "Wtyd\\GitHooks\\Output\\FlowResultRenderer::stdoutIsTty"
+            ]
+        },
+        "RoundingFamily": {
+            "ignore": [
+                "Wtyd\\GitHooks\\Jobs\\CommitMsgJob::formatTime"
             ]
         }
     }
