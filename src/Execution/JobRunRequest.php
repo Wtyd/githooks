@@ -74,7 +74,10 @@ class JobRunRequest
         bool $memoryBudgetDisabled,
         ?bool $statsFlag,
         ?bool $cliFailFast,
-        bool $dryRun = false,
+        // No default: a silent dry run is the one mistake this DTO must not
+        // make easy. Every caller resolves the flag, so the default was dead
+        // weight that only made an omission possible.
+        bool $dryRun,
         ?string $commitMessageFile = null,
         ?bool $ignoreErrorsOnExit = null
     ) {

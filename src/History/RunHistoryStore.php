@@ -119,12 +119,36 @@ class RunHistoryStore
             }
         }
 
-        if (count($files) <= $historySize) {
+        $stale = self::staleFiles($files, $historySize);
+        if ($stale === []) {
             return;
         }
 
-        sort($files);
-        $stale = array_slice($files, 0, count($files) - $historySize);
         Storage::delete($stale);
+    }
+
+    /**
+     * The files that fall outside the retention window, oldest first.
+     *
+     * `Storage::files()` carries no ordering guarantee — Flysystem walks the
+     * directory with DirectoryIterator, which yields entries in whatever order
+     * the filesystem hands out — so the chronological order has to be
+     * re-established here from the `Ymd-His` filename prefix before slicing.
+     * Exposed as a pure function because the ordering bug is invisible through
+     * `rotate()`: it only shows up when the directory happens to enumerate out
+     * of order, which no test can force.
+     *
+     * @param string[] $files
+     * @return string[]
+     */
+    public static function staleFiles(array $files, int $historySize): array
+    {
+        if (count($files) <= $historySize) {
+            return [];
+        }
+
+        sort($files);
+
+        return array_slice($files, 0, count($files) - $historySize);
     }
 }

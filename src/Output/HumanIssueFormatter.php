@@ -33,10 +33,6 @@ final class HumanIssueFormatter
         if (trim($rawOutput) === '') {
             return '';
         }
-        if (!$this->registry->hasParser($jobType)) {
-            return $rawOutput;
-        }
-
         $parser = $this->registry->getParser($jobType);
         if ($parser === null) {
             return $rawOutput;

@@ -457,6 +457,10 @@ class JobConfiguration
             return;
         }
 
+        // The early return is redundant only while SINGLE_THREADED_TYPES and
+        // THREAD_ARG_KEYS stay disjoint — a single-threaded type has no native
+        // thread flag to warn about. Adding a type to both lists makes this
+        // return load-bearing, so do not drop it as dead code.
         if (in_array($type, self::SINGLE_THREADED_TYPES, true) && $cores > 1) {
             $result->addWarning(
                 "Job '$name': '$type' is single-threaded; 'cores' ($cores) "
