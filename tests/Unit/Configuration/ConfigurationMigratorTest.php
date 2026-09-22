@@ -112,6 +112,14 @@ class ConfigurationMigratorTest extends UnitTestCase
 
         $this->assertStringContainsString("'type' => 'custom'", $output);
         $this->assertStringContainsString("'script' => 'node_modules/.bin/eslint --fix'", $output);
+
+        // The whole entry, not two of its lines: the v2 keys were folded into
+        // `script` and must not survive as job keys of their own. A substring
+        // match cannot see the leftovers a missing early return would add.
+        $this->assertSame(
+            ['type' => 'custom', 'script' => 'node_modules/.bin/eslint --fix'],
+            $this->evalConfig($output)['jobs']['script']
+        );
     }
 
     /** @test */

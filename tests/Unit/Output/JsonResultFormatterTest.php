@@ -210,6 +210,34 @@ class JsonResultFormatterTest extends UnitTestCase
         $this->assertSame(['qa', 'lint'], $data['flows']);
     }
 
+    /**
+     * `flows` is a JSON *array* in the v2 envelope, and the producer may hand
+     * over a list with holes (anything that went through `array_filter`).
+     * Without the reindex, `json_encode` emits an object keyed by the surviving
+     * indices — `{"1":"qa","3":"lint"}` — and every consumer that iterates the
+     * array breaks. A fixture already numbered 0..n cannot show the difference.
+     *
+     * @test
+     */
+    function flows_is_reindexed_so_it_serialises_as_an_array_not_an_object()
+    {
+        $result = new FlowResult(
+            'qa+lint',
+            [new JobResult('phpcs_src', true, '', '1s')],
+            '1s',
+            0,
+            0,
+            'full',
+            null,
+            [1 => 'qa', 3 => 'lint']
+        );
+
+        $json = (new JsonResultFormatter())->format($result);
+
+        $this->assertStringContainsString('"flows": [', $json, 'flows must serialise as a JSON array');
+        $this->assertSame(['qa', 'lint'], json_decode($json, true)['flows']);
+    }
+
     /** @test */
     function effective_options_block_is_emitted_when_present()
     {

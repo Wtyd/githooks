@@ -257,6 +257,40 @@ class FlowDependencyGraphTest extends UnitTestCase
     }
 
     /**
+     * Same shape as B6 but one level up: the OUTER loop of `findCycle()`,
+     * which walks every declared job and skips the ones a previous DFS
+     * already explored. `break` there stops the whole scan at the first
+     * already-visited entry, so any cycle declared behind it never gets
+     * looked at — the DAG validates clean and the flow deadlocks at runtime.
+     *
+     * Needs two things at once: a job reached as a DEPENDENCY of an earlier
+     * one (so it is already visited when its own turn comes) and a cycle
+     * declared AFTER it.
+     *
+     * @test
+     */
+    public function B7_cycle_declared_after_an_already_explored_job_is_still_detected()
+    {
+        // A needs B, so B is already visited when the outer loop reaches it.
+        // The C ↔ D cycle sits behind B in declaration order.
+        $refs = [
+            $this->ref('A', ['B']),
+            $this->ref('B'),
+            $this->ref('C', ['D']),
+            $this->ref('D', ['C']),
+        ];
+        $result = new ValidationResult();
+
+        $graph = FlowDependencyGraph::build('qa', $refs, $result);
+
+        $this->assertNull($graph);
+        $this->assertErrorEquals(
+            "Flow 'qa': 'needs' has a cycle: C -> D -> C.",
+            $result
+        );
+    }
+
+    /**
      * Diamond WITH join (a node converging on 2 needs) — the fan-out shape
      * was covered but no node had multiple needs. Verifies the stable
      * topological order across the join.

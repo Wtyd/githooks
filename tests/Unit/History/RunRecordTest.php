@@ -89,4 +89,54 @@ class RunRecordTest extends UnitTestCase
         $this->assertSame('20260610-143005', $this->record([])->getTimestampLabel());
         $this->assertSame('whatever.json', $this->record([], 'whatever.json')->getTimestampLabel());
     }
+
+    /**
+     * @test
+     *
+     * The label recovers a *prefix*, so the digits have to be at the start of
+     * the filename. Without the anchor, any name carrying that digit shape
+     * anywhere is mistaken for a timestamped run, and the label shows a
+     * fragment of the name instead of the name itself.
+     */
+    public function timestamp_label_does_not_mistake_digits_in_the_middle_for_the_prefix(): void
+    {
+        $this->assertSame(
+            'backup-20260610-143005-qa.json',
+            $this->record([], 'backup-20260610-143005-qa.json')->getTimestampLabel()
+        );
+    }
+
+    /**
+     * @test
+     * @dataProvider counterCases
+     *
+     * The counters come out of an untrusted payload: anything that is not an
+     * int reads as zero. Reporting the raw value instead would put a string
+     * (or null) where the profile commands expect to do arithmetic.
+     *
+     * @param array<string, mixed> $payload
+     */
+    public function counters_fall_back_to_zero_for_anything_that_is_not_an_int(
+        array $payload,
+        int $expectedFailed,
+        int $expectedSkipped
+    ): void {
+        $record = $this->record($payload);
+
+        $this->assertSame($expectedFailed, $record->getFailed());
+        $this->assertSame($expectedSkipped, $record->getSkipped());
+    }
+
+    /**
+     * @return array<string, array{0: array<string, mixed>, 1: int, 2: int}>
+     */
+    public function counterCases(): array
+    {
+        return [
+            'both recorded as ints' => [['failed' => 2, 'skipped' => 3], 2, 3],
+            'absent'                => [[], 0, 0],
+            'recorded as strings'   => [['failed' => '2', 'skipped' => '3'], 0, 0],
+            'recorded as null'      => [['failed' => null, 'skipped' => null], 0, 0],
+        ];
+    }
 }

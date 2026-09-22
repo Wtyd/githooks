@@ -131,6 +131,23 @@ class ConfigurationCheckerTest extends UnitTestCase
         $this->assertSame([], $this->checker->validatePaths([]));
     }
 
+    /**
+     * A path may legitimately be a single FILE, not a directory — the guard is
+     * "neither a dir nor an existing file". With only directories and missing
+     * paths in the fixtures, the two halves of that condition are never told
+     * apart, and an `&&` turned into `||` would warn about every file a job
+     * points at.
+     *
+     * @test
+     */
+    public function validate_paths_accepts_a_path_that_is_a_file_rather_than_a_directory(): void
+    {
+        $file = $this->tmpDir . '/phpunit.xml';
+        file_put_contents($file, '<phpunit/>');
+
+        $this->assertSame([], $this->checker->validatePaths([$file]));
+    }
+
     // ───────── validateConfigFiles ─────────
 
     /** @test */

@@ -55,6 +55,31 @@ class ProcessTerminatorTest extends UnitTestCase
         $this->assertSame(['descendants:100', 'signal:100:' . self::TERM, 'alive'], $tree->calls);
     }
 
+    /**
+     * Row 6b — TWO children ignore TERM: both must be killed. Row 6 has a
+     * single survivor, so a `waitForExit()` truncated to its first entry
+     * returns the same list and the leak stays invisible.
+     *
+     * @test
+     */
+    public function every_survivor_of_term_is_killed_not_just_the_first(): void
+    {
+        $tree = new FakeProcessTree([100 => [200, 300]], [100, 200, 300]);
+        $terminator = new RecordingProcessTerminator($tree, 100, true, [200, 300]);
+
+        $terminator->terminate([(new FakeProcess())->withPid(100)]);
+
+        $killed = array_values(array_filter($tree->calls, function (string $call): bool {
+            return strpos($call, ':' . self::KILL) !== false;
+        }));
+        sort($killed);
+
+        $this->assertSame(
+            ['signal:200:' . self::KILL, 'signal:300:' . self::KILL],
+            $killed
+        );
+    }
+
     /** Row 6 — a child ignores TERM: KILL goes to that PID only, and only once the grace is exhausted. */
     /** @test */
     public function survivor_of_term_is_killed_only_after_the_grace_period(): void

@@ -47,6 +47,24 @@ class ConfigurationGeneratorTest extends UnitTestCase
         $this->assertArrayNotHasKey('paths', $config['jobs']['phpunit_src']);
     }
 
+    /**
+     * Two paths, neither of them `src`. The single-path fixture used by the
+     * other tests is the `??` fallback AND a one-element array at the same
+     * time, so it cannot tell the real value from the default, nor the
+     * one-element branch of the array renderer from the multi one.
+     *
+     * @test
+     */
+    public function generated_config_names_jobs_after_the_first_path_and_renders_them_all(): void
+    {
+        $content = (new ConfigurationGenerator())->generate(['phpstan'], ['app', 'lib'], ['pre-commit']);
+
+        $config = $this->evaluateGenerated($content);
+
+        $this->assertSame(['phpstan_app'], array_keys($config['jobs']));
+        $this->assertSame(['app', 'lib'], $config['jobs']['phpstan_app']['paths']);
+    }
+
     /** @test */
     public function generated_config_maps_each_hook_event_to_the_qa_flow(): void
     {

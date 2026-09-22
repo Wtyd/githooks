@@ -281,6 +281,10 @@ class HumanIssueFormatterTest extends UnitTestCase
 
         $this->assertStringContainsString("src/Foo.php\n  line 1  first  [rule.one]\n  line 2  second  [rule.two]\n", $out);
         $this->assertStringContainsString('Totals: 1 file, 2 issues', $out);
+        // The block ends with a newline and starts with the first file — the
+        // separator belongs after the totals, not before the first line.
+        $this->assertStringEndsWith("\n", $out);
+        $this->assertStringStartsWith('src/Foo.php', $out);
     }
 
     /**
