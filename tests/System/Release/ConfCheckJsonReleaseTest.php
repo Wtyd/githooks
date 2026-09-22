@@ -141,4 +141,36 @@ class ConfCheckJsonReleaseTest extends ReleaseTestCase
         $this->assertSame('php artisan test', $decoded['jobs'][0]['command']);
         $this->assertStringNotContainsString('not found', $issues);
     }
+
+    /**
+     * 3.8 — a typo in `runner` used to select the binary runner in silence:
+     * `runner` only recognised `artisan`, so anything else fell through to
+     * `vendor/bin/pest` without a word from `conf:check` or from the run.
+     *
+     * The warning is what tells the user their configuration is not doing what
+     * they wrote, so it has to travel in the compiled binary: a fix that lives
+     * only in the sources leaves every distributed copy silent.
+     *
+     * @test
+     */
+    public function an_unknown_runner_is_reported_with_its_fallback_and_a_suggestion(): void
+    {
+        $this->configurationFileBuilder
+            ->enableV3Mode()
+            ->setV3Flows(['qa' => ['jobs' => ['pest_typo']]])
+            ->setV3Jobs(['pest_typo' => ['type' => 'pest', 'runner' => 'artizan']]);
+        file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
+
+        passthru("$this->githooks conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+
+        $decoded = json_decode($this->getActualOutput(), true);
+
+        $this->assertContains(
+            "Job 'pest_typo': unknown value 'artizan' for 'runner' (valid: binary, artisan); "
+            . "falling back to 'binary'. Did you mean 'artisan'?",
+            $decoded['warnings']
+        );
+        // The fallback itself is unchanged: the job still runs the binary.
+        $this->assertStringNotContainsString('artisan', $decoded['jobs'][0]['command']);
+    }
 }

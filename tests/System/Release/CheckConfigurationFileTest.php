@@ -421,4 +421,67 @@ class CheckConfigurationFileTest extends ReleaseTestCase
             $this->getActualOutput()
         );
     }
+    /**
+     * 3.8 — a missing `--config` used to surface PHP's own
+     * `require(...): failed to open stream` from `conf:check`, in the text
+     * output and in `errors[0]` of the JSON alike, while `flow` and `job`
+     * already answered `Configuration file not found: <path>`.
+     *
+     * Both surfaces are a CLI contract that tooling reads, so the normalised
+     * message has to be the one the distributed binary prints — not just the
+     * one the sources produce.
+     *
+     * @test
+     */
+    function a_missing_config_file_is_reported_with_the_resolved_path()
+    {
+        $missing = self::TESTS_PATH . '/does-not-exist.php';
+
+        passthru("$this->githooks conf:check --config=$missing 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Configuration file not found:', $this->getActualOutput());
+        $this->assertStringContainsString($missing, $this->getActualOutput(), 'the message must name the path it resolved');
+        $this->assertStringNotContainsString('failed to open stream', $this->getActualOutput());
+    }
+
+    /**
+     * Same normalisation on the JSON surface: `errors[0]` carries the message
+     * and nothing leaks from PHP's own require().
+     *
+     * @test
+     */
+    function a_missing_config_file_is_reported_in_the_json_errors_block()
+    {
+        $missing = self::TESTS_PATH . '/does-not-exist.php';
+
+        passthru("$this->githooks conf:check --format=json --config=$missing 2>/dev/null", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $decoded = json_decode($this->getActualOutput(), true);
+        $this->assertIsArray($decoded, 'stdout must stay parseable JSON when the config is missing');
+        $this->assertFalse($decoded['valid']);
+        $this->assertCount(1, $decoded['errors']);
+        $this->assertStringStartsWith('Configuration file not found:', $decoded['errors'][0]);
+        $this->assertStringEndsWith($missing, $decoded['errors'][0]);
+    }
+
+    /**
+     * The normalisation is scoped to "the file is not there": a file that
+     * exists but cannot be parsed must keep surfacing the real reason, or a
+     * syntax error becomes indistinguishable from a wrong path.
+     *
+     * @test
+     */
+    function a_config_file_with_a_syntax_error_still_surfaces_the_real_error()
+    {
+        $broken = self::TESTS_PATH . '/broken.php';
+        file_put_contents($broken, "<?php\nreturn [ this is not php;\n");
+
+        passthru("$this->githooks conf:check --config=$broken 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('syntax error', $this->getActualOutput());
+        $this->assertStringNotContainsString('Configuration file not found', $this->getActualOutput());
+    }
 }
