@@ -34,9 +34,7 @@ trait BuildsRenderOptions
 
         $outputPath = $this->hasOption('output') ? $this->option('output') : null;
 
-        $statsSort = $this->hasOption('stats-sort') && $this->option('stats-sort') !== null
-            ? strval($this->option('stats-sort'))
-            : RenderOptions::STATS_SORT_EXEC;
+        $statsSort = $this->resolveStatsSort();
 
         return new RenderOptions(
             strval($this->option('format')),
@@ -48,5 +46,35 @@ trait BuildsRenderOptions
             $this->hasOption('diag') && (bool) $this->option('diag'),
             $statsSort
         );
+    }
+
+    /**
+     * `RenderOptions` falls back to `exec` for anything it does not recognise,
+     * which on its own turns a typo into a table quietly sorted by something
+     * else. Every other enumerated flag (`--allocator`, `--format`, a pest
+     * job's `runner`) says so; this one did not.
+     */
+    private function resolveStatsSort(): string
+    {
+        if (!$this->hasOption('stats-sort')) {
+            return RenderOptions::STATS_SORT_EXEC;
+        }
+
+        $raw = $this->option('stats-sort');
+        if ($raw === null || $raw === '') {
+            return RenderOptions::STATS_SORT_EXEC;
+        }
+
+        $value = strval($raw);
+        if (!in_array($value, RenderOptions::STATS_SORTS, true)) {
+            $valid = implode(', ', RenderOptions::STATS_SORTS);
+            $this->getOutput()->getErrorStyle()->writeln(
+                "<comment>Warning:</comment> --stats-sort expects one of: $valid (got '$value'). "
+                . 'Falling back to ' . RenderOptions::STATS_SORT_EXEC . '.'
+            );
+            return RenderOptions::STATS_SORT_EXEC;
+        }
+
+        return $value;
     }
 }
