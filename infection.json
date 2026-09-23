@@ -67,7 +67,6 @@
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::buildAdmissionContext::152",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::111",
                 "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::44",
-                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::49",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationChecker::executableExists::192",
                 "Wtyd\\GitHooks\\Execution\\Admission\\AdmissionContext::fits::91",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::applyExplicitCoresOverrides::375",
@@ -279,7 +278,6 @@
                 "Wtyd\\GitHooks\\Jobs\\PhpcsJob::extractCacheFromRuleset::88",
                 "Wtyd\\GitHooks\\Hooks\\PatternMatcher::fileMatchesPattern::91",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::fillPool::85",
-                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::120",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationParser::resolveOneJob::375",
                 "Wtyd\\GitHooks\\Execution\\Admission\\AdmissionContext::isJobReady::104",
                 "Wtyd\\GitHooks\\Configuration\\JobConfiguration::validateCoresKey::463",
@@ -309,7 +307,6 @@
         "Coalesce": {
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::updatePeakThreads::280",
-                "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::withOverrides::355",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::buildResult::1113",
                 "Wtyd\\GitHooks\\Output\\CI\\GitLabCIDecorator::onJobStart::62"
             ]
@@ -330,7 +327,6 @@
         "Continue_": {
             "ignore": [
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::69",
-                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::125",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::sumTreeKb::137",
                 "Wtyd\\GitHooks\\Execution\\Process\\ProcessTreeWalk::descendants",
                 "Wtyd\\GitHooks\\Execution\\Process\\LinuxProcessTree::readChildren"
@@ -395,9 +391,7 @@
         },
         "UnwrapTrim": {
             "ignore": [
-                "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::decorate::50",
                 "Wtyd\\GitHooks\\Output\\CI\\GitHubActionsDecorator::emitErrorAnnotations::50",
-                "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readChildren::123",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationChecker::firstToken::203",
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::readCgroupQuotaLimit::157",
                 "Wtyd\\GitHooks\\Utils\\MemoryDetector::detectMacOS::81",
