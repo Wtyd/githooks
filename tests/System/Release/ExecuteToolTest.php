@@ -88,21 +88,46 @@ class PassingTest extends TestCase
         ];
     }
 
+    /** Memoised across the class: one probe per test process, not per test. */
+    private static ?bool $psalmRunnable = null;
+
     /**
-     * Tools exercised by the "all tools" scenarios. psalm is dropped on
-     * PHP >= 8.5 because psalm 5.26.1 (the highest version resolvable under
-     * laravel-zero 8 / symfony 5) loads Illuminate 8's helpers.php, whose
-     * `callable $callback = null` signatures are promoted from deprecation
-     * to runtime exception by psalm's own ErrorHandler on 8.5. psalm 6 is
-     * blocked by laravel-zero 8 (symfony 5 cap); Illuminate 9+ is blocked
-     * by the same chain. Revisit when laravel-zero is upgraded.
+     * Whether psalm can run at all in this environment.
+     *
+     * psalm 5.26.1 (the highest version resolvable under laravel-zero 8 /
+     * symfony 5) loads Illuminate 8's helpers.php, whose
+     * `callable $callback = null` signatures are promoted from deprecation to
+     * runtime exception by psalm's own ErrorHandler once PHP deprecates
+     * implicitly nullable parameters — PHP 8.4 on. psalm 6 is blocked by
+     * laravel-zero 8 (symfony 5 cap); Illuminate 9+ by the same chain.
+     * Revisit when laravel-zero is upgraded.
+     *
+     * Probed rather than derived from `PHP_VERSION_ID`, which is the version
+     * running PHPUnit — not the one that will run psalm. `vendor/bin/psalm`
+     * starts through a `#!/usr/bin/env php` shebang, so on a box whose default
+     * `php` is 8.4 it throws even when the suite itself was launched with 7.4.
+     * A version check could not see that, and the whole "all tools" set failed
+     * with a crash that says nothing about GitHooks.
+     */
+    protected function psalmIsRunnable(): bool
+    {
+        if (self::$psalmRunnable === null) {
+            exec('vendor/bin/psalm --version > /dev/null 2>&1', $ignored, $exitCode);
+            self::$psalmRunnable = $exitCode === 0;
+        }
+
+        return self::$psalmRunnable;
+    }
+
+    /**
+     * Tools exercised by the "all tools" scenarios.
      *
      * @return string[]
      */
     protected function supportedToolsForCurrentPhp(): array
     {
         $tools = ['phpcs', 'phpcbf', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan', 'phpunit', 'psalm'];
-        if (PHP_VERSION_ID >= 80500) {
+        if (!$this->psalmIsRunnable()) {
             $tools = array_values(array_diff($tools, ['psalm']));
         }
         return $tools;
@@ -313,11 +338,11 @@ class FailingTest extends TestCase
     /** @test */
     function it_returns_exit_0_when_psalm_passes()
     {
-        if (PHP_VERSION_ID >= 80500) {
+        if (!$this->psalmIsRunnable()) {
             $this->markTestSkipped(
-                'psalm 5.26.1 crashes on PHP 8.5 via Illuminate 8 helpers.php; '
-                . 'psalm 6 blocked by laravel-zero 8 / symfony 5. '
-                . 'See supportedToolsForCurrentPhp() for context.'
+                'psalm cannot start in this environment (it throws while loading Illuminate 8 '
+                . 'helpers on PHP 8.4+, and starts through an `env php` shebang). '
+                . 'See psalmIsRunnable() for context.'
             );
         }
 
