@@ -45,7 +45,10 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         @unlink('qa/githooks.php');
         @unlink('qa/githooks.yml');
 
-        passthru("$this->githooks conf:init", $exitCode);
+        // stdin closed: `conf:init` prompts when it has a terminal to prompt
+        // on, and a local run of the suite would sit there for ever. CI never
+        // has one, which is why this only bites in local runs.
+        passthru("$this->githooks conf:init < /dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('created with', $this->getActualOutput());
@@ -67,7 +70,10 @@ class CreateConfigurationFileTest extends ReleaseTestCase
                 ->setTools(['parallel-lint'])
                 ->buildInFileSystem('./vendor/wtyd/githooks/qa/', true);
 
-        passthru("$this->githooks conf:init", $exitCode);
+        // stdin closed: `conf:init` prompts when it has a terminal to prompt
+        // on, and a local run of the suite would sit there for ever. CI never
+        // has one, which is why this only bites in local runs.
+        passthru("$this->githooks conf:init < /dev/null", $exitCode);
         $this->assertStringContainsString('githooks configuration file already exists', $this->getActualOutput());
         $this->assertEquals(1, $exitCode);
         $this->assertFileExists('githooks.php');

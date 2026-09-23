@@ -14,6 +14,11 @@ class CreateHookTest extends ReleaseTestCase
         if (file_exists('.git/hooks/pre-push')) {
             unlink('.git/hooks/pre-push');
         }
+
+        // Without this the base tearDown never runs, so the fixtures under
+        // testsDir/ and the project's own hook wiring are left as the test
+        // found them mid-run.
+        parent::tearDown();
     }
 
     /** @test */

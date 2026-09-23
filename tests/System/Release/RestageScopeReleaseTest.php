@@ -18,10 +18,13 @@ use Tests\Utils\Traits\GitSandboxTrait;
  * one shipped.
  *
  * Runs in a throwaway git repo under /tmp (GitSandboxTrait) — the project's own
- * working tree is never touched.
+ * working tree is never touched, which is why this carries no `@group git`:
+ * that tag is for the tests that do touch it, and `phpunit.xml` excludes it.
+ * Carrying both tags kept the class out of every run there is — `--group X`
+ * lifts the exclusion of X and of nothing else, and the release pipeline runs
+ * `--group release`.
  *
  * @group release
- * @group git
  */
 class RestageScopeReleaseTest extends ReleaseTestCase
 {
