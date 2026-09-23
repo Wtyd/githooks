@@ -30,6 +30,7 @@ class PintJob extends JobAbstract
 
     protected const ARGUMENT_MAP = [
         'config' => ['flag' => '--config', 'type' => 'value'],
+        'preset' => ['flag' => '--preset', 'type' => 'value'],
         'test'   => ['flag' => '--test', 'type' => 'boolean'],
         'paths'  => ['type' => 'paths'],
     ];

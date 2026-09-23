@@ -13,6 +13,7 @@
 | Keyword | Type | Description | Example |
 |---|---|---|---|
 | `config` | String | Path to a `pint.json` (`--config`). | `'pint.json'`, `'vendor/my-org/coding-style/pint.json'` |
+| `preset` | String | Rule preset to apply (`--preset`). Pint's own presets: `laravel` (default), `psr12`, `symfony`, `empty`. | `'psr12'` |
 | `test` | Boolean | Check mode (`--test`): report style issues without fixing them; the job fails if any are found. | `true`, `false` |
 | `paths` | Array | Directories or files to fix. | `['app']`, `['app', 'tests']` |
 

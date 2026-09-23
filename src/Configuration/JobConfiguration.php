@@ -560,6 +560,17 @@ class JobConfiguration
                 case 'repeat':
                     if (!is_array($value)) {
                         $result->addWarning("Job '$name': key '$key' expects an array.");
+                        break;
+                    }
+                    // An empty list is not "analyse everything": the command is
+                    // built without a single path and most tools answer with a
+                    // usage error, so the job fails at run time while
+                    // `conf:check` had called the configuration valid. Easy to
+                    // reach by accident — a filtered array that came back empty.
+                    if ($value === []) {
+                        $result->addWarning(
+                            "Job '$name': key '$key' is an empty list; the tool will run without any path."
+                        );
                     }
                     break;
                 case 'csv':

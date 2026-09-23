@@ -103,6 +103,49 @@ class JobConfigurationTest extends UnitTestCase
         $this->assertEquals('pint', $job->getType());
     }
 
+    /**
+     * @test
+     *
+     * `--preset` is one of Pint's own options (laravel, psr12, symfony, empty)
+     * and the usual reason to reach for a `pint.json` at all. Leaving it
+     * unmapped made a perfectly valid key read as a typo.
+     */
+    public function it_parses_a_pint_job_with_a_preset()
+    {
+        $result = new ValidationResult();
+        $job = JobConfiguration::fromArray('pint_app', [
+            'type'   => 'pint',
+            'preset' => 'psr12',
+            'paths'  => ['app'],
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertEmpty($result->getWarnings(), implode(' | ', $result->getWarnings()));
+        $this->assertNotNull($job);
+    }
+
+    /**
+     * @test
+     *
+     * An empty list is not "analyse everything": the command comes out without
+     * a single path and the tool answers with a usage error, so the job fails
+     * at run time on a configuration `conf:check` had just called valid.
+     */
+    public function it_warns_when_a_paths_list_is_empty()
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('lint', [
+            'type'  => 'parallel-lint',
+            'paths' => [],
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertWarningEquals(
+            "Job 'lint': key 'paths' is an empty list; the tool will run without any path.",
+            $result
+        );
+    }
+
     /** @test */
     public function it_warns_on_unknown_key_for_a_pint_job()
     {

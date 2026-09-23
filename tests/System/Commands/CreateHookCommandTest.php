@@ -277,7 +277,16 @@ class CreateHookCommandTest extends SystemTestCase
         $this->assertFileExists($this->path . '/.git/hooks/pre-commit');
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * A v2 configuration installs a legacy hook that has to drive the v2 entry
+     * point. `hook:run` reads hooks/flows/jobs and rejects a v2 file outright,
+     * so a script pointing at it blocks every commit with "requires v3
+     * configuration format" — while this command reported the hook installed
+     * and exited 0. Asserting the file exists is not enough: the bug is in what
+     * the file says.
+     */
     function v3_mode_falls_back_to_legacy_when_configuration_is_v2_format()
     {
         $this->configurationFileBuilder->buildInFileSystem();
@@ -285,9 +294,49 @@ class CreateHookCommandTest extends SystemTestCase
 
         $this->artisan("hook pre-commit --config=$configPath")
             ->containsStringInOutput('Hook pre-commit created')
+            ->containsStringInOutput("configuration is still in v2 format")
             ->assertExitCode(0);
 
-        $this->assertFileExists($this->path . '/.git/hooks/pre-commit');
+        $content = (string) file_get_contents($this->path . '/.git/hooks/pre-commit');
+        $this->assertStringContainsString('tool all', $content, 'a v2 config needs the v2 entry point');
+        $this->assertStringNotContainsString('hook:run', $content, 'hook:run rejects a v2 configuration');
+    }
+
+    /**
+     * @test
+     *
+     * Same reason the v3 scripts bake it (BUG-31): each trigger has to run the
+     * configuration the hook was installed from, not whatever the working
+     * directory resolves to.
+     */
+    function legacy_script_for_a_v2_config_bakes_the_install_config()
+    {
+        $this->configurationFileBuilder->buildInFileSystem();
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+
+        $this->artisan("hook pre-commit --config=$configPath")->assertExitCode(0);
+
+        $content = (string) file_get_contents($this->path . '/.git/hooks/pre-commit');
+        $this->assertStringContainsString("tool all --config='", $content);
+    }
+
+    /**
+     * @test
+     *
+     * The v2 entry point is only for a configuration that is actually v2. With
+     * no configuration to read there is nothing to migrate and nothing to run
+     * in v2 terms, so the script keeps pointing at `hook:run` — which is what
+     * will resolve once the user writes a v3 file.
+     */
+    function legacy_fallback_without_a_configuration_keeps_the_v3_entry_point()
+    {
+        $missingConfig = getcwd() . '/' . self::TESTS_PATH . '/does-not-exist.php';
+
+        $this->artisan("hook pre-commit --config=$missingConfig")->assertExitCode(0);
+
+        $content = (string) file_get_contents($this->path . '/.git/hooks/pre-commit');
+        $this->assertStringContainsString('hook:run', $content);
+        $this->assertStringNotContainsString('tool all', $content);
     }
 
     /** @test */
