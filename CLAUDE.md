@@ -125,17 +125,26 @@ Razones:
 - **Output determinista** — estructura fija `{version, flow, success, totalTime, executionMode, passed, failed, skipped, jobs[{name, type, success, exitCode, output, command, paths, skipped, skipReason}]}`.
 - **Extracción directa** — filtrar jobs fallidos (`jq '.jobs[] | select(.success == false)'`) en lugar de parsear bloques coloreados.
 
-Ejemplo idiomático:
+Para leer el envelope hay un script en el repo, `.claude/scripts/flow-json.php`. Úsalo
+en lugar de escribir el parseo a mano: es la misma lectura una y otra vez, y el snippet
+inline ha sido fuente recurrente de errores de comillas dentro de zsh.
 
 ```bash
-php7.4 githooks flow qa --format=json | python3 -c "
-import json, sys
-d = json.load(sys.stdin)
-print(f'{d[\"passed\"]}/{d[\"passed\"]+d[\"failed\"]} passed, {d[\"skipped\"]} skipped')
-for j in d['jobs']:
-    if not j['success'] and not j.get('skipped'):
-        print(f'  KO {j[\"name\"]} ({j[\"type\"]}): exitCode={j[\"exitCode\"]}')"
+# Veredicto en una línea: "8/8 passed, 0 skipped in 11.06s [full]" + los KO
+php7.4 githooks flow qa --format=json | php8.4 .claude/scripts/flow-json.php
+
+# Jobs fallidos con su exitCode y las primeras líneas de su salida
+php7.4 githooks flow qa --format=json | php8.4 .claude/scripts/flow-json.php --failed
+
+# Comandos generados (para --dry-run)
+php7.4 githooks flow qa --dry-run --format=json | php8.4 .claude/scripts/flow-json.php --commands
+
+# Un campo suelto, con notación de puntos
+php7.4 githooks flow qa --format=json | php8.4 .claude/scripts/flow-json.php --field=jobs.0.command
 ```
+
+El script nunca replica el exit code del flow: **mídelo en el propio comando, no tras el
+pipe**, o estarás leyendo el del último eslabón.
 
 **Forzar progreso en CI o pipelines largos**: añadir `--show-progress` — el handler emite `OK/KO jobname [n/m]` en stderr aunque no haya TTY. stdout sigue siendo JSON limpio.
 
