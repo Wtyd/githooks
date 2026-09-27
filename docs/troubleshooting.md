@@ -65,6 +65,12 @@ See [Job dependencies (`needs`)](configuration/flows.md#job-dependencies-needs).
 
 See [Options reference](configuration/options.md).
 
+### Job keys (warnings)
+
+| Message | Cause | Fix |
+|---|---|---|
+| `Job 'X': key 'paths' is an empty list; the tool will run without any path.` | `'paths' => []`, often an array built from a filter that came back empty. `conf:check` still reports the configuration as valid, but the tool runs without a single path and usually fails with a usage error. | List at least one path, or leave the job out of the flow when there is nothing to analyse. |
+
 ### Unknown keys (warnings)
 
 Unknown keys never block execution — they always surface as **warnings** with a *did-you-mean* suggestion when the typo is close to a known key. Example:
@@ -114,7 +120,8 @@ When a job has `skipped: true` in `--format=json` (or appears with the `⏭` ann
 
 | Message | Cause | Fix |
 |---|---|---|
-| `Configuration file not found: $path` | `--config=PATH` points at a non-existent file. | Verify the path. |
+| `Configuration file not found: $path` | `--config=PATH` points at a non-existent file. `$path` is the path as resolved against the current directory (a relative `--config=qa/x.php` shows up as `/your/project/qa/x.php`), so the message tells you which file was actually looked up. Same text and exit code `1` in `conf:check`, `flow`, `flows` and `job`; with `conf:check --format=json` it is `errors[0]` and `valid` is `false`. | Check the path against the directory you run the command from. |
+| `Configuration file must be 'githooks.yml' in root directory or in qa/ directory` | No `--config` given and no configuration file found in the default locations (project root or `qa/`). Despite the wording, `githooks.php` in those same locations is also picked up. | Create one with [`conf:init`](cli/conf-init.md), or pass `--config=PATH`. |
 | `PHP configuration file does not return an array.` | The `.php` config file is missing `return [ ... ];`. | Ensure the file ends with `return $config;` or similar. |
 | `GitHooks only supports php 7.4 or greater.` | PHP version too old. | Upgrade PHP. |
 | `There must be at least one tool configured.` | Empty `jobs` block. | Declare at least one job. |

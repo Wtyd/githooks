@@ -21,6 +21,7 @@ githooks conf:check [--config=PATH] [--format=text|json]
 - Structure is correct (hooks/flows/jobs).
 - Job types are supported.
 - Argument types are valid (paths must be array, rules must be string, etc.).
+- `paths` is not an empty list. An empty `'paths' => []` is not "analyse everything": the command is built without any path and most tools answer with a usage error at run time. It is reported as a warning, since the run itself is unchanged.
 - Flow and hook references point to existing jobs/flows.
 - Hook names are valid git events.
 - Unknown configuration keys (warnings, with did-you-mean suggestions for typos).
