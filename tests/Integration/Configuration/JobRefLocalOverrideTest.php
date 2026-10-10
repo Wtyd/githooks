@@ -6,7 +6,6 @@ namespace Tests\Integration\Configuration;
 
 use PHPUnit\Framework\TestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
  * FEAT-1 · Group D — override of `only-files` / `exclude-files` via githooks.local.php.
@@ -19,13 +18,11 @@ use Wtyd\GitHooks\Registry\ToolRegistry;
 class JobRefLocalOverrideTest extends TestCase
 {
     private string $fixturesPath;
-    private ToolRegistry $registry;
 
     protected function setUp(): void
     {
         $this->fixturesPath = sys_get_temp_dir() . '/githooks_jobref_override_' . uniqid();
         mkdir($this->fixturesPath, 0755, true);
-        $this->registry = new ToolRegistry();
     }
 
     protected function tearDown(): void
@@ -281,7 +278,7 @@ PHP;
     /** @return \Wtyd\GitHooks\Configuration\JobRef[] */
     private function parseFlowJobRefs(string $flowName): array
     {
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
         $this->assertFalse(
             $result->hasErrors(),

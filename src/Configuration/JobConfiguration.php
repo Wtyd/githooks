@@ -8,7 +8,6 @@ use Wtyd\GitHooks\Configuration\KeySuggestion;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
 use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /** @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Validation of type, execution mode, arguments, and common keys */
 class JobConfiguration
@@ -76,9 +75,8 @@ class JobConfiguration
     public static function fromArray(
         string $name,
         array $raw,
-        ToolRegistry $toolRegistry,
         ValidationResult $result,
-        ?JobRegistry $jobRegistry = null
+        JobRegistry $jobRegistry
     ): ?self {
         if (!array_key_exists('type', $raw)) {
             $result->addError("Job '$name' is missing the required 'type' key.");
@@ -92,10 +90,7 @@ class JobConfiguration
             return null;
         }
 
-        if (
-            $type !== 'custom' && !$toolRegistry->isSupported($type)
-            && ($jobRegistry === null || !$jobRegistry->isSupported($type))
-        ) {
+        if ($type !== 'custom' && !$jobRegistry->isSupported($type)) {
             $result->addError("Job '$name': type '$type' is not a supported tool.");
             return null;
         }
@@ -131,7 +126,7 @@ class JobConfiguration
             self::validateMapLessJobKeys($name, $type, $config, $result);
         } elseif ($type === 'commit-msg') {
             self::validateCommitMsgKeys($name, $config, $result);
-        } elseif ($jobRegistry !== null) {
+        } else {
             self::validateArguments($name, $type, $config, $jobRegistry, $result);
         }
 

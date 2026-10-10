@@ -8,7 +8,6 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
  * Factor table C (FEAT-16): config-time validation of `commit-msg` jobs —
@@ -17,13 +16,10 @@ use Wtyd\GitHooks\Registry\ToolRegistry;
  */
 class JobConfigurationCommitMsgTest extends UnitTestCase
 {
-    private ToolRegistry $toolRegistry;
-
     private JobRegistry $jobRegistry;
 
     protected function setUp(): void
     {
-        $this->toolRegistry = new ToolRegistry();
         $this->jobRegistry = new JobRegistry();
     }
 
@@ -33,7 +29,7 @@ class JobConfigurationCommitMsgTest extends UnitTestCase
     private function validate(array $config): ValidationResult
     {
         $result = new ValidationResult();
-        JobConfiguration::fromArray('commit-format', $config, $this->toolRegistry, $result, $this->jobRegistry);
+        JobConfiguration::fromArray('commit-format', $config, $result, $this->jobRegistry);
         return $result;
     }
 
