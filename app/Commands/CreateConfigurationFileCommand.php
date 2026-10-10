@@ -5,7 +5,7 @@ namespace Wtyd\GitHooks\App\Commands;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Configuration\ConfigurationGenerator;
 use Wtyd\GitHooks\Configuration\ToolDetector;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Utils\Storage;

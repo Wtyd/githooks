@@ -321,7 +321,7 @@ PHP;
     {
         $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
 
-        $this->expectException(\Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException::class);
+        $this->expectException(\Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException::class);
         $this->expectExceptionMessage('Configuration file not found');
         $parser->parse($this->fixturesPath . '/does_not_exist.php');
     }

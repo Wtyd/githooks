@@ -7,8 +7,8 @@ namespace Wtyd\GitHooks\ConfigurationFile;
 use InvalidArgumentException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException;
 
 class FileReader
 {
@@ -24,8 +24,8 @@ class FileReader
     /**
      * @return array File configuration in associative array format.
      *
-     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException
-     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
+     * @throws \Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException
+     * @throws \Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException
      * @throws \InvalidArgumentException
      */
     public function readFile(string $configFile = ''): array
@@ -59,7 +59,7 @@ class FileReader
      * path) and require it to exist. Same message ConfigurationParser gives:
      * without this guard `require` surfaces PHP's own "failed to open stream".
      *
-     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
+     * @throws \Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException
      */
     private function resolveExplicitPath(string $configFile): string
     {
@@ -94,7 +94,7 @@ class FileReader
      *
      * @return string The path of configuration file
      *
-     * @throws \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
+     * @throws \Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException
      */
     public function findConfigurationFile(): string
     {

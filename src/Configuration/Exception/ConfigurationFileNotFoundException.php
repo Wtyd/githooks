@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\ConfigurationFile\Exception;
+namespace Wtyd\GitHooks\Configuration\Exception;
 
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 

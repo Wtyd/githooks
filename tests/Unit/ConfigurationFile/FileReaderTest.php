@@ -9,8 +9,8 @@ use Tests\Utils\{
     TestCase\UnitTestCase,
     Traits\VirtualFileSystemTrait
 };
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException;
 use Tests\Doubles\FileReaderFake;
 
 /**
@@ -96,7 +96,7 @@ class FileReaderTest extends UnitTestCase
 
     /**
     * @test
-    * @expectedException \Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException
+    * @expectedException \Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException
     */
     function it_throws_exception_when_configuration_file_not_found()
     {
@@ -135,7 +135,7 @@ class FileReaderTest extends UnitTestCase
 
     /**
      * @test
-     * @expectedException \Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException
+     * @expectedException \Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException
      */
     function it_throws_exception_when_yaml_file_is_invalid()
     {

@@ -8,8 +8,8 @@ use InvalidArgumentException;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 use Wtyd\GitHooks\Configuration\KeySuggestion;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ParseConfigurationFileException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Registry\ToolRegistry;
 
