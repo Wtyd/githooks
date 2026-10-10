@@ -138,7 +138,6 @@ nav:
     - githooks status: cli/status.md
     - githooks conf init: cli/conf-init.md
     - githooks conf check: cli/conf-check.md
-    - githooks conf migrate: cli/conf-migrate.md
     - githooks cache clear: cli/cache-clear.md
     - githooks system info: cli/system-info.md
   - How-To Guides:

@@ -22,7 +22,6 @@ Generate, validate and upgrade the configuration file.
 |---|---|
 | [`githooks conf:init`](conf-init.md) | Generate a `githooks.php` template, optionally auto-detecting tools under `vendor/bin/`. Interactive or non-interactive. |
 | [`githooks conf:check`](conf-check.md) | Deep validation: structure, references, paths, executables, configs, deprecations and *did-you-mean* suggestions. Exits 1 on the first error. The first thing to run when something looks wrong — see [Troubleshooting](../troubleshooting.md). |
-| [`githooks conf:migrate`](conf-migrate.md) | One-shot conversion from the legacy v2 `Options/Tools` shape to the v3 `hooks/flows/jobs` shape. |
 
 ## Inspection
 

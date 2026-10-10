@@ -250,7 +250,6 @@ Two ways to run non-PHP tools:
 | `githooks cache:clear [jobs…]` | Clear QA tool cache files. Accepts job names, flow names, or no argument (clear all). |
 | `githooks conf:init` | Generate configuration file (interactive or template). |
 | `githooks conf:check` | Validate configuration with deep checks (paths, executables, configs, deprecations, did-you-mean for typos). |
-| `githooks conf:migrate` | Migrate v2 config to v3 format. |
 | `githooks system:info` | Show CPU detection (cgroup-aware) and process configuration. |
 | `githooks profile <flow>` | Chart a metric (`time`, `peak-memory`, `peak-cores`) across the flow's run history as a sparkline with min/p50/p95/max and a trend. Requires recorded runs (see `--save-history` / `history-size`). |
 | `githooks profile:list <flow>` | List the runs persisted under `.githooks/history/` for a flow. |
