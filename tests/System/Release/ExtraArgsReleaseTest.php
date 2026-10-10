@@ -51,7 +51,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'echo_job' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                 ],
             ]);
@@ -93,7 +93,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'echo_job' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                 ],
             ]);
@@ -141,7 +141,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'job_with_args' => [
                     'type'           => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths'          => ['src'],
                 ],
             ]);

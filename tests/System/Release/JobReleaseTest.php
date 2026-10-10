@@ -68,7 +68,7 @@ class JobReleaseTest extends ReleaseTestCase
     {
         $this->configurationFileBuilder
             ->setV3Jobs([
-                'lint_job' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_job' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]]);
 
@@ -85,7 +85,7 @@ class JobReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
             ->setV3Jobs([
-                'lint_job' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_job' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -154,7 +154,7 @@ class JobReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'cs_fixer' => [
                     'type'           => 'php-cs-fixer',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths'          => ['src'],
                 ],
             ]);
@@ -182,7 +182,7 @@ class JobReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'rector_job' => [
                     'type'           => 'rector',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths'          => ['src'],
                     'dry-run'        => true,
                 ],

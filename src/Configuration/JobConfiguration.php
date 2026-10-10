@@ -37,11 +37,10 @@ class JobConfiguration
     private const SINGLE_THREADED_TYPES = ['phpmd', 'phpunit', 'phpcpd'];
 
     /**
-     * Map of legacy camelCase keys (deprecated since v3.3, removed in v4.0)
-     * to their canonical kebab-case form. Closed list — extending requires
-     * a new spec and bumping the deprecation cycle.
+     * camelCase keys deprecated in 3.3 and removed in 4.0, each with the
+     * canonical kebab-case form the error points at. Closed list.
      */
-    private const DEPRECATED_KEY_MAP = [
+    private const REMOVED_KEY_MAP = [
         'executablePath'     => 'executable-path',
         'otherArguments'     => 'other-arguments',
         'ignoreErrorsOnExit' => 'ignore-errors-on-exit',
@@ -101,11 +100,9 @@ class JobConfiguration
             return null;
         }
 
-        $normalized = self::normalizeDeprecatedKeys($name, $raw, $result);
-        if ($normalized === null) {
+        if (self::rejectRemovedKeys($name, $raw, $result)) {
             return null;
         }
-        $raw = $normalized;
 
         if ($type === 'custom' && !array_key_exists('script', $raw) && !array_key_exists('executable-path', $raw)) {
             $result->addError("Job '$name': custom jobs require a 'script' or 'executable-path' key.");
@@ -152,44 +149,27 @@ class JobConfiguration
     }
 
     /**
-     * Detect and normalize the four legacy camelCase keys (executablePath,
-     * otherArguments, ignoreErrorsOnExit, failFast) to their kebab-case canonical
-     * form. Each conversion records a structured Deprecation that the JSON v2
-     * (and SARIF) output exposes; the user-facing warning string is emitted
-     * automatically by ValidationResult::addDeprecation().
-     *
-     * Returns the normalized array, or null if the same key was declared in
-     * both forms simultaneously (an error condition that aborts the job —
-     * the user must pick one and remove the other).
+     * The camelCase keys removed in 4.0 are rejected outright rather than left
+     * to the unknown-key warning: on a mapped type that warning would let the
+     * job run with the default executable, and on `custom` it would surface as
+     * the unrelated "requires script or executable-path" error. Every removed
+     * key present is reported, not just the first.
      *
      * @param array<string, mixed> $raw
-     * @return array<string, mixed>|null
+     * @return bool true when at least one removed key was found
      */
-    private static function normalizeDeprecatedKeys(string $name, array $raw, ValidationResult $result): ?array
+    private static function rejectRemovedKeys(string $name, array $raw, ValidationResult $result): bool
     {
-        $hasConflict = false;
+        $found = false;
 
-        foreach (self::DEPRECATED_KEY_MAP as $oldKey => $newKey) {
-            $hasOld = array_key_exists($oldKey, $raw);
-            $hasNew = array_key_exists($newKey, $raw);
-
-            if ($hasOld && $hasNew) {
-                $result->addError(
-                    "Job '$name': conflicting keys '$oldKey' and '$newKey'. "
-                    . "Use only one (kebab-case form is canonical)."
-                );
-                $hasConflict = true;
-                continue;
-            }
-
-            if ($hasOld) {
-                $result->addDeprecation(new Deprecation($name, $oldKey, $newKey));
-                $raw[$newKey] = $raw[$oldKey];
-                unset($raw[$oldKey]);
+        foreach (self::REMOVED_KEY_MAP as $oldKey => $newKey) {
+            if (array_key_exists($oldKey, $raw)) {
+                $result->addError("Job '$name': key '$oldKey' was removed in 4.0. Use '$newKey'.");
+                $found = true;
             }
         }
 
-        return $hasConflict ? null : $raw;
+        return $found;
     }
 
     /**

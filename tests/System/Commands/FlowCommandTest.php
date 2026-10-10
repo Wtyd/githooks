@@ -330,7 +330,7 @@ class FlowCommandTest extends SystemTestCase
             ->setV3Jobs([
                 'phpstan_src' => [
                     'type' => 'custom',
-                    'executablePath' => 'true',
+                    'executable-path' => 'true',
                     'paths' => ['src'],
                     'accelerable' => true,
                 ],
@@ -353,7 +353,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
             ->setV3Jobs([
-                'phpstan_src' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'phpstan_src' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->buildInFileSystem();
 
@@ -375,7 +375,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
             ->setV3Jobs([
-                'phpstan_src' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'phpstan_src' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->buildInFileSystem();
 
@@ -399,7 +399,7 @@ class FlowCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->setV3Flows(['qa' => ['jobs' => ['phpstan_src']]])
             ->setV3Jobs([
-                'phpstan_src' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'phpstan_src' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->buildInFileSystem();
 

@@ -34,7 +34,7 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'my_job' => [
                     'type' => 'custom',
-                    'executablePath' => 'original-command',
+                    'executable-path' => 'original-command',
                     'paths' => ['src'],
                 ],
             ]);
@@ -56,12 +56,12 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'job_a' => [
                     'type' => 'custom',
-                    'executablePath' => 'tool-a',
+                    'executable-path' => 'tool-a',
                     'paths' => ['src'],
                 ],
                 'job_b' => [
                     'type' => 'custom',
-                    'executablePath' => 'tool-b',
+                    'executable-path' => 'tool-b',
                     'paths' => ['src'],
                     'executable-prefix' => '/bin/echo LOCAL',
                 ],
@@ -86,12 +86,12 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'job_a' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                 ],
                 'job_b' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                     'executable-prefix' => null,
                 ],
@@ -116,12 +116,12 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'job_a' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                 ],
                 'job_b' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                     'executable-prefix' => '',
                 ],
