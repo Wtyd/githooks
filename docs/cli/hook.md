@@ -17,6 +17,8 @@ The generated scripts are universal and identical — each one calls `githooks h
 
 When you install with `--config=<file>`, the scripts also carry `--config` with that file's path **relative to the repository root**, so every trigger runs the configuration the hooks were installed from — not whatever `githooks.php` the current directory resolves to. Git runs hooks from the top level of the working tree, so the relative path works in every clone that commits `.githooks/`. A file outside the repository can only be baked as an absolute path; the install warns that other clones will not have it.
 
+An explicit `--config` that cannot be used — the path does not exist, the file is a v2 or YAML configuration, or it does not return an array — is an error: the command prints it, exits 1 and installs nothing. The minimal `.git/hooks/` install described under [Legacy mode](#legacy-mode) only applies when there is no `--config` and no `githooks.php` in the default locations.
+
 ```bash
 githooks hook                  # Install all configured hooks
 githooks hook --config=qa/githooks.php   # Hooks run qa/githooks.php on every trigger

@@ -1,51 +1,46 @@
-# From v2 to v3
+# Upgrading from v2
 
-## What changed
+GitHooks 4.0 reads only the v3 shape — `hooks` / `flows` / `jobs` in a PHP file. Everything the 3.x line had marked "removed in v4.0" is gone: the `tool` command, YAML configuration files, the `Options` / `Tools` shape, the camelCase job keys and `conf:migrate` itself. A v2 configuration is rejected before anything runs, by every command:
 
-| Aspect | v2 | v3 |
+```text
+v2 configuration format (Options/Tools) is not supported since 4.0: /srv/app/githooks.php. Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.
+```
+
+Migrate with the last 3.x release first, then upgrade.
+
+## Migrate with 3.8, then upgrade
+
+```bash
+composer require --dev wtyd/githooks:^3.8
+vendor/bin/githooks conf:migrate     # Options/Tools (PHP or YAML) → hooks/flows/jobs; backup in .v2.bak
+vendor/bin/githooks conf:check       # must report a valid v3 file
+composer require --dev wtyd/githooks:^4.0
+vendor/bin/githooks hook             # reinstall the hooks for the new file
+```
+
+`conf:migrate` (3.8) converts YAML to PHP, renames the camelCase keys to kebab-case, drops `usePhpcsConfiguration` and generates a `qa` flow with every original tool as a job. Review the result before upgrading: rename flows and jobs, add the hook mappings (the migrated file does not configure hooks), split tools into flows. Delete the old `githooks.yml` once the PHP file is in place — a `.yml` left behind in the project root or in `qa/` is reported as unsupported, not ignored.
+
+## What changed between v2 and v3
+
+| Aspect | v2 | v3 (and 4.0) |
 |---|---|---|
-| **Config format** | YAML preferred (`githooks.yml`) | PHP preferred (`githooks.php`). YAML deprecated. |
+| **Config format** | YAML (`githooks.yml`) | PHP only (`githooks.php`) |
 | **Config structure** | `Options` + `Tools` | `hooks` + `flows` + `jobs` |
+| **Job keys** | camelCase (`executablePath`, …) | kebab-case (`executable-path`, …) |
 | **CLI** | `githooks tool <name>` | `githooks flow <name>` / `githooks job <name>` |
 | **Hook install** | Copies script to `.git/hooks/` | Creates `.githooks/` + `core.hooksPath` |
 | **Multiple hooks** | Only `pre-commit` | All git events (`pre-commit`, `pre-push`, `commit-msg`, etc.) |
 | **Conditional execution** | Not supported | `only-on`, `exclude-on`, `only-files`, `exclude-files` |
 | **Job inheritance** | Not supported | `extends` |
-| **Execution modes** | `full`, `fast` | `full`, `fast`, `fast-branch` |
+| **Execution modes** | `full`, `fast` | `full`, `fast`, `fast-branch`, `fast-dirty` |
 | **Parallel** | `processes` option | `processes` + thread budget distribution |
-| **Output** | Text only | `text`, `json`, `junit` |
+| **Output** | Text only | `text`, `json`, `junit`, `sarif`, `codeclimate` |
 | **security-checker** | Native type | Removed. Use `custom` with `composer audit`. |
 | **usePhpcsConfiguration** | Supported | Removed. Use explicit keywords. |
 
-## Automatic migration
-
-```bash
-githooks conf:migrate
-```
-
-This command:
-
-1. Creates a backup (`.v2.bak`) of the original file.
-2. Converts YAML to PHP if needed (removes the `.yml` file).
-3. Converts the `script` tool to a `custom` job type, whether it is listed in
-   `Tools` as `script` or under the custom `name` you gave it.
-4. Renames the deprecated camelCase keys (`executablePath`, `otherArguments`,
-   `ignoreErrorsOnExit`, `failFast`) to their canonical kebab-case form.
-5. Drops `usePhpcsConfiguration`.
-6. Generates a v3 file with a `qa` flow containing all original tools as jobs.
-7. Validates the result: if the generated file is not a valid v3 configuration,
-   the command reports the errors and exits **1**. The generated file and the
-   `.v2.bak` backup are both kept so you can inspect or restore them.
-
-!!! warning
-    Review the generated file after migration. You may want to:
-
-    - Rename flows and jobs to meaningful names.
-    - Add hook mappings (the migrated file does not configure hooks automatically).
-    - Split tools into multiple flows.
-    - Add conditions for different hooks.
-
 ## Manual migration
+
+If you would rather not install 3.8, write the v3 file by hand.
 
 ### Step 1: Convert the structure
 
@@ -111,7 +106,22 @@ return [
 ];
 ```
 
-### Step 2: Replace security-checker
+### Step 2: Rename the camelCase keys
+
+The four keys v3 inherited from v2 were deprecated in 3.3 and are rejected in 4.0. A job declaring one is refused with the kebab-case key named in the error:
+
+```text
+Job 'phpstan_src': key 'executablePath' was removed in 4.0. Use 'executable-path'.
+```
+
+| camelCase (removed) | kebab-case |
+|---|---|
+| `executablePath` | `executable-path` |
+| `otherArguments` | `other-arguments` |
+| `ignoreErrorsOnExit` | `ignore-errors-on-exit` |
+| `failFast` | `fail-fast` |
+
+### Step 3: Replace security-checker
 
 **v2:**
 ```yaml
@@ -127,14 +137,14 @@ Tools:
 ],
 ```
 
-### Step 3: Reinstall hooks
+### Step 4: Reinstall hooks
 
 ```bash
 githooks hook:clean --legacy   # remove old hooks from .git/hooks/
 githooks hook                  # install new hooks via .githooks/
 ```
 
-### Step 4: Update composer.json scripts
+### Step 5: Update composer.json scripts
 
 Replace the v2 hook command with the v3 equivalent:
 
@@ -145,7 +155,7 @@ Replace the v2 hook command with the v3 equivalent:
 }
 ```
 
-### Step 5: Validate
+### Step 6: Validate
 
 ```bash
 githooks conf:check

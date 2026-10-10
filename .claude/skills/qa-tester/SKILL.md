@@ -2,8 +2,8 @@
 name: qa-tester
 description: >
   Testing funcional y de integración de GitHooks como QA tester. Prueba todos los comandos CLI
-  (flow, job, hook, conf:check, conf:migrate, cache:clear, status, system:info, tool), edge cases
-  de configuración, formatos de salida, flags, combinaciones y compatibilidad legacy.
+  (flow, job, hook, conf:check, cache:clear, status, system:info), edge cases
+  de configuración, formatos de salida, flags, combinaciones y rechazo de configs v2/YAML.
   Usa esta skill cuando el usuario quiera probar, verificar, o validar funcionalidades del CLI,
   buscar bugs, hacer testing de aceptación, o cuando mencione "probar", "testear funcionalidad",
   "verificar comando", "QA", "edge cases", "testing funcional".
@@ -279,14 +279,12 @@ Cuando necesites una config v3 o una config rota que no exista ya, créalas en `
 | `job <name>` | Job existente | `... job parallel_lint --config=githooks-v3.php` |
 | `job <name>` | Job inexistente | `... job inventado --config=githooks-v3.php` → error + lista de jobs |
 | `conf:check` | Config válida v3 | `... conf:check --config=githooks-v3.php` → tabla con Status |
-| `conf:check` | Config legacy | `... conf:check` (usa githooks.php v2) → tablas + warning migración |
-| `conf:migrate` | Desde v2 a v3 | Copiar githooks.php a tmp, migrar, verificar backup + formato nuevo |
+| `conf:check` | Config v2 | `... conf:check --config=githooks-v2.php` → error "not supported since 4.0", exit 1 |
 | `status` | Con y sin hooks | Instalar hooks, verificar synced; limpiar, verificar missing |
 | `system:info` | Info del sistema | `... system:info` → CPUs, processes |
 | `cache:clear` | Sin cachés | `... cache:clear --config=githooks-v3.php` → reporta "not found" |
 | `cache:clear` | Con cachés | Crear `.phpcs.cache`, ejecutar, verificar borrado |
 | `cache:clear` | Por flow | `... cache:clear qa --config=githooks-v3.php` → borra cachés de todos los jobs del flow |
-| `tool` (legacy) | Deprecation warning | `... tool all full` → warning de deprecación |
 
 ### 2. Edge cases de configuración
 
@@ -458,11 +456,7 @@ Cada item vale para los dos tiers (`builds/php7.4/` y `builds/`). Priorizar los 
 
 | Test | Comando | Resultado esperado |
 |---|---|---|
-| Migrar config v2 válida | Copiar githooks.php a tmp, `conf:migrate --config=tmp` | Genera formato v3, backup |
-| Migrar config ya v3 | `conf:migrate --config=githooks-v3.php` | Detecta que ya es v3 |
-| `tool all full` con config v2 | `tool all full` (usa githooks.php) | Ejecuta con deprecation warning |
-| `tool all full` con config v3 | `tool all full --config=githooks-v3.php` | Error o redirección a `flow` |
-| `conf:check` con config legacy | `conf:check` (usa githooks.php v2) | Tablas + warning de migración |
+| `conf:check` con config v2 | `conf:check --config=githooks-v2.php` | Error "not supported since 4.0", exit 1 |
 
 ## Paso 3: Limpiar
 

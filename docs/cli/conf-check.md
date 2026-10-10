@@ -89,10 +89,11 @@ parser rejected: those carry `"status": "error"`, an empty `command` and the
 rejection reasons in `issues`, so `jobs[] | select(.status != "ok")` never
 misses the most broken entries.
 
-A v2 (`Options`/`Tools`) configuration is not parsed: the payload is the error form
-(`valid: false`, the message in `errors[0]`, no v3 blocks) and the exit code is 1.
-Migrate it with GitHooks 3.8 (`conf:migrate`) before upgrading. Schema version 1
-(GitHooks 3.x) carried a `legacy` marker and a `hint` for that case; version 2 does not.
+A configuration that cannot be read — a v2 (`Options`/`Tools`) shape, a YAML file, a
+missing path — is not parsed: the payload is the error form (`valid: false`, the
+message in `errors[0]`, no v3 blocks) and the exit code is 1. See
+[Upgrading from v2](../migration/v2-to-v3.md). Schema version 1 (GitHooks 3.x)
+carried a `legacy` marker and a `hint` for the v2 case; version 2 does not.
 
 ## Examples
 

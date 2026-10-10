@@ -55,8 +55,8 @@ The following keywords are available for all job types (except `custom` and `com
 !!! tip
     Missing keys can cause the job to fail at runtime. For example, a `phpcs` job without `standard` may fail if no standard is configured in the tool's own config file.
 
-!!! warning "Deprecated camelCase keys"
-    The keys `executablePath`, `otherArguments`, `ignoreErrorsOnExit` and `failFast` (camelCase, inherited from v2) are still accepted in v3.3 with a deprecation warning, but they will be removed in **v4.0**. Use the kebab-case form shown in the table above. See [Migration: v3.3 deprecations](../migration/v33-deprecations.md).
+!!! warning "camelCase keys are rejected"
+    The keys `executablePath`, `otherArguments`, `ignoreErrorsOnExit` and `failFast` (camelCase, inherited from v2) were removed in 4.0. A job declaring one is rejected with the kebab-case form named in the error: `Job 'phpstan_src': key 'executablePath' was removed in 4.0. Use 'executable-path'.` See [Upgrading from v2](../migration/v2-to-v3.md#step-2-rename-the-camelcase-keys).
 
 ## Reserving cores (`cores` or the tool's native flag)
 

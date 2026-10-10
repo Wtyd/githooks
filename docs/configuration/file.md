@@ -13,7 +13,7 @@ return [
 ];
 ```
 
-YAML (`githooks.yml`) is still supported but **deprecated since v3.0** and will be removed in v4.0.
+YAML (`githooks.yml`) is **not supported since 4.0**: a `.yml` passed with `--config`, or left behind in the project root or `qa/`, is rejected with a message pointing at [the migration](../migration/v2-to-v3.md). The same goes for the v2 `Options` / `Tools` shape in a PHP file.
 
 ## Search paths
 
@@ -21,10 +21,8 @@ GitHooks searches for the configuration file in this order:
 
 1. `./githooks.php`
 2. `./qa/githooks.php`
-3. `./githooks.yml` (deprecated)
-4. `./qa/githooks.yml` (deprecated)
 
-Use `--config=path` on any command to specify a custom path.
+Use `--config=path` on any command to specify a custom path. Without one, and with no file in either location, every command stops with `Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).`
 
 ## Local override (`githooks.local.php`)
 
@@ -91,10 +89,4 @@ See [`conf:check`](../cli/conf-check.md) for details.
 
 ## Migrate from v2
 
-```bash
-githooks conf:migrate
-```
-
-Converts a v2 configuration (Options/Tools format) to v3 (hooks/flows/jobs). Creates a backup (`.v2.bak`) of the original file.
-
-See [Migration: v2 to v3](../migration/v2-to-v3.md) for a complete guide.
+4.0 has no migrator: a v2 configuration (`Options` / `Tools`, PHP or YAML) is migrated with GitHooks 3.8 (`conf:migrate`) before upgrading, or rewritten by hand. See [Upgrading from v2](../migration/v2-to-v3.md).

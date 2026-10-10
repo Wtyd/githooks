@@ -17,7 +17,7 @@ El proyecto tiene 4 workflows de GitHub Actions y un proceso de build del `.phar
 
 ```
 Push/PR (no rc) ──┬── main-tests.yml     Tests unitarios, integración, sistema
-                  └── code-analysis.yml   Análisis estático (php githooks tool all full)
+                  └── code-analysis.yml   Análisis estático (php githooks flow qa)
 
 Push a rama rc** ──── release.yml         Build .phar → Test release → Commit builds
 
@@ -218,7 +218,7 @@ function it_does_something_new()
             ->buildPhp()
     );
 
-    passthru("$this->githooks tool all", $exitCode);
+    passthru("$this->githooks flow qa", $exitCode);
 
     $this->assertEquals(0, $exitCode);
     $this->assertToolHasBeenExecutedSuccessfully('tool1');
@@ -241,7 +241,7 @@ function it_does_something_new()
 
 ## code-analysis.yml — Análisis estático
 
-Job único que ejecuta `php githooks tool all full` en PHP 7.1.
+Job único que ejecuta `php githooks flow qa` en PHP 7.1.
 Lee la configuración de `qa/githooks.php`. Si añades una tool ahí, se ejecuta automáticamente.
 Normalmente NO necesitas modificar este workflow.
 
@@ -368,7 +368,6 @@ export PATH=$(echo $PATH | sed 's|/tmp/phpbin:||')
 |---|---|---|---|
 | `@group release` | Sí | `release.yml` (test_rc) | Smoke test del `.phar` |
 | `@group git` | Sí | `main-tests.yml` (Linux) | Tests que necesitan git staging |
-| `@group windows` | Sí | `main-tests.yml` (Windows) | Paths Windows |
 | (sin grupo) | No | Todos los workflows con phpunit | Tests estándar |
 
 ## Checklist
@@ -413,7 +412,7 @@ export PATH=$(echo $PATH | sed 's|/tmp/phpbin:||')
 - `php7.4 githooks app:build` — Build del .phar
 - `php7.4 vendor/bin/phpunit --order-by random` — Tests completos
 - `php7.4 vendor/bin/phpunit --group release` — Release tests
-- `php7.4 githooks tool all full` — QA completo
+- `php7.4 githooks flow qa` — QA completo
 - `git add` / `git commit` — Commits (solo si el usuario lo pide)
 
 ### Agentes

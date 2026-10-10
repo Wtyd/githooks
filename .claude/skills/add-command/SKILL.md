@@ -22,7 +22,6 @@ auto-descubren por `config/commands.php`.
 | **Config** | `ConfigurationParser`, `FileReader`, `JobRegistry` | `CheckConfigurationFileCommand`, `MigrateConfigurationFileCommand` |
 | **Status/Info** | `ConfigurationParser`, `HookStatusInspector` | `StatusCommand`, `SystemInfoCommand` |
 | **Build** | `Build` | `PreBuildCommand`, `BuildCommand` |
-| **Legacy (deprecated)** | `ReadConfigurationFileAction`, `ToolsPreparer` | `ExecuteToolCommand` |
 
 ## Flujo v3 de un comando de ejecución
 
@@ -237,7 +236,4 @@ inexistente lanza `ErrorException`.
 
 ## Contexto legacy
 
-El sistema v2 (Options/Tools/CliArguments) sigue funcionando como puente de compatibilidad.
-Las clases legacy están en `src/ConfigurationFile/`, `src/Tools/`, `src/LoadTools/`.
-El comando `tool` en `ExecuteToolCommand.php` está deprecated.
-No añadir funcionalidad nueva al sistema legacy — solo mantener hasta v4.0.
+El motor v2 (Options/Tools, comando `tool`, YAML) se retiró en 4.0: una config v2 lanza `UnsupportedConfigurationFormatException`.

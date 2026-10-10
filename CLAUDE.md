@@ -165,37 +165,47 @@ php7.4 vendor/bin/phpunit --filter=MyTest
 
 ## Arquitectura (orientación)
 
-### Flujo de ejecución de tools
+### Flujo de ejecución
 
 ```
-CLI (ExecuteToolCommand) → ConfigurationFile → ToolsPreparer → ProcessExecutionFactory → Tool::prepareCommand()
+CLI (FlowCommand / FlowsCommand / JobCommand / HookRunCommand)
+  → FlowRunner / FlowsRunner / JobRunner / HookRunner
+    → ConfigurationParser → FlowPreparer → FlowExecutor (ProcessPool) → Job::buildCommand()
 ```
 
-1. El comando recibe nombre de tool y modo (full/fast)
-2. `ConfigurationFile` parsea `githooks.php` (prioridad) o `githooks.yml`
-3. `ToolsPreparer` → `ToolsFactory` instancia las tools
-4. `ProcessExecutionFactory` crea ejecución single o paralela
-5. Cada tool construye su comando shell via `prepareCommand()`
+1. El comando construye un `*RunRequest` con los flags y la config y delega en su Runner.
+2. `ConfigurationParser` localiza `githooks.php` (raíz, luego `qa/`; o `--config`), aplica `githooks.local.php` y valida. Una config v2 (`Options`/`Tools`) o YAML lanza `UnsupportedConfigurationFormatException` (solo v3 en PHP desde 4.0).
+3. `FlowPreparer` resuelve el flow, la cascada de options, el grafo `needs` y la admisión de ficheros → `FlowPlan`.
+4. `FlowExecutor` ejecuta el plan, secuencial o en `ProcessPool` con budget de threads/memoria.
+5. Cada job (`src/Jobs/*Job.php`, instanciado por `JobRegistry`) construye su comando shell en `buildCommand()`.
 
 ### Estructura de directorios
 
 | Directorio | Contenido |
 |---|---|
 | `app/Commands/` | Comandos artisan (capa CLI) |
-| `src/Tools/Tool/` | Clases de QA tools + sus `*Fake.php` |
-| `src/ConfigurationFile/` | Parseo y validación de config |
-| `src/LoadTools/` | Estrategias de ejecución (Full/Fast) |
-| `src/Tools/Process/` | Ejecución de procesos (single/parallel) |
-| `tests/Unit/`, `Integration/`, `System/` | Tests por nivel |
+| `src/Configuration/` | Parser, validación y modelos de config (`ConfigurationParser`, `JobConfiguration`, `OptionsConfiguration`, excepciones) |
+| `src/Jobs/` | Un `*Job.php` por tipo de job + `JobRegistry` |
+| `src/Execution/` | Runners, `FlowPreparer`, `FlowExecutor`, `ProcessPool`, budgets, resolvers de input |
+| `src/Hooks/` | Instalación, inspección y ejecución de hooks (`HookInstaller`, `HookRunner`) |
+| `src/Output/` | Formatters (text/json/junit/sarif/codeclimate), diagnóstico, stats |
+| `src/History/` | Historial de runs para `profile` |
+| `tests/Unit/`, `Integration/`, `System/` | Tests por nivel (`System/Release` requiere el `.phar`) |
 
 ### Formato de configuración
 
 ```php
 // githooks.php
 return [
-    'Options' => ['execution' => 'full', 'processes' => 8],
-    'Tools'   => ['phpstan', 'phpmd', 'phpcs'],
-    'phpstan' => ['config' => 'qa/phpstan.neon'],
+    'hooks' => ['pre-commit' => ['qa']],
+    'flows' => [
+        'options' => ['processes' => 8],
+        'qa'      => ['jobs' => ['phpstan_src', 'phpcs_src']],
+    ],
+    'jobs' => [
+        'phpstan_src' => ['type' => 'phpstan', 'config' => 'qa/phpstan.neon', 'paths' => ['src']],
+        'phpcs_src'   => ['type' => 'phpcs', 'standard' => 'PSR12', 'paths' => ['src']],
+    ],
 ];
 ```
 
@@ -205,9 +215,8 @@ return [
 - **Sin dependencias runtime en `require`.** Todas las dependencias están en `require-dev` por diseño — el `.phar` las embebe en compilación. Si necesitas añadir una dependencia, va en `require-dev`. Nunca en `require` salvo que se hable explícitamente con el usuario.
 - **Dirección de dependencias:** `src/` nunca importa de `app/` (hook de hookify lo bloquea).
 - **`declare(strict_types=1)`** obligatorio en `src/` (hook de hookify lo verifica).
-- **`ToolsFactory`** — factory que instancia las tools desde la configuración.
-- **`src/Tools/Process/`** excluido de PHPStan — wraps de Symfony Process.
-- **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.4 githooks tool all full`.
+- **`JobRegistry`** — mapa tipo → clase de job; `JobConfiguration::fromArray()` valida el `type` contra él.
+- **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.4 githooks flow qa`.
 - **Implementación mínima, sin especular.** Escribe solo el código que resuelve lo pedido. Nada de features, parámetros, flags de config o abstracciones "por si acaso" que no estén en el requisito. No introduzcas capas de indirección, interfaces o puntos de extensión hasta que haya un segundo caso real que los justifique — en una CLI distribuida como `.phar`, cada abstracción prematura es superficie que hay que mantener, testear y compilar sin demanda que la respalde.
 
 ## Skills disponibles

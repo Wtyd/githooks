@@ -219,7 +219,7 @@ githooks flow qa --format=json
 | `flows` | array | Present only in multi-flow runs. List of normal flows actually executed after meta-flow expansion. |
 | `effectiveOptions` | object | Always present in `flow` / `flows` / `job` runs. Each option's `value` and resolved `source`. See [Effective options and conditions header](#effective-options-and-conditions-header). |
 | `warnings` | string[] | Always present (empty when no warnings). Validation warnings emitted on stderr during the run. |
-| `deprecations` | object[] | Always present (empty when none). Each entry: `{job, oldKey, newKey, removalVersion, kind}`. See [v3.3 deprecations](../migration/v33-deprecations.md). |
+| `deprecations` | object[] | Always present (empty when none). Each entry: `{job, oldKey, newKey, removalVersion, kind}`. Empty since 4.0 (the camelCase keys that fed it are rejected outright); the block stays for future deprecation cycles. |
 
 ### Per-job fields
 
