@@ -37,7 +37,7 @@ class RegisterBindingsTest extends UnitTestCase
         $container = new Container();
         Container::setInstance($container);
         // The framework binds the container contract to itself; constructors
-        // that type-hint it (ProcessExecutionFactory) rely on that.
+        // that type-hint it rely on that.
         $container->instance(ContainerContract::class, $container);
 
         try {

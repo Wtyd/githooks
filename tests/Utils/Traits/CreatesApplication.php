@@ -29,8 +29,8 @@ trait CreatesApplication
      * is itself a *child* of another PHPUnit invocation (because something in
      * the suite spawned `vendor/bin/phpunit` via `JobExecutor` /
      * `FlowExecutor`, which use `Process::fromShellCommandLine()` with
-     * `setTimeout(null)` and bypass the fake binding of
-     * `ProcessExecutionFactoryAbstract`), abort the child immediately. This
+     * `setTimeout(null)` and run outside
+     * any process fake), abort the child immediately. This
      * caps the recursion at depth 1 and prevents the OOM cascade observed on
      * 2026-05-28 (see `incidente-fork-bomb/INFORME.md`).
      */

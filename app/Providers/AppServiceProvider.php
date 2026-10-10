@@ -5,15 +5,11 @@ namespace Wtyd\GitHooks\App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ToolDetector;
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Hooks\HookStatusInspector;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
-use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
-use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
-use Tests\Doubles\FileReaderFake;
 use Tests\Doubles\HookInstallerFake;
 use Tests\Doubles\HookStatusInspectorFake;
 use Tests\Doubles\ToolDetectorFake;
@@ -87,8 +83,6 @@ class AppServiceProvider extends ServiceProvider
             $this->app->singleton(ConfigurationParser::class, function ($app) {
                 return new ConfigurationParser(SystemTestCase::TESTS_PATH, $app->make(JobRegistry::class));
             });
-            $this->app->singleton(FileReader::class, FileReaderFake::class);
-            $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
             $this->app->singleton(HookInstaller::class, HookInstallerFake::class);
             $this->app->singleton(HookStatusInspector::class, HookStatusInspectorFake::class);
             $this->app->singleton(ToolDetector::class, ToolDetectorFake::class);

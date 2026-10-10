@@ -100,9 +100,9 @@ class PathHandlingTest extends UnitTestCase
     }
 
     /** @test */
-    public function file_reader_pattern_matches_windows_drive_letters()
+    public function absolute_path_pattern_matches_windows_drive_letters()
     {
-        // The pattern used by FileReader to detect absolute paths
+        // The pattern ConfigurationParser::resolveFilePath() uses to detect absolute paths
         $pattern = '/^[a-zA-Z]:[\\\\\/]/';
 
         $this->assertMatchesRegularExpression($pattern, 'C:\\project\\githooks.php');
