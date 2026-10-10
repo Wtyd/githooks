@@ -89,7 +89,7 @@ Results: 3/4 passed in 3.45s
 | [Paratest](https://github.com/paratestphp/paratest) | `paratest` | Parallel PHPUnit runner |
 | [PHP Copy Paste Detector](https://github.com/sebastianbergmann/phpcpd) | `phpcpd` | Duplicate code detection |
 | Any command | `custom` | Run any shell command — ESLint, Prettier, `composer audit`, etc. |
-| Any command (legacy) | `script` | Legacy v2 alias. Prefer `custom` for new configs. |
+| Any command | `script` | One executable plus fixed arguments, no path handling. Prefer `custom` for new configs. |
 
 See the [Tools Reference](tools/index.md) for per-tool configuration, accelerability and internal threading.
 

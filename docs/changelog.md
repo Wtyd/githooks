@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here.
 
+## [4.0]
+
+### Removed
+
+**The v2 engine.** Everything the 3.x line had marked "removed in v4.0" is gone: the `tool` command, YAML configuration files, the `Options` / `Tools` configuration shape, the camelCase job keys (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) and `conf:migrate` itself. A configuration 4.0 does not read is rejected with one error — the same in every command, naming the file and the way out:
+
+```text
+$ githooks flow qa
+v2 configuration format (Options/Tools) is not supported since 4.0: /srv/app/githooks.php. Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.
+```
+
+A `githooks.yml` is rejected on its extension alone, never parsed; one left behind in the project root or `qa/` gets the same kind of message instead of "not found". A job declaring a camelCase key is rejected with the kebab-case key named: `Job 'phpstan_src': key 'executablePath' was removed in 4.0. Use 'executable-path'.` Migrate with the last 3.x release first — see [Upgrading from v2](migration/v2-to-v3.md).
+
+- `conf:init --legacy`, which generated the v2 format.
+- `symfony/yaml` is no longer bundled in the `.phar`.
+
+### Changed
+
+- **`conf:check --format=json` is schema version 2.** The `legacy` marker and the `hint` field of version 1 only described the v2 case. The four v3 blocks (`options`, `hooks`, `flows`, `jobs`) are always present, and a file that cannot be read comes back as the error form (`valid: false`, the message in `errors[0]`, exit 1). See [`conf:check`](cli/conf-check.md).
+- The message when no configuration file is found names the file that was looked up: `Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).`
+- A PHP configuration that does not return an array is reported in one line with exit 1 by `flow`, `flows` and `job`, like every other configuration error; it used to escape with a stack trace.
+
+### Fixed
+
+- **`githooks hook --config=<file>` installed a hook when the file could not be read.** A missing path, a v2 or YAML file, or a file that did not return an array all fell back to the minimal `.git/hooks/` install: the command reported `Hook pre-commit created`, exited 0 and left behind a script pointing at a configuration that does not work. An explicit `--config` that cannot be used is now an error (exit 1) and nothing is written; the minimal install only applies when there is no `--config` and no file in the default locations. See [`githooks hook`](cli/hook.md).
+
 ## [3.8.1]
 
 ### Fixed
@@ -389,7 +415,7 @@ The four legacy camelCase keys inherited from v2 inside `jobs.<name>` are deprec
 - **Conflict**: declaring both forms for the same key in the same job aborts that job with an error (`conflicting keys '...' and '...'`). Pick one.
 - **Out of scope for v3.3**: `conf:migrate` is **not** updated yet — that is step 2 of the deprecation plan, in a later v3.x. The camelCase removal itself is step 3, in v4.0.
 
-Migration guide: [Migration → v3.3 deprecations](migration/v33-deprecations.md).
+Migration guide: the v3.3 deprecations page (folded into [Upgrading from v2](migration/v2-to-v3.md) in 4.0).
 
 ---
 

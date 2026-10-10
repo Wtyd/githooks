@@ -83,7 +83,7 @@ Set `re-stage: true` so a successful run (exit code **0**) is treated as a fix a
 | `re-stage` | Both | Boolean. When the job exits 0, re-stage the fixed files (for fixers like Pint). Default `false`. |
 
 !!! note
-    The legacy camelCase keys (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) are still accepted in v3.3 with a deprecation warning. They will be removed in v4.0. See [v3.3 deprecations](../migration/v33-deprecations.md).
+    The camelCase keys inherited from v2 (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) were removed in 4.0: a job declaring one is rejected with the kebab-case key named in the error. See [Upgrading from v2](../migration/v2-to-v3.md#step-2-rename-the-camelcase-keys).
 
 ## The `script` type
 

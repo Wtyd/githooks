@@ -33,7 +33,6 @@ Si aparece un fichero con el nombre pero **con distinta capitalización** (`PhpS
 | Ubicación del código tocado | Tipo de test |
 |---|---|
 | `src/Configuration/`, `src/Jobs/`, `src/Execution/`, `src/Hooks/` | **Unit test v3** (`references/unit-tests-v3.md`) |
-| `src/Tools/Tool/` | **Unit test legacy** + Fake + infra (`references/unit-tests.md`) |
 | `app/Commands/` nuevo o con flags nuevos | **System test** + testing funcional (`qa-tester`) |
 | Feature visible desde el `.phar` | **Release test** happy path (`references/release-tests.md`) |
 
@@ -645,4 +644,4 @@ El separador `--` pasa los args literales a phpunit. Parsear la respuesta JSON p
 
 ## Contexto legacy
 
-Los tests legacy (en `tests/Unit/Tools/`, `tests/Integration/`, `tests/System/Commands/ExecuteToolCommandTest.php`, `tests/System/Release/`) siguen siendo válidos para el sistema v2. Las references `unit-tests.md`, `integration-tests.md`, `system-tests.md`, `release-tests.md` documentan estos patrones. **No añadir tests legacy para funcionalidades nuevas** — usar los patrones v3 de arriba.
+Los tests del motor v2 (`tests/Unit/Tools/`, `ExecuteToolCommandTest`, …) se eliminaron en 4.0 junto con el motor; `references/unit-tests.md` describe ese patrón antiguo y está pendiente de retirar.

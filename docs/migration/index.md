@@ -8,8 +8,7 @@ Single most-asked migration. v3 changes the configuration shape from `Options` /
 
 | Guide | When |
 |---|---|
-| [From v2 to v3](v2-to-v3.md) | You have a `githooks.yml` with `Options:` and `Tools:`. `conf:migrate` automates most of the conversion; the guide covers what changes manually. |
-| [v3.3 deprecations](v33-deprecations.md) | You are already on v3.0–v3.2 and use camelCase job keys (`executablePath`, `failFast`…). v3.3 starts the deprecation cycle; v4.0 removes them. The guide is short — most projects can `sed` their way through it. |
+| [Upgrading from v2](v2-to-v3.md) | You have a `githooks.yml`, or a `githooks.php` with `Options:` and `Tools:`, or jobs with camelCase keys (`executablePath`, `failFast`…). 4.0 does not read any of them: migrate with GitHooks 3.8 (`conf:migrate`) first, or follow the manual route in the guide. |
 
 ## Coming from another tool
 

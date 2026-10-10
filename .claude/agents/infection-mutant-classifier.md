@@ -64,8 +64,7 @@ Convenciones GitHooks útiles:
 - Tests en `tests/Unit/` (mayoría), `tests/Integration/`, `tests/System/`.
 - Ejecutable por defecto: `php7.4 vendor/bin/phpunit`.
 - `src/` tiene `declare(strict_types=1)` obligatorio.
-- `src/Tools/Process/` está excluido de PHPStan — wraps de Symfony Process.
-- Grupos excluidos por defecto en la suite: `@group release`, `@group git`, `@group windows` — si el único test que matase el mutante está en uno de estos grupos, Infection lo reportará como escaped aunque el test exista. **Mencionarlo en la razón** cuando apliques.
+- Grupos excluidos por defecto en la suite: `@group release`, `@group git` — si el único test que matase el mutante está en uno de estos grupos, Infection lo reportará como escaped aunque el test exista. **Mencionarlo en la razón** cuando apliques.
 
 ### 3. Clasificar cada mutant
 
@@ -136,7 +135,7 @@ El orquestador (análisis centralizado) re-inspeccionará y resolverá. **No fue
 
 Casos típicos de ambigüedad legítima:
 - La pista del invocador sugiere EQUIVALENTE pero el test directo no es concluyente.
-- Hay test en `@group release`/`@group git`/`@group windows` (excluido por defecto) que podría cubrir — marcar AMBIGUO con nota "dependiente de grupo excluido".
+- Hay test en `@group release`/`@group git` (excluido por defecto) que podría cubrir — marcar AMBIGUO con nota "dependiente de grupo excluido".
 - El mutant afecta a una rama cuyo test relevante usa fakes que **podrían** o **no** cubrir el comportamiento mutado — sin leer el fake entero no puedes asegurarlo dentro de tu presupuesto.
 
 ---

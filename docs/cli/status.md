@@ -40,8 +40,8 @@ Shows:
 }
 ```
 
-Targets are emitted raw. A legacy configuration produces `{"version":1,"error":"…"}`
-and exit code 1.
+Targets are emitted raw. A configuration that cannot be read (missing, v2 shape,
+YAML) produces `{"version":1,"error":"…"}` and exit code 1.
 
 ## Examples
 

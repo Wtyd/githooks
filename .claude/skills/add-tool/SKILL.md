@@ -267,6 +267,4 @@ Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
 
 ## Contexto legacy
 
-El sistema legacy de Tools vive en `src/Tools/Tool/` con `ToolAbstract`, `ToolRegistry`,
-`ToolsFactory`, `SUPPORTED_TOOLS`, etc. El paso 11+ de la version anterior de esta skill
-documentaba ese flujo (12+ ficheros). No añadir Tools legacy nuevas — usar Jobs v3.
+El sistema legacy de Tools (`src/Tools/`, `ToolRegistry`, `ToolsFactory`) se retiró en 4.0; solo existen Jobs v3.

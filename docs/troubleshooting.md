@@ -71,6 +71,12 @@ See [Options reference](configuration/options.md).
 |---|---|---|
 | `Job 'X': key 'paths' is an empty list; the tool will run without any path.` | `'paths' => []`, often an array built from a filter that came back empty. `conf:check` still reports the configuration as valid, but the tool runs without a single path and usually fails with a usage error. | List at least one path, or leave the job out of the flow when there is nothing to analyse. |
 
+### Removed keys (errors)
+
+| Message | Cause | Fix |
+|---|---|---|
+| `Job 'X': key 'executablePath' was removed in 4.0. Use 'executable-path'.` | One of the camelCase keys inherited from v2 (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`), deprecated in 3.3 and removed in 4.0. The job is rejected; every removed key present is reported, each naming its kebab-case form. | Rename the key as the message says. See [Upgrading from v2](migration/v2-to-v3.md#step-2-rename-the-camelcase-keys). |
+
 ### Unknown keys (warnings)
 
 Unknown keys never block execution — they always surface as **warnings** with a *did-you-mean* suggestion when the typo is close to a known key. Example:
@@ -121,11 +127,12 @@ When a job has `skipped: true` in `--format=json` (or appears with the `⏭` ann
 | Message | Cause | Fix |
 |---|---|---|
 | `Configuration file not found: $path` | `--config=PATH` points at a non-existent file. `$path` is the path as resolved against the current directory (a relative `--config=qa/x.php` shows up as `/your/project/qa/x.php`), so the message tells you which file was actually looked up. Same text and exit code `1` in `conf:check`, `flow`, `flows` and `job`; with `conf:check --format=json` it is `errors[0]` and `valid` is `false`. | Check the path against the directory you run the command from. |
-| `Configuration file must be 'githooks.yml' in root directory or in qa/ directory` | No `--config` given and no configuration file found in the default locations (project root or `qa/`). Despite the wording, `githooks.php` in those same locations is also picked up. | Create one with [`conf:init`](cli/conf-init.md), or pass `--config=PATH`. |
+| `Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).` | No `--config` given and no `githooks.php` in the project root nor in `qa/`. | Create one with [`conf:init`](cli/conf-init.md), or pass `--config=PATH`. |
+| `v2 configuration format (Options/Tools) is not supported since 4.0: $path. Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.` | The file is a v2 configuration: `Options` and/or `Tools` at the top level and no `hooks` / `flows` / `jobs`. 4.0 does not read it. Same text and exit code `1` in every command; `conf:check --format=json` puts it in `errors[0]`. | Migrate with GitHooks 3.8 first, or write the v3 file by hand. See [Upgrading from v2](migration/v2-to-v3.md). |
+| `YAML configuration files are not supported since 4.0: $path. Migrate it with GitHooks 3.8 ('githooks conf:migrate') to githooks.php before upgrading.` | A `.yml` / `.yaml` file, either passed with `--config` or left behind in the project root or `qa/` with no `githooks.php` next to it. The file is rejected on its extension and never parsed. | Migrate with 3.8 (it converts YAML to PHP), then delete the `.yml`. |
+| `Unsupported configuration file type '.json': $path. Expected a .php file.` | `--config` points at a file whose extension is neither `.php` nor `.yml`. | Pass a `.php` file. |
 | `PHP configuration file does not return an array.` | The `.php` config file is missing `return [ ... ];`. | Ensure the file ends with `return $config;` or similar. |
 | `GitHooks only supports php 7.4 or greater.` | PHP version too old. | Upgrade PHP. |
-| `There must be at least one tool configured.` | Empty `jobs` block. | Declare at least one job. |
-| `Could not read legacy configuration.` | v2 YAML configuration is malformed. | Fix the YAML, or migrate it to v3 with GitHooks 3.8 (`conf:migrate`). |
 
 ## CI- and environment-specific
 
