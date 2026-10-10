@@ -168,7 +168,6 @@
         },
         "TrueValue": {
             "ignore": [
-                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::migrate",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::220",
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::756",
                 "Wtyd\\GitHooks\\Execution\\Memory\\LinuxRssSampler::readTreeRssMb::64",
@@ -203,7 +202,6 @@
         "Concat": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
-                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
                 "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
                 "Wtyd\\GitHooks\\Execution\\ThreadBudgetPlan::__construct::40",
                 "Wtyd\\GitHooks\\Output\\HumanIssueFormatter::renderIssues::92",
@@ -214,7 +212,6 @@
         "ConcatOperandRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
-                "Wtyd\\GitHooks\\Configuration\\ConfigurationMigrator::renderPhp::118",
                 "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
                 "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
                 "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::45",

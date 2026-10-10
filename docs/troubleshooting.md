@@ -125,7 +125,7 @@ When a job has `skipped: true` in `--format=json` (or appears with the `⏭` ann
 | `PHP configuration file does not return an array.` | The `.php` config file is missing `return [ ... ];`. | Ensure the file ends with `return $config;` or similar. |
 | `GitHooks only supports php 7.4 or greater.` | PHP version too old. | Upgrade PHP. |
 | `There must be at least one tool configured.` | Empty `jobs` block. | Declare at least one job. |
-| `Could not read legacy configuration.` | v2 YAML configuration is malformed. | Run [`conf:migrate`](cli/conf-migrate.md) to convert to v3 PHP format, or fix the YAML. |
+| `Could not read legacy configuration.` | v2 YAML configuration is malformed. | Fix the YAML, or migrate it to v3 with GitHooks 3.8 (`conf:migrate`). |
 
 ## CI- and environment-specific
 

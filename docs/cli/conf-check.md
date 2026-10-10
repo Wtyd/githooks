@@ -92,7 +92,7 @@ misses the most broken entries.
 
 A legacy (v2) configuration is reported as `{"version":1,"valid":…,"legacy":true,…}`:
 the v3 blocks (`options`, `hooks`, `flows`, `jobs`) are **omitted** and a top-level
-`hint` to run [`conf:migrate`](conf-migrate.md) is added instead. Branch on `legacy`
+`hint` to migrate with GitHooks 3.8 (`conf:migrate`) is added instead. Branch on `legacy`
 before reading those blocks.
 
 ## Examples
