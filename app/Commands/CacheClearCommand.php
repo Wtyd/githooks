@@ -44,11 +44,6 @@ class CacheClearCommand extends Command
         try {
             $config = $this->parser->parse($configFile);
 
-            if ($config->isLegacy()) {
-                $this->error("cache:clear requires v3 configuration format (hooks/flows/jobs).");
-                return 1;
-            }
-
             if ($config->hasErrors()) {
                 foreach ($config->getValidation()->getErrors() as $error) {
                     $this->error($error);

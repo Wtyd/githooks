@@ -256,8 +256,8 @@ class CreateHookCommandTest extends SystemTestCase
             ->setV3Hooks(['pre-commit' => ['qa']])
             ->buildInFileSystem();
 
-        // The command resolves the default lookup from the CWD (repo root, which
-        // has qa/githooks.php); the installer fake writes under testsDir.
+        // The parser is rooted at testsDir in tests, so the default lookup reads
+        // the file built above; the installer fake writes under testsDir too.
         $this->artisan('hook pre-commit')->assertExitCode(0);
 
         $content = (string) file_get_contents($this->path . '/.githooks/pre-commit');
@@ -265,78 +265,65 @@ class CreateHookCommandTest extends SystemTestCase
         $this->assertStringContainsString(" hook:run \"$(basename \"$0\")\" \"$@\"", $content);
     }
 
-    /** @test */
-    function v3_mode_falls_back_to_legacy_when_config_path_does_not_exist()
-    {
-        $missingConfig = getcwd() . '/' . self::TESTS_PATH . '/does-not-exist.php';
-
-        $this->artisan("hook pre-commit --config=$missingConfig")
-            ->containsStringInOutput('Hook pre-commit created')
-            ->assertExitCode(0);
-
-        $this->assertFileExists($this->path . '/.git/hooks/pre-commit');
-    }
-
     /**
      * @test
+     * @dataProvider unusableConfigProvider
      *
-     * A v2 configuration installs a legacy hook that has to drive the v2 entry
-     * point. `hook:run` reads hooks/flows/jobs and rejects a v2 file outright,
-     * so a script pointing at it blocks every commit with "requires v3
-     * configuration format" — while this command reported the hook installed
-     * and exited 0. Asserting the file exists is not enough: the bug is in what
-     * the file says.
+     * BUG-36: an explicit --config that cannot be used is an error, not a
+     * reason to install a hook pointing at it. Before, every parser failure
+     * fell back to the minimal install, so a missing file produced
+     * `Hook pre-commit created`, exit 0, and a script calling hook:run with
+     * a path that does not exist. Nothing is written in .githooks/ nor in
+     * .git/hooks/.
      */
-    function v3_mode_falls_back_to_legacy_when_configuration_is_v2_format()
+    function an_unusable_explicit_config_installs_nothing(string $fileName, ?string $content, string $expectedMessage)
     {
-        $this->configurationFileBuilder->buildInFileSystem();
-        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
+        $configPath = getcwd() . '/' . self::TESTS_PATH . '/' . $fileName;
+        if ($content !== null) {
+            file_put_contents($configPath, $content);
+        }
 
         $this->artisan("hook pre-commit --config=$configPath")
+            ->containsStringInOutput(str_replace('<path>', $configPath, $expectedMessage))
+            ->notContainsStringInOutput('created')
+            ->notContainsStringInOutput('installed')
+            ->assertExitCode(1);
+
+        $this->assertFileDoesNotExist($this->path . '/.git/hooks/pre-commit');
+        $this->assertDirectoryDoesNotExist($this->path . '/.githooks');
+    }
+
+    public function unusableConfigProvider(): array
+    {
+        return [
+            'missing file' => ['does-not-exist.php', null, 'Configuration file not found: <path>'],
+            'v2 shape' => [
+                'githooks.php',
+                "<?php return ['Options' => ['execution' => 'full'], 'Tools' => ['phpstan']];",
+                'v2 configuration format (Options/Tools) is not supported since 4.0: <path>',
+            ],
+            'yaml' => ['githooks.yml', "Tools:\n  - phpstan\n", 'YAML configuration files are not supported since 4.0: <path>'],
+            'not an array' => ['githooks.php', "<?php return 'nope';", 'PHP configuration file does not return an array.'],
+        ];
+    }
+
+    /**
+     * @test
+     *
+     * Without --config and without a file in the default locations there is
+     * nothing to read in v3 terms, so the minimal install (one script in
+     * .git/hooks/) still has a point. The script drives hook:run, which is
+     * what will resolve once the user writes a v3 file.
+     */
+    function no_configuration_anywhere_installs_the_minimal_hook()
+    {
+        $this->artisan('hook pre-commit')
             ->containsStringInOutput('Hook pre-commit created')
-            ->containsStringInOutput("configuration is still in v2 format")
             ->assertExitCode(0);
-
-        $content = (string) file_get_contents($this->path . '/.git/hooks/pre-commit');
-        $this->assertStringContainsString('tool all', $content, 'a v2 config needs the v2 entry point');
-        $this->assertStringNotContainsString('hook:run', $content, 'hook:run rejects a v2 configuration');
-    }
-
-    /**
-     * @test
-     *
-     * Same reason the v3 scripts bake it (BUG-31): each trigger has to run the
-     * configuration the hook was installed from, not whatever the working
-     * directory resolves to.
-     */
-    function legacy_script_for_a_v2_config_bakes_the_install_config()
-    {
-        $this->configurationFileBuilder->buildInFileSystem();
-        $configPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.php';
-
-        $this->artisan("hook pre-commit --config=$configPath")->assertExitCode(0);
-
-        $content = (string) file_get_contents($this->path . '/.git/hooks/pre-commit');
-        $this->assertStringContainsString("tool all --config='", $content);
-    }
-
-    /**
-     * @test
-     *
-     * The v2 entry point is only for a configuration that is actually v2. With
-     * no configuration to read there is nothing to migrate and nothing to run
-     * in v2 terms, so the script keeps pointing at `hook:run` — which is what
-     * will resolve once the user writes a v3 file.
-     */
-    function legacy_fallback_without_a_configuration_keeps_the_v3_entry_point()
-    {
-        $missingConfig = getcwd() . '/' . self::TESTS_PATH . '/does-not-exist.php';
-
-        $this->artisan("hook pre-commit --config=$missingConfig")->assertExitCode(0);
 
         $content = (string) file_get_contents($this->path . '/.git/hooks/pre-commit');
         $this->assertStringContainsString('hook:run', $content);
-        $this->assertStringNotContainsString('tool all', $content);
+        $this->assertStringNotContainsString('--config', $content);
     }
 
     /** @test */

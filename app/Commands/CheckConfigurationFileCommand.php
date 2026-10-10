@@ -63,11 +63,6 @@ class CheckConfigurationFileCommand extends Command
             return 1;
         }
 
-        if ($config->isLegacy()) {
-            $this->printer->resultError(self::v2NotSupported($config->getFilePath()));
-            return 1;
-        }
-
         return $this->handleV3($config);
     }
 
@@ -77,10 +72,6 @@ class CheckConfigurationFileCommand extends Command
             $config = $this->configParser->parse($configFile);
         } catch (\Throwable $e) {
             return $this->emitJsonError($e->getMessage());
-        }
-
-        if ($config->isLegacy()) {
-            return $this->emitJsonError(self::v2NotSupported($config->getFilePath()));
         }
 
         $result = $this->buildResult($config);
@@ -104,16 +95,6 @@ class CheckConfigurationFileCommand extends Command
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
 
         return 1;
-    }
-
-    /**
-     * Bridge until the parser itself rejects the v2 shape: same wording the
-     * runtime will use, so the message is one and the same everywhere.
-     */
-    private static function v2NotSupported(string $filePath): string
-    {
-        return "v2 configuration format (Options/Tools) is not supported since 4.0: $filePath. "
-            . "Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.";
     }
 
     private function buildResult(ConfigurationResult $config): ConfigCheckResult

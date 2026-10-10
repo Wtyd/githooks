@@ -75,11 +75,6 @@ class HookRunner
         try {
             $config = $this->parser->parse($configFile);
 
-            if ($config->isLegacy()) {
-                $this->emitError($output, "hook:run requires v3 configuration format (hooks/flows/jobs).");
-                return 1;
-            }
-
             if ($config->hasErrors()) {
                 foreach ($config->getValidation()->getErrors() as $error) {
                     $this->emitError($output, $error);

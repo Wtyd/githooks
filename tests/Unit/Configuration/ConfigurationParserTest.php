@@ -6,6 +6,7 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\GitHooks\Configuration\Exception\UnsupportedConfigurationFormatException;
 
 class ConfigurationParserTest extends UnitTestCase
 {
@@ -36,21 +37,143 @@ class ConfigurationParserTest extends UnitTestCase
         $parser->parse();
     }
 
-    /** @test */
-    public function it_detects_legacy_format()
-    {
+    /**
+     * @test
+     * @dataProvider unsupportedConfigurationProvider
+     *
+     * A file that exists but is in a shape 4.0 does not read: one exception,
+     * a GitHooksExceptionInterface so every command reports it in one line and
+     * exits 1, naming the file and the way out. The v2 guard fires on the pure
+     * v2 shape (Options and/or Tools, no v3 section); YAML is rejected on the
+     * extension alone, before anything is read.
+     */
+    public function it_rejects_unsupported_configuration_files(
+        string $fileName,
+        string $content,
+        string $expectedMessage
+    ): void {
+        $path = $this->fixturesPath . '/' . $fileName;
+        file_put_contents($path, $content);
         $parser = new ConfigurationParser($this->fixturesPath);
 
-        $this->assertTrue($parser->isLegacyFormat([
-            'Options' => ['execution' => 'full'],
-            'Tools'   => ['phpstan'],
-        ]));
+        try {
+            $parser->parse($fileName);
+            $this->fail('the configuration should have been rejected');
+        } catch (UnsupportedConfigurationFormatException $e) {
+            $this->assertSame(str_replace('<path>', $path, $expectedMessage), $e->getMessage());
+        }
+    }
 
-        $this->assertFalse($parser->isLegacyFormat([
-            'hooks' => ['pre-commit' => ['lint']],
-            'flows' => ['lint' => ['jobs' => ['phpstan_src']]],
-            'jobs'  => ['phpstan_src' => ['type' => 'phpstan']],
-        ]));
+    public function unsupportedConfigurationProvider(): array
+    {
+        $v2 = "v2 configuration format (Options/Tools) is not supported since 4.0: <path>. "
+            . "Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.";
+        $yaml = "YAML configuration files are not supported since 4.0: <path>. "
+            . "Migrate it with GitHooks 3.8 ('githooks conf:migrate') to githooks.php before upgrading.";
+
+        return [
+            'v2: Options and Tools' => [
+                'githooks.php',
+                "<?php return ['Options' => ['execution' => 'full'], 'Tools' => ['phpstan']];",
+                $v2,
+            ],
+            'v2: Tools only' => ['githooks.php', "<?php return ['Tools' => ['phpstan']];", $v2],
+            'v2: Options only' => ['githooks.php', "<?php return ['Options' => ['processes' => 2]];", $v2],
+            'yaml: not even parsed' => ['githooks.yml', "this is: [not yaml at all", $yaml],
+            'yaml: long extension' => ['githooks.yaml', "Tools:\n  - phpstan\n", $yaml],
+            'unknown extension' => [
+                'githooks.json',
+                '{"jobs": {}}',
+                "Unsupported configuration file type '.json': <path>. Expected a .php file.",
+            ],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider v3LookalikesProvider
+     *
+     * Anything that declares a v3 section is parsed as v3 and the stray keys
+     * are reported as unknown — including a v2-looking .local.php on top of a
+     * v3 main file, because the guard runs before the override merges in.
+     */
+    public function it_parses_as_v3_when_any_v3_section_is_present(
+        string $main,
+        ?string $local,
+        string $strayKey
+    ): void {
+        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        if ($local !== null) {
+            file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        }
+
+        $result = (new ConfigurationParser($this->fixturesPath))->parse();
+
+        $this->assertStringContainsString(
+            "Unknown top-level key '$strayKey'",
+            implode("\n", $result->getValidation()->getWarnings())
+        );
+    }
+
+    public function v3LookalikesProvider(): array
+    {
+        $jobs = "'jobs' => ['phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']]]";
+
+        return [
+            'Options next to jobs' => ["<?php return ['Options' => ['execution' => 'full'], $jobs];", null, 'Options'],
+            'lowercase options at the root is not v2' => ["<?php return ['options' => [], $jobs];", null, 'options'],
+            'v2 keys only in the local override' => [
+                "<?php return [$jobs];",
+                "<?php return ['Options' => ['execution' => 'full']];",
+                'Options',
+            ],
+        ];
+    }
+
+    /** @test The default lookup prefers githooks.php over a .yml left behind by 3.x. */
+    public function it_prefers_githooks_php_over_a_leftover_yml(): void
+    {
+        file_put_contents(
+            $this->fixturesPath . '/githooks.php',
+            "<?php return ['jobs' => ['phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']]]];"
+        );
+        file_put_contents($this->fixturesPath . '/githooks.yml', "Tools:\n  - phpstan\n");
+
+        $result = (new ConfigurationParser($this->fixturesPath))->parse();
+
+        $this->assertSame($this->fixturesPath . '/githooks.php', $result->getFilePath());
+    }
+
+    /** @test The default lookup also finds qa/githooks.php. */
+    public function it_finds_the_configuration_file_in_the_qa_directory(): void
+    {
+        mkdir($this->fixturesPath . '/qa');
+        file_put_contents(
+            $this->fixturesPath . '/qa/githooks.php',
+            "<?php return ['jobs' => ['phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']]]];"
+        );
+
+        try {
+            $result = (new ConfigurationParser($this->fixturesPath))->parse();
+
+            $this->assertSame($this->fixturesPath . '/qa/githooks.php', $result->getFilePath());
+        } finally {
+            unlink($this->fixturesPath . '/qa/githooks.php');
+            rmdir($this->fixturesPath . '/qa');
+        }
+    }
+
+    /** @test A .yml that is the only configuration gets the migration message, not "not found". */
+    public function it_names_a_leftover_yml_when_it_is_the_only_configuration(): void
+    {
+        file_put_contents($this->fixturesPath . '/githooks.yml', "Tools:\n  - phpstan\n");
+
+        $this->expectException(UnsupportedConfigurationFormatException::class);
+        $this->expectExceptionMessage(
+            "YAML configuration files are not supported since 4.0: {$this->fixturesPath}/githooks.yml."
+        );
+
+        (new ConfigurationParser($this->fixturesPath))->parse();
     }
 
     /**
@@ -141,7 +264,6 @@ PHP;
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
-        $this->assertFalse($result->isLegacy());
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
         $this->assertCount(2, $result->getJobs());
         $this->assertCount(1, $result->getFlows());
@@ -154,28 +276,6 @@ PHP;
         $this->assertNotNull($lintFlow);
         $this->assertTrue($lintFlow->getOptions()->isFailFast());
         $this->assertEquals(['phpcs_src', 'phpmd_src'], $lintFlow->getJobs());
-    }
-
-    /** @test */
-    public function it_returns_legacy_result_for_old_format()
-    {
-        $config = <<<'PHP'
-<?php
-return [
-    'Options' => ['execution' => 'full'],
-    'Tools'   => ['phpstan'],
-    'phpstan' => ['paths' => ['src']],
-];
-PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
-
-        $parser = new ConfigurationParser($this->fixturesPath);
-        $result = $parser->parse();
-
-        $this->assertTrue($result->isLegacy());
-        $this->assertNotNull($result->getLegacyConfig());
-        $this->assertCount(1, $result->getValidation()->getWarnings());
-        $this->assertStringContainsString('Legacy', $result->getValidation()->getWarnings()[0]);
     }
 
     /** @test */
@@ -256,21 +356,6 @@ PHP;
         $this->assertEquals('npm run lint', $job->getConfig()['script']);
     }
 
-    /**
-     * @test
-     * Unsupported file extension triggers InvalidArgumentException.
-     */
-    public function it_throws_for_unsupported_file_extension()
-    {
-        $badFile = $this->fixturesPath . '/githooks.toml';
-        file_put_contents($badFile, 'key = "value"');
-
-        $parser = new ConfigurationParser($this->fixturesPath);
-
-        $this->expectException(\InvalidArgumentException::class);
-        $parser->parse($badFile);
-    }
-
     /** @test */
     public function it_reports_type_error_without_confusing_undefined_warning()
     {
@@ -319,9 +404,7 @@ PHP;
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
-        // Empty config should NOT be detected as legacy
-        $this->assertFalse($result->isLegacy());
-        // But should have errors (no jobs section)
+        // Empty config is v3 with errors (no jobs section), not v2
         $this->assertTrue($result->hasErrors());
     }
 
@@ -592,23 +675,6 @@ PHP;
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
         $this->assertNull($result->getLocalFilePath());
-    }
-
-    /** @test */
-    public function it_does_not_look_for_local_override_on_yaml_files()
-    {
-        $yml = "flows:\n  qa:\n    jobs:\n      - phpstan_src\njobs:\n  phpstan_src:\n    type: phpstan\n    paths:\n      - src\n";
-        $local = '<?php return ["flows" => ["options" => ["processes" => 99]]];';
-
-        file_put_contents($this->fixturesPath . '/githooks.yml', $yml);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
-
-        $parser = new ConfigurationParser($this->fixturesPath);
-        $result = $parser->parse();
-
-        // Local override should be ignored for YAML files
-        $this->assertNull($result->getLocalFilePath());
-        $this->assertEquals(1, $result->getGlobalOptions()->getProcesses());
     }
 
     /** @test */
@@ -1899,35 +1965,5 @@ PHP;
             . "either side or accept this trade-off.";
 
         $this->assertContains($expected, $result->getValidation()->getWarnings());
-    }
-
-    /**
-     * @test
-     *
-     * Parsing a .yml file must emit the deprecation warning verbatim. Without
-     * the addWarning call, the warning would be missing and the operator
-     * would never learn the format is going away in v4.0.
-     */
-    public function yaml_format_emits_deprecation_warning_verbatim(): void
-    {
-        $yaml = <<<'YAML'
-Tools:
-    - phpstan
-phpstan:
-    config: 'qa/phpstan.neon'
-YAML;
-        file_put_contents($this->fixturesPath . '/githooks.yml', $yaml);
-
-        try {
-            $parser = new ConfigurationParser($this->fixturesPath);
-            $result = $parser->parse();
-
-            $expected = 'YAML configuration files are deprecated since v3.0 and will be removed in v4.0. '
-                . 'Use PHP format (githooks.php) instead. Run "githooks conf:init" to generate.';
-
-            $this->assertContains($expected, $result->getValidation()->getWarnings());
-        } finally {
-            @unlink($this->fixturesPath . '/githooks.yml');
-        }
     }
 }

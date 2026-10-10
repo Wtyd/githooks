@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace Wtyd\GitHooks\Configuration;
 
-use InvalidArgumentException;
-use Symfony\Component\Yaml\Exception\ParseException;
-use Symfony\Component\Yaml\Yaml;
 use Wtyd\GitHooks\Configuration\KeySuggestion;
 use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException;
+use Wtyd\GitHooks\Configuration\Exception\UnsupportedConfigurationFormatException;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Parser orchestrates all configuration types
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Parser handles legacy, v3, inheritance, and validation
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Parser handles file lookup, inheritance, and validation
  */
 class ConfigurationParser
 {
@@ -33,32 +31,34 @@ class ConfigurationParser
      *
      * @throws ConfigurationFileNotFoundException
      * @throws ParseConfigurationFileException
+     * @throws UnsupportedConfigurationFormatException
      */
     public function parse(string $configFile = ''): ConfigurationResult
     {
         $filePath = $this->resolveFilePath($configFile);
         $raw = $this->readFile($filePath);
-        [$raw, $localFilePath] = $this->mergeLocalOverride($raw, $filePath);
 
-        if ($this->isLegacyFormat($raw)) {
-            $result = new ValidationResult();
-            $this->addYamlDeprecationWarning($filePath, $result);
-            $result->addWarning(
-                'Legacy configuration format detected (Options/Tools). '
-                . "Use 'githooks conf:init' to generate the new hooks/flows/jobs format."
-            );
-            $configResult = ConfigurationResult::legacy($raw, $filePath, $result);
-            $configResult->setLocalFilePath($localFilePath);
-            return $configResult;
+        // Before the local override merges in: a .local.php must neither hide
+        // nor produce the v2 shape. A v3 main file whose override carries
+        // v2-looking keys comes out as "unknown top-level key" warnings.
+        if ($this->isV2Shape($raw)) {
+            throw UnsupportedConfigurationFormatException::forV2Shape($filePath);
         }
+
+        [$raw, $localFilePath] = $this->mergeLocalOverride($raw, $filePath);
 
         $configResult = $this->parseV3($raw, $filePath);
         $configResult->setLocalFilePath($localFilePath);
         return $configResult;
     }
 
-    /** @param array<string, mixed> $config */
-    public function isLegacyFormat(array $config): bool
+    /**
+     * The pure v2 shape (Options and/or Tools, no v3 section). Anything that
+     * declares a v3 section is parsed as v3, stray keys and all.
+     *
+     * @param array<string, mixed> $config
+     */
+    private function isV2Shape(array $config): bool
     {
         $hasLegacyKeys = array_key_exists('Options', $config) || array_key_exists('Tools', $config);
         $hasV3Keys = array_key_exists('hooks', $config)
@@ -72,8 +72,6 @@ class ConfigurationParser
     protected function parseV3(array $raw, string $filePath): ConfigurationResult
     {
         $result = new ValidationResult();
-
-        $this->addYamlDeprecationWarning($filePath, $result);
 
         // 1. Parse global flow-level options
         $globalOptions = null;
@@ -491,6 +489,7 @@ class ConfigurationParser
     /**
      * @throws ConfigurationFileNotFoundException
      * @throws ParseConfigurationFileException
+     * @throws UnsupportedConfigurationFormatException
      * @return array<string, mixed>
      */
     protected function readFile(string $filePath): array
@@ -503,23 +502,20 @@ class ConfigurationParser
 
         $extension = pathinfo($filePath, PATHINFO_EXTENSION);
 
-        try {
-            if ($extension === 'yml' || $extension === 'yaml') {
-                return Yaml::parseFile($filePath);
-            }
-
-            if ($extension === 'php') {
-                $config = require $filePath;
-                if (!is_array($config)) {
-                    throw new ParseConfigurationFileException('PHP configuration file does not return an array.');
-                }
-                return $config;
-            }
-        } catch (ParseException $e) {
-            throw ParseConfigurationFileException::forMessage($e->getMessage());
+        // Rejected on the extension alone: the file is never read.
+        if ($extension === 'yml' || $extension === 'yaml') {
+            throw UnsupportedConfigurationFormatException::forYaml($filePath);
         }
 
-        throw new InvalidArgumentException("Unsupported config file type: .$extension");
+        if ($extension !== 'php') {
+            throw UnsupportedConfigurationFormatException::forExtension($filePath);
+        }
+
+        $config = require $filePath;
+        if (!is_array($config)) {
+            throw new ParseConfigurationFileException('PHP configuration file does not return an array.');
+        }
+        return $config;
     }
 
     protected function resolveFilePath(string $configFile): string
@@ -536,19 +532,21 @@ class ConfigurationParser
 
     /**
      * @throws ConfigurationFileNotFoundException
+     * @throws UnsupportedConfigurationFormatException
      */
     protected function findConfigurationFile(): string
     {
-        $possiblePaths = [
-            "$this->rootPath/githooks.php",
-            "$this->rootPath/qa/githooks.php",
-            "$this->rootPath/githooks.yml",
-            "$this->rootPath/qa/githooks.yml",
-        ];
-
-        foreach ($possiblePaths as $path) {
+        foreach (["$this->rootPath/githooks.php", "$this->rootPath/qa/githooks.php"] as $path) {
             if (file_exists($path)) {
                 return $path;
+            }
+        }
+
+        // A YAML file is no longer looked up, but one left behind by 3.x gets
+        // the migration message rather than "not found".
+        foreach (["$this->rootPath/githooks.yml", "$this->rootPath/qa/githooks.yml"] as $path) {
+            if (file_exists($path)) {
+                throw UnsupportedConfigurationFormatException::forYaml($path);
             }
         }
 
@@ -579,16 +577,5 @@ class ConfigurationParser
         $merged = array_replace_recursive($raw, $localRaw);
 
         return [$merged, $localPath];
-    }
-
-    private function addYamlDeprecationWarning(string $filePath, ValidationResult $result): void
-    {
-        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
-        if ($extension === 'yml' || $extension === 'yaml') {
-            $result->addWarning(
-                'YAML configuration files are deprecated since v3.0 and will be removed in v4.0. '
-                . 'Use PHP format (githooks.php) instead. Run "githooks conf:init" to generate.'
-            );
-        }
     }
 }

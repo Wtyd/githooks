@@ -57,20 +57,6 @@ class FlowRunnerTest extends UnitTestCase
     }
 
     /** @test */
-    public function legacy_config_returns_failure_with_help_message(): void
-    {
-        $legacy = ConfigurationResult::legacy([], '/tmp/githooks.yml', new ValidationResult());
-        $parser = $this->fakeParser(fn() => $legacy);
-
-        $prep = $this->makeRunner($parser, $this->createMock(FlowExecutor::class))
-            ->prepare($this->req(['flowName' => 'qa']));
-
-        $this->assertFalse($prep->success);
-        $this->assertCount(2, $prep->errors);
-        $this->assertStringContainsString('requires v3', $prep->errors[0]);
-    }
-
-    /** @test */
     public function validation_errors_are_returned_as_failure(): void
     {
         $validation = new ValidationResult();

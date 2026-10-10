@@ -53,7 +53,7 @@ class SystemInfoCommand extends Command
     /**
      * Resolve the configured number of processes from the v3 config.
      *
-     * @return array{0: int|null, 1: bool} [processes (null for legacy or no
+     * @return array{0: int|null, 1: bool} [processes (null when there is no
      *   config), parseError (true only when the config could not be parsed)]
      */
     private function resolveProcesses(): array
@@ -61,9 +61,6 @@ class SystemInfoCommand extends Command
         $configFile = strval($this->option('config'));
         try {
             $config = $this->parser->parse($configFile);
-            if ($config->isLegacy()) {
-                return [null, false];
-            }
             return [$config->getGlobalOptions()->getProcesses(), false];
         } catch (\Throwable $e) {
             return [null, true];

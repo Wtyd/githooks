@@ -49,6 +49,25 @@ class HookV3ReleaseTest extends ReleaseTestCase
         $this->assertFileExists('.githooks/pre-commit');
     }
 
+    /**
+     * @test
+     *
+     * An explicit --config that does not exist installs nothing and exits 1.
+     * The 3.x binaries fell back to the minimal install and reported the hook
+     * created.
+     */
+    public function it_refuses_to_install_from_a_missing_configuration_file()
+    {
+        $missing = self::TESTS_PATH . '/does-not-exist.php';
+
+        passthru("$this->githooks hook pre-commit --config=$missing 2>&1", $exitCode);
+
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('Configuration file not found', $this->getActualOutput());
+        $this->assertStringNotContainsString('created', $this->getActualOutput());
+        $this->assertDirectoryDoesNotExist('.githooks');
+    }
+
     /** @test */
     public function it_cleans_hooks()
     {

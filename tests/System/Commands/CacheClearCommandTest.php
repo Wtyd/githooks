@@ -116,11 +116,10 @@ class CacheClearCommandTest extends SystemTestCase
         $this->assertFileDoesNotExist('.phpmd.result.cache');
     }
 
-    /** @test */
-    public function it_rejects_legacy_config()
+    /** @test The message goes to stderr (BUG-5), which the harness does not capture; the exit code is the contract. */
+    public function it_rejects_a_v2_configuration()
     {
-        $this->configurationFileBuilder = new \Tests\Utils\ConfigurationFileBuilder(self::TESTS_PATH);
-        $this->configurationFileBuilder->buildInFileSystem();
+        file_put_contents($this->configPath, "<?php return ['Options' => ['execution' => 'full'], 'Tools' => ['phpstan']];");
 
         $this->artisan("cache:clear --config=$this->configPath")
             ->assertExitCode(1);

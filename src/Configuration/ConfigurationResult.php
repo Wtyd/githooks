@@ -20,11 +20,6 @@ class ConfigurationResult
 
     private ValidationResult $validation;
 
-    private bool $isLegacy;
-
-    /** @var array<string, mixed>|null Raw config for legacy format bridge */
-    private ?array $legacyConfig;
-
     private ?string $localFilePath = null;
 
     /**
@@ -45,24 +40,6 @@ class ConfigurationResult
         $this->flows = $flows;
         $this->hooks = $hooks;
         $this->validation = $validation;
-        $this->isLegacy = false;
-        $this->legacyConfig = null;
-    }
-
-    /** @param array<string, mixed> $rawConfig */
-    public static function legacy(array $rawConfig, string $filePath, ValidationResult $validation): self
-    {
-        $instance = new self(
-            $filePath,
-            new OptionsConfiguration(),
-            [],
-            [],
-            null,
-            $validation
-        );
-        $instance->isLegacy = true;
-        $instance->legacyConfig = $rawConfig;
-        return $instance;
     }
 
     public function getFilePath(): string
@@ -110,17 +87,6 @@ class ConfigurationResult
     public function hasErrors(): bool
     {
         return $this->validation->hasErrors();
-    }
-
-    public function isLegacy(): bool
-    {
-        return $this->isLegacy;
-    }
-
-    /** @return array<string, mixed>|null */
-    public function getLegacyConfig(): ?array
-    {
-        return $this->legacyConfig;
     }
 
     public function getLocalFilePath(): ?string
