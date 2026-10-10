@@ -16,12 +16,11 @@ class ConfigCheckJsonFormatterTest extends UnitTestCase
             'errors' => [],
             'warnings' => [],
             'deprecations' => [],
-            'hint' => null,
         ], $overrides);
     }
 
     /** @test */
-    public function v3_valid_config_serialises_full_payload_without_hint()
+    public function v3_valid_config_serialises_full_payload()
     {
         $result = ConfigCheckResult::forV3(
             'githooks.php',
@@ -36,9 +35,8 @@ class ConfigCheckJsonFormatterTest extends UnitTestCase
         $payload = json_decode((new ConfigCheckJsonFormatter())->format($result), true);
 
         $this->assertSame([
-            'version' => 1,
+            'version' => 2,
             'valid' => true,
-            'legacy' => false,
             'file' => ['path' => 'githooks.php', 'localPath' => null],
             'options' => ['processes' => 8, 'failFast' => false],
             'hooks' => [['event' => 'pre-commit', 'targets' => [['target' => 'qa']]]],
@@ -48,7 +46,6 @@ class ConfigCheckJsonFormatterTest extends UnitTestCase
             'warnings' => [],
             'deprecations' => [],
         ], $payload);
-        $this->assertArrayNotHasKey('hint', $payload);
     }
 
     /** @test */
@@ -90,45 +87,5 @@ class ConfigCheckJsonFormatterTest extends UnitTestCase
         $payload = json_decode((new ConfigCheckJsonFormatter())->format($result), true);
 
         $this->assertSame([['job' => 'phpstan', 'oldKey' => 'paths', 'newKey' => 'files']], $payload['deprecations']);
-    }
-
-    /** @test */
-    public function legacy_config_omits_v3_blocks_and_carries_hint()
-    {
-        $result = ConfigCheckResult::legacy(
-            'githooks.yml',
-            null,
-            $this->diagnostics(['hint' => "Run 'githooks conf:migrate' to upgrade to v3."])
-        );
-
-        $payload = json_decode((new ConfigCheckJsonFormatter())->format($result), true);
-
-        $this->assertSame([
-            'version' => 1,
-            'valid' => true,
-            'legacy' => true,
-            'file' => ['path' => 'githooks.yml', 'localPath' => null],
-            'errors' => [],
-            'warnings' => [],
-            'deprecations' => [],
-            'hint' => "Run 'githooks conf:migrate' to upgrade to v3.",
-        ], $payload);
-        $this->assertArrayNotHasKey('options', $payload);
-        $this->assertArrayNotHasKey('jobs', $payload);
-    }
-
-    /** @test */
-    public function legacy_config_with_errors_is_invalid()
-    {
-        $result = ConfigCheckResult::legacy(
-            'githooks.yml',
-            null,
-            $this->diagnostics(['errors' => ['Tool xyz is not supported'], 'hint' => 'migrate'])
-        );
-
-        $payload = json_decode((new ConfigCheckJsonFormatter())->format($result), true);
-
-        $this->assertFalse($payload['valid']);
-        $this->assertSame(['Tool xyz is not supported'], $payload['errors']);
     }
 }

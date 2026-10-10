@@ -11,12 +11,10 @@ namespace Wtyd\GitHooks\Output\Inspection;
  *
  * `valid` is derived: a config is valid when it produced no errors.
  *
- * @phpstan-type Diagnostics array{errors: string[], warnings: string[], deprecations: array<int, array<string, mixed>>, hint: string|null}
+ * @phpstan-type Diagnostics array{errors: string[], warnings: string[], deprecations: array<int, array<string, mixed>>}
  */
 final class ConfigCheckResult
 {
-    private bool $legacy;
-
     private string $filePath;
 
     private ?string $localFilePath;
@@ -44,7 +42,6 @@ final class ConfigCheckResult
      * @param Diagnostics $diagnostics
      */
     private function __construct(
-        bool $legacy,
         string $filePath,
         ?string $localFilePath,
         array $options,
@@ -53,7 +50,6 @@ final class ConfigCheckResult
         array $jobs,
         array $diagnostics
     ) {
-        $this->legacy = $legacy;
         $this->filePath = $filePath;
         $this->localFilePath = $localFilePath;
         $this->options = $options;
@@ -79,20 +75,7 @@ final class ConfigCheckResult
         array $jobs,
         array $diagnostics
     ): self {
-        return new self(false, $filePath, $localFilePath, $options, $hooks, $flows, $jobs, $diagnostics);
-    }
-
-    /**
-     * @param Diagnostics $diagnostics
-     */
-    public static function legacy(string $filePath, ?string $localFilePath, array $diagnostics): self
-    {
-        return new self(true, $filePath, $localFilePath, [], [], [], [], $diagnostics);
-    }
-
-    public function isLegacy(): bool
-    {
-        return $this->legacy;
+        return new self($filePath, $localFilePath, $options, $hooks, $flows, $jobs, $diagnostics);
     }
 
     public function isValid(): bool
@@ -150,10 +133,5 @@ final class ConfigCheckResult
     public function getDeprecations(): array
     {
         return $this->diagnostics['deprecations'];
-    }
-
-    public function getHint(): ?string
-    {
-        return $this->diagnostics['hint'];
     }
 }

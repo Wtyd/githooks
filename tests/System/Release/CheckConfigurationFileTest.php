@@ -12,7 +12,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_checks_the_configuration_file_and_return_exit_0()
     {
-        $this->configurationFileBuilder->buildInFileSystem('./', true);
+        $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('./', true);
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
@@ -22,43 +22,47 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_checks_the_configuration_file_and_show_warning_and_return_exit_0()
     {
-        $this->configurationFileBuilder->setOptions(['invalidOptionTest' => 1])
-                                        ->buildInFileSystem('./', true);
+        $this->configurationFileBuilder->enableV3Mode()
+            ->addV3Job('lint', 'phpstan', ['paths' => ['src'], 'invalidOptionTest' => 1])
+            ->buildInFileSystem('./', true);
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
-        $this->assertStringContainsString("The key 'invalidOptionTest' is not a valid option", $this->getActualOutput());
+        $this->assertStringContainsString("unknown key 'invalidOptionTest'", $this->getActualOutput());
     }
 
     /** @test */
     function it_checks_the_configuration_file_and_show_error_and_return_exit_1()
     {
-        $this->configurationFileBuilder->setTools([])->buildInFileSystem('./', true);
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Jobs(['bad_job' => ['type' => 'nonexistent']])
+            ->setV3Flows(['qa' => ['jobs' => ['bad_job']]])
+            ->buildInFileSystem('./', true);
 
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(1, $exitCode);
-        $this->assertStringContainsString("The 'Tools' tag from configuration file is empty.", $this->getActualOutput());
+        $this->assertStringContainsString("type 'nonexistent' is not a supported tool", $this->getActualOutput());
     }
 
     /** @test */
     function it_checks_configuration_file_in_custom_path_with_config_flag()
     {
-        $this->configurationFileBuilder->setTools(['invalid-tool'])
+        $this->configurationFileBuilder->enableV3Mode()
+            ->setV3Jobs(['bad_job' => ['type' => 'nonexistent']])
+            ->setV3Flows(['qa' => ['jobs' => ['bad_job']]])
             ->buildInFileSystem('./', true);
 
         // Create valid config in custom folder
         $this->createDirStructure('custom');
 
-        $this->configurationFileBuilder
-            ->setTools(['phpunit', 'phpcs'])
-                ->buildInFileSystem('custom', true);
+        $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('custom', true);
 
         // Check root config with errors
         passthru("$this->githooks conf:check", $exitCode);
         $this->assertEquals(1, $exitCode);
-        $this->assertStringContainsString("There must be at least one tool configured.", $this->getActualOutput());
+        $this->assertStringContainsString("type 'nonexistent' is not a supported tool", $this->getActualOutput());
 
         // Check valid config in custom folder
         passthru("$this->githooks conf:check --config=custom/githooks.php", $exitCode);
@@ -71,11 +75,11 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_shows_configuration_file_path()
     {
-        $this->configurationFileBuilder->buildInFileSystem('./', true);
+        $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('./', true);
         passthru("$this->githooks conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString('Configuration file:', $this->getActualOutput());
+        $this->assertStringContainsString('Configuration file: githooks.php', $this->getActualOutput());
     }
 
     /** @test */
