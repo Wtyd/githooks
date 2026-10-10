@@ -10,9 +10,6 @@ use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Hooks\HookRunner;
 use Wtyd\GitHooks\Hooks\HookStatusInspector;
 use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Registry\ToolRegistry;
-use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactory;
-use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Utils\FileUtils;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 use Wtyd\GitHooks\Utils\GitStager;
@@ -63,10 +60,6 @@ class RegisterBindings
     protected function singletons(): array
     {
         return [
-            ProcessExecutionFactoryAbstract::class => ProcessExecutionFactory::class,
-            // The legacy engine registers the script alias on the shared instance
-            // and reads it back from another class; goes with the engine.
-            ToolRegistry::class => ToolRegistry::class,
             JobRegistry::class => JobRegistry::class,
             ConfigurationParser::class => function (Container $app) {
                 return new ConfigurationParser('', $app->make(JobRegistry::class));

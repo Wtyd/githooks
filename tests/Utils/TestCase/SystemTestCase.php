@@ -29,7 +29,7 @@ abstract class SystemTestCase extends ConsoleTestCase
         // lazily at handle(), so each run gets a fresh empty fake (→ FAST modes see no
         // changes, deterministic, never the real git index). Transitorio — not a shared
         // instance — so the container's `resolving(FileUtilsFake::class, ...)` callbacks
-        // fire on every resolution (ExecuteToolCommandTest configures the fake that way).
+        // fire on every resolution (a test may configure the fake that way).
         // A flow test that needs to control the change set binds its own configured
         // instance (`$this->app->instance(FileUtilsInterface::class, $fake)`), which the
         // lazy runner then resolves. Tests needing the real FileUtils re-bind it to
