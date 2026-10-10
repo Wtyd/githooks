@@ -62,9 +62,8 @@ mode).
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "valid": true,
-  "legacy": false,
   "file": { "path": "githooks.php", "localPath": null },
   "options": { "processes": 8, "failFast": false, "timeBudget": null, "memoryBudget": null, "...": "..." },
   "hooks": [ { "event": "pre-commit", "targets": [ { "target": "qa", "onlyOn": [], "excludeOn": [], "onlyFiles": [], "excludeFiles": [] } ] } ],
@@ -90,10 +89,10 @@ parser rejected: those carry `"status": "error"`, an empty `command` and the
 rejection reasons in `issues`, so `jobs[] | select(.status != "ok")` never
 misses the most broken entries.
 
-A legacy (v2) configuration is reported as `{"version":1,"valid":…,"legacy":true,…}`:
-the v3 blocks (`options`, `hooks`, `flows`, `jobs`) are **omitted** and a top-level
-`hint` to migrate with GitHooks 3.8 (`conf:migrate`) is added instead. Branch on `legacy`
-before reading those blocks.
+A v2 (`Options`/`Tools`) configuration is not parsed: the payload is the error form
+(`valid: false`, the message in `errors[0]`, no v3 blocks) and the exit code is 1.
+Migrate it with GitHooks 3.8 (`conf:migrate`) before upgrading. Schema version 1
+(GitHooks 3.x) carried a `legacy` marker and a `hint` for that case; version 2 does not.
 
 ## Examples
 

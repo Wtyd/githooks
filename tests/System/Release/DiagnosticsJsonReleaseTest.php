@@ -35,9 +35,9 @@ class DiagnosticsJsonReleaseTest extends ReleaseTestCase
         $decoded = json_decode($this->getActualOutput(), true);
 
         $this->assertIsArray($decoded, 'stdout must be a single parseable JSON object');
-        $this->assertSame(1, $decoded['version']);
+        $this->assertSame(2, $decoded['version']);
         $this->assertTrue($decoded['valid']);
-        $this->assertFalse($decoded['legacy']);
+        $this->assertArrayNotHasKey('legacy', $decoded);
         $this->assertArrayHasKey('jobs', $decoded);
     }
 

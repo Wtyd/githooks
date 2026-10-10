@@ -12,6 +12,7 @@ class ConfigurationFileNotFoundException extends \RuntimeException implements Gi
     {
         $this->message = !empty($message)
             ? $message
-            : "Configuration file must be 'githooks.yml' in root directory or in qa/ directory";
+            : 'Configuration file not found. Expected githooks.php in the project root or in qa/ '
+                . '(or pass --config=PATH).';
     }
 }

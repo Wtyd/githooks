@@ -24,6 +24,19 @@ class ConfigurationParserTest extends UnitTestCase
     }
 
     /** @test */
+    public function it_names_the_expected_locations_when_no_configuration_file_is_found()
+    {
+        $parser = new ConfigurationParser($this->fixturesPath);
+
+        $this->expectException(\Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException::class);
+        $this->expectExceptionMessage(
+            'Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).'
+        );
+
+        $parser->parse();
+    }
+
+    /** @test */
     public function it_detects_legacy_format()
     {
         $parser = new ConfigurationParser($this->fixturesPath);

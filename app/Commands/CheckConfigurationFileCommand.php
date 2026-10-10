@@ -11,22 +11,15 @@ use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\HookConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
-use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\ConfigurationFile\Printer\OptionsTable;
-use Wtyd\GitHooks\ConfigurationFile\Printer\ToolsTable;
+use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
 use Wtyd\GitHooks\Output\Inspection\ConfigCheckJsonFormatter;
 use Wtyd\GitHooks\Output\Inspection\ConfigCheckResult;
-use Wtyd\GitHooks\Registry\ToolRegistry;
-use Wtyd\GitHooks\Tools\Errors;
-use Wtyd\GitHooks\Tools\ToolsPreparer;
 use Wtyd\GitHooks\Utils\Printer;
 
 class CheckConfigurationFileCommand extends Command
 {
     use EmitsStderr;
+    use RelativizesFilePath;
     use ResolvesDiagnosticFormat;
 
     protected $signature = 'conf:check
@@ -34,13 +27,7 @@ class CheckConfigurationFileCommand extends Command
                             {--format= : Output format (text, json)}';
     protected $description = 'Check that the configuration file exists and that it is in the proper format.';
 
-    protected FileReader $fileReader;
-
     protected Printer $printer;
-
-    protected ToolsPreparer $toolsPreparer;
-
-    protected ToolRegistry $toolRegistry;
 
     protected ConfigurationParser $configParser;
 
@@ -48,24 +35,13 @@ class CheckConfigurationFileCommand extends Command
 
     protected ConfigurationChecker $checker;
 
-    /**
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) Aggregates the config-read pipeline (reader,
-     *   parser, tool registry) plus the rendering helpers (printer) and the pure-validation
-     *   checker; splitting would force the Command to know more about the wiring.
-     */
     public function __construct(
-        FileReader $fileReader,
         Printer $printer,
-        ToolsPreparer $toolsPreparer,
-        ToolRegistry $toolRegistry,
         ConfigurationParser $configParser,
         JobRegistry $jobRegistry,
         ConfigurationChecker $checker
     ) {
-        $this->fileReader = $fileReader;
         $this->printer = $printer;
-        $this->toolsPreparer = $toolsPreparer;
-        $this->toolRegistry = $toolRegistry;
         $this->configParser = $configParser;
         $this->jobRegistry = $jobRegistry;
         $this->checker = $checker;
@@ -74,57 +50,37 @@ class CheckConfigurationFileCommand extends Command
 
     public function handle()
     {
-        if ($this->resolveDiagnosticFormat() === 'json') {
-            return $this->handleJson(strval($this->option('config')));
-        }
-
         $configFile = strval($this->option('config'));
 
-        // Read the raw config via FileReader (respects testing fakes)
+        if ($this->resolveDiagnosticFormat() === 'json') {
+            return $this->handleJson($configFile);
+        }
+
         try {
-            $rawFile = $this->fileReader->readfile($configFile);
-        } catch (ConfigurationFileNotFoundException $e) {
-            $this->printer->resultError($e->getMessage());
-            return 1;
+            $config = $this->configParser->parse($configFile);
         } catch (\Throwable $e) {
             $this->printer->resultError($e->getMessage());
             return 1;
         }
 
-        // Detect format from raw content
-        if (!$this->configParser->isLegacyFormat($rawFile)) {
-            // v3 format: parse with ConfigurationParser using the file FileReader found
-            $filePath = $this->fileReader->getRelativeConfigurationFilePath();
-            try {
-                $config = $this->configParser->parse($filePath);
-                return $this->handleV3($config);
-            } catch (\Throwable $e) {
-                $this->error($e->getMessage());
-                return 1;
-            }
+        if ($config->isLegacy()) {
+            $this->printer->resultError(self::v2NotSupported($config->getFilePath()));
+            return 1;
         }
 
-        return $this->handleLegacy($configFile);
+        return $this->handleV3($config);
     }
 
     private function handleJson(string $configFile): int
     {
         try {
-            $rawFile = $this->fileReader->readfile($configFile);
+            $config = $this->configParser->parse($configFile);
         } catch (\Throwable $e) {
             return $this->emitJsonError($e->getMessage());
         }
 
-        $filePath = $this->fileReader->getRelativeConfigurationFilePath();
-
-        if ($this->configParser->isLegacyFormat($rawFile)) {
-            return $this->emitLegacyJson($rawFile, $filePath);
-        }
-
-        try {
-            $config = $this->configParser->parse($filePath);
-        } catch (\Throwable $e) {
-            return $this->emitJsonError($e->getMessage());
+        if ($config->isLegacy()) {
+            return $this->emitJsonError(self::v2NotSupported($config->getFilePath()));
         }
 
         $result = $this->buildResult($config);
@@ -140,7 +96,7 @@ class CheckConfigurationFileCommand extends Command
     private function emitJsonError(string $message): int
     {
         $this->output->writeln((string) json_encode([
-            'version' => 1,
+            'version' => 2,
             'valid' => false,
             'errors' => [$message],
             'warnings' => [],
@@ -151,32 +107,13 @@ class CheckConfigurationFileCommand extends Command
     }
 
     /**
-     * @param array<string, mixed> $rawConfig the parsed config array from FileReader::readfile
+     * Bridge until the parser itself rejects the v2 shape: same wording the
+     * runtime will use, so the message is one and the same everywhere.
      */
-    private function emitLegacyJson(array $rawConfig, string $filePath): int
+    private static function v2NotSupported(string $filePath): string
     {
-        $errors = [];
-        $warnings = [];
-
-        try {
-            $configurationFile = new ConfigurationFile($rawConfig, ConfigurationFile::ALL_TOOLS, $this->toolRegistry);
-            $this->toolsPreparer->__invoke($configurationFile);
-            $warnings = $configurationFile->getWarnings();
-        } catch (ConfigurationFileException $e) {
-            $errors = $e->getConfigurationFile()->getErrors();
-            $warnings = $e->getConfigurationFile()->getWarnings();
-        }
-
-        $result = ConfigCheckResult::legacy($filePath, null, [
-            'errors' => array_values($errors),
-            'warnings' => array_values($warnings),
-            'deprecations' => [],
-            'hint' => "Run 'githooks conf:migrate' to upgrade to v3.",
-        ]);
-
-        $this->output->writeln((new ConfigCheckJsonFormatter())->format($result));
-
-        return $result->isValid() ? 0 : 1;
+        return "v2 configuration format (Options/Tools) is not supported since 4.0: $filePath. "
+            . "Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.";
     }
 
     private function buildResult(ConfigurationResult $config): ConfigCheckResult
@@ -223,7 +160,6 @@ class CheckConfigurationFileCommand extends Command
                 'errors' => array_values($errors),
                 'warnings' => array_values($warnings),
                 'deprecations' => $deprecations,
-                'hint' => null,
             ]
         );
     }
@@ -335,9 +271,9 @@ class CheckConfigurationFileCommand extends Command
 
     protected function handleV3(ConfigurationResult $config): int
     {
-        $this->printer->info('Configuration file: ' . $config->getFilePath());
+        $this->printer->info('Configuration file: ' . $this->relativizePath($config->getFilePath()));
         if ($config->getLocalFilePath() !== null) {
-            $this->printer->info('Local override: ' . $config->getLocalFilePath());
+            $this->printer->info('Local override: ' . $this->relativizePath($config->getLocalFilePath()));
         }
         $this->line('');
 
@@ -566,65 +502,5 @@ class CheckConfigurationFileCommand extends Command
             $this->printer->resultWarning($warning);
         }
         return !empty($result['errors']);
-    }
-
-    protected function handleLegacy(string $configFile = ''): int
-    {
-        $errors = new Errors();
-        try {
-            $file = $this->fileReader->readfile($configFile);
-
-            $this->printer->info('Configuration file: ' . $this->fileReader->getRelativeConfigurationFilePath());
-
-            $configurationFile = new ConfigurationFile($file, ConfigurationFile::ALL_TOOLS, $this->toolRegistry);
-
-            $optionsTable = new OptionsTable($configurationFile);
-            $this->table(
-                $optionsTable->getHeaders(),
-                $optionsTable->getRows()
-            );
-
-            $tools = $this->toolsPreparer->__invoke($configurationFile);
-
-            $toolsTable = new ToolsTable($tools);
-
-            $this->table(
-                $toolsTable->getHeaders(),
-                $toolsTable->getRows()
-            );
-
-            $this->info('The configuration file has the correct format.');
-
-            $this->warn("Legacy configuration format detected. Run 'githooks conf:migrate' to upgrade to v3.");
-        } catch (ConfigurationFileNotFoundException $exception) {
-            $errors->setError('set error', 'to return 1');
-            $this->printer->resultError($exception->getMessage());
-        } catch (ConfigurationFileException $exception) {
-            $this->error($exception->getMessage());
-            $errors->setError('set error', 'to return 1');
-
-            foreach ($exception->getConfigurationFile()->getErrors() as $error) {
-                $this->printer->resultError($error);
-            }
-            $this->printWarnings($exception->getConfigurationFile()->getWarnings());
-        }
-
-        $exitCode = 0;
-        if ($errors->isEmpty()) {
-            if (isset($configurationFile)) {
-                $this->printWarnings($configurationFile->getWarnings());
-            }
-        } else {
-            $exitCode = 1;
-        }
-
-        return $exitCode;
-    }
-
-    protected function printWarnings(array $warnings): void
-    {
-        foreach ($warnings as $warning) {
-            $this->printer->resultWarning($warning);
-        }
     }
 }

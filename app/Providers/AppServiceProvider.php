@@ -3,11 +3,13 @@
 namespace Wtyd\GitHooks\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Configuration\ToolDetector;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Container\RegisterBindings;
 use Wtyd\GitHooks\Hooks\HookInstaller;
 use Wtyd\GitHooks\Hooks\HookStatusInspector;
+use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryAbstract;
 use Wtyd\GitHooks\Tools\Process\ProcessExecutionFactory\ProcessExecutionFactoryFake;
@@ -15,6 +17,7 @@ use Tests\Doubles\FileReaderFake;
 use Tests\Doubles\HookInstallerFake;
 use Tests\Doubles\HookStatusInspectorFake;
 use Tests\Doubles\ToolDetectorFake;
+use Tests\Utils\TestCase\SystemTestCase;
 use Wtyd\GitHooks\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider
@@ -78,6 +81,12 @@ class AppServiceProvider extends ServiceProvider
     protected function testsRegister(): void
     {
         if (defined('APP_ENV') && APP_ENV === 'testing') {
+            // Same relative root the other fakes use, so a command that looks the
+            // configuration up (conf:check, hook) finds the one the test built
+            // under testsDir instead of the project's own qa/githooks.php.
+            $this->app->singleton(ConfigurationParser::class, function ($app) {
+                return new ConfigurationParser(SystemTestCase::TESTS_PATH, $app->make(JobRegistry::class));
+            });
             $this->app->singleton(FileReader::class, FileReaderFake::class);
             $this->app->singleton(ProcessExecutionFactoryAbstract::class, ProcessExecutionFactoryFake::class);
             $this->app->singleton(HookInstaller::class, HookInstallerFake::class);

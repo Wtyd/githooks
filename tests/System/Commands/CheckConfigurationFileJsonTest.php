@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\System\Commands;
 
-use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 
 /**
@@ -49,9 +48,9 @@ class CheckConfigurationFileJsonTest extends SystemTestCase
         $payload = $this->runJsonCommand("conf:check --format=json --config=$this->configPath");
 
         $this->assertSame(0, $this->lastExit);
-        $this->assertSame(1, $payload['version']);
+        $this->assertSame(2, $payload['version']);
         $this->assertTrue($payload['valid']);
-        $this->assertFalse($payload['legacy']);
+        $this->assertArrayNotHasKey('legacy', $payload);
         $this->assertSame([], $payload['errors']);
         $this->assertNotEmpty($payload['jobs']);
         $this->assertSame('ok', $payload['jobs'][0]['status']);
@@ -176,17 +175,24 @@ class CheckConfigurationFileJsonTest extends SystemTestCase
         $this->assertNotEmpty($payload['warnings']);
     }
 
-    /** @test Legacy config emits a JSON marker and the migrate hint (decision 3) */
-    public function it_emits_legacy_marker_and_migrate_hint_for_legacy_config()
+    /** @test A v2 (Options/Tools) configuration is rejected with the 4.0 message, not parsed */
+    public function it_rejects_a_v2_config_with_the_migration_message()
     {
-        $legacyBuilder = new ConfigurationFileBuilder(self::TESTS_PATH);
-        $legacyBuilder->buildInFileSystem();
+        file_put_contents(
+            $this->configPath,
+            "<?php return ['Options' => ['execution' => 'full'], 'Tools' => ['phpstan']];"
+        );
 
         $payload = $this->runJsonCommand("conf:check --format=json --config=$this->configPath");
 
-        $this->assertTrue($payload['legacy']);
+        $this->assertSame(1, $this->lastExit);
+        $this->assertSame(2, $payload['version']);
+        $this->assertFalse($payload['valid']);
         $this->assertArrayNotHasKey('jobs', $payload);
-        $this->assertSame("Run 'githooks conf:migrate' to upgrade to v3.", $payload['hint']);
+        $this->assertSame([
+            "v2 configuration format (Options/Tools) is not supported since 4.0: $this->configPath. "
+            . "Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.",
+        ], $payload['errors']);
     }
 
     /** @test AC-005 — invalid format warns and falls back to text (tables, not JSON) */
