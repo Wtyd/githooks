@@ -5,43 +5,40 @@ namespace Wtyd\GitHooks\App\Commands;
 use LaravelZero\Framework\Commands\Command;
 use Wtyd\GitHooks\Configuration\ConfigurationGenerator;
 use Wtyd\GitHooks\Configuration\ToolDetector;
-use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\Utils\Printer;
 use Wtyd\GitHooks\Utils\Storage;
 
 class CreateConfigurationFileCommand extends Command
 {
-    protected $signature = 'conf:init {--legacy : Generate legacy (v2) format instead of v3 hooks/flows/jobs}';
+    protected $signature = 'conf:init';
     protected $description = 'Creates the configuration file githooks.php in the project path';
+
+    /** The locations the runtime looks a configuration up in, in order. */
+    private const CONFIGURATION_FILES = ['githooks.php', 'qa/githooks.php'];
 
     protected Printer $printer;
 
-    protected FileReader $fileReader;
-
     private ToolDetector $toolDetector;
 
-    public function __construct(Printer $printer, FileReader $fileReader, ToolDetector $toolDetector)
+    public function __construct(Printer $printer, ToolDetector $toolDetector)
     {
         $this->printer = $printer;
-        $this->fileReader = $fileReader;
         $this->toolDetector = $toolDetector;
         parent::__construct();
     }
 
     public function handle()
     {
-        try {
-            $this->fileReader->findConfigurationFile();
-            $this->printer->error('githooks configuration file already exists');
-            return 1;
-        } catch (ConfigurationFileNotFoundException $ex) {
-            // OK — no config exists, we can create one
+        foreach (self::CONFIGURATION_FILES as $candidate) {
+            if (Storage::exists($candidate)) {
+                $this->printer->error('githooks configuration file already exists');
+                return 1;
+            }
         }
 
-        $result = (!$this->input->isInteractive() || $this->option('legacy'))
-            ? $this->copyDistFile()
-            : $this->interactive();
+        $result = $this->input->isInteractive()
+            ? $this->interactive()
+            : $this->copyDistFile();
 
         if ($result === 0) {
             $this->ensureGitignoreEntry();
@@ -124,9 +121,7 @@ class CreateConfigurationFileCommand extends Command
 
     private function copyDistFile(): int
     {
-        $distFile = $this->option('legacy')
-            ? 'githooks.dist.yml'
-            : 'githooks.dist.php';
+        $distFile = 'githooks.dist.php';
 
         $origin = $this->resolveDistFile($distFile);
 
