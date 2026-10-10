@@ -12,8 +12,5 @@
             '#PHPDoc tag @SuppressWarnings has invalid value#'
         ]
         reportUnmatchedIgnoredErrors: false
-        excludePaths: [
-            %currentWorkingDirectory%/src/Tools/Process/, # inherits from Symfony
-        ]
     }
 }

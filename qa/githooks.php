@@ -48,7 +48,6 @@ return [
             'jobs' => [
                 'phpunit',
                 'phpunit-git',
-                'phpunit-windows',
                 'phpunit-integration',
             ],
         ],
@@ -106,7 +105,7 @@ return [
             // Same rationale for FlowCommand vs FlowsCommand: identical Command
             // shape on purpose, distinct DTOs (FlowRunRequest vs FlowsRunRequest).
             'exclude' => [
-                'vendor', 'tests', 'tools', 'src/Tools',
+                'vendor', 'tests', 'tools',
                 'src/Execution',
                 'app/Commands/FlowsCommand.php',
             ],
@@ -120,14 +119,6 @@ return [
         'phpunit-git' => [
             'extends' => 'phpunit',
             'group' => 'git',
-        ],
-        'phpunit-windows' => [
-            'extends' => 'phpunit',
-            'group' => 'windows',
-            // On Windows the shell treats `vendor/bin/phpunit` as a command lookup,
-            // not a relative path, so composer's unix-style script is not resolved.
-            // Prefixing with `php` makes the interpreter run the script explicitly.
-            'executable-prefix' => 'php',
         ],
         'phpunit-integration' => [
             'extends' => 'phpunit',

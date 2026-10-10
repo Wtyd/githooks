@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\Storage;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
-use Wtyd\GitHooks\LoadTools\ExecutionMode;
 
 class FileUtils implements FileUtilsInterface
 {
+    /** The prefix a tool may put in front of a path it reports as the project root. */
+    private const ROOT_PATH = './';
+
     /**
      * @return array Files modified and staged since last commit.
      */
@@ -33,10 +35,10 @@ class FileUtils implements FileUtilsInterface
      */
     public function isSameFile(string $file1, string $file2): bool
     {
-        $file1 = explode(ExecutionMode::ROOT_PATH, $file1);
+        $file1 = explode(self::ROOT_PATH, $file1);
         $file1 = count($file1) > 1 ? $file1[1] : $file1[0];
 
-        $file2 = explode(ExecutionMode::ROOT_PATH, $file2);
+        $file2 = explode(self::ROOT_PATH, $file2);
         $file2 = count($file2) > 1 ? $file2[1] : $file2[0];
 
         return $file1 === $file2;
@@ -58,7 +60,7 @@ class FileUtils implements FileUtilsInterface
             return false;
         }
 
-        if ($directory === ExecutionMode::ROOT_PATH) {
+        if ($directory === self::ROOT_PATH) {
             return true;
         }
 

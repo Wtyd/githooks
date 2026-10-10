@@ -4,11 +4,14 @@ name: CI
 # Strategy:
 #   - PHP 7.4 on Linux runs `flow qa` (full QA: phpstan + phpcs + phpmd + phpcpd
 #     + parallel-lint + phpcbf + phpunit + composer-audit). Canonical version.
-#   - PHP 8.1 / 8.5 on Linux only run the tests slice via `flow ci-tests
-#     --exclude-jobs=phpunit-windows` (phpunit main suite + phpunit-git). Static
+#   - PHP 8.1 / 8.5 on Linux only run the tests slice via `flow ci-tests`
+#     (phpunit main suite + phpunit-git + phpunit-integration). Static
 #     analysis tools do not depend on the runtime, so no gain from running
 #     them on every PHP version.
-#   - Windows runners (PHP 7.4 / 8.5) run only `job phpunit-windows`.
+#
+# The Windows rows went with the v2 engine in 4.0: they only ran the `windows`
+# group, which held the v2 path-adaptation tests. Running the whole suite on
+# windows-latest is separate work.
 #
 # The matrix is driven by a single `cmd` field so the workflow steps stay
 # identical across all rows.
@@ -33,19 +36,11 @@ jobs:
           - os: ubuntu-latest
             php: '8.1'
             label: 'Tests (PHP 8.1)'
-            cmd: 'flow ci-tests --exclude-jobs=phpunit-windows'
+            cmd: 'flow ci-tests'
           - os: ubuntu-latest
             php: '8.5'
             label: 'Tests (PHP 8.5)'
-            cmd: 'flow ci-tests --exclude-jobs=phpunit-windows'
-          - os: windows-latest
-            php: '7.4'
-            label: 'Windows Tests (PHP 7.4)'
-            cmd: 'job phpunit-windows'
-          - os: windows-latest
-            php: '8.5'
-            label: 'Windows Tests (PHP 8.5)'
-            cmd: 'job phpunit-windows'
+            cmd: 'flow ci-tests'
 
     steps:
       - name: Checkout

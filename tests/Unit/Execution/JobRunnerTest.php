@@ -11,7 +11,7 @@ use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Exception\ExitException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
@@ -64,7 +64,7 @@ class JobRunnerTest extends UnitTestCase
     public function parser_exception_is_returned_as_failure_with_message(): void
     {
         $parser = $this->fakeParser(function () {
-            throw new ExitException('config file not found at /tmp/x.php');
+            throw new ConfigurationFileNotFoundException('config file not found at /tmp/x.php');
         });
 
         $prep = ($this->makeRunner($parser))
@@ -374,7 +374,7 @@ class JobRunnerTest extends UnitTestCase
     // ───────── Helpers ─────────
 
     /**
-     * @param callable():(ConfigurationResult|ExitException) $resolver
+     * @param callable():(ConfigurationResult|ConfigurationFileNotFoundException) $resolver
      */
     private function fakeParser(callable $resolver): ConfigurationParser
     {
@@ -394,7 +394,7 @@ class JobRunnerTest extends UnitTestCase
                 if ($result instanceof ConfigurationResult) {
                     return $result;
                 }
-                throw $result; // ExitException
+                throw $result; // ConfigurationFileNotFoundException
             }
         };
     }
