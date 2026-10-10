@@ -99,7 +99,7 @@ class JobCommandTest extends SystemTestCase
             ->setV3Jobs([
                 'lint_job' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                     'accelerable' => true,
                 ],
@@ -136,7 +136,7 @@ class JobCommandTest extends SystemTestCase
         $this->configurationFileBuilder
             ->enableV3Mode()
             ->setV3Jobs([
-                'lint_job' => ['type' => 'custom', 'executablePath' => '/bin/echo', 'paths' => ['src'], 'accelerable' => true],
+                'lint_job' => ['type' => 'custom', 'executable-path' => '/bin/echo', 'paths' => ['src'], 'accelerable' => true],
             ])
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
             ->buildInFileSystem();

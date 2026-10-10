@@ -76,7 +76,7 @@ class FlowReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['lint_job']]])
             ->setV3Jobs([
-                'lint_job' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_job' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -175,8 +175,8 @@ class FlowReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['lint_a', 'lint_b']]])
             ->setV3Jobs([
-                'lint_a' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
-                'lint_b' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_a' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_b' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -211,8 +211,8 @@ class FlowReleaseTest extends ReleaseTestCase
         $this->configurationFileBuilder
             ->setV3Flows(['qa' => ['jobs' => ['lint_a', 'lint_b']]])
             ->setV3Jobs([
-                'lint_a' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
-                'lint_b' => ['type' => 'custom', 'executablePath' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_a' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
+                'lint_b' => ['type' => 'custom', 'executable-path' => 'true', 'paths' => ['src'], 'accelerable' => true],
             ]);
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
@@ -294,9 +294,9 @@ class FlowReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'lint' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
-                    'otherArguments' => '--checked',
+                    'other-arguments' => '--checked',
                 ],
             ]);
 
@@ -411,7 +411,7 @@ class FlowReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'lint_job' => [
                     'type' => 'custom',
-                    'executablePath' => 'true',
+                    'executable-path' => 'true',
                     'paths' => ['nonexistent_test_path_xyz'],
                     'accelerable' => true,
                 ],
@@ -434,8 +434,8 @@ class FlowReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'base_lint' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
-                    'otherArguments' => '--lint',
+                    'executable-path' => '/bin/echo',
+                    'other-arguments' => '--lint',
                 ],
                 'lint_src' => [
                     'extends' => 'base_lint',

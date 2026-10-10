@@ -1452,69 +1452,62 @@ class JobConfigurationTest extends UnitTestCase
     }
 
 
-    /** @test */
-    public function it_records_conflict_error_with_full_message_for_deprecated_and_kebab_keys(): void
-    {
-        $result = new ValidationResult();
-        JobConfiguration::fromArray('phpstan_job', [
-            'type'           => 'phpstan',
-            'executablePath' => 'vendor/bin/phpstan',
-            'executable-path' => 'vendor/bin/phpstan',
-        ], $this->registry, $result, new JobRegistry());
-
-        $this->assertTrue($result->hasErrors());
-        $errorText = implode(' ', $result->getErrors());
-        $this->assertStringContainsString("Job 'phpstan_job'", $errorText);
-        $this->assertStringContainsString('conflicting keys', $errorText);
-        $this->assertStringContainsString("'executablePath'", $errorText);
-        $this->assertStringContainsString("'executable-path'", $errorText);
-        $this->assertStringContainsString('Use only one', $errorText);
-        $this->assertStringContainsString('kebab-case', $errorText);
-    }
-
-    /** @test */
-    public function it_does_not_record_deprecation_when_conflict_detected(): void
-    {
-        // Kills the Continue_ mutant in normalizeDeprecatedKeys: without
-        // continue, the function would fall through to the deprecation
-        // recording branch even though it already raised a conflict error.
-        $result = new ValidationResult();
-        JobConfiguration::fromArray('phpstan_job', [
-            'type'           => 'phpstan',
-            'executablePath' => 'vendor/bin/phpstan',
-            'executable-path' => 'vendor/bin/phpstan',
-        ], $this->registry, $result, new JobRegistry());
-
-        $this->assertEmpty(
-            $result->getDeprecations(),
-            'no deprecation should be recorded when the conflict is reported'
-        );
-    }
-
     /**
      * @test
-     * Mata el mutante Continue_ → Break_ en línea 150 (`normalizeDeprecatedKeys`):
-     * con un conflict en el primer par y una deprecación legítima en otro
-     * par posterior, real reporta ambos (error + deprecation); mutado
-     * abortaría el foreach y no añadiría la deprecación del segundo par.
+     * @dataProvider removedCamelCaseKeysProvider
+     *
+     * The camelCase keys deprecated in 3.3 are rejected in 4.0 on every job
+     * type: on a mapped type they would otherwise degrade to an unknown-key
+     * warning (and the job would run with the default executable); on
+     * `custom` they would surface as the unrelated "requires script or
+     * executable-path" error.
      */
-    public function conflict_in_first_deprecated_pair_does_not_abort_processing_of_remaining_pairs(): void
+    public function it_rejects_the_camel_case_keys_removed_in_4_0(string $type, string $oldKey, string $newKey): void
     {
         $result = new ValidationResult();
-        JobConfiguration::fromArray('phpstan_job', [
-            'type'            => 'phpstan',
-            // Conflicto: par 1 ('executablePath' vs 'executable-path').
-            'executablePath'  => 'vendor/bin/phpstan',
-            'executable-path' => 'vendor/bin/phpstan',
-            // Deprecación legítima: par 4 ('failFast' sin 'fail-fast').
-            'failFast'        => true,
+        $job = JobConfiguration::fromArray('the_job', [
+            'type'  => $type,
+            $oldKey => 'x',
         ], $this->registry, $result, new JobRegistry());
 
-        $this->assertTrue($result->hasErrors());
-        $deprecations = $result->getDeprecations();
-        $this->assertCount(1, $deprecations);
-        $this->assertSame('failFast', $deprecations[0]->getOldKey());
-        $this->assertSame('fail-fast', $deprecations[0]->getNewKey());
+        $this->assertNull($job);
+        $this->assertContains("Job 'the_job': key '$oldKey' was removed in 4.0. Use '$newKey'.", $result->getErrors());
+        $this->assertEmpty($result->getDeprecations(), 'a removed key is an error, not a deprecation');
+    }
+
+    public function removedCamelCaseKeysProvider(): array
+    {
+        $keys = [
+            'executablePath'     => 'executable-path',
+            'otherArguments'     => 'other-arguments',
+            'ignoreErrorsOnExit' => 'ignore-errors-on-exit',
+            'failFast'           => 'fail-fast',
+        ];
+
+        $cases = [];
+        foreach (['phpstan', 'custom'] as $type) {
+            foreach ($keys as $oldKey => $newKey) {
+                $cases["$type / $oldKey"] = [$type, $oldKey, $newKey];
+            }
+        }
+
+        return $cases;
+    }
+
+    /** @test */
+    public function it_reports_every_removed_key_present_not_only_the_first(): void
+    {
+        $result = new ValidationResult();
+        JobConfiguration::fromArray('the_job', [
+            'type'           => 'phpstan',
+            'executablePath' => 'vendor/bin/phpstan',
+            'failFast'       => true,
+        ], $this->registry, $result, new JobRegistry());
+
+        $this->assertSame([
+            "Job 'the_job': key 'executablePath' was removed in 4.0. Use 'executable-path'.",
+            "Job 'the_job': key 'failFast' was removed in 4.0. Use 'fail-fast'.",
+        ], $result->getErrors());
     }
 
     /** @test */
@@ -1678,28 +1671,6 @@ class JobConfigurationTest extends UnitTestCase
         $this->assertNotNull($threshold);
         $this->assertSame(1, $threshold->getWarnAbove());
         $this->assertTrue($threshold->isShortForm());
-    }
-
-    /**
-     * @test
-     *
-     * Asserts the FULL message verbatim. The existing test asserted four
-     * substrings independently, which the reordered concatenations could
-     * still satisfy.
-     */
-    public function deprecated_key_conflict_message_is_assembled_with_exact_text(): void
-    {
-        $result = new ValidationResult();
-        JobConfiguration::fromArray('phpstan_job', [
-            'type'            => 'phpstan',
-            'executablePath'  => 'vendor/bin/phpstan',
-            'executable-path' => 'vendor/bin/phpstan',
-        ], $this->registry, $result, new JobRegistry());
-
-        $expected = "Job 'phpstan_job': conflicting keys 'executablePath' and 'executable-path'. "
-            . "Use only one (kebab-case form is canonical).";
-
-        $this->assertContains($expected, $result->getErrors());
     }
 
     /**

@@ -42,7 +42,7 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'my_job' => [
                     'type' => 'custom',
-                    'executablePath' => 'original-tool',
+                    'executable-path' => 'original-tool',
                     'paths' => ['src'],
                 ],
             ]);
@@ -67,9 +67,9 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'my_job' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
-                    'otherArguments' => '--original',
+                    'other-arguments' => '--original',
                 ],
             ]);
 
@@ -113,7 +113,7 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
             ->setV3Jobs([
                 'my_job' => [
                     'type' => 'custom',
-                    'executablePath' => '/bin/echo',
+                    'executable-path' => '/bin/echo',
                     'paths' => ['src'],
                 ],
             ]);
