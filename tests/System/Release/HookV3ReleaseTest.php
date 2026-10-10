@@ -54,18 +54,28 @@ class HookV3ReleaseTest extends ReleaseTestCase
      *
      * An explicit --config that does not exist installs nothing and exits 1.
      * The 3.x binaries fell back to the minimal install and reported the hook
-     * created.
+     * created. The binary runs against the repository's own wiring, where
+     * `.githooks/` legitimately exists, so "installs nothing" is asserted as
+     * "no hook script is written or changed", not as the directory being absent.
      */
     public function it_refuses_to_install_from_a_missing_configuration_file()
     {
         $missing = self::TESTS_PATH . '/does-not-exist.php';
+        $snapshot = static function (): array {
+            $scripts = [];
+            foreach (['.githooks/pre-commit', '.git/hooks/pre-commit'] as $file) {
+                $scripts[$file] = is_file($file) ? (string) file_get_contents($file) : null;
+            }
+            return $scripts;
+        };
+        $before = $snapshot();
 
         passthru("$this->githooks hook pre-commit --config=$missing 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('Configuration file not found', $this->getActualOutput());
         $this->assertStringNotContainsString('created', $this->getActualOutput());
-        $this->assertDirectoryDoesNotExist('.githooks');
+        $this->assertSame($before, $snapshot(), 'no hook script may be written or changed');
     }
 
     /** @test */
