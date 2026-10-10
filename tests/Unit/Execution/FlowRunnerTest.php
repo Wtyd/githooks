@@ -13,7 +13,7 @@ use Wtyd\GitHooks\Configuration\FlowConfiguration;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Exception\ExitException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\FlowResult;
@@ -46,7 +46,7 @@ class FlowRunnerTest extends UnitTestCase
     public function parser_exception_is_returned_as_failure(): void
     {
         $parser = $this->fakeParser(function () {
-            throw new ExitException('boom from parser');
+            throw new ConfigurationFileNotFoundException('boom from parser');
         });
 
         $prep = $this->makeRunner($parser, $this->createMock(FlowExecutor::class))
@@ -174,7 +174,7 @@ class FlowRunnerTest extends UnitTestCase
     public function failed_preparation_emits_errors_to_output(): void
     {
         $parser = $this->fakeParser(function () {
-            throw new ExitException('parse boom');
+            throw new ConfigurationFileNotFoundException('parse boom');
         });
         $output = new RoutingBufferedOutput();
 

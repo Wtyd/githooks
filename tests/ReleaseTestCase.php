@@ -8,7 +8,6 @@ use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Tests\Utils\Traits\FileSystemTrait;
 use Wtyd\GitHooks\Build\Build;
-use Wtyd\GitHooks\Exception\ExitException;
 
 class ReleaseTestCase extends TestCase
 {
@@ -175,22 +174,5 @@ class ReleaseTestCase extends TestCase
     protected function assertToolDidNotRun(string $tool): void
     {
         $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has been run");
-    }
-
-    /**
-     * Verifies that some tool of all launched has failed.
-     * 1. ExitException must be throwed.
-     * 2. The summation of run time of all tools.
-     * 3. Fail message.
-     *
-     * @param \Throwable $exception All errors and exceptions are cached for no break phpunit's flow.
-     * @param string $failMessage Message printed when GitHooks finds an error.
-     * @return void
-     */
-    protected function assertSomeToolHasFailed(\Throwable $exception, string $failMessage): void
-    {
-        $this->assertInstanceOf(ExitException::class, $exception);
-        $this->assertMatchesRegularExpression('%Total run time = \d+\.\d{2} sec%', $this->getActualOutput());
-        $this->assertStringContainsString($failMessage, $this->getActualOutput());
     }
 }

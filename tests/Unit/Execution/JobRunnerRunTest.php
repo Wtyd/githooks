@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Configuration\ConfigurationResult;
 use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Exception\ExitException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\Execution\FlowExecutor;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Execution\FlowPreparer;
@@ -50,7 +50,7 @@ class JobRunnerRunTest extends UnitTestCase
     public function failed_preparation_emits_errors_and_returns_one_without_calling_executor(): void
     {
         $parser = $this->fakeParser(function () {
-            throw new ExitException('config file not found');
+            throw new ConfigurationFileNotFoundException('config file not found');
         });
         $output = new RoutingBufferedOutput();
         $executor = $this->createMock(FlowExecutor::class);
@@ -140,8 +140,8 @@ class JobRunnerRunTest extends UnitTestCase
     public function exception_implementing_GitHooksExceptionInterface_is_caught_and_routed_to_stderr(): void
     {
         $parser = $this->fakeParser(function () {
-            // ExitException implements GitHooksExceptionInterface
-            throw new ExitException('boom from parser');
+            // ConfigurationFileNotFoundException implements GitHooksExceptionInterface
+            throw new ConfigurationFileNotFoundException('boom from parser');
         });
         $executor = $this->createMock(FlowExecutor::class);
         $output = new RoutingBufferedOutput();

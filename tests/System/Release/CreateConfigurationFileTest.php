@@ -62,12 +62,10 @@ class CreateConfigurationFileTest extends ReleaseTestCase
 
         $this->configurationFileBuilder
                 ->setName('githooks.php')
-                ->setTools(['phpcs'])
                 ->buildInFileSystem('./', true);
 
         $this->configurationFileBuilder
                 ->setName('githooks.dist.php')
-                ->setTools(['parallel-lint'])
                 ->buildInFileSystem('./vendor/wtyd/githooks/qa/', true);
 
         // stdin closed: `conf:init` prompts when it has a terminal to prompt

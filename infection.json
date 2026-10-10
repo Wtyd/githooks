@@ -61,7 +61,6 @@
                 "Wtyd\\GitHooks\\Execution\\FlowExecutor::executeParallel::239",
                 "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch::144",
                 "Wtyd\\GitHooks\\Utils\\FileUtils::detectMainBranch::206",
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::204",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::terminateAll::210",
                 "Wtyd\\GitHooks\\Execution\\ProcessPool::buildAdmissionContext::152",
@@ -133,8 +132,6 @@
         },
         "CastString": {
             "ignore": [
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::46",
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::runProcesses::49",
                 "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::205",
                 "Wtyd\\GitHooks\\Configuration\\ConfigurationChecker::validateConfigFiles::100",
                 "Wtyd\\GitHooks\\Configuration\\OptionsConfiguration::parseAllocator::265",
@@ -152,8 +149,6 @@
         "ArrayItemRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\Platform::normalizePath",
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\MultiProcessesExecution::finishExecution::106",
-                "Wtyd\\GitHooks\\Tools\\Process\\ProcessExecutionFactory\\ProcessExecutionFactoryFake",
                 "Wtyd\\GitHooks\\Execution\\Memory\\MacOsRssSampler::parseListing::115",
                 "Wtyd\\GitHooks\\Jobs\\CommitMessage\\CommitMessageValidator::extractSubject"
             ]
@@ -212,7 +207,6 @@
         "ConcatOperandRemoval": {
             "ignore": [
                 "Wtyd\\GitHooks\\Utils\\CpuDetector::detectWindows::29",
-                "Wtyd\\GitHooks\\Tools\\Process\\Execution\\ProcessExecutionAbstract::executionTime::75",
                 "Wtyd\\GitHooks\\Output\\ProgressOutputHandler::write::94",
                 "Wtyd\\GitHooks\\Hooks\\HookStatusInspector::getGitHooksPath::45",
                 "Wtyd\\GitHooks\\Output\\CI\\GitLabCIDecorator::onJobError::92",
