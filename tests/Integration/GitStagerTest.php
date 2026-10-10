@@ -51,6 +51,10 @@ class GitStagerTest extends SystemTestCase
         shell_exec('git add -f ' . escapeshellarg($originalPath));
         shell_exec('git commit --quiet -m "temp: add file for restage test"');
 
+        // The snapshot the executor takes before the jobs run: a clean index.
+        $gitStager = new GitStager();
+        $snapshot = $gitStager->snapshotStagedFiles();
+
         // Rename the file and then modify it (simulating phpcbf fix after rename)
         shell_exec('git mv -f ' . escapeshellarg($originalPath) . ' ' . escapeshellarg($renamedPath));
         file_put_contents($renamedPath, "<?php\n\nclass Renamed\n{\n}\n");
@@ -59,11 +63,12 @@ class GitStagerTest extends SystemTestCase
         $unstaged = trim((string) shell_exec('git diff --name-only'));
         $this->assertNotEmpty($unstaged, 'Modified renamed file should appear in unstaged changes');
 
-        $gitStager = new GitStager();
-        $gitStager->stageTrackedFiles();
+        // The renamed path entered the index after the snapshot, so it is re-staged
+        // whole; the deleted original is skipped (`git add` on it would fail).
+        $gitStager->stageModifiedSince($snapshot);
 
         // After restage: the content modification should now be staged, nothing unstaged
         $unstagedAfter = trim((string) shell_exec('git diff --name-only'));
-        $this->assertEmpty($unstagedAfter, 'No unstaged changes should remain after stageTrackedFiles');
+        $this->assertEmpty($unstagedAfter, 'No unstaged changes should remain after stageModifiedSince');
     }
 }

@@ -25,18 +25,6 @@ parameters:
 			path: src/Utils/FileUtilsInterface.php
 
 		-
-			message: '#^Method Wtyd\\GitHooks\\Utils\\Printer\:\:summary\(\) has parameter \$skippedResults with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Utils/Printer.php
-
-		-
-			message: '#^Method Wtyd\\GitHooks\\Utils\\Printer\:\:summary\(\) has parameter \$toolResults with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Utils/Printer.php
-
-		-
 			message: '#^Method Wtyd\\GitHooks\\Utils\\Storage\:\:delete\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1

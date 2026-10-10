@@ -21,12 +21,6 @@ abstract class ConsoleTestCase extends ZeroTestCase
 
     public $notMatchesRegularExpression = [];
 
-    public $toolHasBeenExecutedSuccessfully = [];
-
-    public $toolHasFailed = [];
-
-    public $toolDidNotRun = [];
-
     public $expectedTables = [];
 
     /**
@@ -70,9 +64,6 @@ abstract class ConsoleTestCase extends ZeroTestCase
             'notContainsStringInOutput'       => $this->notContainsStringInOutput,
             'matchesRegularExpression'        => $this->matchesRegularExpression,
             'notMatchesRegularExpression'     => $this->notMatchesRegularExpression,
-            'toolHasBeenExecutedSuccessfully' => $this->toolHasBeenExecutedSuccessfully,
-            'toolHasFailed'                   => $this->toolHasFailed,
-            'toolDidNotRun'                   => $this->toolDidNotRun,
         ];
 
         parent::tearDown();

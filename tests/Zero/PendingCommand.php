@@ -65,7 +65,7 @@ class PendingCommand
     /**
      * Output captured via ob_start during command execution.
      * Used by verifyExpectations() for assertions that check raw output
-     * (containsStringInOutput, toolHasFailed, etc.), since the Printer
+     * (containsStringInOutput, matchesRegularExpression, etc.), since the Printer
      * class writes via echo bypassing Symfony's OutputInterface.
      *
      * @var string
@@ -208,45 +208,6 @@ class PendingCommand
     public function notMatchesRegularExpression($notMatchesRegularExpression)
     {
         $this->test->notMatchesRegularExpression[] = $notMatchesRegularExpression;
-
-        return $this;
-    }
-
-    /**
-     * Checks if tool has been executed successfully
-     *
-     * @param  string  $tool
-     * @return $this
-     */
-    public function toolHasBeenExecutedSuccessfully($tool)
-    {
-        $this->test->toolHasBeenExecutedSuccessfully[] = $tool;
-
-        return $this;
-    }
-
-    /**
-     * Checks if tool has failed
-     *
-     * @param  string  $tool
-     * @return $this
-     */
-    public function toolHasFailed($tool)
-    {
-        $this->test->toolHasFailed[] = $tool;
-
-        return $this;
-    }
-
-    /**
-     * Checks if tool didn't run
-     *
-     * @param  string  $tool
-     * @return $this
-     */
-    public function toolDidNotRun($tool)
-    {
-        $this->test->toolDidNotRun[] = $tool;
 
         return $this;
     }
@@ -467,47 +428,6 @@ class PendingCommand
                 unset($this->test->notMatchesRegularExpression[$key]);
             }
         }
-
-        if (count($this->test->toolHasBeenExecutedSuccessfully)) {
-            foreach ($this->test->toolHasBeenExecutedSuccessfully as $key => $tool) {
-                $this->test->assertMatchesRegularExpression(
-                    "%$tool(\.phar)? - OK\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%",
-                    $this->capturedOutput,
-                    "The tool $tool has not been executed successfully"
-                );
-                unset($this->test->toolHasBeenExecutedSuccessfully[$key]);
-            }
-        }
-
-        if (count($this->test->toolHasFailed)) {
-            foreach ($this->test->toolHasFailed as $key => $tool) {
-                $this->test->assertMatchesRegularExpression(
-                    "%$tool(\.phar)? - KO\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%",
-                    $this->capturedOutput,
-                    "The tool $tool has not failed"
-                );
-                unset($this->test->toolHasFailed[$key]);
-            }
-        }
-
-        if (count($this->test->toolDidNotRun)) {
-            foreach ($this->test->toolDidNotRun as $key => $tool) {
-                // "did not run" includes "was skipped": a skip notice names the tool
-                // but is not an execution. Strip the skip line before the substring
-                // check (now that the command's OutputInterface output is captured).
-                $withoutSkipNotice = (string) preg_replace(
-                    '/The tool ' . preg_quote($tool, '/') . ' was skipped\.?/',
-                    '',
-                    $this->capturedOutput
-                );
-                $this->test->assertStringNotContainsString(
-                    $tool,
-                    $withoutSkipNotice,
-                    "The tool $tool has been run"
-                );
-                unset($this->test->toolDidNotRun[$key]);
-            }
-        }
     }
 
     /**
@@ -640,9 +560,6 @@ class PendingCommand
         $this->test->notContainsStringInOutput = [];
         $this->test->matchesRegularExpression = [];
         $this->test->notMatchesRegularExpression = [];
-        $this->test->toolHasBeenExecutedSuccessfully = [];
-        $this->test->toolHasFailed = [];
-        $this->test->toolDidNotRun = [];
     }
 
     /**

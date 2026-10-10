@@ -9,12 +9,6 @@ namespace Wtyd\GitHooks\Utils;
  */
 class Printer
 {
-    public function resultSuccess(string $message): void
-    {
-        echo "✔️ ";
-        $this->success($message);
-    }
-
     public function resultWarning(string $message): void
     {
         echo "⚠️ ";
@@ -31,11 +25,6 @@ class Printer
     public function line(string $message): void
     {
         echo "$message\n";
-    }
-
-    public function rawLine(string $message): void
-    {
-        echo $message;
     }
 
     public function emptyLine(): void
@@ -74,25 +63,6 @@ class Printer
         }
 
         echo "  └" . str_repeat('─', $frameWidth - 1) . "\n";
-    }
-
-    /**
-     * @param int $passed
-     * @param int $total
-     * @param array $toolResults Array of ['displayName' => string, 'success' => bool]
-     * @param array $skippedResults Array of ['displayName' => string]
-     */
-    public function summary(int $passed, int $total, array $toolResults, array $skippedResults = []): void
-    {
-        $icon = ($passed === $total) ? '✔️' : '';
-        echo "\nResults: $passed/$total passed $icon\n";
-        foreach ($toolResults as $result) {
-            $resultIcon = $result['success'] ? '✔️' : '❌';
-            echo "  $resultIcon " . $result['displayName'] . "\n";
-        }
-        foreach ($skippedResults as $result) {
-            echo "  ⏩ " . $result['displayName'] . " (skipped by failFast)\n";
-        }
     }
 
     // Job status lines — indentation outside color block
