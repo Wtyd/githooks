@@ -10,18 +10,10 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Configuration\ValidationResult;
 use Wtyd\GitHooks\Execution\ExecutionMode;
 use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class JobConfigurationTest extends UnitTestCase
 {
     use AssertWarningsTrait;
-
-    private ToolRegistry $registry;
-
-    protected function setUp(): void
-    {
-        $this->registry = new ToolRegistry();
-    }
 
     /** @test */
     public function it_parses_a_valid_job()
@@ -31,7 +23,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'phpstan',
             'paths'  => ['src'],
             'config' => 'qa/phpstan.neon',
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -49,7 +41,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('lint_js', [
             'type'   => 'custom',
             'script' => 'npm run lint',
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -66,7 +58,7 @@ class JobConfigurationTest extends UnitTestCase
             'parallel' => true,
             'coverage' => true,
             'min'      => 90,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings());
@@ -81,7 +73,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('pest_suite', [
             'type'      => 'pest',
             'inventado' => true,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertStringContainsString('inventado', implode("\n", $result->getWarnings()));
     }
@@ -95,7 +87,7 @@ class JobConfigurationTest extends UnitTestCase
             'config' => 'pint.json',
             'test'   => true,
             'paths'  => ['app', 'tests'],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings());
@@ -117,7 +109,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'pint',
             'preset' => 'psr12',
             'paths'  => ['app'],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings(), implode(' | ', $result->getWarnings()));
@@ -137,7 +129,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('lint', [
             'type'  => 'parallel-lint',
             'paths' => [],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertWarningEquals(
@@ -155,7 +147,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('pint_app', [
             'type'  => 'pint',
             'dirty' => true,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertStringContainsString('dirty', implode("\n", $result->getWarnings()));
     }
@@ -164,7 +156,7 @@ class JobConfigurationTest extends UnitTestCase
     public function it_reports_error_when_type_is_missing()
     {
         $result = new ValidationResult();
-        $job = JobConfiguration::fromArray('bad_job', ['paths' => ['src']], $this->registry, $result);
+        $job = JobConfiguration::fromArray('bad_job', ['paths' => ['src']], $result, new JobRegistry());
 
         $this->assertNull($job);
         $this->assertTrue($result->hasErrors());
@@ -175,7 +167,7 @@ class JobConfigurationTest extends UnitTestCase
     public function it_reports_error_for_unsupported_type()
     {
         $result = new ValidationResult();
-        $job = JobConfiguration::fromArray('bad_job', ['type' => 'nonexistent'], $this->registry, $result);
+        $job = JobConfiguration::fromArray('bad_job', ['type' => 'nonexistent'], $result, new JobRegistry());
 
         $this->assertNull($job);
         $this->assertTrue($result->hasErrors());
@@ -186,7 +178,7 @@ class JobConfigurationTest extends UnitTestCase
     public function it_reports_error_for_custom_without_script()
     {
         $result = new ValidationResult();
-        $job = JobConfiguration::fromArray('bad_custom', ['type' => 'custom'], $this->registry, $result);
+        $job = JobConfiguration::fromArray('bad_custom', ['type' => 'custom'], $result, new JobRegistry());
 
         $this->assertNull($job);
         $this->assertTrue($result->hasErrors());
@@ -200,7 +192,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('test', [
             'type' => 'phpstan',
             'config' => ['should', 'be', 'string'],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warnings = $result->getWarnings();
         $this->assertNotEmpty($warnings);
@@ -214,7 +206,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('test', [
             'type' => 'phpstan',
             'no-progress' => 'yes',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warnings = $result->getWarnings();
         $this->assertNotEmpty($warnings);
@@ -228,7 +220,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('test', [
             'type' => 'phpcs',
             'paths' => 'src',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warnings = $result->getWarnings();
         $found = false;
@@ -251,7 +243,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('test', [
             'type'   => 'phpcs',
             'ignore' => 123,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertWarningEquals("Job 'test': key 'ignore' expects an array or string.", $result);
     }
@@ -263,7 +255,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('test', [
             'type'   => 'phpcs',
             'ignore' => ['vendor', 'tools'],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertEmpty(array_filter($result->getWarnings(), function (string $w) {
             return strpos($w, "'ignore'") !== false;
@@ -277,7 +269,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('test', [
             'type'   => 'phpcs',
             'ignore' => 'vendor,tools',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertEmpty(array_filter($result->getWarnings(), function (string $w) {
             return strpos($w, "'ignore'") !== false;
@@ -294,7 +286,7 @@ class JobConfigurationTest extends UnitTestCase
             'level' => 8,
             'no-progress' => true,
             'paths' => ['src'],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertEmpty($result->getWarnings());
         $this->assertFalse($result->hasErrors());
@@ -323,7 +315,7 @@ class JobConfigurationTest extends UnitTestCase
     public function pest_runner_value_is_validated_with_a_warning_and_a_suggestion(array $config, array $expectedWarnings)
     {
         $result = new ValidationResult();
-        $job = JobConfiguration::fromArray('tests', ['type' => 'pest'] + $config, $this->registry, $result, new JobRegistry());
+        $job = JobConfiguration::fromArray('tests', ['type' => 'pest'] + $config, $result, new JobRegistry());
 
         $this->assertNotNull($job, 'an unknown runner is a warning, not an error');
         $this->assertSame([], $result->getErrors());
@@ -368,7 +360,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'        => ['src'],
             'unknown_foo'  => 'x',
             'another_bad'  => 42,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertWarningEquals("Job 'phpstan_src': unknown key 'unknown_foo' for type 'phpstan'.", $result);
         $this->assertWarningEquals("Job 'phpstan_src': unknown key 'another_bad' for type 'phpstan'.", $result);
@@ -383,7 +375,7 @@ class JobConfigurationTest extends UnitTestCase
             'script' => 'echo ok',
             'inventado' => true,
             'otra clave' => 'valor',
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertCount(2, $result->getWarnings());
         $this->assertStringContainsString('inventado', $result->getWarnings()[0]);
@@ -398,7 +390,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'     => 'custom',
             'script'   => 'vendor/bin/pint',
             're-stage' => true,
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings());
@@ -412,7 +404,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'    => 'custom',
             'script'  => 'vendor/bin/pint',
             'restage' => true,
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertCount(1, $result->getWarnings());
         $this->assertStringContainsString("unknown key 'restage'", $result->getWarnings()[0]);
@@ -449,7 +441,7 @@ class JobConfigurationTest extends UnitTestCase
         bool $expectsRejection = false
     ) {
         $result = new ValidationResult();
-        $job = JobConfiguration::fromArray('runner', ['type' => 'script'] + $config, $this->registry, $result, new JobRegistry());
+        $job = JobConfiguration::fromArray('runner', ['type' => 'script'] + $config, $result, new JobRegistry());
 
         if ($expectedError !== null) {
             $this->assertTrue($result->hasErrors(), 'Expected a hard error for this config');
@@ -522,7 +514,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'custom',
             'script' => 'vendor/bin/pint',
             'files'  => ['src'],
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $this->assertStringContainsString("key 'files' is CLI-only", implode(' | ', $result->getErrors()));
@@ -543,7 +535,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'       => ['src'],
             'files'       => ['src/X.php'],
             'files-from'  => 'changed.txt',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errors = implode("\n", $result->getErrors());
@@ -560,7 +552,7 @@ class JobConfigurationTest extends UnitTestCase
             'script' => 'composer audit',
             'ignore-errors-on-exit' => true,
             'fail-fast' => false,
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertEmpty($result->getWarnings());
         $this->assertFalse($result->hasErrors());
@@ -575,7 +567,7 @@ class JobConfigurationTest extends UnitTestCase
             'type' => 'phpmd',
             'paths' => 'src',
             'rules' => 'codesize',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $found = false;
         foreach ($result->getWarnings() as $w) {
@@ -594,7 +586,7 @@ class JobConfigurationTest extends UnitTestCase
             'type' => 'phpmd',
             'paths' => ['src'],
             'rules' => 123,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $found = false;
         foreach ($result->getWarnings() as $w) {
@@ -613,7 +605,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'      => 'phpstan',
             'paths'     => ['src'],
             'execution' => 'fast',
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEquals('fast', $job->getExecution());
@@ -627,7 +619,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'      => 'phpstan',
             'paths'     => ['src'],
             'execution' => 'fast-branch',
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEquals('fast-branch', $job->getExecution());
@@ -640,7 +632,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('phpstan_src', [
             'type'  => 'phpstan',
             'paths' => ['src'],
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertNull($job->getExecution());
     }
@@ -655,7 +647,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('phpstan_src', [
             'type'      => 'phpstan',
             'execution' => 'invalid',
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertNull($job);
         $this->assertErrorEquals(
@@ -672,7 +664,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'      => 'phpstan',
             'paths'     => ['src'],
             'execution' => 'full',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
             return strpos($w, 'execution') !== false && strpos($w, 'nknown') !== false;
@@ -691,7 +683,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'      => 'phpstan',
             'paths'     => ['src'],
             'execution' => $mode,
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEquals($mode, $job->getExecution());
@@ -714,7 +706,7 @@ class JobConfigurationTest extends UnitTestCase
             'type' => 'phpstan',
             'paths' => ['src'],
             'executable-prefix' => 'docker exec -i app',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
             return strpos($w, 'executable-prefix') !== false && strpos($w, 'nknown') !== false;
@@ -730,7 +722,7 @@ class JobConfigurationTest extends UnitTestCase
             'type' => 'phpstan',
             'paths' => ['src'],
             'executable-prefix' => null,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
@@ -747,7 +739,7 @@ class JobConfigurationTest extends UnitTestCase
             'type' => 'custom',
             'script' => 'npm run lint',
             'executable-prefix' => 'docker exec -i app',
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $unknownWarnings = array_filter($result->getWarnings(), function (string $w) {
             return strpos($w, 'executable-prefix') !== false;
@@ -763,7 +755,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'php-cs-fixer',
             'paths'  => ['src'],
             'config' => '.php-cs-fixer.dist.php',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -778,7 +770,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'rector',
             'paths'  => ['src'],
             'config' => 'rector.php',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -791,21 +783,7 @@ class JobConfigurationTest extends UnitTestCase
         $result = new ValidationResult();
         $job = JobConfiguration::fromArray('bad_job', [
             'type' => 'nonexistent',
-        ], $this->registry, $result, new JobRegistry());
-
-        $this->assertNull($job);
-        $this->assertTrue($result->hasErrors());
-        $this->assertStringContainsString('not a supported tool', $result->getErrors()[0]);
-    }
-
-    /** @test */
-    public function it_rejects_v3_only_type_when_job_registry_is_null()
-    {
-        $result = new ValidationResult();
-        $job = JobConfiguration::fromArray('fixer_src', [
-            'type' => 'php-cs-fixer',
-            'paths' => ['src'],
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertNull($job);
         $this->assertTrue($result->hasErrors());
@@ -820,7 +798,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpcs',
             'paths' => ['src'],
             'cores' => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings(), 'cores as valid int should not emit warnings');
@@ -836,7 +814,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpcs',
             'paths' => ['src'],
             'cores' => 0,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warningText = implode(' ', $result->getWarnings());
         $this->assertStringContainsString("Job 'phpcs_src'", $warningText);
@@ -852,7 +830,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpcs',
             'paths' => ['src'],
             'cores' => '4',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warnings = $result->getWarnings();
         $found = false;
@@ -874,7 +852,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'    => ['src'],
             'parallel' => 8,
             'cores'    => 2,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warningText = implode(' ', $result->getWarnings());
         $this->assertStringContainsString("Job 'phpcs_src'", $warningText);
@@ -891,7 +869,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'      => 'paratest',
             'processes' => 4,
             'cores'     => 2,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warnings = $result->getWarnings();
         $found = false;
@@ -912,14 +890,14 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpcs',
             'paths' => ['src'],
             'cores' => 4,
-        ], $this->registry, $onlyCores, new JobRegistry());
+        ], $onlyCores, new JobRegistry());
 
         $onlyNative = new ValidationResult();
         JobConfiguration::fromArray('phpcs_src', [
             'type'     => 'phpcs',
             'paths'    => ['src'],
             'parallel' => 4,
-        ], $this->registry, $onlyNative, new JobRegistry());
+        ], $onlyNative, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($onlyCores->getWarnings(), 'overrides'));
         $this->assertFalse($this->warningsContain($onlyNative->getWarnings(), 'overrides'));
@@ -933,7 +911,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'custom',
             'script' => 'vendor/bin/paratest --processes=4',
             'cores'  => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), "unknown key 'cores'"));
     }
@@ -949,7 +927,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'  => ['src'],
             'config' => 'qa/phpstan.neon',
             'cores'  => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'overrides'));
     }
@@ -965,7 +943,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'    => ['src'],
             'parallel' => 8,
             'cores'    => 2,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warningText = implode(' ', $result->getWarnings());
         $this->assertStringContainsString("Job 'phpcbf_src'", $warningText);
@@ -985,7 +963,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths' => ['src'],
             'rules' => 'cleancode',
             'cores' => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warningText = implode(' ', $result->getWarnings());
         $this->assertStringContainsString("Job 'phpmd_src'", $warningText);
@@ -1000,7 +978,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpunit_all', [
             'type'  => 'phpunit',
             'cores' => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($this->warningsContain($result->getWarnings(), 'single-threaded'));
     }
@@ -1013,7 +991,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpcpd',
             'paths' => ['src'],
             'cores' => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($this->warningsContain($result->getWarnings(), 'single-threaded'));
     }
@@ -1029,7 +1007,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths' => ['src'],
             'rules' => 'cleancode',
             'cores' => 1,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'single-threaded'));
     }
@@ -1042,7 +1020,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpmd',
             'paths' => ['src'],
             'rules' => 'cleancode',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'single-threaded'));
     }
@@ -1057,7 +1035,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'     => 'phpcs',
             'paths'    => ['src'],
             'parallel' => -1,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($this->warningsContain($result->getWarnings(), "'parallel' must be a positive integer"));
     }
@@ -1070,7 +1048,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'     => 'phpcs',
             'paths'    => ['src'],
             'parallel' => '4',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($this->warningsContain($result->getWarnings(), "'parallel' must be a positive integer"));
     }
@@ -1083,7 +1061,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'    => 'psalm',
             'paths'   => ['src'],
             'threads' => 0,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($this->warningsContain($result->getWarnings(), "'threads' must be a positive integer"));
     }
@@ -1095,7 +1073,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('paratest_all', [
             'type'      => 'paratest',
             'processes' => -3,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($this->warningsContain($result->getWarnings(), "'processes' must be a positive integer"));
     }
@@ -1108,7 +1086,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'     => 'phpcs',
             'paths'    => ['src'],
             'parallel' => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), "must be a positive integer"));
     }
@@ -1125,7 +1103,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'    => ['src'],
             'cores'    => 2,
             'parallel' => -1,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), "'parallel' must be a positive integer"));
         // the conflict warning still fires
@@ -1144,7 +1122,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'custom',
             'script' => 'npx eslint src/',
             'cores'  => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'single-threaded'));
     }
@@ -1168,7 +1146,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'       => 'phpunit',
             'warn-after' => 60,
             'fail-after' => 180,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -1184,7 +1162,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('phpcs_job', [
             'type'       => 'phpcs',
             'warn-after' => 5,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertSame(5, $job->getWarnAfter());
@@ -1197,7 +1175,7 @@ class JobConfigurationTest extends UnitTestCase
         $result = new ValidationResult();
         $job = JobConfiguration::fromArray('phpstan_job', [
             'type' => 'phpstan',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertNull($job->getWarnAfter());
         $this->assertNull($job->getFailAfter());
@@ -1212,7 +1190,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'       => 'phpunit',
             'warn-after' => 60,
             'fail-after' => 45,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
@@ -1231,7 +1209,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpcs_job', [
             'type'       => 'phpcs',
             'warn-after' => 0,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = $result->getErrors()[0];
@@ -1248,7 +1226,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpcs_job', [
             'type'       => 'phpcs',
             'warn-after' => 'fast',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = $result->getErrors()[0];
@@ -1268,7 +1246,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpunit_job', [
             'type'        => 'phpunit',
             'time-budget' => ['warn-after' => 60],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
@@ -1286,7 +1264,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'       => 'phpunit',
             'warn-after' => 60,
             'fail-after' => 180,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
     }
@@ -1300,7 +1278,7 @@ class JobConfigurationTest extends UnitTestCase
             'script'     => 'npm run lint',
             'warn-after' => 30,
             'fail-after' => 90,
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
@@ -1313,7 +1291,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('phpstan_job', [
             'type'   => 'phpstan',
             'memory' => 2000,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -1332,7 +1310,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('phpunit_job', [
             'type'   => 'phpunit',
             'memory' => ['warn-above' => 1500, 'fail-above' => 2000],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $threshold = $job->getMemoryThreshold();
@@ -1349,7 +1327,7 @@ class JobConfigurationTest extends UnitTestCase
         $result = new ValidationResult();
         $job = JobConfiguration::fromArray('phpstan_job', [
             'type' => 'phpstan',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertNull($job->getMemoryThreshold());
         $this->assertNull($job->getMemoryReserve());
@@ -1363,7 +1341,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpstan_job', [
             'type'   => 'phpstan',
             'memory' => 0,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = $result->getErrors()[0];
@@ -1380,7 +1358,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpstan_job', [
             'type'   => 'phpstan',
             'memory' => -100,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = $result->getErrors()[0];
@@ -1395,7 +1373,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpunit_job', [
             'type'   => 'phpunit',
             'memory' => ['warn-above' => 2000, 'fail-above' => 1500],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = implode(' ', $result->getErrors());
@@ -1415,7 +1393,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpstan_job', [
             'type'   => 'phpstan',
             'memory' => '2000',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertTrue($result->hasErrors());
         $errorText = $result->getErrors()[0];
@@ -1432,7 +1410,7 @@ class JobConfigurationTest extends UnitTestCase
         JobConfiguration::fromArray('phpstan_job', [
             'type'   => 'phpstan',
             'memory' => 2000,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
     }
@@ -1445,7 +1423,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'custom',
             'script' => 'npm run lint',
             'memory' => 512,
-        ], $this->registry, $result);
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertFalse($this->warningsContain($result->getWarnings(), 'unknown key'));
@@ -1468,7 +1446,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('the_job', [
             'type'  => $type,
             $oldKey => 'x',
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertNull($job);
         $this->assertContains("Job 'the_job': key '$oldKey' was removed in 4.0. Use '$newKey'.", $result->getErrors());
@@ -1502,7 +1480,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'           => 'phpstan',
             'executablePath' => 'vendor/bin/phpstan',
             'failFast'       => true,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertSame([
             "Job 'the_job': key 'executablePath' was removed in 4.0. Use 'executable-path'.",
@@ -1518,7 +1496,7 @@ class JobConfigurationTest extends UnitTestCase
         $job = JobConfiguration::fromArray('phpstan_job', [
             'type'   => 'phpstan',
             'memory' => 1,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -1537,7 +1515,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'       => 'phpcs',
             'warn-after' => 1,
             'fail-after' => 2,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertNotNull($job);
@@ -1554,7 +1532,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpcs',
             'paths' => ['src'],
             'cores' => 1,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $this->assertFalse($result->hasErrors());
         $this->assertEmpty($result->getWarnings(), 'cores=1 must not warn');
@@ -1576,7 +1554,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'    => ['src'],
             'parallel' => 8,
             'cores'    => 0,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $warningText = implode(' ', $result->getWarnings());
         $this->assertStringContainsString('positive integer', $warningText);
@@ -1686,7 +1664,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'   => 'phpstan',
             'paths'  => ['src'],
             'memory' => '2000m', // string instead of int/array
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $expected = "Job 'phpstan_job': 'memory' must be either a positive integer (MB) or an object "
             . "with 'warn-above'/'fail-above'.";
@@ -1708,7 +1686,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths' => ['src'],
             'rules' => 'cleancode',
             'cores' => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $expected = "Job 'phpmd_src': 'phpmd' is single-threaded; 'cores' (4) "
             . "reserves slots in the budget without benefit. Remove the key "
@@ -1743,7 +1721,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths' => ['src'],
             'rules' => 'cleancode',
             'cores' => 4,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $singleThreaded = array_filter(
             $result->getWarnings(),
@@ -1767,7 +1745,7 @@ class JobConfigurationTest extends UnitTestCase
             'paths'    => ['src'],
             'cores'    => 4,
             'parallel' => 2,
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $expected = "Job 'phpcs_src': 'cores' overrides 'parallel' (cores=4, parallel=2).";
 
@@ -1789,7 +1767,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'     => 'phpcs',
             'paths'    => ['src'],
             'parallel' => 1,
-        ], $this->registry, $resultOk, new JobRegistry());
+        ], $resultOk, new JobRegistry());
 
         $parallelWarnings = array_filter(
             $resultOk->getWarnings(),
@@ -1805,7 +1783,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'     => 'phpcs',
             'paths'    => ['src'],
             'parallel' => 0,
-        ], $this->registry, $resultKo, new JobRegistry());
+        ], $resultKo, new JobRegistry());
 
         $parallelWarningsKo = array_filter(
             $resultKo->getWarnings(),
@@ -1828,7 +1806,7 @@ class JobConfigurationTest extends UnitTestCase
             'type'  => 'phpstan',
             'paths' => ['src'],
             'files' => ['src/X.php'],
-        ], $this->registry, $result, new JobRegistry());
+        ], $result, new JobRegistry());
 
         $expected = "Job 'phpstan_src': key 'files' is CLI-only and cannot be declared in jobs. "
             . "Use --files on the command line instead.";

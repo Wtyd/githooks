@@ -6,19 +6,15 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Registry\ToolRegistry;
 
 class ConfigurationParserTest extends UnitTestCase
 {
     private string $fixturesPath;
 
-    private ToolRegistry $registry;
-
     protected function setUp(): void
     {
         $this->fixturesPath = sys_get_temp_dir() . '/githooks_config_test_' . uniqid();
         mkdir($this->fixturesPath, 0755, true);
-        $this->registry = new ToolRegistry();
     }
 
     protected function tearDown(): void
@@ -30,7 +26,7 @@ class ConfigurationParserTest extends UnitTestCase
     /** @test */
     public function it_detects_legacy_format()
     {
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
 
         $this->assertTrue($parser->isLegacyFormat([
             'Options' => ['execution' => 'full'],
@@ -68,7 +64,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $result = (new ConfigurationParser($this->registry, $this->fixturesPath))->parse();
+        $result = (new ConfigurationParser($this->fixturesPath))->parse();
         $rejected = $result->getValidation()->getRejectedJobs();
 
         $rejectedNames = array_keys($rejected);
@@ -92,7 +88,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $result = (new ConfigurationParser($this->registry, $this->fixturesPath))->parse();
+        $result = (new ConfigurationParser($this->fixturesPath))->parse();
 
         $this->assertSame([], $result->getValidation()->getRejectedJobs());
     }
@@ -129,7 +125,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->isLegacy());
@@ -160,7 +156,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->isLegacy());
@@ -186,7 +182,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -210,7 +206,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -237,7 +233,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -256,7 +252,7 @@ PHP;
         $badFile = $this->fixturesPath . '/githooks.toml';
         file_put_contents($badFile, 'key = "value"');
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
 
         $this->expectException(\InvalidArgumentException::class);
         $parser->parse($badFile);
@@ -278,7 +274,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         // Should have the type error
@@ -307,7 +303,7 @@ PHP;
         $config = '<?php return [];';
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         // Empty config should NOT be detected as legacy
@@ -319,7 +315,7 @@ PHP;
     /** @test */
     public function it_throws_friendly_error_for_nonexistent_file()
     {
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
 
         $this->expectException(\Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException::class);
         $this->expectExceptionMessage('Configuration file not found');
@@ -352,7 +348,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -385,7 +381,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -418,7 +414,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -451,7 +447,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -484,7 +480,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -519,7 +515,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -553,7 +549,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -578,7 +574,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -594,7 +590,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.yml', $yml);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         // Local override should be ignored for YAML files
@@ -621,7 +617,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
         file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertNotNull($result->getLocalFilePath());
@@ -644,7 +640,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $main);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertNull($result->getLocalFilePath());
@@ -666,7 +662,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -693,7 +689,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -722,7 +718,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -749,7 +745,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -775,7 +771,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -803,7 +799,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -837,7 +833,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -866,7 +862,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -894,7 +890,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -921,7 +917,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -948,7 +944,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -975,7 +971,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertContains(
@@ -1001,7 +997,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -1036,7 +1032,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -1070,7 +1066,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -1106,7 +1102,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -1138,7 +1134,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -1167,7 +1163,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors());
@@ -1200,7 +1196,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -1231,7 +1227,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertFalse($result->hasErrors(), implode("\n", $result->getValidation()->getErrors()));
@@ -1278,7 +1274,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $errorText = implode("\n", $result->getValidation()->getErrors());
@@ -1315,7 +1311,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $errorText = implode("\n", $result->getValidation()->getErrors());
@@ -1350,7 +1346,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $errorText = implode("\n", $result->getValidation()->getErrors());
@@ -1382,7 +1378,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode(' ', $result->getValidation()->getWarnings());
@@ -1412,7 +1408,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertTrue($result->hasErrors());
@@ -1445,7 +1441,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode(' ', $result->getValidation()->getWarnings());
@@ -1473,7 +1469,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode(' ', $result->getValidation()->getWarnings());
@@ -1507,7 +1503,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $errorText = implode("\n", $result->getValidation()->getErrors());
@@ -1546,7 +1542,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1585,7 +1581,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1617,7 +1613,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1655,7 +1651,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1689,7 +1685,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1733,7 +1729,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1768,7 +1764,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $expected = "Job 'phpstan_src': 'memory' (2000) exceeds memory-budget (1000) "
@@ -1808,7 +1804,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1848,7 +1844,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $warningText = implode("\n", $result->getValidation()->getWarnings());
@@ -1881,7 +1877,7 @@ return [
 PHP;
         file_put_contents($this->fixturesPath . '/githooks.php', $config);
 
-        $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+        $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $expected = "Job 'custom_heavy' in flow 'ci': cores=8 exceeds the flow's "
@@ -1910,7 +1906,7 @@ YAML;
         file_put_contents($this->fixturesPath . '/githooks.yml', $yaml);
 
         try {
-            $parser = new ConfigurationParser($this->registry, $this->fixturesPath);
+            $parser = new ConfigurationParser($this->fixturesPath);
             $result = $parser->parse();
 
             $expected = 'YAML configuration files are deprecated since v3.0 and will be removed in v4.0. '

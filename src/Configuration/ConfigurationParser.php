@@ -11,7 +11,6 @@ use Wtyd\GitHooks\Configuration\KeySuggestion;
 use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException;
 use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Registry\ToolRegistry;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Parser orchestrates all configuration types
@@ -21,14 +20,11 @@ class ConfigurationParser
 {
     private string $rootPath;
 
-    private ToolRegistry $toolRegistry;
-
     private JobRegistry $jobRegistry;
 
-    public function __construct(ToolRegistry $toolRegistry, string $rootPath = '', ?JobRegistry $jobRegistry = null)
+    public function __construct(string $rootPath = '', ?JobRegistry $jobRegistry = null)
     {
         $this->rootPath = $rootPath !== '' ? $rootPath : (getcwd() ?: '');
-        $this->toolRegistry = $toolRegistry;
         $this->jobRegistry = $jobRegistry ?? new JobRegistry();
     }
 
@@ -340,7 +336,7 @@ class ConfigurationParser
             // reason it was rejected; capturing the delta keeps them tied to the
             // job so conf:check can report it instead of dropping it silently.
             $errorsBefore = count($result->getErrors());
-            $job = JobConfiguration::fromArray($jobName, $jobData, $this->toolRegistry, $result, $this->jobRegistry);
+            $job = JobConfiguration::fromArray($jobName, $jobData, $result, $this->jobRegistry);
             if ($job !== null) {
                 $jobs[$jobName] = $job;
                 continue;
