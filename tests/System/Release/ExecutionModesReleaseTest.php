@@ -383,6 +383,77 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
     }
 
     /**
+     * BUG-38 — `githooks job` in fast mode must skip the job exactly like
+     * `flow` does, instead of running it over its original paths: with an
+     * empty staged set, and with a staged set that misses the job's paths.
+     *
+     * @test
+     * @dataProvider jobFastSkipCases
+     *
+     * @param string[] $stagedFiles
+     */
+    public function phar_job_in_fast_mode_skips_like_flow(array $stagedFiles, string $expectedReason): void
+    {
+        $tests = self::TESTS_PATH;
+        $sandbox = "$tests/sandbox-job-fast-skip";
+        $cwd = (string) getcwd();
+        @mkdir("$sandbox/tests", 0777, true);
+        @mkdir("$sandbox/src", 0777, true);
+
+        chdir($sandbox);
+        try {
+            shell_exec('git init --quiet');
+            shell_exec('git symbolic-ref HEAD refs/heads/main');
+            shell_exec('git config user.email "bug38-release@example.com"');
+            shell_exec('git config user.name "BUG-38 Release Test"');
+            shell_exec('git config commit.gpgsign false');
+            file_put_contents('tests/ATest.php', "<?php\n");
+            $configFile = 'githooks.php';
+            $config = [
+                'flows' => ['solo' => ['jobs' => ['tests_check']]],
+                'jobs'  => [
+                    'tests_check' => ['type' => 'custom', 'script' => 'true', 'paths' => ['tests'], 'accelerable' => true],
+                ],
+            ];
+            file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
+            shell_exec('git add -A');
+            shell_exec('git commit --quiet -m baseline');
+            foreach ($stagedFiles as $file) {
+                file_put_contents($file, "<?php\n");
+                shell_exec('git add ' . escapeshellarg($file));
+            }
+
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+
+            passthru(
+                sprintf('%s job tests_check --fast --format=json --config=%s 2>/dev/null', $binary, $configFile),
+                $exitCode
+            );
+
+            $this->assertSame(0, $exitCode);
+            $decoded = json_decode($this->getActualOutput(), true);
+            $this->assertIsArray($decoded);
+            $byName = $this->indexJobs($decoded['jobs']);
+            $this->assertTrue($byName['tests_check']['skipped'], 'job must skip, not run over tests/');
+            $this->assertSame($expectedReason, $byName['tests_check']['skipReason']);
+        } finally {
+            chdir($cwd);
+            shell_exec('rm -rf ' . escapeshellarg($sandbox));
+        }
+    }
+
+    /**
+     * @return array<string, array{0: string[], 1: string}>
+     */
+    public function jobFastSkipCases(): array
+    {
+        return [
+            'empty staged set'        => [[], 'no changes to validate'],
+            'staged set misses paths' => [['src/X.php'], 'no staged files match its paths'],
+        ];
+    }
+
+    /**
      * @param array<int, array<string, mixed>> $jobs
      * @return array<string, array<string, mixed>>
      */

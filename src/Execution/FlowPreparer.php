@@ -104,7 +104,7 @@ class FlowPreparer
                 // log stay consistent. BUG-15: the universal "no changes to
                 // validate" branch is checked first; otherwise fall back to the
                 // existing per-paths messages.
-                $reason = $this->resolveSkipReason($context, $effectiveInvocation, $flow, $originalConfig);
+                $reason = $this->resolveSkipReason($context, $effectiveInvocation);
                 $skippedJobs[$jobName] = [
                     'type' => $originalConfig->getType(),
                     'reason' => $reason,
@@ -217,19 +217,34 @@ class FlowPreparer
             $effectiveInvocation = ExecutionMode::FAST;
         }
 
-        $jobConfig = $this->applyExecutionModeSingleJob($jobConfig, $effectiveInvocation, $context, $options);
-
-        $job = $this->jobRegistry->create($jobConfig);
-        if ($cliExtraArgs !== '') {
-            $job->applyCliExtraArguments($cliExtraArgs);
-        }
-        $this->applyExecutablePrefix($job, $jobConfig, $options);
         // FEAT-13 envelope reporting: if no CLI mode flag is present, fall
         // back to the job-declared `execution` so the plan (and the JSON
         // envelope's top-level `executionMode`) reflects the mode the job
         // actually runs in. Matches the resolution priority used by
         // `resolveMode()` for jobs inside a flow.
         $planMode = $effectiveInvocation ?? $jobConfig->getExecution() ?? ExecutionMode::FULL;
+        $inputFiles = $context !== null ? $context->getInputFilesResolution() : null;
+
+        $filteredConfig = $this->filterJobForMode($jobConfig, $planMode, $context, $options);
+        if ($filteredConfig === null) {
+            // BUG-38: skipped by execution mode — record it exactly like
+            // prepare() does instead of running the job with its original paths.
+            $skipped = [
+                'type' => $jobConfig->getType(),
+                'reason' => $this->resolveSkipReason($context, $planMode),
+                'paths' => $jobConfig->getPaths(),
+                'accelerable' => $jobConfig->isAccelerable($this->jobRegistry),
+            ];
+            $skippedJobs = [$jobConfig->getName() => $skipped];
+            return new FlowPlan($jobConfig->getName(), [], $options, $context, $skippedJobs, $planMode, $inputFiles);
+        }
+        $jobConfig = $filteredConfig;
+
+        $job = $this->jobRegistry->create($jobConfig);
+        if ($cliExtraArgs !== '') {
+            $job->applyCliExtraArguments($cliExtraArgs);
+        }
+        $this->applyExecutablePrefix($job, $jobConfig, $options);
         return new FlowPlan(
             $jobConfig->getName(),
             [$job],
@@ -237,7 +252,7 @@ class FlowPreparer
             $context,
             [],
             $planMode,
-            $context !== null ? $context->getInputFilesResolution() : null
+            $inputFiles
         );
     }
 
@@ -263,18 +278,14 @@ class FlowPreparer
      * Map the skipped-job reason recorded in FlowPlan to the warning emitted
      * by filterJobForMode(). Keeps structured outputs (JSON / SARIF / JUnit)
      * aligned with the validation log.
+     *
+     * @param string|null $mode Resolved mode; null when the flow path has no
+     *                          invocation mode (keeps its pre-BUG-38 reason).
      */
-    private function resolveSkipReason(
-        ?ExecutionContext $context,
-        ?string $effectiveInvocation,
-        FlowConfiguration $flow,
-        JobConfiguration $originalConfig
-    ): string {
-        if ($context !== null && $effectiveInvocation !== null) {
-            $mode = $this->resolveMode($effectiveInvocation, $originalConfig, $flow);
-            if ($context->isEffectiveSetEmpty($mode)) {
-                return 'no changes to validate';
-            }
+    private function resolveSkipReason(?ExecutionContext $context, ?string $mode): string
+    {
+        if ($context !== null && $mode !== null && $context->isEffectiveSetEmpty($mode)) {
+            return 'no changes to validate';
         }
         return ($context !== null && $context->hasInputFiles())
             ? 'no input files match its paths'
@@ -296,20 +307,6 @@ class FlowPreparer
         $mode = $this->resolveMode($invocationMode, $jobConfig, $flow);
 
         return $this->filterJobForMode($jobConfig, $mode, $context, $options, $config);
-    }
-
-    /**
-     * Apply execution mode filtering to a single job (no flow context).
-     */
-    private function applyExecutionModeSingleJob(
-        JobConfiguration $jobConfig,
-        ?string $invocationMode,
-        ?ExecutionContext $context,
-        OptionsConfiguration $options
-    ): JobConfiguration {
-        $mode = $invocationMode ?? ($jobConfig->getExecution() ?? ExecutionMode::FULL);
-
-        return $this->filterJobForMode($jobConfig, $mode, $context, $options) ?? $jobConfig;
     }
 
     /**

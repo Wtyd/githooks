@@ -1246,6 +1246,44 @@ class FlowPreparerTest extends UnitTestCase
     }
 
     /**
+     * BUG-38: `githooks job` and git hooks that point at a job go through
+     * prepareSingleJob(). The verdict (skip + reason, or run with these paths)
+     * must not depend on the entry point, so the single-job path is checked
+     * against the very same decision table as the flow path.
+     *
+     * @test
+     * @dataProvider modeFilteringDecisionTable
+     */
+    public function single_job_follows_the_same_mode_decision_table(
+        ?string $invocationMode,
+        \Closure $jobFactory,
+        \Closure $contextFactory,
+        bool $expectSkip,
+        ?string $expectSkipReason,
+        ?array $expectFinalPaths,
+        string $fastBranchFallback = 'full'
+    ): void {
+        /** @var JobConfiguration $jobConfig */
+        $jobConfig = $jobFactory();
+        /** @var ExecutionContext|null $context */
+        $context = $contextFactory();
+        $options = new OptionsConfiguration(false, 1, null, $fastBranchFallback);
+
+        $plan = $this->preparer->prepareSingleJob($jobConfig, $options, $context, $invocationMode);
+
+        if ($expectSkip) {
+            $this->assertSame([], $plan->getJobs(), 'job should be skipped');
+            $this->assertSame(['j'], array_keys($plan->getSkippedJobs()));
+            $this->assertSame($expectSkipReason, $plan->getSkippedJobs()['j']['reason']);
+            return;
+        }
+
+        $this->assertSame([], $plan->getSkippedJobs());
+        $this->assertCount(1, $plan->getJobs(), 'job should be admitted');
+        $this->assertSame($expectFinalPaths, $plan->getJobs()[0]->getConfiguredPaths());
+    }
+
+    /**
      * @return array<string, array{0: ?string, 1: \Closure, 2: \Closure, 3: bool, 4: ?string, 5: ?array<int,string>}>
      */
     public function modeFilteringDecisionTable(): array
@@ -1313,6 +1351,27 @@ class FlowPreparerTest extends UnitTestCase
             $f = new FileUtilsFake();
             $f->setBranchDiffFiles(null);
             $f->setModifiedfiles(['vendor/Foo.php']);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastDirtySrcMatch     = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setWorktreeDiffFiles(['src/Foo.php', 'docs/readme.md']);
+            $f->setFilesThatShouldBeFoundInDirectories(['src/Foo.php']);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastDirtyNoMatch      = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setWorktreeDiffFiles(['vendor/Foo.php']);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastDirtyEmpty        = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setWorktreeDiffFiles([]);
+            return ExecutionContext::create($f, 'master');
+        };
+        $fastDirtyNoRepo       = static function (): ExecutionContext {
+            $f = new FileUtilsFake();
+            $f->setWorktreeDiffFiles(null);
             return ExecutionContext::create($f, 'master');
         };
 
@@ -1425,6 +1484,29 @@ class FlowPreparerTest extends UnitTestCase
             // Row 20 — FAST_BRANCH + accel + paths + no match ⇒ skip.
             '20 FAST_BRANCH + accel + paths + no match' => [
                 ExecutionMode::FAST_BRANCH, $accelerableWithPaths, $fastBranchNoMatch,
+                true, 'no staged files match its paths', null,
+            ],
+
+            // Rows 21-25 — FAST_DIRTY. Empty or unavailable worktree set skips
+            // universally (no fallback to full); otherwise same rules as FAST.
+            '21 FAST_DIRTY + accel + paths + empty set' => [
+                ExecutionMode::FAST_DIRTY, $accelerableWithPaths, $fastDirtyEmpty,
+                true, 'no changes to validate', null,
+            ],
+            '22 FAST_DIRTY + non-accel + paths + empty set' => [
+                ExecutionMode::FAST_DIRTY, $nonAccelerableWithPaths, $fastDirtyEmpty,
+                true, 'no changes to validate', null,
+            ],
+            '23 FAST_DIRTY + accel + paths + no repo (set unavailable)' => [
+                ExecutionMode::FAST_DIRTY, $accelerableWithPaths, $fastDirtyNoRepo,
+                true, 'no changes to validate', null,
+            ],
+            '24 FAST_DIRTY + accel + paths + match' => [
+                ExecutionMode::FAST_DIRTY, $accelerableWithPaths, $fastDirtySrcMatch,
+                false, null, ['src/Foo.php'],
+            ],
+            '25 FAST_DIRTY + accel + paths + no match' => [
+                ExecutionMode::FAST_DIRTY, $accelerableWithPaths, $fastDirtyNoMatch,
                 true, 'no staged files match its paths', null,
             ],
         ];

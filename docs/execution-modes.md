@@ -141,7 +141,7 @@ When `--fast-branch` cannot compute the diff (e.g. in a shallow clone or detache
 
 ### Clean working tree
 
-If the working tree is clean, **all accelerable jobs are skipped** with `no changes to validate` and the run exits **0**. There is no fallback to `full` — that would surprise the post-commit "nothing to validate" semantics that motivate the mode. Non-accelerable jobs (phpunit, phpcpd, composer-*) still run with their original `paths`; declare `accelerable: true` or move them to a different flow if you want them out of the agentic loop.
+If the working tree is clean, **every job is skipped** — accelerable or not — with `no changes to validate` and the run exits **0**. There is no fallback to `full` — that would surprise the post-commit "nothing to validate" semantics that motivate the mode. Non-accelerable jobs (phpunit, phpcpd, composer-*) only run with their original `paths` when the working tree has changes.
 
 ### Untracked files
 

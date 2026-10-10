@@ -167,9 +167,9 @@ lista a un ancestro), raíz ≤ 0 → `[]`. Compartido por `LinuxProcessTree`, `
 
 ## 7. `FlowPreparer` — precedencia del modo de ejecución (Infection 2026-09-21)
 
-Dos `??` encadenados resuelven el modo de un job suelto: `prepareSingleJob()` para el modo
-que se reporta en el plan (línea 232) y `applyExecutionModeSingleJob()` para el filtrado
-real de ficheros (línea 310). Ambos deben leerse igual: **CLI > config del job > FULL**.
+Un `??` encadenado en `prepareSingleJob()` resuelve el modo de un job suelto, y ese mismo
+valor sirve para el modo que se reporta en el plan y para el filtrado real de ficheros
+(antes eran dos cadenas separadas; BUG-38 las unificó). Orden: **CLI > config del job > FULL**.
 
 | `--execution` (CLI) | `execution:` del job | modo efectivo |
 |---|---|---|
@@ -186,6 +186,29 @@ real de ficheros (línea 310). Ambos deben leerse igual: **CLI > config del job 
 `execution`) dejaba vivos los dos mutantes Coalesce. El modo se observa en dos sitios
 distintos y hay que assertar los dos: `FlowPlan::getExecutionMode()` (lo que sale en el
 envelope) y el comando construido (si filtró a los ficheros modificados o no).
+
+### 7b. Veredicto de skip — `prepare()` ≡ `prepareSingleJob()` (BUG-38)
+
+`filterJobForMode()` devuelve `null` para "sáltalo". El camino de job suelto (`githooks job`
+y los hooks que apuntan a un job vía `HookRunner`) lo convertía en "sin filtro" con
+`?? $jobConfig` y ejecutaba el job sobre sus `paths` originales.
+
+**Invariante**: para un mismo (modo, conjunto efectivo, job), los dos caminos dan el mismo
+veredicto — ejecutar con los paths X, o skip con el reason R.
+
+| Factor | Clases |
+|---|---|
+| Camino | `prepare()` · `prepareSingleJob()` |
+| Modo | full · fast · fast-branch (fallback full / fast) · fast-dirty |
+| Conjunto efectivo | vacío · no disponible (diff falla / sin repo) · sin coincidencias · con coincidencias |
+| Job | acelerable con paths · acelerable sin paths · no acelerable con / sin paths |
+
+**Clases patógenas**: conjunto vacío y conjunto sin coincidencias en el camino de job suelto
+— las únicas filas donde `filterJobForMode()` devuelve `null`. La tabla está materializada
+en `FlowPreparerTest::modeFilteringDecisionTable()` (filas 01–25) y la ejecutan **los dos**
+tests: `it_filters_jobs_per_mode_decision_table` (flow) y
+`single_job_follows_the_same_mode_decision_table` (job suelto). Añadir una fila al provider
+la cubre en ambos caminos a la vez.
 
 ## 8. `JobRunner` — override de budgets desde la CLI (Infection 2026-09-21)
 

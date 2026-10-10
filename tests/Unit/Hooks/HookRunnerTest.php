@@ -19,6 +19,7 @@ use Wtyd\GitHooks\Execution\FlowPreparer;
 use Wtyd\GitHooks\Execution\FlowResult;
 use Wtyd\GitHooks\Execution\FlowPlan;
 use Wtyd\GitHooks\Hooks\HookRunner;
+use Wtyd\GitHooks\Jobs\JobRegistry;
 
 class HookRunnerTest extends UnitTestCase
 {
@@ -437,6 +438,64 @@ class HookRunnerTest extends UnitTestCase
         $results = $this->runner->run('pre-push', $config);
 
         $this->assertCount(1, $results);
+    }
+
+    /**
+     * BUG-38: a hook that points straight at a job goes through
+     * prepareSingleJob(). In fast mode the job must be skipped when the staged
+     * set is empty or misses its paths, not run over its original paths.
+     *
+     * @test
+     * @dataProvider fastJobRefCases
+     *
+     * @param string[] $staged
+     * @param string[] $matching
+     * @param string[] $expectedJobPaths
+     * @param string[] $expectedSkipped
+     */
+    public function hook_pointing_at_a_job_honours_fast_mode_skips(
+        array $staged,
+        array $matching,
+        array $expectedJobPaths,
+        array $expectedSkipped
+    ): void {
+        $this->fileUtils->setModifiedfiles($staged);
+        $this->fileUtils->setFilesThatShouldBeFoundInDirectories($matching);
+        $config = new ConfigurationResult(
+            'githooks.php',
+            new OptionsConfiguration(),
+            ['phpstan_src' => new JobConfiguration('phpstan_src', 'phpstan', ['paths' => ['src']])],
+            [],
+            new HookConfiguration(['pre-commit' => [new HookRef('phpstan_src', [], [], [], [], 'fast')]]),
+            new ValidationResult()
+        );
+        $captured = null;
+        $this->executor->method('execute')
+            ->willReturnCallback(function (FlowPlan $plan) use (&$captured) {
+                $captured = $plan;
+                return new FlowResult('phpstan_src', [], '0.00s');
+            });
+        $runner = new HookRunner(new FlowPreparer(new JobRegistry()), $this->executor, $this->fileUtils);
+
+        $runner->run('pre-commit', $config);
+
+        $this->assertNotNull($captured, 'the runner must reach the executor');
+        $jobPaths = array_map(static fn($job) => $job->getConfiguredPaths(), $captured->getJobs());
+        $this->assertSame($expectedJobPaths, $jobPaths);
+        $reasons = array_map(static fn(array $info): string => $info['reason'], $captured->getSkippedJobs());
+        $this->assertSame($expectedSkipped, $reasons);
+    }
+
+    /**
+     * @return array<string, array{0: string[], 1: string[], 2: array<int, string[]>, 3: array<string, string>}>
+     */
+    public function fastJobRefCases(): array
+    {
+        return [
+            'empty staged set'           => [[], [], [], ['phpstan_src' => 'no changes to validate']],
+            'staged set misses paths'    => [['docs/readme.md'], [], [], ['phpstan_src' => 'no staged files match its paths']],
+            'staged set matches paths'   => [['src/Foo.php', 'docs/readme.md'], ['src/Foo.php'], [['src/Foo.php']], []],
+        ];
     }
 
     /**

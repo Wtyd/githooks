@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented here.
 
+## [3.8.1]
+
+### Fixed
+
+- **`githooks job` in fast mode ran the job over its whole `paths` when it should have skipped it.** With `--fast`, `--fast-branch` or `--fast-dirty`, a job whose change set was empty — or held no file inside the job's `paths` — ran over its original `paths` instead of being skipped, while `githooks flow` with the same job skipped it (`no changes to validate` / `no staged files match its paths`). A hook that points straight at a job (`'pre-commit' => ['phpstan_src']`) went through the same path, so a commit that did not touch the job's `paths` still analysed all of them. `job` and job hooks now skip exactly like `flow`, with the same reason in every output format; a change set that does match still narrows the job to those files, as before. See [Execution modes](execution-modes.md).
+
 ## [3.8]
 
 ### Added
