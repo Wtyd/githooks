@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\System\Commands;
 
-use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 
 class HookRunCommandTest extends SystemTestCase
@@ -44,14 +43,13 @@ class HookRunCommandTest extends SystemTestCase
     }
 
     /** @test */
-    public function it_shows_error_for_legacy_config()
+    public function it_rejects_a_v2_configuration()
     {
-        $legacyBuilder = new ConfigurationFileBuilder(self::TESTS_PATH);
-        $legacyBuilder->buildInFileSystem();
+        file_put_contents($this->configPath, "<?php return ['Options' => ['execution' => 'full'], 'Tools' => ['phpstan']];");
 
         $this->artisan("hook:run pre-commit --config=$this->configPath")
             ->assertExitCode(1)
-            ->containsStringInOutput('requires v3');
+            ->containsStringInOutput('v2 configuration format (Options/Tools) is not supported since 4.0');
     }
 
     /** @test */
@@ -97,14 +95,15 @@ class HookRunCommandTest extends SystemTestCase
             ->assertExitCode(1);
     }
 
-    /** @test */
-    public function handles_parser_exception_and_exits_with_error_code()
+    /** @test A .yml is rejected on its extension, before anything is read. */
+    public function it_rejects_a_yaml_configuration()
     {
         $yamlPath = getcwd() . '/' . self::TESTS_PATH . '/githooks.yml';
         file_put_contents($yamlPath, "Tools:\n  - phpstan\n  invalid: [not closed\n");
 
         $this->artisan("hook:run pre-commit --config=$yamlPath")
-            ->assertExitCode(1);
+            ->assertExitCode(1)
+            ->containsStringInOutput('YAML configuration files are not supported since 4.0');
     }
 
     /** @test */

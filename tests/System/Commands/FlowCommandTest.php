@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\System\Commands;
 
 use Tests\Doubles\FileUtilsFake;
-use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Wtyd\GitHooks\Utils\FileUtilsInterface;
 
@@ -46,15 +45,13 @@ class FlowCommandTest extends SystemTestCase
     }
 
     /** @test */
-    public function it_shows_error_for_legacy_config()
+    public function it_rejects_a_v2_configuration()
     {
-        // Overwrite with legacy config
-        $legacyBuilder = new ConfigurationFileBuilder(self::TESTS_PATH);
-        $legacyBuilder->buildInFileSystem();
+        file_put_contents($this->configPath, "<?php return ['Options' => ['execution' => 'full'], 'Tools' => ['phpstan']];");
 
         $this->artisan("flow qa --config=$this->configPath")
             ->assertExitCode(1)
-            ->containsStringInOutput('requires v3');
+            ->containsStringInOutput('v2 configuration format (Options/Tools) is not supported since 4.0');
     }
 
     /** @test */

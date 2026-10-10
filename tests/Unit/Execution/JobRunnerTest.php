@@ -78,21 +78,6 @@ class JobRunnerTest extends UnitTestCase
     }
 
     /** @test */
-    public function legacy_config_returns_failure_with_help_message(): void
-    {
-        $legacy = ConfigurationResult::legacy([], '/tmp/githooks.yml', new ValidationResult());
-        $parser = $this->fakeParser(fn() => $legacy);
-
-        $prep = ($this->makeRunner($parser))
-            ->prepare($this->req(['jobName' => 'phpcs_src']));
-
-        $this->assertFalse($prep->success);
-        $this->assertCount(2, $prep->errors);
-        $this->assertStringContainsString("requires v3", $prep->errors[0]);
-        $this->assertStringContainsString("conf:init", $prep->errors[1]);
-    }
-
-    /** @test */
     public function config_with_validation_errors_returns_failure(): void
     {
         $validation = new ValidationResult();

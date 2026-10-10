@@ -43,10 +43,6 @@ class StatusCommand extends Command
         try {
             $config = $this->parser->parse($configFile);
 
-            if ($config->isLegacy()) {
-                return $this->fail($format, "The 'status' command requires v3 configuration format (hooks/flows/jobs).");
-            }
-
             $report = $this->inspector->inspect($config);
         } catch (\Throwable $e) {
             return $this->fail($format, $e->getMessage());

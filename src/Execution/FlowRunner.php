@@ -189,13 +189,6 @@ class FlowRunner
             return FlowPreparation::failure([$e->getMessage()]);
         }
 
-        if ($config->isLegacy()) {
-            return FlowPreparation::failure([
-                "The 'flow' command requires v3 configuration format (hooks/flows/jobs).",
-                "Use 'githooks conf:init' to generate the new format.",
-            ]);
-        }
-
         if ($config->hasErrors()) {
             return FlowPreparation::failure($config->getValidation()->getErrors());
         }

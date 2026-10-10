@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\System\Commands;
 
-use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 
 /**
@@ -54,17 +53,16 @@ class StatusCommandJsonTest extends SystemTestCase
         $this->assertIsArray($event['targets']);
     }
 
-    /** @test Legacy config yields a structured error and exit 1 (parseable stdout) */
-    public function it_emits_structured_error_for_legacy_config()
+    /** @test A v2 config yields a structured error and exit 1 (parseable stdout) */
+    public function it_emits_structured_error_for_a_v2_config()
     {
-        $legacyBuilder = new ConfigurationFileBuilder(self::TESTS_PATH);
-        $legacyBuilder->buildInFileSystem();
+        file_put_contents($this->configPath, "<?php return ['Options' => ['execution' => 'full'], 'Tools' => ['phpstan']];");
 
         $payload = $this->runJsonCommand("status --format=json --config=$this->configPath");
 
         $this->assertSame(1, $this->lastExit);
         $this->assertSame(1, $payload['version']);
-        $this->assertStringContainsString('requires v3', $payload['error']);
+        $this->assertStringContainsString('not supported since 4.0', $payload['error']);
     }
 
     /** @test AC-005 — invalid format warns and falls back to text */

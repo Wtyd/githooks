@@ -85,19 +85,6 @@ class FlowsRunnerTest extends UnitTestCase
     }
 
     /** @test */
-    public function legacy_config_returns_failure(): void
-    {
-        $legacy = ConfigurationResult::legacy([], '/tmp/githooks.yml', new ValidationResult());
-        $parser = $this->fakeParser(fn() => $legacy);
-
-        $prep = $this->makeRunner($parser, $this->createMock(FlowExecutor::class))
-            ->prepare($this->req(['flowNames' => ['qa']]), new RoutingBufferedOutput());
-
-        $this->assertFalse($prep->success);
-        $this->assertStringContainsString('requires v3', $prep->errors[0]);
-    }
-
-    /** @test */
     public function unknown_flow_returns_failure_with_available_lists(): void
     {
         $config = $this->configWith(['qa'], ['phpcs_src'], ['meta-all']);
