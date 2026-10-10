@@ -151,28 +151,4 @@ class ReleaseTestCase extends TestCase
         copy($origin, $destiny);
         return chmod($destiny, 0777);
     }
-
-    /**
-     * Checks if the $tool has been executed Successfully by regular expression assert. This assert was renamed and is deprecated
-     * sinse phpunit 9.
-     *
-     * @param string $tool
-     * @return void
-     */
-    protected function assertToolHasBeenExecutedSuccessfully(string $tool): void
-    {
-        //phpcbf - OK. Time: 60ms | 0.18s | 2m 5s
-        $this->assertMatchesRegularExpression("%$tool - OK\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%", $this->getActualOutput(), "The tool $tool has not been executed successfully");
-    }
-
-    protected function assertToolHasFailed(string $tool): void
-    {
-        //phpcbf - KO. Time: 60ms | 0.18s | 2m 5s
-        $this->assertMatchesRegularExpression("%$tool - KO\. Time: (\d+ms|\d+\.\d{2}s|\d+m \d+s)%", $this->getActualOutput(), "The tool $tool has not failed");
-    }
-
-    protected function assertToolDidNotRun(string $tool): void
-    {
-        $this->assertStringNotContainsString($tool, $this->getActualOutput(), "The tool $tool has been run");
-    }
 }

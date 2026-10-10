@@ -7,17 +7,6 @@ namespace Wtyd\GitHooks\Utils;
 class GitStager implements GitStagerInterface
 {
     /**
-     * Re-stages files that are already in the index (cached) to capture modifications
-     * made by auto-fixing tools (e.g. phpcbf).
-     *
-     * @return void
-     */
-    public function stageTrackedFiles(): void
-    {
-        $this->add($this->stagedFiles());
-    }
-
-    /**
      * @return array<string, string>
      */
     public function snapshotStagedFiles(): array
