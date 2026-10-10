@@ -77,7 +77,7 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->localConfigPath, '<?php return [
             "jobs" => [
-                "my_job" => ["otherArguments" => "--overridden"],
+                "my_job" => ["other-arguments" => "--overridden"],
             ],
         ];');
 
