@@ -66,7 +66,6 @@ See [How-To: Docker & Local Override](../how-to/docker-local-override.md) for pr
 ```bash
 githooks conf:init             # Interactive setup
 githooks conf:init -n          # Copy template (non-interactive)
-githooks conf:init --legacy    # Generate v2 format (deprecated)
 ```
 
 See [`conf:init`](../cli/conf-init.md) for details.

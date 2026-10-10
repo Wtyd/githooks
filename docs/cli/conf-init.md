@@ -34,7 +34,6 @@ githooks conf:init -n
 | Option | Description |
 |---|---|
 | `-n`, `--no-interaction` | Copy template instead of interactive setup. |
-| `--legacy` | Generate v2 format (deprecated). |
 
 ## See also
 
