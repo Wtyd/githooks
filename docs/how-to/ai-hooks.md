@@ -66,6 +66,60 @@ When the agent stops:
     and re-emitted the JSON. With `--format=claude-code` that wrapper disappears — the
     `settings.json` command is the whole integration.
 
+## Avoid blocking forever
+
+The command above blocks on **every** attempt to stop while the problem is still there. When
+the agent cannot fix it (a pre-existing error, a tool that is not installed), each stop is
+blocked again, and Claude Code only ends the turn after **8 consecutive continuations**. The
+counter resets each time Claude calls a tool, and `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` raises it.
+
+Claude Code sends the hook event as JSON on stdin, and for the Stop event it includes
+`stop_hook_active: true` when the agent is already continuing because of a stop hook. Check
+it to block once and then let the agent stop:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "grep -q '\"stop_hook_active\": *true' && exit 0; vendor/bin/githooks flow qa --fast-dirty --format=claude-code"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The first stop runs the flow and, if a job fails, blocks with its output. The next consecutive
+stop finds `stop_hook_active: true` and exits silently, so the turn ends.
+
+## Hook commands run under `sh -c`
+
+On Linux and macOS, Claude Code passes the `command` string to `sh -c`, not to your login
+shell. On Debian and Ubuntu, `sh` is `dash`, which does not understand bash syntax.
+
+!!! warning "Bash-only syntax breaks the JSON"
+    `vendor/bin/githooks … &>/dev/null` looks like it silences a command, but `dash` reads it
+    as "run in the background" followed by an empty redirection: nothing is silenced, the
+    stray output lands on stdout next to the `block` JSON, and Claude Code can no longer parse
+    it. The hook then never blocks, and no error is reported. Use POSIX syntax
+    (`>/dev/null 2>&1`), or set `"shell": "bash"` on the hook.
+
+When the hook needs no shell at all, declare the arguments in `args`. Claude Code then runs
+the command directly, without a shell:
+
+```json
+{
+  "type": "command",
+  "command": "vendor/bin/githooks",
+  "args": ["flow", "qa", "--fast-dirty", "--format=claude-code"]
+}
+```
+
 ## Works with `flow`, `flows` and `job`
 
 `--format=claude-code` is available on all three execution commands, so you can scope
