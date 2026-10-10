@@ -5,7 +5,7 @@ namespace Wtyd\GitHooks\App\Commands;
 use Wtyd\GitHooks\App\Commands\ToolCommand as BaseCommand;
 use Wtyd\GitHooks\ConfigurationFile\CliArguments;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ToolIsNotSupportedException;
 use Wtyd\GitHooks\ConfigurationFile\Exception\WrongOptionsValueException;
 use Wtyd\GitHooks\Tools\Errors;

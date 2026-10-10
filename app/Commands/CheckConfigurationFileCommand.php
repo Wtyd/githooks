@@ -13,7 +13,7 @@ use Wtyd\GitHooks\Configuration\OptionsConfiguration;
 use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\ConfigurationFile\ConfigurationFile;
 use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileException;
-use Wtyd\GitHooks\ConfigurationFile\Exception\ConfigurationFileNotFoundException;
+use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
 use Wtyd\GitHooks\ConfigurationFile\FileReader;
 use Wtyd\GitHooks\ConfigurationFile\Printer\OptionsTable;
 use Wtyd\GitHooks\ConfigurationFile\Printer\ToolsTable;
