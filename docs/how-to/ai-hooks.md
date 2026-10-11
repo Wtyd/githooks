@@ -176,7 +176,7 @@ stop — so the command is the same one as above, guard included:
 }
 ```
 
-Tested with Copilot CLI in October 2026. Two details from that run: the event JSON on stdin
+Tested with GitHub Copilot CLI 1.0.95 (October 2026). Two details from that run: the event JSON on stdin
 uses camelCase names (`sessionId`, `stopReason`, …) **except** `stop_hook_active`, which keeps
 its snake_case name, so the guard works unchanged; and the
 [Copilot hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference) documents
