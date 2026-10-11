@@ -66,7 +66,16 @@ When the agent stops:
     and re-emitted the JSON. With `--format=claude-code` that wrapper disappears — the
     `settings.json` command is the whole integration.
 
-## Avoid blocking forever
+## Claude Code's side of the hook
+
+!!! note "This section is about Claude Code, not GitHooks"
+    Nothing below changes what `--format=claude-code` prints. It describes how Claude Code
+    runs a stop hook — its loop protection and the shell it uses — and how to write the
+    `settings.json` command so that it works with that behaviour. Both details come from the
+    [Claude Code hooks reference](https://code.claude.com/docs/en/hooks) and may change with
+    Claude Code releases; GitHooks does not control them.
+
+### Avoid blocking forever
 
 The command above blocks on **every** attempt to stop while the problem is still there. When
 the agent cannot fix it (a pre-existing error, a tool that is not installed), each stop is
@@ -95,9 +104,13 @@ it to block once and then let the agent stop:
 ```
 
 The first stop runs the flow and, if a job fails, blocks with its output. The next consecutive
-stop finds `stop_hook_active: true` and exits silently, so the turn ends.
+stop finds `stop_hook_active: true` and exits silently, so the turn ends — **whether or not the
+agent fixed everything**: on that second stop the flow does not run at all. The agent gets one
+round of fixes per turn; whatever is left is for you to see, and the git `pre-commit` hook still
+stops it from being committed. Drop the guard if you prefer the agent to keep working until the
+flow passes, and accept that a problem it cannot fix will cost it up to 8 rounds.
 
-## Hook commands run under `sh -c`
+### Hook commands run under `sh -c`
 
 On Linux and macOS, Claude Code passes the `command` string to `sh -c`, not to your login
 shell. On Debian and Ubuntu, `sh` is `dash`, which does not understand bash syntax.
@@ -138,11 +151,43 @@ githooks flows pre-commit --fast-dirty --format=claude-code
 
 ## Other agents
 
-The stop-hook protocol is **not** standardised across IDEs, so the format is named after
-its consumer: `claude-code`. When other agents (Cursor, Cline, …) stabilise a comparable
-protocol, GitHooks will add `--format=cursor`, `--format=cline`, etc. — each opt-in, each
-with its own shape. There is deliberately **no** auto-detection from environment
-variables: the format you want is always explicit.
+The format is named after the consumer it was written for, `claude-code`, but the stop-hook
+protocol it emits is no longer exclusive to Claude Code.
+
+### GitHub Copilot CLI (tested)
+
+Copilot CLI reads hooks from `.github/hooks/*.json` and fires `agentStop` when the agent
+ends its turn. It accepts the same stdout protocol — `{"decision":"block","reason":…}` forces
+another turn with the `reason` as the next instruction, and an empty output lets the agent
+stop — so the command is the same one as above, guard included:
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "grep -q '\"stop_hook_active\": *true' && exit 0; vendor/bin/githooks flow qa --fast-dirty --format=claude-code",
+        "timeoutSec": 60
+      }
+    ]
+  }
+}
+```
+
+Tested with Copilot CLI in October 2026. Two details from that run: the event JSON on stdin
+uses camelCase names (`sessionId`, `stopReason`, …) **except** `stop_hook_active`, which keeps
+its snake_case name, so the guard works unchanged; and the
+[Copilot hooks reference](https://docs.github.com/en/copilot/reference/hooks-reference) documents
+the same limit of 8 consecutive blocks.
+
+### Others
+
+OpenAI Codex CLI (`Stop`) and Gemini CLI (`AfterAgent`) document the same JSON shape, but
+GitHooks has not been tested with them. Cursor's `stop` hook uses a different field
+(`followup_message`) and is not supported. There is deliberately **no** auto-detection from
+environment variables: the format you want is always explicit.
 
 ## See also
 
