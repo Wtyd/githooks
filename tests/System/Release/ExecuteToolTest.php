@@ -56,7 +56,13 @@ class PassingTest extends TestCase
             ->changeToolOption('phpunit', ['group' => []])
             ->changeToolOption('phpunit', ['exclude-group' => []])
             ->changeToolOption('phpunit', ['filter' => ''])
-            ->changeToolOption('phpunit', ['log-junit' => '']);
+            ->changeToolOption('phpunit', ['log-junit' => ''])
+            // The builder's 512M dates from psalm 5. psalm 6 scanning its stubs with a
+            // cold cache needs more than that on PHP 8.5 (observed on the Linux CI
+            // runner: "Allowed memory size of 536870912 bytes exhausted"), and the
+            // release suite is not here to measure psalm's memory. psalm's own
+            // default is unlimited; use it.
+            ->changeToolOption('psalm', ['memory-limit' => '-1']);
 
         // Psalm needs a config file to run
         $psalmDir = self::TESTS_PATH . '/qa';
