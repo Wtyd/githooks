@@ -148,7 +148,9 @@ class PassingTest extends TestCase
         );
         passthru("$this->githooks tool all $executionModeArgument", $exitCode);
 
-        $this->assertEquals(0, $exitCode);
+        // The output is captured by PHPUnit, so on failure CI would only show
+        // the exit code: carry the tools' output in the message instead.
+        $this->assertSame(0, $exitCode, "tool all exited $exitCode. Output:\n" . $this->getActualOutput());
         foreach ($tools as $tool) {
             $this->assertToolHasBeenExecutedSuccessfully($tool);
         }
