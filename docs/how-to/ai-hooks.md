@@ -115,12 +115,17 @@ flow passes, and accept that a problem it cannot fix will cost it up to 8 rounds
 On Linux and macOS, Claude Code passes the `command` string to `sh -c`, not to your login
 shell. On Debian and Ubuntu, `sh` is `dash`, which does not understand bash syntax.
 
-!!! warning "Bash-only syntax breaks the JSON"
-    `vendor/bin/githooks … &>/dev/null` looks like it silences a command, but `dash` reads it
-    as "run in the background" followed by an empty redirection: nothing is silenced, the
-    stray output lands on stdout next to the `block` JSON, and Claude Code can no longer parse
-    it. The hook then never blocks, and no error is reported. Use POSIX syntax
-    (`>/dev/null 2>&1`), or set `"shell": "bash"` on the hook.
+!!! warning "Do not redirect the command, and mind the shell"
+    With `--format=claude-code` there is nothing to silence: stdout carries only the
+    protocol (empty, or the `block` JSON) and stderr stays empty unless the configuration
+    itself is broken (exit `1`). Any redirection of stdout swallows the JSON, and the hook
+    never blocks again.
+
+    If the hook line runs other commands before GitHooks and silences them, remember it runs
+    under `dash`: `cmd &>/dev/null` is not a redirection there but "run `cmd` in the
+    background", so its output lands on stdout next to the JSON and Claude Code can no longer
+    parse it. The hook then never blocks, and nothing reports it. Write `cmd >/dev/null 2>&1`
+    (POSIX), or set `"shell": "bash"` on the hook.
 
 When the hook needs no shell at all, declare the arguments in `args`. Claude Code then runs
 the command directly, without a shell:

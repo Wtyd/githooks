@@ -108,6 +108,7 @@ githooks flow qa --fast                                # Only staged files (acce
 githooks flow qa --fast-branch                         # Only files changed vs the base branch
 githooks flow qa --fast-dirty                          # Unified working tree (ideal for AI agents)
 githooks flow qa --fast-dirty --format=json --no-reports  # AI-agent friendly: clean JSON, no side-effect files
+githooks flow qa --fast-dirty --format=claude-code     # Stop hook for AI agents (Claude Code, Copilot CLI): blocks the agent on failures
 githooks flow qa --only-jobs=phpstan_src               # Run specific jobs from a flow
 githooks flow qa --dry-run                             # Show commands without executing
 githooks job phpstan_src                               # Run a single job
@@ -281,7 +282,7 @@ Full documentation is available at **[wtyd.github.io/githooks](https://wtyd.gith
 - [Configuration Reference](https://wtyd.github.io/githooks/configuration/) — hooks, flows, jobs, options.
 - [Tools Reference](https://wtyd.github.io/githooks/tools/) — all keywords for each QA tool.
 - [CLI Reference](https://wtyd.github.io/githooks/cli/) — every command with options and examples.
-- [How-To Guides](https://wtyd.github.io/githooks/how-to/) — parallel execution, CI/CD, frontend tools, etc.
+- [How-To Guides](https://wtyd.github.io/githooks/how-to/) — parallel execution, CI/CD, frontend tools, [AI agent hooks](https://wtyd.github.io/githooks/how-to/ai-hooks/), etc.
 - [Migration](https://wtyd.github.io/githooks/migration/v2-to-v3/) — from v2, GrumPHP, or CaptainHook.
 - [Comparison](https://wtyd.github.io/githooks/comparison/) — GitHooks vs GrumPHP vs CaptainHook.
 - [Changelog](https://wtyd.github.io/githooks/changelog/) — what's new in each version.
