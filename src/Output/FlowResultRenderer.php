@@ -512,9 +512,11 @@ class FlowResultRenderer
      * are created on the fly so that CI pipelines can use
      * `--output=reports/qa.sarif` without a preceding `mkdir`.
      *
+     * Public for `flow --repeat`, whose flap report is written the same way.
+     *
      * @param OutputInterface $output
      */
-    private function writeStructuredPayload(string $content, RenderOptions $options, OutputInterface $output): void
+    public function writeStructuredPayload(string $content, RenderOptions $options, OutputInterface $output): void
     {
         if ($options->outputPath === null || $options->outputPath === '') {
             $output->writeln($content);

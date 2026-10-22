@@ -23,6 +23,7 @@ use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
 use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
 use Wtyd\GitHooks\Output\FlowResultRenderer;
+use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\RenderOptions;
 
 /**
@@ -217,6 +218,77 @@ class FlowRunnerTest extends UnitTestCase
         );
     }
 
+    // ── FEAT-25 · runRepeated() ──────────────────────────────────────────
+
+    /** @test */
+    public function run_repeated_executes_the_plan_once_per_pass_and_emits_the_header_once(): void
+    {
+        $executor = $this->createMock(FlowExecutor::class);
+        $executor->expects($this->exactly(3))->method('execute')->willReturn($this->successfulResult());
+        $header = $this->createMock(ConditionsHeaderEmitter::class);
+        $header->expects($this->once())->method('emit');
+
+        $runner = $this->makeRepeatRunner($executor, $header, $this->createMock(FlowResultRenderer::class));
+        $runner->runRepeated($this->req(['repeat' => 3]), new RoutingBufferedOutput(), $this->renderOpts());
+    }
+
+    /** @test */
+    public function run_repeated_runs_the_executor_silently_and_without_structured_tool_output(): void
+    {
+        $executor = $this->createMock(FlowExecutor::class);
+        $executor->method('execute')->willReturn($this->successfulResult());
+        $executor->expects($this->once())->method('setOutputHandler')->with($this->isInstanceOf(NullOutputHandler::class));
+        $executor->expects($this->once())->method('setStructuredFormat')->with(false);
+
+        $runner = $this->makeRepeatRunner($executor, $this->createMock(ConditionsHeaderEmitter::class), $this->createMock(FlowResultRenderer::class));
+        $runner->runRepeated($this->req(['repeat' => 2]), new RoutingBufferedOutput(), $this->renderOpts());
+    }
+
+    /** @test */
+    public function run_repeated_in_json_writes_only_the_flap_report(): void
+    {
+        $executor = $this->createMock(FlowExecutor::class);
+        $executor->method('execute')->willReturn($this->successfulResult());
+        $renderer = $this->createMock(FlowResultRenderer::class);
+        $renderer->expects($this->once())->method('writeStructuredPayload')->with(
+            $this->callback(function (string $json): bool {
+                $decoded = json_decode($json, true);
+                return is_array($decoded) && $decoded['version'] === 1 && $decoded['repeat'] === 2;
+            })
+        );
+        $output = new RoutingBufferedOutput();
+
+        $exit = $this->makeRepeatRunner($executor, $this->createMock(ConditionsHeaderEmitter::class), $renderer)
+            ->runRepeated($this->req(['repeat' => 2]), $output, new RenderOptions('json', null, false, false, false, []));
+
+        $this->assertSame([[], 1], [$output->lines, $exit], 'nothing else on stdout; no junit file was written, so it is inconclusive');
+    }
+
+    /**
+     * A flow whose only job declares a junit file that is never written.
+     */
+    private function makeRepeatRunner(FlowExecutor $executor, ConditionsHeaderEmitter $header, FlowResultRenderer $renderer): FlowRunner
+    {
+        $config = new ConfigurationResult(
+            '/tmp/githooks.php',
+            new OptionsConfiguration(false, 1),
+            ['suite' => new JobConfiguration('suite', 'custom', ['script' => 'true', 'junit' => sys_get_temp_dir() . '/flow-runner-repeat-' . uniqid() . '.xml'])],
+            ['qa' => new FlowConfiguration('qa', ['suite'])],
+            null,
+            new ValidationResult()
+        );
+
+        return new FlowRunner(
+            $this->fakeParser(fn() => $config),
+            $this->preparer,
+            $this->fileUtils,
+            $executor,
+            $renderer,
+            $header,
+            $this->createMock(ConfigWarningsEmitter::class)
+        );
+    }
+
     private function makeRunner(ConfigurationParser $parser, FlowExecutor $executor): FlowRunner
     {
         return new FlowRunner(
@@ -317,6 +389,7 @@ class FlowRunnerTest extends UnitTestCase
             'cliBranch' => null,
             'dryRun' => false,
             'monitor' => false,
+            'repeat' => 1,
         ];
         $m = array_merge($defaults, $overrides);
         return new FlowRunRequest(
@@ -338,7 +411,9 @@ class FlowRunnerTest extends UnitTestCase
             $m['cliStats'],
             $m['cliBranch'],
             $m['dryRun'],
-            $m['monitor']
+            $m['monitor'],
+            false,
+            $m['repeat']
         );
     }
 

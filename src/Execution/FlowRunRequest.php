@@ -14,7 +14,7 @@ namespace Wtyd\GitHooks\Execution;
  * Public properties not readonly by PHP 7.4 compatibility — treat as
  * immutable at the consumer boundary.
  *
- * @SuppressWarnings(PHPMD.TooManyFields) DTO surfaces the 19 pre-resolved CLI inputs
+ * @SuppressWarnings(PHPMD.TooManyFields) DTO surfaces the 22 pre-resolved CLI inputs
  *   1:1; merging into sub-structs would obscure the FlowCommand → FlowRunner contract.
  */
 class FlowRunRequest
@@ -62,10 +62,16 @@ class FlowRunRequest
     /** FEAT-5: persist this run to .githooks/history/ regardless of config. */
     public bool $saveHistory;
 
+    /** FEAT-25: number of passes; 1 is a normal run. */
+    public int $repeat;
+
+    /** FEAT-25: minimum min(passed, failed) for a mixed test to count as flaky. */
+    public int $flapThreshold;
+
     /**
      * @param string[] $excludeJobs
      * @param string[] $onlyJobs
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 19 pre-resolved CLI inputs;
+     * @SuppressWarnings(PHPMD.ExcessiveParameterList) DTO mirroring 22 pre-resolved CLI inputs;
      *   merging into sub-structs would obscure the FlowCommand → FlowRunner contract.
      * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The `disabled` / `dryRun` / `monitor` /
      *   `saveHistory` booleans are configuration toggles pre-resolved by the Command.
@@ -90,7 +96,9 @@ class FlowRunRequest
         ?string $cliBranch,
         bool $dryRun,
         bool $monitor,
-        bool $saveHistory = false
+        bool $saveHistory = false,
+        int $repeat = 1,
+        int $flapThreshold = 1
     ) {
         $this->flowName = $flowName;
         $this->configFile = $configFile;
@@ -112,5 +120,7 @@ class FlowRunRequest
         $this->dryRun = $dryRun;
         $this->monitor = $monitor;
         $this->saveHistory = $saveHistory;
+        $this->repeat = $repeat;
+        $this->flapThreshold = $flapThreshold;
     }
 }

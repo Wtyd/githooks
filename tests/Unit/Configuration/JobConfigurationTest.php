@@ -1813,4 +1813,42 @@ class JobConfigurationTest extends UnitTestCase
 
         $this->assertContains($expected, $result->getErrors());
     }
+
+    /**
+     * FEAT-25: `junit` is a known key for every type and its value is checked.
+     *
+     * @test
+     * @dataProvider junitKeyCases
+     * @param array<string, mixed> $config
+     * @param string[] $expectedWarnings
+     */
+    public function it_validates_the_junit_key(string $type, array $config, array $expectedWarnings): void
+    {
+        $result = new ValidationResult();
+
+        JobConfiguration::fromArray('j', array_merge(['type' => $type], $config), $result, new JobRegistry());
+
+        $this->assertSame($expectedWarnings, $result->getWarnings());
+        $this->assertSame([], $result->getErrors());
+    }
+
+    /**
+     * @return array<string, array{string, array<string, mixed>, string[]}>
+     */
+    public function junitKeyCases(): array
+    {
+        $notAPath = "Job 'j': key 'junit' expects a non-empty string (the path of a junit XML file).";
+
+        return [
+            'custom with junit (map-less type)' => ['custom', ['script' => 'true', 'junit' => 'out.xml'], []],
+            'pest with junit (typed)'           => ['pest', ['junit' => 'out.xml'], []],
+            'phpunit, junit equal to log-junit' => ['phpunit', ['junit' => 'j.xml', 'log-junit' => 'j.xml'], []],
+            'phpunit, junit differs from log-junit' => ['phpunit', ['junit' => 'mine.xml', 'log-junit' => 'tool.xml'], [
+                "Job 'j': 'junit' (mine.xml) differs from 'log-junit' (tool.xml); flow --repeat reads 'mine.xml', but the tool writes 'tool.xml'.",
+            ]
+            ],
+            'empty junit on custom'             => ['custom', ['script' => 'true', 'junit' => ''], [$notAPath]],
+            'array junit on phpunit'            => ['phpunit', ['junit' => ['out.xml']], [$notAPath]],
+        ];
+    }
 }

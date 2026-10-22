@@ -512,7 +512,7 @@ class JobConfiguration
             // 'time-budget' is recognised so the unknown-key loop doesn't emit a
             // duplicate warning; the dedicated check in validateTimeBudgetKeys()
             // already rejects it as an error (BUG-10).
-            ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory', 'time-budget', 'cache-dir']
+            ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'rules', 'script', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory', 'time-budget', 'cache-dir', 'junit']
         );
 
         self::reportUnknownAndCliOnlyJobKeys($name, $type, $config, $knownKeys, $result);
@@ -564,6 +564,7 @@ class JobConfiguration
 
         // Validate common keys not in ARGUMENT_MAP but used by the system
         self::validateCommonKeys($name, $config, $argumentMap, $result);
+        self::validateJunitKey($name, $config, $result);
 
         if ($type === 'pest') {
             self::validatePestRunner($name, $config, $result);
@@ -641,12 +642,41 @@ class JobConfiguration
         array $config,
         ValidationResult $result
     ): void {
-        $sharedKeys = ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory'];
+        $sharedKeys = ['executable-path', 'other-arguments', 'ignore-errors-on-exit', 'fail-fast', 'paths', 'accelerable', 'execution', 'executable-prefix', 'cores', 'warn-after', 'fail-after', 'memory', 'junit'];
         $knownKeys = $type === 'custom'
             ? array_merge(['script', 're-stage'], $sharedKeys)
             : $sharedKeys;
 
         self::reportUnknownAndCliOnlyJobKeys($name, $type, $config, $knownKeys, $result);
+        self::validateJunitKey($name, $config, $result);
+    }
+
+    /**
+     * `junit` is the file `flow --repeat` reads after each pass (FEAT-25). A
+     * value that is not a usable path is ignored at run time, so say so here.
+     * When the tool is also told to write `log-junit` somewhere else, the file
+     * `--repeat` reads is not the one the tool writes: every pass would come
+     * back as "junit file was not written".
+     *
+     * @param array<string, mixed> $config
+     */
+    private static function validateJunitKey(string $name, array $config, ValidationResult $result): void
+    {
+        if (!array_key_exists('junit', $config)) {
+            return;
+        }
+        $junit = $config['junit'];
+        if (!is_string($junit) || $junit === '') {
+            $result->addWarning("Job '$name': key 'junit' expects a non-empty string (the path of a junit XML file).");
+            return;
+        }
+        $logJunit = $config['log-junit'] ?? null;
+        if (is_string($logJunit) && $logJunit !== '' && $logJunit !== $junit) {
+            $result->addWarning(
+                "Job '$name': 'junit' ($junit) differs from 'log-junit' ($logJunit); "
+                . "flow --repeat reads '$junit', but the tool writes '$logJunit'."
+            );
+        }
     }
 
     /**

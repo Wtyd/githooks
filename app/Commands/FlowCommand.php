@@ -12,6 +12,7 @@ use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesProcessesFlag;
+use Wtyd\GitHooks\App\Commands\Concerns\ResolvesRepeatFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
 use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
@@ -33,6 +34,7 @@ class FlowCommand extends Command
     use ResolvesInputFiles;
     use ResolvesMemoryBudgetFlags;
     use ResolvesProcessesFlag;
+    use ResolvesRepeatFlags;
     use ResolvesStatsFlag;
     use ResolvesTimeBudgetFlags;
     use ValidatesUnknownOptionsBeforeDashDash;
@@ -72,6 +74,8 @@ class FlowCommand extends Command
                             {--show-progress : Force progress emission on stderr even when not a TTY (useful for CI with --format=json|junit|sarif|codeclimate)}
                             {--diag : Print a runtime diagnostics block (CPU/mem/load/CI/version) before running. Auto-on in CI.}
                             {--branch= : Override the detected branch name used to evaluate flow.on rules (FEAT-2)}
+                            {--repeat= : Run the flow N times and report the tests whose outcome changes between passes (reads each job\'s junit file)}
+                            {--flap-threshold= : With --repeat: a test that both passed and failed is flaky when the rarer outcome occurs at least this many times (default 1); below it, it is listed as suspect}
                             {--config= : Path to configuration file}';
 
     protected $description = 'Execute a flow (group of jobs) defined in the configuration file';
@@ -103,8 +107,13 @@ class FlowCommand extends Command
             return 1;
         }
 
+        $repeatFlags = $this->resolveRepeatFlags();
+        if ($repeatFlags === null) {
+            return 1;
+        }
+
         try {
-            $request = $this->buildRunRequest();
+            $request = $this->buildRunRequest($repeatFlags);
         } catch (GitHooksExceptionInterface $e) {
             $this->emitStderr($e->getMessage());
             return 1;
@@ -115,11 +124,20 @@ class FlowCommand extends Command
         // FileUtilsInterface in setUp reaches FlowRunner's FileUtils. With
         // constructor injection the command is built at bootstrap and would
         // capture the production FileUtils, ignoring later test rebinds.
-        return $this->getLaravel()->make(FlowRunner::class)
-            ->run($request, $this->output, $this->buildRenderOptions());
+        $runner = $this->getLaravel()->make(FlowRunner::class);
+
+        // FEAT-25: a dry run only shows commands, so it has nothing to repeat.
+        if ($request->repeat >= 2 && !$request->dryRun) {
+            return $runner->runRepeated($request, $this->output, $this->buildRenderOptions());
+        }
+
+        return $runner->run($request, $this->output, $this->buildRenderOptions());
     }
 
-    private function buildRunRequest(): FlowRunRequest
+    /**
+     * @param array{repeat: int, flapThreshold: int} $repeatFlags
+     */
+    private function buildRunRequest(array $repeatFlags): FlowRunRequest
     {
         $timeBudget = $this->resolveTimeBudgetFlags();
         $memoryBudget = $this->resolveMemoryBudgetFlags();
@@ -145,7 +163,9 @@ class FlowCommand extends Command
             is_string($cliBranch) && $cliBranch !== '' ? $cliBranch : null,
             (bool) $this->option('dry-run'),
             (bool) $this->option('monitor'),
-            (bool) $this->option('save-history')
+            (bool) $this->option('save-history'),
+            $repeatFlags['repeat'],
+            $repeatFlags['flapThreshold']
         );
     }
 

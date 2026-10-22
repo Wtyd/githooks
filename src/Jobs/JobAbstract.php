@@ -65,6 +65,9 @@ abstract class JobAbstract
 
     protected ?MemoryThreshold $memoryThreshold = null;
 
+    /** Junit file `flow --repeat` reads after each pass (FEAT-25). */
+    protected ?string $junit = null;
+
     public function __construct(JobConfiguration $config)
     {
         $this->name = $config->getName();
@@ -82,6 +85,9 @@ abstract class JobAbstract
         $this->memoryReserve = $config->getMemoryReserve();
         $this->memoryThreshold = $config->getMemoryThreshold();
         unset($this->args['memory']);
+        $junit = $this->args['junit'] ?? null;
+        $this->junit = is_string($junit) && $junit !== '' ? $junit : null;
+        unset($this->args['junit']);
     }
 
     /**
@@ -284,6 +290,21 @@ abstract class JobAbstract
     public function getDisplayName(): string
     {
         return $this->name;
+    }
+
+    /**
+     * The junit file `flow --repeat` reads after each pass: the `junit` key,
+     * else the `log-junit` the tool is already told to write (types that map
+     * it, i.e. phpunit and paratest), else none.
+     */
+    public function getJunitPath(): ?string
+    {
+        if ($this->junit !== null) {
+            return $this->junit;
+        }
+        $logJunit = array_key_exists('log-junit', static::ARGUMENT_MAP) ? ($this->args['log-junit'] ?? null) : null;
+
+        return is_string($logJunit) && $logJunit !== '' ? $logJunit : null;
     }
 
     /** @return string[] */

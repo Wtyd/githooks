@@ -9,6 +9,7 @@ use Wtyd\GitHooks\Configuration\JobConfiguration;
 use Wtyd\GitHooks\Jobs\CommitMsgJob;
 use Wtyd\GitHooks\Jobs\CustomJob;
 use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\GitHooks\Jobs\JobRegistry;
 use Wtyd\GitHooks\Jobs\ParallelLintJob;
 use Wtyd\GitHooks\Jobs\PestJob;
 use Wtyd\GitHooks\Jobs\ParatestJob;
@@ -594,6 +595,65 @@ class JobAbstractTest extends UnitTestCase
             'parallel-lint'                 => [new ParallelLintJob(new JobConfiguration('j', 'parallel-lint', [])), false],
             'script'                        => [new ScriptJob(new JobConfiguration('j', 'script', ['executable-path' => 'true'])), false],
             'commit-msg'                    => [new CommitMsgJob(new JobConfiguration('j', 'commit-msg', [])), false],
+        ];
+    }
+
+    /**
+     * Table C of tests/Unit/Flaky/factors.md: which junit file `flow --repeat`
+     * reads for a job.
+     *
+     * @test
+     * @dataProvider junitPathCases
+     * @param array<string, mixed> $config
+     */
+    public function it_resolves_the_junit_file_flow_repeat_reads(string $type, array $config, ?string $expected): void
+    {
+        $job = (new JobRegistry())->create(new JobConfiguration('j', $type, $config));
+
+        $this->assertSame($expected, $job->getJunitPath());
+    }
+
+    /**
+     * @return array<string, array{string, array<string, mixed>, ?string}>
+     */
+    public function junitPathCases(): array
+    {
+        return [
+            'junit on a custom job'                    => ['custom', ['script' => 'true', 'junit' => 'out.xml'], 'out.xml'],
+            'junit equal to log-junit'                 => ['phpunit', ['junit' => 'j.xml', 'log-junit' => 'j.xml'], 'j.xml'],
+            'junit wins over a different log-junit'    => ['phpunit', ['junit' => 'mine.xml', 'log-junit' => 'tool.xml'], 'mine.xml'],
+            'phpunit log-junit is derived'             => ['phpunit', ['log-junit' => 'tool.xml'], 'tool.xml'],
+            'paratest log-junit is derived'            => ['paratest', ['log-junit' => 'tool.xml'], 'tool.xml'],
+            'phpunit without either'                   => ['phpunit', [], null],
+            'custom without junit'                     => ['custom', ['script' => 'true'], null],
+            'pest has no log-junit to derive from'     => ['pest', ['log-junit' => 'tool.xml'], null],
+            'empty junit falls back to log-junit'      => ['phpunit', ['junit' => '', 'log-junit' => 'tool.xml'], 'tool.xml'],
+            'non-string junit is ignored'              => ['custom', ['script' => 'true', 'junit' => ['out.xml']], null],
+            'empty log-junit is not a path'            => ['phpunit', ['log-junit' => ''], null],
+        ];
+    }
+
+    /**
+     * @test
+     * @dataProvider junitNeverReachesTheCommand
+     * @param array<string, mixed> $config
+     */
+    public function the_junit_key_never_reaches_the_command(string $type, array $config): void
+    {
+        $job = (new JobRegistry())->create(new JobConfiguration('j', $type, $config));
+
+        $this->assertStringNotContainsString('out.xml', $job->buildCommand());
+    }
+
+    /**
+     * @return array<string, array{string, array<string, mixed>}>
+     */
+    public function junitNeverReachesTheCommand(): array
+    {
+        return [
+            'custom'  => ['custom', ['script' => 'phpunit', 'junit' => 'out.xml']],
+            'phpunit' => ['phpunit', ['junit' => 'out.xml']],
+            'pest'    => ['pest', ['junit' => 'out.xml']],
         ];
     }
 }

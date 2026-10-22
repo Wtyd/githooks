@@ -8,6 +8,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Wtyd\GitHooks\Configuration\ConfigurationParser;
 use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
 use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
+use Wtyd\GitHooks\Flaky\FlapAggregator;
+use Wtyd\GitHooks\Flaky\FlapReport;
+use Wtyd\GitHooks\Flaky\FlapReportRenderer;
+use Wtyd\GitHooks\Flaky\JunitReport;
 use Wtyd\GitHooks\History\RunHistoryStore;
 use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
 use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
@@ -15,6 +19,7 @@ use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
 use Wtyd\GitHooks\Output\DiagnosticsHeaderEmitter;
 use Wtyd\GitHooks\Output\FlowResultRenderer;
 use Wtyd\GitHooks\Output\HeaderOptions;
+use Wtyd\GitHooks\Output\NullOutputHandler;
 use Wtyd\GitHooks\Output\OutputFormats;
 use Wtyd\GitHooks\Output\RenderOptions;
 use Wtyd\GitHooks\Utils\BranchResolver;
@@ -30,6 +35,9 @@ use Wtyd\GitHooks\Utils\FileUtilsInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Composes parser, preparer,
  *   executor, renderer and emitters. The coupling reflects the surface.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Two entry points sharing
+ *   prepare(): the single run and the repeated run of FEAT-25, whose tail
+ *   (flap report instead of a FlowResult) is deliberately kept out of run().
  */
 class FlowRunner
 {
@@ -143,6 +151,288 @@ class FlowRunner
             $this->emitStderr($output, $e->getMessage());
             return 1;
         }
+    }
+
+    /**
+     * FEAT-25: run the flow `repeat` times and report, test by test, whose
+     * outcome changed between passes. Shares prepare() with run(); the tail
+     * differs entirely — one flap report instead of one FlowResult — which is
+     * why it is a sibling and not a branch inside run() (see
+     * tests/Unit/Flaky/factors.md, table B).
+     */
+    public function runRepeated(FlowRunRequest $request, OutputInterface $output, RenderOptions $renderOptions): int
+    {
+        try {
+            $format = $this->repeatFormat($renderOptions->format, $output);
+            if ($format === null) {
+                return 1;
+            }
+
+            $preparation = $this->prepare($request);
+            foreach ($preparation->errors as $error) {
+                $this->emitError($output, $error);
+            }
+            if (!$preparation->success) {
+                return 1;
+            }
+            $plan = $preparation->plan;
+            $resolution = $preparation->resolution;
+            $config = $preparation->config;
+            if ($plan === null || $resolution === null || $config === null) {
+                return 1;
+            }
+
+            $junitPaths = $this->junitPaths($plan, $output);
+            if ($junitPaths === null) {
+                return 1;
+            }
+
+            $this->warnInertFlags($request, $renderOptions, $output);
+            $this->executor->setOutputHandler(new NullOutputHandler());
+            $this->executor->setStructuredFormat(false);
+            $this->executor->setThresholdsDisabled($request->timeBudgetDisabled);
+            $this->executor->setMemoryBudgetDisabled($request->memoryBudgetDisabled);
+
+            $this->headerEmitter->emit(
+                $resolution,
+                $plan->getExpandedFlows(),
+                $plan->getInputFiles(),
+                new HeaderOptions($format, $renderOptions->showProgress),
+                $output
+            );
+
+            $passes = $this->runPasses($plan, $junitPaths, $request->repeat, $format, $renderOptions, $output);
+
+            $this->warningsEmitter->emit($config->getValidation(), $output);
+
+            $report = (new FlapAggregator($request->flapThreshold))->aggregate($plan->getFlowName(), $junitPaths, $passes);
+            $this->renderFlapReport($report, $format, $renderOptions, $output);
+
+            return $report->exitCode();
+        } catch (GitHooksExceptionInterface $e) {
+            $this->emitStderr($output, $e->getMessage());
+            return 1;
+        }
+    }
+
+    /**
+     * Only text and json can describe N passes; the other formats describe a
+     * single run. An unknown value falls back to text, as it does in run().
+     */
+    private function repeatFormat(string $format, OutputInterface $output): ?string
+    {
+        if ($format === '' || $format === 'text') {
+            return 'text';
+        }
+        if ($format === 'json') {
+            return 'json';
+        }
+        if (in_array($format, OutputFormats::SUPPORTED, true)) {
+            $this->emitError($output, "--format=$format describes a single run and cannot be used with --repeat. Use text or json.");
+            return null;
+        }
+        $this->emitStderr($output, "Unknown format '$format'. Using text output.");
+        return 'text';
+    }
+
+    /**
+     * Junit file of each job that declares one, keyed by job name. Two jobs
+     * writing the same file would overwrite each other's results, so that is
+     * refused here — not in conf:check, where `extends` makes a shared
+     * `log-junit` legitimate as long as the jobs never run in the same flow.
+     *
+     * @return array<string, string>|null null when the plan cannot be repeated (already reported)
+     */
+    private function junitPaths(FlowPlan $plan, OutputInterface $output): ?array
+    {
+        $paths = [];
+        $owners = [];
+        foreach ($plan->getJobs() as $job) {
+            $path = $job->getJunitPath();
+            if ($path === null) {
+                continue;
+            }
+            $absolute = $this->absolutePath($path);
+            if (isset($owners[$absolute])) {
+                $this->emitError(
+                    $output,
+                    "Jobs '{$owners[$absolute]}' and '{$job->getName()}' both write their junit file to '$path'; "
+                    . "--repeat cannot tell their tests apart. Give each job its own 'junit' path."
+                );
+                return null;
+            }
+            $owners[$absolute] = $job->getName();
+            $paths[$job->getName()] = $path;
+        }
+
+        if ($paths === []) {
+            $this->emitError(
+                $output,
+                "--repeat needs at least one job in flow '{$plan->getFlowName()}' that declares 'junit' "
+                . "(or 'log-junit' on phpunit and paratest jobs)."
+            );
+            return null;
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Run the passes. Before each one every declared junit file is removed:
+     * a pass that crashes without writing one must read as "not written",
+     * never as the previous pass's results.
+     *
+     * @param array<string, string> $junitPaths
+     * @return list<array{reports: array<string, JunitReport>, jobs: array<string, string>}>
+     */
+    private function runPasses(
+        FlowPlan $plan,
+        array $junitPaths,
+        int $repeat,
+        string $format,
+        RenderOptions $renderOptions,
+        OutputInterface $output
+    ): array {
+        $passes = [];
+        for ($pass = 1; $pass <= $repeat; $pass++) {
+            $stale = $this->clearJunitFiles($junitPaths);
+
+            $result = $this->executor->execute($plan);
+
+            $reports = [];
+            foreach ($junitPaths as $job => $path) {
+                $reports[$job] = in_array($job, $stale, true)
+                    ? JunitReport::stale()
+                    : JunitReport::fromFile($this->absolutePath($path));
+            }
+            $passes[] = ['reports' => $reports, 'jobs' => $this->jobOutcomes($result)];
+
+            $this->emitPassProgress($result, $pass, $repeat, $format, $renderOptions, $output);
+        }
+        return $passes;
+    }
+
+    /**
+     * Remove every declared junit file. A file that is still there afterwards
+     * (no permission, …) would be read as this pass's results, so its job is
+     * returned and the pass reported as an anomaly for it.
+     *
+     * @param array<string, string> $junitPaths
+     * @return string[] jobs whose junit file could not be removed
+     */
+    private function clearJunitFiles(array $junitPaths): array
+    {
+        $stale = [];
+        foreach ($junitPaths as $job => $path) {
+            $absolute = $this->absolutePath($path);
+            if (!is_file($absolute)) {
+                continue;
+            }
+            try {
+                unlink($absolute);
+            } catch (\Throwable $e) {
+                // The check below decides; the reason does not change the outcome.
+            }
+            clearstatcache(true, $absolute);
+            if (is_file($absolute)) {
+                $stale[] = (string) $job;
+            }
+        }
+        return $stale;
+    }
+
+    /**
+     * @return array<string, string> job name => FlapReport::JOB_*
+     */
+    private function jobOutcomes(FlowResult $result): array
+    {
+        $outcomes = [];
+        foreach ($result->getJobResults() as $jobResult) {
+            if ($jobResult->isSkipped()) {
+                $outcomes[$jobResult->getJobName()] = FlapReport::JOB_SKIPPED;
+                continue;
+            }
+            $outcomes[$jobResult->getJobName()] = $jobResult->isSuccess() ? FlapReport::JOB_PASSED : FlapReport::JOB_FAILED;
+        }
+        return $outcomes;
+    }
+
+    /**
+     * One line per pass. On stdout for text, where it is part of the log; on
+     * stderr for json, and only on a terminal or with --show-progress, so
+     * stdout stays a single parseable document (BUG-5).
+     */
+    private function emitPassProgress(
+        FlowResult $result,
+        int $pass,
+        int $repeat,
+        string $format,
+        RenderOptions $renderOptions,
+        OutputInterface $output
+    ): void {
+        $line = sprintf(
+            'Pass %d/%d: jobs %d passed, %d failed, %d skipped (%s)',
+            $pass,
+            $repeat,
+            $result->getPassedCount(),
+            $result->getFailedCount(),
+            $result->getSkippedCount(),
+            $result->getTotalTime()
+        );
+
+        if ($format === 'text') {
+            $output->writeln($line);
+            return;
+        }
+        if ($renderOptions->showProgress || $this->stderrIsTty()) {
+            $this->emitStderr($output, $line);
+        }
+    }
+
+    private function renderFlapReport(FlapReport $report, string $format, RenderOptions $renderOptions, OutputInterface $output): void
+    {
+        $renderer = new FlapReportRenderer();
+        if ($format === 'json') {
+            $this->renderer->writeStructuredPayload($renderer->renderJson($report), $renderOptions, $output);
+            return;
+        }
+        $output->writeln('');
+        $output->writeln($renderer->renderText($report));
+    }
+
+    /**
+     * The options that describe a single run have nothing to say about N
+     * passes. Said once, on stderr, so a CI log shows why no history or
+     * report file appeared.
+     */
+    private function warnInertFlags(FlowRunRequest $request, RenderOptions $renderOptions, OutputInterface $output): void
+    {
+        $inert = array_keys(array_filter([
+            '--save-history' => $request->saveHistory,
+            '--monitor'      => $request->monitor,
+            '--diag'         => $renderOptions->diag,
+            '--report-*'     => $renderOptions->cliReports !== [],
+        ]));
+        if ($inert !== []) {
+            $this->emitStderr($output, 'Warning: ' . implode(', ', $inert) . ' ignored with --repeat.');
+        }
+    }
+
+    /**
+     * Jobs run as child processes of this one, without an explicit working
+     * directory, so a relative junit path resolves against ours.
+     */
+    private function absolutePath(string $path): string
+    {
+        if ($path[0] === '/' || $path[0] === '\\' || preg_match('/^[A-Za-z]:[\\\\\/]/', $path) === 1) {
+            return $path;
+        }
+        return getcwd() . DIRECTORY_SEPARATOR . $path;
+    }
+
+    private function stderrIsTty(): bool
+    {
+        return defined('STDERR') && function_exists('stream_isatty') && stream_isatty(STDERR);
     }
 
     /**
