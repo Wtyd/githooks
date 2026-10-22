@@ -30,6 +30,8 @@ Most flags below are CLI overrides for keys declared under `flows.options` or pe
 | `--files-from=PATH` | Files mode — read the list of paths from `PATH` (one per line; `#` comments and blanks ignored; UTF-8 + CRLF tolerated). Use this when the list exceeds the shell `ARG_MAX` or comes from `git diff --name-only`. |
 | `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob (`*`, `**`, `?`). Requires `--files` or `--files-from`. See [How-To: --files / --files-from](../how-to/files-flag.md#-exclude-pattern). |
 | `--branch=X` | Override the detected branch name used to resolve `flows.<name>.on => [branch_pattern => …]`. Wins over `$GITHOOKS_BRANCH`, CI env vars (`CI_COMMIT_REF_NAME`, `GITHUB_REF_NAME`, …) and `git rev-parse --abbrev-ref HEAD`. Only meaningful when the flow declares `on`. See [Branch-driven execution mode (`on`)](../configuration/flows.md#branch-driven-execution-mode-on). |
+| `--repeat=N` | Run the flow `N` times (every pass runs, whatever its outcome) and report, test by test, which tests passed in some passes and failed in others. Reads the junit file of each job that declares `junit` (or `log-junit` on `phpunit`/`paratest`). `--repeat=1` is a normal run; with `--dry-run` it is ignored. Only `--format=text` and `--format=json` are accepted. See [How-To: Finding Flaky Tests](../how-to/flaky-tests.md). |
+| `--flap-threshold=N` | With `--repeat`: a test that both passed and failed is **flaky** when its rarer outcome happened at least `N` times (default `1`); below that it is listed as **suspect** and does not fail the command. Without `--repeat` it warns and is ignored. |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
 | `--save-history` | Persist this run to `.githooks/history/` for [`profile`](profile.md), even when `history-size` is not configured (window defaults to 100). Never persists on `--dry-run`. See [`githooks profile`](profile.md#enabling-history). |
 | `--warn-after=N` / `--fail-after=N` | Override flow-level time-budget thresholds (seconds). See [Options: Time budget](../configuration/options.md#time-budget-time-budget). |
@@ -111,6 +113,8 @@ githooks flow qa --format=json --show-progress --output=reports/qa.json
 | `0` | All jobs passed. |
 | `1` | One or more jobs failed. |
 
+With `--repeat`, the exit code comes from the flaky test report instead: `1` when a test is flaky or failed in every pass, or when a job declaring `junit` produced no readable file in any pass; `0` otherwise, `suspect` tests included. An invalid `--repeat` / `--flap-threshold`, a single-run `--format`, a flow without any junit file, or two jobs sharing one exit `1` before running anything.
+
 ## Conditions header
 
 `flow` prints a **conditions header** at the start of every run with the resolved options and their source — one row per option, aligned, every row carries its `(source)` parenthesis (including `(default)`):
@@ -134,3 +138,4 @@ The header writes to stdout in text mode and to stderr when a structured format 
 - [Configuration: Options](../configuration/options.md)
 - [`githooks flows`](flows.md) — run several flows or a meta-flow in a single plan.
 - [`githooks job`](job.md) — run a single job.
+- [How-To: Finding Flaky Tests](../how-to/flaky-tests.md) — `--repeat` and `--flap-threshold` in practice.

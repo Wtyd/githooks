@@ -110,6 +110,7 @@ githooks flow qa --fast-dirty                          # Unified working tree (i
 githooks flow qa --fast-dirty --format=json --no-reports  # AI-agent friendly: clean JSON, no side-effect files
 githooks flow qa --fast-dirty --format=claude-code     # Stop hook for AI agents (Claude Code, Copilot CLI): blocks the agent on failures
 githooks flow qa --only-jobs=phpstan_src               # Run specific jobs from a flow
+githooks flow tests --repeat=10                         # Run 10 times and report the flaky tests (reads each job's junit file)
 githooks flow qa --dry-run                             # Show commands without executing
 githooks job phpstan_src                               # Run a single job
 githooks job phpstan_src --format=json                 # JSON output for CI integration

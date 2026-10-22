@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [4.0]
 
+### Added
+
+**`flow --repeat=N` finds flaky tests, test by test.** A test that passes on one run and fails on the next used to surface as a red job someone re-ran until it went green, without ever learning which test it was. `githooks flow tests --repeat=10` runs the flow ten times — every pass, whatever its outcome — reads the junit file each test job writes and crosses the results per test: passed every time is stable, failed every time is broken, both is **flaky**. The report lists the flaky and failing tests with their counts (`7/10 passed`) and exits 1 when there is one. A job declares its file with the new `junit` key; `phpunit` and `paratest` jobs reuse their `log-junit`. Junit files are deleted before every pass, so a pass that crashes without writing one is reported as such, never read as the previous pass's results. `--flap-threshold=N` raises the bar for noisy suites: the rarer outcome must happen at least N times, below that the test is listed as *suspect* without failing the command. `--format=json` gives the same report as one JSON document with its own schema (`version: 1`). It repeats, it never retries: re-running a failure until it passes would hide the flaky test instead of finding it. See [Finding Flaky Tests](how-to/flaky-tests.md).
+
 ### Removed
 
 **The v2 engine.** Everything the 3.x line had marked "removed in v4.0" is gone: the `tool` command, YAML configuration files, the `Options` / `Tools` configuration shape, the camelCase job keys (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) and `conf:migrate` itself. A configuration 4.0 does not read is rejected with one error — the same in every command, naming the file and the way out:

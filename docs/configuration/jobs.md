@@ -51,6 +51,7 @@ The following keywords are available for all job types (except `custom` and `com
 | `cores` | Integer | Reserve N cores in the [thread budget](options.md#thread-budget). See [Reserving cores explicitly](#reserving-cores-cores-or-the-tools-native-flag) below. |
 | `memory` | Integer or Object | Per-job memory threshold (MB) — and 2D allocator reservation when given as a short integer. See [Per-job memory threshold](#per-job-memory-threshold-memory) below. |
 | `warn-after` / `fail-after` | Integer | Per-job time thresholds (seconds). See [Per-job time threshold](#per-job-time-threshold-warn-after-fail-after) below. |
+| `junit` | String | Path of the junit XML file the job's tool writes. Read by [`flow --repeat`](../how-to/flaky-tests.md) after each pass; ignored otherwise. `phpunit` and `paratest` jobs fall back to their `log-junit`. `conf:check` warns when it differs from `log-junit`. |
 
 !!! tip
     Missing keys can cause the job to fail at runtime. For example, a `phpcs` job without `standard` may fail if no standard is configured in the tool's own config file.
