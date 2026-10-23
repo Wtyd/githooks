@@ -97,8 +97,9 @@ class StatusCommand extends Command
         })));
         if (!empty($stale)) {
             $this->line('');
+            $verb = count($stale) === 1 ? 'calls' : 'call';
             $this->line(
-                '  <fg=yellow>' . implode(', ', $stale) . '</> still call the githooks binary, removed in 4.0: '
+                '  <fg=yellow>' . implode(', ', $stale) . "</> still $verb the githooks binary, removed in 4.0: "
                 . "run 'alfil hook' to regenerate the scripts."
             );
         }

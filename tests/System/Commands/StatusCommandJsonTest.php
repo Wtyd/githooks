@@ -82,6 +82,19 @@ class StatusCommandJsonTest extends SystemTestCase
         file_put_contents($this->path . '/.githooks/pre-commit', "#!/bin/sh\nphp vendor/bin/githooks hook:run x\n");
 
         $this->artisan("status --config=$this->configPath")
+            ->containsStringInOutput("still calls the githooks binary, removed in 4.0: run 'alfil hook' to regenerate the scripts.")
+            ->assertExitCode(0);
+    }
+
+    /** @test Several stale scripts are listed together, with the plural verb. */
+    public function it_lists_every_stale_script_in_text_mode()
+    {
+        mkdir($this->path . '/.githooks', 0777, true);
+        file_put_contents($this->path . '/.githooks/pre-commit', "#!/bin/sh\nphp vendor/bin/githooks hook:run x\n");
+        file_put_contents($this->path . '/.githooks/pre-push', "#!/bin/sh\nphp vendor/bin/githooks hook:run x\n");
+
+        $this->artisan("status --config=$this->configPath")
+            ->containsStringInOutput('pre-commit, pre-push')
             ->containsStringInOutput("still call the githooks binary, removed in 4.0: run 'alfil hook' to regenerate the scripts.")
             ->assertExitCode(0);
     }
