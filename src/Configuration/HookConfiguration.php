@@ -8,7 +8,7 @@ use Wtyd\Alfil\Hooks;
 
 class HookConfiguration
 {
-    private const DEFAULT_COMMAND = 'php vendor/bin/githooks';
+    private const DEFAULT_COMMAND = 'php vendor/bin/alfil';
 
     /** @var array<string, HookRef[]> event => HookRef[] */
     private array $hooks;
@@ -44,7 +44,7 @@ class HookConfiguration
 
         if (array_key_exists('command', $raw)) {
             if (!is_string($raw['command'])) {
-                $result->addError("'hooks.command' must be a string (e.g. 'php7.4 vendor/bin/githooks').");
+                $result->addError("'hooks.command' must be a string (e.g. 'php7.4 vendor/bin/alfil').");
             } else {
                 $command = $raw['command'];
             }

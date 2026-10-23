@@ -17,7 +17,7 @@ class CleanHookTest extends ReleaseTestCase
             $this->phpFileBuilder->build()
         );
 
-        passthru("$this->githooks hook:clean pre-push --legacy", $exitCode);
+        passthru("$this->alfil hook:clean pre-push --legacy", $exitCode);
 
         $this->assertStringContainsString('Hook pre-push has been deleted', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
@@ -27,7 +27,7 @@ class CleanHookTest extends ReleaseTestCase
     /** @test */
     function it_returns_exit_1_for_invalid_legacy_hook()
     {
-        passthru("$this->githooks hook:clean no-valid-hook --legacy", $exitCode);
+        passthru("$this->alfil hook:clean no-valid-hook --legacy", $exitCode);
 
         $this->assertStringContainsString("is not a valid git hook", $this->getActualOutput());
         $this->assertEquals(1, $exitCode);

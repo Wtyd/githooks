@@ -16,7 +16,7 @@ use Tests\Utils\Traits\FileSystemTrait;
  * Unlike SystemTestCase, this base does NOT bind any fakes — the real
  * binary is invoked as a subprocess so child processes, the RSS sampler
  * and `git` actually run. Unlike ReleaseTestCase, this base does NOT
- * require the compiled .phar — it invokes `php githooks` directly from
+ * require the compiled .phar — it invokes `php alfil` directly from
  * the source checkout, which is what the matrix CI cell uses too.
  *
  * The verification objective: prove that the cross-OS behaviour of
@@ -34,7 +34,7 @@ abstract class CiFeatureTestCase extends TestCase
 
     protected ConfigurationFileBuilder $configurationFileBuilder;
 
-    /** Project root (where `githooks` entrypoint lives). */
+    /** Project root (where `php alfil` lives). */
     protected string $projectRoot;
 
     protected function setUp(): void
@@ -71,7 +71,7 @@ abstract class CiFeatureTestCase extends TestCase
     }
 
     /**
-     * Invoke the real `php githooks` binary from the source checkout.
+     * Invoke the real `php alfil` binary from the source checkout.
      *
      * @param string      $args Command + flags, e.g. "flow qa --format=json --config=/abs/path".
      * @param string|null $cwd  Working directory to run from. Defaults to the project root.
@@ -81,7 +81,7 @@ abstract class CiFeatureTestCase extends TestCase
     protected function runGithooks(string $args, ?string $cwd = null): array
     {
         $php = PHP_BINARY;
-        $entrypoint = $this->projectRoot . DIRECTORY_SEPARATOR . 'githooks';
+        $entrypoint = $this->projectRoot . DIRECTORY_SEPARATOR . 'alfil';
 
         $stdoutFile = tempnam(sys_get_temp_dir(), 'gh-stdout-');
         $stderrFile = tempnam(sys_get_temp_dir(), 'gh-stderr-');

@@ -30,7 +30,7 @@ class JobReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_executes_single_job()
     {
-        passthru("$this->githooks job phpcs_src --config=$this->configPath", $exitCode);
+        passthru("$this->alfil job phpcs_src --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('passed', $this->getActualOutput());
@@ -39,7 +39,7 @@ class JobReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_shows_command_in_dry_run()
     {
-        passthru("$this->githooks job phpcs_src --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil job phpcs_src --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         // The dry-run renderer indents the command with 5 leading spaces; the
@@ -54,7 +54,7 @@ class JobReleaseTest extends ReleaseTestCase
     {
         // Discard stderr: in v3.2 structured formats route progress to stderr;
         // mixing it into stdout would break json_decode.
-        passthru("$this->githooks job phpcs_src --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil job phpcs_src --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -74,7 +74,7 @@ class JobReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job lint_job --fast --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil job lint_job --fast --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -90,7 +90,7 @@ class JobReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job lint_job --fast-branch --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil job lint_job --fast-branch --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -98,7 +98,7 @@ class JobReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_exits_with_error_for_undefined_job()
     {
-        passthru("$this->githooks job nonexistent --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil job nonexistent --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertNotEquals(0, $exitCode);
         $this->assertStringContainsString('is not defined', $this->getActualOutput());
@@ -129,7 +129,7 @@ class JobReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $output = $this->getActualOutput();
         $this->assertSame(0, $exitCode);
@@ -161,7 +161,7 @@ class JobReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $output = $this->getActualOutput();
         $this->assertSame(0, $exitCode);
@@ -190,7 +190,7 @@ class JobReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $output = $this->getActualOutput();
         $this->assertSame(0, $exitCode);
@@ -222,7 +222,7 @@ class JobReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         passthru(
-            "$this->githooks job qjob --memory-warn-above=1 --memory-fail-above=2 --stats --format=json --config=$this->configPath 2>/dev/null",
+            "$this->alfil job qjob --memory-warn-above=1 --memory-fail-above=2 --stats --format=json --config=$this->configPath 2>/dev/null",
             $exitCode
         );
 
@@ -257,12 +257,12 @@ class JobReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         // Baseline: the failing job exits non-zero without the flag.
-        passthru("$this->githooks job failing --config=$this->configPath 2>/dev/null", $withoutFlag);
+        passthru("$this->alfil job failing --config=$this->configPath 2>/dev/null", $withoutFlag);
         $this->assertNotEquals(0, $withoutFlag, 'a failing job must exit non-zero without the flag');
 
         // With the flag the command tolerates the job's failure and exits 0.
         passthru(
-            "$this->githooks job failing --ignore-errors-on-exit --config=$this->configPath 2>/dev/null",
+            "$this->alfil job failing --ignore-errors-on-exit --config=$this->configPath 2>/dev/null",
             $withFlag
         );
         $this->assertSame(
@@ -298,7 +298,7 @@ class JobReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $output = $this->getActualOutput();
         $this->assertSame(0, $exitCode);

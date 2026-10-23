@@ -92,4 +92,4 @@ jobs:
         run: composer install --prefer-dist --no-progress
 
       - name: Run GitHooks
-        run: php githooks ${{ matrix.cmd }} --show-progress
+        run: php alfil ${{ matrix.cmd }} --show-progress

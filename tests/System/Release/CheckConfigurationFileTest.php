@@ -13,7 +13,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     function it_checks_the_configuration_file_and_return_exit_0()
     {
         $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('./', true);
-        passthru("$this->githooks conf:check", $exitCode);
+        passthru("$this->alfil conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
@@ -25,7 +25,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->configurationFileBuilder->enableV3Mode()
             ->addV3Job('lint', 'phpstan', ['paths' => ['src'], 'invalidOptionTest' => 1])
             ->buildInFileSystem('./', true);
-        passthru("$this->githooks conf:check", $exitCode);
+        passthru("$this->alfil conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
@@ -40,7 +40,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
             ->setV3Flows(['qa' => ['jobs' => ['bad_job']]])
             ->buildInFileSystem('./', true);
 
-        passthru("$this->githooks conf:check", $exitCode);
+        passthru("$this->alfil conf:check", $exitCode);
 
         $this->assertEquals(1, $exitCode);
         $this->assertStringContainsString("type 'nonexistent' is not a supported tool", $this->getActualOutput());
@@ -60,12 +60,12 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('custom', true);
 
         // Check root config with errors
-        passthru("$this->githooks conf:check", $exitCode);
+        passthru("$this->alfil conf:check", $exitCode);
         $this->assertEquals(1, $exitCode);
         $this->assertStringContainsString("type 'nonexistent' is not a supported tool", $this->getActualOutput());
 
         // Check valid config in custom folder
-        passthru("$this->githooks conf:check --config=custom/githooks.php", $exitCode);
+        passthru("$this->alfil conf:check --config=custom/githooks.php", $exitCode);
 
         $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
 
@@ -76,7 +76,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     function it_shows_configuration_file_path()
     {
         $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('./', true);
-        passthru("$this->githooks conf:check", $exitCode);
+        passthru("$this->alfil conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('Configuration file: githooks.php', $this->getActualOutput());
@@ -93,7 +93,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         );
 
         $configPath = self::TESTS_PATH . '/githooks.php';
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('correct format', $this->getActualOutput());
@@ -111,7 +111,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('not found', $this->getActualOutput());
@@ -131,7 +131,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('on: main', $this->getActualOutput());
@@ -156,7 +156,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString(
@@ -188,7 +188,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
         $output = $this->getActualOutput();
 
         $this->assertSame(0, $exitCode);
@@ -219,13 +219,13 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
         $output = $this->getActualOutput();
 
         // conf:check renders ellipsis (ASCII `...` or Unicode `…`).
         $this->assertMatchesRegularExpression('/\.{3}|…/u', $output, 'conf:check should truncate long commands');
 
-        passthru("$this->githooks job long_cmd_job --dry-run --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil job long_cmd_job --dry-run --config=$configPath 2>&1", $exitCode);
         $dryRunOutput = $this->getActualOutput();
         $this->assertStringContainsString('argument-long-enough argument-long-enough argument-long-enough', $dryRunOutput);
     }
@@ -253,7 +253,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
         $output = $this->getActualOutput();
 
         $this->assertStringContainsString("'cores' overrides 'parallel'", $output);
@@ -287,7 +287,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $output = $this->getActualOutput();
@@ -318,7 +318,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString(
@@ -346,7 +346,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString(
@@ -379,7 +379,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $output = $this->getActualOutput();
@@ -417,7 +417,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $configPath = self::TESTS_PATH . '/githooks.php';
         file_put_contents($configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --config=$configPath 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$configPath 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString(
@@ -441,7 +441,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         $missing = self::TESTS_PATH . '/does-not-exist.php';
 
-        passthru("$this->githooks conf:check --config=$missing 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$missing 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('Configuration file not found:', $this->getActualOutput());
@@ -459,7 +459,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         $missing = self::TESTS_PATH . '/does-not-exist.php';
 
-        passthru("$this->githooks conf:check --format=json --config=$missing 2>/dev/null", $exitCode);
+        passthru("$this->alfil conf:check --format=json --config=$missing 2>/dev/null", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -482,7 +482,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $broken = self::TESTS_PATH . '/broken.php';
         file_put_contents($broken, "<?php\nreturn [ this is not php;\n");
 
-        passthru("$this->githooks conf:check --config=$broken 2>&1", $exitCode);
+        passthru("$this->alfil conf:check --config=$broken 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('syntax error', $this->getActualOutput());

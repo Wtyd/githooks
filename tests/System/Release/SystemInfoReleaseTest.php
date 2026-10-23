@@ -26,7 +26,7 @@ class SystemInfoReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_shows_system_info()
     {
-        passthru("$this->githooks system:info", $exitCode);
+        passthru("$this->alfil system:info", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('Available CPUs', $this->getActualOutput());

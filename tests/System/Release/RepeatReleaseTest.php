@@ -62,7 +62,7 @@ PHP);
     /** @test */
     public function the_phar_reports_a_test_that_flips_between_passes_as_flaky(): void
     {
-        passthru("$this->githooks flow tests --repeat=4 --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow tests --repeat=4 --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded, 'stdout must be the flap report and nothing else');
@@ -78,7 +78,7 @@ PHP);
     {
         $this->writeConfig('g,!');
 
-        passthru("$this->githooks flow tests --repeat=2 --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow tests --repeat=2 --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded);

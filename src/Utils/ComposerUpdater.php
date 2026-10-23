@@ -19,8 +19,8 @@ class ComposerUpdater
 
         $rootPath = getcwd();
         $build = new Build();
-        $origin = str_replace('/', DIRECTORY_SEPARATOR, "$rootPath/vendor/wtyd/githooks/") . $build->getBinary();
-        $destiny = str_replace('/', DIRECTORY_SEPARATOR, "$rootPath/vendor/bin/githooks");
+        $origin = str_replace('/', DIRECTORY_SEPARATOR, "$rootPath/vendor/wtyd/alfil/") . $build->getBinary();
+        $destiny = str_replace('/', DIRECTORY_SEPARATOR, "$rootPath/vendor/bin/alfil");
         if (file_exists($destiny)) {
             unlink($destiny);
         }

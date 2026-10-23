@@ -27,9 +27,9 @@ class CreateConfigurationFileTest extends ReleaseTestCase
 
         $this->configurationFileBuilder
                 ->setName('githooks.dist.php')
-                ->buildInFileSystem('./vendor/wtyd/githooks/qa/', true);
+                ->buildInFileSystem('./vendor/wtyd/alfil/qa/', true);
 
-        passthru("$this->githooks conf:init -n", $exitCode);
+        passthru("$this->alfil conf:init -n", $exitCode);
         $this->assertStringContainsString('Configuration file githooks.php has been created in root path', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
         $this->assertFileExists('githooks.php');
@@ -48,7 +48,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         // stdin closed: `conf:init` prompts when it has a terminal to prompt
         // on, and a local run of the suite would sit there for ever. CI never
         // has one, which is why this only bites in local runs.
-        passthru("$this->githooks conf:init < /dev/null", $exitCode);
+        passthru("$this->alfil conf:init < /dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('created with', $this->getActualOutput());
@@ -66,12 +66,12 @@ class CreateConfigurationFileTest extends ReleaseTestCase
 
         $this->configurationFileBuilder
                 ->setName('githooks.dist.php')
-                ->buildInFileSystem('./vendor/wtyd/githooks/qa/', true);
+                ->buildInFileSystem('./vendor/wtyd/alfil/qa/', true);
 
         // stdin closed: `conf:init` prompts when it has a terminal to prompt
         // on, and a local run of the suite would sit there for ever. CI never
         // has one, which is why this only bites in local runs.
-        passthru("$this->githooks conf:init < /dev/null", $exitCode);
+        passthru("$this->alfil conf:init < /dev/null", $exitCode);
         $this->assertStringContainsString('githooks configuration file already exists', $this->getActualOutput());
         $this->assertEquals(1, $exitCode);
         $this->assertFileExists('githooks.php');

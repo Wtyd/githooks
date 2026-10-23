@@ -8,7 +8,7 @@ use Exception;
 
 class Build
 {
-    const ALL_BUILDS = ['githooks-7.4.tar', 'githooks-8.1.tar'];
+    const ALL_BUILDS = ['alfil-7.4.tar', 'alfil-8.1.tar'];
 
     private string $phpVersion;
 
@@ -54,7 +54,7 @@ class Build
 
     public function getBinary(): string
     {
-        return $this->buildPath . 'githooks';
+        return $this->buildPath . 'alfil';
     }
 
     public function getPhpVersion(): string
@@ -69,10 +69,10 @@ class Build
     {
         $majorMinor = implode('.', array_slice(explode('.', $this->phpVersion), 0, 2));
         if (in_array($majorMinor, ['7.4', '8.0'], true)) {
-            return 'githooks-7.4.tar';
+            return 'alfil-7.4.tar';
         }
         if (version_compare($majorMinor, '8.1', '>=')) {
-            return 'githooks-8.1.tar';
+            return 'alfil-8.1.tar';
         }
         throw new Exception('GitHooks only supports php 7.4 or greater.', 1);
     }

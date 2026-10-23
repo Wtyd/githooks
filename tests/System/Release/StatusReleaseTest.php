@@ -26,7 +26,7 @@ class StatusReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_shows_status_information()
     {
-        passthru("$this->githooks status", $exitCode);
+        passthru("$this->alfil status", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('GitHooks Status', $this->getActualOutput());

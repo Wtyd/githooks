@@ -52,7 +52,7 @@ class MultiReportReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        shell_exec("$this->githooks flow qa --config=$this->configPath 2>/dev/null");
+        shell_exec("$this->alfil flow qa --config=$this->configPath 2>/dev/null");
 
         $this->assertFileExists($reportPath);
         $decoded = json_decode((string) file_get_contents($reportPath), true);
@@ -105,7 +105,7 @@ class MultiReportReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        shell_exec("$this->githooks flow qa --config=$this->configPath 2>/dev/null");
+        shell_exec("$this->alfil flow qa --config=$this->configPath 2>/dev/null");
 
         $this->assertFileExists($reportPath);
         $decoded = json_decode((string) file_get_contents($reportPath), true);
@@ -149,7 +149,7 @@ class MultiReportReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        shell_exec("$this->githooks flow qa --report-sarif=$reportPath --config=$this->configPath 2>/dev/null");
+        shell_exec("$this->alfil flow qa --report-sarif=$reportPath --config=$this->configPath 2>/dev/null");
 
         $this->assertFileExists($reportPath);
         $decoded = json_decode((string) file_get_contents($reportPath), true);
@@ -195,7 +195,7 @@ class MultiReportReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, "<?php\nreturn " . var_export($config, true) . ";\n");
 
         passthru(
-            sprintf('%s flow qa --config=%s > /dev/null 2>&1', $this->githooks, $this->configPath),
+            sprintf('%s flow qa --config=%s > /dev/null 2>&1', $this->alfil, $this->configPath),
             $exitCode
         );
 

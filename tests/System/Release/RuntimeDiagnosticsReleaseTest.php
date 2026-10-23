@@ -40,7 +40,7 @@ class RuntimeDiagnosticsReleaseTest extends ReleaseTestCase
     /** @test */
     public function json_runtime_version_is_the_real_version_not_unknown(): void
     {
-        passthru("$this->githooks flow qa --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -58,7 +58,7 @@ class RuntimeDiagnosticsReleaseTest extends ReleaseTestCase
     /** @test */
     public function diag_block_version_is_the_real_version_not_unknown(): void
     {
-        passthru("$this->githooks flow qa --diag --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --diag --config=$this->configPath 2>&1", $exitCode);
 
         $output = $this->getActualOutput();
         $this->assertSame(0, $exitCode);

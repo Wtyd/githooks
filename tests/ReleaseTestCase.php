@@ -19,7 +19,7 @@ class ReleaseTestCase extends TestCase
      *
      * @var string
      */
-    protected $githooks = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'githooks';
+    protected $alfil = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'alfil';
 
     /**
      * @var ConfigurationFileBuilder
@@ -146,8 +146,8 @@ class ReleaseTestCase extends TestCase
     protected static function copyReleaseBinary(): bool
     {
         $build = new Build();
-        $origin = $build->getBuildPath() . 'githooks';
-        $destiny = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'githooks';
+        $origin = $build->getBuildPath() . 'alfil';
+        $destiny = SystemTestCase::TESTS_PATH . DIRECTORY_SEPARATOR . 'alfil';
         copy($origin, $destiny);
         return chmod($destiny, 0777);
     }

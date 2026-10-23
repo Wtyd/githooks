@@ -61,7 +61,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flow qa --files=%s/Match.php --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             $srcFoo,
             $this->configPath
         );
@@ -116,7 +116,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flow qa --files=%s/Keep.php,%s/Skip.php --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             $srcFoo,
             $srcFoo,
             $this->configPath
@@ -168,7 +168,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flow qa --files=%s/Skip.php --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             $srcFoo,
             $this->configPath
         );
@@ -213,7 +213,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
         $cmdFor = function (string $branch): string {
             return sprintf(
                 '%s flow qa --branch=%s --format=json --config=%s 2>/dev/null',
-                $this->githooks,
+                $this->alfil,
                 escapeshellarg($branch),
                 $this->configPath
             );
@@ -258,7 +258,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
         $cmdFor = function (string $branch): string {
             return sprintf(
                 '%s flows qa --branch=%s --format=json --config=%s 2>/dev/null',
-                $this->githooks,
+                $this->alfil,
                 escapeshellarg($branch),
                 $this->configPath
             );
@@ -316,7 +316,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
         // propagate as "needs upstream was skipped".
         $cmd = sprintf(
             '%s flow qa --files=%s/Other.php --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             $srcOther,
             $this->configPath
         );
@@ -381,7 +381,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flows qa --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             $this->configPath
         );
 
@@ -431,7 +431,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flows qa --files=%s/Skip.php --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             $srcFoo,
             $this->configPath
         );
@@ -488,7 +488,7 @@ class FlowEntryAttrsReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flows build qa --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             $this->configPath
         );
 

@@ -45,7 +45,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
         $stdoutFile = tempnam(sys_get_temp_dir(), 'gh-out');
         $stderrFile = tempnam(sys_get_temp_dir(), 'gh-err');
 
-        exec("$this->githooks flow qa --format=csv --config=$this->configPath > $stdoutFile 2> $stderrFile", $ignored, $exitCode);
+        exec("$this->alfil flow qa --format=csv --config=$this->configPath > $stdoutFile 2> $stderrFile", $ignored, $exitCode);
 
         $stdout = (string) file_get_contents($stdoutFile);
         $stderr = (string) file_get_contents($stderrFile);
@@ -69,7 +69,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -109,7 +109,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=claude-code --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=claude-code --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode, 'claude-code must exit 0 even when a job fails');
 
@@ -135,7 +135,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=claude-code --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=claude-code --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $this->assertSame('', trim($this->getActualOutput()), 'stdout must be empty on success');
@@ -152,7 +152,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=codeclimate --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=codeclimate --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded, 'Code Climate output must be a JSON array');
@@ -169,7 +169,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=sarif --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=sarif --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded);
@@ -204,7 +204,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         passthru(
-            "$this->githooks job lint_dirty --format=json --config=$this->configPath 2>/dev/null",
+            "$this->alfil job lint_dirty --format=json --config=$this->configPath 2>/dev/null",
             $exitCode
         );
 
@@ -234,7 +234,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
             ->setV3Jobs(['ok_job' => ['type' => 'custom', 'script' => 'true']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        $cmd = "$this->githooks flow qa --format=json --config=$this->configPath 2>/dev/null";
+        $cmd = "$this->alfil flow qa --format=json --config=$this->configPath 2>/dev/null";
 
         $full = json_decode((string) shell_exec($cmd), true);
         $fast = json_decode((string) shell_exec(str_replace('--format', '--fast --format', $cmd)), true);
@@ -266,7 +266,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=codeclimate --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=codeclimate --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded);
@@ -299,7 +299,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --format=sarif --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=sarif --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded);
@@ -334,7 +334,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
 
         foreach ($targets as $format => $path) {
             @unlink($path);
-            shell_exec("$this->githooks flow qa --format=$format --output=$path --config=$this->configPath 2>/dev/null");
+            shell_exec("$this->alfil flow qa --format=$format --output=$path --config=$this->configPath 2>/dev/null");
             $this->assertFileExists($path, "--output=PATH should create the file for format=$format");
             $this->assertNotSame('', (string) file_get_contents($path));
         }
@@ -352,7 +352,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $output = (string) shell_exec(
-            "$this->githooks flow qa --fail-fast --format=junit --config=$this->configPath 2>/dev/null"
+            "$this->alfil flow qa --fail-fast --format=junit --config=$this->configPath 2>/dev/null"
         );
 
         $this->assertStringContainsString('<?xml', $output);
@@ -372,7 +372,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fail-fast --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --fail-fast --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $this->assertIsArray($decoded);
@@ -413,7 +413,7 @@ class OutputFormatsReleaseTest extends ReleaseTestCase
         // --report-codeclimate (typical GitLab pipeline shape: JUnit + CC
         // generated together).
         shell_exec(
-            "$this->githooks flow qa --format=junit --output=$junitPath"
+            "$this->alfil flow qa --format=junit --output=$junitPath"
             . " --report-codeclimate=$codeclimatePath --config=$this->configPath 2>/dev/null"
         );
 

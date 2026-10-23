@@ -9,7 +9,7 @@ use Wtyd\Alfil\Utils\Platform;
 
 class HookInstaller
 {
-    private const DEFAULT_COMMAND = 'php vendor/bin/githooks';
+    private const DEFAULT_COMMAND = 'php vendor/bin/alfil';
 
     private string $rootPath;
 
@@ -22,7 +22,7 @@ class HookInstaller
      * Install hooks for the given events using core.hooksPath.
      *
      * @param string[] $events
-     * @param string $command The GitHooks command prefix (e.g. 'php7.4 vendor/bin/githooks')
+     * @param string $command The GitHooks command prefix (e.g. 'php7.4 vendor/bin/alfil')
      * @param string $configPath Baked into the scripts as `--config` (see scriptConfigPath());
      *                           empty keeps the default lookup at run time.
      * @return string[] List of created hook file paths

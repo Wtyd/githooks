@@ -136,7 +136,7 @@ class CreateConfigurationFileCommand extends Command
     protected function resolveDistFile(string $distFile): ?string
     {
         $candidates = [
-            "vendor/wtyd/githooks/qa/$distFile",
+            "vendor/wtyd/alfil/qa/$distFile",
             "qa/$distFile",
         ];
 

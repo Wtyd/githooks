@@ -30,7 +30,7 @@ class CreateHookTest extends ReleaseTestCase
             $this->phpFileBuilder->setFileName('FileWithErrors')->buildWithErrors(['phpcs', 'parallel-lint', 'phpmd', 'phpcpd', 'phpstan'])
         );
 
-        passthru("$this->githooks hook pre-push $scriptFile", $exitCode);
+        passthru("$this->alfil hook pre-push $scriptFile", $exitCode);
 
         $this->assertStringContainsString('Hook pre-push created', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
@@ -42,7 +42,7 @@ class CreateHookTest extends ReleaseTestCase
     {
         $scriptFile = self::TESTS_PATH . '/src/File.php';
 
-        passthru("$this->githooks hook pre-push $scriptFile", $exitCode);
+        passthru("$this->alfil hook pre-push $scriptFile", $exitCode);
 
         $this->assertEquals(1, $exitCode);
         $this->assertStringContainsString("$scriptFile file not found", $this->getActualOutput());

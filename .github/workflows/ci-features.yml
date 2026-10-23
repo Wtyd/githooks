@@ -3,7 +3,7 @@ name: CI Features (cross-OS E2E)
 # GitHub Actions runners across Linux/Windows/macOS. Driven by the system
 # tests under tests/System/CiFeatures (`@group ci-features`).
 #
-# These tests invoke the real `php githooks` binary as a subprocess, so
+# These tests invoke the real `php alfil` binary as a subprocess, so
 # child process durations, RSS sampling and `git` actually run — no mocks.
 #
 # Trigger policy:

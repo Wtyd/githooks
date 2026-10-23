@@ -134,10 +134,10 @@ class HookInstallerMutationTest extends UnitTestCase
     {
         $installer = new HookInstaller($this->tempDir);
 
-        $installer->install(['pre-commit'], 'php7.4 vendor/bin/githooks');
+        $installer->install(['pre-commit'], 'php7.4 vendor/bin/alfil');
 
         $content = file_get_contents($this->tempDir . '/.githooks/pre-commit');
-        $this->assertStringContainsString('php7.4 vendor/bin/githooks', $content);
+        $this->assertStringContainsString('php7.4 vendor/bin/alfil', $content);
     }
 
     /** @test */
@@ -148,7 +148,7 @@ class HookInstallerMutationTest extends UnitTestCase
         $installer->install(['pre-commit'], '');
 
         $content = file_get_contents($this->tempDir . '/.githooks/pre-commit');
-        $this->assertStringContainsString('php vendor/bin/githooks', $content);
+        $this->assertStringContainsString('php vendor/bin/alfil', $content);
     }
 
     /** @test */

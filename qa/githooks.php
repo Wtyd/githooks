@@ -2,7 +2,7 @@
 
 return [
     'hooks' => [
-        'command' => 'php7.4 githooks',
+        'command' => 'php7.4 alfil',
         'pre-commit' => ['qa'],
     ],
 

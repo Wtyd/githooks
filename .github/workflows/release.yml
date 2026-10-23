@@ -54,15 +54,15 @@ jobs:
     - name: Build the Aplication
       run: |
         php --version
-        php githooks app:pre-build php
-        php githooks app:build
+        php alfil app:pre-build php
+        php alfil app:build
         git status --short
   
     - name: Upload build artifact
       uses: actions/upload-artifact@v4
       with:
-        name: githooks-${{ matrix.php-versions }}
-        path: githooks-${{ matrix.php-versions }}.tar
+        name: alfil-${{ matrix.php-versions }}
+        path: alfil-${{ matrix.php-versions }}.tar
 
   test_rc:
     name: Test the Build (${{ matrix.operating-system }} php ${{ matrix.php-versions }})
@@ -118,10 +118,10 @@ jobs:
         path: ${{ github.GITHUB_WORKSPACE }}
   
     - name: Display structure of downloaded files
-      run: ls -R | grep githooks
+      run: ls -R | grep alfil
 
     - name: Extract and check build
-      run: php githooks app:extract-build
+      run: php alfil app:extract-build
 
     # Smoke test: verifies that the compiled .phar actually boots as a standalone
     # binary for a real user. Picks the correct tier based on the runner's PHP
@@ -131,8 +131,8 @@ jobs:
       shell: bash
       run: |
         case "${{ matrix.php-versions }}" in
-          7.4|8.0) PHAR="builds/php7.4/githooks" ;;
-          *)       PHAR="builds/githooks" ;;
+          7.4|8.0) PHAR="builds/php7.4/alfil" ;;
+          *)       PHAR="builds/alfil" ;;
         esac
         echo -e "\e[42m\e[30m**** Smoke test: $PHAR on PHP $(php -r 'echo PHP_VERSION;') ****\033[0m"
         php "$PHAR" --version
@@ -195,7 +195,7 @@ jobs:
           tools/composer install --prefer-dist --no-progress
 
       - name: Delete Old Builds
-        run: rm builds/githooks builds/php7.4/githooks
+        run: rm builds/alfil builds/php7.4/alfil
 
       - uses: actions/download-artifact@v4
         with:
@@ -203,15 +203,15 @@ jobs:
 
       - name: Display structure of downloaded files
         run: |
-          ls -R | grep githooks
+          ls -R | grep alfil
           ls
 
       - name: Extract and check builds
         run: |
-          php githooks app:extract-build --all
-          # tar -xvf githooks-7.1/githooks-7.1.tar
-          # tar -xvf githooks-7.3/githooks-7.3.tar
-          # tar -xvf githooks-8.1/githooks-8.1.tar
+          php alfil app:extract-build --all
+          # tar -xvf alfil-7.1/alfil-7.1.tar
+          # tar -xvf alfil-7.3/alfil-7.3.tar
+          # tar -xvf alfil-8.1/alfil-8.1.tar
           ls -lah builds
           git status
 
@@ -240,7 +240,7 @@ jobs:
 
       - uses: GuillaumeFalourd/git-commit-push@v1.3
         with:
-          files: builds/githooks builds/php7.4/githooks
+          files: builds/alfil builds/php7.4/alfil
           commit_message: 'Release Candidate: ${{ steps.version_id.outputs.version }} - Build: ${{ steps.time.outputs.time }}'
 
       - name: Check the commit

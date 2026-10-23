@@ -41,7 +41,7 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('PREFIX original-command', $this->getActualOutput());
@@ -69,7 +69,7 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -99,7 +99,7 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -129,7 +129,7 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -168,7 +168,7 @@ class ExecutablePrefixReleaseTest extends ReleaseTestCase
         passthru(
             sprintf(
                 '%s flow qa --dry-run --format=json --config=%s 2>/dev/null',
-                $this->githooks,
+                $this->alfil,
                 $this->configPath
             ),
             $exitCode

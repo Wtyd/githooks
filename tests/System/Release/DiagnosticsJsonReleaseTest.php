@@ -29,7 +29,7 @@ class DiagnosticsJsonReleaseTest extends ReleaseTestCase
     /** @test */
     public function conf_check_emits_json_from_the_phar(): void
     {
-        passthru("$this->githooks conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -44,7 +44,7 @@ class DiagnosticsJsonReleaseTest extends ReleaseTestCase
     /** @test */
     public function status_emits_json_from_the_phar(): void
     {
-        passthru("$this->githooks status --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil status --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -58,7 +58,7 @@ class DiagnosticsJsonReleaseTest extends ReleaseTestCase
     /** @test */
     public function system_info_emits_json_from_the_phar(): void
     {
-        passthru("$this->githooks system:info --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil system:info --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);

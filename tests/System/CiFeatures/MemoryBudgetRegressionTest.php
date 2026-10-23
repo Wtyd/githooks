@@ -125,7 +125,7 @@ class MemoryBudgetRegressionTest extends CiFeatureTestCase
             ]);
         $this->writeConfig();
 
-        $entrypoint = $this->projectRoot . DIRECTORY_SEPARATOR . 'githooks';
+        $entrypoint = $this->projectRoot . DIRECTORY_SEPARATOR . 'alfil';
 
         // Deadlock sentinel: a regression of the clamp fix spins the
         // executeParallel loop at 100% CPU forever. Symfony's process timeout

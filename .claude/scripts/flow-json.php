@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Reads the JSON v2 envelope of `githooks flow|flows|job --format=json` from
+ * Reads the JSON v2 envelope of `alfil flow|flows|job --format=json` from
  * stdin and prints the handful of things worth looking at.
  *
  * Exists so those readings stop being one-off snippets. The same
@@ -14,10 +14,10 @@
  * repository has not already granted.
  *
  * Usage:
- *   githooks flow qa --format=json | php .claude/scripts/flow-json.php
- *   githooks flow qa --format=json | php .claude/scripts/flow-json.php --failed
- *   githooks flow qa --dry-run --format=json | php .claude/scripts/flow-json.php --commands
- *   githooks flow qa --format=json | php .claude/scripts/flow-json.php --field=executionMode
+ *   alfil flow qa --format=json | php .claude/scripts/flow-json.php
+ *   alfil flow qa --format=json | php .claude/scripts/flow-json.php --failed
+ *   alfil flow qa --dry-run --format=json | php .claude/scripts/flow-json.php --commands
+ *   alfil flow qa --format=json | php .claude/scripts/flow-json.php --field=executionMode
  *
  * Exit codes: 0 when the payload was read, 1 when stdin held no valid JSON or
  * the requested field is absent. It never mirrors the flow's own exit code —

@@ -41,7 +41,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_installs_hooks_via_core_hooks_path()
     {
-        passthru("$this->githooks hook --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('installed', $this->getActualOutput());
@@ -70,7 +70,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
         };
         $before = $snapshot();
 
-        passthru("$this->githooks hook pre-commit --config=$missing 2>&1", $exitCode);
+        passthru("$this->alfil hook pre-commit --config=$missing 2>&1", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('Configuration file not found', $this->getActualOutput());
@@ -81,10 +81,10 @@ class HookV3ReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_cleans_hooks()
     {
-        passthru("$this->githooks hook --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook --config=$this->configPath 2>&1", $exitCode);
         $this->assertEquals(0, $exitCode);
 
-        passthru("$this->githooks hook:clean 2>&1", $exitCode);
+        passthru("$this->alfil hook:clean 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertDirectoryDoesNotExist('.githooks');
@@ -93,10 +93,10 @@ class HookV3ReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_shows_synced_status_after_install()
     {
-        passthru("$this->githooks hook --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook --config=$this->configPath 2>&1", $exitCode);
         $this->assertEquals(0, $exitCode);
 
-        passthru("$this->githooks status --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil status --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('synced', $this->getActualOutput());
@@ -105,7 +105,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_runs_hook_event()
     {
-        passthru("$this->githooks hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('OK', $this->getActualOutput());
@@ -125,7 +125,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('OK', $this->getActualOutput());
@@ -143,7 +143,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('skipped by execution conditions', $this->getActualOutput());
@@ -163,7 +163,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('skipped by execution conditions', $this->getActualOutput());
@@ -183,7 +183,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('skipped by execution conditions', $this->getActualOutput());
@@ -201,7 +201,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('skipped by execution conditions', $this->getActualOutput());
@@ -215,7 +215,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run pre-commit --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -228,7 +228,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_reports_no_config_for_unknown_event()
     {
-        passthru("$this->githooks hook:run post-merge --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run post-merge --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -258,10 +258,10 @@ class HookV3ReleaseTest extends ReleaseTestCase
         file_put_contents($validFile, "feat(api): add user endpoint\n");
         file_put_contents($invalidFile, "Add stuff.\n");
 
-        passthru("$this->githooks hook:run commit-msg $validFile --config=$this->configPath 2>&1", $okExit);
+        passthru("$this->alfil hook:run commit-msg $validFile --config=$this->configPath 2>&1", $okExit);
         $this->assertEquals(0, $okExit, 'Valid conventional message must pass the commit-msg hook');
 
-        passthru("$this->githooks hook:run commit-msg $invalidFile --config=$this->configPath 2>&1", $koExit);
+        passthru("$this->alfil hook:run commit-msg $invalidFile --config=$this->configPath 2>&1", $koExit);
         $this->assertEquals(1, $koExit, 'Non-conventional message must fail the commit-msg hook');
         $this->assertStringContainsString("rule 'pattern'", $this->getActualOutput());
 
@@ -285,7 +285,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
         $mergeFile = self::TESTS_PATH . '/commit-msg-merge.txt';
         file_put_contents($mergeFile, "Merge branch 'feature/foo'\n");
 
-        passthru("$this->githooks hook:run commit-msg $mergeFile --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook:run commit-msg $mergeFile --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
 
@@ -299,7 +299,7 @@ class HookV3ReleaseTest extends ReleaseTestCase
      */
     public function it_bakes_the_install_config_into_the_hook_scripts_relative_to_the_repository_root()
     {
-        passthru("$this->githooks hook --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil hook --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString(
@@ -323,14 +323,14 @@ class HookV3ReleaseTest extends ReleaseTestCase
         $marker = "$outside/hook-ran.marker";
         $config = [
             // Absolute command: the hook is triggered from $outside, not from the repo.
-            'hooks' => ['command' => PHP_BINARY . ' ' . realpath($this->githooks), 'pre-push' => ['mark']],
+            'hooks' => ['command' => PHP_BINARY . ' ' . realpath($this->alfil), 'pre-push' => ['mark']],
             'flows' => ['mark' => ['jobs' => ['touch_marker']]],
             'jobs'  => ['touch_marker' => ['type' => 'custom', 'script' => "touch $marker"]],
         ];
         file_put_contents("$outside/githooks.php", "<?php\nreturn " . var_export($config, true) . ";\n");
 
         try {
-            passthru("$this->githooks hook --config=$outside/githooks.php 2>&1", $installExit);
+            passthru("$this->alfil hook --config=$outside/githooks.php 2>&1", $installExit);
             $this->assertEquals(0, $installExit);
             $this->assertStringContainsString('is outside the repository', $this->getActualOutput());
             $hook = (string) realpath('.githooks/pre-push');

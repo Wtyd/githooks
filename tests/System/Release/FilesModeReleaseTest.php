@@ -46,7 +46,7 @@ class FilesModeReleaseTest extends ReleaseTestCase
     {
         $cmd = sprintf(
             '%s flow qa --files=%s/src/User.php --format=json --config=%s 2>/dev/null',
-            $this->githooks,
+            $this->alfil,
             self::TESTS_PATH,
             $this->configPath
         );
@@ -71,7 +71,7 @@ class FilesModeReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flow qa --files=%s/src/User.php --files-from=%s --config=%s 2>&1',
-            $this->githooks,
+            $this->alfil,
             self::TESTS_PATH,
             $manifest,
             $this->configPath
@@ -88,7 +88,7 @@ class FilesModeReleaseTest extends ReleaseTestCase
     {
         $cmd = sprintf(
             '%s flow qa --exclude-pattern=**/*Test.php --config=%s 2>&1',
-            $this->githooks,
+            $this->alfil,
             $this->configPath
         );
 

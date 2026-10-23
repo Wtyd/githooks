@@ -45,7 +45,7 @@ class CIIntegrationReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         passthru(
-            "GITHUB_ACTIONS=true $this->githooks flow qa --config=$this->configPath 2>&1",
+            "GITHUB_ACTIONS=true $this->alfil flow qa --config=$this->configPath 2>&1",
             $exitCode
         );
 
@@ -71,7 +71,7 @@ class CIIntegrationReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         passthru(
-            "GITHUB_ACTIONS=true $this->githooks flow qa --no-ci --config=$this->configPath 2>&1",
+            "GITHUB_ACTIONS=true $this->alfil flow qa --no-ci --config=$this->configPath 2>&1",
             $exitCode
         );
 
@@ -125,7 +125,7 @@ class CIIntegrationReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             'GITHUB_ACTIONS=true %s flow qa --report-codeclimate=%s --config=%s 2>&1',
-            $this->githooks,
+            $this->alfil,
             $reportPath,
             $this->configPath
         );

@@ -1,8 +1,9 @@
 {
-    "name": "wtyd/githooks",
+    "name": "wtyd/alfil",
     "description": "Manage git hooks in a simple and sophisticated way.",
     "keywords": [
         "git",
+        "alfil",
         "githooks",
         "hooks",
         "precommit",
@@ -74,6 +75,6 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "bin": [
-        "builds/githooks"
+        "builds/alfil"
     ]
 }

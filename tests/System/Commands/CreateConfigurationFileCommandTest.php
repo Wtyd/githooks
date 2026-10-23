@@ -84,7 +84,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     /** @test */
     function resolves_distribution_file_from_vendor_path_when_available()
     {
-        $vendorTemplatePath = $this->path . '/vendor/wtyd/githooks/qa/';
+        $vendorTemplatePath = $this->path . '/vendor/wtyd/alfil/qa/';
         mkdir($vendorTemplatePath, 0777, true);
         file_put_contents($vendorTemplatePath . 'githooks.dist.php', "<?php return ['source' => 'vendor'];");
 

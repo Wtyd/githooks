@@ -39,7 +39,7 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $stderrPath = self::TESTS_PATH . '/stderr.log';
-        passthru("$this->githooks flow qa --format=json --config=$this->configPath 2>$stderrPath", $exitCode);
+        passthru("$this->alfil flow qa --format=json --config=$this->configPath 2>$stderrPath", $exitCode);
 
         $stdout = $this->getActualOutput();
         $stderr = (string) file_get_contents($stderrPath);
@@ -60,7 +60,7 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $stderrPath = self::TESTS_PATH . '/stderr.log';
-        passthru("$this->githooks flow qa --format=json --show-progress --config=$this->configPath 2>$stderrPath", $exitCode);
+        passthru("$this->alfil flow qa --format=json --show-progress --config=$this->configPath 2>$stderrPath", $exitCode);
 
         $stdout = $this->getActualOutput();
         $stderr = (string) file_get_contents($stderrPath);
@@ -85,7 +85,7 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $stderrPath = self::TESTS_PATH . '/stderr.log';
-        passthru("$this->githooks flow qa --format=json -v --config=$this->configPath 2>$stderrPath", $exitCode);
+        passthru("$this->alfil flow qa --format=json -v --config=$this->configPath 2>$stderrPath", $exitCode);
 
         $stdout = $this->getActualOutput();
         $stderr = (string) file_get_contents($stderrPath);
@@ -113,7 +113,7 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
 
         $stderrPath = self::TESTS_PATH . '/stderr.log';
         passthru(
-            "$this->githooks flow qa --fail-fast --format=json --show-progress --config=$this->configPath 2>$stderrPath",
+            "$this->alfil flow qa --fail-fast --format=json --show-progress --config=$this->configPath 2>$stderrPath",
             $exitCode
         );
 
@@ -135,7 +135,7 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $stderrPath = self::TESTS_PATH . '/stderr.log';
-        passthru("$this->githooks flow qa --dry-run --format=json --config=$this->configPath 2>$stderrPath", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --format=json --config=$this->configPath 2>$stderrPath", $exitCode);
 
         $stderr = (string) file_get_contents($stderrPath);
         $this->assertSame('', trim($stderr), 'dry-run should not emit any progress on stderr');
@@ -158,7 +158,7 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --processes=2 --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --processes=2 --config=$this->configPath 2>&1", $exitCode);
         $output = $this->getActualOutput();
 
         $this->assertSame(0, $exitCode);
@@ -203,7 +203,7 @@ class ProgressOutputReleaseTest extends ReleaseTestCase
 
         $inner = sprintf(
             'NO_COLOR=1 %s flow qa --processes=2 --no-ci --config=%s',
-            $this->githooks,
+            $this->alfil,
             $this->configPath
         );
         passthru(sprintf('script -qc %s /dev/null 2>&1', escapeshellarg($inner)), $exitCode);

@@ -37,7 +37,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job echo_job --dry-run --config=$this->configPath -- --extra-flag 2>&1", $exitCode);
+        passthru("$this->alfil job echo_job --dry-run --config=$this->configPath -- --extra-flag 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('--extra-flag', $this->getActualOutput());
@@ -58,7 +58,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job echo_job --dry-run --config=$this->configPath -- --verbose --strict 2>&1", $exitCode);
+        passthru("$this->alfil job echo_job --dry-run --config=$this->configPath -- --verbose --strict 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -77,7 +77,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job echo_job --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil job echo_job --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -100,7 +100,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job echo_job --dry-run --format=json --config=$this->configPath -- --extra-flag 2>/dev/null", $exitCode);
+        passthru("$this->alfil job echo_job --dry-run --format=json --config=$this->configPath -- --extra-flag 2>/dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $json = json_decode($this->getActualOutput(), true);
@@ -119,7 +119,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job echo_job --format=json --config=$this->configPath -- --appended 2>/dev/null", $exitCode);
+        passthru("$this->alfil job echo_job --format=json --config=$this->configPath -- --appended 2>/dev/null", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $json = json_decode($this->getActualOutput(), true);
@@ -148,7 +148,7 @@ class ExtraArgsReleaseTest extends ReleaseTestCase
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
         $output = (string) shell_exec(
-            "$this->githooks job job_with_args --dry-run --format=json --config=$this->configPath -- --custom-flag=value extra-arg 2>/dev/null"
+            "$this->alfil job job_with_args --dry-run --format=json --config=$this->configPath -- --custom-flag=value extra-arg 2>/dev/null"
         );
         $decoded = json_decode($output, true);
 

@@ -4,7 +4,7 @@
 $backFiles = shell_exec('git diff --cached --name-only --diff-filter=ACM | grep ".php$\\|^composer.json$\\|^composer.lock$"');
 
 if (!empty($backFiles)) {
-    passthru('php vendor/bin/githooks hook:run pre-commit', $exit);
+    passthru('php vendor/bin/alfil hook:run pre-commit', $exit);
 
     exit($exit);
 }

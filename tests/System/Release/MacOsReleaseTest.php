@@ -49,14 +49,14 @@ class MacOsReleaseTest extends ReleaseTestCase
      */
     public function phar_boots_and_responds_to_introspection_commands_on_macos(): void
     {
-        $versionStr = (string) shell_exec("$this->githooks --version 2>&1");
+        $versionStr = (string) shell_exec("$this->alfil --version 2>&1");
         $this->assertNotSame('', trim($versionStr), '--version produced empty output');
         $this->assertStringContainsString('GitHooks', $versionStr);
 
-        passthru("$this->githooks --help > /dev/null 2>&1", $helpExit);
+        passthru("$this->alfil --help > /dev/null 2>&1", $helpExit);
         $this->assertSame(0, $helpExit, '--help should exit 0');
 
-        passthru("$this->githooks system:info > /dev/null 2>&1", $sysExit);
+        passthru("$this->alfil system:info > /dev/null 2>&1", $sysExit);
         $this->assertSame(0, $sysExit, 'system:info should exit 0');
     }
 
@@ -79,7 +79,7 @@ class MacOsReleaseTest extends ReleaseTestCase
 
         // Bypass passthru's output capture so we can read both streams
         // verbatim and dump them on failure.
-        $cmd = "$this->githooks flow qa --format=json --config=$this->configPath > $stdoutPath 2> $stderrPath";
+        $cmd = "$this->alfil flow qa --format=json --config=$this->configPath > $stdoutPath 2> $stderrPath";
         exec($cmd, $unused, $exitCode);
 
         $stdout = (string) file_get_contents($stdoutPath);
@@ -131,7 +131,7 @@ class MacOsReleaseTest extends ReleaseTestCase
         $stdoutPath = self::TESTS_PATH . '/diag-par-stdout.log';
         $stderrPath = self::TESTS_PATH . '/diag-par-stderr.log';
 
-        $cmd = "$this->githooks flow qa --format=json --config=$this->configPath > $stdoutPath 2> $stderrPath";
+        $cmd = "$this->alfil flow qa --format=json --config=$this->configPath > $stdoutPath 2> $stderrPath";
         exec($cmd, $unused, $exitCode);
 
         $stdout = (string) file_get_contents($stdoutPath);

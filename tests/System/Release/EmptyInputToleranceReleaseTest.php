@@ -69,7 +69,7 @@ class EmptyInputToleranceReleaseTest extends ReleaseTestCase
 
         $output = [];
         $exitCode = 1;
-        exec("$this->githooks job phpstan_excl --format=json 2>/dev/null", $output, $exitCode);
+        exec("$this->alfil job phpstan_excl --format=json 2>/dev/null", $output, $exitCode);
         $json = implode("\n", $output);
 
         $this->assertSame(0, $exitCode, "githooks job exit code (raw output:\n$json)");

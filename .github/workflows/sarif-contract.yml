@@ -58,7 +58,7 @@ jobs:
 
       - name: Generate SARIF on broken-code fixture
         run: |
-          php githooks flow sarif-check \
+          php alfil flow sarif-check \
             --config=qa/githooks.sarif-check.php \
             --format=sarif \
             --output=reports/sarif-contract.sarif

@@ -38,7 +38,7 @@ class ProfileReleaseTest extends ReleaseTestCase
         parent::setUp();
 
         // Absolute, because the sandbox changes the working directory.
-        $this->binary = (string) realpath($this->githooks);
+        $this->binary = (string) realpath($this->alfil);
 
         $this->setUpGitSandbox();
 

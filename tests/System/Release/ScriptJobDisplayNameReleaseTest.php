@@ -44,7 +44,7 @@ class ScriptJobDisplayNameReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks job shard_alpha --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil job shard_alpha --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -86,7 +86,7 @@ class ScriptJobDisplayNameReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow shards --config=$this->configPath --processes=2 2>&1", $exitCode);
+        passthru("$this->alfil flow shards --config=$this->configPath --processes=2 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();

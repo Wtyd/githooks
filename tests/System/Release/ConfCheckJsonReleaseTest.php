@@ -44,7 +44,7 @@ class ConfCheckJsonReleaseTest extends ReleaseTestCase
             ->setV3Jobs(['noop' => ['type' => 'custom', 'script' => 'true']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -81,7 +81,7 @@ class ConfCheckJsonReleaseTest extends ReleaseTestCase
             ->setV3Jobs(['noop' => ['type' => 'custom', 'script' => 'true']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('"reports": {}', $this->getActualOutput());
@@ -105,7 +105,7 @@ class ConfCheckJsonReleaseTest extends ReleaseTestCase
             ]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(1, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -133,7 +133,7 @@ class ConfCheckJsonReleaseTest extends ReleaseTestCase
             ->setV3Jobs(['pest_artisan' => ['type' => 'pest', 'runner' => 'artisan']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
         $issues = implode(' ', $decoded['jobs'][0]['issues']);
@@ -161,7 +161,7 @@ class ConfCheckJsonReleaseTest extends ReleaseTestCase
             ->setV3Jobs(['pest_typo' => ['type' => 'pest', 'runner' => 'artizan']]);
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil conf:check --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $decoded = json_decode($this->getActualOutput(), true);
 

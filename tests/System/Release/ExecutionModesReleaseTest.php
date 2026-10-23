@@ -83,7 +83,7 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
             ];
             file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
 
-            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->alfil;
 
             passthru(
                 sprintf(
@@ -128,7 +128,7 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flow qa --fast --fast-dirty --config=%s 2>&1',
-            $this->githooks,
+            $this->alfil,
             $this->configPath
         );
 
@@ -158,7 +158,7 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
 
         $cmd = sprintf(
             '%s flow qa --fast-dirty --files=foo.php --config=%s 2>&1',
-            $this->githooks,
+            $this->alfil,
             $this->configPath
         );
 
@@ -214,7 +214,7 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
             shell_exec('git add -A');
             shell_exec('git commit --quiet -m baseline');
 
-            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->alfil;
 
             passthru(
                 sprintf('%s flow qa --fast-dirty --format=json --config=%s 2>/dev/null', $binary, $configFile),
@@ -285,7 +285,7 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
             ];
             file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
 
-            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->alfil;
 
             passthru(
                 sprintf('%s flow qa --fast-branch --format=json --config=%s 2>/dev/null', $binary, $configFile),
@@ -354,7 +354,7 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
             ];
             file_put_contents($configFile, "<?php\nreturn " . var_export($config, true) . ";\n");
 
-            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->alfil;
 
             // --branch=feature-x is mandatory here: BranchResolver puts the CI
             // env vars (GITHUB_REF_NAME, CI_COMMIT_REF_NAME, …) ahead of the git
@@ -423,7 +423,7 @@ class ExecutionModesReleaseTest extends ReleaseTestCase
                 shell_exec('git add ' . escapeshellarg($file));
             }
 
-            $binary = $cwd . DIRECTORY_SEPARATOR . $this->githooks;
+            $binary = $cwd . DIRECTORY_SEPARATOR . $this->alfil;
 
             passthru(
                 sprintf('%s job tests_check --fast --format=json --config=%s 2>/dev/null', $binary, $configFile),

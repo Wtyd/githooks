@@ -53,7 +53,7 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
             "flows" => ["options" => ["executable-prefix" => "/bin/echo DOCKER"]],
         ];');
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('DOCKER original-tool', $this->getActualOutput());
@@ -81,7 +81,7 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
             ],
         ];');
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -99,7 +99,7 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('/bin/echo no-override', $this->getActualOutput());
@@ -124,7 +124,7 @@ class LocalOverrideReleaseTest extends ReleaseTestCase
             "flows" => ["options" => ["executable-prefix" => "/bin/echo DOCKER"]],
         ];');
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();

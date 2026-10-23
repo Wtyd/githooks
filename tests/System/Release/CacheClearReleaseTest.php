@@ -47,7 +47,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
     {
         @unlink('.phpcs.cache');
 
-        passthru("$this->githooks cache:clear --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('not found', $this->getActualOutput());
@@ -58,7 +58,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
     {
         file_put_contents('.phpcs.cache', 'fake cache');
 
-        passthru("$this->githooks cache:clear phpcs_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear phpcs_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('deleted', $this->getActualOutput());
@@ -88,7 +88,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $this->mkArtifactDir($cacheDir);
         file_put_contents("$cacheDir/cache.bin", 'fake');
 
-        passthru("$this->githooks cache:clear phpstan_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear phpstan_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertDirectoryDoesNotExist($cacheDir);
@@ -112,7 +112,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $neon = "services:\n    -\n        class: My\\Service\n        arguments:\n            tmpDir: '/wrong'\nparameters:\n    level: 8\n";
         $this->writeArtifact(self::TESTS_PATH . '/phpstan-services.neon', $neon);
 
-        passthru("$this->githooks cache:clear phpstan_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear phpstan_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -137,7 +137,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
 
         $this->writeArtifact(self::TESTS_PATH . '/phpstan-env.neon', "parameters:\n    tmpDir: %env.HOME%/qa-cache\n");
 
-        passthru("$this->githooks cache:clear phpstan_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear phpstan_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('placeholder', $this->getActualOutput());
@@ -165,7 +165,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $this->writeArtifact(self::TESTS_PATH . '/modern.cache', 'fake-modern');
         $this->writeArtifact(self::TESTS_PATH . '/legacy.cache', 'fake-legacy');
 
-        passthru("$this->githooks cache:clear phpunit_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear phpunit_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertFileDoesNotExist(self::TESTS_PATH . '/modern.cache');
@@ -190,7 +190,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $this->mkArtifactDir($expected);
         file_put_contents("$expected/cache.bin", 'fake');
 
-        passthru("$this->githooks cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertDirectoryDoesNotExist($expected);
@@ -218,7 +218,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $this->mkArtifactDir($cacheDir);
         file_put_contents("$cacheDir/cache.bin", 'fake');
 
-        passthru("$this->githooks cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertDirectoryDoesNotExist($cacheDir);
@@ -247,7 +247,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $this->mkArtifactDir($cacheDir);
         file_put_contents("$cacheDir/cache.bin", 'fake');
 
-        passthru("$this->githooks cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertDirectoryDoesNotExist($cacheDir);
@@ -271,7 +271,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
             ],
         ]);
 
-        passthru("$this->githooks cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -299,7 +299,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         file_put_contents('.phpmd.result.cache', 'fake-real');
         file_put_contents('.phpmd.cache', 'fake-old-default');
 
-        passthru("$this->githooks cache:clear phpmd_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear phpmd_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertFileDoesNotExist('.phpmd.result.cache');
@@ -331,7 +331,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $cacheFile = self::TESTS_PATH . '/.fixer.cache';
         $this->writeArtifact($cacheFile, 'fake');
 
-        passthru("$this->githooks cache:clear php_cs_fixer --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear php_cs_fixer --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertFileDoesNotExist($cacheFile);
@@ -359,7 +359,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
         $this->writeArtifact(self::TESTS_PATH . '/first.cache', 'fake-first');
         $this->writeArtifact(self::TESTS_PATH . '/second.cache', 'fake-second');
 
-        passthru("$this->githooks cache:clear phpcs_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear phpcs_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertFileExists(self::TESTS_PATH . '/first.cache');
@@ -381,7 +381,7 @@ class CacheClearReleaseTest extends ReleaseTestCase
             ],
         ]);
 
-        passthru("$this->githooks cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil cache:clear rector_src --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();

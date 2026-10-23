@@ -30,7 +30,7 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_executes_flow_with_all_jobs_passing()
     {
-        passthru("$this->githooks flow qa --config=$this->configPath", $exitCode);
+        passthru("$this->alfil flow qa --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -38,7 +38,7 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_exits_with_error_for_undefined_flow()
     {
-        passthru("$this->githooks flow nonexistent --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow nonexistent --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertNotEquals(0, $exitCode);
         $this->assertStringContainsString('is not defined', $this->getActualOutput());
@@ -47,7 +47,7 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_shows_available_flows_when_undefined()
     {
-        passthru("$this->githooks flow nonexistent --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow nonexistent --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertNotEquals(0, $exitCode);
         $this->assertStringContainsString('Available flows', $this->getActualOutput());
@@ -65,7 +65,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --exclude-jobs=fail_job --config=$this->configPath", $exitCode);
+        passthru("$this->alfil flow qa --exclude-jobs=fail_job --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -81,7 +81,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fast --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --fast --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('⏩', $this->getActualOutput(), 'skip glyph must appear on stdout for fast-mode no-match');
@@ -91,7 +91,7 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_outputs_json_format()
     {
-        passthru("$this->githooks flow qa --format=json --config=$this->configPath", $exitCode);
+        passthru("$this->alfil flow qa --format=json --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -103,7 +103,7 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_outputs_junit_format()
     {
-        passthru("$this->githooks flow qa --format=junit --config=$this->configPath", $exitCode);
+        passthru("$this->alfil flow qa --format=junit --config=$this->configPath", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -125,7 +125,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fail-fast --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --fail-fast --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertNotEquals(0, $exitCode);
         $this->assertStringContainsString('skipped by fail-fast', $this->getActualOutput());
@@ -143,7 +143,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --only-jobs=job_a --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --only-jobs=job_a --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -151,7 +151,7 @@ class FlowReleaseTest extends ReleaseTestCase
     /** @test */
     public function it_shows_commands_in_dry_run()
     {
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $output = $this->getActualOutput();
@@ -181,7 +181,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -217,7 +217,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fast --dry-run --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --fast --dry-run --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $this->assertSame(0, $exitCode);
         $decoded = json_decode($this->getActualOutput(), true);
@@ -246,7 +246,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --monitor --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --monitor --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('Thread monitor', $this->getActualOutput());
@@ -264,7 +264,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --processes=2 --monitor --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --processes=2 --monitor --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('budget: 2', $this->getActualOutput());
@@ -281,7 +281,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -302,7 +302,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('/bin/echo src --checked', $this->getActualOutput());
@@ -326,7 +326,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         // Discard stderr: in v3.2 structured formats route progress to stderr;
         // mixing it into stdout would pollute the JUnit XML with ANSI escapes.
-        passthru("$this->githooks flow qa --format=junit --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --format=junit --config=$this->configPath 2>/dev/null", $exitCode);
 
         $output = $this->getActualOutput();
         $this->assertStringNotContainsString("\e[", $output);
@@ -346,7 +346,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fail-fast --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --fail-fast --config=$this->configPath 2>&1", $exitCode);
 
         $output = $this->getActualOutput();
 
@@ -373,7 +373,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         // Discard stderr: in v3.2 structured formats route progress to stderr;
         // mixing it into stdout would break json_decode.
-        passthru("$this->githooks flow qa --fail-fast --format=json --config=$this->configPath 2>/dev/null", $exitCode);
+        passthru("$this->alfil flow qa --fail-fast --format=json --config=$this->configPath 2>/dev/null", $exitCode);
 
         $output = $this->getActualOutput();
         $decoded = json_decode($output, true);
@@ -397,7 +397,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fast-branch --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --fast-branch --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
     }
@@ -419,7 +419,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --fast-branch --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --fast-branch --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('⏩', $this->getActualOutput(), 'skip glyph must appear on stdout for fast-branch no-match');
@@ -445,7 +445,7 @@ class FlowReleaseTest extends ReleaseTestCase
 
         file_put_contents($this->configPath, $this->configurationFileBuilder->buildV3Php());
 
-        passthru("$this->githooks flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
+        passthru("$this->alfil flow qa --dry-run --config=$this->configPath 2>&1", $exitCode);
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('/bin/echo src --lint', $this->getActualOutput());

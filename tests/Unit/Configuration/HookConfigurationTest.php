@@ -242,7 +242,7 @@ class HookConfigurationTest extends UnitTestCase
             $result
         );
 
-        $this->assertEquals('php vendor/bin/githooks', $hooks->getCommand());
+        $this->assertEquals('php vendor/bin/alfil', $hooks->getCommand());
     }
 
     /** @test */
@@ -251,7 +251,7 @@ class HookConfigurationTest extends UnitTestCase
         $result = new ValidationResult();
         $hooks = HookConfiguration::fromArray(
             [
-                'command' => 'php7.4 vendor/bin/githooks',
+                'command' => 'php7.4 vendor/bin/alfil',
                 'pre-commit' => ['qa'],
             ],
             ['qa'],
@@ -260,7 +260,7 @@ class HookConfigurationTest extends UnitTestCase
         );
 
         $this->assertFalse($result->hasErrors());
-        $this->assertEquals('php7.4 vendor/bin/githooks', $hooks->getCommand());
+        $this->assertEquals('php7.4 vendor/bin/alfil', $hooks->getCommand());
         // 'command' should not be treated as a hook event
         $this->assertCount(1, $hooks->getEvents());
         $this->assertEquals(['pre-commit'], $hooks->getEvents());

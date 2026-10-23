@@ -51,7 +51,7 @@ El orden de verificación depende del contexto:
 php7.4 vendor/bin/phpunit --order-by random
 
 # QA tools (v3)
-php7.4 githooks flow qa
+php7.4 alfil flow qa
 ```
 
 Si algún check falla, seguir la skill `qa-workflow` para gestionar las violaciones (corregir, suprimir o documentar según criterio).
@@ -101,19 +101,19 @@ php7.4 vendor/bin/phpunit --group git             # Tests de git (excluidos por 
 php7.4 vendor/bin/phpunit --group release         # Tests de release (requieren .phar)
 
 # QA (v3 — usa qa/githooks.php con formato hooks/flows/jobs)
-php7.4 githooks flow qa --format=json       # Flow completo de QA
-php7.4 githooks job phpstan_src --format=json  # Job individual
+php7.4 alfil flow qa --format=json       # Flow completo de QA
+php7.4 alfil job phpstan_src --format=json  # Job individual
 
 # Build
-php7.4 githooks app:pre-build php
-php7.4 githooks app:build
+php7.4 alfil app:pre-build php
+php7.4 alfil app:build
 ```
 
 Grupos de test excluidos por defecto: `@group release`, `@group git`, `@group windows`.
 
 ### Invocación por Claude — siempre `--format=json`
 
-**Regla obligatoria**: cuando Claude ejecuta `githooks flow`, `githooks job`, `githooks conf:check`, etc. como parte de una tarea (no para probar el output humano), usar **siempre** `--format=json` y parsear la respuesta.
+**Regla obligatoria**: cuando Claude ejecuta `alfil flow`, `alfil job`, `alfil conf:check`, etc. como parte de una tarea (no para probar el output humano), usar **siempre** `--format=json` y parsear la respuesta.
 
 Los comandos de **diagnóstico** (`conf:check`, `status`, `system:info`) también aceptan `--format=text|json`. Su payload tiene **schema propio por comando** con su propio `version` (hoy `2` en `conf:check`, `1` en `status` y `system:info`), distinto del JSON v2 de los comandos de ejecución: `conf:check` → `{version, valid, file{path,localPath}, options, hooks, flows, jobs[{name, command, status, issues[]}], errors[], warnings[], deprecations[]}`; `status` → `{version, hooksPath{configured,value}, events[{event, status, executable, targets[]}]}`; `system:info` → `{version, cpus, processes, warning}`. Un `--format` inválido avisa por stderr y cae a `text` (mismo comportamiento que `flow`).
 
@@ -131,16 +131,16 @@ inline ha sido fuente recurrente de errores de comillas dentro de zsh.
 
 ```bash
 # Veredicto en una línea: "8/8 passed, 0 skipped in 11.06s [full]" + los KO
-php7.4 githooks flow qa --format=json | php8.4 .claude/scripts/flow-json.php
+php7.4 alfil flow qa --format=json | php8.4 .claude/scripts/flow-json.php
 
 # Jobs fallidos con su exitCode y las primeras líneas de su salida
-php7.4 githooks flow qa --format=json | php8.4 .claude/scripts/flow-json.php --failed
+php7.4 alfil flow qa --format=json | php8.4 .claude/scripts/flow-json.php --failed
 
 # Comandos generados (para --dry-run)
-php7.4 githooks flow qa --dry-run --format=json | php8.4 .claude/scripts/flow-json.php --commands
+php7.4 alfil flow qa --dry-run --format=json | php8.4 .claude/scripts/flow-json.php --commands
 
 # Un campo suelto, con notación de puntos
-php7.4 githooks flow qa --format=json | php8.4 .claude/scripts/flow-json.php --field=jobs.0.command
+php7.4 alfil flow qa --format=json | php8.4 .claude/scripts/flow-json.php --field=jobs.0.command
 ```
 
 El script nunca replica el exit code del flow: **mídelo en el propio comando, no tras el
@@ -150,18 +150,18 @@ pipe**, o estarás leyendo el del último eslabón.
 
 **Excepción**: la skill `qa-tester` ejecuta los comandos sin `--format=json` porque su cometido es precisamente validar el output humano (colores, progreso, dashboard TTY).
 
-**Pasar args al tool subyacente**: `githooks job` acepta el separador POSIX `--`; todo lo que va después se concatena al comando generado. Usar esto en lugar de invocar `vendor/bin/<tool>` directamente para iterar sobre un subconjunto:
+**Pasar args al tool subyacente**: `alfil job` acepta el separador POSIX `--`; todo lo que va después se concatena al comando generado. Usar esto en lugar de invocar `vendor/bin/<tool>` directamente para iterar sobre un subconjunto:
 
 ```bash
 # Correcto — respeta config del proyecto (--log-junit, --colors)
-php7.4 githooks job "Phpunit" --format=json -- --filter=MyTest
-php7.4 githooks job "Phpunit" --format=json -- --group=slow --stop-on-failure
+php7.4 alfil job "Phpunit" --format=json -- --filter=MyTest
+php7.4 alfil job "Phpunit" --format=json -- --group=slow --stop-on-failure
 
 # Evitar — rompe la config
 php7.4 vendor/bin/phpunit --filter=MyTest
 ```
 
-`githooks flow` **no** soporta `--` (no tiene sentido aplicar args específicos a todos los jobs del flow).
+`alfil flow` **no** soporta `--` (no tiene sentido aplicar args específicos a todos los jobs del flow).
 
 ## Arquitectura (orientación)
 
@@ -216,7 +216,7 @@ return [
 - **Dirección de dependencias:** `src/` nunca importa de `app/` (hook de hookify lo bloquea).
 - **`declare(strict_types=1)`** obligatorio en `src/` (hook de hookify lo verifica).
 - **`JobRegistry`** — mapa tipo → clase de job; `JobConfiguration::fromArray()` valida el `type` contra él.
-- **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.4 githooks flow qa`.
+- **PHPStan nivel 8**, PSR-12, PHPMD completo — ejecutados via `php7.4 alfil flow qa`.
 - **Implementación mínima, sin especular.** Escribe solo el código que resuelve lo pedido. Nada de features, parámetros, flags de config o abstracciones "por si acaso" que no estén en el requisito. No introduzcas capas de indirección, interfaces o puntos de extensión hasta que haya un segundo caso real que los justifique — en una CLI distribuida como `.phar`, cada abstracción prematura es superficie que hay que mantener, testear y compilar sin demanda que la respalde.
 
 ## Skills disponibles

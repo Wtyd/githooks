@@ -19,7 +19,7 @@ class NewVersionTest extends ReleaseTestCase
     /** @test */
     function it_prints_the_new_version()
     {
-        passthru("$this->githooks --version", $exitCode);
+        passthru("$this->alfil --version", $exitCode);
 
         $branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD'));
         $newVersion = substr($branch, strlen('rc-'));
