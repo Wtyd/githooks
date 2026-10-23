@@ -47,12 +47,14 @@ class RuntimeDiagnosticsReleaseTest extends ReleaseTestCase
         $this->assertIsArray($decoded);
         $this->assertArrayHasKey('runtime', $decoded);
 
-        $version = $decoded['runtime']['githooksVersion'] ?? null;
+        $version = $decoded['runtime']['alfilVersion'] ?? null;
         // Before the fix the bundled binary reported 'unknown' here even though
         // `--version` knew the real version.
-        $this->assertNotSame('unknown', $version, 'runtime.githooksVersion is "unknown" in the .phar');
+        $this->assertNotSame('unknown', $version, 'runtime.alfilVersion is "unknown" in the .phar');
         $this->assertNotSame('', $version);
         $this->assertNotNull($version);
+        // The pre-4.0 key carries the same value until 5.0.
+        $this->assertSame($version, $decoded['runtime']['githooksVersion'] ?? null);
     }
 
     /** @test */
@@ -62,8 +64,8 @@ class RuntimeDiagnosticsReleaseTest extends ReleaseTestCase
 
         $output = $this->getActualOutput();
         $this->assertSame(0, $exitCode);
-        // The compact --diag line starts with "githooks <version> on <platform> …".
-        $this->assertStringContainsString('githooks ', $output);
-        $this->assertStringNotContainsString('githooks unknown', $output);
+        // The compact --diag line starts with "alfil <version> on <platform> …".
+        $this->assertStringContainsString('alfil ', $output);
+        $this->assertStringNotContainsString('alfil unknown', $output);
     }
 }

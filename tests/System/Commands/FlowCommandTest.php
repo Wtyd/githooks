@@ -580,12 +580,12 @@ class FlowCommandTest extends SystemTestCase
     /** @test FEAT-14: --diag prints the runtime diagnostics block (text format). */
     public function it_prints_the_diagnostics_block_with_the_diag_flag(): void
     {
-        // The block's header starts with "githooks <version> …"; present in both
+        // The block's header starts with "alfil <version> …"; present in both
         // the compact (local) and multiline (CI) shapes. The normal flow output
-        // never contains "githooks", so this uniquely identifies the diag block.
+        // never contains "alfil ", so this uniquely identifies the diag block.
         $this->artisan("flow qa --diag --config=$this->configPath")
             ->assertExitCode(0)
-            ->containsStringInOutput('githooks')
+            ->containsStringInOutput('alfil ')
             ->containsStringInOutput('cpus');
     }
 
@@ -595,6 +595,7 @@ class FlowCommandTest extends SystemTestCase
         $this->artisan("flow qa --format=json --config=$this->configPath")
             ->assertExitCode(0)
             ->containsStringInOutput('"runtime"')
+            ->containsStringInOutput('"alfilVersion"')
             ->containsStringInOutput('"githooksVersion"')
             ->containsStringInOutput('"startedAt"')
             ->containsStringInOutput('"endedAt"');

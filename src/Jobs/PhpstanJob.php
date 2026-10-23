@@ -106,7 +106,7 @@ class PhpstanJob extends JobAbstract
         if (!$this->cacheUnresolvable) {
             return null;
         }
-        return "tmpDir in the .neon contains a placeholder that GitHooks does not expand "
+        return "tmpDir in the .neon contains a placeholder that Alfil does not expand "
             . "(only %currentWorkingDirectory% and %rootDir% are recognised); "
             . "the cache lives elsewhere — clear it manually";
     }

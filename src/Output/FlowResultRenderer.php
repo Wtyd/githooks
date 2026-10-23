@@ -215,7 +215,7 @@ class FlowResultRenderer
             return;
         }
         $timestamp = time();
-        echo "\033[0Ksection_start:{$timestamp}:githooks_summary[collapsed=false]\r\033[0KSummary\n";
+        echo "\033[0Ksection_start:{$timestamp}:alfil_summary[collapsed=false]\r\033[0KSummary\n";
     }
 
     private function emitCISummarySectionEnd(RenderOptions $options): void
@@ -227,7 +227,7 @@ class FlowResultRenderer
             return;
         }
         $timestamp = time();
-        echo "\033[0Ksection_end:{$timestamp}:githooks_summary\r\033[0K\n";
+        echo "\033[0Ksection_end:{$timestamp}:alfil_summary\r\033[0K\n";
     }
 
     /**

@@ -761,6 +761,8 @@ class JsonResultFormatterTest extends UnitTestCase
         // preserve the int/float distinction (21.0 round-trips as 21), same as the
         // existing `duration` field.
         $this->assertEquals([
+            'alfilVersion'    => '3.5.0',
+            // Pre-4.0 name, emitted alongside alfilVersion until 5.0.
             'githooksVersion' => '3.5.0',
             'platform'        => 'linux',
             'ci'              => 'gitlab-ci',

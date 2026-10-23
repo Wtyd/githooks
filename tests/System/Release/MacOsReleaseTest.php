@@ -51,7 +51,7 @@ class MacOsReleaseTest extends ReleaseTestCase
     {
         $versionStr = (string) shell_exec("$this->alfil --version 2>&1");
         $this->assertNotSame('', trim($versionStr), '--version produced empty output');
-        $this->assertStringContainsString('GitHooks', $versionStr);
+        $this->assertStringContainsString('Alfil', $versionStr);
 
         passthru("$this->alfil --help > /dev/null 2>&1", $helpExit);
         $this->assertSame(0, $helpExit, '--help should exit 0');

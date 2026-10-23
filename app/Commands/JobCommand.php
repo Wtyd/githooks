@@ -167,7 +167,7 @@ class JobCommand extends Command
 
         $message = $this->option('message');
         if ($message !== null) {
-            $path = (string) tempnam(sys_get_temp_dir(), 'githooks-commit-msg-');
+            $path = (string) tempnam(sys_get_temp_dir(), 'alfil-commit-msg-');
             file_put_contents($path, (string) $message);
             return $path;
         }

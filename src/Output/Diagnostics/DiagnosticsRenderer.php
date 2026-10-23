@@ -24,7 +24,7 @@ class DiagnosticsRenderer
     {
         $ciName = $snapshot->getCi() ?? 'local';
         $lines = [
-            sprintf('githooks %s on %s · %s · %s', $snapshot->getVersion(), $snapshot->getPlatform(), $ciName, $timestamp),
+            sprintf('alfil %s on %s · %s · %s', $snapshot->getVersion(), $snapshot->getPlatform(), $ciName, $timestamp),
         ];
 
         $rows = [
@@ -43,7 +43,7 @@ class DiagnosticsRenderer
     public function renderCompact(Diagnostics $snapshot, string $timestamp): string
     {
         return sprintf(
-            'githooks %s · %s · cpus=%s · mem=%s · load=%s · %s',
+            'alfil %s · %s · cpus=%s · mem=%s · load=%s · %s',
             $snapshot->getVersion(),
             $snapshot->getPlatform(),
             $this->cpuValue($snapshot),

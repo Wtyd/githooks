@@ -28,7 +28,7 @@ class DiagnosticsRendererTest extends UnitTestCase
         $lines = $this->renderer->renderMultiline($this->full(), '2026-05-13T14:23:08.123+00:00');
 
         $this->assertSame(
-            'githooks 3.5.0 on linux · gitlab-ci · 2026-05-13T14:23:08.123+00:00',
+            'alfil 3.5.0 on linux · gitlab-ci · 2026-05-13T14:23:08.123+00:00',
             $lines[0]
         );
         // labels aligned to the longest ("load avg (1/5/15)")
@@ -46,7 +46,7 @@ class DiagnosticsRendererTest extends UnitTestCase
         );
 
         $this->assertSame(
-            'githooks 3.5.0 · linux · cpus=8 (cgroup limit: none) · mem=12403 MB / 65536 MB · load=1.20 / 0.80 / 0.50 · 2026-05-13T14:23:08+00:00',
+            'alfil 3.5.0 · linux · cpus=8 (cgroup limit: none) · mem=12403 MB / 65536 MB · load=1.20 / 0.80 / 0.50 · 2026-05-13T14:23:08+00:00',
             $line
         );
     }

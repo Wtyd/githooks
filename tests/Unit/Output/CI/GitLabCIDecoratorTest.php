@@ -177,8 +177,8 @@ class GitLabCIDecoratorTest extends UnitTestCase
             $decorator->onJobSuccess('job2', '1s');
         });
 
-        $this->assertStringContainsString('githooks_job_1', $output);
-        $this->assertStringContainsString('githooks_job_2', $output);
+        $this->assertStringContainsString('alfil_job_1', $output);
+        $this->assertStringContainsString('alfil_job_2', $output);
     }
 
     /** @test */

@@ -138,7 +138,7 @@ class SarifResultFormatterTest extends UnitTestCase
         $this->assertSame('2.1.0', $data['version']);
         $this->assertCount(1, $data['runs']);
         $this->assertSame([], $data['runs'][0]['results']);
-        $this->assertSame('githooks', $data['runs'][0]['tool']['driver']['name']);
+        $this->assertSame('alfil', $data['runs'][0]['tool']['driver']['name']);
     }
 
     /**

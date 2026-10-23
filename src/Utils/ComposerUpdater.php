@@ -28,7 +28,7 @@ class ComposerUpdater
         try {
             copy($origin, $destiny);
             chmod($destiny, 0755);
-            $printer->info('GitHooks was correctly installed');
+            $printer->info('Alfil was correctly installed');
         } catch (\Throwable $th) {
             $printer->error('Something went wrong');
             throw $th;
@@ -43,7 +43,7 @@ class ComposerUpdater
     public static function pathToBuild(): string
     {
         if (version_compare(phpversion(), '7.4.0', '<')) {
-            throw new Exception('GitHooks only supports php 7.4 or greater.', 1);
+            throw new Exception('Alfil only supports php 7.4 or greater.', 1);
         }
 
         if (version_compare(phpversion(), '8.1.0', '<')) {

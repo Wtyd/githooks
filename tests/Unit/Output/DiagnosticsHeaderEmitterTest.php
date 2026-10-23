@@ -38,7 +38,7 @@ class DiagnosticsHeaderEmitterTest extends UnitTestCase
         $this->emitter->emit($this->inCi(), self::TS, false, new HeaderOptions('text', false), $out);
 
         $text = $out->fetch();
-        $this->assertStringContainsString('githooks 3.5.0 on linux · gitlab-ci · ' . self::TS, $text);
+        $this->assertStringContainsString('alfil 3.5.0 on linux · gitlab-ci · ' . self::TS, $text);
         $this->assertStringContainsString('cpus', $text);
         $this->assertStringContainsString("\n", $text); // multiline
     }
@@ -50,7 +50,7 @@ class DiagnosticsHeaderEmitterTest extends UnitTestCase
         $this->emitter->emit($this->local(), self::TS, true, new HeaderOptions('text', false), $out);
 
         $text = trim($out->fetch());
-        $this->assertStringStartsWith('githooks 3.5.0 · linux · cpus=8', $text);
+        $this->assertStringStartsWith('alfil 3.5.0 · linux · cpus=8', $text);
         $this->assertStringNotContainsString("\n", $text); // single line
     }
 

@@ -12,8 +12,6 @@ namespace Wtyd\Alfil\Hooks;
  */
 final class RemovedBinary
 {
-    public const NAME = 'githooks';
-
     /**
      * Whether $text runs the removed binary: `githooks` as a word preceded by
      * the start of the line, whitespace or a path separator (so

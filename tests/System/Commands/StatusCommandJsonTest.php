@@ -103,6 +103,6 @@ class StatusCommandJsonTest extends SystemTestCase
     {
         $this->artisan("status --format=csv --config=$this->configPath")
             ->assertExitCode(0)
-            ->containsStringInOutput('GitHooks Status');
+            ->containsStringInOutput('Alfil Status');
     }
 }

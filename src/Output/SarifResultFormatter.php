@@ -76,7 +76,7 @@ class SarifResultFormatter implements ResultFormatter
         // Always include at least one empty run if no issues found
         if (empty($runs)) {
             $runs[] = [
-                'tool' => ['driver' => ['name' => 'githooks']],
+                'tool' => ['driver' => ['name' => 'alfil']],
                 'results' => [],
             ];
         }

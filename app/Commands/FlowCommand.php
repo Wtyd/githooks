@@ -94,7 +94,7 @@ class FlowCommand extends Command
         if ($this->inputContainsDashDashSeparator()) {
             $this->error(
                 "The 'flow' command does not support the '--' separator. "
-                . "Use 'githooks job <name> -- <args>' to forward extra args to a tool."
+                . "Use 'alfil job <name> -- <args>' to forward extra args to a tool."
             );
             return 1;
         }

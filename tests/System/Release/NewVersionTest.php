@@ -23,7 +23,7 @@ class NewVersionTest extends ReleaseTestCase
 
         $branch = trim(shell_exec('git rev-parse --abbrev-ref HEAD'));
         $newVersion = substr($branch, strlen('rc-'));
-        $this->assertStringContainsString("GitHooks $newVersion", $this->getActualOutput());
+        $this->assertStringContainsString("Alfil $newVersion", $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
     }
 }

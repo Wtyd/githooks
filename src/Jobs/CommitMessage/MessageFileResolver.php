@@ -80,7 +80,7 @@ class MessageFileResolver
      */
     protected function writeTemp(string $content): string
     {
-        $path = (string) tempnam(sys_get_temp_dir(), 'githooks-commit-msg-');
+        $path = (string) tempnam(sys_get_temp_dir(), 'alfil-commit-msg-');
         file_put_contents($path, $content);
         return $path;
     }

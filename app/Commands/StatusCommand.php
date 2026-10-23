@@ -59,16 +59,16 @@ class StatusCommand extends Command
     private function renderText(HookStatusReport $report): int
     {
         $this->line('');
-        $this->info('GitHooks Status');
+        $this->info('Alfil Status');
         $this->line('');
 
         // Hooks path status
         if ($report->isHooksPathConfigured()) {
             $this->line("  hooks path: <fg=green>.githooks</> (configured via core.hooksPath)");
         } elseif ($report->getHooksPathValue() !== '') {
-            $this->line("  hooks path: <fg=yellow>" . $report->getHooksPathValue() . "</> (not .githooks — run 'githooks hook' to fix)");
+            $this->line("  hooks path: <fg=yellow>" . $report->getHooksPathValue() . "</> (not .githooks — run 'alfil hook' to fix)");
         } else {
-            $this->line("  hooks path: <fg=red>not configured</> (run 'githooks hook' to install)");
+            $this->line("  hooks path: <fg=red>not configured</> (run 'alfil hook' to install)");
         }
 
         $this->line('');

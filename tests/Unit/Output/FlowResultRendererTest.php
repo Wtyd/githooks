@@ -746,12 +746,12 @@ class FlowResultRendererTest extends UnitTestCase
         }
 
         if ($expectSection) {
-            $this->assertMatchesRegularExpression('/\033\[0Ksection_start:\d+:githooks_summary\[collapsed=false\]/', $echoed);
-            $this->assertMatchesRegularExpression('/\033\[0Ksection_end:\d+:githooks_summary/', $echoed);
+            $this->assertMatchesRegularExpression('/\033\[0Ksection_start:\d+:alfil_summary\[collapsed=false\]/', $echoed);
+            $this->assertMatchesRegularExpression('/\033\[0Ksection_end:\d+:alfil_summary/', $echoed);
             return;
         }
 
-        $this->assertStringNotContainsString('githooks_summary', $echoed);
+        $this->assertStringNotContainsString('alfil_summary', $echoed);
     }
 
     /**

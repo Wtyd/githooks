@@ -38,7 +38,7 @@ class Build
     {
         $path = 'builds' . DIRECTORY_SEPARATOR;
         if (version_compare($this->phpVersion, '7.4', '<')) {
-            throw new Exception('GitHooks only supports php 7.4 or greater.', 1);
+            throw new Exception('Alfil only supports php 7.4 or greater.', 1);
         }
         if (version_compare($this->phpVersion, '8.1.0', '<')) {
             $this->buildPath =  $path . 'php7.4' . DIRECTORY_SEPARATOR;
@@ -74,6 +74,6 @@ class Build
         if (version_compare($majorMinor, '8.1', '>=')) {
             return 'alfil-8.1.tar';
         }
-        throw new Exception('GitHooks only supports php 7.4 or greater.', 1);
+        throw new Exception('Alfil only supports php 7.4 or greater.', 1);
     }
 }

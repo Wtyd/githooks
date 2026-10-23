@@ -25,7 +25,7 @@ class StatusCommandTest extends SystemTestCase
     {
         $this->artisan("status --config=$this->configPath")
             ->assertExitCode(0)
-            ->containsStringInOutput('GitHooks Status')
+            ->containsStringInOutput('Alfil Status')
             ->containsStringInOutput('pre-commit');
     }
 

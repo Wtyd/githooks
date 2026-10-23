@@ -287,6 +287,8 @@ class JsonResultFormatter implements ResultFormatter
         $diagnostics = $runtime->getDiagnostics();
 
         return [
+            'alfilVersion'    => $diagnostics->getVersion(),
+            // Pre-4.0 name of alfilVersion, kept until 5.0 for existing consumers.
             'githooksVersion' => $diagnostics->getVersion(),
             'platform'        => $diagnostics->getPlatform(),
             'ci'              => $diagnostics->getCi(),

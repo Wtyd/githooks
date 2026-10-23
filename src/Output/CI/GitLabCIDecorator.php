@@ -128,7 +128,7 @@ class GitLabCIDecorator extends CIOutputDecorator
     private function emitSection(string $jobName, string $body, bool $collapsed): void
     {
         $this->sectionCounter++;
-        $sectionId = 'githooks_job_' . $this->sectionCounter;
+        $sectionId = 'alfil_job_' . $this->sectionCounter;
         $flag = $collapsed ? '[collapsed=true]' : '[collapsed=false]';
 
         $end = ($this->clock)();

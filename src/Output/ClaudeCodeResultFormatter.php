@@ -54,7 +54,7 @@ class ClaudeCodeResultFormatter implements ResultFormatter
 
         return $json !== false
             ? $json
-            : '{"decision":"block","reason":"githooks: JSON encoding failed"}';
+            : '{"decision":"block","reason":"alfil: JSON encoding failed"}';
     }
 
     /**
