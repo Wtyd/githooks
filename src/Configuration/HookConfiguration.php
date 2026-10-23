@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Wtyd\Alfil\Configuration;
 
 use Wtyd\Alfil\Hooks;
+use Wtyd\Alfil\Hooks\RemovedBinary;
 
 class HookConfiguration
 {
@@ -47,6 +48,12 @@ class HookConfiguration
                 $result->addError("'hooks.command' must be a string (e.g. 'php7.4 vendor/bin/alfil').");
             } else {
                 $command = $raw['command'];
+                if (RemovedBinary::isCalledBy($command)) {
+                    $result->addWarning(
+                        "'hooks.command' calls the githooks binary, removed in 4.0: point it at alfil "
+                        . "(e.g. 'php vendor/bin/alfil') and run 'alfil hook'."
+                    );
+                }
             }
             unset($raw['command']);
         }

@@ -84,7 +84,8 @@ class HookStatusInspector
             $executable = $installed && is_executable($hooksDir . DIRECTORY_SEPARATOR . $event);
             $status = $installed ? HookEventStatus::STATUS_SYNCED : HookEventStatus::STATUS_MISSING;
 
-            $events[] = new HookEventStatus($event, $status, $executable, $targets);
+            $eventStatus = new HookEventStatus($event, $status, $executable, $targets);
+            $events[] = $installed ? $this->flagRemovedBinary($eventStatus, $hooksDir) : $eventStatus;
             $processed[] = $event;
         }
 
@@ -92,10 +93,28 @@ class HookStatusInspector
         foreach ($installedEvents as $event) {
             if (!in_array($event, $processed, true)) {
                 $executable = is_executable($hooksDir . DIRECTORY_SEPARATOR . $event);
-                $events[] = new HookEventStatus($event, HookEventStatus::STATUS_ORPHAN, $executable);
+                $events[] = $this->flagRemovedBinary(
+                    new HookEventStatus($event, HookEventStatus::STATUS_ORPHAN, $executable),
+                    $hooksDir
+                );
             }
         }
 
         return $events;
+    }
+
+    /**
+     * A script installed by 3.x calls the `githooks` binary, gone in 4.0: it
+     * is still "synced" by name, but every trigger fails until `alfil hook`
+     * regenerates it.
+     */
+    private function flagRemovedBinary(HookEventStatus $eventStatus, string $hooksDir): HookEventStatus
+    {
+        $path = $hooksDir . DIRECTORY_SEPARATOR . $eventStatus->getEvent();
+        $script = is_file($path) && is_readable($path) ? file_get_contents($path) : false;
+
+        return is_string($script) && RemovedBinary::isCalledBy($script)
+            ? $eventStatus->withRemovedBinaryCall()
+            : $eventStatus;
     }
 }

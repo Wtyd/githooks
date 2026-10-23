@@ -90,6 +90,19 @@ class StatusCommand extends Command
 
         $this->table(['Event', 'Status', 'Targets'], $rows);
 
+        $stale = array_map(function (HookEventStatus $eventStatus): string {
+            return $eventStatus->getEvent();
+        }, array_values(array_filter($events, function (HookEventStatus $eventStatus): bool {
+            return $eventStatus->callsRemovedBinary();
+        })));
+        if (!empty($stale)) {
+            $this->line('');
+            $this->line(
+                '  <fg=yellow>' . implode(', ', $stale) . '</> still call the githooks binary, removed in 4.0: '
+                . "run 'alfil hook' to regenerate the scripts."
+            );
+        }
+
         $this->line('');
         $this->line("  Legend: <fg=green>synced</> = installed & configured, <fg=red>missing</> = configured but not installed, <fg=yellow>orphan</> = installed but not configured");
 

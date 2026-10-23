@@ -19,6 +19,9 @@ class HookEventStatus
     /** @var string[] */
     private array $targets;
 
+    /** The installed script calls the binary removed in 4.0 ({@see RemovedBinary}). */
+    private bool $callsRemovedBinary = false;
+
     /**
      * @param string[] $targets
      */
@@ -49,5 +52,18 @@ class HookEventStatus
     public function getTargets(): array
     {
         return $this->targets;
+    }
+
+    public function withRemovedBinaryCall(): self
+    {
+        $clone = clone $this;
+        $clone->callsRemovedBinary = true;
+
+        return $clone;
+    }
+
+    public function callsRemovedBinary(): bool
+    {
+        return $this->callsRemovedBinary;
     }
 }

@@ -23,6 +23,8 @@ final class StatusJsonFormatter
                 'status' => $event->getStatus(),
                 'executable' => $event->isExecutable(),
                 'targets' => $event->getTargets(),
+                // Additive in 4.0: the script calls the removed `githooks` binary.
+                'callsRemovedBinary' => $event->callsRemovedBinary(),
             ];
         }
 

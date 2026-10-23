@@ -15,7 +15,7 @@ class StatusJsonFormatterTest extends UnitTestCase
     public function it_serialises_hooks_path_and_events_with_full_payload()
     {
         $report = new HookStatusReport(true, '.githooks', [
-            new HookEventStatus('pre-commit', HookEventStatus::STATUS_SYNCED, true, ['qa']),
+            (new HookEventStatus('pre-commit', HookEventStatus::STATUS_SYNCED, true, ['qa']))->withRemovedBinaryCall(),
             new HookEventStatus('pre-push', HookEventStatus::STATUS_MISSING, false, ['security', 'qa']),
         ]);
 
@@ -25,8 +25,14 @@ class StatusJsonFormatterTest extends UnitTestCase
             'version' => 1,
             'hooksPath' => ['configured' => true, 'value' => '.githooks'],
             'events' => [
-                ['event' => 'pre-commit', 'status' => 'synced', 'executable' => true, 'targets' => ['qa']],
-                ['event' => 'pre-push', 'status' => 'missing', 'executable' => false, 'targets' => ['security', 'qa']],
+                [
+                    'event' => 'pre-commit', 'status' => 'synced', 'executable' => true, 'targets' => ['qa'],
+                    'callsRemovedBinary' => true,
+                ],
+                [
+                    'event' => 'pre-push', 'status' => 'missing', 'executable' => false, 'targets' => ['security', 'qa'],
+                    'callsRemovedBinary' => false,
+                ],
             ],
         ], $payload);
     }

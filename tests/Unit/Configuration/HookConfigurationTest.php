@@ -266,6 +266,42 @@ class HookConfigurationTest extends UnitTestCase
         $this->assertEquals(['pre-commit'], $hooks->getEvents());
     }
 
+    /**
+     * @test
+     * @dataProvider hooksCommandProvider
+     *
+     * Factor table D (4.0 rename): a hooks.command written for 3.x keeps
+     * regenerated scripts calling the removed githooks binary. Warned, not
+     * rejected: the command is still used as given.
+     */
+    public function it_warns_when_hooks_command_calls_the_removed_binary(string $command, bool $expectWarning)
+    {
+        $result = new ValidationResult();
+        $hooks = HookConfiguration::fromArray(['command' => $command, 'pre-commit' => ['qa']], ['qa'], [], $result);
+
+        $this->assertFalse($result->hasErrors());
+        $this->assertSame($command, $hooks->getCommand());
+        $expected = $expectWarning
+            ? ["'hooks.command' calls the githooks binary, removed in 4.0: point it at alfil "
+                . "(e.g. 'php vendor/bin/alfil') and run 'alfil hook'."
+            ]
+            : [];
+        $this->assertSame($expected, $result->getWarnings());
+    }
+
+    public function hooksCommandProvider(): array
+    {
+        return [
+            'vendor/bin/githooks'          => ['php vendor/bin/githooks', true],
+            'githooks with a php prefix'   => ['php7.4 githooks', true],
+            'bare githooks'                => ['githooks', true],
+            'docker wrapper'               => ['docker compose exec app php vendor/bin/githooks', true],
+            'vendor/bin/alfil'             => ['php vendor/bin/alfil', false],
+            'custom path without the name' => ['./tools/qa-runner', false],
+            'a path that only contains it' => ['php tools/githooks-wrapper', false],
+        ];
+    }
+
     /** @test */
     public function it_reports_error_for_non_string_command()
     {
