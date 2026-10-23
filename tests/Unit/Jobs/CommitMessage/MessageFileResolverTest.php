@@ -8,9 +8,9 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\Alfil\Jobs\CommitMessage\MessageFileResolver;
 
 /**
- * Factor table B (FEAT-16): source priority (hook/cli > inline > env > fallback),
- * the null-on-no-source case (REQ-005) and raw reading (REQ-006). Disk is
- * stubbed via protected seams.
+ * Factor table of factors-message-file.md (FEAT-16, 4.0 ALFIL_COMMIT_MSG_FILE):
+ * source priority (hook/cli > inline > env > fallback), the null-on-no-source
+ * case (REQ-005) and raw reading (REQ-006). Disk is stubbed via protected seams.
  */
 class MessageFileResolverTest extends UnitTestCase
 {
@@ -48,65 +48,56 @@ class MessageFileResolverTest extends UnitTestCase
         };
     }
 
-    /** @test */
-    public function explicit_file_wins_over_everything(): void
-    {
-        $resolver = $this->resolver(true);
+    /**
+     * @test
+     * @dataProvider sourcePriorityTable
+     *
+     * Decision table of tests/Unit/Jobs/CommitMessage/factors-message-file.md:
+     * the highest-priority PRESENT source wins and is returned as-is (a path to
+     * a missing file included — only the fallback is existence-checked), null
+     * only when nothing is present and the fallback does not exist.
+     *
+     * @param string|null $expected 'temp' = a materialised inline file
+     */
+    public function resolve_follows_the_source_priority_table(
+        ?string $explicit,
+        ?string $inline,
+        ?string $env,
+        bool $fallbackExists,
+        ?string $expected
+    ): void {
+        $resolver = $this->resolver($fallbackExists);
 
-        $path = $resolver->resolve('/hook/COMMIT_EDITMSG', 'inline text', '/env/file', '/root');
+        $path = $resolver->resolve($explicit, $inline, $env, '/root');
 
-        $this->assertSame('/hook/COMMIT_EDITMSG', $path);
+        if ($expected === 'temp') {
+            $this->assertSame('/tmp/fake-inline-1.txt', $path);
+            $this->assertSame([$inline], $resolver->tempWrites, 'the inline content is what gets materialised');
+            return;
+        }
+        $this->assertSame($expected, $path);
+        $this->assertSame([], $resolver->tempWrites, 'nothing is materialised unless inline is the winner');
     }
 
-    /** @test */
-    public function inline_wins_over_env_and_fallback(): void
+    /** @return array<string, array{?string, ?string, ?string, bool, ?string}> */
+    public function sourcePriorityTable(): array
     {
-        $resolver = $this->resolver(true);
-
-        $path = $resolver->resolve(null, 'feat: inline message', '/env/file', '/root');
-
-        $this->assertStringStartsWith('/tmp/fake-inline-', $path);
-        $this->assertSame(['feat: inline message'], $resolver->tempWrites);
-    }
-
-    /** @test */
-    public function env_wins_over_fallback(): void
-    {
-        $resolver = $this->resolver(true);
-
-        $path = $resolver->resolve(null, null, '/env/COMMIT_MSG', '/root');
-
-        $this->assertSame('/env/COMMIT_MSG', $path);
-    }
-
-    /** @test */
-    public function fallback_used_when_it_exists_and_no_other_source(): void
-    {
-        $resolver = $this->resolver(true);
-
-        $path = $resolver->resolve(null, null, null, '/root');
-
-        $this->assertSame('/root/.git/COMMIT_EDITMSG', $path);
-    }
-
-    /** @test */
-    public function returns_null_when_no_source_and_no_fallback(): void
-    {
-        $resolver = $this->resolver(false);
-
-        $path = $resolver->resolve(null, null, null, '/root');
-
-        $this->assertNull($path);
-    }
-
-    /** @test */
-    public function empty_explicit_and_env_are_treated_as_absent(): void
-    {
-        $resolver = $this->resolver(true);
-
-        $path = $resolver->resolve('', null, '', '/root');
-
-        $this->assertSame('/root/.git/COMMIT_EDITMSG', $path);
+        // The stub's fileExists() is false for every non-fallback path, so each
+        // explicit/env path below is a "missing file" as far as the resolver knows.
+        return [
+            // explicit, inline, env, fallback exists, expected
+            'explicit wins over inline, env and fallback'      => ['/hook/MSG', 'inline', '/env/MSG', true, '/hook/MSG'],
+            'explicit missing file is returned, not env'       => ['/hook/missing', null, '/env/MSG', true, '/hook/missing'],
+            'inline wins over env and fallback'                => [null, 'feat: inline', '/env/MSG', true, 'temp'],
+            'empty explicit is absent, empty inline is content' => ['', '', '/env/MSG', true, 'temp'],
+            'env wins over fallback'                            => [null, null, '/env/MSG', true, '/env/MSG'],
+            'env missing file is returned, not fallback'        => [null, null, '/env/missing', true, '/env/missing'],
+            'env with no fallback'                              => [null, null, '/env/MSG', false, '/env/MSG'],
+            'empty explicit and empty env fall through'         => ['', null, '', true, '/root/.git/COMMIT_EDITMSG'],
+            'empty env and no fallback is null'                 => [null, null, '', false, null],
+            'no source, fallback exists'                        => [null, null, null, true, '/root/.git/COMMIT_EDITMSG'],
+            'no source, no fallback is null'                    => [null, null, null, false, null],
+        ];
     }
 
     /** @test */

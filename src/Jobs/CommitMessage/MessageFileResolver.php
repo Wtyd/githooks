@@ -10,7 +10,9 @@ namespace Wtyd\Alfil\Jobs\CommitMessage;
  *
  *   1. explicit path — Git hook arg `$1` or `--message-file=PATH`
  *   2. inline string — `--message=STRING` (materialised to a temp file)
- *   3. environment   — `$envFile`, a caller-supplied path (no caller passes one today)
+ *   3. environment   — `ALFIL_COMMIT_MSG_FILE` ({@see ENV_MESSAGE_FILE}), read by
+ *                      the caller; the only source when the job runs inside
+ *                      `flow` / `flows`, which carry no hook argument
  *   4. fallback      — `<rootPath>/.git/COMMIT_EDITMSG`
  *
  * `resolve()` returns a path candidate, or `null` only when no explicit/inline/
@@ -25,6 +27,9 @@ namespace Wtyd\Alfil\Jobs\CommitMessage;
  */
 class MessageFileResolver
 {
+    /** Environment variable that hands the message file to a job run outside the hook (4.0). */
+    public const ENV_MESSAGE_FILE = 'ALFIL_COMMIT_MSG_FILE';
+
     public function resolve(
         ?string $explicitFile,
         ?string $inlineContent,

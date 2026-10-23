@@ -149,10 +149,10 @@ alfil job commit-format --message-file=/tmp/msg.txt
 alfil job commit-format --message="feat: add x" --format=json
 ```
 
-`--message` and `--message-file` are mutually exclusive. When neither is given (nor a hook argument), the job falls back to `.git/COMMIT_EDITMSG`. Exit code `0` means valid, `1` means invalid.
+`--message` and `--message-file` are mutually exclusive. When neither is given (nor a hook argument), the job falls back to the `ALFIL_COMMIT_MSG_FILE` environment variable and then to `.git/COMMIT_EDITMSG`. Exit code `0` means valid, `1` means invalid.
 
 !!! note "Keep `commit-msg` out of QA flows"
-    Wire `commit-msg` directly to the hook (`'commit-msg' => ['commit-format']`), not inside a `qa` flow. A reader expects `flow qa` to validate code, not commit metadata — and outside the hook there is usually no message to validate.
+    Wire `commit-msg` directly to the hook (`'commit-msg' => ['commit-format']`), not inside a `qa` flow. A reader expects `flow qa` to validate code, not commit metadata — and outside the hook there is usually no message to validate. If a hook script of your own does run a flow with a `commit-msg` job in it, hand it the file Git passed: `ALFIL_COMMIT_MSG_FILE="$1" vendor/bin/alfil flow commit-checks`.
 
 ## What is **not** validated
 

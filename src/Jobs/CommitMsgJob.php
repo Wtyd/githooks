@@ -61,11 +61,17 @@ class CommitMsgJob extends JobAbstract
         $context = $this->context ?? ExecutionContext::default();
         $resolver = $this->resolver();
 
-        $path = $resolver->resolve($context->getCommitMessageFile(), null, null, $context->getCwd());
+        $envFile = getenv(MessageFileResolver::ENV_MESSAGE_FILE);
+        $path = $resolver->resolve(
+            $context->getCommitMessageFile(),
+            null,
+            $envFile === false ? null : $envFile,
+            $context->getCwd()
+        );
         if ($path === null) {
             return $this->failResult(
                 "commit-msg: no message file available. Provide --message-file, --message, "
-                . "or run via the 'commit-msg' git hook.",
+                . "set ALFIL_COMMIT_MSG_FILE, or run via the 'commit-msg' git hook.",
                 $start
             );
         }

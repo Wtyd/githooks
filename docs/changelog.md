@@ -53,6 +53,7 @@ A `githooks.yml` is rejected on its extension alone, never parsed; one left behi
 ### Fixed
 
 - **`alfil hook --config=<file>` installed a hook when the file could not be read.** A missing path, a v2 or YAML file, or a file that did not return an array all fell back to the minimal `.git/hooks/` install: the command reported `Hook pre-commit created`, exited 0 and left behind a script pointing at a configuration that does not work. An explicit `--config` that cannot be used is now an error (exit 1) and nothing is written; the minimal install only applies when there is no `--config` and no file in the default locations. See [`alfil hook`](cli/hook.md).
+- **A `commit-msg` job run through `flow` or `flows` never received the message file.** The 3.x documentation promised `GITHOOKS_COMMIT_MSG_FILE` as the way to hand it over when the job runs outside the hook, but the variable was never read: the job fell back to `.git/COMMIT_EDITMSG` whatever the script passed, and found nothing at all in a git worktree, where `.git` is a file. `ALFIL_COMMIT_MSG_FILE` is now read, after the hook argument and `--message-file` / `--message` and before `.git/COMMIT_EDITMSG`, so a hook script of your own can run `ALFIL_COMMIT_MSG_FILE="$1" vendor/bin/alfil flow commit-checks`. A variable pointing at a missing file is reported as *cannot read message file*, never silently replaced by the fallback. The old name is not read; it never did anything. See [Commit Message Validation](tools/commit-msg.md).
 
 ## [3.8.1]
 

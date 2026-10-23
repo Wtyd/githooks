@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Tests\System\Commands;
 
 use Tests\Utils\TestCase\SystemTestCase;
+use Wtyd\Alfil\Jobs\CommitMessage\MessageFileResolver;
 
 /**
  * End-to-end coverage of the `commit-msg` job through `githooks job` (FEAT-16):
- * --message / --message-file, mutual exclusion, JSON envelope and conf:check.
- * Uses --message (GUD-003) so the tests never touch a real .git/COMMIT_EDITMSG.
+ * --message / --message-file, mutual exclusion, JSON envelope and conf:check,
+ * plus ALFIL_COMMIT_MSG_FILE through `flow` (4.0). Uses --message (GUD-003)
+ * so the tests never touch a real .git/COMMIT_EDITMSG.
  */
 class CommitMsgJobCommandTest extends SystemTestCase
 {
@@ -24,6 +26,12 @@ class CommitMsgJobCommandTest extends SystemTestCase
             ->enableV3Mode()
             ->addV3Job('commit-format', 'commit-msg', ['preset' => 'conventional-commits'])
             ->buildInFileSystem();
+    }
+
+    protected function tearDown(): void
+    {
+        putenv(MessageFileResolver::ENV_MESSAGE_FILE);
+        parent::tearDown();
     }
 
     /** @test AC-001 */
@@ -113,6 +121,29 @@ class CommitMsgJobCommandTest extends SystemTestCase
         ])
             ->assertExitCode(0)
             ->containsStringInOutput('"skipped": true');
+    }
+
+    /**
+     * @test
+     *
+     * 4.0: inside `flow` there is no hook argument and no --message-file, so
+     * ALFIL_COMMIT_MSG_FILE is the only way to hand the job its file. The run
+     * starts from the repository root, where .git/COMMIT_EDITMSG may well exist
+     * and be valid, so the env file carries an invalid subject: only a job that
+     * read the variable can echo that subject back.
+     */
+    public function flow_reads_the_message_file_from_the_environment(): void
+    {
+        $this->configurationFileBuilder->addV3Flow('commit-checks', ['commit-format'])->buildInFileSystem();
+        $messageFile = tempnam(sys_get_temp_dir(), 'commitmsgsys-');
+        file_put_contents($messageFile, "Add stuff.\n");
+        putenv(MessageFileResolver::ENV_MESSAGE_FILE . "=$messageFile");
+
+        $this->artisan("flow commit-checks --config=$this->configPath")
+            ->assertExitCode(1)
+            ->containsStringInOutput('Subject:   Add stuff.');
+
+        unlink($messageFile);
     }
 
     /** @test */

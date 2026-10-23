@@ -7,27 +7,44 @@ namespace Tests\Unit\Jobs;
 use Tests\Utils\TestCase\UnitTestCase;
 use Wtyd\Alfil\Configuration\JobConfiguration;
 use Wtyd\Alfil\Execution\ExecutionContext;
+use Wtyd\Alfil\Jobs\CommitMessage\MessageFileResolver;
 use Wtyd\Alfil\Jobs\CommitMsgJob;
 
 /**
  * Orchestration of {@see CommitMsgJob::runInline()} (FEAT-16): outcome → JobResult
  * mapping for pass / fail / merge-skip / no-source / unreadable. The validator,
  * presets and resolver have their own unit tests; here we check the wiring and
- * the JobResult contract (REQ-016/017/018, AC-001/002/003/009/010).
+ * the JobResult contract (REQ-016/017/018, AC-001/002/003/009/010), and that
+ * ALFIL_COMMIT_MSG_FILE is really read (4.0; rows 1, 5, 6 and 8 of
+ * CommitMessage/factors-message-file.md as the job sees them).
  */
 class CommitMsgJobTest extends UnitTestCase
 {
     /** @var string[] */
     private array $tmpFiles = [];
 
+    /** @var string[] Fake repository roots, deepest path first for rmdir. */
+    private array $tmpDirs = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        putenv(MessageFileResolver::ENV_MESSAGE_FILE);
+    }
+
     protected function tearDown(): void
     {
+        putenv(MessageFileResolver::ENV_MESSAGE_FILE);
         foreach ($this->tmpFiles as $file) {
             if (is_file($file)) {
                 unlink($file);
             }
         }
+        foreach ($this->tmpDirs as $dir) {
+            @rmdir($dir);
+        }
         $this->tmpFiles = [];
+        $this->tmpDirs = [];
     }
 
     private function job(array $config): CommitMsgJob
@@ -35,12 +52,38 @@ class CommitMsgJobTest extends UnitTestCase
         return new CommitMsgJob(new JobConfiguration('commit-format', 'commit-msg', $config));
     }
 
-    private function contextWithMessage(string $message): ExecutionContext
+    private function messageFile(string $message): string
     {
         $path = (string) tempnam(sys_get_temp_dir(), 'commitmsgtest-');
         file_put_contents($path, $message);
         $this->tmpFiles[] = $path;
-        return ExecutionContext::default()->withCommitMessageFile($path);
+        return $path;
+    }
+
+    private function contextWithMessage(string $message): ExecutionContext
+    {
+        return ExecutionContext::default()->withCommitMessageFile($this->messageFile($message));
+    }
+
+    /**
+     * A context whose CWD is a fake repository root holding a valid
+     * .git/COMMIT_EDITMSG, so the fallback exists and any verdict other than
+     * "valid" must have come from a higher-priority source.
+     */
+    private function contextWithValidFallback(): ExecutionContext
+    {
+        $root = sys_get_temp_dir() . '/commitmsg-root-' . uniqid();
+        mkdir($root . '/.git', 0777, true);
+        file_put_contents($root . '/.git/COMMIT_EDITMSG', "feat(api): add user endpoint\n");
+        $this->tmpFiles[] = $root . '/.git/COMMIT_EDITMSG';
+        $this->tmpDirs[] = $root . '/.git';
+        $this->tmpDirs[] = $root;
+        return ExecutionContext::default()->withCwd($root);
+    }
+
+    private function setEnvFile(string $path): void
+    {
+        putenv(MessageFileResolver::ENV_MESSAGE_FILE . '=' . $path);
     }
 
     private function runWithContext(CommitMsgJob $job, ExecutionContext $context): \Wtyd\Alfil\Execution\JobResult
@@ -155,9 +198,70 @@ class CommitMsgJobTest extends UnitTestCase
         // committer is the one listing the three ways to supply a message.
         $this->assertSame(
             "commit-msg: no message file available. Provide --message-file, --message, "
-            . "or run via the 'commit-msg' git hook.",
+            . "set ALFIL_COMMIT_MSG_FILE, or run via the 'commit-msg' git hook.",
             $result->getOutput()
         );
+    }
+
+    /**
+     * @test
+     *
+     * 4.0: a commit-msg job inside `flow` / `flows` carries no hook argument and
+     * no --message-file, so ALFIL_COMMIT_MSG_FILE is its only way to the message.
+     * The fallback exists and is valid; the env file is not, so a job that did
+     * not read the variable would pass on the fallback.
+     */
+    public function the_env_file_wins_over_the_commit_editmsg_fallback(): void
+    {
+        $job = $this->job(['preset' => 'conventional-commits']);
+        $this->setEnvFile($this->messageFile('Add stuff.'));
+
+        $result = $this->runWithContext($job, $this->contextWithValidFallback());
+
+        $this->assertFalse($result->isSuccess());
+        $this->assertStringContainsString("\n  Subject:   Add stuff.\n", $result->getOutput());
+    }
+
+    /** @test The hook argument / --message-file keeps its priority over the variable. */
+    public function the_explicit_file_wins_over_the_env_file(): void
+    {
+        $job = $this->job(['preset' => 'conventional-commits']);
+        $this->setEnvFile($this->messageFile('Add stuff.'));
+
+        $result = $this->runWithContext($job, $this->contextWithMessage('feat(api): add user endpoint'));
+
+        $this->assertTrue($result->isSuccess(), $result->getOutput());
+    }
+
+    /**
+     * @test
+     *
+     * A variable pointing at a missing file is a misconfiguration to report,
+     * not a reason to silently validate .git/COMMIT_EDITMSG instead.
+     */
+    public function a_missing_env_file_fails_with_cannot_read_instead_of_the_fallback(): void
+    {
+        $job = $this->job(['preset' => 'conventional-commits']);
+        $this->setEnvFile('/no/such/env/commit/msg.txt');
+
+        $result = $this->runWithContext($job, $this->contextWithValidFallback());
+
+        $this->assertFalse($result->isSuccess());
+        $this->assertSame(
+            "commit-msg: cannot read message file '/no/such/env/commit/msg.txt'.",
+            $result->getOutput()
+        );
+    }
+
+    /** @test An empty variable counts as unset: the fallback is used. */
+    public function an_empty_env_file_is_absent(): void
+    {
+        $job = $this->job(['preset' => 'conventional-commits']);
+        $this->setEnvFile('');
+
+        $result = $this->runWithContext($job, $this->contextWithValidFallback());
+
+        $this->assertTrue($result->isSuccess(), $result->getOutput());
     }
 
     /**
