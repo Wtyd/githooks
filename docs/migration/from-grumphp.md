@@ -2,9 +2,9 @@
 
 ## Concept mapping
 
-| GrumPHP | GitHooks |
+| GrumPHP | Alfil |
 |---|---|
-| `grumphp.yml` | `githooks.php` |
+| `grumphp.yml` | `alfil.php` |
 | `tasks` | `jobs` |
 | Task name (e.g. `phpstan`) | Job type (`'type' => 'phpstan'`) |
 | `task.metadata.priority` | Job order in the flow's `jobs` array |
@@ -30,7 +30,7 @@ grumphp:
       config_file: phpunit.xml
 ```
 
-**GitHooks (`githooks.php`):**
+**Alfil (`alfil.php`):**
 ```php
 <?php
 return [
@@ -66,7 +66,7 @@ return [
 
 ## Key differences
 
-| Feature | GrumPHP | GitHooks |
+| Feature | GrumPHP | Alfil |
 |---|---|---|
 | **Distribution** | Composer dependency (mixes with project deps) | `.phar` standalone (isolated dependencies) |
 | **Config format** | YAML | PHP (YAML deprecated) |
@@ -79,9 +79,9 @@ return [
 
 ## Steps
 
-1. Create `githooks.php` based on your `grumphp.yml` (see example above).
-2. Install GitHooks: `composer require --dev wtyd/githooks`
-3. Install hooks: `githooks hook`
-4. Validate: `githooks conf:check`
+1. Create `alfil.php` based on your `grumphp.yml` (see example above).
+2. Install Alfil: `composer require --dev wtyd/alfil`
+3. Install hooks: `alfil hook`
+4. Validate: `alfil conf:check`
 5. Remove GrumPHP: `composer remove --dev phpro/grumphp`
 6. Delete `grumphp.yml`.

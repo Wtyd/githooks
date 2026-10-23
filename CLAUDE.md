@@ -6,7 +6,7 @@ Responde siempre en castellano (español de España).
 
 ## Qué es este proyecto
 
-**GitHooks** (`wtyd/githooks`) es una herramienta CLI en PHP distribuida como `.phar`, construida con Laravel Zero. Gestiona git hooks y ofrece una interfaz unificada para ejecutar herramientas de QA (phpstan, phpmd, phpcs, phpunit, psalm, etc.) contra un código fuente. Se distribuye como binario standalone para no interferir con las dependencias Composer del proyecto destino.
+**Alfil** (`wtyd/alfil`, antes GitHooks / `wtyd/githooks` hasta la 3.x) es una herramienta CLI en PHP distribuida como `.phar`, construida con Laravel Zero. Gestiona git hooks y ofrece una interfaz unificada para ejecutar herramientas de QA (phpstan, phpmd, phpcs, phpunit, psalm, etc.) contra un código fuente. Se distribuye como binario standalone para no interferir con las dependencias Composer del proyecto destino.
 
 ## Proceso de trabajo
 
@@ -100,7 +100,7 @@ php7.4 vendor/bin/phpunit tests/Unit              # Solo unitarios
 php7.4 vendor/bin/phpunit --group git             # Tests de git (excluidos por defecto)
 php7.4 vendor/bin/phpunit --group release         # Tests de release (requieren .phar)
 
-# QA (v3 — usa qa/githooks.php con formato hooks/flows/jobs)
+# QA (v3 — usa qa/alfil.php con formato hooks/flows/jobs)
 php7.4 alfil flow qa --format=json       # Flow completo de QA
 php7.4 alfil job phpstan_src --format=json  # Job individual
 
@@ -174,7 +174,7 @@ CLI (FlowCommand / FlowsCommand / JobCommand / HookRunCommand)
 ```
 
 1. El comando construye un `*RunRequest` con los flags y la config y delega en su Runner.
-2. `ConfigurationParser` localiza `githooks.php` (raíz, luego `qa/`; o `--config`), aplica `githooks.local.php` y valida. Una config v2 (`Options`/`Tools`) o YAML lanza `UnsupportedConfigurationFormatException` (solo v3 en PHP desde 4.0).
+2. `ConfigurationParser` localiza `alfil.php` (raíz, luego `qa/`; después `githooks.php` como fallback deprecado; o `--config`), aplica el `.local.php` emparejado por nombre y valida. Una config v2 (`Options`/`Tools`) o YAML lanza `UnsupportedConfigurationFormatException` (solo v3 en PHP desde 4.0).
 3. `FlowPreparer` resuelve el flow, la cascada de options, el grafo `needs` y la admisión de ficheros → `FlowPlan`.
 4. `FlowExecutor` ejecuta el plan, secuencial o en `ProcessPool` con budget de threads/memoria.
 5. Cada job (`src/Jobs/*Job.php`, instanciado por `JobRegistry`) construye su comando shell en `buildCommand()`.
@@ -195,7 +195,7 @@ CLI (FlowCommand / FlowsCommand / JobCommand / HookRunCommand)
 ### Formato de configuración
 
 ```php
-// githooks.php
+// alfil.php
 return [
     'hooks' => ['pre-commit' => ['qa']],
     'flows' => [

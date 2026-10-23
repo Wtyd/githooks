@@ -1,11 +1,11 @@
-# githooks job
+# alfil job
 
 Run a single job in isolation. Useful for debugging job configuration or running a specific check.
 
 ## Synopsis
 
 ```
-githooks job <name> [options]
+alfil job <name> [options]
 ```
 
 ## Options
@@ -35,24 +35,24 @@ Most flags below are CLI overrides for keys declared under `flows.options` or in
 | `--stats` | Activate RSS sampling and the summary table after the run. See [Options: Stats](../configuration/options.md#stats-stats). |
 | `--stats-sort=exec\|name\|type` | Sort the `--stats` table: `exec` (default, completion order), `name`, or `type`. A non-`exec` value adds a leading `#` column with the execution order. Text table only. An unknown value warns on stderr and falls back to `exec`: `Warning: --stats-sort expects one of: exec, name, type (got 'nmae'). Falling back to exec.` |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
-| `--diag` | Print a runtime diagnostics block (githooks version, platform, CPU/cgroup limit, available memory, load averages, start timestamp) before the run. Opt-in locally; **auto-on in CI**. See [Runtime diagnostics](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps). |
+| `--diag` | Print a runtime diagnostics block (alfil version, platform, CPU/cgroup limit, available memory, load averages, start timestamp) before the run. Opt-in locally; **auto-on in CI**. See [Runtime diagnostics](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps). |
 | `--config=PATH` | Path to configuration file. |
 | `-- ARGS...` | Extra arguments passed to the tool. Place after `--` separator. |
 
 ## Examples
 
 ```bash
-githooks job phpstan_src                  # Run a single job
-githooks job phpstan_src --dry-run        # Show command without running
-githooks job phpunit_all --format=json    # JSON v2 output to stdout
-githooks job phpstan_src --format=sarif   # SARIF 2.1.0 to stdout
-githooks job phpstan_src --format=sarif --output=reports/phpstan.sarif   # SARIF to a file
-githooks job phpcs_src --fast             # Only staged files
-githooks job phpcs_src --fast-dirty       # Working tree diff vs HEAD ∪ untracked
-githooks job phpstan_src --files=src/User.php   # Files mode: single explicit file (IDE on-save)
-githooks job phpstan_src --files-from=changed.txt   # Files mode: read paths from manifest
-githooks job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
-githooks job phpstan_src -- --memory-limit=2G         # Override memory limit
+alfil job phpstan_src                  # Run a single job
+alfil job phpstan_src --dry-run        # Show command without running
+alfil job phpunit_all --format=json    # JSON v2 output to stdout
+alfil job phpstan_src --format=sarif   # SARIF 2.1.0 to stdout
+alfil job phpstan_src --format=sarif --output=reports/phpstan.sarif   # SARIF to a file
+alfil job phpcs_src --fast             # Only staged files
+alfil job phpcs_src --fast-dirty       # Working tree diff vs HEAD ∪ untracked
+alfil job phpstan_src --files=src/User.php   # Files mode: single explicit file (IDE on-save)
+alfil job phpstan_src --files-from=changed.txt   # Files mode: read paths from manifest
+alfil job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
+alfil job phpstan_src -- --memory-limit=2G         # Override memory limit
 ```
 
 ## Structured output
@@ -75,5 +75,5 @@ See [How-To: Output Formats](../how-to/output-formats.md) for the full schema.
 ## See also
 
 - [Configuration: Jobs](../configuration/jobs.md)
-- [`githooks flow`](flow.md) — run a group of jobs.
-- [`githooks flows`](flows.md) — run several flows or a meta-flow in a single plan.
+- [`alfil flow`](flow.md) — run a group of jobs.
+- [`alfil flows`](flows.md) — run several flows or a meta-flow in a single plan.

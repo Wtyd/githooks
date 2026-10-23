@@ -1,11 +1,11 @@
-# githooks status
+# alfil status
 
 Show the state of installed hooks and their synchronization with the configuration.
 
 ## Synopsis
 
 ```
-githooks status [--config=PATH] [--format=text|json]
+alfil status [--config=PATH] [--format=text|json]
 ```
 
 ## Options
@@ -25,7 +25,7 @@ Shows:
 | Status | Meaning |
 |---|---|
 | **synced** | Installed and matches configuration. |
-| **missing** | Configured but not installed. Run `githooks hook` to fix. |
+| **missing** | Configured but not installed. Run `alfil hook` to fix. |
 | **orphan** | Installed but not in configuration. |
 
 ### JSON payload
@@ -35,22 +35,22 @@ Shows:
   "version": 1,
   "hooksPath": { "configured": true, "value": ".githooks" },
   "events": [
-    { "event": "pre-commit", "status": "synced", "executable": true, "targets": ["qa"] }
+    { "event": "pre-commit", "status": "synced", "executable": true, "targets": ["qa"], "callsRemovedBinary": false }
   ]
 }
 ```
 
-Targets are emitted raw. A configuration that cannot be read (missing, v2 shape,
+Targets are emitted raw. `callsRemovedBinary` is `true` when the installed script still runs the `githooks` binary of 3.x, which no longer exists: the event looks synced but fails on every trigger until `alfil hook` regenerates the scripts. The text report lists those events with the same hint. A configuration that cannot be read (missing, v2 shape,
 YAML) produces `{"version":1,"error":"…"}` and exit code 1.
 
 ## Examples
 
 ```bash
-githooks status
-githooks status --config=qa/githooks.php
-githooks status --format=json
+alfil status
+alfil status --config=qa/alfil.php
+alfil status --format=json
 ```
 
 ## See also
 
-- [`githooks hook`](hook.md) — install hooks.
+- [`alfil hook`](hook.md) — install hooks.

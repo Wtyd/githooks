@@ -1,11 +1,11 @@
-# githooks flow
+# alfil flow
 
 Run a flow by name. A flow executes its configured jobs with the flow's options.
 
 ## Synopsis
 
 ```
-githooks flow <name> [options]
+alfil flow <name> [options]
 ```
 
 ## Options
@@ -29,11 +29,11 @@ Most flags below are CLI overrides for keys declared under `flows.options` or pe
 | `--files=a,b,c` | Files mode — accelerable jobs analyze only the explicit list (CSV). Mutually exclusive with `--files-from`, `--fast`, `--fast-branch`, `--fast-dirty`. See [How-To: --files / --files-from](../how-to/files-flag.md). |
 | `--files-from=PATH` | Files mode — read the list of paths from `PATH` (one per line; `#` comments and blanks ignored; UTF-8 + CRLF tolerated). Use this when the list exceeds the shell `ARG_MAX` or comes from `git diff --name-only`. |
 | `--exclude-pattern=glob1,glob2` | Drop input paths that match any glob (`*`, `**`, `?`). Requires `--files` or `--files-from`. See [How-To: --files / --files-from](../how-to/files-flag.md#-exclude-pattern). |
-| `--branch=X` | Override the detected branch name used to resolve `flows.<name>.on => [branch_pattern => …]`. Wins over `$GITHOOKS_BRANCH`, CI env vars (`CI_COMMIT_REF_NAME`, `GITHUB_REF_NAME`, …) and `git rev-parse --abbrev-ref HEAD`. Only meaningful when the flow declares `on`. See [Branch-driven execution mode (`on`)](../configuration/flows.md#branch-driven-execution-mode-on). |
+| `--branch=X` | Override the detected branch name used to resolve `flows.<name>.on => [branch_pattern => …]`. Wins over `$ALFIL_BRANCH`, CI env vars (`CI_COMMIT_REF_NAME`, `GITHUB_REF_NAME`, …) and `git rev-parse --abbrev-ref HEAD`. Only meaningful when the flow declares `on`. See [Branch-driven execution mode (`on`)](../configuration/flows.md#branch-driven-execution-mode-on). |
 | `--repeat=N` | Run the flow `N` times (every pass runs, whatever its outcome) and report, test by test, which tests passed in some passes and failed in others. Reads the junit file of each job that declares `junit` (or `log-junit` on `phpunit`/`paratest`). `--repeat=1` is a normal run; with `--dry-run` it is ignored. Only `--format=text` and `--format=json` are accepted. See [How-To: Finding Flaky Tests](../how-to/flaky-tests.md). |
 | `--flap-threshold=N` | With `--repeat`: a test that both passed and failed is **flaky** when its rarer outcome happened at least `N` times (default `1`); below that it is listed as **suspect** and does not fail the command. Without `--repeat` it warns and is ignored. |
 | `--monitor` | Show thread usage report after execution. See [Options: Thread budget](../configuration/options.md#thread-budget). |
-| `--save-history` | Persist this run to `.githooks/history/` for [`profile`](profile.md), even when `history-size` is not configured (window defaults to 100). Never persists on `--dry-run`. See [`githooks profile`](profile.md#enabling-history). |
+| `--save-history` | Persist this run to `.githooks/history/` for [`profile`](profile.md), even when `history-size` is not configured (window defaults to 100). Never persists on `--dry-run`. See [`alfil profile`](profile.md#enabling-history). |
 | `--warn-after=N` / `--fail-after=N` | Override flow-level time-budget thresholds (seconds). See [Options: Time budget](../configuration/options.md#time-budget-time-budget). |
 | `--no-time-budget` | Disable both per-job and flow-level time evaluation for this run. Mixing with `--warn-after` / `--fail-after` emits a stderr warning and ignores them. |
 | `--memory-warn-above=N` / `--memory-fail-above=N` | Override flow-level memory-budget thresholds (MB). See [Options: Memory budget](../configuration/options.md#memory-budget-memory-budget). |
@@ -43,41 +43,41 @@ Most flags below are CLI overrides for keys declared under `flows.options` or pe
 | `--stats-sort=exec\|name\|type` | Sort the `--stats` table: `exec` (default, completion order), `name`, or `type`. A non-`exec` value adds a leading `#` column with the execution order. Text table only; JSON keeps execution order (see [`executionOrder`](../how-to/output-formats.md#per-job-fields)). An unknown value warns on stderr and falls back to `exec`: `Warning: --stats-sort expects one of: exec, name, type (got 'nmae'). Falling back to exec.` |
 | `--no-ci` | Disable auto-detection of CI annotations (GitHub Actions / GitLab CI). See [CI Annotations](../how-to/ci-cd.md#ci-annotations). |
 | `--show-progress` | Force progress emission on stderr even when not a TTY. Useful in CI with `--format=json\|junit\|sarif\|codeclimate` to make long pipelines visible in the runner log. |
-| `--diag` | Print a runtime diagnostics block (githooks version, platform, CPU/cgroup limit, available memory, load averages, start timestamp) before the run. Opt-in locally; **auto-on in CI** regardless of the flag. See [Runtime diagnostics](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps). |
+| `--diag` | Print a runtime diagnostics block (alfil version, platform, CPU/cgroup limit, available memory, load averages, start timestamp) before the run. Opt-in locally; **auto-on in CI** regardless of the flag. See [Runtime diagnostics](../how-to/output-formats.md#runtime-diagnostics-and-absolute-timestamps). |
 | `--config=PATH` | Path to configuration file. |
 
 ## Examples
 
 ```bash
-githooks flow qa                                    # Run the 'qa' flow
-githooks flow lint --fail-fast                      # Run with fail-fast
-githooks flow qa --exclude-jobs=phpunit,phpcpd      # Skip specific jobs
-githooks flow qa --only-jobs=phpstan_src,phpmd_src  # Run only these jobs
-githooks flow qa --dry-run                          # Full plan (would-run + skipped), no execution
-githooks flow qa --dry-run --format=json            # Dry-run plan as JSON (dryRun: true)
-githooks flow qa --fast --dry-run                   # Preview which jobs fast mode would run vs skip
-githooks flow qa --processes=4                      # Run with 4 parallel processes
-githooks flow qa --format=json                      # JSON v2 (AI / CI / scripts), to stdout
-githooks flow qa --format=junit                     # JUnit XML for test reporting, to stdout
-githooks flow qa --format=codeclimate               # GitLab Code Quality report, to stdout
-githooks flow qa --format=sarif                     # SARIF 2.1.0, to stdout
-githooks flow qa --format=sarif --output=reports/qa.sarif   # SARIF to a file
-githooks flow qa --report-sarif=reports/qa.sarif --report-junit=reports/junit.xml \
+alfil flow qa                                    # Run the 'qa' flow
+alfil flow lint --fail-fast                      # Run with fail-fast
+alfil flow qa --exclude-jobs=phpunit,phpcpd      # Skip specific jobs
+alfil flow qa --only-jobs=phpstan_src,phpmd_src  # Run only these jobs
+alfil flow qa --dry-run                          # Full plan (would-run + skipped), no execution
+alfil flow qa --dry-run --format=json            # Dry-run plan as JSON (dryRun: true)
+alfil flow qa --fast --dry-run                   # Preview which jobs fast mode would run vs skip
+alfil flow qa --processes=4                      # Run with 4 parallel processes
+alfil flow qa --format=json                      # JSON v2 (AI / CI / scripts), to stdout
+alfil flow qa --format=junit                     # JUnit XML for test reporting, to stdout
+alfil flow qa --format=codeclimate               # GitLab Code Quality report, to stdout
+alfil flow qa --format=sarif                     # SARIF 2.1.0, to stdout
+alfil flow qa --format=sarif --output=reports/qa.sarif   # SARIF to a file
+alfil flow qa --report-sarif=reports/qa.sarif --report-junit=reports/junit.xml \
                                                     # Multi-report: 4 formats in one run
                  --report-codeclimate=reports/cc.json --report-json=reports/qa.json
-githooks flow qa --format=json --no-reports         # AI/script: JSON to stdout, no side-effect files
-githooks flow qa --fast                             # Only staged files
-githooks flow qa --fast-branch                      # Only branch diff files
-githooks flow qa --fast-dirty                       # Working tree diff vs HEAD ∪ untracked
-githooks flow ci --branch=master                    # Force branch for flows.ci.on resolution
-githooks flow qa --files=src/User.php               # Files mode: explicit single file
-githooks flow qa --files-from=changed.txt           # Files mode: from manifest
-githooks flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'
+alfil flow qa --format=json --no-reports         # AI/script: JSON to stdout, no side-effect files
+alfil flow qa --fast                             # Only staged files
+alfil flow qa --fast-branch                      # Only branch diff files
+alfil flow qa --fast-dirty                       # Working tree diff vs HEAD ∪ untracked
+alfil flow ci --branch=master                    # Force branch for flows.ci.on resolution
+alfil flow qa --files=src/User.php               # Files mode: explicit single file
+alfil flow qa --files-from=changed.txt           # Files mode: from manifest
+alfil flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'
                                                     # Drop tests from the manifest
-githooks flow qa --monitor                          # Show thread usage report
-githooks flow qa --diag                             # Print runtime diagnostics block first
-githooks flow qa --no-ci                            # Opt out of CI annotations
-githooks flow qa --config=qa/custom-githooks.php    # Use custom config
+alfil flow qa --monitor                          # Show thread usage report
+alfil flow qa --diag                             # Print runtime diagnostics block first
+alfil flow qa --no-ci                            # Opt out of CI annotations
+alfil flow qa --config=qa/custom-alfil.php    # Use custom config
 ```
 
 ## Structured output
@@ -95,13 +95,13 @@ Progress lines (`OK`, `Done.`, colours) write to **stderr** **only when a TTY is
 
 ```bash
 # No redirection needed — stderr is naturally empty off a TTY
-githooks flow qa --format=json | jq '.jobs[] | select(.success == false)'
+alfil flow qa --format=json | jq '.jobs[] | select(.success == false)'
 ```
 
 Force progress in long-running CI pipelines with `--show-progress`:
 
 ```bash
-githooks flow qa --format=json --show-progress --output=reports/qa.json
+alfil flow qa --format=json --show-progress --output=reports/qa.json
 ```
 
 `--dry-run` never emits progress (no real execution to measure). See [How-To: Output Formats](../how-to/output-formats.md) for the full schema and stderr rules.
@@ -136,6 +136,6 @@ The header writes to stdout in text mode and to stderr when a structured format 
 
 - [Configuration: Flows](../configuration/flows.md)
 - [Configuration: Options](../configuration/options.md)
-- [`githooks flows`](flows.md) — run several flows or a meta-flow in a single plan.
-- [`githooks job`](job.md) — run a single job.
+- [`alfil flows`](flows.md) — run several flows or a meta-flow in a single plan.
+- [`alfil job`](job.md) — run a single job.
 - [How-To: Finding Flaky Tests](../how-to/flaky-tests.md) — `--repeat` and `--flap-threshold` in practice.

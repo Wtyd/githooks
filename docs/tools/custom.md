@@ -1,6 +1,6 @@
 # Custom Jobs
 
-The `custom` type makes GitHooks adaptable to any scenario: run tools not natively supported, scripts in any language, or replace removed tools.
+The `custom` type makes Alfil adaptable to any scenario: run tools not natively supported, scripts in any language, or replace removed tools.
 
 - **Type:** `custom`
 - **Accelerable:** Opt-in (`accelerable: true` in structured mode)
@@ -100,7 +100,7 @@ A minimal sibling of `custom`: one executable plus fixed arguments, with no path
 ],
 ```
 
-The command is `executable-path` + `other-arguments` (plus anything after `--` when run via `githooks job`). `executable-path` is **required**: without it the job would build an empty command and be reported as passing while running nothing, so since 3.7 it is rejected as a configuration error.
+The command is `executable-path` + `other-arguments` (plus anything after `--` when run via `alfil job`). `executable-path` is **required**: without it the job would build an empty command and be reported as passing while running nothing, so since 3.7 it is rejected as a configuration error.
 
 How it differs from `custom`:
 

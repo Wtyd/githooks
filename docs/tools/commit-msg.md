@@ -28,7 +28,7 @@ return [
 Then install the hooks so Git runs the job on every commit:
 
 ```bash
-githooks hook
+alfil hook
 ```
 
 Now a commit whose subject does not follow [Conventional Commits](https://www.conventionalcommits.org/) is rejected:
@@ -44,7 +44,7 @@ $ git commit -m "Add stuff."
 A valid one (`git commit -m "feat(api): add user endpoint"`) passes silently and the commit is created.
 
 !!! warning "Upgrading from an earlier version"
-    The `commit-msg` job needs the message-file path that Git passes to the hook. If you installed your hooks **before this feature existed**, the generated hook script discards that argument. **Run `githooks hook` again** after upgrading so the script forwards Git's arguments; until then a `commit-msg` job reports *"no message file available"*. Reinstalling is safe and idempotent.
+    The `commit-msg` job needs the message-file path that Git passes to the hook. If you installed your hooks **before this feature existed**, the generated hook script discards that argument. **Run `alfil hook` again** after upgrading so the script forwards Git's arguments; until then a `commit-msg` job reports *"no message file available"*. Reinstalling is safe and idempotent.
 
 ## The `conventional-commits` preset
 
@@ -129,7 +129,7 @@ When your convention is not Conventional Commits, drop the preset and use `patte
 `commit-msg` only accepts `type`, `preset`, `rules`, `warn-after` and `fail-after`. The path-oriented and process-oriented common keywords (`paths`, `executable-path`, `other-arguments`, `accelerable`, `execution`, `executable-prefix`, `cores`, `memory`) do **not** apply to an inline, path-agnostic validator and are rejected by `conf:check`:
 
 ```
-$ githooks conf:check
+$ alfil conf:check
 ✗ Configuration errors:
   • Job 'commit-format': key 'paths' is not applicable to type 'commit-msg'.
 ```
@@ -140,13 +140,13 @@ The job is wired to the hook for normal use, but you can run it by hand to test 
 
 ```bash
 # Validate a literal message (handy for testing rules / CI)
-githooks job commit-format --message="feat(api): add user endpoint"
+alfil job commit-format --message="feat(api): add user endpoint"
 
 # Validate a specific file
-githooks job commit-format --message-file=/tmp/msg.txt
+alfil job commit-format --message-file=/tmp/msg.txt
 
 # Machine-readable result for CI / scripts
-githooks job commit-format --message="feat: add x" --format=json
+alfil job commit-format --message="feat: add x" --format=json
 ```
 
 `--message` and `--message-file` are mutually exclusive. When neither is given (nor a hook argument), the job falls back to `.git/COMMIT_EDITMSG`. Exit code `0` means valid, `1` means invalid.
@@ -162,5 +162,5 @@ Only the subject (first line) is checked. The body and footer are ignored, so th
 
 - [Configuration: Hooks](../configuration/hooks.md) — wiring jobs to git hook events.
 - [Configuration: Jobs](../configuration/jobs.md) — common job structure.
-- [`githooks job`](../cli/job.md) — manual invocation and `--message` / `--message-file`.
-- [`githooks hook`](../cli/hook.md) — installing the hook scripts.
+- [`alfil job`](../cli/job.md) — manual invocation and `--message` / `--message-file`.
+- [`alfil hook`](../cli/hook.md) — installing the hook scripts.

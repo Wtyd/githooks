@@ -1,6 +1,6 @@
 # Upgrading from v2
 
-GitHooks 4.0 reads only the v3 shape — `hooks` / `flows` / `jobs` in a PHP file. Everything the 3.x line had marked "removed in v4.0" is gone: the `tool` command, YAML configuration files, the `Options` / `Tools` shape, the camelCase job keys and `conf:migrate` itself. A v2 configuration is rejected before anything runs, by every command:
+Alfil 4.0 (formerly GitHooks) reads only the v3 shape — `hooks` / `flows` / `jobs` in a PHP file. Everything the 3.x line had marked "removed in v4.0" is gone: the `tool` command, YAML configuration files, the `Options` / `Tools` shape, the camelCase job keys and `conf:migrate` itself. A v2 configuration is rejected before anything runs, by every command:
 
 ```text
 v2 configuration format (Options/Tools) is not supported since 4.0: /srv/app/githooks.php. Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.
@@ -14,9 +14,12 @@ Migrate with the last 3.x release first, then upgrade.
 composer require --dev wtyd/githooks:^3.8
 vendor/bin/githooks conf:migrate     # Options/Tools (PHP or YAML) → hooks/flows/jobs; backup in .v2.bak
 vendor/bin/githooks conf:check       # must report a valid v3 file
-composer require --dev wtyd/githooks:^4.0
-vendor/bin/githooks hook             # reinstall the hooks for the new file
+composer remove --dev wtyd/githooks
+composer require --dev wtyd/alfil    # 4.0: the package and binary are called alfil
+vendor/bin/alfil hook                # reinstall the hooks for the new file
 ```
+
+The last three steps are the ordinary 3.x → 4.0 upgrade; see [Upgrading from 3.x to 4.0](to-4-0.md) for the rest of what changes with the new name.
 
 `conf:migrate` (3.8) converts YAML to PHP, renames the camelCase keys to kebab-case, drops `usePhpcsConfiguration` and generates a `qa` flow with every original tool as a job. Review the result before upgrading: rename flows and jobs, add the hook mappings (the migrated file does not configure hooks), split tools into flows. Delete the old `githooks.yml` once the PHP file is in place — a `.yml` left behind in the project root or in `qa/` is reported as unsupported, not ignored.
 
@@ -24,10 +27,10 @@ vendor/bin/githooks hook             # reinstall the hooks for the new file
 
 | Aspect | v2 | v3 (and 4.0) |
 |---|---|---|
-| **Config format** | YAML (`githooks.yml`) | PHP only (`githooks.php`) |
+| **Config format** | YAML (`githooks.yml`) | PHP only (`githooks.php`; `alfil.php` since 4.0) |
 | **Config structure** | `Options` + `Tools` | `hooks` + `flows` + `jobs` |
 | **Job keys** | camelCase (`executablePath`, …) | kebab-case (`executable-path`, …) |
-| **CLI** | `githooks tool <name>` | `githooks flow <name>` / `githooks job <name>` |
+| **CLI** | `githooks tool <name>` | `githooks flow <name>` / `githooks job <name>` (`alfil …` since 4.0) |
 | **Hook install** | Copies script to `.git/hooks/` | Creates `.githooks/` + `core.hooksPath` |
 | **Multiple hooks** | Only `pre-commit` | All git events (`pre-commit`, `pre-push`, `commit-msg`, etc.) |
 | **Conditional execution** | Not supported | `only-on`, `exclude-on`, `only-files`, `exclude-files` |
@@ -140,8 +143,8 @@ Tools:
 ### Step 4: Reinstall hooks
 
 ```bash
-githooks hook:clean --legacy   # remove old hooks from .git/hooks/
-githooks hook                  # install new hooks via .githooks/
+vendor/bin/alfil hook:clean --legacy   # remove old hooks from .git/hooks/
+vendor/bin/alfil hook                  # install new hooks via .githooks/
 ```
 
 ### Step 5: Update composer.json scripts
@@ -150,13 +153,13 @@ Replace the v2 hook command with the v3 equivalent:
 
 ```json
 "scripts": {
-    "post-update-cmd": ["vendor/bin/githooks hook"],
-    "post-install-cmd": ["vendor/bin/githooks hook"]
+    "post-update-cmd": ["vendor/bin/alfil hook"],
+    "post-install-cmd": ["vendor/bin/alfil hook"]
 }
 ```
 
 ### Step 6: Validate
 
 ```bash
-githooks conf:check
+vendor/bin/alfil conf:check
 ```

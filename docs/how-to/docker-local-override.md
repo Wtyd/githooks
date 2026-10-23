@@ -1,22 +1,22 @@
 # Docker & Local Override
 
-Run GitHooks with Docker, Laravel Sail, or any remote environment — without modifying the shared configuration.
+Run Alfil with Docker, Laravel Sail, or any remote environment — without modifying the shared configuration.
 
 ## The problem
 
-Your team has mixed environments: some developers run PHP natively, others use Docker, others use Laravel Sail. The shared `githooks.php` shouldn't contain environment-specific paths or commands.
+Your team has mixed environments: some developers run PHP natively, others use Docker, others use Laravel Sail. The shared `alfil.php` shouldn't contain environment-specific paths or commands.
 
 ## The solution
 
 Two features work together:
 
 1. **`executable-prefix`** — a command prepended to all job executables.
-2. **`githooks.local.php`** — a local override file merged over the shared config.
+2. **`alfil.local.php`** — a local override file merged over the shared config.
 
 ### Step 1: Keep the shared config clean
 
 ```php
-// githooks.php (committed to git)
+// alfil.php (committed to git)
 <?php
 return [
     'flows' => [
@@ -46,7 +46,7 @@ return [
 
 ### Step 2: Each developer creates their local override
 
-**Docker user** — `githooks.local.php`:
+**Docker user** — `alfil.local.php`:
 
 ```php
 <?php
@@ -59,7 +59,7 @@ return [
 ];
 ```
 
-**Laravel Sail user** — `githooks.local.php`:
+**Laravel Sail user** — `alfil.local.php`:
 
 ```php
 <?php
@@ -82,12 +82,12 @@ return [];
 ### Step 3: Add to .gitignore
 
 ```
-githooks.local.php
+alfil.local.php
 ```
 
 ## How it works
 
-- GitHooks looks for `githooks.local.php` in the same directory as `githooks.php`.
+- Alfil looks for `alfil.local.php` in the same directory as `alfil.php`.
 - If found, it merges the local config over the main config using `array_replace_recursive`.
 - The `executable-prefix` is prepended to every job's `executable-path` automatically.
 
@@ -98,7 +98,7 @@ So `vendor/bin/phpstan analyse src` becomes `docker exec -i app vendor/bin/phpst
 Some jobs may need to run locally even when a global prefix is set (e.g., a local npm script):
 
 ```php
-// githooks.php
+// alfil.php
 'eslint_src' => [
     'type'              => 'custom',
     'script'            => 'npx eslint src/',
@@ -113,7 +113,7 @@ Setting `executable-prefix` to `null` or `''` on a job overrides the global pref
 Use `--dry-run` to see the actual commands with the prefix applied:
 
 ```bash
-githooks flow qa --dry-run
+alfil flow qa --dry-run
 ```
 
 ## See also

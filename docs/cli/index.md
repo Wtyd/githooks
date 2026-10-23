@@ -1,6 +1,6 @@
 # CLI Reference
 
-GitHooks is built on [Laravel Zero](https://laravel-zero.com/). Run `githooks list` to see all available commands. Every command that reads a configuration file accepts `--config=PATH` (absolute or relative); every command that produces structured output accepts `--format=json` and writes a stable [JSON v2 schema](../how-to/output-formats.md#json-v2) on stdout.
+Alfil is built on [Laravel Zero](https://laravel-zero.com/). Run `alfil list` to see all available commands. Every command that reads a configuration file accepts `--config=PATH` (absolute or relative); every command that produces structured output accepts `--format=json` and writes a stable [JSON v2 schema](../how-to/output-formats.md#json-v2) on stdout.
 
 The commands fall into four groups by purpose.
 
@@ -10,9 +10,9 @@ Run a flow, a combined plan or a single job. These commands honour the [executio
 
 | Command | What it does |
 |---|---|
-| [`githooks flow <name>`](flow.md) | Run a single flow. |
-| [`githooks flows <name1> <name2>…`](flows.md) | Run several flows or a declarative [meta-flow](../configuration/flows.md#meta-flows) as a single combined plan. Replaces the "two CI steps with two `composer install`" pattern with a single invocation. |
-| [`githooks job <name>`](job.md) | Run a single job in isolation. Useful when iterating on one tool's config. Accepts `-- <args>` to forward extra arguments to the underlying tool. |
+| [`alfil flow <name>`](flow.md) | Run a single flow. |
+| [`alfil flows <name1> <name2>…`](flows.md) | Run several flows or a declarative [meta-flow](../configuration/flows.md#meta-flows) as a single combined plan. Replaces the "two CI steps with two `composer install`" pattern with a single invocation. |
+| [`alfil job <name>`](job.md) | Run a single job in isolation. Useful when iterating on one tool's config. Accepts `-- <args>` to forward extra arguments to the underlying tool. |
 
 ## Configuration
 
@@ -20,8 +20,8 @@ Generate, validate and upgrade the configuration file.
 
 | Command | What it does |
 |---|---|
-| [`githooks conf:init`](conf-init.md) | Generate a `githooks.php` template, optionally auto-detecting tools under `vendor/bin/`. Interactive or non-interactive. |
-| [`githooks conf:check`](conf-check.md) | Deep validation: structure, references, paths, executables, configs, deprecations and *did-you-mean* suggestions. Exits 1 on the first error. The first thing to run when something looks wrong — see [Troubleshooting](../troubleshooting.md). |
+| [`alfil conf:init`](conf-init.md) | Generate a `alfil.php` template, optionally auto-detecting tools under `vendor/bin/`. Interactive or non-interactive. |
+| [`alfil conf:check`](conf-check.md) | Deep validation: structure, references, paths, executables, configs, deprecations and *did-you-mean* suggestions. Exits 1 on the first error. The first thing to run when something looks wrong — see [Troubleshooting](../troubleshooting.md). |
 
 ## Inspection
 
@@ -29,15 +29,15 @@ Look at the system, the install, and the on-disk state without modifying anythin
 
 | Command | What it does |
 |---|---|
-| [`githooks status`](status.md) | Show whether hooks are installed for the current repository and which `core.hooksPath` is active. |
-| [`githooks system:info`](system-info.md) | Show CPU detection (cgroup-aware) and how `processes` resolves on the current host. Use to size budgets in CI runners. |
-| [`githooks cache:clear`](cache-clear.md) | Clear QA tool cache directories. Resolves the **effective** cache path per tool (reads `.neon` / `psalm.xml` / `phpunit.xml` / etc.) rather than relying on hard-coded defaults. |
+| [`alfil status`](status.md) | Show whether hooks are installed for the current repository and which `core.hooksPath` is active. |
+| [`alfil system:info`](system-info.md) | Show CPU detection (cgroup-aware) and how `processes` resolves on the current host. Use to size budgets in CI runners. |
+| [`alfil cache:clear`](cache-clear.md) | Clear QA tool cache directories. Resolves the **effective** cache path per tool (reads `.neon` / `psalm.xml` / `phpunit.xml` / etc.) rather than relying on hard-coded defaults. |
 
 ## Hook management
 
 | Command | What it does |
 |---|---|
-| [`githooks hook`](hook.md) | Install git hooks via `core.hooksPath = .githooks` (no overwrite of `.git/hooks/`). Pre-existing hook scripts are backed up to `<hook>.bak`. |
+| [`alfil hook`](hook.md) | Install git hooks via `core.hooksPath = .githooks` (no overwrite of `.git/hooks/`). Pre-existing hook scripts are backed up to `<hook>.bak`. |
 
 ## Common flags
 

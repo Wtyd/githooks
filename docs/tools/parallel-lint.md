@@ -41,4 +41,4 @@ Full:
 
 ## Threading
 
-Parallel-lint supports the `-j` flag for internal parallelism. When `processes > 1` in flow options, GitHooks adjusts this flag as part of the thread budget distribution.
+Parallel-lint supports the `-j` flag for internal parallelism. When `processes > 1` in flow options, Alfil adjusts this flag as part of the thread budget distribution.

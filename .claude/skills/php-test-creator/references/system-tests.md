@@ -31,7 +31,7 @@ namespace Tests\System\Commands;
 
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
+use Wtyd\Alfil\Tools\Process\Execution\ProcessExecutionFake;
 
 class MyCommandTest extends SystemTestCase
 {

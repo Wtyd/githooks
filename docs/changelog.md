@@ -4,17 +4,39 @@ All notable changes to this project are documented here.
 
 ## [4.0]
 
+### Changed
+
+**GitHooks is now Alfil.** Same tool and configuration shape, new names: the package is `wtyd/alfil` (`wtyd/githooks` is abandoned in its favour), the binary `vendor/bin/alfil`, the configuration file `alfil.php`, the PHP namespace `Wtyd\Alfil`. Upgrading is four commands:
+
+```bash
+composer remove --dev wtyd/githooks
+composer require --dev wtyd/alfil
+vendor/bin/alfil hook          # the 3.x hook scripts call vendor/bin/githooks, which no longer exists
+vendor/bin/alfil conf:check
+```
+
+There is no `vendor/bin/githooks` alias: until `alfil hook` regenerates them, the 3.x scripts in `.githooks/` fail on every commit. `alfil status` flags them (`callsRemovedBinary` in its JSON) and `conf:check` warns about a `hooks.command` that still calls the old binary. `.githooks/` itself keeps its name. Machine-facing names change too: SARIF `tool.driver.name` is `alfil` (GitHub Code Scanning closes and reopens existing alerts once under the new name) and the GitLab CI section ids are `alfil_job_N` / `alfil_summary`. See [Upgrading from 3.x to 4.0](migration/to-4-0.md).
+
+### Deprecated
+
+The old names keep working until 5.0, each reported as a structured deprecation (`deprecations` in JSON, SARIF and `conf:check`):
+
+- `githooks.php` / `githooks.local.php` are still found when there is no `alfil.php` (`kind: config-file-rename`). The new name wins over the location, a `githooks.php` next to an `alfil.php` is reported as ignored, and an override whose name does not match its main file says which one to rename. See [Configuration File](configuration/file.md#search-paths).
+- `$GITHOOKS_BRANCH` is still read when `$ALFIL_BRANCH` is unset (`kind: env-var-rename`).
+- `Wtyd\GitHooks\Utils\ComposerUpdater::phpOldVersions`, called from the `composer.json` scripts of PHP 7.4/8.0 projects, still resolves.
+- The JSON `runtime` block emits `githooksVersion` next to the new `alfilVersion`, with the same value.
+
 ### Added
 
-**`flow --repeat=N` finds flaky tests, test by test.** A test that passes on one run and fails on the next used to surface as a red job someone re-ran until it went green, without ever learning which test it was. `githooks flow tests --repeat=10` runs the flow ten times — every pass, whatever its outcome — reads the junit file each test job writes and crosses the results per test: passed every time is stable, failed every time is broken, both is **flaky**. The report lists the flaky and failing tests with their counts (`7/10 passed`) and exits 1 when there is one. A job declares its file with the new `junit` key; `phpunit` and `paratest` jobs reuse their `log-junit`. Junit files are deleted before every pass, so a pass that crashes without writing one is reported as such, never read as the previous pass's results. `--flap-threshold=N` raises the bar for noisy suites: the rarer outcome must happen at least N times, below that the test is listed as *suspect* without failing the command. `--format=json` gives the same report as one JSON document with its own schema (`version: 1`). It repeats, it never retries: re-running a failure until it passes would hide the flaky test instead of finding it. See [Finding Flaky Tests](how-to/flaky-tests.md).
+**`flow --repeat=N` finds flaky tests, test by test.** A test that passes on one run and fails on the next used to surface as a red job someone re-ran until it went green, without ever learning which test it was. `alfil flow tests --repeat=10` runs the flow ten times — every pass, whatever its outcome — reads the junit file each test job writes and crosses the results per test: passed every time is stable, failed every time is broken, both is **flaky**. The report lists the flaky and failing tests with their counts (`7/10 passed`) and exits 1 when there is one. A job declares its file with the new `junit` key; `phpunit` and `paratest` jobs reuse their `log-junit`. Junit files are deleted before every pass, so a pass that crashes without writing one is reported as such, never read as the previous pass's results. `--flap-threshold=N` raises the bar for noisy suites: the rarer outcome must happen at least N times, below that the test is listed as *suspect* without failing the command. `--format=json` gives the same report as one JSON document with its own schema (`version: 1`). It repeats, it never retries: re-running a failure until it passes would hide the flaky test instead of finding it. See [Finding Flaky Tests](how-to/flaky-tests.md).
 
 ### Removed
 
 **The v2 engine.** Everything the 3.x line had marked "removed in v4.0" is gone: the `tool` command, YAML configuration files, the `Options` / `Tools` configuration shape, the camelCase job keys (`executablePath`, `otherArguments`, `ignoreErrorsOnExit`, `failFast`) and `conf:migrate` itself. A configuration 4.0 does not read is rejected with one error — the same in every command, naming the file and the way out:
 
 ```text
-$ githooks flow qa
-v2 configuration format (Options/Tools) is not supported since 4.0: /srv/app/githooks.php. Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.
+$ alfil flow qa
+v2 configuration format (Options/Tools) is not supported since 4.0: /srv/app/alfil.php. Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.
 ```
 
 A `githooks.yml` is rejected on its extension alone, never parsed; one left behind in the project root or `qa/` gets the same kind of message instead of "not found". A job declaring a camelCase key is rejected with the kebab-case key named: `Job 'phpstan_src': key 'executablePath' was removed in 4.0. Use 'executable-path'.` Migrate with the last 3.x release first — see [Upgrading from v2](migration/v2-to-v3.md).
@@ -25,12 +47,12 @@ A `githooks.yml` is rejected on its extension alone, never parsed; one left behi
 ### Changed
 
 - **`conf:check --format=json` is schema version 2.** The `legacy` marker and the `hint` field of version 1 only described the v2 case. The four v3 blocks (`options`, `hooks`, `flows`, `jobs`) are always present, and a file that cannot be read comes back as the error form (`valid: false`, the message in `errors[0]`, exit 1). See [`conf:check`](cli/conf-check.md).
-- The message when no configuration file is found names the file that was looked up: `Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).`
+- The message when no configuration file is found names the file that was looked up: `Configuration file not found. Expected alfil.php in the project root or in qa/ (or pass --config=PATH).`
 - A PHP configuration that does not return an array is reported in one line with exit 1 by `flow`, `flows` and `job`, like every other configuration error; it used to escape with a stack trace.
 
 ### Fixed
 
-- **`githooks hook --config=<file>` installed a hook when the file could not be read.** A missing path, a v2 or YAML file, or a file that did not return an array all fell back to the minimal `.git/hooks/` install: the command reported `Hook pre-commit created`, exited 0 and left behind a script pointing at a configuration that does not work. An explicit `--config` that cannot be used is now an error (exit 1) and nothing is written; the minimal install only applies when there is no `--config` and no file in the default locations. See [`githooks hook`](cli/hook.md).
+- **`alfil hook --config=<file>` installed a hook when the file could not be read.** A missing path, a v2 or YAML file, or a file that did not return an array all fell back to the minimal `.git/hooks/` install: the command reported `Hook pre-commit created`, exited 0 and left behind a script pointing at a configuration that does not work. An explicit `--config` that cannot be used is now an error (exit 1) and nothing is written; the minimal install only applies when there is no `--config` and no file in the default locations. See [`alfil hook`](cli/hook.md).
 
 ## [3.8.1]
 

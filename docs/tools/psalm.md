@@ -50,8 +50,8 @@ Full:
 
 ## Threading
 
-Psalm supports the `--threads` flag for internal parallelism. When `processes > 1` in flow options, GitHooks adjusts this flag as part of the thread budget distribution.
+Psalm supports the `--threads` flag for internal parallelism. When `processes > 1` in flow options, Alfil adjusts this flag as part of the thread budget distribution.
 
 ## Cache
 
-Default cache location: `.psalm/cache/`. Cleared with `githooks cache:clear`.
+Default cache location: `.psalm/cache/`. Cleared with `alfil cache:clear`.

@@ -54,12 +54,12 @@ With inheritance for phpcbf:
 
 ## Phpcbf auto-staging
 
-When `phpcbf` fixes files during a `pre-commit` hook run (exit code 1 = fixes applied), GitHooks automatically re-stages the fixed files. This ensures the commit includes the corrected code, not the pre-fix version. Deleted files are excluded from re-staging. No configuration needed.
+When `phpcbf` fixes files during a `pre-commit` hook run (exit code 1 = fixes applied), Alfil automatically re-stages the fixed files. This ensures the commit includes the corrected code, not the pre-fix version. Deleted files are excluded from re-staging. No configuration needed.
 
 ## Threading
 
-phpcs/phpcbf support the `--parallel` flag for internal parallelism. When `processes > 1` in flow options, GitHooks adjusts this flag as part of the thread budget distribution.
+phpcs/phpcbf support the `--parallel` flag for internal parallelism. When `processes > 1` in flow options, Alfil adjusts this flag as part of the thread budget distribution.
 
 ## Cache
 
-Default cache location: `.phpcs.cache`. Cleared with `githooks cache:clear`.
+Default cache location: `.phpcs.cache`. Cleared with `alfil cache:clear`.

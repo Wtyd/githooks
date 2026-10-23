@@ -1,6 +1,6 @@
 # Configuration
 
-GitHooks uses a PHP configuration file (`githooks.php`) that returns an array with three sections: **hooks**, **flows**, and **jobs**.
+Alfil uses a PHP configuration file (`alfil.php`) that returns an array with three sections: **hooks**, **flows**, and **jobs**.
 
 ```mermaid
 graph TD

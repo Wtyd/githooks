@@ -1,7 +1,7 @@
 ---
 name: php-test-creator
 description: >
-  Crea tests PHPUnit para el proyecto GitHooks (wtyd/githooks) siguiendo sus convenciones y patrones.
+  Crea tests PHPUnit para el proyecto GitHooks (wtyd/alfil) siguiendo sus convenciones y patrones.
   Usa esta skill siempre que el usuario pida crear tests, añadir tests, testear una feature, verificar
   una funcionalidad, o cuando se implemente una nueva feature que necesite cobertura de tests.
   También cuando se mencione: "añadir tests", "crear tests", "test unitario", "test de integración",
@@ -629,15 +629,15 @@ Leer la referencia antes de escribir el primer test del tipo correspondiente.
 - [ ] `applyThreadLimit()` modifica el argumento correcto
 
 ### Ejecución final (OBLIGATORIO)
-- [ ] `php7.4 githooks job "Phpunit" --format=json -- --order-by=random` — 0 fallos
-- [ ] `php7.4 githooks flow qa --format=json` — QA completo sin violaciones nuevas
+- [ ] `php7.4 alfil job "Phpunit" --format=json -- --order-by=random` — 0 fallos
+- [ ] `php7.4 alfil flow qa --format=json` — QA completo sin violaciones nuevas
 - [ ] Skill `qa-tester` sobre los comandos tocados
 
 **Iterar sobre un test concreto** durante desarrollo (en lugar de correr la suite entera):
 
 ```bash
-php7.4 githooks job "Phpunit" --format=json -- --filter=MyNewFeatureTest
-php7.4 githooks job "Phpunit" --format=json -- --filter='MyClassTest::method_x'
+php7.4 alfil job "Phpunit" --format=json -- --filter=MyNewFeatureTest
+php7.4 alfil job "Phpunit" --format=json -- --filter='MyClassTest::method_x'
 ```
 
 El separador `--` pasa los args literales a phpunit. Parsear la respuesta JSON para ver qué falló sin leer bloques ANSI.

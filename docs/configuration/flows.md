@@ -64,7 +64,7 @@ See [Options](options.md) for the full list of available options.
 A flow can be:
 
 - Referenced from multiple hooks.
-- Executed directly from the CLI with `githooks flow <name>`.
+- Executed directly from the CLI with `alfil flow <name>`.
 - Combined with other flows in the same hook event.
 
 ```php
@@ -113,7 +113,7 @@ Same operators (`*`, `**`, `?`, `[abc]`, `{a,b,c}`) as hook-level conditions and
 
 Hook-level conditions (`hooks.<event>.<ref>.only-files`) and flow-entry rules **compose by AND** across levels: the hook ref decides whether the flow runs at all; if it runs, each flow entry then decides per job. Both levels operate on the same change set.
 
-### Overriding in `githooks.local.php`
+### Overriding in `alfil.local.php`
 
 The override semantics mirror `time-budget` / `memory-budget`:
 
@@ -165,7 +165,7 @@ A flow can declare an `on` map that picks its execution mode based on the curren
 The execution mode now lives **inside the flow declaration**, so a single CI step covers both protected and feature branches:
 
 ```yaml
-script: vendor/bin/githooks flows ci
+script: vendor/bin/alfil flows ci
 ```
 
 No branch-aware `if:` conditional in the CI definition, no duplicated job (e.g. one for `master` running `full`, another for the rest running `--fast-branch`), no environment variable injected per pipeline template. On `master` the mode resolves to `full` (per-entry `only-files` rules become no-op); on a task branch it resolves to `fast-branch` and admission filters apply — all driven by config.
@@ -187,10 +187,10 @@ The `Settings:` header at the top of each run shows the source — `mode = full 
 The current branch is read with the following priority (first non-empty wins):
 
 1. `--branch=<name>` CLI flag — useful for testing or local override.
-2. `$GITHOOKS_BRANCH` env var — explicit user override.
+2. `$ALFIL_BRANCH` env var — explicit user override. The pre-4.0 name `$GITHOOKS_BRANCH` is still read when `$ALFIL_BRANCH` is unset (deprecated, removed in 5.0; the run reports it in `deprecations`).
 3. CI variables in this order: `CI_COMMIT_REF_NAME` (GitLab), `GITHUB_REF_NAME` (GitHub Actions), `BUILDKITE_BRANCH` (Buildkite), `BITBUCKET_BRANCH` (Bitbucket Pipelines), `CIRCLE_BRANCH` (CircleCI), `DRONE_COMMIT_BRANCH` (Drone), `TRAVIS_PULL_REQUEST_BRANCH` (PR build) / `TRAVIS_BRANCH` (push build).
 4. `git rev-parse --abbrev-ref HEAD`.
-5. Otherwise (detached HEAD): the run aborts with an error pointing the user at `--branch` or `$GITHOOKS_BRANCH`.
+5. Otherwise (detached HEAD): the run aborts with an error pointing the user at `--branch` or `$ALFIL_BRANCH`.
 
 The resolver is only invoked when the flow declares `on`. Flows without `on` keep running unchanged on a detached HEAD.
 
@@ -208,7 +208,7 @@ The order of patterns in the map is the priority order: **the first pattern that
 
 `conf:check` emits a warning when no catch-all `'*'` is declared so the user knows non-matching branches will fall back to `flow.execution` or `flows.options.execution`.
 
-### Overriding in `githooks.local.php`
+### Overriding in `alfil.local.php`
 
 Same semantics as per-entry `only-files` / `exclude-files`:
 
@@ -241,11 +241,11 @@ Same semantics as per-entry `only-files` / `exclude-files`:
 ],
 ```
 
-A single `vendor/bin/githooks flows ci` CI step covers every branch, picks the mode internally, and admits each job based on the actual change set. The CI definition no longer needs branch-aware conditionals, per-job duplication or `rules:` / `changes:` filters (GitLab CI) and `paths:` filters (GitHub Actions) that depend on pipeline source and can be coarse on merge / scheduled pipelines. The admission decision lives next to the job, so the same logic is exercised locally (`flow ci --fast-branch`) and in CI.
+A single `vendor/bin/alfil flows ci` CI step covers every branch, picks the mode internally, and admits each job based on the actual change set. The CI definition no longer needs branch-aware conditionals, per-job duplication or `rules:` / `changes:` filters (GitLab CI) and `paths:` filters (GitHub Actions) that depend on pipeline source and can be coarse on merge / scheduled pipelines. The admission decision lives next to the job, so the same logic is exercised locally (`flow ci --fast-branch`) and in CI.
 
 ### Scope and caveats
 
-- **Per-flow only.** Multi-flow runs (`githooks flows X Y`) ignore per-flow `on` — same convention as every other flow-level option in multi-flow mode. The mode comes from `--fast`/`--fast-branch`/`--fast-dirty` or `flows.options.execution`.
+- **Per-flow only.** Multi-flow runs (`alfil flows X Y`) ignore per-flow `on` — same convention as every other flow-level option in multi-flow mode. The mode comes from `--fast`/`--fast-branch`/`--fast-dirty` or `flows.options.execution`.
 - **`execution` is the only supported attribute today.** The object shape leaves room for `time-budget` / `fail-fast` to be added later without breaking the surface.
 - **`PHP collapses duplicate map keys.** `'master' => …, 'master' => …` cannot be detected — PHP keeps only the last entry.
 
@@ -325,7 +325,7 @@ When there is no JS in the change set, both skip by `only-files` — coherent wi
 
 The execution mode chosen by `on` does not affect `needs`. Dependencies are structural — they hold in `full`, `fast`, `fast-branch`, and `fast-dirty` alike.
 
-### Overriding in `githooks.local.php`
+### Overriding in `alfil.local.php`
 
 Same semantics as the other per-entry attributes (`only-files` / `exclude-files`) and as the per-flow `on` map:
 
@@ -373,7 +373,7 @@ In non-TTY output (CI logs) the waiting lane is silent — only the final result
 
 ## Meta-flows
 
-A **meta-flow** is a flow that, instead of declaring `jobs`, declares `flows` — a list of normal flow names to combine into a single executable plan. It is the declarative companion to [`githooks flows ci-pack`](../cli/flows.md): the combo lives with the project, runs the same locally and in CI, and exposes its own options.
+A **meta-flow** is a flow that, instead of declaring `jobs`, declares `flows` — a list of normal flow names to combine into a single executable plan. It is the declarative companion to [`alfil flows ci-pack`](../cli/flows.md): the combo lives with the project, runs the same locally and in CI, and exposes its own options.
 
 ```php
 'flows' => [
@@ -398,13 +398,13 @@ A **meta-flow** is a flow that, instead of declaring `jobs`, declares `flows` �
 - A `flows.<X>` entry declares **exactly one** of `jobs` (normal flow) or `flows` (meta-flow). Both or neither is a `conf:check` error.
 - `flows.<alias>.flows` may only reference **normal flows** that exist in config. Nesting one meta-flow inside another is rejected (`conf:check` error). The pattern instead is to declare a meta-flow that enumerates the desired normal flows directly.
 - The names of jobs, normal flows, and meta-flows share a **single flat namespace**. Two of them cannot share a name; `conf:check` reports the collision.
-- A meta-flow can declare `options` of its own (same shape as `flows.<X>.options` for normal flows). They apply **only** when the meta-flow is invoked alone (`githooks flows ci-pack`); they are ignored in mixed runs (`githooks flows ci-pack other`) and in ad-hoc combinations.
+- A meta-flow can declare `options` of its own (same shape as `flows.<X>.options` for normal flows). They apply **only** when the meta-flow is invoked alone (`alfil flows ci-pack`); they are ignored in mixed runs (`alfil flows ci-pack other`) and in ad-hoc combinations.
 - A meta-flow can also declare [`on`](../execution-modes.md) (per-branch execution). Like `options`, it applies **only** when the meta-flow is invoked alone: the branch is resolved and the matching rule's execution mode propagates to the expanded flows. It is ignored in mixed/ad-hoc runs.
 - Empty (`flows: []`) or single-element (`flows: ['qa']`) meta-flows are accepted but produce a `conf:check` warning suggesting a redesign.
 
 ### Expansion mechanics
 
-When `githooks flows ci-pack other` runs, the resolver follows the spec:
+When `alfil flows ci-pack other` runs, the resolver follows the spec:
 
 1. Each argument is replaced by either itself (normal flow) or its `flows: [...]` references (meta-flow).
 2. The expanded list is deduplicated by first occurrence.
@@ -417,4 +417,4 @@ When `githooks flows ci-pack other` runs, the resolver follows the spec:
 
 - [Options](options.md) — all execution options (processes, fail-fast, main-branch).
 - [Jobs](jobs.md) — how to define the individual tasks that flows execute.
-- [`githooks flows`](../cli/flows.md) — running combined flows from the CLI.
+- [`alfil flows`](../cli/flows.md) — running combined flows from the CLI.

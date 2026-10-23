@@ -1,4 +1,4 @@
-site_name: GitHooks
+site_name: Alfil
 site_url: https://wtyd.github.io/alfil/
 site_dir: public
 site_description: >-
@@ -8,7 +8,7 @@ repo_url: https://github.com/Wtyd/alfil
 repo_name: Wtyd/alfil
 edit_uri: edit/master/docs/
 
-copyright: Copyright &copy; 2020-2026 Wtyd/GitHooks contributors
+copyright: Copyright &copy; 2020-2026 Wtyd/Alfil contributors
 
 theme:
   name: material
@@ -130,16 +130,16 @@ nav:
     - Commit Message: tools/commit-msg.md
   - CLI Reference:
     - cli/index.md
-    - githooks flow: cli/flow.md
-    - githooks flows: cli/flows.md
-    - githooks job: cli/job.md
-    - githooks profile: cli/profile.md
-    - githooks hook: cli/hook.md
-    - githooks status: cli/status.md
-    - githooks conf init: cli/conf-init.md
-    - githooks conf check: cli/conf-check.md
-    - githooks cache clear: cli/cache-clear.md
-    - githooks system info: cli/system-info.md
+    - alfil flow: cli/flow.md
+    - alfil flows: cli/flows.md
+    - alfil job: cli/job.md
+    - alfil profile: cli/profile.md
+    - alfil hook: cli/hook.md
+    - alfil status: cli/status.md
+    - alfil conf init: cli/conf-init.md
+    - alfil conf check: cli/conf-check.md
+    - alfil cache clear: cli/cache-clear.md
+    - alfil system info: cli/system-info.md
   - How-To Guides:
     - how-to/index.md
     - Parallel Execution & Thread Budget: how-to/parallel-execution.md
@@ -155,6 +155,7 @@ nav:
     - Automating Hook Installation: how-to/automate-install.md
   - Migration:
     - migration/index.md
+    - Upgrading from 3.x to 4.0: migration/to-4-0.md
     - Upgrading from v2: migration/v2-to-v3.md
     - From GrumPHP: migration/from-grumphp.md
     - From CaptainHook: migration/from-captainhook.md

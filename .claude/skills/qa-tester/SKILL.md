@@ -25,17 +25,17 @@ Guía para hacer testing funcional exhaustivo del CLI de GitHooks.
 
    ```bash
    # CORRECTO — exit limpio
-   php7.4 vendor/bin/githooks conf:check --config=X.php > /dev/null 2>&1
+   php7.4 vendor/bin/alfil conf:check --config=X.php > /dev/null 2>&1
    echo "EXIT: $?"
 
    # INCORRECTO — $? viene de head, siempre 0
-   php7.4 vendor/bin/githooks conf:check --config=X.php 2>&1 | head -20; echo "EXIT=$?"
+   php7.4 vendor/bin/alfil conf:check --config=X.php 2>&1 | head -20; echo "EXIT=$?"
    ```
 
    Si necesitas ver el output **y** el exit code en el mismo bloque, vuelca el output a fichero antes:
 
    ```bash
-   php7.4 vendor/bin/githooks conf:check --config=X.php > /tmp/qa-out 2>&1
+   php7.4 vendor/bin/alfil conf:check --config=X.php > /tmp/qa-out 2>&1
    echo "EXIT: $?"
    head -20 /tmp/qa-out
    ```
@@ -80,8 +80,8 @@ Con estos datos se determina:
 | Rama RC en html1 | `rc-{versión}` (ej: `rc-3.0.0`) |
 | Rama en html3 | `master` para 3.x, `2.x` para 2.x |
 | Versión Composer | `dev-rc-{versión}` (ej: `dev-rc-3.0.0`) |
-| Binario | `vendor/bin/githooks` (instalado por Composer) |
-| Abreviatura en tests | `GH` = `phpX.Y vendor/bin/githooks` |
+| Binario | `vendor/bin/alfil` (instalado por Composer) |
+| Abreviatura en tests | `GH` = `phpX.Y vendor/bin/alfil` |
 | Post-update necesario | Sí si PHP < 8.1, No si PHP >= 8.1 |
 
 ### Gestión de la build
@@ -106,8 +106,8 @@ Si la build no existe o está desactualizada respecto al código, preguntar al u
 
 | PHP para tests | PHP para build | Comando |
 |---|---|---|
-| 7.4, 8.0 | `php7.4` | `php7.4 githooks app:pre-build php && php7.4 githooks app:build` |
-| 8.1, 8.2, 8.3, 8.4, 8.5 | `php8.1` | `php8.1 githooks app:pre-build php && php8.1 githooks app:build` |
+| 7.4, 8.0 | `php7.4` | `php7.4 alfil app:pre-build php && php7.4 alfil app:build` |
+| 8.1, 8.2, 8.3, 8.4, 8.5 | `php8.1` | `php8.1 alfil app:pre-build php && php8.1 alfil app:build` |
 
 **Importante**: el build elimina las dev dependencies de html1. Tras el build, restaurarlas:
 
@@ -138,7 +138,7 @@ Reemplazar la versión de githooks:
 # Cambiar "*" por la versión RC
 php{X.Y} -r '
 $json = json_decode(file_get_contents("composer.json"), true);
-$json["require-dev"]["wtyd/githooks"] = "dev-rc-{versión}";
+$json["require-dev"]["wtyd/alfil"] = "dev-rc-{versión}";
 file_put_contents("composer.json", json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 '
 ```
@@ -149,7 +149,7 @@ file_put_contents("composer.json", json_encode($json, JSON_PRETTY_PRINT | JSON_U
 php{X.Y} -r '
 $json = json_decode(file_get_contents("composer.json"), true);
 $json["scripts"] = [
-    "post-update-cmd" => ["Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"]
+    "post-update-cmd" => ["Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions"]
 ];
 file_put_contents("composer.json", json_encode($json, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
 '
@@ -162,7 +162,7 @@ file_put_contents("composer.json", json_encode($json, JSON_PRETTY_PRINT | JSON_U
 | php7.4 | PHP 7.4, 8.0 | `builds/php7.4/` | **Sí** |
 | php8.1+ | PHP 8.1, 8.2, 8.3, 8.4, 8.5 | `builds/` | No |
 
-Sin el post-update-cmd en PHP <8.1, `vendor/bin/githooks` apuntará al build de 8.1+ que no es compatible.
+Sin el post-update-cmd en PHP <8.1, `vendor/bin/alfil` apuntará al build de 8.1+ que no es compatible.
 
 ### Instalar dependencias
 
@@ -170,12 +170,12 @@ Sin el post-update-cmd en PHP <8.1, `vendor/bin/githooks` apuntará al build de 
 php{X.Y} composer.phar update
 ```
 
-Esto instala GitHooks desde Packagist (rama RC) con el binario correcto en `vendor/bin/githooks`.
+Esto instala GitHooks desde Packagist (rama RC) con el binario correcto en `vendor/bin/alfil`.
 
 ### Verificar instalación
 
 ```bash
-php{X.Y} vendor/bin/githooks --version
+php{X.Y} vendor/bin/alfil --version
 ```
 
 Debe mostrar la versión correspondiente sin errores PHP.
@@ -190,7 +190,7 @@ Todos los tests se ejecutan DESDE `/var/www/html3`:
 
 ```bash
 cd /var/www/html3
-php{X.Y} vendor/bin/githooks <comando> [--config=<config>]
+php{X.Y} vendor/bin/alfil <comando> [--config=<config>]
 ```
 
 Sin `--config`, busca `githooks.php` en el CWD.
@@ -441,7 +441,7 @@ Estas features están en el changelog de [3.2.0] pero no tienen test `@group rel
 | 4 | `--output=PATH` escribe fichero (los 4 formatos estructurados) | Para cada `FORMAT ∈ {json, junit, codeclimate, sarif}`: `flow qa --format=FORMAT --output=/tmp/qa.out` | Exit 0, fichero `/tmp/qa.out` contiene el payload esperado (JSON parseable, XML válido, …) |
 | 5 | JUnit emite `<skipped>` para jobs skippados | `flow qa --fast --format=junit` con un job accelerable que no matchea staged files | Output contiene `<skipped message="..."/>` dentro del `<testcase>` correspondiente |
 | 6 | GitLab CI annotations | `GITLAB_CI=true flow qa` (desde un test con error) | Output incluye markers `section_start:` / `section_end:` entre jobs |
-| 7 | `conf:check` trunca commands a 80 chars | Config con un comando generado largo | Tabla de Jobs muestra `…` al final del comando; `githooks job X --dry-run` muestra el comando completo |
+| 7 | `conf:check` trunca commands a 80 chars | Config con un comando generado largo | Tabla de Jobs muestra `…` al final del comando; `alfil job X --dry-run` muestra el comando completo |
 | 8 | Live streaming sequential (`flow --processes=1`) | `flow qa --processes=1` con varios jobs | Cada job emite su output en tiempo real con separadores `--- job_name ---` (identificador literal del job) entre ellos |
 | 9 | Dashboard TTY paralelo | `flow qa --processes=4` en un terminal interactivo | Aparece dashboard con estados ⏺/⏳/✓/✗ y timers en vivo; al acabar, colapsa al resumen |
 | 10 | `--fast --format=<estructurado>` no contamina stdout | `flow qa --fast --format=json` (sin staged) 1>stdout 2>stderr | `stdout` es JSON parseable; mensajes `⏩ was skipped` solo en stderr |

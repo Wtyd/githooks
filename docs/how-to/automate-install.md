@@ -7,10 +7,10 @@ Ensure every team member gets git hooks installed automatically when they run `c
 ```json
 "scripts": {
     "post-update-cmd": [
-        "vendor/bin/githooks hook"
+        "vendor/bin/alfil hook"
     ],
     "post-install-cmd": [
-        "vendor/bin/githooks hook"
+        "vendor/bin/alfil hook"
     ]
 }
 ```
@@ -24,12 +24,12 @@ If your project needs to support PHP < 8.1, combine the `ComposerUpdater` script
 ```json
 "scripts": {
     "post-update-cmd": [
-        "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions",
-        "vendor/bin/githooks hook"
+        "Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions",
+        "vendor/bin/alfil hook"
     ],
     "post-install-cmd": [
-        "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions",
-        "vendor/bin/githooks hook"
+        "Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions",
+        "vendor/bin/alfil hook"
     ]
 }
 ```
@@ -39,11 +39,11 @@ If your project needs to support PHP < 8.1, combine the `ComposerUpdater` script
 After setup, any team member can verify their hooks are correctly installed:
 
 ```bash
-githooks status
+alfil status
 ```
 
 This shows whether hooks are **synced**, **missing**, or **orphan**.
 
 ## Commit .githooks/
 
-The `.githooks/` directory must be committed to version control. The scripts inside are universal — they call `githooks hook:run <event>` and resolve flows/jobs from the configuration at runtime. No regeneration needed when the config changes.
+The `.githooks/` directory must be committed to version control. The scripts inside are universal — they call `alfil hook:run <event>` and resolve flows/jobs from the configuration at runtime. No regeneration needed when the config changes.

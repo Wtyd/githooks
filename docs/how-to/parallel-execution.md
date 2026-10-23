@@ -18,12 +18,12 @@ Set `processes` in your flow options:
 Or override from the CLI:
 
 ```bash
-githooks flow qa --processes=4
+alfil flow qa --processes=4
 ```
 
 ## How thread budgeting works
 
-The `processes` value is the **total CPU cores** available, not the number of parallel jobs. GitHooks distributes threads across jobs that support internal parallelism:
+The `processes` value is the **total CPU cores** available, not the number of parallel jobs. Alfil distributes threads across jobs that support internal parallelism:
 
 | Tool | Internal parallelism flag |
 |---|---|
@@ -58,7 +58,7 @@ The allocator reserves the declared amount and, for tools with controllable thre
 
 ## Running paratest inside a flow
 
-[Paratest](https://github.com/paratestphp/paratest) is a parallel driver for PHPUnit. It reuses the same CLI — `--filter`, `--group`, `-c` — and adds `--processes=N` to control worker count. GitHooks ships with a dedicated `type: paratest`:
+[Paratest](https://github.com/paratestphp/paratest) is a parallel driver for PHPUnit. It reuses the same CLI — `--filter`, `--group`, `-c` — and adds `--processes=N` to control worker count. Alfil ships with a dedicated `type: paratest`:
 
 ```php
 'jobs' => [
@@ -81,13 +81,13 @@ With `processes: 8` and paratest declaring `cores: 4`, the allocator leaves 4 co
 Use `--monitor` to see the actual thread usage after execution:
 
 ```bash
-githooks flow qa --processes=4 --monitor
+alfil flow qa --processes=4 --monitor
 ```
 
 ## Check your system
 
 ```bash
-githooks system:info
+alfil system:info
 ```
 
 Shows detected CPU count and current `processes` configuration. Warns if `processes` exceeds available CPUs.
@@ -95,7 +95,7 @@ Shows detected CPU count and current `processes` configuration. Warns if `proces
 ## Tips
 
 - Start with `processes` equal to your CPU core count.
-- PHPStan worker count is configured in the `.neon` file (`maximumNumberOfProcesses`), not via GitHooks. It is accounted for in the budget but not adjustable at runtime.
+- PHPStan worker count is configured in the `.neon` file (`maximumNumberOfProcesses`), not via Alfil. It is accounted for in the budget but not adjustable at runtime.
 - Use `--monitor` to verify that the budget is being distributed as expected.
 
 ## Memory budget and 2D scheduling
@@ -140,7 +140,7 @@ Run any flow with `--stats` first **without** thresholds to discover real
 peaks. The canonical 5-column table prints after the `Results:` line:
 
 ```bash
-githooks flow qa --stats
+alfil flow qa --stats
 ```
 
 Then declare conservative `warn-above`/`fail-above` based on the table.

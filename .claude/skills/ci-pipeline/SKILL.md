@@ -17,7 +17,7 @@ El proyecto tiene 4 workflows de GitHub Actions y un proceso de build del `.phar
 
 ```
 Push/PR (no rc) ──┬── main-tests.yml     Tests unitarios, integración, sistema
-                  └── code-analysis.yml   Análisis estático (php githooks flow qa)
+                  └── code-analysis.yml   Análisis estático (php alfil flow qa)
 
 Push a rama rc** ──── release.yml         Build .phar → Test release → Commit builds
 
@@ -117,8 +117,8 @@ commit_rc (PHP 7.4)
 Para cada PHP de la matriz (7.4, 8.1):
 1. `tools/composer install` — instala dependencias
 2. `tools/composer global require humbug/box` — instala Box compatible con el PHP
-3. `php githooks app:pre-build php` — elimina dependencias dev
-4. `php githooks app:build` — compila .phar, genera `.tar` con PharData (preserva permisos)
+3. `php alfil app:pre-build php` — elimina dependencias dev
+4. `php alfil app:build` — compila .phar, genera `.tar` con PharData (preserva permisos)
 5. Upload artifact: `githooks-{php-version}.tar`
 
 ### test_rc — Tests cruzados
@@ -131,7 +131,7 @@ Para cada PHP de la matriz:
    - **Son necesarias** porque el `.phar` las invoca como subprocesos
    - phpunit y psalm se obtienen de `vendor/bin/` via `composer install`
 3. Descarga todos los artefactos de build_rc
-4. `php githooks app:extract-build` — extrae .tar al directorio `builds/`
+4. `php alfil app:extract-build` — extrae .tar al directorio `builds/`
 5. `vendor/bin/phpunit --group release` — ejecuta los release tests
 
 ### commit_rc — Commit de binarios
@@ -241,7 +241,7 @@ function it_does_something_new()
 
 ## code-analysis.yml — Análisis estático
 
-Job único que ejecuta `php githooks flow qa` en PHP 7.1.
+Job único que ejecuta `php alfil flow qa` en PHP 7.1.
 Lee la configuración de `qa/githooks.php`. Si añades una tool ahí, se ejecuta automáticamente.
 Normalmente NO necesitas modificar este workflow.
 
@@ -264,8 +264,8 @@ Solo se ejecuta domingos. Usa PHP 8.5 con xdebug. Normalmente NO necesitas modif
 ### Comandos
 
 ```bash
-php7.4 githooks app:pre-build php7.1   # Elimina deps dev (argumento = PHP para tools/composer)
-php7.4 githooks app:build              # Compila con Humbug Box
+php7.4 alfil app:pre-build php7.1   # Elimina deps dev (argumento = PHP para tools/composer)
+php7.4 alfil app:build              # Compila con Humbug Box
 ```
 
 **Importante:** El argumento de `app:pre-build` se usa internamente para ejecutar `tools/composer remove` y `tools/composer update`. Si pasas `php` a secas, usará el PHP del sistema (que puede ser otra versión).
@@ -342,8 +342,8 @@ export COMPOSER_HOME=$(php7.4 tools/composer global config home)
 export PATH="$COMPOSER_HOME/vendor/bin:$PATH"
 
 # 2. Build (el argumento de pre-build es el PHP para tools/composer)
-php7.4 githooks app:pre-build php7.1
-php7.4 githooks app:build
+php7.4 alfil app:pre-build php7.1
+php7.4 alfil app:build
 
 # 3. Restaurar deps dev (pre-build las elimina de composer.json)
 git restore --staged --worktree composer.json
@@ -408,11 +408,11 @@ export PATH=$(echo $PATH | sed 's|/tmp/phpbin:||')
 - `tests/System/Release/*.php` — Release tests
 
 ### Comandos Bash
-- `php7.4 githooks app:pre-build php7.1` — Pre-build
-- `php7.4 githooks app:build` — Build del .phar
+- `php7.4 alfil app:pre-build php7.1` — Pre-build
+- `php7.4 alfil app:build` — Build del .phar
 - `php7.4 vendor/bin/phpunit --order-by random` — Tests completos
 - `php7.4 vendor/bin/phpunit --group release` — Release tests
-- `php7.4 githooks flow qa` — QA completo
+- `php7.4 alfil flow qa` — QA completo
 - `git add` / `git commit` — Commits (solo si el usuario lo pide)
 
 ### Agentes

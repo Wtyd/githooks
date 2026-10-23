@@ -45,22 +45,22 @@ Full:
 
 ## Refactor mode vs dry-run
 
-By default, `rector` applies refactorings in place. In `--fast` mode GitHooks re-stages modified files (`fixApplied: true` in the JSON output) so refactorings are included in the commit.
+By default, `rector` applies refactorings in place. In `--fast` mode Alfil re-stages modified files (`fixApplied: true` in the JSON output) so refactorings are included in the commit.
 
 To run in check-only mode (for CI), set `dry-run: true` or invoke with the CLI flag:
 
 ```bash
-githooks job rector_src --dry-run
+alfil job rector_src --dry-run
 ```
 
 In dry-run mode `fixApplied` is always `false` and the exit code is non-zero if any file would have been changed.
 
 ## Cache
 
-Default cache location: `/tmp/rector` (Rector default). Cleared with `githooks cache:clear rector_src` or by setting `clear-cache: true`.
+Default cache location: `/tmp/rector` (Rector default). Cleared with `alfil cache:clear rector_src` or by setting `clear-cache: true`.
 
 ## See also
 
 - [Jobs reference](../configuration/jobs.md) — common keywords.
 - [PHP CS Fixer](phpcsfixer.md) — companion coding-style fixer shipped in v3.2.
-- [`githooks cache:clear`](../cli/cache-clear.md) — clear the Rector cache.
+- [`alfil cache:clear`](../cli/cache-clear.md) — clear the Rector cache.

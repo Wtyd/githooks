@@ -9,9 +9,9 @@ Usa como referencia `Phpmd` (tool con más argumentos) o `Phpstan` (tool con sub
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Tools\Tool;
+namespace Wtyd\Alfil\Tools\Tool;
 
-use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
+use Wtyd\Alfil\ConfigurationFile\ToolConfiguration;
 
 /**
  * Descripción de la librería que envuelve (e.g., "Library vimeo/psalm")

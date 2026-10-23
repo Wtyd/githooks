@@ -1,13 +1,13 @@
 # Output Formats
 
-GitHooks supports six output formats: `text` (default), `json`, `junit`, `codeclimate`, `sarif` and `claude-code`. All are available on the `flow`, `flows` and `job` commands via `--format=FORMAT`.
+Alfil supports six output formats: `text` (default), `json`, `junit`, `codeclimate`, `sarif` and `claude-code`. All are available on the `flow`, `flows` and `job` commands via `--format=FORMAT`.
 
 ## Text (default)
 
 Human-readable output with status, time, and error details:
 
 ```bash
-githooks flow qa
+alfil flow qa
 ```
 
 ```
@@ -23,7 +23,7 @@ Results: 2/3 passed in 3.45s
 
 ## Live streaming for `job` and sequential flows
 
-When you run a single job (`githooks job X`) or a flow with `processes=1`, each tool's output streams in real time. Long-running jobs (phpmd, phpunit with coverage) no longer look frozen — you see the tool's own progress as it happens.
+When you run a single job (`alfil job X`) or a flow with `processes=1`, each tool's output streams in real time. Long-running jobs (phpmd, phpunit with coverage) no longer look frozen — you see the tool's own progress as it happens.
 
 For `flow --processes=1`, a header separator is printed between jobs (like `make` or `docker compose up`):
 
@@ -69,10 +69,10 @@ The progress handler detects whether stderr is a TTY. If it is not (pipe, subshe
 
 ```bash
 # From a script, agent or pipe — stderr is naturally empty
-githooks flow qa --format=json | jq '.jobs[] | select(.success == false)'
+alfil flow qa --format=json | jq '.jobs[] | select(.success == false)'
 
 # Interactive terminal — stderr shows OK/KO while the flow runs
-githooks flow qa --format=json > report.json
+alfil flow qa --format=json > report.json
 ```
 
 !!! tip "No need for `2>/dev/null`"
@@ -84,7 +84,7 @@ Long-running pipelines in CI can look stuck because stderr is silent by default.
 
 ```bash
 # In a CI job that takes several minutes
-githooks flow qa --format=json --show-progress --output=report.json
+alfil flow qa --format=json --show-progress --output=report.json
 # → stderr: OK phpcs_src (2.1s) [1/6], KO phpstan_src (5.3s) [2/6], …
 # → report.json: clean JSON payload
 ```
@@ -100,14 +100,14 @@ githooks flow qa --format=json --show-progress --output=report.json
 All four structured formats print to **stdout** by default. Pass `--output=PATH` to write the payload to a file, or use shell redirection — both are equivalent:
 
 ```bash
-githooks flow qa --format=json       --output=reports/qa.json
-githooks flow qa --format=junit      --output=reports/junit.xml
-githooks flow qa --format=codeclimate --output=reports/qa-codeclimate.json
-githooks flow qa --format=sarif      --output=reports/qa.sarif
+alfil flow qa --format=json       --output=reports/qa.json
+alfil flow qa --format=junit      --output=reports/junit.xml
+alfil flow qa --format=codeclimate --output=reports/qa-codeclimate.json
+alfil flow qa --format=sarif      --output=reports/qa.sarif
 
 # Same result with shell redirection:
-githooks flow qa --format=json       > reports/qa.json
-githooks flow qa --format=sarif      > reports/qa.sarif
+alfil flow qa --format=json       > reports/qa.json
+alfil flow qa --format=sarif      > reports/qa.sarif
 ```
 
 Pick the flag form when the surrounding tooling (pipeline DSL, script linter) prefers explicit arguments over shell glue; pick redirection when you are composing with `tee`, filters, or alternate stdout handling.
@@ -117,7 +117,7 @@ Pick the flag form when the surrounding tooling (pipeline DSL, script linter) pr
 Machine-readable output for CI pipelines, scripts, and AI tools:
 
 ```bash
-githooks flow qa --format=json
+alfil flow qa --format=json
 ```
 
 ### Schema
@@ -158,6 +158,7 @@ githooks flow qa --format=json
     }
   },
   "runtime": {
+    "alfilVersion": "3.5.0",
     "githooksVersion": "3.5.0",
     "platform": "linux",
     "ci": "gitlab-ci",
@@ -206,7 +207,7 @@ githooks flow qa --format=json
 | Field | Type | Description |
 |---|---|---|
 | `version` | integer | Schema version — currently `2`. Bumped on breaking changes. |
-| `flow` | string | Flow name (or job name when called from `githooks job`). |
+| `flow` | string | Flow name (or job name when called from `alfil job`). |
 | `success` | boolean | `true` if **all** non-skipped jobs passed AND no flow-level `fail-after` / `fail-above` was crossed. |
 | `totalTime` | string | Human-readable wall-clock time. `"0ms"` under `--dry-run`. |
 | `executionMode` | string | `"full"`, `"fast"`, `"fast-branch"`, `"fast-dirty"` or `"files"`. Reflects the actual mode used. |
@@ -219,7 +220,7 @@ githooks flow qa --format=json
 | `flows` | array | Present only in multi-flow runs. List of normal flows actually executed after meta-flow expansion. |
 | `effectiveOptions` | object | Always present in `flow` / `flows` / `job` runs. Each option's `value` and resolved `source`. See [Effective options and conditions header](#effective-options-and-conditions-header). |
 | `warnings` | string[] | Always present (empty when no warnings). Validation warnings emitted on stderr during the run. |
-| `deprecations` | object[] | Always present (empty when none). Each entry: `{job, oldKey, newKey, removalVersion, kind}`. Empty since 4.0 (the camelCase keys that fed it are rejected outright); the block stays for future deprecation cycles. |
+| `deprecations` | object[] | Always present (empty when none). Each entry: `{job, oldKey, newKey, removalVersion, kind}`. In 4.x, `kind` is `config-file-rename` (the configuration was found as `githooks.php`: `oldKey` `githooks.php`, `newKey` `alfil.php`) or `env-var-rename` (the branch came from `GITHOOKS_BRANCH`: `newKey` `ALFIL_BRANCH`); `job` is empty for both and `removalVersion` is `5.0`. |
 
 ### Per-job fields
 
@@ -395,24 +396,24 @@ This keeps structured consumers honest: the array size equals the declared plan 
 
 ## Runtime diagnostics and absolute timestamps
 
-When a CI job hangs for 40 minutes with 39 of them silent, the run log alone cannot tell you whether PHP was blocked, the runner was starved of memory, or the agent's output buffer simply froze. GitHooks answers this with three pieces of **pure observability** (no behaviour change, no intervention): a runner diagnostics block, absolute `startedAt`/`endedAt` timestamps per job and per flow, and a `runtime` node in JSON v2.
+When a CI job hangs for 40 minutes with 39 of them silent, the run log alone cannot tell you whether PHP was blocked, the runner was starved of memory, or the agent's output buffer simply froze. Alfil answers this with three pieces of **pure observability** (no behaviour change, no intervention): a runner diagnostics block, absolute `startedAt`/`endedAt` timestamps per job and per flow, and a `runtime` node in JSON v2.
 
 ### The `--diag` text block
 
 In text mode, `--diag` prints a snapshot of the runner **before** the `Settings:` header:
 
 ```bash
-githooks flow qa --diag
+alfil flow qa --diag
 ```
 
 ```
-githooks 3.5.0 · linux · cpus=8 (cgroup limit: 4) · mem=5821 MB / 16027 MB · load=1.42 / 1.10 / 0.87 · 2026-06-02T09:14:07.512+00:00
+alfil 3.5.0 · linux · cpus=8 (cgroup limit: 4) · mem=5821 MB / 16027 MB · load=1.42 / 1.10 / 0.87 · 2026-06-02T09:14:07.512+00:00
 Settings:
   processes     = 4     (cli)
   …
 ```
 
-The block is **flushed immediately** so that if the run later hangs, the log still carries the snapshot — it is the signal that distinguishes "githooks never started" from "started but blocked".
+The block is **flushed immediately** so that if the run later hangs, the log still carries the snapshot — it is the signal that distinguishes "alfil never started" from "started but blocked".
 
 Emission follows the same factors table as the conditions header:
 
@@ -437,6 +438,7 @@ In CI the block is **automatic** (no flag needed) and rendered multiline; locall
 
 ```json
 "runtime": {
+  "alfilVersion": "3.5.0",
   "githooksVersion": "3.5.0",
   "platform": "linux",
   "ci": "gitlab-ci",
@@ -450,7 +452,8 @@ In CI the block is **automatic** (no flag needed) and rendered multiline; locall
 
 | Field | Type | Description |
 |---|---|---|
-| `githooksVersion` | string | Resolved package version (`unknown` if it cannot be determined). |
+| `alfilVersion` | string | Resolved package version (`unknown` if it cannot be determined). |
+| `githooksVersion` | string | **Deprecated**, removed in 5.0: same value as `alfilVersion`, kept for consumers written against 3.x. |
 | `platform` | string | Short OS token: `linux`, `darwin`, `windows`. |
 | `ci` | string or null | CI name (`github-actions`, `gitlab-ci`) or `null` outside CI. |
 | `startedAt` / `endedAt` | string | Flow span as ISO-8601 timestamps (millisecond precision). |
@@ -480,7 +483,7 @@ Every executed job carries `startedAt` / `endedAt` (ISO-8601, millisecond precis
 JUnit XML compatible with GitHub Actions, GitLab CI, Jenkins and other test reporting tools:
 
 ```bash
-githooks flow qa --format=junit > junit.xml
+alfil flow qa --format=junit > junit.xml
 ```
 
 Skipped jobs emit `<skipped>` elements:
@@ -495,7 +498,7 @@ Use with test reporting actions:
 
 ```yaml
 # GitHub Actions
-- run: vendor/bin/githooks flow qa --format=junit > junit.xml
+- run: vendor/bin/alfil flow qa --format=junit > junit.xml
 - uses: mikepenz/action-junit-report@v4
   if: always()
   with:
@@ -507,8 +510,8 @@ Use with test reporting actions:
 GitLab-compatible Code Quality report. Emits a JSON array where each entry is a CodeIssue:
 
 ```bash
-githooks flow qa --format=codeclimate                                # prints to stdout
-githooks flow qa --format=codeclimate --output=reports/quality.json  # writes a file
+alfil flow qa --format=codeclimate                                # prints to stdout
+alfil flow qa --format=codeclimate --output=reports/quality.json  # writes a file
 ```
 
 Each issue's `location.path` is **relative to the current working directory**. Absolute paths emitted by tool parsers (phpcs, for instance) are normalised to the workspace root so the report is portable and links correctly in the GitLab UI:
@@ -526,7 +529,7 @@ Integrate directly with GitLab CI — the `--output` path must match the `codequ
 
 ```yaml
 qa:
-  script: vendor/bin/githooks flow qa --format=codeclimate --output=gl-code-quality-report.json
+  script: vendor/bin/alfil flow qa --format=codeclimate --output=gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -537,8 +540,8 @@ qa:
 SARIF 2.1.0 report consumable by GitHub Code Scanning, Azure DevOps, and other static-analysis tools:
 
 ```bash
-githooks flow qa --format=sarif                              # prints to stdout
-githooks flow qa --format=sarif --output=reports/qa.sarif    # writes a file
+alfil flow qa --format=sarif                              # prints to stdout
+alfil flow qa --format=sarif --output=reports/qa.sarif    # writes a file
 ```
 
 `artifactLocation.uri` is **relative to the current working directory**, matching the SARIF convention expected by Code Scanning. Absolute paths from tool parsers are normalised; paths outside the CWD are preserved as-is.
@@ -546,11 +549,11 @@ githooks flow qa --format=sarif --output=reports/qa.sarif    # writes a file
 Upload to GitHub Code Scanning — the `--output` path must match the `sarif_file` argument of the upload step:
 
 ```yaml
-- run: vendor/bin/githooks flow qa --format=sarif --output=githooks-results.sarif
+- run: vendor/bin/alfil flow qa --format=sarif --output=alfil-results.sarif
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
   with:
-    sarif_file: githooks-results.sarif
+    sarif_file: alfil-results.sarif
 ```
 
 ## Claude Code stop-hook
@@ -560,7 +563,7 @@ and exit 0 on success, a `{"decision":"block","reason":…}` JSON on failure (al
 protocol). It replaces the per-repo bash wrapper that AI integrations used to need.
 
 ```bash
-githooks flow qa --fast-dirty --format=claude-code
+alfil flow qa --fast-dirty --format=claude-code
 ```
 
 See the dedicated guide: [AI Agent Hooks (Claude Code)](ai-hooks.md).
@@ -570,9 +573,9 @@ See the dedicated guide: [AI Agent Hooks (Claude Code)](ai-hooks.md).
 The `--format` and `--output` flags work identically with the `job` command:
 
 ```bash
-githooks job phpstan_src --format=json                                   # JSON v2 to stdout
-githooks job phpcs_src   --format=junit                                  # JUnit to stdout
-githooks job phpstan_src --format=sarif  --output=reports/phpstan.sarif  # SARIF to a file
+alfil job phpstan_src --format=json                                   # JSON v2 to stdout
+alfil job phpcs_src   --format=junit                                  # JUnit to stdout
+alfil job phpstan_src --format=sarif  --output=reports/phpstan.sarif  # SARIF to a file
 ```
 
 ## Dry-run
@@ -580,8 +583,8 @@ githooks job phpstan_src --format=sarif  --output=reports/phpstan.sarif  # SARIF
 Combine `--dry-run` with any format to see what commands would run:
 
 ```bash
-githooks flow qa --dry-run                 # text
-githooks flow qa --dry-run --format=json   # JSON with .command per job
+alfil flow qa --dry-run                 # text
+alfil flow qa --dry-run --format=json   # JSON with .command per job
 ```
 
 In dry-run the `command` field per job is the exact shell command that would have executed, so it can be reused by other tools or documented elsewhere.

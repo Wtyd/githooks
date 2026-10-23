@@ -48,4 +48,4 @@ If you want faster feedback, use `group` / `exclude-group` to split your test su
 
 ## Cache
 
-Default cache location: `.phpunit.result.cache`. Cleared with `githooks cache:clear`.
+Default cache location: `.phpunit.result.cache`. Cleared with `alfil cache:clear`.

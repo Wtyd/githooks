@@ -1,6 +1,6 @@
 # Execution Modes
 
-GitHooks supports five execution modes that control which files accelerable jobs analyze.
+Alfil supports five execution modes that control which files accelerable jobs analyze.
 
 ## Modes
 
@@ -30,7 +30,7 @@ graph TD
 
 ## Which jobs are accelerable?
 
-When running with `--fast`, `--fast-branch`, `--fast-dirty` or `--files` / `--files-from`, GitHooks replaces the `paths` of accelerable jobs with only the relevant files. Jobs with no matching files are **skipped entirely** (with reason `"no input files match its paths"` in files mode). Non-accelerable jobs (phpunit, phpcpd, composer-*, script) ignore the file list and run with their original `paths`.
+When running with `--fast`, `--fast-branch`, `--fast-dirty` or `--files` / `--files-from`, Alfil replaces the `paths` of accelerable jobs with only the relevant files. Jobs with no matching files are **skipped entirely** (with reason `"no input files match its paths"` in files mode). Non-accelerable jobs (phpunit, phpcpd, composer-*, script) ignore the file list and run with their original `paths`.
 
 | Type | Accelerable by default | Reason |
 |---|---|---|
@@ -148,7 +148,7 @@ If the working tree is clean, **every job is skipped** — accelerable or not �
 Untracked files **are included** as long as they are not in `.gitignore`. If a scratch directory under a covered path produces noise, either add it to `.gitignore` or use `--exclude-pattern`:
 
 ```bash
-githooks flow qa --fast-dirty --exclude-pattern='tmp/**,**/Generated/**'
+alfil flow qa --fast-dirty --exclude-pattern='tmp/**,**/Generated/**'
 ```
 
 ### Mutually exclusive flags
@@ -165,17 +165,17 @@ When the input is an **explicit user-supplied list of files** (IDE on-save, mani
 
 ```bash
 # Single file — typical IDE on-save call
-githooks flow qa --files=src/Foo.php
+alfil flow qa --files=src/Foo.php
 
 # Several files at once
-githooks flow qa --files=src/Foo.php,src/Bar.php
+alfil flow qa --files=src/Foo.php,src/Bar.php
 
 # Manifest produced by an external tool
 git diff --name-only origin/main...HEAD > /tmp/changed.txt
-githooks flow qa --files-from=/tmp/changed.txt
+alfil flow qa --files-from=/tmp/changed.txt
 
 # Manifest minus tests and generated code
-githooks flow qa --files-from=/tmp/changed.txt \
+alfil flow qa --files-from=/tmp/changed.txt \
                  --exclude-pattern='tests/**,**/Generated/**'
 ```
 

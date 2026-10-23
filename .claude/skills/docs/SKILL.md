@@ -9,7 +9,7 @@ description: >
 
 # Documentación externa de GitHooks
 
-La documentación se genera con MkDocs + Material for MkDocs y se despliega en GitHub Pages (`https://wtyd.github.io/githooks/`).
+La documentación se genera con MkDocs + Material for MkDocs y se despliega en GitHub Pages (`https://wtyd.github.io/alfil/`).
 
 ## Estructura del proyecto
 
@@ -104,8 +104,8 @@ Si el cambio afecta a algo que también está en el README (nueva herramienta, n
 El README debe ser un resumen conciso que enlaza a la documentación completa. No duplicar contenido extenso.
 
 **Enlaces en el README:**
-- Referencia de config → `https://wtyd.github.io/githooks/configuration/`
-- Referencia de comandos → `https://wtyd.github.io/githooks/cli/`
+- Referencia de config → `https://wtyd.github.io/alfil/configuration/`
+- Referencia de comandos → `https://wtyd.github.io/alfil/cli/`
 - Wiki (legacy, mantener hasta que la docs esté consolidada)
 
 ## Convenciones

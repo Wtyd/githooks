@@ -25,9 +25,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Registry\ToolRegistry;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Registry\ToolRegistry;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 class ConfigurationParserTest extends TestCase
 {
@@ -86,11 +86,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Jobs\PhpstanJob;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 class JobBuildCommandTest extends TestCase
 {
@@ -149,10 +149,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\ThreadBudgetAllocator;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Jobs\PhpstanJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
 
 class ThreadBudgetAllocatorTest extends TestCase
 {
@@ -180,7 +180,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hooks;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Hooks\HookInstaller;
+use Wtyd\Alfil\Hooks\HookInstaller;
 
 class HookInstallerTest extends TestCase
 {

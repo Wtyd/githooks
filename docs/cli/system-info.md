@@ -1,11 +1,11 @@
-# githooks system:info
+# alfil system:info
 
 Show detected CPU count and current `processes` configuration.
 
 ## Synopsis
 
 ```
-githooks system:info [--config=PATH] [--format=text|json]
+alfil system:info [--config=PATH] [--format=text|json]
 ```
 
 ## Options
@@ -38,9 +38,9 @@ unless `processes` over-subscribes the available CPUs.
 ## Examples
 
 ```bash
-githooks system:info
-githooks system:info --config=qa/githooks.php
-githooks system:info --format=json
+alfil system:info
+alfil system:info --config=qa/alfil.php
+alfil system:info --format=json
 ```
 
 ## See also

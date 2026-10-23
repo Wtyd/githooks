@@ -1,4 +1,4 @@
-# githooks profile
+# alfil profile
 
 Show the trend of a metric across a flow's persisted run history: an ASCII sparkline plus min / p50 / p95 / max and a trend versus the previous half of the window.
 
@@ -7,8 +7,8 @@ Show the trend of a metric across a flow's persisted run history: an ASCII spark
 ## Synopsis
 
 ```
-githooks profile <flow> [options]
-githooks profile:list <flow> [options]
+alfil profile <flow> [options]
+alfil profile:list <flow> [options]
 ```
 
 ## Enabling history
@@ -35,7 +35,7 @@ The flow name in the filename is the run identifier, so multi-flow runs (`flows 
 ### Example
 
 ```console
-$ githooks profile qa --job=phpstan-src
+$ alfil profile qa --job=phpstan-src
 phpstan-src · last 30 runs · time
   ▁▃▆▆█▆▃▁▂▃▆█▇▆▅▅▆▆▆▇█▇▆▆▅▅▆▆▆▇
   min: 1.8s · p50: 4.0s · p95: 5.6s · max: 6.1s · trend: ↑ +18.0% vs prev 15
@@ -52,7 +52,7 @@ phpstan-src · last 30 runs · time
 Lists the persisted runs for the flow — timestamp, total time, passed and failed — oldest first.
 
 ```console
-$ githooks profile:list qa
+$ alfil profile:list qa
 +----------------------------+------------+--------+--------+
 | Timestamp                  | Total time | Passed | Failed |
 +----------------------------+------------+--------+--------+
@@ -63,5 +63,5 @@ $ githooks profile:list qa
 
 ## See also
 
-- [`githooks flow`](flow.md) / [`githooks flows`](flows.md) — `--save-history`.
+- [`alfil flow`](flow.md) / [`alfil flows`](flows.md) — `--save-history`.
 - [Configuration: Options](../configuration/options.md) — `history-size`.

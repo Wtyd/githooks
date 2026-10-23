@@ -8,21 +8,20 @@
     <img src="https://img.shields.io/github/v/release/Wtyd/alfil">
 </p>
 <p align="center">
-  <a href="https://github.com/Wtyd/alfil/actions?query=workflow%3A%22Code Analysis%22" title="Build"><img src="https://github.com/Wtyd/alfil/workflows/Code Analysis/badge.svg"></a>
-  <a href="https://github.com/Wtyd/alfil/actions?query=workflow%3A%22Main Tests%22" title="Build"><img src="https://github.com/Wtyd/alfil/workflows/Main Tests/badge.svg"></a>
-  <a href="https://github.com/Wtyd/alfil/actions?query=workflow%3A%22Schedule CI%22" title="Build"><img src="https://github.com/Wtyd/alfil/workflows/Schedule CI/badge.svg"></a>
+  <a href="https://github.com/Wtyd/alfil/actions/workflows/ci.yml" title="Build"><img src="https://github.com/Wtyd/alfil/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/Wtyd/alfil/actions/workflows/schedule-ci.yml" title="Build"><img src="https://github.com/Wtyd/alfil/actions/workflows/schedule-ci.yml/badge.svg"></a>
 </p>
 
-# 1. Wtyd/GitHooks
+# 1. Wtyd/Alfil
 
-GitHooks is a standalone CLI tool (.phar) for managing git hooks and running QA tools in PHP projects. Built with Laravel Zero.
+Alfil (GitHooks until 3.x) is a standalone CLI tool (.phar) for managing git hooks and running QA tools in PHP projects. Built with Laravel Zero. Upgrading from GitHooks 3.x? See [Upgrading from 3.x to 4.0](https://wtyd.github.io/alfil/migration/to-4-0/).
 
-**Why GitHooks?**
+**Why Alfil?**
 * **Standalone binary** — distributed as `.phar`, so its dependencies don't interfere with your project.
 * **Managed with Composer** — no need for Phive or other tools.
-* **Unified configuration** — one file (`githooks.php`) configures all QA tools, hooks, and execution options.
+* **Unified configuration** — one file (`alfil.php`) configures all QA tools, hooks, and execution options.
 * **Hooks, flows, jobs** — map git events to groups of QA tasks with parallel execution, fail-fast, and conditional execution.
-* **Language agnostic** — the `custom` job type can run any command (`eslint`, `prettier`, `composer audit`, etc.), so GitHooks manages both backend and frontend QA from a single configuration.
+* **Language agnostic** — the `custom` job type can run any command (`eslint`, `prettier`, `composer audit`, etc.), so Alfil manages both backend and frontend QA from a single configuration.
 
 # 2. Requirements
 * PHP >= 7.4
@@ -30,31 +29,31 @@ GitHooks is a standalone CLI tool (.phar) for managing git hooks and running QA 
 
 # 3. Install
 
-#### 1. Install GitHooks as a dev dependency:
+#### 1. Install Alfil as a dev dependency:
 ```bash
-composer require --dev wtyd/githooks
+composer require --dev wtyd/alfil
 ```
 
 **Note:** for PHP < 8.1 you must add the following events to the `scripts` section in your `composer.json`:
 
 ```json
 "scripts": {
-    "post-update-cmd": "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions",
-    "post-install-cmd": "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"
+    "post-update-cmd": "Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions",
+    "post-install-cmd": "Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions"
 }
 ```
-Then run `composer update wtyd/githooks`.
+Then run `composer update wtyd/alfil`.
 
 #### 2. Initialize the configuration file:
 ```bash
-githooks conf:init
+alfil conf:init
 ```
 
-In interactive mode, GitHooks detects QA tools in `vendor/bin/` and generates a tailored `githooks.php`. You can also use `--no-interaction` to copy a template.
+In interactive mode, Alfil detects QA tools in `vendor/bin/` and generates a tailored `alfil.php`. You can also use `--no-interaction` to copy a template.
 
 #### 3. Install the git hooks:
 ```bash
-githooks hook
+alfil hook
 ```
 
 This creates a `.githooks/` directory with universal hook scripts and configures `git config core.hooksPath .githooks`. The `.githooks/` directory should be committed to version control.
@@ -64,10 +63,10 @@ To automate hook installation, add it to your `composer.json`:
 ```json
 "scripts": {
     "post-update-cmd": [
-        "vendor/bin/githooks hook"
+        "vendor/bin/alfil hook"
     ],
     "post-install-cmd": [
-        "vendor/bin/githooks hook"
+        "vendor/bin/alfil hook"
     ]
 }
 ```
@@ -103,29 +102,29 @@ Results: 3/4 passed in 3.45s
 ### Running manually
 
 ```bash
-githooks flow qa                                       # Run a flow (group of jobs)
-githooks flow qa --fast                                # Only staged files (accelerable jobs)
-githooks flow qa --fast-branch                         # Only files changed vs the base branch
-githooks flow qa --fast-dirty                          # Unified working tree (ideal for AI agents)
-githooks flow qa --fast-dirty --format=json --no-reports  # AI-agent friendly: clean JSON, no side-effect files
-githooks flow qa --fast-dirty --format=claude-code     # Stop hook for AI agents (Claude Code, Copilot CLI): blocks the agent on failures
-githooks flow qa --only-jobs=phpstan_src               # Run specific jobs from a flow
-githooks flow tests --repeat=10                         # Run 10 times and report the flaky tests (reads each job's junit file)
-githooks flow qa --dry-run                             # Show commands without executing
-githooks job phpstan_src                               # Run a single job
-githooks job phpstan_src --format=json                 # JSON output for CI integration
+alfil flow qa                                       # Run a flow (group of jobs)
+alfil flow qa --fast                                # Only staged files (accelerable jobs)
+alfil flow qa --fast-branch                         # Only files changed vs the base branch
+alfil flow qa --fast-dirty                          # Unified working tree (ideal for AI agents)
+alfil flow qa --fast-dirty --format=json --no-reports  # AI-agent friendly: clean JSON, no side-effect files
+alfil flow qa --fast-dirty --format=claude-code     # Stop hook for AI agents (Claude Code, Copilot CLI): blocks the agent on failures
+alfil flow qa --only-jobs=phpstan_src               # Run specific jobs from a flow
+alfil flow tests --repeat=10                         # Run 10 times and report the flaky tests (reads each job's junit file)
+alfil flow qa --dry-run                             # Show commands without executing
+alfil job phpstan_src                               # Run a single job
+alfil job phpstan_src --format=json                 # JSON output for CI integration
 ```
 
 # 5. Configuration
 
-GitHooks uses a PHP configuration file (`githooks.php`) with three sections: **hooks**, **flows**, and **jobs**.
+Alfil uses a PHP configuration file (`alfil.php`) with three sections: **hooks**, **flows**, and **jobs**.
 
 ```php
 <?php
 return [
     // Git hooks: map git events to flows/jobs
     'hooks' => [
-        'command'    => 'php7.4 vendor/bin/githooks', // optional: customize the hook script command
+        'command'    => 'php7.4 vendor/bin/alfil', // optional: customize the hook script command
         'pre-commit' => ['qa'],
         'pre-push'   => [
             ['flow' => 'full', 'only-on' => ['main', 'develop']], // only on these branches
@@ -208,7 +207,7 @@ return [
 
 * **Hooks** map git events (`pre-commit`, `pre-push`, etc.) to flows and jobs. Supports conditional execution by branch (`only-on` / `exclude-on`) and staged file patterns (`only-files` / `exclude-files`).
 * **Flows** are named groups of jobs with shared options (`fail-fast`, `processes`, `time-budget`, `memory-budget`, `reports`). Reusable across hooks and directly executable from CLI. A flow can declare `on => [branch_pattern => attrs]` to pick its execution mode per branch (e.g. `full` on `master`, `fast-branch` elsewhere). Each entry in `jobs` accepts the plain job name **or** an object `{job, needs?, only-files?, exclude-files?}` to declare intra-flow dependencies and per-entry admission gates. Meta-flows (`flows.<X>.flows`) compose other flows in a single run.
-* **Jobs** are individual QA tasks. Each declares a `type` and its arguments. Jobs can inherit from other jobs with `extends`. When `executable-path` is omitted, GitHooks auto-detects the binary in `vendor/bin/`. Per-job thresholds (`warn-after`, `fail-after`, `memory`, `cores`) cap regressions.
+* **Jobs** are individual QA tasks. Each declares a `type` and its arguments. Jobs can inherit from other jobs with `extends`. When `executable-path` is omitted, Alfil auto-detects the binary in `vendor/bin/`. Per-job thresholds (`warn-after`, `fail-after`, `memory`, `cores`) cap regressions.
 * **Execution modes**: `full` (default), `--fast` (only staged files), `--fast-branch` (only files changed vs base branch), `--fast-dirty` (unified working tree: dirty vs `HEAD` ∪ untracked — ideal for AI agentic hooks), `--files` / `--files-from` (explicit list).
 
 See the [documentation site](https://wtyd.github.io/alfil/) for the full configuration reference.
@@ -242,25 +241,25 @@ Two ways to run non-PHP tools:
 
 | Command | Description |
 |---|---|
-| `githooks flow <name>` | Run a single flow. |
-| `githooks flows <name1> <name2>…` | Run multiple flows in a combined plan: ad-hoc list, declarative meta-flow, or mixed. Jobs deduped by first occurrence. |
-| `githooks job <name>` | Run a single job. Pass extra args to the underlying tool with `--`: `githooks job phpunit -- --filter=MyTest`. |
-| `githooks hook` | Install git hooks via `core.hooksPath`. |
-| `githooks hook:clean` | Remove installed hooks. |
-| `githooks status` | Show hook installation status. |
-| `githooks cache:clear [jobs…]` | Clear QA tool cache files. Accepts job names, flow names, or no argument (clear all). |
-| `githooks conf:init` | Generate configuration file (interactive or template). |
-| `githooks conf:check` | Validate configuration with deep checks (paths, executables, configs, deprecations, did-you-mean for typos). |
-| `githooks system:info` | Show CPU detection (cgroup-aware) and process configuration. |
-| `githooks profile <flow>` | Chart a metric (`time`, `peak-memory`, `peak-cores`) across the flow's run history as a sparkline with min/p50/p95/max and a trend. Requires recorded runs (see `--save-history` / `history-size`). |
-| `githooks profile:list <flow>` | List the runs persisted under `.githooks/history/` for a flow. |
+| `alfil flow <name>` | Run a single flow. |
+| `alfil flows <name1> <name2>…` | Run multiple flows in a combined plan: ad-hoc list, declarative meta-flow, or mixed. Jobs deduped by first occurrence. |
+| `alfil job <name>` | Run a single job. Pass extra args to the underlying tool with `--`: `alfil job phpunit -- --filter=MyTest`. |
+| `alfil hook` | Install git hooks via `core.hooksPath`. |
+| `alfil hook:clean` | Remove installed hooks. |
+| `alfil status` | Show hook installation status. |
+| `alfil cache:clear [jobs…]` | Clear QA tool cache files. Accepts job names, flow names, or no argument (clear all). |
+| `alfil conf:init` | Generate configuration file (interactive or template). |
+| `alfil conf:check` | Validate configuration with deep checks (paths, executables, configs, deprecations, did-you-mean for typos). |
+| `alfil system:info` | Show CPU detection (cgroup-aware) and process configuration. |
+| `alfil profile <flow>` | Chart a metric (`time`, `peak-memory`, `peak-cores`) across the flow's run history as a sparkline with min/p50/p95/max and a trend. Requires recorded runs (see `--save-history` / `history-size`). |
+| `alfil profile:list <flow>` | List the runs persisted under `.githooks/history/` for a flow. |
 
 ### Common flags for `flow` / `flows` / `job`
 
 | Flag | Purpose |
 |---|---|
 | `--mode=full\|fast\|fast-branch\|fast-dirty` / `--fast` / `--fast-branch` / `--fast-dirty` | Select execution mode. `fast` filters to staged files, `fast-branch` to files changed vs base branch, `fast-dirty` to the unified working tree (dirty vs `HEAD` ∪ untracked). |
-| `--branch=X` *(`flow` only)* | Force branch name used to resolve `flows.<X>.on => [branch_pattern => …]`. Overrides CI env vars and `git rev-parse HEAD`. In `flows`/`job`, branch resolution falls back to `$GITHOOKS_BRANCH` / CI env / git. |
+| `--branch=X` *(`flow` only)* | Force branch name used to resolve `flows.<X>.on => [branch_pattern => …]`. Overrides CI env vars and `git rev-parse HEAD`. In `flows`/`job`, branch resolution falls back to `$ALFIL_BRANCH` / CI env / git. |
 | `--files=a,b,c` / `--files-from=PATH` / `--exclude-pattern=glob` | Run against an explicit list of files (CSV, manifest, or with exclusion patterns). |
 | `--processes=N`, `--fail-fast`, `--only-jobs=a,b`, `--exclude-jobs=a,b`, `--dry-run` | Control parallelism, fail-fast behaviour, and job selection. |
 | `--format=text\|json\|junit\|sarif\|codeclimate` | Output format on stdout. JSON v2 schema is stable. |
@@ -284,7 +283,7 @@ Full documentation is available at **[wtyd.github.io/alfil](https://wtyd.github.
 - [CLI Reference](https://wtyd.github.io/alfil/cli/) — every command with options and examples.
 - [How-To Guides](https://wtyd.github.io/alfil/how-to/) — parallel execution, CI/CD, frontend tools, [AI agent hooks](https://wtyd.github.io/alfil/how-to/ai-hooks/), etc.
 - [Migration](https://wtyd.github.io/alfil/migration/v2-to-v3/) — from v2, GrumPHP, or CaptainHook.
-- [Comparison](https://wtyd.github.io/alfil/comparison/) — GitHooks vs GrumPHP vs CaptainHook.
+- [Comparison](https://wtyd.github.io/alfil/comparison/) — Alfil vs GrumPHP vs CaptainHook.
 - [Changelog](https://wtyd.github.io/alfil/changelog/) — what's new in each version.
 
 # 9. Contributing

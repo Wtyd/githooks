@@ -1,6 +1,6 @@
 # Plantilla canónica de release notes
 
-Basada en el estilo de [v3.1.0](https://github.com/Wtyd/githooks/releases/tag/v3.1.0) y lo aprendido al reescribir la 3.2.0. Referencia viva: [CHANGELOG-3.2.0.md](../../../../CHANGELOG-3.2.0.md).
+Basada en el estilo de [v3.1.0](https://github.com/Wtyd/alfil/releases/tag/v3.1.0) y lo aprendido al reescribir la 3.2.0. Referencia viva: [CHANGELOG-3.2.0.md](../../../../CHANGELOG-3.2.0.md).
 
 ## Esqueleto
 
@@ -20,7 +20,7 @@ Basada en el estilo de [v3.1.0](https://github.com/Wtyd/githooks/releases/tag/v3
 <ejemplo mínimo si aporta — opcional>
 ```
 
-Ver [<doc anchor>](https://wtyd.github.io/githooks/<path>/).
+Ver [<doc anchor>](https://wtyd.github.io/alfil/<path>/).
 
 ### <Feature 2>
 
@@ -38,7 +38,7 @@ Ver [<doc anchor>](https://wtyd.github.io/githooks/<path>/).
 
 ---
 
-**Full changelog**: https://wtyd.github.io/githooks/changelog/
+**Full changelog**: https://wtyd.github.io/alfil/changelog/
 ```
 
 ## Notas de uso
@@ -50,7 +50,7 @@ Ver [<doc anchor>](https://wtyd.github.io/githooks/<path>/).
 | `## Breaking Changes` | Hay al menos una ruptura (API, config, comando retirado, PHP mínimo subido, formato deprecado) | No hay rupturas. **Nunca** poner "Breaking Changes: none" |
 | `### Other improvements` | ≥2 mejoras menores que no merecen H3 propio | 0-1 mejoras menores (integrarla en la feature correspondiente o como bullet suelto) |
 | `### Bug Fixes` | ≥1 bug visible desde fuera | 0 bugs visibles. **No** incluir bugs internos cerrados durante el dev |
-| Sección "Installation/upgrade" | Matiz real: cambio de tier PHP, migración obligatoria, paso manual de upgrade | Upgrade estándar (`composer update wtyd/githooks`). La 3.1.0 no la lleva; por defecto, no la pongas |
+| Sección "Installation/upgrade" | Matiz real: cambio de tier PHP, migración obligatoria, paso manual de upgrade | Upgrade estándar (`composer update wtyd/alfil`). La 3.1.0 no la lleva; por defecto, no la pongas |
 
 ### Cómo elegir qué features llevan ejemplo
 
@@ -75,8 +75,8 @@ Siempre al sitio MkDocs, nunca al blob de GitHub:
 
 | Origen | Destino |
 |---|---|
-| `docs/how-to/output-formats.md#json-v2` | `https://wtyd.github.io/githooks/how-to/output-formats/#json-v2` |
-| `docs/tools/phpcsfixer.md` | `https://wtyd.github.io/githooks/tools/phpcsfixer/` |
+| `docs/how-to/output-formats.md#json-v2` | `https://wtyd.github.io/alfil/how-to/output-formats/#json-v2` |
+| `docs/tools/phpcsfixer.md` | `https://wtyd.github.io/alfil/tools/phpcsfixer/` |
 
 ### Orden de las features dentro de `## What's New`
 
@@ -114,4 +114,4 @@ Ver [CHANGELOG-3.2.0.md](../../../../CHANGELOG-3.2.0.md) en la raíz del repo. N
 - `### Bug Fixes` para dos bugs visibles.
 - Footer con el enlace al sitio docs.
 - Ejemplos de código solo donde aportan (`--format=codeclimate`, jq, etc.).
-- Todos los enlaces a `https://wtyd.github.io/githooks/...`.
+- Todos los enlaces a `https://wtyd.github.io/alfil/...`.

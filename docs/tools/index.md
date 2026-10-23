@@ -1,6 +1,6 @@
 # Tools Reference
 
-GitHooks provides native support for the most common PHP QA tools, a `custom` type that can run any command, and a `commit-msg` type that validates commit messages.
+Alfil provides native support for the most common PHP QA tools, a `custom` type that can run any command, and a `commit-msg` type that validates commit messages.
 
 ## Supported tools
 
@@ -25,19 +25,19 @@ GitHooks provides native support for the most common PHP QA tools, a `custom` ty
 
 ## Accelerable
 
-An accelerable job supports `--fast` mode: when running with `--fast`, GitHooks replaces the job's `paths` with only the staged files that fall within those paths. Jobs with no matching staged files are skipped entirely.
+An accelerable job supports `--fast` mode: when running with `--fast`, Alfil replaces the job's `paths` with only the staged files that fall within those paths. Jobs with no matching staged files are skipped entirely.
 
 See [Execution Modes](../execution-modes.md) for details.
 
 ## Internal threading
 
-Some tools support internal parallelism (running multiple analysis threads). When `processes > 1` in the flow options, GitHooks distributes the thread budget across these tools automatically.
+Some tools support internal parallelism (running multiple analysis threads). When `processes > 1` in the flow options, Alfil distributes the thread budget across these tools automatically.
 
 See [How-To: Parallel Execution](../how-to/parallel-execution.md) for details.
 
 ## Auto-detection of executables
 
-When `executable-path` is omitted, GitHooks auto-detects the binary:
+When `executable-path` is omitted, Alfil auto-detects the binary:
 
 1. First checks `vendor/bin/{tool}`.
 2. Falls back to the tool name resolved via system PATH.

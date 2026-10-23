@@ -12,17 +12,17 @@
 
 ```bash
 # Single file — typical IDE on-save call
-githooks job phpstan_src --files=src/User.php
+alfil job phpstan_src --files=src/User.php
 
 # Several files at once
-githooks flow qa --files=src/User.php,src/Order.php
+alfil flow qa --files=src/User.php,src/Order.php
 
 # Manifest produced by git
 git diff --name-only origin/main...HEAD > /tmp/changed.txt
-githooks flow qa --files-from=/tmp/changed.txt
+alfil flow qa --files-from=/tmp/changed.txt
 
 # Manifest minus tests and generated code
-githooks flow qa \
+alfil flow qa \
   --files-from=/tmp/changed.txt \
   --exclude-pattern='**/*Test.php,src/Generated/**'
 ```
@@ -38,7 +38,7 @@ This mirrors the model of `--fast`: filter the *accelerable* jobs, leave the res
 
 ## --files
 
-A comma-separated list (CSV). Paths are resolved against **CWD** (the directory you launch `githooks` from), so they line up with `git diff --name-only` output. Absolute paths are accepted as-is. Whitespace is trimmed and duplicates are removed.
+A comma-separated list (CSV). Paths are resolved against **CWD** (the directory you launch `alfil` from), so they line up with `git diff --name-only` output. Absolute paths are accepted as-is. Whitespace is trimmed and duplicates are removed.
 
 If a path points to a **directory**, it is expanded recursively to every `.php` / `.phtml` file underneath. If a path does not exist, you get a warning and that entry is dropped from the input.
 
@@ -55,7 +55,7 @@ Use `--files-from` whenever the list might be long (the shell `ARG_MAX` is aroun
 
 ```bash
 git diff --name-only origin/main...HEAD > /tmp/changed.txt
-githooks flow qa --files-from=/tmp/changed.txt --format=sarif --output=qa.sarif
+alfil flow qa --files-from=/tmp/changed.txt --format=sarif --output=qa.sarif
 ```
 
 `--files` and `--files-from` are **mutually exclusive**. Passing both fails with exit code 1 and the message:
@@ -66,19 +66,19 @@ githooks flow qa --files-from=/tmp/changed.txt --format=sarif --output=qa.sarif
 
 ## --exclude-pattern
 
-Comma-separated list of glob patterns to drop from the input list (post-expansion, before per-job filtering). Same operators as everywhere else in GitHooks — see the [Glob syntax reference](../glob-syntax.md) for the full table.
+Comma-separated list of glob patterns to drop from the input list (post-expansion, before per-job filtering). Same operators as everywhere else in Alfil — see the [Glob syntax reference](../glob-syntax.md) for the full table.
 
 Patterns are evaluated against the path **as the user supplied it** (relative to CWD, or absolute when the input was absolute). The check is OR-based — a path is dropped if **any** pattern matches.
 
 ```bash
 # Run QA on everything that changed except tests
-githooks flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'
+alfil flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php'
 
 # Drop generated code from a directory expansion
-githooks flow qa --files=src --exclude-pattern='src/Generated/**'
+alfil flow qa --files=src --exclude-pattern='src/Generated/**'
 
 # Multiple patterns: drop tests AND migrations
-githooks flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php,database/migrations/**'
+alfil flow qa --files-from=changed.txt --exclude-pattern='**/*Test.php,database/migrations/**'
 ```
 
 `--exclude-pattern` **requires** `--files` or `--files-from`. Used alone:
@@ -102,7 +102,7 @@ Patterns that don't match anything are silently ignored — you can keep a long 
 `--files` / `--files-from` win over the staging-derived modes. If you mix them you get a warning, and the explicit list is used:
 
 ```bash
-githooks flow qa --files=src/User.php --fast
+alfil flow qa --files=src/User.php --fast
 # ⚠ --files takes precedence over --fast (--fast ignored)
 ```
 
@@ -148,6 +148,6 @@ When files mode is in effect, the JSON v2 payload reports `executionMode: "files
 ## See also
 
 - [Execution Modes](../execution-modes.md)
-- [`githooks flow`](../cli/flow.md) — full flag reference
-- [`githooks job`](../cli/job.md) — single-job runner
+- [`alfil flow`](../cli/flow.md) — full flag reference
+- [`alfil job`](../cli/job.md) — single-job runner
 - [Conditional hooks](conditional-hooks.md) — `exclude-files` in hook config (different feature, same glob syntax)

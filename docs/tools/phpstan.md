@@ -50,8 +50,8 @@ Full:
 
 ## Threading
 
-PHPStan worker count is read from the `.neon` config file (`maximumNumberOfProcesses`). It is not adjustable at runtime via GitHooks, but it is accounted for in the thread budget calculation.
+PHPStan worker count is read from the `.neon` config file (`maximumNumberOfProcesses`). It is not adjustable at runtime via Alfil, but it is accounted for in the thread budget calculation.
 
 ## Cache
 
-Default cache location: `{sys_get_temp_dir}/phpstan/` or the `tmpDir` specified in the `.neon` config. Cleared with `githooks cache:clear`.
+Default cache location: `{sys_get_temp_dir}/phpstan/` or the `tmpDir` specified in the `.neon` config. Cleared with `alfil cache:clear`.

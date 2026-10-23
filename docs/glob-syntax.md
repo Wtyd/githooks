@@ -1,6 +1,6 @@
 # Glob syntax
 
-The same glob syntax is used everywhere a pattern appears in GitHooks:
+The same glob syntax is used everywhere a pattern appears in Alfil:
 
 - [Hook conditions](configuration/hooks.md#conditional-execution): `only-on` / `exclude-on` (branch patterns) and `only-files` / `exclude-files` (file patterns) inside a hook entry.
 - [Per-flow-entry admission](configuration/flows.md#per-entry-admission-rules-only-files-exclude-files): `only-files` / `exclude-files` next to a job inside `flows.<X>.jobs`.

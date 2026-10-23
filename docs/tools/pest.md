@@ -1,12 +1,12 @@
 # Pest
 
-[Pest](https://pestphp.com) is the elegant, PHPUnit-based testing framework and Laravel's default test runner. GitHooks wraps the `pest` binary (or `php artisan test`) so it is a first-class job instead of a `custom` script — with exit-code pass/fail, thread-budget-aware `--parallel`, and Pest's coverage/mutation flags.
+[Pest](https://pestphp.com) is the elegant, PHPUnit-based testing framework and Laravel's default test runner. Alfil wraps the `pest` binary (or `php artisan test`) so it is a first-class job instead of a `custom` script — with exit-code pass/fail, thread-budget-aware `--parallel`, and Pest's coverage/mutation flags.
 
 - **Type:** `pest`
 - **Accelerable:** No (runs tests, not source files — inherited from [PHPUnit](phpunit.md))
 - **Default executable:** `vendor/bin/pest`
 
-> Pest is installed in **your project** (`composer require pestphp/pest --dev`), not by GitHooks. Unlike the other tools, GitHooks does not ship or self-test with Pest — it only builds and runs its command.
+> Pest is installed in **your project** (`composer require pestphp/pest --dev`), not by Alfil. Unlike the other tools, Alfil does not ship or self-test with Pest — it only builds and runs its command.
 
 ## Runner: `binary` vs `artisan`
 
@@ -80,8 +80,8 @@ Pest parallelises with `--parallel --processes=N`. As with [Paratest](paratest.m
 
 ## Pass/fail
 
-The verdict comes from Pest's **exit code** (0 = pass). Coverage/mutation thresholds (`--min`) make Pest exit non-zero when unmet, which GitHooks reports as a failed job — no output parsing involved.
+The verdict comes from Pest's **exit code** (0 = pass). Coverage/mutation thresholds (`--min`) make Pest exit non-zero when unmet, which Alfil reports as a failed job — no output parsing involved.
 
 ## Cache
 
-Default cache location: `.phpunit.result.cache` (inherited from PHPUnit). Cleared with `githooks cache:clear`.
+Default cache location: `.phpunit.result.cache` (inherited from PHPUnit). Cleared with `alfil cache:clear`.

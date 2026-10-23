@@ -64,4 +64,4 @@ See the [Paratest documentation](https://github.com/paratestphp/paratest) for in
 
 ## Cache
 
-Default cache location: `.phpunit.result.cache` (inherited from PHPUnit). Cleared with `githooks cache:clear`.
+Default cache location: `.phpunit.result.cache` (inherited from PHPUnit). Cleared with `alfil cache:clear`.

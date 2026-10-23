@@ -4,7 +4,7 @@ AI coding agents such as **Claude Code** can run a *stop hook* — a command exe
 when the agent finishes a turn. If the command blocks, the agent is told *why* and
 keeps working instead of handing back unfinished, failing code.
 
-GitHooks closes this loop natively:
+Alfil closes this loop natively:
 
 - **Input side** — [`--fast-dirty`](../execution-modes.md#fast-dirty-mode-fast-dirty)
   analyses the unified working tree (modified + untracked files), exactly the set an
@@ -25,7 +25,7 @@ GitHooks closes this loop natively:
     when the process **exits 0**. A non-zero exit makes Claude Code surface stderr and
     treat it as a native, unexplained block. So `--format=claude-code` always exits 0
     on a lint failure and signals the block through stdout instead. A genuine
-    *configuration* error (bad `githooks.php`, undefined flow) still exits `1` — that
+    *configuration* error (bad `alfil.php`, undefined flow) still exits `1` — that
     is a tooling problem for you to fix, not a reason to block the agent.
 
 The `reason` aggregates the plain-text output of **every** failed job under a Markdown
@@ -45,7 +45,7 @@ Add a single command to your `~/.claude/settings.json` (or the project-level
         "hooks": [
           {
             "type": "command",
-            "command": "vendor/bin/githooks flow qa --fast-dirty --format=claude-code"
+            "command": "vendor/bin/alfil flow qa --fast-dirty --format=claude-code"
           }
         ]
       }
@@ -68,12 +68,12 @@ When the agent stops:
 
 ## Claude Code's side of the hook
 
-!!! note "This section is about Claude Code, not GitHooks"
+!!! note "This section is about Claude Code, not Alfil"
     Nothing below changes what `--format=claude-code` prints. It describes how Claude Code
     runs a stop hook — its loop protection and the shell it uses — and how to write the
     `settings.json` command so that it works with that behaviour. Both details come from the
     [Claude Code hooks reference](https://code.claude.com/docs/en/hooks) and may change with
-    Claude Code releases; GitHooks does not control them.
+    Claude Code releases; Alfil does not control them.
 
 ### Avoid blocking forever
 
@@ -94,7 +94,7 @@ it to block once and then let the agent stop:
         "hooks": [
           {
             "type": "command",
-            "command": "grep -q '\"stop_hook_active\": *true' && exit 0; vendor/bin/githooks flow qa --fast-dirty --format=claude-code"
+            "command": "grep -q '\"stop_hook_active\": *true' && exit 0; vendor/bin/alfil flow qa --fast-dirty --format=claude-code"
           }
         ]
       }
@@ -121,7 +121,7 @@ shell. On Debian and Ubuntu, `sh` is `dash`, which does not understand bash synt
     itself is broken (exit `1`). Any redirection of stdout swallows the JSON, and the hook
     never blocks again.
 
-    If the hook line runs other commands before GitHooks and silences them, remember it runs
+    If the hook line runs other commands before Alfil and silences them, remember it runs
     under `dash`: `cmd &>/dev/null` is not a redirection there but "run `cmd` in the
     background", so its output lands on stdout next to the JSON and Claude Code can no longer
     parse it. The hook then never blocks, and nothing reports it. Write `cmd >/dev/null 2>&1`
@@ -133,7 +133,7 @@ the command directly, without a shell:
 ```json
 {
   "type": "command",
-  "command": "vendor/bin/githooks",
+  "command": "vendor/bin/alfil",
   "args": ["flow", "qa", "--fast-dirty", "--format=claude-code"]
 }
 ```
@@ -145,13 +145,13 @@ the stop hook to a single fast job instead of the whole flow:
 
 ```bash
 # Whole QA flow over the working tree
-githooks flow qa --fast-dirty --format=claude-code
+alfil flow qa --fast-dirty --format=claude-code
 
 # A single fast job
-githooks job phpstan_src --fast-dirty --format=claude-code
+alfil job phpstan_src --fast-dirty --format=claude-code
 
 # A meta-flow of several flows
-githooks flows pre-commit --fast-dirty --format=claude-code
+alfil flows pre-commit --fast-dirty --format=claude-code
 ```
 
 ## Other agents
@@ -173,7 +173,7 @@ stop — so the command is the same one as above, guard included:
     "agentStop": [
       {
         "type": "command",
-        "bash": "grep -q '\"stop_hook_active\": *true' && exit 0; vendor/bin/githooks flow qa --fast-dirty --format=claude-code",
+        "bash": "grep -q '\"stop_hook_active\": *true' && exit 0; vendor/bin/alfil flow qa --fast-dirty --format=claude-code",
         "timeoutSec": 60
       }
     ]
@@ -190,7 +190,7 @@ the same limit of 8 consecutive blocks.
 ### Others
 
 OpenAI Codex CLI (`Stop`) and Gemini CLI (`AfterAgent`) document the same JSON shape, but
-GitHooks has not been tested with them. Cursor's `stop` hook uses a different field
+Alfil has not been tested with them. Cursor's `stop` hook uses a different field
 (`followup_message`) and is not supported. There is deliberately **no** auto-detection from
 environment variables: the format you want is always explicit.
 

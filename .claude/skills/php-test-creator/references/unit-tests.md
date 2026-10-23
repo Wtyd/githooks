@@ -26,9 +26,9 @@ Todas las Tool tienen el mismo conjunto de tests. Sigue este esquema exacto:
 namespace Tests\Unit\Tools\Tool;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\ConfigurationFile\ToolConfiguration;
-use Wtyd\GitHooks\Tools\Tool\MyTool;
-use Wtyd\GitHooks\Tools\Tool\MyToolFake;
+use Wtyd\Alfil\ConfigurationFile\ToolConfiguration;
+use Wtyd\Alfil\Tools\Tool\MyTool;
+use Wtyd\Alfil\Tools\Tool\MyToolFake;
 
 class MyToolTest extends UnitTestCase
 {

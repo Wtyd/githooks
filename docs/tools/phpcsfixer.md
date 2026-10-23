@@ -51,22 +51,22 @@ Full:
 
 ## Fix mode vs dry-run
 
-By default, `php-cs-fixer` modifies files in place. In `--fast` mode GitHooks automatically re-stages modified files (`fixApplied: true` in the JSON output) so fixes are included in the commit.
+By default, `php-cs-fixer` modifies files in place. In `--fast` mode Alfil automatically re-stages modified files (`fixApplied: true` in the JSON output) so fixes are included in the commit.
 
 To run in check-only mode (for CI), set `dry-run: true` or invoke with the CLI flag:
 
 ```bash
-githooks job cs_fixer_src --dry-run
+alfil job cs_fixer_src --dry-run
 ```
 
 In dry-run mode `fixApplied` is always `false` and the exit code is non-zero if any file would have been changed.
 
 ## Cache
 
-Default cache location: `.php-cs-fixer.cache` in the project root (or the path specified by `cache-file`). Cleared with `githooks cache:clear cs_fixer_src`.
+Default cache location: `.php-cs-fixer.cache` in the project root (or the path specified by `cache-file`). Cleared with `alfil cache:clear cs_fixer_src`.
 
 ## See also
 
 - [Jobs reference](../configuration/jobs.md) — common keywords.
 - [Rector](rector.md) — the other automatic refactoring job type shipped in v3.2.
-- [`githooks cache:clear`](../cli/cache-clear.md) — clear the fixer cache.
+- [`alfil cache:clear`](../cli/cache-clear.md) — clear the fixer cache.

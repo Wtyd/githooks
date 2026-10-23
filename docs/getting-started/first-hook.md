@@ -3,7 +3,7 @@
 ## Install the hooks
 
 ```bash
-githooks hook
+alfil hook
 ```
 
 This command:
@@ -16,11 +16,11 @@ This command:
 
 ## Test it
 
-Make a commit and watch GitHooks run your configured QA tools:
+Make a commit and watch Alfil run your configured QA tools:
 
 ```bash
 git add .
-git commit -m "test: verify githooks is working"
+git commit -m "test: verify alfil is working"
 ```
 
 If all checks pass, the commit proceeds. If any check fails, the commit is blocked and you see the errors.
@@ -30,25 +30,25 @@ If all checks pass, the commit proceeds. If any check fails, the commit is block
 You don't need to commit to run your QA tools. Use the CLI directly:
 
 ```bash
-githooks flow qa                          # Run a flow (group of jobs)
-githooks flow qa --fast                   # Only analyze staged files
-githooks flow qa --only-jobs=phpstan_src  # Run specific jobs from a flow
-githooks flow qa --dry-run                # Show commands without executing
-githooks job phpstan_src                  # Run a single job
-githooks job phpstan_src --format=json    # JSON output for CI and AI integration
-githooks job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
+alfil flow qa                          # Run a flow (group of jobs)
+alfil flow qa --fast                   # Only analyze staged files
+alfil flow qa --only-jobs=phpstan_src  # Run specific jobs from a flow
+alfil flow qa --dry-run                # Show commands without executing
+alfil job phpstan_src                  # Run a single job
+alfil job phpstan_src --format=json    # JSON output for CI and AI integration
+alfil job phpunit_all -- --filter=testFoo          # Pass extra args to the tool
 ```
 
 ## Check hook status
 
 ```bash
-githooks status
+alfil status
 ```
 
 Shows which hooks are installed and whether they're synchronized with your configuration:
 
 - **synced** — installed and matches configuration.
-- **missing** — configured but not installed (run `githooks hook` to fix).
+- **missing** — configured but not installed (run `alfil hook` to fix).
 - **orphan** — installed but not in configuration.
 
 ## Automate installation
@@ -58,10 +58,10 @@ Add the hook installation to your `composer.json` so every team member gets hook
 ```json
 "scripts": {
     "post-update-cmd": [
-        "vendor/bin/githooks hook"
+        "vendor/bin/alfil hook"
     ],
     "post-install-cmd": [
-        "vendor/bin/githooks hook"
+        "vendor/bin/alfil hook"
     ]
 }
 ```
@@ -71,12 +71,12 @@ Add the hook installation to your `composer.json` so every team member gets hook
     ```json
     "scripts": {
         "post-update-cmd": [
-            "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions",
-            "vendor/bin/githooks hook"
+            "Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions",
+            "vendor/bin/alfil hook"
         ],
         "post-install-cmd": [
-            "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions",
-            "vendor/bin/githooks hook"
+            "Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions",
+            "vendor/bin/alfil hook"
         ]
     }
     ```
@@ -86,7 +86,7 @@ Add the hook installation to your `composer.json` so every team member gets hook
 If your environment doesn't support `core.hooksPath`, use legacy mode:
 
 ```bash
-githooks hook --legacy
+alfil hook --legacy
 ```
 
 This copies hook scripts directly to `.git/hooks/` instead.

@@ -1,6 +1,6 @@
 # Frontend Tools
 
-GitHooks can run non-PHP tools using the `custom` job type. This lets you manage backend and frontend QA from a single configuration.
+Alfil can run non-PHP tools using the `custom` job type. This lets you manage backend and frontend QA from a single configuration.
 
 ## ESLint
 

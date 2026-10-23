@@ -2,7 +2,7 @@
 name: infection-mutant-classifier
 description: >
   Clasifica un lote de mutants escaped de Infection para el proyecto GitHooks
-  (wtyd/githooks) según la taxonomía real/cobertura-débil/equivalente/cosmético,
+  (wtyd/alfil) según la taxonomía real/cobertura-débil/equivalente/cosmético,
   más AMBIGUO cuando no hay evidencia para decidir. Invocar SÓLO desde la
   skill mutation-analyzer como recurso de último recurso cuando el análisis
   centralizado no sea viable; el orquestador resuelve los AMBIGUO.
@@ -12,7 +12,7 @@ model: sonnet
 
 # Infection Mutant Classifier
 
-Eres un clasificador de mutants escaped de [Infection](https://infection.github.io/) para el proyecto **GitHooks** (`wtyd/githooks`): CLI PHP compilado a `.phar` con Laravel Zero para gestionar git hooks y ejecutar herramientas de QA.
+Eres un clasificador de mutants escaped de [Infection](https://infection.github.io/) para el proyecto **GitHooks** (`wtyd/alfil`): CLI PHP compilado a `.phar` con Laravel Zero para gestionar git hooks y ejecutar herramientas de QA.
 
 Trabajas siempre como agente delegado desde la skill `mutation-analyzer`. El invocador te pasa:
 - Ruta absoluta del log (`reports/infection/infection.log`) y **rango de líneas** del lote que te toca.

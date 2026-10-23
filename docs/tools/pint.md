@@ -1,12 +1,12 @@
 # Laravel Pint
 
-[Laravel Pint](https://laravel.com/docs/pint) is Laravel's opinionated code-style fixer, built on top of [PHP CS Fixer](phpcsfixer.md) and installed by default in every new Laravel application. GitHooks wraps the `pint` binary as a first-class fixer job — with automatic re-staging of fixes and a check-only `--test` mode for CI — completing the Symfony/Laravel fixer pair (`php-cs-fixer` / `pint`).
+[Laravel Pint](https://laravel.com/docs/pint) is Laravel's opinionated code-style fixer, built on top of [PHP CS Fixer](phpcsfixer.md) and installed by default in every new Laravel application. Alfil wraps the `pint` binary as a first-class fixer job — with automatic re-staging of fixes and a check-only `--test` mode for CI — completing the Symfony/Laravel fixer pair (`php-cs-fixer` / `pint`).
 
 - **Type:** `pint`
 - **Accelerable:** Yes
 - **Default executable:** `vendor/bin/pint`
 
-> Pint is installed in **your project** (`composer require laravel/pint --dev`), not by GitHooks. Like Pest, GitHooks does not ship or self-test with Pint — it only builds and runs its command.
+> Pint is installed in **your project** (`composer require laravel/pint --dev`), not by Alfil. Like Pest, Alfil does not ship or self-test with Pint — it only builds and runs its command.
 
 ## Keywords
 
@@ -52,15 +52,15 @@ Exit-code semantics (verified against Pint 1.30 — they do **not** mirror php-c
 | `pint` (fix) | 0 | 0 (fixes applied) | 1 (parseable files still fixed) |
 | `pint --test` | 0 | 1 | 1 |
 
-In fix mode, GitHooks automatically re-stages the staged files Pint rewrote (`fixApplied: true` in the JSON output) so the fixes are included in the commit — scoped to the files the tool changed, like every native fixer. With `test: true`, `fixApplied` is always `false`, nothing is rewritten, and the job fails when the style is dirty.
+In fix mode, Alfil automatically re-stages the staged files Pint rewrote (`fixApplied: true` in the JSON output) so the fixes are included in the commit — scoped to the files the tool changed, like every native fixer. With `test: true`, `fixApplied` is always `false`, nothing is rewritten, and the job fails when the style is dirty.
 
-## File selection: GitHooks, not `--dirty`
+## File selection: Alfil, not `--dirty`
 
-Pint's own `--dirty` flag (fix only uncommitted files) is deliberately not mapped: file selection is governed by GitHooks — in [`--fast` mode](../execution-modes.md) the staged files under `paths` are injected as explicit arguments — and two competing selection mechanisms would blur which files actually ran.
+Pint's own `--dirty` flag (fix only uncommitted files) is deliberately not mapped: file selection is governed by Alfil — in [`--fast` mode](../execution-modes.md) the staged files under `paths` are injected as explicit arguments — and two competing selection mechanisms would blur which files actually ran.
 
 ## Cache
 
-Pint keeps its cache in the system temp directory, never in the project — there is nothing for [`githooks cache:clear`](../cli/cache-clear.md) to clear.
+Pint keeps its cache in the system temp directory, never in the project — there is nothing for [`alfil cache:clear`](../cli/cache-clear.md) to clear.
 
 ## See also
 

@@ -4,7 +4,7 @@ Common error and warning messages emitted by [`conf:check`](cli/conf-check.md), 
 
 ## `conf:check` errors
 
-Run [`githooks conf:check`](cli/conf-check.md) to validate your configuration without executing any tool. The command exits 1 on the first error and lists warnings inline.
+Run [`alfil conf:check`](cli/conf-check.md) to validate your configuration without executing any tool. The command exits 1 on the first error and lists warnings inline.
 
 ### Flows
 
@@ -120,19 +120,19 @@ When a job has `skipped: true` in `--format=json` (or appears with the `⏭` ann
 |---|---|---|
 | `No hooks defined in configuration. Nothing to install.` | The config file has no `hooks` block or it is empty. | Declare at least one hook event under `hooks`. See [Configuration: Hooks](configuration/hooks.md). |
 | `Could not delete $hook hook` / `Error installing hook $hook` | Permission issue writing to `.githooks/`. | Check filesystem permissions; ensure `.githooks/` is writable. |
-| Existing hooks from another tool | `githooks hook` backs up pre-existing hook scripts to `<hook>.bak` before overwriting. | Inspect the `.bak` file and decide whether to keep the GitHooks install or restore the original. |
+| Existing hooks from another tool | `alfil hook` backs up pre-existing hook scripts to `<hook>.bak` before overwriting. | Inspect the `.bak` file and decide whether to keep the Alfil install or restore the original. |
 
 ## Configuration file loading
 
 | Message | Cause | Fix |
 |---|---|---|
 | `Configuration file not found: $path` | `--config=PATH` points at a non-existent file. `$path` is the path as resolved against the current directory (a relative `--config=qa/x.php` shows up as `/your/project/qa/x.php`), so the message tells you which file was actually looked up. Same text and exit code `1` in `conf:check`, `flow`, `flows` and `job`; with `conf:check --format=json` it is `errors[0]` and `valid` is `false`. | Check the path against the directory you run the command from. |
-| `Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).` | No `--config` given and no `githooks.php` in the project root nor in `qa/`. | Create one with [`conf:init`](cli/conf-init.md), or pass `--config=PATH`. |
+| `Configuration file not found. Expected alfil.php in the project root or in qa/ (or pass --config=PATH).` | No `--config` given and no `alfil.php` in the project root nor in `qa/`. | Create one with [`conf:init`](cli/conf-init.md), or pass `--config=PATH`. |
 | `v2 configuration format (Options/Tools) is not supported since 4.0: $path. Migrate it with GitHooks 3.8 ('githooks conf:migrate') before upgrading.` | The file is a v2 configuration: `Options` and/or `Tools` at the top level and no `hooks` / `flows` / `jobs`. 4.0 does not read it. Same text and exit code `1` in every command; `conf:check --format=json` puts it in `errors[0]`. | Migrate with GitHooks 3.8 first, or write the v3 file by hand. See [Upgrading from v2](migration/v2-to-v3.md). |
-| `YAML configuration files are not supported since 4.0: $path. Migrate it with GitHooks 3.8 ('githooks conf:migrate') to githooks.php before upgrading.` | A `.yml` / `.yaml` file, either passed with `--config` or left behind in the project root or `qa/` with no `githooks.php` next to it. The file is rejected on its extension and never parsed. | Migrate with 3.8 (it converts YAML to PHP), then delete the `.yml`. |
+| `YAML configuration files are not supported since 4.0: $path. Migrate it with GitHooks 3.8 ('githooks conf:migrate') to alfil.php before upgrading.` | A `.yml` / `.yaml` file, either passed with `--config` or left behind in the project root or `qa/` with no `alfil.php` next to it. The file is rejected on its extension and never parsed. | Migrate with 3.8 (it converts YAML to PHP), then delete the `.yml`. |
 | `Unsupported configuration file type '.json': $path. Expected a .php file.` | `--config` points at a file whose extension is neither `.php` nor `.yml`. | Pass a `.php` file. |
 | `PHP configuration file does not return an array.` | The `.php` config file is missing `return [ ... ];`. | Ensure the file ends with `return $config;` or similar. |
-| `GitHooks only supports php 7.4 or greater.` | PHP version too old. | Upgrade PHP. |
+| `Alfil only supports php 7.4 or greater.` | PHP version too old. | Upgrade PHP. |
 
 ## CI- and environment-specific
 
@@ -150,8 +150,8 @@ When a job has `skipped: true` in `--format=json` (or appears with the `⏭` ann
 
 If a flow declares an [`on`](configuration/flows.md#branch-driven-execution-mode-on) map and the run happens on a detached HEAD (`git rev-parse --abbrev-ref HEAD` returns `HEAD`), the resolver errors out and points you at:
 
-- `--branch=X` (CLI flag on `githooks flow`)
-- `$GITHOOKS_BRANCH` (environment variable)
+- `--branch=X` (CLI flag on `alfil flow`)
+- `$ALFIL_BRANCH` (environment variable)
 
 Set one of those when running on detached HEAD. Flows without `on` continue to work on detached HEAD unchanged.
 
@@ -189,6 +189,6 @@ Jobs already running when another fails are allowed to finish naturally. `fail-f
 
 ### Per-flow options ignored in multi-flow runs
 
-When you invoke `githooks flows X Y` (two normal flows) or a mixed meta-flow + extra flows run, per-flow `options:` blocks are intentionally ignored. The cascade collapses to `cli > flows.options > default`. A one-line stderr notice names the ignored sources so you know what is not being applied.
+When you invoke `alfil flows X Y` (two normal flows) or a mixed meta-flow + extra flows run, per-flow `options:` blocks are intentionally ignored. The cascade collapses to `cli > flows.options > default`. A one-line stderr notice names the ignored sources so you know what is not being applied.
 
-See [`githooks flows` invocation modes](cli/flows.md#invocation-modes).
+See [`alfil flows` invocation modes](cli/flows.md#invocation-modes).

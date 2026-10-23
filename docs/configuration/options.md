@@ -17,7 +17,7 @@ Execution options control how flows run their jobs. They can be set globally (fo
 | `memory-budget` | Object | `null` | Flow-level `warn-above` / `fail-above` thresholds (MB) over the simultaneous RSS sum across jobs in flight. See [Memory budget](#memory-budget-memory-budget). |
 | `allocator` | String | `'fifo'` | Admission strategy when the pool fills: `fifo` (strict order) or `greedy` (first-fit scan). See [Allocator strategy](#allocator-strategy-allocator). |
 | `stats` | Boolean | `false` | Activate RSS sampling and emit the `--stats` summary table. See [Stats](#stats-stats). |
-| `history-size` | Integer | `0` | Persist each run under `.githooks/history/` and keep the last N per flow (FIFO) for [`profile`](../cli/profile.md). `0` disables it. See [`githooks profile`](../cli/profile.md#enabling-history). |
+| `history-size` | Integer | `0` | Persist each run under `.githooks/history/` and keep the last N per flow (FIFO) for [`profile`](../cli/profile.md). `0` disables it. See [`alfil profile`](../cli/profile.md#enabling-history). |
 
 ## Priority
 
@@ -42,7 +42,7 @@ Options are resolved from lowest to highest priority:
 ],
 ```
 
-Running `githooks flow qa --processes=4` would use `fail-fast=true` (from flow) and `processes=4` (from CLI).
+Running `alfil flow qa --processes=4` would use `fail-fast=true` (from flow) and `processes=4` (from CLI).
 
 ### Per-key cascade
 
@@ -79,7 +79,7 @@ This mirrors the existing `--allocator` behaviour across every option, so an inv
 
 ## Thread budget
 
-The `processes` option controls the **total CPU cores** available — not just the number of parallel jobs, and not just a soft hint. It is the **absolute ceiling**: no individual job can spawn more workers than `processes` allows. When `processes > 1`, GitHooks distributes threads across jobs that support internal parallelism:
+The `processes` option controls the **total CPU cores** available — not just the number of parallel jobs, and not just a soft hint. It is the **absolute ceiling**: no individual job can spawn more workers than `processes` allows. When `processes > 1`, Alfil distributes threads across jobs that support internal parallelism:
 
 | Tool | Internal parallelism flag |
 |---|---|
@@ -89,7 +89,7 @@ The `processes` option controls the **total CPU cores** available — not just t
 | paratest | `--processes` |
 | phpstan | Worker count from `.neon` config (not adjustable at runtime) |
 
-For example, with `processes: 4` and two threadable jobs, each gets approximately 2 threads. Use `githooks flow <name> --monitor` to see the actual thread usage.
+For example, with `processes: 4` and two threadable jobs, each gets approximately 2 threads. Use `alfil flow <name> --monitor` to see the actual thread usage.
 
 ### Per-job reservation (`cores`)
 
@@ -123,7 +123,7 @@ The `ignore-errors-on-exit` at flow level overrides the same option for all jobs
 
 ## Executable prefix
 
-The `executable-prefix` option prepends a command to every job's executable. This is the key to running GitHooks inside Docker, Laravel Sail, or any remote environment.
+The `executable-prefix` option prepends a command to every job's executable. This is the key to running Alfil inside Docker, Laravel Sail, or any remote environment.
 
 ```php
 'flows' => [
@@ -167,10 +167,10 @@ Individual jobs can override or opt out of the global prefix:
 
 ### Local override
 
-The most common pattern is to set `executable-prefix` in `githooks.local.php` so each developer configures their own environment:
+The most common pattern is to set `executable-prefix` in `alfil.local.php` so each developer configures their own environment:
 
 ```php
-// githooks.local.php (not committed)
+// alfil.local.php (not committed)
 <?php
 return [
     'flows' => [
@@ -211,7 +211,7 @@ Valid format keys are `json`, `junit`, `sarif`, `codeclimate` (the structured se
 The same effect can be obtained per-invocation:
 
 ```bash
-githooks flow qa \
+alfil flow qa \
   --report-sarif=reports/qa.sarif \
   --report-junit=reports/junit.xml \
   --report-codeclimate=reports/gl-code-quality.json
@@ -240,10 +240,10 @@ Skips the `reports` section from config without cancelling the CLI `--report-*` 
 
 ```bash
 # Read JSON without writing any report file
-githooks flow qa --format=json --no-reports
+alfil flow qa --format=json --no-reports
 
 # Same, but still write a single SARIF that the tool needs
-githooks flow qa --format=json --no-reports --report-sarif=/tmp/q.sarif
+alfil flow qa --format=json --no-reports --report-sarif=/tmp/q.sarif
 ```
 
 See [How-To: CI/CD](../how-to/ci-cd.md) for end-to-end pipeline recipes.
@@ -296,7 +296,7 @@ non-positive integers; `time-budget` placed inside a job is rejected
 
 CLI overrides: `--warn-after=N`, `--fail-after=N`, `--no-time-budget`.
 Apply flow-level on `flow` / `flows`; apply to the single job on
-`githooks job <name>`. `--no-time-budget` always wins and disables both
+`alfil job <name>`. `--no-time-budget` always wins and disables both
 layers for that run; mixing it with `--warn-after` / `--fail-after`
 emits a stderr warning and ignores the conflicting flags.
 

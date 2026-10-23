@@ -19,16 +19,16 @@ Practical recipes for common scenarios. Each guide stands alone — read the one
 
 | Guide | When to read it |
 |---|---|
-| [CI/CD Integration](ci-cd.md) | You are wiring GitHooks into GitHub Actions, GitLab CI, or any pipeline. Includes JUnit / SARIF / Code Climate report integration and CI annotations. |
+| [CI/CD Integration](ci-cd.md) | You are wiring Alfil into GitHub Actions, GitLab CI, or any pipeline. Includes JUnit / SARIF / Code Climate report integration and CI annotations. |
 | [Output Formats](output-formats.md) | You need JSON v2, JUnit, SARIF or Code Climate output for an automation, IDE or CI dashboard. |
 | [Finding Flaky Tests](flaky-tests.md) | A test suite goes red now and then with no code change, and you want to know *which* tests flip — with `flow --repeat`. |
-| [AI Agent Hooks (Claude Code)](ai-hooks.md) | You want to wire GitHooks as the *stop hook* of an AI coding agent so failing QA blocks the agent with a readable reason instead of shipping broken code. |
+| [AI Agent Hooks (Claude Code)](ai-hooks.md) | You want to wire Alfil as the *stop hook* of an AI coding agent so failing QA blocks the agent with a readable reason instead of shipping broken code. |
 
 ## Sharing configuration across environments
 
 | Guide | When to read it |
 |---|---|
-| [Docker & Local Override](docker-local-override.md) | You run GitHooks inside Docker / Sail / a remote runner and want a per-developer `.local.php` override for `executable-prefix`. |
+| [Docker & Local Override](docker-local-override.md) | You run Alfil inside Docker / Sail / a remote runner and want a per-developer `.local.php` override for `executable-prefix`. |
 | [Automating Hook Installation](automate-install.md) | You want hooks installed automatically for every team member after `composer install`. |
 | [Job Inheritance](job-inheritance.md) | You have several similar jobs (e.g. `phpcs_src`, `phpcs_tests`) and want to share a base definition with `extends`. |
 

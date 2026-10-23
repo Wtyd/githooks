@@ -1,7 +1,7 @@
 ---
 name: add-tool
 description: >
-  Guia para añadir una nueva herramienta QA al proyecto GitHooks (wtyd/githooks).
+  Guia para añadir una nueva herramienta QA al proyecto GitHooks (wtyd/alfil).
   En v3, las herramientas se implementan como Jobs en src/Jobs/.
   Usa esta skill cuando el usuario quiera añadir soporte para una herramienta de analisis de codigo
   (phpunit, psalm, rector, phpinsights, etc.), integrar una nueva tool, o cuando mencione
@@ -32,10 +32,10 @@ Fichero: `src/Jobs/MyToolJob.php`
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\ThreadCapability;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\ThreadCapability;
 
 class MyToolJob extends JobAbstract
 {
@@ -168,7 +168,7 @@ ls vendor/bin/mytool
 php7.4 vendor/bin/mytool --version
 
 # Pre-build debe retirarla (no debe quedar en composer.json tras ejecutar)
-php7.4 githooks app:pre-build php7.4
+php7.4 alfil app:pre-build php7.4
 grep vendor/mytool composer.json    # no debe devolver nada
 
 # Restaurar
@@ -260,10 +260,10 @@ Claves no reconocidas generan warning. No hace falta tocar `conf:check`.
 - [ ] `buildCommand()` genera el comando esperado
 - [ ] `conf:check` muestra el job con su comando
 - [ ] `vendor/bin/mytool` existe tras `composer update`
-- [ ] Tras `php7.4 githooks app:pre-build php7.4` el `composer.json` resultante ya no contiene la tool en `require-dev`
-- [ ] `php7.4 githooks job "Phpunit" --format=json -- --order-by=random` — 0 fallos
-- [ ] `php7.4 githooks flow qa --format=json` — QA sin violaciones nuevas
-- [ ] Probar `php7.4 githooks job MyTool_Src --format=json` manualmente
+- [ ] Tras `php7.4 alfil app:pre-build php7.4` el `composer.json` resultante ya no contiene la tool en `require-dev`
+- [ ] `php7.4 alfil job "Phpunit" --format=json -- --order-by=random` — 0 fallos
+- [ ] `php7.4 alfil flow qa --format=json` — QA sin violaciones nuevas
+- [ ] Probar `php7.4 alfil job MyTool_Src --format=json` manualmente
 
 ## Contexto legacy
 

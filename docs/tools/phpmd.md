@@ -51,4 +51,4 @@ Full:
 
 ## Cache
 
-Default cache location: `.phpmd.cache` (or the `cache-file` from job config). Cleared with `githooks cache:clear`.
+Default cache location: `.phpmd.cache` (or the `cache-file` from job config). Cleared with `alfil cache:clear`.

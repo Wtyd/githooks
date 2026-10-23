@@ -1,7 +1,7 @@
 ---
 name: add-command
 description: >
-  Guia para crear o modificar comandos artisan en GitHooks (wtyd/githooks).
+  Guia para crear o modificar comandos artisan en GitHooks (wtyd/alfil).
   Usa esta skill cuando el usuario quiera crear un nuevo comando, modificar un comando existente,
   añadir opciones al CLI, cambiar el comportamiento de un comando, o cuando mencione "nuevo comando",
   "añadir opción", "modificar command", "flag", "argumento CLI".
@@ -42,11 +42,11 @@ CLI (FlowCommand/JobCommand)
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Exception\GitHooksExceptionInterface;
 
 class MyCommand extends Command
 {
@@ -142,7 +142,7 @@ Los comandos se auto-descubren desde `app/Commands/`. Para ocultar de la ayuda:
 ```php
 // config/commands.php
 'hidden' => [
-    Wtyd\GitHooks\App\Commands\MyCommand::class,
+    Wtyd\Alfil\App\Commands\MyCommand::class,
 ],
 ```
 
@@ -170,7 +170,7 @@ Si el comando necesita una nueva dependencia, añadirla en `RegisterBindings::si
 Para comandos que ejecutan flows/jobs y soportan `--format` y `--monitor`:
 
 ```php
-use Wtyd\GitHooks\App\Commands\Concerns\FormatsOutput;
+use Wtyd\Alfil\App\Commands\Concerns\FormatsOutput;
 
 class MyCommand extends Command
 {

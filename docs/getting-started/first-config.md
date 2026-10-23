@@ -1,11 +1,11 @@
 # Your First Config
 
-GitHooks uses a single PHP file (`githooks.php`) to configure all QA tools, hooks, and execution options.
+Alfil uses a single PHP file (`alfil.php`) to configure all QA tools, hooks, and execution options.
 
 ## Generate the configuration
 
 ```bash
-githooks conf:init
+alfil conf:init
 ```
 
 In interactive mode, `conf:init`:
@@ -14,10 +14,10 @@ In interactive mode, `conf:init`:
 2. **Asks** which tools to include.
 3. **Asks** for source directories (comma-separated, default `src`).
 4. **Asks** which hook events to configure (`pre-commit`, `pre-push`, both, or none).
-5. **Generates** a tailored `githooks.php`.
+5. **Generates** a tailored `alfil.php`.
 
 !!! tip "Non-interactive mode"
-    Use `githooks conf:init -n` to copy a template file with examples of all supported job types. Useful for CI environments or if you prefer editing manually.
+    Use `alfil conf:init -n` to copy a template file with examples of all supported job types. Useful for CI environments or if you prefer editing manually.
 
 ## Anatomy of the configuration
 
@@ -48,17 +48,17 @@ See the [Configuration reference](../configuration/index.md) for the full keywor
 
 ## File location
 
-GitHooks searches for the configuration file in this order:
+Alfil searches for the configuration file in this order:
 
-1. `./githooks.php`
-2. `./qa/githooks.php`
+1. `./alfil.php`
+2. `./qa/alfil.php`
 
-You can also specify a custom path with `--config=path/to/githooks.php` on any command.
+You can also specify a custom path with `--config=path/to/alfil.php` on any command.
 
 ## Validate the configuration
 
 ```bash
-githooks conf:check
+alfil conf:check
 ```
 
 This verifies the structure, checks that referenced executables and paths exist, and reports errors and warnings.

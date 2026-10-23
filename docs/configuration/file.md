@@ -17,21 +17,25 @@ YAML (`githooks.yml`) is **not supported since 4.0**: a `.yml` passed with `--co
 
 ## Search paths
 
-GitHooks searches for the configuration file in this order:
+Alfil searches for the configuration file in this order:
 
-1. `./githooks.php`
-2. `./qa/githooks.php`
+1. `./alfil.php`
+2. `./qa/alfil.php`
+3. `./githooks.php` — the pre-4.0 name, deprecated (removed in 5.0)
+4. `./qa/githooks.php` — same
 
-Use `--config=path` on any command to specify a custom path. Without one, and with no file in either location, every command stops with `Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).`
+A `githooks.php` found this way works as before and the run reports a `config-file-rename` deprecation; rename it to `alfil.php` (and its `githooks.local.php`, if any, to `alfil.local.php`). The new name wins over the location: `qa/alfil.php` is used before a root `githooks.php`, and a `githooks.php` left next to an `alfil.php` is reported as ignored. A `--config` path is used as given and never flagged, whatever its name.
 
-## Local override (`githooks.local.php`)
+Use `--config=path` on any command to specify a custom path. Without one, and with no file in either location, every command stops with `Configuration file not found. Expected alfil.php in the project root or in qa/ (or pass --config=PATH).`
 
-GitHooks looks for a `githooks.local.php` file in the same location as `githooks.php`. If found, its contents are merged over the main configuration using `array_replace_recursive`.
+## Local override (`alfil.local.php`)
 
-This allows each developer to customize their environment without modifying the shared configuration. Add `githooks.local.php` to your `.gitignore`.
+Alfil looks for an `alfil.local.php` file in the same location as `alfil.php`. If found, its contents are merged over the main configuration using `array_replace_recursive`. The override pairs with the main file by name (`githooks.php` pairs with `githooks.local.php`); an override whose name does not match its main file is not merged, and the run says which file to rename.
+
+This allows each developer to customize their environment without modifying the shared configuration. Add `alfil.local.php` to your `.gitignore`.
 
 ```php
-// githooks.local.php — Docker user
+// alfil.local.php — Docker user
 <?php
 return [
     'flows' => [
@@ -43,7 +47,7 @@ return [
 ```
 
 ```php
-// githooks.local.php — Laravel Sail user
+// alfil.local.php — Laravel Sail user
 <?php
 return [
     'flows' => [
@@ -54,7 +58,7 @@ return [
 ];
 ```
 
-Developers with native PHP don't need a local file at all. The shared `githooks.php` stays clean, with no environment-specific references.
+Developers with native PHP don't need a local file at all. The shared `alfil.php` stays clean, with no environment-specific references.
 
 See [Options: executable-prefix](options.md#executable-prefix) for details on how the prefix is applied.
 See [How-To: Docker & Local Override](../how-to/docker-local-override.md) for practical examples.
@@ -62,8 +66,8 @@ See [How-To: Docker & Local Override](../how-to/docker-local-override.md) for pr
 ## Generate
 
 ```bash
-githooks conf:init             # Interactive setup
-githooks conf:init -n          # Copy template (non-interactive)
+alfil conf:init             # Interactive setup
+alfil conf:init -n          # Copy template (non-interactive)
 ```
 
 See [`conf:init`](../cli/conf-init.md) for details.
@@ -71,7 +75,7 @@ See [`conf:init`](../cli/conf-init.md) for details.
 ## Validate
 
 ```bash
-githooks conf:check
+alfil conf:check
 ```
 
 Checks:

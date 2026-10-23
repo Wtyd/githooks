@@ -42,7 +42,7 @@ The following keywords are available for all job types (except `custom` and `com
 | `type` | String | Determines the tool and accepted keywords. **Mandatory.** |
 | `executable-path` | String | Path to the tool binary. If omitted, auto-detects `vendor/bin/{tool}`, then falls back to system PATH. |
 | `paths` | Array | Directories or files to analyze. |
-| `other-arguments` | String | Extra CLI flags not natively supported by GitHooks. |
+| `other-arguments` | String | Extra CLI flags not natively supported by Alfil. |
 | `ignore-errors-on-exit` | Boolean | Job returns exit 0 even with problems. Default `false`. |
 | `fail-fast` | Boolean | Stop remaining jobs in the flow if this one fails. Default `false`. |
 | `accelerable` | Boolean | Override `--fast` behavior. Default depends on type. |
@@ -64,7 +64,7 @@ The following keywords are available for all job types (except `custom` and `com
 Every job accepts a `cores: N` keyword (integer ≥ 1) that reserves N cores
 in the [thread budget](options.md#thread-budget). On tools with their own
 threading flag, **`cores: N` and the native flag are interchangeable** —
-declare whichever feels natural and GitHooks does the right thing in both
+declare whichever feels natural and Alfil does the right thing in both
 cases:
 
 - Reserves N cores in the allocator so the parallel pool admits jobs
@@ -133,7 +133,7 @@ The same clamp applies to the native flag when declared without `cores`
 (e.g. `parallel: 8`, `threads: 8`), to the default capability of
 controllable tools (parallel-lint's default `jobs: 10`, paratest's
 default `processes: 4`), and to `cores`/`neon-workers` for uncontrollable
-jobs — except that for phpstan and `type: custom` GitHooks cannot
+jobs — except that for phpstan and `type: custom` Alfil cannot
 **force** the limit (phpstan reads `.neon` directly, custom scripts are
 opaque). For these two, [`conf:check`](../cli/conf-check.md) emits a
 cross-flow warning naming the affected flow so you can adjust the
@@ -220,7 +220,7 @@ and a `time-budget` key placed inside a job (the canonical job-level
 keys are flat `warn-after` / `fail-after`; `time-budget` is reserved for
 flow-level `flows.options`).
 
-CLI override on a single-job run: `githooks job <name> --warn-after=N
+CLI override on a single-job run: `alfil job <name> --warn-after=N
 --fail-after=N` (or `--no-time-budget` to disable both layers for that
 run). See [Time budget](options.md#time-budget-time-budget) for the
 flow-level counterpart and the cross-layer rules.

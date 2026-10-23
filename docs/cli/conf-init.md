@@ -1,11 +1,11 @@
-# githooks conf:init
+# alfil conf:init
 
-Generate the configuration file `githooks.php`.
+Generate the configuration file `alfil.php`.
 
 ## Synopsis
 
 ```
-githooks conf:init [options]
+alfil conf:init [options]
 ```
 
 ## Interactive mode (default)
@@ -15,10 +15,10 @@ When run interactively, `conf:init` detects QA tools installed in `vendor/bin/` 
 1. Shows detected tools and asks which to include.
 2. Asks for source directories (comma-separated, default `src`).
 3. Asks which hook events to configure (`pre-commit`, `pre-push`, both, or none).
-4. Generates a tailored `githooks.php` with the selected tools, paths, and hooks.
+4. Generates a tailored `alfil.php` with the selected tools, paths, and hooks.
 
 ```bash
-githooks conf:init
+alfil conf:init
 ```
 
 ## Non-interactive mode
@@ -26,7 +26,7 @@ githooks conf:init
 With `--no-interaction` (or `-n`), copies a template file with examples of all supported job types.
 
 ```bash
-githooks conf:init -n
+alfil conf:init -n
 ```
 
 ## Options
@@ -38,4 +38,4 @@ githooks conf:init -n
 ## See also
 
 - [Getting Started: Your First Config](../getting-started/first-config.md)
-- [`githooks conf:check`](conf-check.md) — validate the generated file.
+- [`alfil conf:check`](conf-check.md) — validate the generated file.

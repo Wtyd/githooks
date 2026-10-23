@@ -51,7 +51,7 @@ Descripción de cómo se integra con el thread budget.
 
 ## Cache (si genera caché)
 
-Default cache location: `ruta`. Cleared with `githooks cache:clear`.
+Default cache location: `ruta`. Cleared with `alfil cache:clear`.
 ```
 
 ## Página de comando CLI

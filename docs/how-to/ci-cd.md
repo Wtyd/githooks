@@ -1,6 +1,6 @@
 # CI/CD Integration
 
-Use GitHooks in CI pipelines for consistent QA checks across local development and CI.
+Use Alfil in CI pipelines for consistent QA checks across local development and CI.
 
 ## Basic GitHub Actions workflow
 
@@ -17,7 +17,7 @@ jobs:
         with:
           php-version: '8.2'
       - run: composer install --no-progress
-      - run: vendor/bin/githooks flow qa --format=junit > junit.xml
+      - run: vendor/bin/alfil flow qa --format=junit > junit.xml
       - uses: mikepenz/action-junit-report@v4
         if: always()
         with:
@@ -26,7 +26,7 @@ jobs:
 
 ## CI annotations
 
-GitHooks auto-detects CI environments and emits native annotations:
+Alfil auto-detects CI environments and emits native annotations:
 
 - **GitHub Actions** (`GITHUB_ACTIONS=true`): wraps each job in `::group::JOB::…::endgroup::`, and parses tool output for `file.php:LINE` patterns to emit `::error file=…,line=…::MESSAGE` annotations that appear inline in the PR diff.
 - **GitLab CI** (`GITLAB_CI` env var set): wraps each job in a collapsible `section_start:` / `section_end:` block (see "GitLab CI sections" below for the per-job collapse rules and the dedicated Summary section).
@@ -34,18 +34,18 @@ GitHooks auto-detects CI environments and emits native annotations:
 No configuration needed — annotations are on by default in CI. Opt out with `--no-ci`:
 
 ```bash
-githooks flow qa --no-ci         # plain output even under GITHUB_ACTIONS
+alfil flow qa --no-ci         # plain output even under GITHUB_ACTIONS
 ```
 
 Annotations stream on **stdout** alongside the normal text output, so they show up directly in the CI log. When using structured formats (`--format=json` etc.), annotations route to **stderr** so they don't contaminate the stdout payload.
 
 ### Runtime diagnostics block (auto-on in CI)
 
-In CI, GitHooks **automatically** prints a runtime diagnostics block before the run — the runner's githooks version, platform, CPU and cgroup limit, available system memory, load averages and an absolute start timestamp. No flag is needed (the `--diag` flag is only required to opt in locally). When a pipeline hangs, this block — flushed immediately — is what distinguishes "githooks never started" from "started but starved", and the per-job `startedAt`/`endedAt` timestamps in `--format=json` pin the lost time to an exact job. See [Runtime diagnostics and absolute timestamps](output-formats.md#runtime-diagnostics-and-absolute-timestamps).
+In CI, Alfil **automatically** prints a runtime diagnostics block before the run — the runner's alfil version, platform, CPU and cgroup limit, available system memory, load averages and an absolute start timestamp. No flag is needed (the `--diag` flag is only required to opt in locally). When a pipeline hangs, this block — flushed immediately — is what distinguishes "alfil never started" from "started but starved", and the per-job `startedAt`/`endedAt` timestamps in `--format=json` pin the lost time to an exact job. See [Runtime diagnostics and absolute timestamps](output-formats.md#runtime-diagnostics-and-absolute-timestamps).
 
 ### ANSI colour in CI logs
 
-Symfony Console disables ANSI decoration off-TTY by default — every `<fg=red>✗ Flow time-budget exceeded…</>` and `<fg=yellow>⚠ Job exceeded memory threshold…</>` would otherwise be stripped before reaching the log, leaving the operator scanning every row to spot the failure. GitHooks **forces decoration on** when running under GitHub Actions or GitLab CI so:
+Symfony Console disables ANSI decoration off-TTY by default — every `<fg=red>✗ Flow time-budget exceeded…</>` and `<fg=yellow>⚠ Job exceeded memory threshold…</>` would otherwise be stripped before reaching the log, leaving the operator scanning every row to spot the failure. Alfil **forces decoration on** when running under GitHub Actions or GitLab CI so:
 
 - `× Flow time-budget exceeded` and `⚠ memory-budget warning` lines render in red / yellow.
 - The `--stats` table cells render with colour: `KO` red, `OK ⚠` yellow, `⏭` blue, `TOTAL ✗ / ✔` red / green.
@@ -85,20 +85,20 @@ Symfony Style chips with the live timer (e.g. the `00:00` clock GitLab shows on 
 
 ### Human-readable KO body under `--format=codeclimate` / `--format=sarif`
 
-When `--format=codeclimate` or `--format=sarif` is active (CLI flag or `reports.codeclimate` / `reports.sarif` in config), GitHooks reconfigures each tool to emit JSON (`phpstan --error-format=json`, `phpcs --report=json`, `phpmd … json`, `psalm --output-format=json`, `parallel-lint --json`) so the file-based formatters can parse it. The CI display layer translates that JSON back into a human listing (path + indented `line N` / `line N:C` rows + `Totals: X file(s), Y issue(s)`), so the GitLab section / GitHub Actions group / framed-error block keeps showing `file.php:line  message  [rule]` rather than a raw minified JSON blob. The `output` field in JSON v2 still carries the raw tool JSON unchanged — only the **display** layer is humanised. Custom jobs and tools without a registered parser fall back to the raw output, identical to prior behaviour.
+When `--format=codeclimate` or `--format=sarif` is active (CLI flag or `reports.codeclimate` / `reports.sarif` in config), Alfil reconfigures each tool to emit JSON (`phpstan --error-format=json`, `phpcs --report=json`, `phpmd … json`, `psalm --output-format=json`, `parallel-lint --json`) so the file-based formatters can parse it. The CI display layer translates that JSON back into a human listing (path + indented `line N` / `line N:C` rows + `Totals: X file(s), Y issue(s)`), so the GitLab section / GitHub Actions group / framed-error block keeps showing `file.php:line  message  [rule]` rather than a raw minified JSON blob. The `output` field in JSON v2 still carries the raw tool JSON unchanged — only the **display** layer is humanised. Custom jobs and tools without a registered parser fall back to the raw output, identical to prior behaviour.
 
 ## Fast-branch mode for PRs
 
 Analyze only the files that changed in the branch, instead of the full codebase:
 
 ```bash
-githooks flow qa --fast-branch
+alfil flow qa --fast-branch
 ```
 
 This computes the diff between the current branch and the main branch, then runs accelerable jobs only against those files. Ideal for PR checks:
 
 ```yaml
-- run: vendor/bin/githooks flow qa --fast-branch --format=junit > junit.xml
+- run: vendor/bin/alfil flow qa --fast-branch --format=junit > junit.xml
 ```
 
 !!! note
@@ -114,7 +114,7 @@ This computes the diff between the current branch and the main branch, then runs
 All structured formats route progress to stderr and the payload to stdout, so piping works without contamination:
 
 ```bash
-githooks flow qa --format=json > report.json   # stdout → file, progress on CI log
+alfil flow qa --format=json > report.json   # stdout → file, progress on CI log
 ```
 
 ### JUnit (test reporters)
@@ -125,7 +125,7 @@ Covered by the basic workflow above. JUnit is the right choice when you want the
 
 ```yaml
 qa:
-  script: vendor/bin/githooks flow qa --format=codeclimate --output=gl-code-quality-report.json
+  script: vendor/bin/alfil flow qa --format=codeclimate --output=gl-code-quality-report.json
   artifacts:
     reports:
       codequality: gl-code-quality-report.json
@@ -134,12 +134,12 @@ qa:
 ### GitHub Code Scanning
 
 ```yaml
-- run: vendor/bin/githooks flow qa --format=sarif --output=githooks-results.sarif
+- run: vendor/bin/alfil flow qa --format=sarif --output=alfil-results.sarif
   continue-on-error: true
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
   with:
-    sarif_file: githooks-results.sarif
+    sarif_file: alfil-results.sarif
 ```
 
 ## Multi-report (one runner, several artifacts)
@@ -148,7 +148,7 @@ When the pipeline needs **SARIF** for Code Scanning, **JUnit** for the test dash
 
 ```yaml
 - run: |
-    vendor/bin/githooks flow qa \
+    vendor/bin/alfil flow qa \
       --report-sarif=reports/qa.sarif \
       --report-junit=reports/junit.xml \
       --report-codeclimate=reports/gl-code-quality.json
@@ -171,7 +171,7 @@ When the pipeline needs **SARIF** for Code Scanning, **JUnit** for the test dash
 The same setup with declarative config:
 
 ```php
-// githooks.php
+// alfil.php
 'flows' => [
     'qa' => [
         'jobs' => ['phpstan-src', 'phpcs', 'phpunit'],
@@ -187,7 +187,7 @@ The same setup with declarative config:
 ```
 
 ```yaml
-- run: vendor/bin/githooks flow qa
+- run: vendor/bin/alfil flow qa
   continue-on-error: true
 ```
 
@@ -198,7 +198,7 @@ The same setup with declarative config:
 A typical CI used to run two `flow` invocations sequentially — one for QA, one for tests — each paying the `composer install` + PHP startup tax. Replace both with a single `flows` invocation backed by a **meta-flow** declared in config:
 
 ```php
-// githooks.php
+// alfil.php
 'flows' => [
     'options' => ['processes' => 4],
 
@@ -218,7 +218,7 @@ A typical CI used to run two `flow` invocations sequentially — one for QA, one
 
 ```yaml
 # .github/workflows/ci.yml
-- run: vendor/bin/githooks flows ci-pack --show-progress
+- run: vendor/bin/alfil flows ci-pack --show-progress
 - uses: github/codeql-action/upload-sarif@v3
   if: always()
   with:
@@ -229,7 +229,7 @@ A typical CI used to run two `flow` invocations sequentially — one for QA, one
     report_paths: reports/junit.xml
 ```
 
-Single PHP runtime, single thread budget, single combined `FlowResult`, two artifacts emitted in parallel. The same `githooks flows ci-pack` runs locally for the developer with no flag changes.
+Single PHP runtime, single thread budget, single combined `FlowResult`, two artifacts emitted in parallel. The same `alfil flows ci-pack` runs locally for the developer with no flag changes.
 
 Prefer **declarative meta-flows** to ad-hoc `flows qa ci-tests` invocations: the meta-flow lives with the project, exposes its own options, and produces a stable `flow` identifier for dashboards.
 
@@ -238,7 +238,7 @@ Prefer **declarative meta-flows** to ad-hoc `flows qa ci-tests` invocations: the
 Use `--dry-run` to verify what commands would run without executing them:
 
 ```bash
-githooks flow qa --dry-run --format=json
+alfil flow qa --dry-run --format=json
 ```
 
 The JSON output in dry-run mode includes a `command` field for each job, which is handy for debugging runner configurations or documenting the exact shell command that CI executes.
@@ -246,7 +246,7 @@ The JSON output in dry-run mode includes a `command` field for each job, which i
 ## See also
 
 - [Output Formats](output-formats.md) — JSON v2 schema, JUnit, Code Climate, SARIF details.
-- [`githooks flow`](../cli/flow.md) — CLI reference for flags used above.
-- [`githooks flows`](../cli/flows.md) — combined runs and the four invocation modes.
+- [`alfil flow`](../cli/flow.md) — CLI reference for flags used above.
+- [`alfil flows`](../cli/flows.md) — combined runs and the four invocation modes.
 - [Configuration: Flows — Meta-flows](../configuration/flows.md#meta-flows) — declarative composition rules.
 - [Execution Modes](../execution-modes.md) — `full`, `fast`, `fast-branch`.

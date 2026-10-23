@@ -2,7 +2,7 @@
 
 A flaky test passes on one run and fails on the next with no code change in between: random data from factories, shared state between parallel workers, timing, ordering. It usually shows up as a red CI job that someone re-runs until it goes green, and nobody learns *which* test it was.
 
-`githooks flow <name> --repeat=N` runs the flow N times, reads the junit file each test job writes, and crosses the results **test by test**. A test that passed every time is stable, one that failed every time is broken, and one that did both is flaky.
+`alfil flow <name> --repeat=N` runs the flow N times, reads the junit file each test job writes, and crosses the results **test by test**. A test that passed every time is stable, one that failed every time is broken, and one that did both is flaky.
 
 !!! important "Repeat, not retry"
     `--repeat` always runs the N passes, whatever their outcome, and reports what changed. It never re-runs a failure until it passes: that would hide the flaky test instead of finding it.
@@ -21,17 +21,17 @@ A flaky test passes on one run and fails on the next with no code change in betw
 ],
 ```
 
-`phpunit` and `paratest` jobs that already declare `log-junit` need nothing else: that path is used when `junit` is absent. A `pest` job, or any `custom` job, needs `junit` — GitHooks cannot guess where the tool writes.
+`phpunit` and `paratest` jobs that already declare `log-junit` need nothing else: that path is used when `junit` is absent. A `pest` job, or any `custom` job, needs `junit` — Alfil cannot guess where the tool writes.
 
-A relative path is resolved from the directory you run GitHooks in. Each job needs its own path: two jobs writing the same file would overwrite each other's results, so `--repeat` refuses to start.
+A relative path is resolved from the directory you run Alfil in. Each job needs its own path: two jobs writing the same file would overwrite each other's results, so `--repeat` refuses to start.
 
 ## 2. Run the flow N times
 
 A flow made of the test jobs only keeps the passes short. `--only-jobs` does the same on an existing flow.
 
 ```bash
-githooks flow tests --repeat=10
-githooks flow qa --repeat=10 --only-jobs=tests
+alfil flow tests --repeat=10
+alfil flow qa --repeat=10 --only-jobs=tests
 ```
 
 Every pass runs, even after a failure. Before each pass, the declared junit files are deleted, so a pass that crashes without writing one is reported as such and never read as the previous pass's results.
@@ -68,7 +68,7 @@ A `skipped` or `incomplete` outcome is neither a pass nor a failure. `stable-pas
 By default one occurrence is enough: a test that passed 9 times and failed once is flaky. When a suite carries known noise, raise the bar with `--flap-threshold=N`: the rarer outcome must happen at least N times for the test to count as flaky; below that it is listed as `suspect` and does not fail the command.
 
 ```bash
-githooks flow tests --repeat=20 --flap-threshold=3
+alfil flow tests --repeat=20 --flap-threshold=3
 ```
 
 The threshold is a count, not a percentage, so its meaning does not change with the number of passes.
@@ -78,7 +78,7 @@ The threshold is a count, not a percentage, so its meaning does not change with 
 `--format=json` prints the report as one JSON document (its own schema, `version: 1`), and `--output=PATH` writes it to a file:
 
 ```bash
-githooks flow tests --repeat=10 --format=json --output=reports/flaky.json
+alfil flow tests --repeat=10 --format=json --output=reports/flaky.json
 jq -r '.tests[] | select(.class == "flaky") | .test' reports/flaky.json
 ```
 
@@ -111,6 +111,6 @@ jq -r '.tests[] | select(.class == "flaky") | .test' reports/flaky.json
 
 ## See also
 
-- [`githooks flow`](../cli/flow.md) — every option of the command.
+- [`alfil flow`](../cli/flow.md) — every option of the command.
 - [Jobs: common keywords](../configuration/jobs.md#common-keywords) — the `junit` key.
 - [PHPUnit](../tools/phpunit.md) and [Paratest](../tools/paratest.md) — `log-junit`.

@@ -3,11 +3,11 @@ hide:
   - navigation
 ---
 
-# GitHooks
+# Alfil
 
 **One config. Every QA tool. Every git hook.**
 
-GitHooks is a standalone CLI tool for managing git hooks and running QA tools in PHP projects. Distributed as a `.phar` binary, it keeps its dependencies completely isolated from your project.
+Alfil is a standalone CLI tool for managing git hooks and running QA tools in PHP projects. Distributed as a `.phar` binary, it keeps its dependencies completely isolated from your project.
 
 <div class="grid cards" markdown>
 
@@ -21,7 +21,7 @@ GitHooks is a standalone CLI tool for managing git hooks and running QA tools in
 
     ---
 
-    One file (`githooks.php`) configures all QA tools, hooks, and execution options.
+    One file (`alfil.php`) configures all QA tools, hooks, and execution options.
 
 -   :material-layers-triple:{ .lg .middle } **Hooks, Flows, Jobs**
 
@@ -40,9 +40,9 @@ GitHooks is a standalone CLI tool for managing git hooks and running QA tools in
 ## Quick start
 
 ```bash
-composer require --dev wtyd/githooks   # Install
-githooks conf:init                     # Generate configuration (interactive)
-githooks hook                          # Install git hooks
+composer require --dev wtyd/alfil   # Install
+alfil conf:init                     # Generate configuration (interactive)
+alfil hook                          # Install git hooks
 ```
 
 That's it. On your next commit, all configured QA tools run automatically.

@@ -81,11 +81,11 @@ Y leer desde esa línea hasta el siguiente `## [` (o EOF). Si la sección está 
 
 | Origen (en `docs/changelog.md`) | Destino (en `CHANGELOG-X.Y.Z.md`) |
 |---|---|
-| `[texto](how-to/output-formats.md#json-v2)` | `[texto](https://wtyd.github.io/githooks/how-to/output-formats/#json-v2)` |
-| `[texto](tools/phpcsfixer.md)` | `[texto](https://wtyd.github.io/githooks/tools/phpcsfixer/)` |
-| `[texto](configuration/jobs.md#cores)` | `[texto](https://wtyd.github.io/githooks/configuration/jobs/#cores)` |
+| `[texto](how-to/output-formats.md#json-v2)` | `[texto](https://wtyd.github.io/alfil/how-to/output-formats/#json-v2)` |
+| `[texto](tools/phpcsfixer.md)` | `[texto](https://wtyd.github.io/alfil/tools/phpcsfixer/)` |
+| `[texto](configuration/jobs.md#cores)` | `[texto](https://wtyd.github.io/alfil/configuration/jobs/#cores)` |
 
-Reglas: quitar `.md`, añadir `/` final antes del `#anchor`, prefijar `https://wtyd.github.io/githooks/`. **Nunca** enlazar a `github.com/Wtyd/githooks/blob/master/docs/...`.
+Reglas: quitar `.md`, añadir `/` final antes del `#anchor`, prefijar `https://wtyd.github.io/alfil/`. **Nunca** enlazar a `github.com/Wtyd/alfil/blob/master/docs/...`.
 
 ### Ejemplos de código (nivel 1: solo input)
 
@@ -109,7 +109,7 @@ Ver [`references/template.md`](references/template.md) para la plantilla complet
 ### Other improvements           ← solo si hay >1 mejora menor
 ### Bug Fixes                    ← solo si hay bugs visibles
 ---
-**Full changelog**: https://wtyd.github.io/githooks/changelog/
+**Full changelog**: https://wtyd.github.io/alfil/changelog/
 ```
 
 Notas:
@@ -131,7 +131,7 @@ Tras crear el archivo, confirmar al usuario:
 - **No mezclar idiomas** — todo el cuerpo en inglés. El frontmatter de la skill está en castellano (consistente con el resto del proyecto), el output no.
 - **No usar emojis** — los release notes de v3.0.0 y v3.1.0 no los usan; mantener consistencia.
 - **No incluir "Installation/upgrade"** salvo que el upgrade tenga un matiz real. La 3.1.0 no la lleva; la 3.2.0 que escribí inicialmente sí, y se quitó por innecesaria.
-- **No enlazar a `github.com/Wtyd/githooks/blob/master/docs/...`** — usar siempre `https://wtyd.github.io/githooks/`.
+- **No enlazar a `github.com/Wtyd/alfil/blob/master/docs/...`** — usar siempre `https://wtyd.github.io/alfil/`.
 - **No incluir refactors, clases internas, mejoras de cobertura ni cambios de CI propios**. Aunque estén en `docs/changelog.md`. La regla es "qué se nota desde fuera del proyecto".
 - **No inventar features no presentes en `docs/changelog.md`** — si crees que falta algo, parar y avisar al usuario; no recopilar de git log.
 - **No actualizar `docs/changelog.md`** — la skill solo lee. El changelog interno se mantiene a mano durante el desarrollo.
@@ -154,8 +154,8 @@ Antes de reportar terminado:
 - [ ] Las mejoras menores están agrupadas bajo `### Other improvements` (si hay >1).
 - [ ] Los bugs visibles están bajo `### Bug Fixes` (si hay alguno).
 - [ ] Si hay breaking changes, llevan su propia sección `## Breaking Changes` arriba.
-- [ ] Todos los enlaces apuntan a `https://wtyd.github.io/githooks/...` con `/` final y sin `.md`.
-- [ ] Footer presente: `**Full changelog**: https://wtyd.github.io/githooks/changelog/`.
+- [ ] Todos los enlaces apuntan a `https://wtyd.github.io/alfil/...` con `/` final y sin `.md`.
+- [ ] Footer presente: `**Full changelog**: https://wtyd.github.io/alfil/changelog/`.
 - [ ] No hay sección "Installation/upgrade" salvo que aplique por matiz real.
 - [ ] No quedan referencias a clases internas, refactors, MSI, cobertura ni cambios de CI propios.
 - [ ] **Sin IDs de kanban**: `grep -nE '\b(BUG|FEAT)-[0-9]+' CHANGELOG-X.Y.Z.md` devuelve vacío (también conviene en `docs/changelog.md`).

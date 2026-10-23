@@ -26,8 +26,8 @@ class MyFeatureTest extends ConsoleTestCase
 namespace Tests\Integration;
 
 use Tests\Utils\TestCase\ConsoleTestCase;
-use Wtyd\GitHooks\ConfigurationFile\FileReader;
-use Wtyd\GitHooks\Tools\Process\Execution\ProcessExecutionFake;
+use Wtyd\Alfil\ConfigurationFile\FileReader;
+use Wtyd\Alfil\Tools\Process\Execution\ProcessExecutionFake;
 
 class MyFeatureTest extends ConsoleTestCase
 {

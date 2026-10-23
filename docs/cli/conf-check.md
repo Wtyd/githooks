@@ -1,11 +1,11 @@
-# githooks conf:check
+# alfil conf:check
 
 Validate the configuration file with deep checks.
 
 ## Synopsis
 
 ```
-githooks conf:check [--config=PATH] [--format=text|json]
+alfil conf:check [--config=PATH] [--format=text|json]
 ```
 
 ## Options
@@ -64,7 +64,7 @@ mode).
 {
   "version": 2,
   "valid": true,
-  "file": { "path": "githooks.php", "localPath": null },
+  "file": { "path": "alfil.php", "localPath": null },
   "options": { "processes": 8, "failFast": false, "timeBudget": null, "memoryBudget": null, "...": "..." },
   "hooks": [ { "event": "pre-commit", "targets": [ { "target": "qa", "onlyOn": [], "excludeOn": [], "onlyFiles": [], "excludeFiles": [] } ] } ],
   "flows": [ { "name": "qa", "meta": false, "jobs": ["phpstan", "phpcs"], "flows": [] } ],
@@ -98,13 +98,13 @@ carried a `legacy` marker and a `hint` for the v2 case; version 2 does not.
 ## Examples
 
 ```bash
-githooks conf:check
-githooks conf:check --config=qa/custom-githooks.php
-githooks conf:check --format=json                              # machine-readable, clean stdout
-githooks conf:check --format=json | jq '.jobs[] | select(.status != "ok")'
+alfil conf:check
+alfil conf:check --config=qa/custom-alfil.php
+alfil conf:check --format=json                              # machine-readable, clean stdout
+alfil conf:check --format=json | jq '.jobs[] | select(.status != "ok")'
 ```
 
 ## See also
 
 - [Configuration File](../configuration/file.md)
-- [`githooks conf:init`](conf-init.md) — generate a configuration file.
+- [`alfil conf:init`](conf-init.md) — generate a configuration file.

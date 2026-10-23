@@ -2,9 +2,9 @@
 
 ## Concept mapping
 
-| CaptainHook | GitHooks |
+| CaptainHook | Alfil |
 |---|---|
-| `captainhook.json` | `githooks.php` |
+| `captainhook.json` | `alfil.php` |
 | Hook events | `hooks` section |
 | Actions (PHP classes) | `jobs` (declarative config) |
 | Conditions (PHP classes) | `only-on`, `exclude-on`, `only-files`, `exclude-files` |
@@ -12,7 +12,7 @@
 
 ## Key difference
 
-CaptainHook uses **PHP classes** as actions — you write or reference a class that implements an interface. GitHooks uses **declarative configuration** — you specify the tool type and its arguments, and GitHooks builds the shell command.
+CaptainHook uses **PHP classes** as actions — you write or reference a class that implements an interface. Alfil uses **declarative configuration** — you specify the tool type and its arguments, and Alfil builds the shell command.
 
 ## Example migration
 
@@ -42,7 +42,7 @@ CaptainHook uses **PHP classes** as actions — you write or reference a class t
 }
 ```
 
-**GitHooks (`githooks.php`):**
+**Alfil (`alfil.php`):**
 ```php
 <?php
 return [
@@ -81,7 +81,7 @@ return [
 
 ## Key differences
 
-| Feature | CaptainHook | GitHooks |
+| Feature | CaptainHook | Alfil |
 |---|---|---|
 | **Distribution** | Composer dependency | `.phar` standalone (isolated) |
 | **Config format** | JSON | PHP |
@@ -94,9 +94,9 @@ return [
 
 ## Steps
 
-1. Create `githooks.php` based on your `captainhook.json` (see example above).
-2. Install GitHooks: `composer require --dev wtyd/githooks`
-3. Install hooks: `githooks hook`
-4. Validate: `githooks conf:check`
+1. Create `alfil.php` based on your `captainhook.json` (see example above).
+2. Install Alfil: `composer require --dev wtyd/alfil`
+3. Install hooks: `alfil hook`
+4. Validate: `alfil conf:check`
 5. Remove CaptainHook: `composer remove --dev captainhook/captainhook`
 6. Delete `captainhook.json`.
