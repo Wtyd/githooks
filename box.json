@@ -3,6 +3,7 @@
     "directories": [
         "app",
         "bootstrap",
+        "compat",
         "config",
         "src",
         "vendor"
