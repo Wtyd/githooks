@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Configuration;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
 
 /**
  * FEAT-1 · Group D — override of `only-files` / `exclude-files` via githooks.local.php.
@@ -275,7 +275,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.local.php', $contents);
     }
 
-    /** @return \Wtyd\GitHooks\Configuration\JobRef[] */
+    /** @return \Wtyd\Alfil\Configuration\JobRef[] */
     private function parseFlowJobRefs(string $flowName): array
     {
         $parser = new ConfigurationParser($this->fixturesPath);

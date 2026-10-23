@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\ExecutionMode;
 
 /**
  * One entry of a flow's `on` map: a branch pattern paired with execution

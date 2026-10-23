@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 use LogicException;
 use Symfony\Component\Console\Output\OutputInterface;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
-use Wtyd\GitHooks\History\RunHistoryStore;
-use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
-use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
-use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
-use Wtyd\GitHooks\Output\DiagnosticsHeaderEmitter;
-use Wtyd\GitHooks\Output\FlowResultRenderer;
-use Wtyd\GitHooks\Output\HeaderOptions;
-use Wtyd\GitHooks\Output\OutputFormats;
-use Wtyd\GitHooks\Output\RenderOptions;
-use Wtyd\GitHooks\Utils\BranchResolution;
-use Wtyd\GitHooks\Utils\BranchResolver;
-use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
+use Wtyd\Alfil\Execution\Concerns\EmitsRunnerStderr;
+use Wtyd\Alfil\History\RunHistoryStore;
+use Wtyd\Alfil\Output\ConditionsHeaderEmitter;
+use Wtyd\Alfil\Output\ConfigWarningsEmitter;
+use Wtyd\Alfil\Output\Diagnostics\DiagnosticsCollector;
+use Wtyd\Alfil\Output\DiagnosticsHeaderEmitter;
+use Wtyd\Alfil\Output\FlowResultRenderer;
+use Wtyd\Alfil\Output\HeaderOptions;
+use Wtyd\Alfil\Output\OutputFormats;
+use Wtyd\Alfil\Output\RenderOptions;
+use Wtyd\Alfil\Utils\BranchResolution;
+use Wtyd\Alfil\Utils\BranchResolver;
+use Wtyd\Alfil\Utils\Exception\DetachedHeadException;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 
 /**
  * Pure-orchestration handler for `githooks flows <name1> <name2> ...`.
@@ -143,7 +143,7 @@ class FlowsRunner
             }
 
             return OutputFormats::exitCodeFor($renderOptions->format, $result->isSuccess());
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             $this->emitStderr($output, $e->getMessage());
             return 1;
         }
@@ -184,7 +184,7 @@ class FlowsRunner
     {
         try {
             $config = $this->parser->parse($request->configFile);
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             return FlowsPreparation::failure([$e->getMessage()]);
         }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hooks;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Hooks\HookInstaller;
+use Wtyd\Alfil\Hooks\HookInstaller;
 
 /**
  * Tests targeting escaped mutants in HookInstaller:

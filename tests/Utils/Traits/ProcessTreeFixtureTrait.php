@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Utils\Traits;
 
-use Wtyd\GitHooks\Execution\Process\ProcessTreeFactory;
+use Wtyd\Alfil\Execution\Process\ProcessTreeFactory;
 
 /**
  * Helpers for the real-process regression tests of the process-tree kill

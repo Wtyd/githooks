@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
 /**
  * Native `pint` job type. Wraps `vendor/bin/pint` — Laravel Pint, Laravel's

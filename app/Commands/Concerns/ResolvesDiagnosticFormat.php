@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
-use Wtyd\GitHooks\Output\OutputFormats;
+use Wtyd\Alfil\Output\OutputFormats;
 
 /**
  * Resolve the `--format=` option for the diagnostic commands (`conf:check`,

@@ -5,7 +5,7 @@ namespace Tests\Unit\Utils;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Storage as FacadesStorage;
 use Tests\Zero\ZeroTestCase;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Utils\Storage;
 
 class StorageTest extends ZeroTestCase
 {

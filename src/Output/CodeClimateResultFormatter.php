@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
-use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Output\Concerns\RelativizesFilePath;
+use Wtyd\Alfil\Output\ToolOutputParser\ToolOutputParserRegistry;
 
 /**
  * Produces Code Climate JSON format for GitLab Code Quality.

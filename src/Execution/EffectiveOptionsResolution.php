@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
 
 /**
  * Immutable result of EffectiveOptionsResolver: the resolved OptionsConfiguration,

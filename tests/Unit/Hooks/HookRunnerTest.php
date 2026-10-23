@@ -7,19 +7,19 @@ namespace Tests\Unit\Hooks;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\HookConfiguration;
-use Wtyd\GitHooks\Configuration\HookRef;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Hooks\HookRunner;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\HookConfiguration;
+use Wtyd\Alfil\Configuration\HookRef;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Hooks\HookRunner;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 class HookRunnerTest extends UnitTestCase
 {
@@ -603,7 +603,7 @@ class HookRunnerTest extends UnitTestCase
     /** @test */
     public function run_propagates_flow_result_when_ref_targets_a_flow()
     {
-        $flowConfig = new \Wtyd\GitHooks\Configuration\FlowConfiguration('qa', ['phpcs'], null);
+        $flowConfig = new \Wtyd\Alfil\Configuration\FlowConfiguration('qa', ['phpcs'], null);
         $ref = new HookRef('qa', [], [], []);
         $hookConfig = new HookConfiguration(['pre-commit' => [$ref]]);
         $config = new ConfigurationResult(

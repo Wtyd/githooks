@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 use LogicException;
 use Symfony\Component\Process\Process;
-use Wtyd\GitHooks\Configuration\AllocatorStrategy;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
-use Wtyd\GitHooks\Execution\Admission\AdmissionStrategy;
-use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
-use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
-use Wtyd\GitHooks\Jobs\JobAbstract;
-use Wtyd\GitHooks\Output\DashboardOutputHandler;
-use Wtyd\GitHooks\Output\HumanIssueFormatter;
-use Wtyd\GitHooks\Output\OutputHandler;
-use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
-use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
-use Wtyd\GitHooks\Utils\GitStagerInterface;
-use Wtyd\GitHooks\Utils\IsoTimestamp;
+use Wtyd\Alfil\Configuration\AllocatorStrategy;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\TimeBudgetConfiguration;
+use Wtyd\Alfil\Execution\Admission\AdmissionStrategy;
+use Wtyd\Alfil\Execution\Admission\FifoAdmission;
+use Wtyd\Alfil\Execution\Admission\GreedyAdmission;
+use Wtyd\Alfil\Jobs\JobAbstract;
+use Wtyd\Alfil\Output\DashboardOutputHandler;
+use Wtyd\Alfil\Output\HumanIssueFormatter;
+use Wtyd\Alfil\Output\OutputHandler;
+use Wtyd\Alfil\Output\ToolOutputParser\ToolOutputParserRegistry;
+use Wtyd\Alfil\Execution\ThreadBudgetAllocator;
+use Wtyd\Alfil\Utils\GitStagerInterface;
+use Wtyd\Alfil\Utils\IsoTimestamp;
 
 /**
  * Orchestrates flow execution: runs jobs respecting processes limit and fail-fast.
@@ -469,7 +469,7 @@ class FlowExecutor
     private function executeSequential(
         array $jobs,
         bool $failFast,
-        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null,
+        ?\Wtyd\Alfil\Configuration\FlowDependencyGraph $dependencyGraph = null,
         array $preSkippedNames = []
     ): array {
         $results = [];
@@ -746,7 +746,7 @@ class FlowExecutor
         int $coresBudget,
         bool $failFast,
         OptionsConfiguration $options,
-        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $dependencyGraph = null,
+        ?\Wtyd\Alfil\Configuration\FlowDependencyGraph $dependencyGraph = null,
         array $preSkippedNames = []
     ): array {
         $results = [];
@@ -901,7 +901,7 @@ class FlowExecutor
      */
     private function attachNeedsToResults(
         array $results,
-        ?\Wtyd\GitHooks\Configuration\FlowDependencyGraph $graph
+        ?\Wtyd\Alfil\Configuration\FlowDependencyGraph $graph
     ): array {
         if ($graph === null) {
             return $results;

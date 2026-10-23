@@ -7,9 +7,9 @@ namespace Tests\Unit\Output;
 use JsonSchema\Constraints\Constraint;
 use JsonSchema\Validator;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Output\SarifResultFormatter;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Output\SarifResultFormatter;
 
 /**
  * Contract test: the SARIF produced by SarifResultFormatter validates

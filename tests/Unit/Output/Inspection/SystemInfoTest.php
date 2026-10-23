@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\Inspection;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\Inspection\SystemInfo;
+use Wtyd\Alfil\Output\Inspection\SystemInfo;
 
 /**
  * Factor table B (see factors.md): SystemInfo::status() classifies the relation

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\MemoryThreshold;
-use Wtyd\GitHooks\Execution\Memory\MemoryThresholdEvaluator;
+use Wtyd\Alfil\Configuration\MemoryThreshold;
+use Wtyd\Alfil\Execution\Memory\MemoryThresholdEvaluator;
 
 class MemoryThresholdEvaluatorTest extends UnitTestCase
 {
@@ -46,7 +46,7 @@ class MemoryThresholdEvaluatorTest extends UnitTestCase
     public function returns_failed_when_above_fail(): void
     {
         $rawArray = ['warn-above' => 1000, 'fail-above' => 2000];
-        $threshold = MemoryThreshold::fromArray($rawArray, new \Wtyd\GitHooks\Configuration\ValidationResult(), 'job');
+        $threshold = MemoryThreshold::fromArray($rawArray, new \Wtyd\Alfil\Configuration\ValidationResult(), 'job');
         $this->assertNotNull($threshold);
 
         $eval = MemoryThresholdEvaluator::evaluate(2200, $threshold);
@@ -60,7 +60,7 @@ class MemoryThresholdEvaluatorTest extends UnitTestCase
     {
         $threshold = MemoryThreshold::fromArray(
             ['warn-above' => 1000, 'fail-above' => 2000],
-            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            new \Wtyd\Alfil\Configuration\ValidationResult(),
             'job'
         );
 
@@ -75,7 +75,7 @@ class MemoryThresholdEvaluatorTest extends UnitTestCase
     {
         $threshold = MemoryThreshold::fromArray(
             ['fail-above' => 2000],
-            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            new \Wtyd\Alfil\Configuration\ValidationResult(),
             'job'
         );
 

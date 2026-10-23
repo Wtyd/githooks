@@ -4,11 +4,11 @@ namespace Tests\System\Commands;
 
 use Tests\Doubles\HookInstallerFake;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Hooks\HookInstaller;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Hooks\HookInstaller;
+use Wtyd\Alfil\Utils\Storage;
 
 /**
- * Testing Wtyd\GitHooks\App\Commands\CreateHookCommand;
+ * Testing Wtyd\Alfil\App\Commands\CreateHookCommand;
  */
 class CreateHookCommandTest extends SystemTestCase
 {

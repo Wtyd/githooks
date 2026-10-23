@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Utils;
+namespace Wtyd\Alfil\Utils;
 
 /**
  * Reads **system** memory (the runner's RAM), not the PHP process memory.

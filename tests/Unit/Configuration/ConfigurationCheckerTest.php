@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationChecker;
+use Wtyd\Alfil\Configuration\ConfigurationChecker;
 
 /**
  * Unit tests for the pure-validation rules extracted from

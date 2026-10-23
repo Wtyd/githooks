@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 use Symfony\Component\Console\Output\OutputInterface;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
-use Wtyd\GitHooks\Flaky\FlapAggregator;
-use Wtyd\GitHooks\Flaky\FlapReport;
-use Wtyd\GitHooks\Flaky\FlapReportRenderer;
-use Wtyd\GitHooks\Flaky\JunitReport;
-use Wtyd\GitHooks\History\RunHistoryStore;
-use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
-use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
-use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
-use Wtyd\GitHooks\Output\DiagnosticsHeaderEmitter;
-use Wtyd\GitHooks\Output\FlowResultRenderer;
-use Wtyd\GitHooks\Output\HeaderOptions;
-use Wtyd\GitHooks\Output\NullOutputHandler;
-use Wtyd\GitHooks\Output\OutputFormats;
-use Wtyd\GitHooks\Output\RenderOptions;
-use Wtyd\GitHooks\Utils\BranchResolver;
-use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
+use Wtyd\Alfil\Execution\Concerns\EmitsRunnerStderr;
+use Wtyd\Alfil\Flaky\FlapAggregator;
+use Wtyd\Alfil\Flaky\FlapReport;
+use Wtyd\Alfil\Flaky\FlapReportRenderer;
+use Wtyd\Alfil\Flaky\JunitReport;
+use Wtyd\Alfil\History\RunHistoryStore;
+use Wtyd\Alfil\Output\ConditionsHeaderEmitter;
+use Wtyd\Alfil\Output\ConfigWarningsEmitter;
+use Wtyd\Alfil\Output\Diagnostics\DiagnosticsCollector;
+use Wtyd\Alfil\Output\DiagnosticsHeaderEmitter;
+use Wtyd\Alfil\Output\FlowResultRenderer;
+use Wtyd\Alfil\Output\HeaderOptions;
+use Wtyd\Alfil\Output\NullOutputHandler;
+use Wtyd\Alfil\Output\OutputFormats;
+use Wtyd\Alfil\Output\RenderOptions;
+use Wtyd\Alfil\Utils\BranchResolver;
+use Wtyd\Alfil\Utils\Exception\DetachedHeadException;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 
 /**
  * Pure-orchestration handler for `githooks flow <name>`. Equivalent to
@@ -113,7 +113,7 @@ class FlowRunner
             $plan = $preparation->plan;
             /** @var EffectiveOptionsResolution $resolution */
             $resolution = $preparation->resolution;
-            /** @var \Wtyd\GitHooks\Configuration\ConfigurationResult $config */
+            /** @var \Wtyd\Alfil\Configuration\ConfigurationResult $config */
             $config = $preparation->config;
 
             $this->renderer->applyFormat($this->executor, $plan, $renderOptions, $output);
@@ -146,7 +146,7 @@ class FlowRunner
             }
 
             return OutputFormats::exitCodeFor($renderOptions->format, $result->isSuccess());
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
             $this->emitStderr($output, $e->getMessage());
             return 1;
@@ -209,7 +209,7 @@ class FlowRunner
             $this->renderFlapReport($report, $format, $renderOptions, $output);
 
             return $report->exitCode();
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             $this->emitStderr($output, $e->getMessage());
             return 1;
         }
@@ -475,7 +475,7 @@ class FlowRunner
     {
         try {
             $config = $this->parser->parse($request->configFile);
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             return FlowPreparation::failure([$e->getMessage()]);
         }
 

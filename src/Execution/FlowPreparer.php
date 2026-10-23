@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\JobRef;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Hooks\PatternMatcher;
-use Wtyd\GitHooks\Jobs\JobAbstract;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\FlowConfiguration;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\JobRef;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Hooks\PatternMatcher;
+use Wtyd\Alfil\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 /**
  * Pure function: resolves a flow configuration into an executable plan (list of job instances).

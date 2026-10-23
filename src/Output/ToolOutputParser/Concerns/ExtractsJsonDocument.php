@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\ToolOutputParser\Concerns;
+namespace Wtyd\Alfil\Output\ToolOutputParser\Concerns;
 
 /**
  * Extracts the JSON document from a raw tool output that may include a human

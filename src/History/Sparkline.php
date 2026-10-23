@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\History;
+namespace Wtyd\Alfil\History;
 
 /**
  * Renders a series of numeric values as a one-line ASCII sparkline using the

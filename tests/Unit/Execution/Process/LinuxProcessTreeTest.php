@@ -6,7 +6,7 @@ namespace Tests\Unit\Execution\Process;
 
 use Symfony\Component\Process\Process;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Process\LinuxProcessTree;
+use Wtyd\Alfil\Execution\Process\LinuxProcessTree;
 
 /**
  * LinuxProcessTree driven through a synthetic /proc map (any platform,

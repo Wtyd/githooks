@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Process;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Process\MacOsProcessTree;
+use Wtyd\Alfil\Execution\Process\MacOsProcessTree;
 
 /**
  * MacOsProcessTree driven through synthetic `ps` output keyed by the exact

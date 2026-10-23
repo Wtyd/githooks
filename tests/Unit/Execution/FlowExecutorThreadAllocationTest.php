@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Jobs\ParatestJob;
-use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Jobs\ParatestJob;
+use Wtyd\Alfil\Output\NullOutputHandler;
 
 /**
  * Decision table of the thread-budget distribution (factors.md
@@ -99,7 +99,7 @@ class FlowExecutorThreadAllocationTest extends UnitTestCase
     }
 
     /**
-     * @param \Wtyd\GitHooks\Jobs\JobAbstract[] $jobs
+     * @param \Wtyd\Alfil\Jobs\JobAbstract[] $jobs
      */
     private function executeDryRun(array $jobs, int $processes): void
     {

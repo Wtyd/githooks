@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
 /**
  * Generates a githooks.php configuration string from detected tools and user choices.

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Utils\CpuDetector;
+use Wtyd\Alfil\Utils\CpuDetector;
 
 /**
  * Stub that forces Windows detection path on any platform.

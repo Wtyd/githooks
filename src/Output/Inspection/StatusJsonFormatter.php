@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Inspection;
+namespace Wtyd\Alfil\Output\Inspection;
 
-use Wtyd\GitHooks\Hooks\HookStatusReport;
+use Wtyd\Alfil\Hooks\HookStatusReport;
 
 /**
  * Serialise a {@see HookStatusReport} as the `status --format=json` payload.

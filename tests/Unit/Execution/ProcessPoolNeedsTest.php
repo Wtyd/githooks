@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\ProcessPool;
-use Wtyd\GitHooks\Jobs\JobAbstract;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\ProcessPool;
+use Wtyd\Alfil\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\PhpcsJob;
 
 /**
  * FEAT-3 · Group D — needs-aware pool primitives.

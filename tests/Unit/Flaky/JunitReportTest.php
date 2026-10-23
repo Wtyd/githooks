@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Flaky;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Flaky\JunitReport;
-use Wtyd\GitHooks\Flaky\TestStatus;
+use Wtyd\Alfil\Flaky\JunitReport;
+use Wtyd\Alfil\Flaky\TestStatus;
 
 /**
  * Parser side of table A (tests/Unit/Flaky/factors.md): F1 file state, F3

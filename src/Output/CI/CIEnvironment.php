@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\CI;
+namespace Wtyd\Alfil\Output\CI;
 
 class CIEnvironment
 {

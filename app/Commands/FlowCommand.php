@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
-use Wtyd\GitHooks\App\Commands\Concerns\BuildsRenderOptions;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesProcessesFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesRepeatFlags;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
-use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\FlowRunner;
-use Wtyd\GitHooks\Execution\FlowRunRequest;
-use Wtyd\GitHooks\Execution\InputFilesResolver;
+use Wtyd\Alfil\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
+use Wtyd\Alfil\App\Commands\Concerns\BuildsRenderOptions;
+use Wtyd\Alfil\App\Commands\Concerns\EmitsStderr;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesAllocatorFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesProcessesFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesRepeatFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesStatsFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesTimeBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
+use Wtyd\Alfil\Execution\FlowRunner;
+use Wtyd\Alfil\Execution\FlowRunRequest;
+use Wtyd\Alfil\Execution\InputFilesResolver;
 
 /**
  * Thin CLI adapter for `githooks flow <name>`. Phase 2c reduces handle() to
@@ -114,7 +114,7 @@ class FlowCommand extends Command
 
         try {
             $request = $this->buildRunRequest($repeatFlags);
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             $this->emitStderr($e->getMessage());
             return 1;
         }

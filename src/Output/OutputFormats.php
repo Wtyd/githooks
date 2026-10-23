@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 /**
  * Centralised lists of output formats. Single source of truth for both the

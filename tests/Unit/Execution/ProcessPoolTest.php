@@ -7,14 +7,14 @@ namespace Tests\Unit\Execution;
 use Tests\Doubles\InlineJobFake;
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Utils\Traits\ProcessTreeFixtureTrait;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
-use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\Process\NullProcessTree;
-use Wtyd\GitHooks\Execution\Process\ProcessTerminator;
-use Wtyd\GitHooks\Execution\ProcessPool;
-use Wtyd\GitHooks\Jobs\CustomJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\Admission\FifoAdmission;
+use Wtyd\Alfil\Execution\Admission\GreedyAdmission;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\Process\NullProcessTree;
+use Wtyd\Alfil\Execution\Process\ProcessTerminator;
+use Wtyd\Alfil\Execution\ProcessPool;
+use Wtyd\Alfil\Jobs\CustomJob;
 
 class ProcessPoolTest extends UnitTestCase
 {

@@ -1,20 +1,20 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Providers;
+namespace Wtyd\Alfil\App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ToolDetector;
-use Wtyd\GitHooks\Container\RegisterBindings;
-use Wtyd\GitHooks\Hooks\HookInstaller;
-use Wtyd\GitHooks\Hooks\HookStatusInspector;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ToolDetector;
+use Wtyd\Alfil\Container\RegisterBindings;
+use Wtyd\Alfil\Hooks\HookInstaller;
+use Wtyd\Alfil\Hooks\HookStatusInspector;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Output\Diagnostics\DiagnosticsCollector;
 use Tests\Doubles\HookInstallerFake;
 use Tests\Doubles\HookStatusInspectorFake;
 use Tests\Doubles\ToolDetectorFake;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Utils\Storage;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
         // Bind my custom BuildCommand
         $this->app->bind(
             \LaravelZero\Framework\Commands\BuildCommand::class,
-            \Wtyd\GitHooks\App\Commands\Zero\BuildCommand::class
+            \Wtyd\Alfil\App\Commands\Zero\BuildCommand::class
         );
 
         // Feed the runtime diagnostics block (FEAT-14) the same version source

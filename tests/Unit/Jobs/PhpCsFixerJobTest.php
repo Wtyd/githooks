@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Jobs\PhpCsFixerJob;
 
 class PhpCsFixerJobTest extends UnitTestCase
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Memory;
+namespace Wtyd\Alfil\Execution\Memory;
 
 /**
  * Reads the resident set size (RSS) of a set of running processes once.

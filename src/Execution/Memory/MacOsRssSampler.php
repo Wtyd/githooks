@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Memory;
+namespace Wtyd\Alfil\Execution\Memory;
 
-use Wtyd\GitHooks\Execution\Process\ProcessTreeWalk;
+use Wtyd\Alfil\Execution\Process\ProcessTreeWalk;
 
 /**
  * macOS RSS sampler. Reads the entire process listing once per sample with

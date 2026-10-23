@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Configuration\KeySuggestion;
-use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\Configuration\Exception\ParseConfigurationFileException;
-use Wtyd\GitHooks\Configuration\Exception\UnsupportedConfigurationFormatException;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\KeySuggestion;
+use Wtyd\Alfil\Configuration\Exception\ConfigurationFileNotFoundException;
+use Wtyd\Alfil\Configuration\Exception\ParseConfigurationFileException;
+use Wtyd\Alfil\Configuration\Exception\UnsupportedConfigurationFormatException;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Parser orchestrates all configuration types
@@ -260,7 +260,7 @@ class ConfigurationParser
             } catch (\Throwable $e) {
                 return null;
             }
-            if (!$instance instanceof \Wtyd\GitHooks\Jobs\PhpstanJob) {
+            if (!$instance instanceof \Wtyd\Alfil\Jobs\PhpstanJob) {
                 return null;
             }
             $workers = $instance->getDeclaredNeonWorkers();

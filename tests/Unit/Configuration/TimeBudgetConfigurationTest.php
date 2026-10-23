@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\TimeBudgetConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 class TimeBudgetConfigurationTest extends UnitTestCase
 {

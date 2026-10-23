@@ -1,6 +1,6 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 

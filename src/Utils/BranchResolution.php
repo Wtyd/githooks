@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Utils;
+namespace Wtyd\Alfil\Utils;
 
 /**
  * Result of {@see BranchResolver::resolve()}: the current branch name and the

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 /**
  * Helpers for asserting warning/error messages by exact equality rather than

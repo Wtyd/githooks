@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Concerns;
+namespace Wtyd\Alfil\Output\Concerns;
 
 /**
- * Default no-op implementation of {@see \Wtyd\GitHooks\Output\OutputHandler::onJobWaiting()}
+ * Default no-op implementation of {@see \Wtyd\Alfil\Output\OutputHandler::onJobWaiting()}
  * for handlers that do not need to render the FEAT-3 "waiting (deps)" state.
  *
  * Applied to TextOutputHandler, StreamingTextOutputHandler, ProgressOutputHandler,

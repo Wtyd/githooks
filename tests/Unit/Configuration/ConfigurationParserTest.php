@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\Exception\UnsupportedConfigurationFormatException;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\Exception\UnsupportedConfigurationFormatException;
 
 class ConfigurationParserTest extends UnitTestCase
 {
@@ -29,7 +29,7 @@ class ConfigurationParserTest extends UnitTestCase
     {
         $parser = new ConfigurationParser($this->fixturesPath);
 
-        $this->expectException(\Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException::class);
+        $this->expectException(\Wtyd\Alfil\Configuration\Exception\ConfigurationFileNotFoundException::class);
         $this->expectExceptionMessage(
             'Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).'
         );
@@ -42,7 +42,7 @@ class ConfigurationParserTest extends UnitTestCase
      * @dataProvider unsupportedConfigurationProvider
      *
      * A file that exists but is in a shape 4.0 does not read: one exception,
-     * a GitHooksExceptionInterface so every command reports it in one line and
+     * a AlfilExceptionInterface so every command reports it in one line and
      * exits 1, naming the file and the way out. The v2 guard fires on the pure
      * v2 shape (Options and/or Tools, no v3 section); YAML is rejected on the
      * extension alone, before anything is read.
@@ -413,7 +413,7 @@ PHP;
     {
         $parser = new ConfigurationParser($this->fixturesPath);
 
-        $this->expectException(\Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException::class);
+        $this->expectException(\Wtyd\Alfil\Configuration\Exception\ConfigurationFileNotFoundException::class);
         $this->expectExceptionMessage('Configuration file not found');
         $parser->parse($this->fixturesPath . '/does_not_exist.php');
     }

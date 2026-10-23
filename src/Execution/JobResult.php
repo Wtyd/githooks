@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 /**
  * @SuppressWarnings(PHPMD.TooManyFields) Immutable value object — every field describes one

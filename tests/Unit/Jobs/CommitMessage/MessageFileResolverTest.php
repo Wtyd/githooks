@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs\CommitMessage;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Jobs\CommitMessage\MessageFileResolver;
+use Wtyd\Alfil\Jobs\CommitMessage\MessageFileResolver;
 
 /**
  * Factor table B (FEAT-16): source priority (hook/cli > inline > env > fallback),

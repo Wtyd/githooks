@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\History\RunHistoryReader;
-use Wtyd\GitHooks\History\RunRecord;
+use Wtyd\Alfil\History\RunHistoryReader;
+use Wtyd\Alfil\History\RunRecord;
 
 /**
  * `profile:list <flow>` — list the runs persisted under `.githooks/history/`

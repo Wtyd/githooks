@@ -13,7 +13,7 @@ use Tests\ReleaseTestCase;
  * the executor. After the fix every Job type (including `script`) returns its
  * config key — the override in `src/Jobs/ScriptJob.php` is gone.
  *
- * Required as @group release because the consumer (`Wtyd\GitHooks\Execution\JobExecutor`)
+ * Required as @group release because the consumer (`Wtyd\Alfil\Execution\JobExecutor`)
  * lives inside the `.phar`; an asserted regression here means the fix is embedded
  * in the bundled binary.
  *

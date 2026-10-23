@@ -5,7 +5,7 @@ namespace Tests\Utils\TestCase;
 use Tests\Doubles\FileUtilsFake;
 use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\Traits\FileSystemTrait;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 
 abstract class SystemTestCase extends ConsoleTestCase
 {

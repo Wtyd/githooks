@@ -8,7 +8,7 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\DiagnosticsCollectorStub;
 use Tests\Doubles\MemoryDetectorStub;
 use Tests\Doubles\UnixCpuDetectorStub;
-use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
+use Wtyd\Alfil\Output\Diagnostics\DiagnosticsCollector;
 
 class DiagnosticsCollectorTest extends UnitTestCase
 {

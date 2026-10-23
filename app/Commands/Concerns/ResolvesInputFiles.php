@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
-use Wtyd\GitHooks\Execution\InputFilesResolution;
-use Wtyd\GitHooks\Execution\InputFilesResolver;
+use Wtyd\Alfil\Execution\InputFilesResolution;
+use Wtyd\Alfil\Execution\InputFilesResolver;
 
 /**
  * Shared logic for commands that accept --files / --files-from / --exclude-pattern.
@@ -29,7 +29,7 @@ trait ResolvesInputFiles
      * Returns null when none of the input-files flags are present. Otherwise
      * returns the resolved object after emitting any informational warnings.
      * Throws InputFilesException for fatal spec conditions; the caller catches
-     * it via GitHooksExceptionInterface.
+     * it via AlfilExceptionInterface.
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) Mirrors spec branches.
      */

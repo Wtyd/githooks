@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Process;
+namespace Wtyd\Alfil\Execution\Process;
 
 /**
  * Fallback tree for platforms with no supported way to walk processes

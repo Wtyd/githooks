@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
-use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\JobConfiguration;
 
 /**
  * Executes an arbitrary command. Two modes:

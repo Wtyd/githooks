@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Admission;
+namespace Wtyd\Alfil\Execution\Admission;
 
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Decides which queued job (if any) to admit next given the live resource

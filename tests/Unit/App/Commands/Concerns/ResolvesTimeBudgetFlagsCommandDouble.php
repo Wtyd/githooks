@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Commands\Concerns;
 
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesTimeBudgetFlags;
 
 /**
  * Test double that exposes the private resolveTimeBudgetFlags() of the trait

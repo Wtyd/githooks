@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 /**
  * Interactive dashboard for parallel execution in TTY terminals.

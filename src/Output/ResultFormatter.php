@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Execution\FlowResult;
+use Wtyd\Alfil\Execution\FlowResult;
 
 interface ResultFormatter
 {

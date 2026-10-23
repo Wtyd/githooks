@@ -1,6 +1,6 @@
 <?php
 
-use Wtyd\GitHooks\App\Updater\CustomStrategy;
+use Wtyd\Alfil\App\Updater\CustomStrategy;
 use LaravelZero\Framework\Components\Updater\Strategy\GithubStrategy;
 
 return [

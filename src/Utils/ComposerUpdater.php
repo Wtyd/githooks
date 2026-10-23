@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Utils;
+namespace Wtyd\Alfil\Utils;
 
 use Exception;
-use Wtyd\GitHooks\Build\Build;
+use Wtyd\Alfil\Build\Build;
 
 class ComposerUpdater
 {
@@ -56,7 +56,7 @@ class ComposerUpdater
 /*
 "scripts": {
     "post-update-cmd": [
-        "Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"
+        "Wtyd\\Alfil\\Utils\\ComposerUpdater::phpOldVersions"
     ]
 }
  */

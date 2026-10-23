@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\ToolOutputParser;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\ToolOutputParser\PhpcsOutputParser;
-use Wtyd\GitHooks\Output\ToolOutputParser\PhpmdOutputParser;
-use Wtyd\GitHooks\Output\ToolOutputParser\PhpstanOutputParser;
-use Wtyd\GitHooks\Output\ToolOutputParser\PsalmOutputParser;
-use Wtyd\GitHooks\Output\ToolOutputParser\ParallelLintOutputParser;
-use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
+use Wtyd\Alfil\Output\ToolOutputParser\PhpcsOutputParser;
+use Wtyd\Alfil\Output\ToolOutputParser\PhpmdOutputParser;
+use Wtyd\Alfil\Output\ToolOutputParser\PhpstanOutputParser;
+use Wtyd\Alfil\Output\ToolOutputParser\PsalmOutputParser;
+use Wtyd\Alfil\Output\ToolOutputParser\ParallelLintOutputParser;
+use Wtyd\Alfil\Output\ToolOutputParser\ToolOutputParserRegistry;
 
 class ToolOutputParserRegistryTest extends UnitTestCase
 {

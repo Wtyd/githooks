@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Tests\Integration\Execution;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\JobRef;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\Alfil\Configuration\FlowDependencyGraph;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\JobRef;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Output\NullOutputHandler;
 
 /**
  * FEAT-3 · Groups D, E, F — end-to-end propagation through FlowExecutor.
@@ -125,7 +125,7 @@ class FlowNeedsCompositionTest extends TestCase
             new OptionsConfiguration(true, 1),
             null,
             [],
-            \Wtyd\GitHooks\Execution\ExecutionMode::FULL,
+            \Wtyd\Alfil\Execution\ExecutionMode::FULL,
             null,
             null,
             null,
@@ -198,7 +198,7 @@ class FlowNeedsCompositionTest extends TestCase
     }
 
     /**
-     * @param \Wtyd\GitHooks\Jobs\JobAbstract[] $jobs
+     * @param \Wtyd\Alfil\Jobs\JobAbstract[] $jobs
      */
     private function plan(array $jobs, FlowDependencyGraph $graph): FlowPlan
     {
@@ -208,7 +208,7 @@ class FlowNeedsCompositionTest extends TestCase
             new OptionsConfiguration(false, 1),  // sequential mode
             null,
             [],
-            \Wtyd\GitHooks\Execution\ExecutionMode::FULL,
+            \Wtyd\Alfil\Execution\ExecutionMode::FULL,
             null,
             null,
             null,

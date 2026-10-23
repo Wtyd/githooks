@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 /**
  * A single code quality issue extracted from a tool's structured output.

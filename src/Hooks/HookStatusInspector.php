@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Hooks;
+namespace Wtyd\Alfil\Hooks;
 
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
 
 class HookStatusInspector
 {
@@ -42,7 +42,7 @@ class HookStatusInspector
     {
         $output = [];
         $exitCode = 0;
-        exec('git config core.hooksPath ' . \Wtyd\GitHooks\Utils\Platform::stderrRedirect(), $output, $exitCode);
+        exec('git config core.hooksPath ' . \Wtyd\Alfil\Utils\Platform::stderrRedirect(), $output, $exitCode);
 
         if ($exitCode !== 0 || empty($output)) {
             return '';

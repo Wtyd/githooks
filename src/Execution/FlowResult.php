@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\Memory\MemoryStats;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\Memory\MemoryStats;
 
 class FlowResult
 {

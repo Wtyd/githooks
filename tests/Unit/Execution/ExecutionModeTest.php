@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\ExecutionMode;
 
 class ExecutionModeTest extends UnitTestCase
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\History;
+namespace Wtyd\Alfil\History;
 
 /**
  * Read-only view over one persisted run (a decoded JSON v2 payload) plus the

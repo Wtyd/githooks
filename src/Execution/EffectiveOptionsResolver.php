@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\AllocatorStrategy;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\FlowOnRule;
-use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
-use Wtyd\GitHooks\Hooks\PatternMatcher;
-use Wtyd\GitHooks\Utils\BranchResolution;
+use Wtyd\Alfil\Configuration\AllocatorStrategy;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\FlowConfiguration;
+use Wtyd\Alfil\Configuration\FlowOnRule;
+use Wtyd\Alfil\Configuration\MemoryBudgetConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\TimeBudgetConfiguration;
+use Wtyd\Alfil\Hooks\PatternMatcher;
+use Wtyd\Alfil\Utils\BranchResolution;
 
 /**
  * Resolves the effective option set for a run, layering CLI > flow.options > flows.options > default

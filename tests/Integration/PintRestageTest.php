@@ -6,13 +6,13 @@ namespace Tests\Integration;
 
 use Tests\Utils\TestCase\SystemTestCase;
 use Tests\Utils\Traits\GitSandboxTrait;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Jobs\PintJob;
-use Wtyd\GitHooks\Output\NullOutputHandler;
-use Wtyd\GitHooks\Utils\GitStager;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Jobs\PintJob;
+use Wtyd\Alfil\Output\NullOutputHandler;
+use Wtyd\Alfil\Utils\GitStager;
 
 /**
  * Verifies the `pint` job through the fixer pipeline end to end

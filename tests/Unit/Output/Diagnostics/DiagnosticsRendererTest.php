@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\Diagnostics;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Diagnostics;
-use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsRenderer;
+use Wtyd\Alfil\Execution\Diagnostics;
+use Wtyd\Alfil\Output\Diagnostics\DiagnosticsRenderer;
 
 class DiagnosticsRendererTest extends UnitTestCase
 {

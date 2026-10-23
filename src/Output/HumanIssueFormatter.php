@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
-use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
+use Wtyd\Alfil\Output\Concerns\RelativizesFilePath;
+use Wtyd\Alfil\Output\ToolOutputParser\ToolOutputParserRegistry;
 
 /**
  * Renders a tool's raw JSON output as a human-readable text block consumable

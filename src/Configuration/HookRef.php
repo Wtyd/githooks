@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\ExecutionMode;
 
 /**
  * A reference from a hook event to a flow or job, with optional execution conditions.

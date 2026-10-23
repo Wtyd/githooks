@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
-use Wtyd\GitHooks\App\Commands\Concerns\BuildsRenderOptions;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
-use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\InputFilesResolver;
-use Wtyd\GitHooks\Execution\JobRunner;
-use Wtyd\GitHooks\Execution\JobRunRequest;
+use Wtyd\Alfil\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
+use Wtyd\Alfil\App\Commands\Concerns\BuildsRenderOptions;
+use Wtyd\Alfil\App\Commands\Concerns\EmitsStderr;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesAllocatorFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesStatsFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesTimeBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
+use Wtyd\Alfil\Execution\InputFilesResolver;
+use Wtyd\Alfil\Execution\JobRunner;
+use Wtyd\Alfil\Execution\JobRunRequest;
 
 /**
  * Thin CLI adapter for `githooks job <name>`. Phase 2b reduces handle() to
@@ -101,7 +101,7 @@ class JobCommand extends Command
 
         try {
             $request = $this->buildRunRequest();
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             // Input-files resolution lives in the Command (via ResolvesInputFiles)
             // because it needs $this->option(). Its exceptions surface here so
             // --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).

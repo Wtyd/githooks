@@ -6,16 +6,16 @@ namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\JobRef;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\FlowConfiguration;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\JobRef;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\ExecutionContext;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 /**
  * FEAT-1 · Groups B + C — admission by only-files / exclude-files at flow entry.

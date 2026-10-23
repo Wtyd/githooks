@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Memory;
+namespace Wtyd\Alfil\Execution\Memory;
 
 /**
  * Immutable snapshot of a single sampling tick: the wall-clock offset since

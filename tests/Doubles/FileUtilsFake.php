@@ -2,7 +2,7 @@
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\Alfil\Utils\FileUtils;
 
 class FileUtilsFake extends FileUtils
 {

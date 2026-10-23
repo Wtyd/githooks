@@ -6,9 +6,9 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
-use Wtyd\GitHooks\Configuration\HookConfiguration;
-use Wtyd\GitHooks\Configuration\HookRef;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\HookConfiguration;
+use Wtyd\Alfil\Configuration\HookRef;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 class HookConfigurationTest extends UnitTestCase
 {

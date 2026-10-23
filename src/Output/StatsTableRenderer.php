@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Helper\TableSeparator;
 use Symfony\Component\Console\Output\OutputInterface;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\Memory\MemoryStats;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\Memory\MemoryStats;
 
 /**
  * Renders the canonical 5-column `--stats` summary table after the flow

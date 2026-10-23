@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Concerns;
+namespace Wtyd\Alfil\Output\Concerns;
 
 /**
  * Converts absolute file paths within the current working directory to relative paths.

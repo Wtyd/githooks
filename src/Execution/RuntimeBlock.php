@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 /**
  * Runtime span + runner snapshot for a flow (FEAT-14). Attached to
- * {@see FlowResult} so {@see \Wtyd\GitHooks\Output\JsonResultFormatter}
+ * {@see FlowResult} so {@see \Wtyd\Alfil\Output\JsonResultFormatter}
  * serialises the always-present `runtime` JSON node.
  */
 final class RuntimeBlock

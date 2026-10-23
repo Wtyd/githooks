@@ -1,12 +1,12 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use Illuminate\Console\Application as Artisan;
 use Illuminate\Support\Facades\File;
 use LaravelZero\Framework\Commands\Command;
 use PharData;
-use Wtyd\GitHooks\Build\Build;
+use Wtyd\Alfil\Build\Build;
 
 class ExtractBuildCommand extends Command
 {

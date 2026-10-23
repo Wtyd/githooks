@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
 
 class FlowResultTest extends UnitTestCase
 {
@@ -62,7 +62,7 @@ class FlowResultTest extends UnitTestCase
     /** @test */
     public function flow_is_failed_when_time_budget_failed_even_if_all_jobs_pass(): void
     {
-        $state = new \Wtyd\GitHooks\Execution\TimeBudgetState(120, 300, 320.1, true, true);
+        $state = new \Wtyd\Alfil\Execution\TimeBudgetState(120, 300, 320.1, true, true);
         $result = new FlowResult(
             'qa',
             [
@@ -86,7 +86,7 @@ class FlowResultTest extends UnitTestCase
     /** @test */
     public function flow_is_success_when_time_budget_only_warned(): void
     {
-        $state = new \Wtyd\GitHooks\Execution\TimeBudgetState(120, 300, 125.4, true, false);
+        $state = new \Wtyd\Alfil\Execution\TimeBudgetState(120, 300, 125.4, true, false);
         $result = new FlowResult(
             'qa',
             [new JobResult('phpunit', true, '', '125s')],

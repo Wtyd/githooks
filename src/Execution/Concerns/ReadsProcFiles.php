@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Concerns;
+namespace Wtyd\Alfil\Execution\Concerns;
 
 /**
  * Best-effort reads of /proc pseudo-files, shared by the Linux RSS sampler

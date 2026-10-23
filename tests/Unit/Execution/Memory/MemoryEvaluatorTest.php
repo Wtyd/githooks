@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
-use Wtyd\GitHooks\Execution\Memory\MemoryEvaluator;
-use Wtyd\GitHooks\Execution\Memory\MemorySample;
+use Wtyd\Alfil\Configuration\MemoryBudgetConfiguration;
+use Wtyd\Alfil\Execution\Memory\MemoryEvaluator;
+use Wtyd\Alfil\Execution\Memory\MemorySample;
 
 class MemoryEvaluatorTest extends UnitTestCase
 {

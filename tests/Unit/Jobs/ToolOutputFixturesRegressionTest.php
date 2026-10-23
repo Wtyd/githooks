@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Jobs\PhpstanJob;
 
 /**
  * Test de regresión que doble la salida real de las QA tools usando los

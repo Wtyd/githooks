@@ -1,16 +1,16 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use Exception;
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\Hooks;
-use Wtyd\GitHooks\Hooks\HookInstaller;
-use Wtyd\GitHooks\Utils\Platform;
-use Wtyd\GitHooks\Utils\Printer;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\Exception\ConfigurationFileNotFoundException;
+use Wtyd\Alfil\Hooks;
+use Wtyd\Alfil\Hooks\HookInstaller;
+use Wtyd\Alfil\Utils\Platform;
+use Wtyd\Alfil\Utils\Printer;
+use Wtyd\Alfil\Utils\Storage;
 
 class CreateHookCommand extends Command
 {

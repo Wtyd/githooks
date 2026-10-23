@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\Inspection;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\Inspection\SystemInfo;
-use Wtyd\GitHooks\Output\Inspection\SystemInfoJsonFormatter;
+use Wtyd\Alfil\Output\Inspection\SystemInfo;
+use Wtyd\Alfil\Output\Inspection\SystemInfoJsonFormatter;
 
 class SystemInfoJsonFormatterTest extends UnitTestCase
 {

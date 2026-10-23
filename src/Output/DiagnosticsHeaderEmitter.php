@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Wtyd\GitHooks\Execution\Diagnostics;
-use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsRenderer;
+use Wtyd\Alfil\Execution\Diagnostics;
+use Wtyd\Alfil\Output\Diagnostics\DiagnosticsRenderer;
 
 /**
  * Emits the runtime diagnostics block (FEAT-14) just before the `Settings:`

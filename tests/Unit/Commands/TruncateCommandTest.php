@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Commands;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationChecker;
+use Wtyd\Alfil\Configuration\ConfigurationChecker;
 
 /**
  * Tests for the command-truncation rule. Phase 3b moved the rule into

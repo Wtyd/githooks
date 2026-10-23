@@ -6,8 +6,8 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\FlowConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 class FlowConfigurationTest extends UnitTestCase
 {

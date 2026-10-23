@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Configuration\Deprecation;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Output\Concerns\StripsAnsi;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\InputFilesResolution;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\Memory\MemoryStats;
-use Wtyd\GitHooks\Execution\MemoryBudgetState;
-use Wtyd\GitHooks\Execution\RuntimeBlock;
-use Wtyd\GitHooks\Execution\TimeBudgetState;
+use Wtyd\Alfil\Configuration\Deprecation;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Output\Concerns\StripsAnsi;
+use Wtyd\Alfil\Execution\EffectiveOptionsResolution;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\InputFilesResolution;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\Memory\MemoryStats;
+use Wtyd\Alfil\Execution\MemoryBudgetState;
+use Wtyd\Alfil\Execution\RuntimeBlock;
+use Wtyd\Alfil\Execution\TimeBudgetState;
 
 class JsonResultFormatter implements ResultFormatter
 {

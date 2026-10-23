@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\ProcessPool;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\ProcessPool;
 
 /**
  * Test-only `FlowExecutor` subclass that lets a test inject a pre-built

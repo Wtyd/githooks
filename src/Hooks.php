@@ -1,6 +1,6 @@
 <?php
 
-namespace Wtyd\GitHooks;
+namespace Wtyd\Alfil;
 
 class Hooks
 {

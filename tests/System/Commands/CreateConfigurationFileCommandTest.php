@@ -4,8 +4,8 @@ namespace Tests\System\Commands;
 
 use Tests\Doubles\ToolDetectorFake;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Configuration\ToolDetector;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Configuration\ToolDetector;
+use Wtyd\Alfil\Utils\Storage;
 
 class CreateConfigurationFileCommandTest extends SystemTestCase
 {

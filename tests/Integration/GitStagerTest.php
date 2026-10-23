@@ -4,7 +4,7 @@ namespace Tests\Integration;
 
 use Tests\Utils\TestCase\SystemTestCase;
 use Tests\Utils\Traits\GitSandboxTrait;
-use Wtyd\GitHooks\Utils\GitStager;
+use Wtyd\Alfil\Utils\GitStager;
 
 /**
  * Tests GitStager against a sandboxed git repo created in /tmp. The

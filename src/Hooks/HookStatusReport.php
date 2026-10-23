@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Hooks;
+namespace Wtyd\Alfil\Hooks;
 
 class HookStatusReport
 {

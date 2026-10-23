@@ -7,13 +7,13 @@ namespace Tests\Unit\Container;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Container\Container as ContainerContract;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\HookConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Container\RegisterBindings;
-use Wtyd\GitHooks\Hooks\HookEventStatus;
-use Wtyd\GitHooks\Hooks\HookStatusInspector;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\HookConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Container\RegisterBindings;
+use Wtyd\Alfil\Hooks\HookEventStatus;
+use Wtyd\Alfil\Hooks\HookStatusInspector;
 
 /**
  * The production bindings are shadowed in the test harness: `testsRegister`

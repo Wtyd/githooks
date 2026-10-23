@@ -7,13 +7,13 @@ namespace Tests\Unit\Output;
 use Illuminate\Container\Container;
 use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Output\OutputInterface;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Output\DashboardOutputHandler;
-use Wtyd\GitHooks\Output\OutputHandler;
-use Wtyd\GitHooks\Output\RenderOptions;
-use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Output\DashboardOutputHandler;
+use Wtyd\Alfil\Output\OutputHandler;
+use Wtyd\Alfil\Output\RenderOptions;
+use Wtyd\Alfil\Output\StreamingTextOutputHandler;
 
 /**
  * A single job in an interactive terminal gets the live dashboard (spinner +
@@ -81,7 +81,7 @@ class FlowResultRendererSingleJobModeTest extends UnitTestCase
         $output = $this->createMock(OutputInterface::class);
         $output->method('isDecorated')->willReturn($isDecorated);
 
-        $renderer = new class (new Container(), $stdoutIsTty) extends \Wtyd\GitHooks\Output\FlowResultRenderer {
+        $renderer = new class (new Container(), $stdoutIsTty) extends \Wtyd\Alfil\Output\FlowResultRenderer {
             private bool $forcedTty;
 
             public function __construct(Container $container, bool $forcedTty)

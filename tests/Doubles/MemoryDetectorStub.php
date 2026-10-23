@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Utils\MemoryDetector;
+use Wtyd\Alfil\Utils\MemoryDetector;
 
 /**
  * Forces a platform path and scripts file (`/proc`, `/sys`) + `exec()` responses

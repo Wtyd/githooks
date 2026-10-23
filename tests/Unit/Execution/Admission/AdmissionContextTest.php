@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Admission;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Admission\AdmissionContext;
-use Wtyd\GitHooks\Jobs\JobAbstract;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\Admission\AdmissionContext;
+use Wtyd\Alfil\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
 
 class AdmissionContextTest extends UnitTestCase
 {

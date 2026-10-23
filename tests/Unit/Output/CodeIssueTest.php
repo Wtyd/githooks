@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\CodeIssue;
+use Wtyd\Alfil\Output\CodeIssue;
 
 class CodeIssueTest extends UnitTestCase
 {

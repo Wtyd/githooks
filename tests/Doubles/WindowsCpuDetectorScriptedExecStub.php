@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Utils\CpuDetector;
+use Wtyd\Alfil\Utils\CpuDetector;
 
 /**
  * Forces the Windows detection path with a scripted exec response. Tests can

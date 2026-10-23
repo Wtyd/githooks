@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Commands\Concerns;
 
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
 
 /**
  * Test double that exposes the private resolveMemoryBudgetFlags() of the trait

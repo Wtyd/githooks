@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\CI;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\CI\CIEnvironment;
+use Wtyd\Alfil\Output\CI\CIEnvironment;
 
 class CIEnvironmentTest extends UnitTestCase
 {

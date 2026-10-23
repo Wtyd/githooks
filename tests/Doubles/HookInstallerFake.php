@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Doubles;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Hooks\HookInstaller;
+use Wtyd\Alfil\Hooks\HookInstaller;
 
 /**
  * Test double for HookInstaller that keeps the real install/clean

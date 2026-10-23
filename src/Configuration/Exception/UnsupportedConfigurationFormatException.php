@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration\Exception;
+namespace Wtyd\Alfil\Configuration\Exception;
 
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
 
 /**
  * The configuration file exists but is in a shape 4.0 no longer reads: the
@@ -12,7 +12,7 @@ use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
  * know. Distinct from "not found" on purpose: `hook` falls back to a minimal
  * install when there is no file and must not do so when there is a wrong one.
  */
-class UnsupportedConfigurationFormatException extends \RuntimeException implements GitHooksExceptionInterface
+class UnsupportedConfigurationFormatException extends \RuntimeException implements AlfilExceptionInterface
 {
     public static function forV2Shape(string $path): self
     {

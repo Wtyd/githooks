@@ -6,10 +6,10 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 class JobConfigurationTest extends UnitTestCase
 {

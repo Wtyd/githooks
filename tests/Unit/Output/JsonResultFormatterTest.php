@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\Deprecation;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\Diagnostics;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\RuntimeBlock;
-use Wtyd\GitHooks\Output\JsonResultFormatter;
+use Wtyd\Alfil\Configuration\Deprecation;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\Diagnostics;
+use Wtyd\Alfil\Execution\EffectiveOptionsResolution;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\RuntimeBlock;
+use Wtyd\Alfil\Output\JsonResultFormatter;
 
 class JsonResultFormatterTest extends UnitTestCase
 {
@@ -298,7 +298,7 @@ class JsonResultFormatterTest extends UnitTestCase
     /** @test */
     function time_budget_root_field_is_object_when_state_present(): void
     {
-        $state = new \Wtyd\GitHooks\Execution\TimeBudgetState(120, 300, 125.4, true, false);
+        $state = new \Wtyd\Alfil\Execution\TimeBudgetState(120, 300, 125.4, true, false);
         $result = new FlowResult('qa', [new JobResult('a', true, '', '125s')], '125s', 0, 0, 'full', null, null, null, $state);
 
         $data = json_decode((new JsonResultFormatter())->format($result), true);
@@ -438,7 +438,7 @@ class JsonResultFormatterTest extends UnitTestCase
     /** @test */
     function memory_budget_block_serializes_state_when_attached(): void
     {
-        $state = new \Wtyd\GitHooks\Execution\MemoryBudgetState(
+        $state = new \Wtyd\Alfil\Execution\MemoryBudgetState(
             3500,
             3900,
             3460,
@@ -472,7 +472,7 @@ class JsonResultFormatterTest extends UnitTestCase
     /** @test */
     function stats_block_emits_cores_always_and_memory_only_when_sampler_active(): void
     {
-        $stats = new \Wtyd\GitHooks\Execution\Memory\MemoryStats(
+        $stats = new \Wtyd\Alfil\Execution\Memory\MemoryStats(
             true,
             3460,
             8.2,
@@ -509,7 +509,7 @@ class JsonResultFormatterTest extends UnitTestCase
     /** @test */
     function stats_block_omits_memory_subblock_when_sampler_inactive(): void
     {
-        $stats = new \Wtyd\GitHooks\Execution\Memory\MemoryStats(
+        $stats = new \Wtyd\Alfil\Execution\Memory\MemoryStats(
             false,
             0,
             0.0,

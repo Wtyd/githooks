@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Inspection;
+namespace Wtyd\Alfil\Output\Inspection;
 
 /**
  * Diagnostic model for `conf:check`: the assembled, presentation-free result of

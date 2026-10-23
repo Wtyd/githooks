@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\Alfil\Output\OutputHandler;
 
 /**
  * OutputHandler double that records every event in public lists, enabling

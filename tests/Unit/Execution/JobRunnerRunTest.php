@@ -7,23 +7,23 @@ namespace Tests\Unit\Execution;
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
 use Tests\Unit\Output\RoutingBufferedOutput;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobRunner;
-use Wtyd\GitHooks\Execution\JobRunRequest;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
-use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
-use Wtyd\GitHooks\Output\FlowResultRenderer;
-use Wtyd\GitHooks\Output\RenderOptions;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\Exception\ConfigurationFileNotFoundException;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobRunner;
+use Wtyd\Alfil\Execution\JobRunRequest;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Output\ConditionsHeaderEmitter;
+use Wtyd\Alfil\Output\ConfigWarningsEmitter;
+use Wtyd\Alfil\Output\FlowResultRenderer;
+use Wtyd\Alfil\Output\RenderOptions;
 
 /**
  * Unit tests for `JobRunner::run()` — the Phase 2b entry point that swallows
@@ -137,10 +137,10 @@ class JobRunnerRunTest extends UnitTestCase
     }
 
     /** @test */
-    public function exception_implementing_GitHooksExceptionInterface_is_caught_and_routed_to_stderr(): void
+    public function exception_implementing_AlfilExceptionInterface_is_caught_and_routed_to_stderr(): void
     {
         $parser = $this->fakeParser(function () {
-            // ConfigurationFileNotFoundException implements GitHooksExceptionInterface
+            // ConfigurationFileNotFoundException implements AlfilExceptionInterface
             throw new ConfigurationFileNotFoundException('boom from parser');
         });
         $executor = $this->createMock(FlowExecutor::class);

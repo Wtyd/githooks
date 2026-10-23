@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\ToolOutputParser;
+namespace Wtyd\Alfil\Output\ToolOutputParser;
 
 class ToolOutputParserRegistry
 {

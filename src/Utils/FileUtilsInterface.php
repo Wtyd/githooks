@@ -1,6 +1,6 @@
 <?php
 
-namespace Wtyd\GitHooks\Utils;
+namespace Wtyd\Alfil\Utils;
 
 interface FileUtilsInterface
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 /**
  * Post-hoc state of a flow's `time-budget`. Built by FlowExecutor after the

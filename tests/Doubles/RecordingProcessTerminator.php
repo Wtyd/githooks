@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Execution\Process\ProcessTerminator;
+use Wtyd\Alfil\Execution\Process\ProcessTerminator;
 
 /**
  * ProcessTerminator with every OS seam replaced (BUG-35 decision table):

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\App\Commands\Concerns\EmitsStderr;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 class CacheClearCommand extends Command
 {
@@ -65,7 +65,7 @@ class CacheClearCommand extends Command
             $this->info("Cache clear complete: $cleared item(s) deleted.");
 
             return $hasErrors ? 1 : 0;
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             // To STDERR so --format=json/junit/sarif/codeclimate stdout stays clean (BUG-5).
             $this->emitStderr($e->getMessage());
             return 1;

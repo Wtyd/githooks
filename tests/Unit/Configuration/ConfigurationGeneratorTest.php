@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationGenerator;
+use Wtyd\Alfil\Configuration\ConfigurationGenerator;
 
 /**
  * Direct coverage for the `conf:init` interactive generator (no test existed).

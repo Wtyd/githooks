@@ -1,11 +1,11 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Updater;
+namespace Wtyd\Alfil\App\Updater;
 
 use Humbug\SelfUpdate\Strategy\GithubStrategy;
 use LaravelZero\Framework\Components\Updater\Strategy\StrategyInterface;
 use Phar;
-use Wtyd\GitHooks\Build\Build;
+use Wtyd\Alfil\Build\Build;
 
 class CustomStrategy extends GithubStrategy implements StrategyInterface
 {

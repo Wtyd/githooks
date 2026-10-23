@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Utils;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Utils\ComposerUpdater;
+use Wtyd\Alfil\Utils\ComposerUpdater;
 
 class ComposerUpdaterTest extends UnitTestCase
 {
@@ -37,5 +37,22 @@ class ComposerUpdaterTest extends UnitTestCase
 
         $this->assertIsString($result);
         $this->assertContains($result, ['', 'php7.4']);
+    }
+
+    /**
+     * @test
+     * 3.x projects call the old name from their composer.json scripts
+     * ("Wtyd\\GitHooks\\Utils\\ComposerUpdater::phpOldVersions"); Composer
+     * resolves it through the autoloader, so it has to load and expose the
+     * same static entry point until 5.0.
+     */
+    function the_3x_class_name_still_resolves_to_the_updater()
+    {
+        $legacy = 'Wtyd\GitHooks\Utils\ComposerUpdater';
+
+        $this->assertTrue(class_exists($legacy));
+        $this->assertTrue(is_subclass_of($legacy, ComposerUpdater::class));
+        $this->assertTrue(is_callable([$legacy, 'phpOldVersions']));
+        $this->assertSame(ComposerUpdater::pathToBuild(), $legacy::pathToBuild());
     }
 }

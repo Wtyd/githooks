@@ -5,18 +5,18 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Jobs\PhpmdJob;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\FlowConfiguration;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\ExecutionContext;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Jobs\PhpstanJob;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Jobs\PhpmdJob;
 use Tests\Doubles\FileUtilsFake;
 
 class FlowPreparerTest extends UnitTestCase

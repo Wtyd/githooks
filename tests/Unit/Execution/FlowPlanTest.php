@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowPlan;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\FlowPlan;
 
 class FlowPlanTest extends UnitTestCase
 {

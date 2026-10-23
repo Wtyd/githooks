@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Memory;
+namespace Wtyd\Alfil\Execution\Memory;
 
 /**
  * Fallback sampler used on platforms where no RSS source is supported in

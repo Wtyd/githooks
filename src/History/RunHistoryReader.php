@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\History;
+namespace Wtyd\Alfil\History;
 
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Utils\Storage;
 
 /**
  * Reads the persisted run history for a flow and extracts a single metric per

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Admission;
+namespace Wtyd\Alfil\Execution\Admission;
 
 /**
  * First-fit admission scanning the entire queue. Returns the first index

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\ThreadCapability;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\ThreadCapability;
 
 /**
  * Native `pest` job type. Wraps `vendor/bin/pest` (default) or `php artisan test`

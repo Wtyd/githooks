@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 /**
  * Emits parsing-time warnings (including deprecations) on stderr after the

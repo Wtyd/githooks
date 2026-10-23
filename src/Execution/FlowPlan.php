@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Configuration\FlowDependencyGraph;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Immutable plan: the resolved jobs and options for a flow execution.

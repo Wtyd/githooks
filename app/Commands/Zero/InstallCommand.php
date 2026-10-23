@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Zero;
+namespace Wtyd\Alfil\App\Commands\Zero;
 
 use LaravelZero\Framework\Commands\Command;
 use LaravelZero\Framework\Components;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\History;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\History\RunRecord;
+use Wtyd\Alfil\History\RunRecord;
 
 /**
  * Direct coverage of the read-only view over a persisted run. The class had

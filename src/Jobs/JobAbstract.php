@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
 use LogicException;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\MemoryThreshold;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\ThreadCapability;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\MemoryThreshold;
+use Wtyd\Alfil\Execution\ExecutionContext;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\ThreadCapability;
 
 /**
  * Base class for all job types. Subclasses declare ARGUMENT_MAP and the base

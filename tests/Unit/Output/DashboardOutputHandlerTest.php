@@ -6,7 +6,7 @@ namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Concerns\CapturesStdout;
-use Wtyd\GitHooks\Output\DashboardOutputHandler;
+use Wtyd\Alfil\Output\DashboardOutputHandler;
 
 class DashboardOutputHandlerTest extends UnitTestCase
 {

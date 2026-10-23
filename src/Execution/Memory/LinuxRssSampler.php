@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Memory;
+namespace Wtyd\Alfil\Execution\Memory;
 
-use Wtyd\GitHooks\Execution\Concerns\ReadsProcFiles;
-use Wtyd\GitHooks\Execution\Process\LinuxProcessTree;
+use Wtyd\Alfil\Execution\Concerns\ReadsProcFiles;
+use Wtyd\Alfil\Execution\Process\LinuxProcessTree;
 
 /**
  * Linux RSS sampler backed by /proc/<PID>/status. Sums VmRSS across the

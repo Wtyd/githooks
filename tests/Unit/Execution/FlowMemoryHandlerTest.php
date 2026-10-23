@@ -8,14 +8,14 @@ use Mockery;
 use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Process\Process;
 use Tests\Doubles\FakeMemorySampler;
-use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
-use Wtyd\GitHooks\Configuration\MemoryThreshold;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowMemoryHandler;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\Memory\MemorySampler;
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Configuration\MemoryBudgetConfiguration;
+use Wtyd\Alfil\Configuration\MemoryThreshold;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowMemoryHandler;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\Memory\MemorySampler;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Direct unit tests for FlowMemoryHandler. The handler talks to a
@@ -465,7 +465,7 @@ class FlowMemoryHandlerTest extends UnitTestCase
 
         $threshold = MemoryThreshold::fromArray(
             ['warn-above' => 1000, 'fail-above' => 2000],
-            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            new \Wtyd\Alfil\Configuration\ValidationResult(),
             'phpunit'
         );
         $job = $this->jobWithMemory('phpunit', null, $threshold);
@@ -498,7 +498,7 @@ class FlowMemoryHandlerTest extends UnitTestCase
 
         $threshold = MemoryThreshold::fromArray(
             ['warn-above' => 1000, 'fail-above' => 2000],
-            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            new \Wtyd\Alfil\Configuration\ValidationResult(),
             'phpunit'
         );
         $job = $this->jobWithMemory('phpunit', null, $threshold);
@@ -532,7 +532,7 @@ class FlowMemoryHandlerTest extends UnitTestCase
 
         $threshold = MemoryThreshold::fromArray(
             ['warn-above' => 1000, 'fail-above' => 2000],
-            new \Wtyd\GitHooks\Configuration\ValidationResult(),
+            new \Wtyd\Alfil\Configuration\ValidationResult(),
             'phpunit'
         );
         $job = $this->jobWithMemory('phpunit', null, $threshold);

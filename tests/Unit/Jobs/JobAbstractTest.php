@@ -5,24 +5,24 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Jobs\CommitMsgJob;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Jobs\JobAbstract;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Jobs\ParallelLintJob;
-use Wtyd\GitHooks\Jobs\PestJob;
-use Wtyd\GitHooks\Jobs\ParatestJob;
-use Wtyd\GitHooks\Jobs\PhpcbfJob;
-use Wtyd\GitHooks\Jobs\PhpcpdJob;
-use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Jobs\PhpmdJob;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-use Wtyd\GitHooks\Jobs\PhpunitJob;
-use Wtyd\GitHooks\Jobs\PsalmJob;
-use Wtyd\GitHooks\Jobs\RectorJob;
-use Wtyd\GitHooks\Jobs\ScriptJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Jobs\CommitMsgJob;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Jobs\ParallelLintJob;
+use Wtyd\Alfil\Jobs\PestJob;
+use Wtyd\Alfil\Jobs\ParatestJob;
+use Wtyd\Alfil\Jobs\PhpcbfJob;
+use Wtyd\Alfil\Jobs\PhpcpdJob;
+use Wtyd\Alfil\Jobs\PhpCsFixerJob;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Jobs\PhpmdJob;
+use Wtyd\Alfil\Jobs\PhpstanJob;
+use Wtyd\Alfil\Jobs\PhpunitJob;
+use Wtyd\Alfil\Jobs\PsalmJob;
+use Wtyd\Alfil\Jobs\RectorJob;
+use Wtyd\Alfil\Jobs\ScriptJob;
 
 /**
  * Direct coverage for JobAbstract logic that was only exercised indirectly.
@@ -198,7 +198,7 @@ class JobAbstractTest extends UnitTestCase
     public function get_cache_paths_defaults_to_empty_on_base_class()
     {
         // PhpcpdJob inherits JobAbstract::getCachePaths() unchanged.
-        $job = new \Wtyd\GitHooks\Jobs\PhpcpdJob(new JobConfiguration('cpd', 'phpcpd', ['paths' => ['./']]));
+        $job = new \Wtyd\Alfil\Jobs\PhpcpdJob(new JobConfiguration('cpd', 'phpcpd', ['paths' => ['./']]));
 
         $this->assertSame([], $job->getCachePaths());
     }
@@ -207,7 +207,7 @@ class JobAbstractTest extends UnitTestCase
     public function get_thread_capability_defaults_to_null_on_base_class()
     {
         // ScriptJob inherits JobAbstract::getThreadCapability() default (null).
-        $job = new \Wtyd\GitHooks\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executable-path' => 'echo']));
+        $job = new \Wtyd\Alfil\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executable-path' => 'echo']));
 
         $this->assertNull($job->getThreadCapability());
     }
@@ -215,7 +215,7 @@ class JobAbstractTest extends UnitTestCase
     /** @test */
     public function supports_structured_output_defaults_to_false_on_base_class()
     {
-        $job = new \Wtyd\GitHooks\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executable-path' => 'echo']));
+        $job = new \Wtyd\Alfil\Jobs\ScriptJob(new JobConfiguration('x', 'script', ['executable-path' => 'echo']));
 
         $this->assertFalse($job->supportsStructuredOutput());
         $this->assertFalse($job->applyStructuredOutputFormat());

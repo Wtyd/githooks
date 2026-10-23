@@ -6,8 +6,8 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
-use Wtyd\GitHooks\Configuration\FlowOnRule;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\FlowOnRule;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 /**
  * FEAT-2 · `on => [branch_pattern => attrs]` per flow.

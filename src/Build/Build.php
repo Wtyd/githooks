@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Build;
+namespace Wtyd\Alfil\Build;
 
 use Exception;
 

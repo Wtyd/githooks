@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\Deprecation;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Output\SarifResultFormatter;
+use Wtyd\Alfil\Configuration\Deprecation;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Output\SarifResultFormatter;
 
 class SarifResultFormatterTest extends UnitTestCase
 {

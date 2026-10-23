@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Utils;
+namespace Wtyd\Alfil\Utils;
 
-use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
+use Wtyd\Alfil\Utils\Exception\DetachedHeadException;
 
 /**
  * Resolve the current branch from the canonical cascade (FEAT-2):

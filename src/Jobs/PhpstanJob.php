@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
-use Wtyd\GitHooks\Execution\ThreadCapability;
-use Wtyd\GitHooks\Jobs\CacheResolver\PhpstanCacheResolver;
+use Wtyd\Alfil\Execution\ThreadCapability;
+use Wtyd\Alfil\Jobs\CacheResolver\PhpstanCacheResolver;
 
 class PhpstanJob extends JobAbstract
 {

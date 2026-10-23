@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Memory;
+namespace Wtyd\Alfil\Execution\Memory;
 
-use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
-use Wtyd\GitHooks\Execution\MemoryBudgetState;
+use Wtyd\Alfil\Configuration\MemoryBudgetConfiguration;
+use Wtyd\Alfil\Execution\MemoryBudgetState;
 
 /**
  * Aggregates memory samples across the flow and answers the two questions

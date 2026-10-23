@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\Alfil\Output\OutputHandler;
 
 /**
  * Base double with every OutputHandler hook implemented as a no-op.

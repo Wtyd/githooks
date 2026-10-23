@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Execution\Exception\InputFilesException;
-use Wtyd\GitHooks\Hooks\PatternMatcher;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Execution\Exception\InputFilesException;
+use Wtyd\Alfil\Hooks\PatternMatcher;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 
 /**
  * Resolve user-provided file lists (--files, --files-from, --exclude-pattern)

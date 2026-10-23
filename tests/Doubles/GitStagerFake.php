@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Utils\GitStagerInterface;
+use Wtyd\Alfil\Utils\GitStagerInterface;
 
 class GitStagerFake implements GitStagerInterface
 {

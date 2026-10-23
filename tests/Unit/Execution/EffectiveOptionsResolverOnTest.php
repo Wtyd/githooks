@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\FlowOnRule;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolver;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Utils\BranchResolution;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\FlowConfiguration;
+use Wtyd\Alfil\Configuration\FlowOnRule;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\EffectiveOptionsResolver;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Utils\BranchResolution;
 
 /**
  * FEAT-2 · Groups B + D — matching of branch-pattern rules and the resulting

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesDiagnosticFormat;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Output\Inspection\SystemInfo;
-use Wtyd\GitHooks\Output\Inspection\SystemInfoJsonFormatter;
-use Wtyd\GitHooks\Utils\CpuDetector;
+use Wtyd\Alfil\App\Commands\Concerns\EmitsStderr;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesDiagnosticFormat;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Output\Inspection\SystemInfo;
+use Wtyd\Alfil\Output\Inspection\SystemInfoJsonFormatter;
+use Wtyd\Alfil\Utils\CpuDetector;
 
 class SystemInfoCommand extends Command
 {

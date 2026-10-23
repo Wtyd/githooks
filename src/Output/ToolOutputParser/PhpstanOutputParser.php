@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\ToolOutputParser;
+namespace Wtyd\Alfil\Output\ToolOutputParser;
 
-use Wtyd\GitHooks\Output\CodeIssue;
-use Wtyd\GitHooks\Output\ToolOutputParser\Concerns\ExtractsJsonDocument;
+use Wtyd\Alfil\Output\CodeIssue;
+use Wtyd\Alfil\Output\ToolOutputParser\Concerns\ExtractsJsonDocument;
 
 /**
  * Parses PHPStan JSON output (--error-format=json).

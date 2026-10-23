@@ -6,13 +6,13 @@ namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\GitStagerFake;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Jobs\PhpcbfJob;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Jobs\PhpcbfJob;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Output\NullOutputHandler;
 
 class FlowExecutorRestageTest extends UnitTestCase
 {

@@ -6,8 +6,8 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
-use Wtyd\GitHooks\Configuration\JobRef;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\JobRef;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 /**
  * FEAT-1 · only-files / exclude-files declarables per flow entry.

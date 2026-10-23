@@ -6,21 +6,21 @@ namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Configuration\Exception\ConfigurationFileNotFoundException;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Execution\JobRunner;
-use Wtyd\GitHooks\Execution\JobRunRequest;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
-use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
-use Wtyd\GitHooks\Output\FlowResultRenderer;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\Exception\ConfigurationFileNotFoundException;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Execution\JobRunner;
+use Wtyd\Alfil\Execution\JobRunRequest;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Output\ConditionsHeaderEmitter;
+use Wtyd\Alfil\Output\ConfigWarningsEmitter;
+use Wtyd\Alfil\Output\FlowResultRenderer;
 
 /**
  * Unit tests for `JobRunner::prepare()`. The Runner is the pure-orchestration
@@ -174,8 +174,8 @@ class JobRunnerTest extends UnitTestCase
         $config = $this->configWithJobs(['phpcs_src' => $this->jobConfig('phpcs_src')]);
         $parser = $this->fakeParser(fn() => $config);
 
-        $inputFiles = new \Wtyd\GitHooks\Execution\InputFilesResolution(
-            \Wtyd\GitHooks\Execution\InputFilesResolution::SOURCE_CLI,
+        $inputFiles = new \Wtyd\Alfil\Execution\InputFilesResolution(
+            \Wtyd\Alfil\Execution\InputFilesResolution::SOURCE_CLI,
             null,
             ['src/Touched.php'],
             [],

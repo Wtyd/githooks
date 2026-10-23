@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Process;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Process\LinuxProcessTree;
-use Wtyd\GitHooks\Execution\Process\MacOsProcessTree;
-use Wtyd\GitHooks\Execution\Process\NullProcessTree;
-use Wtyd\GitHooks\Execution\Process\ProcessTreeFactory;
+use Wtyd\Alfil\Execution\Process\LinuxProcessTree;
+use Wtyd\Alfil\Execution\Process\MacOsProcessTree;
+use Wtyd\Alfil\Execution\Process\NullProcessTree;
+use Wtyd\Alfil\Execution\Process\ProcessTreeFactory;
 
 class ProcessTreeFactoryTest extends UnitTestCase
 {

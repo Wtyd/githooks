@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs\CacheResolver;
+namespace Wtyd\Alfil\Jobs\CacheResolver;
 
 /**
  * Static-best-effort cache path extractor for PHP config files (rector.php,

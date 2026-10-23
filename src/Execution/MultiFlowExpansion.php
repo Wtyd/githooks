@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
-use Wtyd\GitHooks\Configuration\JobRef;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\FlowDependencyGraph;
+use Wtyd\Alfil\Configuration\JobRef;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 /**
  * Pure helpers for spec §4.3 / REQ-003: meta-flow expansion + ordered dedup of

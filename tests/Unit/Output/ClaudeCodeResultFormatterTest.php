@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\MemoryBudgetState;
-use Wtyd\GitHooks\Execution\TimeBudgetState;
-use Wtyd\GitHooks\Output\ClaudeCodeResultFormatter;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\MemoryBudgetState;
+use Wtyd\Alfil\Execution\TimeBudgetState;
+use Wtyd\Alfil\Output\ClaudeCodeResultFormatter;
 
 class ClaudeCodeResultFormatterTest extends UnitTestCase
 {

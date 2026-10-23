@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Hooks;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\HookConfiguration;
-use Wtyd\GitHooks\Configuration\HookRef;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Hooks\HookEventStatus;
-use Wtyd\GitHooks\Hooks\HookStatusInspector;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\HookConfiguration;
+use Wtyd\Alfil\Configuration\HookRef;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Hooks\HookEventStatus;
+use Wtyd\Alfil\Hooks\HookStatusInspector;
 
 class HookStatusInspectorTest extends UnitTestCase
 {

@@ -3,7 +3,7 @@
 namespace Tests\Utils\TestCase;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Container\RegisterBindings;
+use Wtyd\Alfil\Container\RegisterBindings;
 
 class UnitTestCase extends TestCase
 {

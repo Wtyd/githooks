@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
 /**
  * DAG of `needs` relations among the job entries of a single flow (FEAT-3).

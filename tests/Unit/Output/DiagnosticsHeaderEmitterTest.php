@@ -6,9 +6,9 @@ namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Wtyd\GitHooks\Execution\Diagnostics;
-use Wtyd\GitHooks\Output\DiagnosticsHeaderEmitter;
-use Wtyd\GitHooks\Output\HeaderOptions;
+use Wtyd\Alfil\Execution\Diagnostics;
+use Wtyd\Alfil\Output\DiagnosticsHeaderEmitter;
+use Wtyd\Alfil\Output\HeaderOptions;
 
 class DiagnosticsHeaderEmitterTest extends UnitTestCase
 {

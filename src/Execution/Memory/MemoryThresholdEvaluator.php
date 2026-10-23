@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Memory;
+namespace Wtyd\Alfil\Execution\Memory;
 
-use Wtyd\GitHooks\Configuration\MemoryThreshold;
+use Wtyd\Alfil\Configuration\MemoryThreshold;
 
 /**
  * Stateless evaluator of the per-job memory threshold. Encapsulates the

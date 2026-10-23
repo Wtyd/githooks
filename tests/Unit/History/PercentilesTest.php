@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\History;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\History\Percentiles;
+use Wtyd\Alfil\History\Percentiles;
 
 /**
  * FEAT-5 · summary statistics. Covers nearest-rank percentiles, the flat

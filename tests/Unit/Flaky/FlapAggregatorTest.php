@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Flaky;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Flaky\FlapAggregator;
-use Wtyd\GitHooks\Flaky\FlapReport;
-use Wtyd\GitHooks\Flaky\JunitReport;
+use Wtyd\Alfil\Flaky\FlapAggregator;
+use Wtyd\Alfil\Flaky\FlapReport;
+use Wtyd\Alfil\Flaky\JunitReport;
 
 /**
  * Table A of tests/Unit/Flaky/factors.md, row by row. Each pass of the single

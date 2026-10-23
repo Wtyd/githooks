@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Hooks;
+namespace Wtyd\Alfil\Hooks;
 
-use Wtyd\GitHooks\Hooks as HooksConstants;
-use Wtyd\GitHooks\Utils\Platform;
+use Wtyd\Alfil\Hooks as HooksConstants;
+use Wtyd\Alfil\Utils\Platform;
 
 class HookInstaller
 {
@@ -184,7 +184,7 @@ class HookInstaller
     {
         $cwd = getcwd();
         chdir($this->rootPath);
-        shell_exec($command . ' ' . \Wtyd\GitHooks\Utils\Platform::stderrRedirect());
+        shell_exec($command . ' ' . \Wtyd\Alfil\Utils\Platform::stderrRedirect());
         if ($cwd !== false) {
             chdir($cwd);
         }

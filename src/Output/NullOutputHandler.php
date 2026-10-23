@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Output\Concerns\OutputHandlerWaitingNoOp;
+use Wtyd\Alfil\Output\Concerns\OutputHandlerWaitingNoOp;
 
 /**
  * Silent output handler for structured formats (JSON, JUnit).

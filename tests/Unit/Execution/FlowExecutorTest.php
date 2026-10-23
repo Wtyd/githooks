@@ -9,24 +9,24 @@ use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\GitStagerFake;
 use Tests\Doubles\InjectableFlowExecutor;
 use Tests\Doubles\OutputHandlerSpy;
-use Wtyd\GitHooks\Configuration\AllocatorStrategy;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\Admission\FifoAdmission;
-use Wtyd\GitHooks\Execution\Admission\GreedyAdmission;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\ThreadCapability;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Jobs\ParallelLintJob;
-use Wtyd\GitHooks\Jobs\ParatestJob;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-use Wtyd\GitHooks\Output\DashboardOutputHandler;
-use Wtyd\GitHooks\Output\NullOutputHandler;
-use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\Alfil\Configuration\AllocatorStrategy;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\Admission\FifoAdmission;
+use Wtyd\Alfil\Execution\Admission\GreedyAdmission;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\ThreadCapability;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Jobs\ParallelLintJob;
+use Wtyd\Alfil\Jobs\ParatestJob;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Jobs\PhpstanJob;
+use Wtyd\Alfil\Output\DashboardOutputHandler;
+use Wtyd\Alfil\Output\NullOutputHandler;
+use Wtyd\Alfil\Output\OutputHandler;
 
 /**
  * Tests targeting escaped mutants in FlowExecutor:
@@ -440,7 +440,7 @@ class FlowExecutorTest extends UnitTestCase
         $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildTimeBudgetState');
         $reflection->setAccessible(true);
 
-        $budget = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(10, 20);
+        $budget = new \Wtyd\Alfil\Configuration\TimeBudgetConfiguration(10, 20);
 
         // Factor coverage: 4 results of which 1 is skipped (in the middle).
         // Sum must be 1.0 + 2.0 + 4.0 = 7.0 (the skipped 100.0 is dropped via
@@ -452,7 +452,7 @@ class FlowExecutorTest extends UnitTestCase
         $r3 = $this->makeJobResult('skipped', 100.0, true);
         $r4 = $this->makeJobResult('d', 4.0, false);
 
-        /** @var \Wtyd\GitHooks\Execution\TimeBudgetState $state */
+        /** @var \Wtyd\Alfil\Execution\TimeBudgetState $state */
         $state = $reflection->invoke($executor, $budget, [$r1, $r2, $r3, $r4]);
         $this->assertNotNull($state);
         $this->assertEqualsWithDelta(7.0, $state->getTotalJobDuration(), 0.001);
@@ -469,7 +469,7 @@ class FlowExecutorTest extends UnitTestCase
         $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildTimeBudgetState');
         $reflection->setAccessible(true);
 
-        $budget = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(10, 20);
+        $budget = new \Wtyd\Alfil\Configuration\TimeBudgetConfiguration(10, 20);
 
         $r1 = $this->makeJobResult('a', 12.0, false);
 
@@ -490,7 +490,7 @@ class FlowExecutorTest extends UnitTestCase
         $reflection = new \ReflectionMethod(FlowExecutor::class, 'buildTimeBudgetState');
         $reflection->setAccessible(true);
 
-        $budget = new \Wtyd\GitHooks\Configuration\TimeBudgetConfiguration(10, 20);
+        $budget = new \Wtyd\Alfil\Configuration\TimeBudgetConfiguration(10, 20);
 
         $r1 = $this->makeJobResult('a', 25.0, false); // exceeds both warn and fail
 
@@ -512,12 +512,12 @@ class FlowExecutorTest extends UnitTestCase
         $this->assertNull($reflection->invoke($executor, null, []));
     }
 
-    private function makeJobResult(string $name, float $durationSeconds, bool $skipped): \Wtyd\GitHooks\Execution\JobResult
+    private function makeJobResult(string $name, float $durationSeconds, bool $skipped): \Wtyd\Alfil\Execution\JobResult
     {
         if ($skipped) {
-            return \Wtyd\GitHooks\Execution\JobResult::skipped($name, 'custom', 'skip', []);
+            return \Wtyd\Alfil\Execution\JobResult::skipped($name, 'custom', 'skip', []);
         }
-        return new \Wtyd\GitHooks\Execution\JobResult(
+        return new \Wtyd\Alfil\Execution\JobResult(
             $name,
             true,
             'output',
@@ -761,7 +761,7 @@ class FlowExecutorTest extends UnitTestCase
             '',                                                                       // executablePrefix
             [],                                                                       // reports
             null,                                                                     // timeBudget
-            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration($warnAbove, null), // memoryBudget
+            new \Wtyd\Alfil\Configuration\MemoryBudgetConfiguration($warnAbove, null), // memoryBudget
             'fifo',                                                                   // allocator
             false                                                                     // stats
         );
@@ -1397,7 +1397,7 @@ class FlowExecutorTest extends UnitTestCase
             new OptionsConfiguration(false, 1),
             null,
             [],
-            \Wtyd\GitHooks\Execution\ExecutionMode::FAST
+            \Wtyd\Alfil\Execution\ExecutionMode::FAST
         );
 
         $result = $executor->execute($plan);
@@ -1417,7 +1417,7 @@ class FlowExecutorTest extends UnitTestCase
             new OptionsConfiguration(false, 1),
             null,
             [],
-            \Wtyd\GitHooks\Execution\ExecutionMode::FAST_BRANCH
+            \Wtyd\Alfil\Execution\ExecutionMode::FAST_BRANCH
         );
 
         $result = $executor->execute($plan);
@@ -1450,7 +1450,7 @@ class FlowExecutorTest extends UnitTestCase
             new OptionsConfiguration(),
             null,
             [],
-            \Wtyd\GitHooks\Execution\ExecutionMode::FAST
+            \Wtyd\Alfil\Execution\ExecutionMode::FAST
         );
 
         $result = $executor->execute($plan, true);
@@ -1533,7 +1533,7 @@ class FlowExecutorTest extends UnitTestCase
             '',                                                                       // executablePrefix
             [],                                                                       // reports
             null,                                                                     // timeBudget
-            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(500, null),    // memoryBudget
+            new \Wtyd\Alfil\Configuration\MemoryBudgetConfiguration(500, null),    // memoryBudget
             'fifo',                                                                   // allocator
             true                                                                      // stats — forces parallel + sampler
         );
@@ -1628,7 +1628,7 @@ class FlowExecutorTest extends UnitTestCase
             '',
             [],
             null,
-            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration($warnAbove, null),
+            new \Wtyd\Alfil\Configuration\MemoryBudgetConfiguration($warnAbove, null),
             'fifo',
             false
         );
@@ -1688,7 +1688,7 @@ class FlowExecutorTest extends UnitTestCase
     public function shouldSampleMemory_observable_effect(
         string $caseLabel,
         bool $stats,
-        ?\Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration $memoryBudget,
+        ?\Wtyd\Alfil\Configuration\MemoryBudgetConfiguration $memoryBudget,
         ?int $jobMemory,
         bool $expectMemoryStats,
         bool $expectMemoryBudgetState,
@@ -1757,13 +1757,13 @@ class FlowExecutorTest extends UnitTestCase
     }
 
     /**
-     * @return array<string, array{0: string, 1: bool, 2: ?\Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration, 3: ?int, 4: bool, 5: bool, 6: ?int}>
+     * @return array<string, array{0: string, 1: bool, 2: ?\Wtyd\Alfil\Configuration\MemoryBudgetConfiguration, 3: ?int, 4: bool, 5: bool, 6: ?int}>
      */
     public function shouldSampleMemoryScenarios(): array
     {
         return [
             'stats_only'    => ['stats_only',  true,  null,                                                                          null, true,  false, null],
-            'budget_only'   => ['budget_only', false, new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(500, null), null, false, true,  null],
+            'budget_only'   => ['budget_only', false, new \Wtyd\Alfil\Configuration\MemoryBudgetConfiguration(500, null), null, false, true,  null],
             'jobmem_only'   => ['jobmem_only', false, null,                                                                          100,  false, false, 100],
             'none'          => ['none',        false, null,                                                                          null, false, false, null],
         ];
@@ -1865,7 +1865,7 @@ class FlowExecutorTest extends UnitTestCase
             '',
             [],
             null,
-            new \Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration(100, null),    // budget tight enough to bottleneck
+            new \Wtyd\Alfil\Configuration\MemoryBudgetConfiguration(100, null),    // budget tight enough to bottleneck
             $allocator,                                                               // fifo | greedy
             false
         );

@@ -1,20 +1,20 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesDiagnosticFormat;
-use Wtyd\GitHooks\Configuration\ConfigurationChecker;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\HookConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
-use Wtyd\GitHooks\Output\Inspection\ConfigCheckJsonFormatter;
-use Wtyd\GitHooks\Output\Inspection\ConfigCheckResult;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\Alfil\App\Commands\Concerns\EmitsStderr;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesDiagnosticFormat;
+use Wtyd\Alfil\Configuration\ConfigurationChecker;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\HookConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Output\Concerns\RelativizesFilePath;
+use Wtyd\Alfil\Output\Inspection\ConfigCheckJsonFormatter;
+use Wtyd\Alfil\Output\Inspection\ConfigCheckResult;
+use Wtyd\Alfil\Utils\Printer;
 
 class CheckConfigurationFileCommand extends Command
 {
@@ -204,7 +204,7 @@ class CheckConfigurationFileCommand extends Command
     }
 
     /**
-     * @param array<string, \Wtyd\GitHooks\Configuration\JobConfiguration> $jobs
+     * @param array<string, \Wtyd\Alfil\Configuration\JobConfiguration> $jobs
      * @param array<string, string[]> $rejectedJobs jobs the parser refused to build
      * @return array<int, array<string, mixed>>
      */
@@ -453,8 +453,8 @@ class CheckConfigurationFileCommand extends Command
     }
 
     /**
-     * @param \Wtyd\GitHooks\Jobs\JobAbstract $jobInstance
-     * @param \Wtyd\GitHooks\Configuration\JobConfiguration $jobConfig
+     * @param \Wtyd\Alfil\Jobs\JobAbstract $jobInstance
+     * @param \Wtyd\Alfil\Configuration\JobConfiguration $jobConfig
      */
     private function validateJob($jobInstance, $jobConfig): string
     {

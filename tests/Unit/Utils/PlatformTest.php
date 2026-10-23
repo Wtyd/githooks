@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Utils;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Utils\Platform;
+use Wtyd\Alfil\Utils\Platform;
 
 class PlatformTest extends UnitTestCase
 {

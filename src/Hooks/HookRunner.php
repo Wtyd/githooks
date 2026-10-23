@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Hooks;
+namespace Wtyd\Alfil\Hooks;
 
 use LogicException;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\HookRef;
-use Wtyd\GitHooks\Execution\Concerns\EmitsRunnerStderr;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\HookRef;
+use Wtyd\Alfil\Execution\Concerns\EmitsRunnerStderr;
+use Wtyd\Alfil\Execution\ExecutionContext;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 
 /**
  * Resolves a hook event to its flows/jobs and executes them in order.

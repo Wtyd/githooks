@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\TimeBudgetConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Output\NullOutputHandler;
 
 /**
  * End-to-end coverage of the time-budget feature against the real SUT:

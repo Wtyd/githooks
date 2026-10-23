@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\System\History;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\History\RunHistoryReader;
-use Wtyd\GitHooks\History\RunHistoryStore;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\History\RunHistoryReader;
+use Wtyd\Alfil\History\RunHistoryStore;
+use Wtyd\Alfil\Utils\Storage;
 
 /**
  * FEAT-5 · reading and metric extraction over the persisted history. Fixtures

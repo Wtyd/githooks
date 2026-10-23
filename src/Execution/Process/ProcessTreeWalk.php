@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Process;
+namespace Wtyd\Alfil\Execution\Process;
 
 /**
  * The one BFS over a process tree, shared by every ProcessTree

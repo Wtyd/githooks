@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Configuration\ToolDetector;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\ToolDetector;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 /**
  * Test double for ToolDetector that returns a pre-configured list of

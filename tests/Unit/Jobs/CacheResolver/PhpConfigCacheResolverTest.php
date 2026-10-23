@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs\CacheResolver;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Jobs\CacheResolver\PhpConfigCacheResolver;
+use Wtyd\Alfil\Jobs\CacheResolver\PhpConfigCacheResolver;
 
 /**
  * Covers the static-best-effort resolver shared by RectorJob and PhpCsFixerJob.

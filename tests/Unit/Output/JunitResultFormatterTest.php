@@ -6,9 +6,9 @@ namespace Tests\Unit\Output;
 
 use DOMDocument;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Output\JunitResultFormatter;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Output\JunitResultFormatter;
 
 class JunitResultFormatterTest extends UnitTestCase
 {

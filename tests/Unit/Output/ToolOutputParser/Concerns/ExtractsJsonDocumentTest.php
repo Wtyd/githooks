@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\ToolOutputParser\Concerns;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\ToolOutputParser\Concerns\ExtractsJsonDocument;
+use Wtyd\Alfil\Output\ToolOutputParser\Concerns\ExtractsJsonDocument;
 
 /**
  * Cover the ExtractsJsonDocument trait directly via a host class so the

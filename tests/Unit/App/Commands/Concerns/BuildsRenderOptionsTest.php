@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\App\Commands\Concerns;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\RenderOptions;
+use Wtyd\Alfil\Output\RenderOptions;
 
 /**
  * `--stats-sort` is an enumerated flag and has to behave like the rest of them

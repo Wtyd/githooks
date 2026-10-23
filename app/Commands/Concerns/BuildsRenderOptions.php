@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
-use Wtyd\GitHooks\Output\OutputFormats;
-use Wtyd\GitHooks\Output\RenderOptions;
+use Wtyd\Alfil\Output\OutputFormats;
+use Wtyd\Alfil\Output\RenderOptions;
 
 /**
  * Builds the {@see RenderOptions} DTO from the parsed CLI flags. Shared by

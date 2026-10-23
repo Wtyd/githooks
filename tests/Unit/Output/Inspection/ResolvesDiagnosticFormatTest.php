@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\Inspection;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesDiagnosticFormat;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesDiagnosticFormat;
 
 /**
  * Factor table A (see factors.md): the only factor is the `--format` value.

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\History;
+namespace Wtyd\Alfil\History;
 
 /**
  * Summary statistics over a series of numeric values (FEAT-5): min, p50, p95,

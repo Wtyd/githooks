@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Process;
+namespace Wtyd\Alfil\Execution\Process;
 
-use Wtyd\GitHooks\Execution\Concerns\ReadsProcFiles;
+use Wtyd\Alfil\Execution\Concerns\ReadsProcFiles;
 
 /**
  * Linux process tree backed by /proc/<PID>/task/<PID>/children (Linux 3.5+),

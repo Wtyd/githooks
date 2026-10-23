@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
-use Wtyd\GitHooks\App\Commands\Concerns\BuildsRenderOptions;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesAllocatorFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesInputFiles;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesProcessesFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesStatsFlag;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesTimeBudgetFlags;
-use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
-use Wtyd\GitHooks\Execution\FlowsRunner;
-use Wtyd\GitHooks\Execution\FlowsRunRequest;
-use Wtyd\GitHooks\Execution\InputFilesResolver;
+use Wtyd\Alfil\App\Commands\Concerns\AssertsExecutionModeFlagsExclusive;
+use Wtyd\Alfil\App\Commands\Concerns\BuildsRenderOptions;
+use Wtyd\Alfil\App\Commands\Concerns\EmitsStderr;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesAllocatorFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesInputFiles;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesMemoryBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesProcessesFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesStatsFlag;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesTimeBudgetFlags;
+use Wtyd\Alfil\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
+use Wtyd\Alfil\Execution\FlowsRunner;
+use Wtyd\Alfil\Execution\FlowsRunRequest;
+use Wtyd\Alfil\Execution\InputFilesResolver;
 
 /**
  * Thin CLI adapter for `githooks flows <name1> <name2> ...`. Phase 2c reduces
@@ -110,7 +110,7 @@ class FlowsCommand extends Command
 
         try {
             $request = $this->buildRunRequest();
-        } catch (GitHooksExceptionInterface $e) {
+        } catch (AlfilExceptionInterface $e) {
             $this->emitStderr($e->getMessage());
             return 1;
         }

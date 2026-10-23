@@ -6,9 +6,9 @@ namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Support\AssertWarningsTrait;
-use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
-use Wtyd\GitHooks\Configuration\JobRef;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\FlowDependencyGraph;
+use Wtyd\Alfil\Configuration\JobRef;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 /**
  * FEAT-3 · Group B — DAG validation (cycles, missing target, topo sort, descendants).

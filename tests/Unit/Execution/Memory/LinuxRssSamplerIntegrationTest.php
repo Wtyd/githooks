@@ -6,7 +6,7 @@ namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Process\Process;
-use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
+use Wtyd\Alfil\Execution\Memory\LinuxRssSampler;
 
 /**
  * Real /proc walk against a real subprocess tree. Mirrors the role of

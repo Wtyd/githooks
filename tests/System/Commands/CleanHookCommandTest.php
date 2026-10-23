@@ -4,8 +4,8 @@ namespace Tests\System\Commands;
 
 use Tests\Doubles\HookInstallerFake;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Hooks\HookInstaller;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Hooks\HookInstaller;
+use Wtyd\Alfil\Utils\Storage;
 
 class CleanHookCommandTest extends SystemTestCase
 {

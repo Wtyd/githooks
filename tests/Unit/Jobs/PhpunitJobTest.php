@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Jobs\PhpunitJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Jobs\PhpunitJob;
 
 class PhpunitJobTest extends UnitTestCase
 {

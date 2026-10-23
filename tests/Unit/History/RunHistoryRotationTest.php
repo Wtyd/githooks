@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\History;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\History\RunHistoryStore;
+use Wtyd\Alfil\History\RunHistoryStore;
 
 /**
  * Retention window of the run history, driven directly rather than through

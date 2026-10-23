@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 /**
  * Pre-resolved inputs for {@see FlowResultRenderer::applyFormat()} and

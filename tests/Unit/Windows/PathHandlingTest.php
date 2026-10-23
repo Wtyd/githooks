@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Windows;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-use Wtyd\GitHooks\Jobs\PhpcsJob;
-use Wtyd\GitHooks\Jobs\PhpCsFixerJob;
-use Wtyd\GitHooks\Jobs\RectorJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Jobs\PhpstanJob;
+use Wtyd\Alfil\Jobs\PhpcsJob;
+use Wtyd\Alfil\Jobs\PhpCsFixerJob;
+use Wtyd\Alfil\Jobs\RectorJob;
 
 /**
  * Cross-platform path handling tests.

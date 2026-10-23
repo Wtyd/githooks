@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
-use Wtyd\GitHooks\Configuration\TimeBudgetConfiguration;
+use Wtyd\Alfil\Configuration\TimeBudgetConfiguration;
 
 /**
  * Reads `--warn-after`, `--fail-after` and `--no-time-budget` from the

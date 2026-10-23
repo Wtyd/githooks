@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Output\Concerns\OutputHandlerWaitingNoOp;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\Alfil\Output\Concerns\OutputHandlerWaitingNoOp;
+use Wtyd\Alfil\Utils\Printer;
 
 /**
  * Default text output: success lines print in real-time, error details

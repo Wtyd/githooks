@@ -6,9 +6,9 @@ namespace Tests\Unit\Utils;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
-use Wtyd\GitHooks\Utils\BranchResolution;
-use Wtyd\GitHooks\Utils\BranchResolver;
-use Wtyd\GitHooks\Utils\Exception\DetachedHeadException;
+use Wtyd\Alfil\Utils\BranchResolution;
+use Wtyd\Alfil\Utils\BranchResolver;
+use Wtyd\Alfil\Utils\Exception\DetachedHeadException;
 
 /**
  * FEAT-2 · Group C — branch detection cascade.

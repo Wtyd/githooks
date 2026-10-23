@@ -7,12 +7,12 @@ namespace Tests\Unit\Execution;
 use Tests\Doubles\FakeProcessPool;
 use Tests\Doubles\InjectableFlowExecutor;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowMemoryHandler;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowMemoryHandler;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Output\NullOutputHandler;
 
 /**
  * BUG-7 tick contract of the parallel loop: the memory handler must be

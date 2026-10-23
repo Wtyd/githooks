@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration\Exception;
+namespace Wtyd\Alfil\Configuration\Exception;
 
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
 
-class ConfigurationFileNotFoundException extends \RuntimeException implements GitHooksExceptionInterface
+class ConfigurationFileNotFoundException extends \RuntimeException implements AlfilExceptionInterface
 {
     public function __construct(string $message = '')
     {

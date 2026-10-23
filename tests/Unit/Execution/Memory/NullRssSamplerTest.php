@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Memory\NullRssSampler;
+use Wtyd\Alfil\Execution\Memory\NullRssSampler;
 
 class NullRssSamplerTest extends UnitTestCase
 {

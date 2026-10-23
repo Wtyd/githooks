@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
 /**
  * Reads `--repeat` and `--flap-threshold` (FEAT-25). Both are counts, so

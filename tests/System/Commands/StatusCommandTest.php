@@ -6,7 +6,7 @@ namespace Tests\System\Commands;
 
 use Tests\Doubles\HookStatusInspectorFake;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Hooks\HookStatusInspector;
+use Wtyd\Alfil\Hooks\HookStatusInspector;
 
 class StatusCommandTest extends SystemTestCase
 {

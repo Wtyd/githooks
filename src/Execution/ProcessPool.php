@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 use Symfony\Component\Process\Process;
-use Wtyd\GitHooks\Execution\Admission\AdmissionContext;
-use Wtyd\GitHooks\Execution\Admission\AdmissionStrategy;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\Process\ProcessTerminator;
-use Wtyd\GitHooks\Execution\Process\ProcessTreeFactory;
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Execution\Admission\AdmissionContext;
+use Wtyd\Alfil\Execution\Admission\AdmissionStrategy;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\Process\ProcessTerminator;
+use Wtyd\Alfil\Execution\Process\ProcessTreeFactory;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Manages a pool of concurrent processes. Without an AdmissionStrategy the

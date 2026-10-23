@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Exception\InputFilesException;
-use Wtyd\GitHooks\Execution\InputFilesResolution;
-use Wtyd\GitHooks\Execution\InputFilesResolver;
-use Wtyd\GitHooks\Hooks\PatternMatcher;
-use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\Alfil\Execution\Exception\InputFilesException;
+use Wtyd\Alfil\Execution\InputFilesResolution;
+use Wtyd\Alfil\Execution\InputFilesResolver;
+use Wtyd\Alfil\Hooks\PatternMatcher;
+use Wtyd\Alfil\Utils\FileUtils;
 
 /**
  * Spec coverage: spec-design-files-flag.md REQ-001..036, AC-001..086.
@@ -377,7 +377,7 @@ class InputFilesResolverTest extends UnitTestCase
         // be absolute (digit start), "C:/" must be (alpha start). With
         // the negation, the comparison flips.
         $reflection = new \ReflectionMethod(
-            \Wtyd\GitHooks\Execution\InputFilesResolver::class,
+            \Wtyd\Alfil\Execution\InputFilesResolver::class,
             'isAbsolute'
         );
         $reflection->setAccessible(true);

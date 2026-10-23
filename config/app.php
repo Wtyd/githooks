@@ -54,7 +54,7 @@ return [
     */
 
     'providers' => [
-        Wtyd\GitHooks\App\Providers\AppServiceProvider::class,
+        Wtyd\Alfil\App\Providers\AppServiceProvider::class,
         Intonate\TinkerZero\TinkerZeroServiceProvider::class,
     ],
 

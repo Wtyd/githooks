@@ -7,7 +7,7 @@ use Tests\Utils\ConfigurationFileBuilder;
 use Tests\Utils\PhpFileBuilder;
 use Tests\Utils\TestCase\SystemTestCase;
 use Tests\Utils\Traits\FileSystemTrait;
-use Wtyd\GitHooks\Build\Build;
+use Wtyd\Alfil\Build\Build;
 
 class ReleaseTestCase extends TestCase
 {

@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Tests\Integration\Execution;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\FlowDependencyGraph;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\JobRef;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\Alfil\Configuration\FlowDependencyGraph;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\JobRef;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Output\NullOutputHandler;
 
 /**
  * BUG-19 · admission-skip must propagate through `needs`.
@@ -282,7 +282,7 @@ class FlowAdmissionPropagationTest extends TestCase
     }
 
     /**
-     * @param \Wtyd\GitHooks\Jobs\JobAbstract[] $jobs
+     * @param \Wtyd\Alfil\Jobs\JobAbstract[] $jobs
      * @param array<string, array{type: string, reason: string, paths: string[], accelerable?: bool}> $skippedJobs
      */
     private function plan(
@@ -306,8 +306,8 @@ class FlowAdmissionPropagationTest extends TestCase
     }
 
     /**
-     * @param \Wtyd\GitHooks\Execution\JobResult[] $jobResults
-     * @return array<string, \Wtyd\GitHooks\Execution\JobResult>
+     * @param \Wtyd\Alfil\Execution\JobResult[] $jobResults
+     * @return array<string, \Wtyd\Alfil\Execution\JobResult>
      */
     private function indexResults(array $jobResults): array
     {

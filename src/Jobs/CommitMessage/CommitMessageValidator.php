@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs\CommitMessage;
+namespace Wtyd\Alfil\Jobs\CommitMessage;
 
 /**
  * Pure validator for a commit-message subject (FEAT-16). Receives an already

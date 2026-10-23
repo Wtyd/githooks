@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
 
 /**
  * Result of {@see FlowsRunner::prepare()}. Multi-flow variant of

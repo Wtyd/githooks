@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Configuration;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
 
 class OptionsConfigurationTest extends UnitTestCase
 {
@@ -419,8 +419,8 @@ class OptionsConfigurationTest extends UnitTestCase
     /** @test */
     public function it_parses_time_budget_with_warn_and_fail_after(): void
     {
-        $result = new \Wtyd\GitHooks\Configuration\ValidationResult();
-        $options = \Wtyd\GitHooks\Configuration\OptionsConfiguration::fromArray([
+        $result = new \Wtyd\Alfil\Configuration\ValidationResult();
+        $options = \Wtyd\Alfil\Configuration\OptionsConfiguration::fromArray([
             'time-budget' => ['warn-after' => 120, 'fail-after' => 300],
         ], $result);
 
@@ -434,8 +434,8 @@ class OptionsConfigurationTest extends UnitTestCase
     /** @test */
     public function it_propagates_time_budget_validation_errors(): void
     {
-        $result = new \Wtyd\GitHooks\Configuration\ValidationResult();
-        \Wtyd\GitHooks\Configuration\OptionsConfiguration::fromArray([
+        $result = new \Wtyd\Alfil\Configuration\ValidationResult();
+        \Wtyd\Alfil\Configuration\OptionsConfiguration::fromArray([
             'time-budget' => ['warn-after' => 300, 'fail-after' => 120],
         ], $result);
 
@@ -445,8 +445,8 @@ class OptionsConfigurationTest extends UnitTestCase
     /** @test */
     public function time_budget_is_not_an_unknown_key(): void
     {
-        $result = new \Wtyd\GitHooks\Configuration\ValidationResult();
-        \Wtyd\GitHooks\Configuration\OptionsConfiguration::fromArray([
+        $result = new \Wtyd\Alfil\Configuration\ValidationResult();
+        \Wtyd\Alfil\Configuration\OptionsConfiguration::fromArray([
             'time-budget' => ['warn-after' => 60],
         ], $result);
 

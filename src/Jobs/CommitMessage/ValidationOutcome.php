@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs\CommitMessage;
+namespace Wtyd\Alfil\Jobs\CommitMessage;
 
 /**
  * Immutable result of validating a commit message subject (FEAT-16).

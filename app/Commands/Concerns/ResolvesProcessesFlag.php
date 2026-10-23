@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
 
 /**
  * Reads `--processes` from the Laravel-Zero command and normalises it for the

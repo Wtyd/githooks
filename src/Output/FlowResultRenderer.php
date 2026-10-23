@@ -2,23 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 use Illuminate\Container\Container;
 use InvalidArgumentException;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\OutputStyle as SymfonyOutputStyle;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\MemoryBudgetState;
-use Wtyd\GitHooks\Output\CI\CIEnvironment;
-use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
-use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\MemoryBudgetState;
+use Wtyd\Alfil\Output\CI\CIEnvironment;
+use Wtyd\Alfil\Output\CI\GitHubActionsDecorator;
+use Wtyd\Alfil\Output\CI\GitLabCIDecorator;
+use Wtyd\Alfil\Utils\Printer;
 
 /**
  * Render the FlowResult of a `flow`, `flows` or `job` run according to the

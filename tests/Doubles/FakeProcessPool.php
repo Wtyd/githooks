@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Doubles;
 
 use RuntimeException;
-use Wtyd\GitHooks\Execution\ProcessPool;
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Execution\ProcessPool;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Test double for `ProcessPool` that runs no real processes. The production

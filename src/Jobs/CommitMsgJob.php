@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
-use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessageValidator;
-use Wtyd\GitHooks\Jobs\CommitMessage\MessageFileResolver;
-use Wtyd\GitHooks\Jobs\CommitMessage\ValidationOutcome;
-use Wtyd\GitHooks\Utils\IsoTimestamp;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\ExecutionContext;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Jobs\CommitMessage\CommitMessagePresets;
+use Wtyd\Alfil\Jobs\CommitMessage\CommitMessageValidator;
+use Wtyd\Alfil\Jobs\CommitMessage\MessageFileResolver;
+use Wtyd\Alfil\Jobs\CommitMessage\ValidationOutcome;
+use Wtyd\Alfil\Utils\IsoTimestamp;
 
 /**
  * Native `commit-msg` job (FEAT-16): validates the commit-message subject

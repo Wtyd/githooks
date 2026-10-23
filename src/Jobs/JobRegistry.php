@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
 use InvalidArgumentException;
 use ReflectionClass;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\JobConfiguration;
 
 class JobRegistry
 {

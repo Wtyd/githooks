@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Flaky;
+namespace Wtyd\Alfil\Flaky;
 
 /**
  * Result of `flow --repeat`: every test seen in a declared junit file with its

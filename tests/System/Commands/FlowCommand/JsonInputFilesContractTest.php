@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\System\Commands\FlowCommand;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Utils\FileUtils;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Utils\FileUtils;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 
 /**
  * JSON v2 contract for the `inputFiles` block. Spec §4.5, AC-040..042, AC-085.

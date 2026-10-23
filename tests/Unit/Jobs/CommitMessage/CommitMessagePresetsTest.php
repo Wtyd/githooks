@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs\CommitMessage;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
+use Wtyd\Alfil\Jobs\CommitMessage\CommitMessagePresets;
 
 /**
  * Preset catalogue + per-key override resolution (REQ-012, FEAT-16).

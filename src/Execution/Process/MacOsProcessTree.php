@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Process;
+namespace Wtyd\Alfil\Execution\Process;
 
 /**
  * macOS process tree read through `ps`. Darwin has no /proc, so the tree

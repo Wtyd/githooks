@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Configuration\KeySuggestion;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Configuration\KeySuggestion;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Jobs\CommitMessage\CommitMessagePresets;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 /** @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Validation of type, execution mode, arguments, and common keys */
 class JobConfiguration

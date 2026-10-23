@@ -6,11 +6,11 @@ namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\Memory\MemoryStats;
-use Wtyd\GitHooks\Output\RenderOptions;
-use Wtyd\GitHooks\Output\StatsTableRenderer;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\Memory\MemoryStats;
+use Wtyd\Alfil\Output\RenderOptions;
+use Wtyd\Alfil\Output\StatsTableRenderer;
 
 class StatsTableRendererTest extends UnitTestCase
 {

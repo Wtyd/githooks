@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\ToolOutputParser;
+namespace Wtyd\Alfil\Output\ToolOutputParser;
 
-use Wtyd\GitHooks\Output\CodeIssue;
+use Wtyd\Alfil\Output\CodeIssue;
 
 interface ToolOutputParserInterface
 {

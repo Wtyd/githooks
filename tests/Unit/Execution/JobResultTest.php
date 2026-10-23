@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\InputFilesPerJob;
-use Wtyd\GitHooks\Execution\JobResult;
+use Wtyd\Alfil\Execution\InputFilesPerJob;
+use Wtyd\Alfil\Execution\JobResult;
 
 class JobResultTest extends UnitTestCase
 {

@@ -8,12 +8,12 @@ use Illuminate\Container\Container;
 use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Output\OutputInterface;
 use Tests\Concerns\CapturesStdout;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Output\DashboardOutputHandler;
-use Wtyd\GitHooks\Output\FlowResultRenderer;
-use Wtyd\GitHooks\Output\RenderOptions;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Output\DashboardOutputHandler;
+use Wtyd\Alfil\Output\FlowResultRenderer;
+use Wtyd\Alfil\Output\RenderOptions;
 
 /**
  * BUG-27: the parallel dashboard repeated every completed job line once per

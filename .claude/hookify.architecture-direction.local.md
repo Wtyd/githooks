@@ -8,7 +8,7 @@ conditions:
     pattern: src/.*\.php$
   - field: new_text
     operator: regex_match
-    pattern: use\s+Wtyd\\GitHooks\\App\\
+    pattern: use\s+Wtyd\\Alfil\\App\\
 action: block
 ---
 

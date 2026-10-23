@@ -1,22 +1,22 @@
 <?php
 
-namespace Wtyd\GitHooks\Container;
+namespace Wtyd\Alfil\Container;
 
 use Illuminate\Container\Container;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Hooks\HookInstaller;
-use Wtyd\GitHooks\Hooks\HookRunner;
-use Wtyd\GitHooks\Hooks\HookStatusInspector;
-use Wtyd\GitHooks\Jobs\JobRegistry;
-use Wtyd\GitHooks\Utils\FileUtils;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
-use Wtyd\GitHooks\Utils\GitStager;
-use Wtyd\GitHooks\Utils\GitStagerInterface;
-use Wtyd\GitHooks\Output\OutputHandler;
-use Wtyd\GitHooks\Output\TextOutputHandler;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Hooks\HookInstaller;
+use Wtyd\Alfil\Hooks\HookRunner;
+use Wtyd\Alfil\Hooks\HookStatusInspector;
+use Wtyd\Alfil\Jobs\JobRegistry;
+use Wtyd\Alfil\Utils\FileUtils;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Utils\GitStager;
+use Wtyd\Alfil\Utils\GitStagerInterface;
+use Wtyd\Alfil\Output\OutputHandler;
+use Wtyd\Alfil\Output\TextOutputHandler;
+use Wtyd\Alfil\Utils\Printer;
 
 /** @SuppressWarnings(PHPMD.CouplingBetweenObjects) DI container binds all services by definition */
 class RegisterBindings

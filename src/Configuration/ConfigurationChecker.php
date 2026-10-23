@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Pure validation logic extracted from CheckConfigurationFileCommand (Phase 3b).

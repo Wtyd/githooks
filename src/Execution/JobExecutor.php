@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 use Symfony\Component\Process\Process;
-use Wtyd\GitHooks\Jobs\JobAbstract;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\Alfil\Jobs\JobAbstract;
+use Wtyd\Alfil\Utils\Printer;
 
 class JobExecutor
 {

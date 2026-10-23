@@ -8,7 +8,7 @@ use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Wtyd\GitHooks\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
+use Wtyd\Alfil\App\Commands\Concerns\ValidatesUnknownOptionsBeforeDashDash;
 
 /**
  * @SuppressWarnings(PHPMD)

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Process;
+namespace Wtyd\Alfil\Execution\Process;
 
 /**
  * Selects the process tree for the current platform: Linux (/proc), macOS

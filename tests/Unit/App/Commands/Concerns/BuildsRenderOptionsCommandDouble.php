@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\App\Commands\Concerns;
 
-use Wtyd\GitHooks\App\Commands\Concerns\BuildsRenderOptions;
-use Wtyd\GitHooks\Output\RenderOptions;
+use Wtyd\Alfil\App\Commands\Concerns\BuildsRenderOptions;
+use Wtyd\Alfil\Output\RenderOptions;
 
 /**
  * @SuppressWarnings(PHPMD)

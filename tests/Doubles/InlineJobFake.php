@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Jobs\CustomJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Jobs\CustomJob;
 
 /**
  * Inline job double (FEAT-16): runs in-process, so its pool entry must carry

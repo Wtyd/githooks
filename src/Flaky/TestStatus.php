@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Flaky;
+namespace Wtyd\Alfil\Flaky;
 
 /**
  * Outcome of one testcase in one junit file, already normalised for flap

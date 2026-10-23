@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Hooks;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Hooks\PatternMatcher;
+use Wtyd\Alfil\Hooks\PatternMatcher;
 
 /**
  * Direct unit tests for PatternMatcher extracted from HookRunner.

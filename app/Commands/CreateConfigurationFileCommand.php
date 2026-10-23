@@ -1,12 +1,12 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\Configuration\ConfigurationGenerator;
-use Wtyd\GitHooks\Configuration\ToolDetector;
-use Wtyd\GitHooks\Utils\Printer;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Configuration\ConfigurationGenerator;
+use Wtyd\Alfil\Configuration\ToolDetector;
+use Wtyd\Alfil\Utils\Printer;
+use Wtyd\Alfil\Utils\Storage;
 
 class CreateConfigurationFileCommand extends Command
 {

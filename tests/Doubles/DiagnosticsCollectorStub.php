@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Output\Diagnostics\DiagnosticsCollector;
-use Wtyd\GitHooks\Utils\CpuDetector;
-use Wtyd\GitHooks\Utils\MemoryDetector;
+use Wtyd\Alfil\Output\Diagnostics\DiagnosticsCollector;
+use Wtyd\Alfil\Utils\CpuDetector;
+use Wtyd\Alfil\Utils\MemoryDetector;
 
 /**
  * Deterministic {@see DiagnosticsCollector}: fixed version/platform/ci/load/clock

@@ -6,8 +6,8 @@ namespace Tests\Unit\Output\CI;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Concerns\CapturesStdout;
-use Wtyd\GitHooks\Output\CI\GitHubActionsDecorator;
-use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\Alfil\Output\CI\GitHubActionsDecorator;
+use Wtyd\Alfil\Output\OutputHandler;
 
 class GitHubActionsDecoratorTest extends UnitTestCase
 {

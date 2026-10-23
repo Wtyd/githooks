@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Doubles;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Hooks\HookStatusInspector;
+use Wtyd\Alfil\Hooks\HookStatusInspector;
 
 /**
  * Test double for HookStatusInspector that returns a configurable

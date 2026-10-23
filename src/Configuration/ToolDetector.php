@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Jobs\JobRegistry;
+use Wtyd\Alfil\Jobs\JobRegistry;
 
 /**
  * Detects QA tool binaries in vendor/bin/ to suggest job configuration.

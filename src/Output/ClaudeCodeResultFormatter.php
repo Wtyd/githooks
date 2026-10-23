@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Execution\JobResult;
-use Wtyd\GitHooks\Execution\MemoryBudgetState;
-use Wtyd\GitHooks\Execution\TimeBudgetState;
-use Wtyd\GitHooks\Output\Concerns\StripsAnsi;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Execution\JobResult;
+use Wtyd\Alfil\Execution\MemoryBudgetState;
+use Wtyd\Alfil\Execution\TimeBudgetState;
+use Wtyd\Alfil\Output\Concerns\StripsAnsi;
 
 /**
  * Renders a {@see FlowResult} as the Claude Code stop-hook protocol (FEAT-15).

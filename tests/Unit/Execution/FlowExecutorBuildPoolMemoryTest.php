@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\ProcessPool;
-use Wtyd\GitHooks\Jobs\CustomJob;
-use Wtyd\GitHooks\Output\NullOutputHandler;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\MemoryBudgetConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\ProcessPool;
+use Wtyd\Alfil\Jobs\CustomJob;
+use Wtyd\Alfil\Output\NullOutputHandler;
 
 /**
  * `FlowExecutor::buildProcessPool` wires 2D bin-packing admission only when the
@@ -72,12 +72,12 @@ class FlowExecutorBuildPoolMemoryTest extends UnitTestCase
     }
 
     /**
-     * @param \Wtyd\GitHooks\Jobs\JobAbstract[] $jobs
+     * @param \Wtyd\Alfil\Jobs\JobAbstract[] $jobs
      */
     private function buildPool(array $jobs, OptionsConfiguration $options): ProcessPool
     {
         $executor = new class (new NullOutputHandler()) extends FlowExecutor {
-            /** @param \Wtyd\GitHooks\Jobs\JobAbstract[] $jobs */
+            /** @param \Wtyd\Alfil\Jobs\JobAbstract[] $jobs */
             public function buildPoolForTest(array $jobs, OptionsConfiguration $options): ProcessPool
             {
                 return $this->buildProcessPool(2, 2, $jobs, $options);

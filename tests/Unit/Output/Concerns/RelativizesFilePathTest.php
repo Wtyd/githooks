@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\Concerns;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
+use Wtyd\Alfil\Output\Concerns\RelativizesFilePath;
 
 /**
  * Direct coverage for the RelativizesFilePath trait via a host class that

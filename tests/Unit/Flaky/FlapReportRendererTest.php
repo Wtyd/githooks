@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Flaky;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Flaky\FlapReport;
-use Wtyd\GitHooks\Flaky\FlapReportRenderer;
-use Wtyd\GitHooks\Flaky\JunitReport;
+use Wtyd\Alfil\Flaky\FlapReport;
+use Wtyd\Alfil\Flaky\FlapReportRenderer;
+use Wtyd\Alfil\Flaky\JunitReport;
 
 class FlapReportRendererTest extends UnitTestCase
 {

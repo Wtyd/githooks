@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\Inspection;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Hooks\HookEventStatus;
-use Wtyd\GitHooks\Hooks\HookStatusReport;
-use Wtyd\GitHooks\Output\Inspection\StatusJsonFormatter;
+use Wtyd\Alfil\Hooks\HookEventStatus;
+use Wtyd\Alfil\Hooks\HookStatusReport;
+use Wtyd\Alfil\Output\Inspection\StatusJsonFormatter;
 
 class StatusJsonFormatterTest extends UnitTestCase
 {

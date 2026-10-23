@@ -6,8 +6,8 @@ namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Concerns\CapturesStdout;
-use Wtyd\GitHooks\Output\StreamingTextOutputHandler;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\Alfil\Output\StreamingTextOutputHandler;
+use Wtyd\Alfil\Utils\Printer;
 
 class StreamingTextOutputHandlerTest extends UnitTestCase
 {

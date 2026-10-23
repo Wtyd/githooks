@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\ExecutionContext;
-use Wtyd\GitHooks\Jobs\CommitMsgJob;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\ExecutionContext;
+use Wtyd\Alfil\Jobs\CommitMsgJob;
 
 /**
  * Orchestration of {@see CommitMsgJob::runInline()} (FEAT-16): outcome → JobResult
@@ -43,7 +43,7 @@ class CommitMsgJobTest extends UnitTestCase
         return ExecutionContext::default()->withCommitMessageFile($path);
     }
 
-    private function runWithContext(CommitMsgJob $job, ExecutionContext $context): \Wtyd\GitHooks\Execution\JobResult
+    private function runWithContext(CommitMsgJob $job, ExecutionContext $context): \Wtyd\Alfil\Execution\JobResult
     {
         $job->setExecutionContext($context);
         return $job->runInline();

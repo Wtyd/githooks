@@ -60,9 +60,9 @@ return [
         Illuminate\Console\Scheduling\ScheduleRunCommand::class,
         Illuminate\Console\Scheduling\ScheduleFinishCommand::class,
         Illuminate\Foundation\Console\VendorPublishCommand::class,
-        Wtyd\GitHooks\App\Commands\PreBuildCommand::class,
-        Wtyd\GitHooks\App\Commands\Zero\BuildCommand::class,
-        Wtyd\GitHooks\App\Commands\Zero\InstallCommand::class,
+        Wtyd\Alfil\App\Commands\PreBuildCommand::class,
+        Wtyd\Alfil\App\Commands\Zero\BuildCommand::class,
+        Wtyd\Alfil\App\Commands\Zero\InstallCommand::class,
     ],
 
     /*

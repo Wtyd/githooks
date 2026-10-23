@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Execution\Process\ProcessTree;
+use Wtyd\Alfil\Execution\Process\ProcessTree;
 
 /**
  * Scripted `ProcessTree` for ProcessTerminator's decision table (BUG-35):

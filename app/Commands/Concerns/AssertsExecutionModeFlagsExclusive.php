@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
-use Wtyd\GitHooks\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\ExecutionMode;
 
 /**
  * Shared mutual-exclusion check for the four set-defining flags:

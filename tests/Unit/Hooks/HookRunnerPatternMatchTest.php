@@ -6,16 +6,16 @@ namespace Tests\Unit\Hooks;
 
 use Tests\Utils\TestCase\UnitTestCase;
 use Tests\Doubles\FileUtilsFake;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\HookConfiguration;
-use Wtyd\GitHooks\Configuration\HookRef;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPreparer;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Hooks\HookRunner;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\HookConfiguration;
+use Wtyd\Alfil\Configuration\HookRef;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPreparer;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Hooks\HookRunner;
 
 /**
  * Tests targeting escaped mutants in HookRunner's pattern matching logic:
@@ -375,7 +375,7 @@ class HookRunnerPatternMatchTest extends UnitTestCase
     /** @test */
     public function exitCode_returns_1_when_any_failure()
     {
-        $failedJobResult = new \Wtyd\GitHooks\Execution\JobResult('job', false, '', '0s');
+        $failedJobResult = new \Wtyd\Alfil\Execution\JobResult('job', false, '', '0s');
         $results = [
             new FlowResult('a', [], '0s'),
             new FlowResult('b', [$failedJobResult], '0s'),

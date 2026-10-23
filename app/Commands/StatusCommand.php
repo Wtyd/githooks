@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\App\Commands\Concerns\EmitsStderr;
-use Wtyd\GitHooks\App\Commands\Concerns\ResolvesDiagnosticFormat;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
-use Wtyd\GitHooks\Hooks\HookEventStatus;
-use Wtyd\GitHooks\Hooks\HookStatusInspector;
-use Wtyd\GitHooks\Hooks\HookStatusReport;
-use Wtyd\GitHooks\Output\Inspection\StatusJsonFormatter;
+use Wtyd\Alfil\App\Commands\Concerns\EmitsStderr;
+use Wtyd\Alfil\App\Commands\Concerns\ResolvesDiagnosticFormat;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Hooks\HookEventStatus;
+use Wtyd\Alfil\Hooks\HookStatusInspector;
+use Wtyd\Alfil\Hooks\HookStatusReport;
+use Wtyd\Alfil\Output\Inspection\StatusJsonFormatter;
 
 class StatusCommand extends Command
 {

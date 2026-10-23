@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Jobs\CommitMessage;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessagePresets;
-use Wtyd\GitHooks\Jobs\CommitMessage\CommitMessageValidator;
+use Wtyd\Alfil\Jobs\CommitMessage\CommitMessagePresets;
+use Wtyd\Alfil\Jobs\CommitMessage\CommitMessageValidator;
 
 /**
  * Factor table A (FEAT-16): one case per rule × both senses, boundary values

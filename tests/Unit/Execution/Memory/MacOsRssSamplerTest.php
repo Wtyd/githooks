@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
+use Wtyd\Alfil\Execution\Memory\MacOsRssSampler;
 
 /**
  * Parser-only tests for MacOsRssSampler. They drive the sampler through

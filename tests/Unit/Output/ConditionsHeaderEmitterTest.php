@@ -8,12 +8,12 @@ use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\StreamOutput;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Execution\InputFilesResolution;
-use Wtyd\GitHooks\Output\ConditionsHeaderEmitter;
-use Wtyd\GitHooks\Output\HeaderOptions;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\EffectiveOptionsResolution;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Execution\InputFilesResolution;
+use Wtyd\Alfil\Output\ConditionsHeaderEmitter;
+use Wtyd\Alfil\Output\HeaderOptions;
 
 /**
  * Restored unit coverage for the "Settings:" conditions header, ported 1:1 from

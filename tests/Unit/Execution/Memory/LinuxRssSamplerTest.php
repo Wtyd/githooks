@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
-use Wtyd\GitHooks\Execution\Process\LinuxProcessTree;
+use Wtyd\Alfil\Execution\Memory\LinuxRssSampler;
+use Wtyd\Alfil\Execution\Process\LinuxProcessTree;
 
 /**
  * Parser-only tests for LinuxRssSampler. They drive the sampler through

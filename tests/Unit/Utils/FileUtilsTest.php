@@ -4,7 +4,7 @@ namespace Tests\Unit\Utils;
 
 use Illuminate\Support\Facades\Storage;
 use Tests\Zero\ZeroTestCase;
-use Wtyd\GitHooks\Utils\FileUtils;
+use Wtyd\Alfil\Utils\FileUtils;
 
 class FileUtilsTest extends ZeroTestCase
 {
@@ -380,7 +380,7 @@ class FileUtilsTest extends ZeroTestCase
             file_put_contents($dir . '/lower.php', '<?php');
             file_put_contents($dir . '/ignored.txt', 'x');
 
-            $utils = new \Wtyd\GitHooks\Utils\FileUtils();
+            $utils = new \Wtyd\Alfil\Utils\FileUtils();
             $found = $utils->expandDirectory($dir, ['PHP']); // uppercase filter
 
             $this->assertCount(1, $found, 'lower.php matches the PHP filter (case-insensitive)');
@@ -406,7 +406,7 @@ class FileUtilsTest extends ZeroTestCase
             file_put_contents($dir . '/UPPER.PHP', '<?php');
             file_put_contents($dir . '/ignored.txt', 'x');
 
-            $utils = new \Wtyd\GitHooks\Utils\FileUtils();
+            $utils = new \Wtyd\Alfil\Utils\FileUtils();
             $found = $utils->expandDirectory($dir, ['php']); // lowercase filter
 
             $this->assertCount(1, $found, 'UPPER.PHP matches the php filter (case-insensitive)');

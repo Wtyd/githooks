@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs\CommitMessage;
+namespace Wtyd\Alfil\Jobs\CommitMessage;
 
 /**
  * Resolves the path of the commit-message file from the available sources, in

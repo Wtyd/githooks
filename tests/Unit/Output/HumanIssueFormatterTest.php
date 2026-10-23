@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Output;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\HumanIssueFormatter;
-use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
+use Wtyd\Alfil\Output\HumanIssueFormatter;
+use Wtyd\Alfil\Output\ToolOutputParser\ToolOutputParserRegistry;
 
 /**
  * BUG-18: covers the decision table of `HumanIssueFormatter::format()`.

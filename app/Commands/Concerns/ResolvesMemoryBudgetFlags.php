@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands\Concerns;
+namespace Wtyd\Alfil\App\Commands\Concerns;
 
-use Wtyd\GitHooks\Configuration\MemoryBudgetConfiguration;
+use Wtyd\Alfil\Configuration\MemoryBudgetConfiguration;
 
 /**
  * Reads `--memory-warn-above`, `--memory-fail-above` and `--no-memory-budget`

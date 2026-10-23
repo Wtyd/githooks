@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Integration;
 
-use Wtyd\GitHooks\Utils\FileUtils;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Utils\FileUtils;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 use Tests\Utils\TestCase\SystemTestCase;
 use Tests\Utils\Traits\GitSandboxTrait;
 

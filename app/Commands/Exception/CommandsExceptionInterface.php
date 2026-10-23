@@ -1,6 +1,6 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Commands\Exception;
+namespace Wtyd\Alfil\App\Commands\Exception;
 
 interface CommandsExceptionInterface
 {

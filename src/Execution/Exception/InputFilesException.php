@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Exception;
+namespace Wtyd\Alfil\Execution\Exception;
 
 use RuntimeException;
-use Wtyd\GitHooks\Exception\GitHooksExceptionInterface;
+use Wtyd\Alfil\Exception\AlfilExceptionInterface;
 
 /**
  * Thrown by InputFilesResolver when the user-provided file list cannot be resolved.
  * The error code identifies the failure family so the caller can produce the exact
  * message the spec mandates (see §9.5 of spec-design-files-flag.md).
  */
-class InputFilesException extends RuntimeException implements GitHooksExceptionInterface
+class InputFilesException extends RuntimeException implements AlfilExceptionInterface
 {
     public const MUTUALLY_EXCLUSIVE          = 'mutually-exclusive';
     public const FILES_FROM_MISSING          = 'files-from-missing';

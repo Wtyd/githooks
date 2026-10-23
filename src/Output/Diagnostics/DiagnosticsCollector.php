@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Diagnostics;
+namespace Wtyd\Alfil\Output\Diagnostics;
 
 use Jean85\PrettyVersions;
 use Throwable;
-use Wtyd\GitHooks\Execution\Diagnostics;
-use Wtyd\GitHooks\Output\CI\CIEnvironment;
-use Wtyd\GitHooks\Utils\CpuDetector;
-use Wtyd\GitHooks\Utils\IsoTimestamp;
-use Wtyd\GitHooks\Utils\MemoryDetector;
+use Wtyd\Alfil\Execution\Diagnostics;
+use Wtyd\Alfil\Output\CI\CIEnvironment;
+use Wtyd\Alfil\Utils\CpuDetector;
+use Wtyd\Alfil\Utils\IsoTimestamp;
+use Wtyd\Alfil\Utils\MemoryDetector;
 
 /**
  * Gathers the runner snapshot for the diagnostics block (FEAT-14) into an

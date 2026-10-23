@@ -1,31 +1,31 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Method Wtyd\\GitHooks\\Container\\RegisterBindings\:\:binds\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Wtyd\\Alfil\\Container\\RegisterBindings\:\:binds\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Container/RegisterBindings.php
 
 		-
-			message: '#^Method Wtyd\\GitHooks\\Container\\RegisterBindings\:\:singletons\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Wtyd\\Alfil\\Container\\RegisterBindings\:\:singletons\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Container/RegisterBindings.php
 
 		-
-			message: '#^Method Wtyd\\GitHooks\\Utils\\FileUtils\:\:getModifiedFiles\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Wtyd\\Alfil\\Utils\\FileUtils\:\:getModifiedFiles\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Utils/FileUtils.php
 
 		-
-			message: '#^Method Wtyd\\GitHooks\\Utils\\FileUtilsInterface\:\:getModifiedFiles\(\) return type has no value type specified in iterable type array\.$#'
+			message: '#^Method Wtyd\\Alfil\\Utils\\FileUtilsInterface\:\:getModifiedFiles\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Utils/FileUtilsInterface.php
 
 		-
-			message: '#^Method Wtyd\\GitHooks\\Utils\\Storage\:\:delete\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
+			message: '#^Method Wtyd\\Alfil\\Utils\\Storage\:\:delete\(\) has parameter \$paths with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
 			count: 1
 			path: src/Utils/Storage.php

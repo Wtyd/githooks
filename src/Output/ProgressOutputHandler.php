@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Output\Concerns\OutputHandlerWaitingNoOp;
+use Wtyd\Alfil\Output\Concerns\OutputHandlerWaitingNoOp;
 
 /**
  * Progress output on stderr for structured formats (json, junit, codeclimate, sarif).

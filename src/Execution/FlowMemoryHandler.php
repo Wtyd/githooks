@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Configuration\MemoryThreshold;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\Memory\MemoryEvaluator;
-use Wtyd\GitHooks\Execution\Memory\MemorySample;
-use Wtyd\GitHooks\Execution\Memory\MemorySampler;
-use Wtyd\GitHooks\Execution\Memory\MemorySamplerFactory;
-use Wtyd\GitHooks\Execution\Memory\MemoryThresholdEvaluator;
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Configuration\MemoryThreshold;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\Memory\MemoryEvaluator;
+use Wtyd\Alfil\Execution\Memory\MemorySample;
+use Wtyd\Alfil\Execution\Memory\MemorySampler;
+use Wtyd\Alfil\Execution\Memory\MemorySamplerFactory;
+use Wtyd\Alfil\Execution\Memory\MemoryThresholdEvaluator;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Wraps the memory-budget runtime concerns for a single flow execution:

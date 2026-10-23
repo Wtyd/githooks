@@ -6,7 +6,7 @@ namespace Tests\System\Commands;
 
 use Tests\Doubles\FileUtilsFake;
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Utils\FileUtilsInterface;
+use Wtyd\Alfil\Utils\FileUtilsInterface;
 
 class JobCommandTest extends SystemTestCase
 {

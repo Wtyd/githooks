@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Flaky;
+namespace Wtyd\Alfil\Flaky;
 
 /**
  * Renders a {@see FlapReport} as the text table `flow --repeat` prints, or as

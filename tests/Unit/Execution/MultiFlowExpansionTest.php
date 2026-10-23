@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationResult;
-use Wtyd\GitHooks\Configuration\FlowConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\MultiFlowExpansion;
+use Wtyd\Alfil\Configuration\ConfigurationResult;
+use Wtyd\Alfil\Configuration\FlowConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\MultiFlowExpansion;
 
 /**
  * Unit coverage for the pure expansion / merge helpers (spec §4.3 +
@@ -276,9 +276,9 @@ class MultiFlowExpansionTest extends UnitTestCase
     // ------------------------------------------------------------------
 
     /**
-     * @param \Wtyd\GitHooks\Configuration\JobRef[] $refs
+     * @param \Wtyd\Alfil\Configuration\JobRef[] $refs
      */
-    private function findRef(array $refs, string $target): ?\Wtyd\GitHooks\Configuration\JobRef
+    private function findRef(array $refs, string $target): ?\Wtyd\Alfil\Configuration\JobRef
     {
         foreach ($refs as $ref) {
             if ($ref->getTarget() === $target) {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Admission;
+namespace Wtyd\Alfil\Execution\Admission;
 
 /**
  * Strict declaration-order admission. The queue head is the only candidate

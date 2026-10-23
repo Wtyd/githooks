@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\History;
+namespace Wtyd\Alfil\History;
 
 use DateTime;
 use DateTimeImmutable;
 use Exception;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Output\JsonResultFormatter;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Output\JsonResultFormatter;
+use Wtyd\Alfil\Utils\Storage;
 
 /**
  * Persists the JSON v2 payload of a run under `.githooks/history/` and keeps a

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Tests\System\History;
 
 use Tests\Utils\TestCase\SystemTestCase;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\History\RunHistoryStore;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\History\RunHistoryStore;
+use Wtyd\Alfil\Utils\Storage;
 
 /**
  * FEAT-5 · persistence and FIFO rotation. The store only honours the `enabled`

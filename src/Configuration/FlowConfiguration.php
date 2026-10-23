@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Execution\ExecutionMode;
-use Wtyd\GitHooks\Hooks;
+use Wtyd\Alfil\Execution\ExecutionMode;
+use Wtyd\Alfil\Hooks;
 
 /**
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Models both normal flows and meta-flows

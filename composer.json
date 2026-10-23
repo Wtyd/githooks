@@ -54,9 +54,10 @@
     },
     "autoload": {
         "psr-4": {
-            "Wtyd\\GitHooks\\App\\": "app/",
-            "Wtyd\\GitHooks\\": "src/"
-        }
+            "Wtyd\\Alfil\\App\\": "app/",
+            "Wtyd\\Alfil\\": "src/"
+        },
+        "classmap": ["compat/"]
     },
     "autoload-dev": {
         "psr-4": {

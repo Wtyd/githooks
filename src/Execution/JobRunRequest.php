@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
 /**
  * Input DTO for {@see JobRunner::prepare()} and {@see JobRunner::run()}. Built

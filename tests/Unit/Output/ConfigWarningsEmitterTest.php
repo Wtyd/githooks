@@ -8,12 +8,12 @@ use Tests\Utils\TestCase\UnitTestCase;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Output\ConfigWarningsEmitter;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Output\ConfigWarningsEmitter;
 
 /**
  * Unit tests for the {@see ConfigWarningsEmitter} class extracted from the
- * legacy {@see \Wtyd\GitHooks\App\Commands\Concerns\EmitsConfigWarnings} trait.
+ * legacy {@see \Wtyd\Alfil\App\Commands\Concerns\EmitsConfigWarnings} trait.
  *
  * Coverage targets:
  *  - emits a normal warning to stderr (via getErrorStyle) when output is a SymfonyStyle.

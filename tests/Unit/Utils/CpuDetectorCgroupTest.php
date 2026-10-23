@@ -272,7 +272,7 @@ class CpuDetectorCgroupTest extends UnitTestCase
     public function divide_quota_rejects_non_positive_inputs_directly(int $quota, int $period, ?int $expected): void
     {
         $detector = new UnixCpuDetectorStub([]);
-        $reflection = new \ReflectionMethod(\Wtyd\GitHooks\Utils\CpuDetector::class, 'divideQuota');
+        $reflection = new \ReflectionMethod(\Wtyd\Alfil\Utils\CpuDetector::class, 'divideQuota');
         $reflection->setAccessible(true);
 
         $this->assertSame($expected, $reflection->invoke($detector, $quota, $period));

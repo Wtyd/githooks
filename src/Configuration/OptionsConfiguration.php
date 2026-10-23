@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Configuration;
+namespace Wtyd\Alfil\Configuration;
 
-use Wtyd\GitHooks\Configuration\KeySuggestion;
-use Wtyd\GitHooks\Output\OutputFormats;
+use Wtyd\Alfil\Configuration\KeySuggestion;
+use Wtyd\Alfil\Output\OutputFormats;
 
 /**
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) Value object that validates each option key

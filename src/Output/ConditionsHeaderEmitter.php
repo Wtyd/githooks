@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Wtyd\GitHooks\Execution\EffectiveOptionsResolution;
-use Wtyd\GitHooks\Execution\InputFilesResolution;
+use Wtyd\Alfil\Execution\EffectiveOptionsResolution;
+use Wtyd\Alfil\Execution\InputFilesResolution;
 
 /**
  * Emit the cross-cutting "conditions header" that shows the effective options

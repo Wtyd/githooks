@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Inspection;
+namespace Wtyd\Alfil\Output\Inspection;
 
 /**
  * Serialise a {@see ConfigCheckResult} as the `conf:check --format=json`

@@ -7,11 +7,11 @@ namespace Tests\Unit\Execution;
 use LogicException;
 use Mockery;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Execution\ThreadBudgetAllocator;
-use Wtyd\GitHooks\Execution\ThreadBudgetPlan;
-use Wtyd\GitHooks\Execution\ThreadCapability;
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Execution\ThreadBudgetAllocator;
+use Wtyd\Alfil\Execution\ThreadBudgetPlan;
+use Wtyd\Alfil\Execution\ThreadCapability;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 class ThreadBudgetAllocatorTest extends UnitTestCase
 {

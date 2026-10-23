@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output;
+namespace Wtyd\Alfil\Output;
 
-use Wtyd\GitHooks\Configuration\Deprecation;
-use Wtyd\GitHooks\Configuration\ValidationResult;
-use Wtyd\GitHooks\Execution\FlowResult;
-use Wtyd\GitHooks\Output\Concerns\RelativizesFilePath;
-use Wtyd\GitHooks\Output\ToolOutputParser\ToolOutputParserRegistry;
+use Wtyd\Alfil\Configuration\Deprecation;
+use Wtyd\Alfil\Configuration\ValidationResult;
+use Wtyd\Alfil\Execution\FlowResult;
+use Wtyd\Alfil\Output\Concerns\RelativizesFilePath;
+use Wtyd\Alfil\Output\ToolOutputParser\ToolOutputParserRegistry;
 
 /**
  * Produces SARIF 2.1.0 JSON format for GitHub Code Scanning.

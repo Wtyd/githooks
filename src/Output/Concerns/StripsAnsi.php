@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Concerns;
+namespace Wtyd\Alfil\Output\Concerns;
 
 /**
  * Strips ANSI escape sequences (colour codes, cursor moves, OSC sequences) and

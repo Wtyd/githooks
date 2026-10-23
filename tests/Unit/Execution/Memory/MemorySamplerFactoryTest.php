@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Unit\Execution\Memory;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Execution\Memory\LinuxRssSampler;
-use Wtyd\GitHooks\Execution\Memory\MacOsRssSampler;
-use Wtyd\GitHooks\Execution\Memory\MemorySamplerFactory;
-use Wtyd\GitHooks\Execution\Memory\NullRssSampler;
+use Wtyd\Alfil\Execution\Memory\LinuxRssSampler;
+use Wtyd\Alfil\Execution\Memory\MacOsRssSampler;
+use Wtyd\Alfil\Execution\Memory\MemorySamplerFactory;
+use Wtyd\Alfil\Execution\Memory\NullRssSampler;
 
 class MemorySamplerFactoryTest extends UnitTestCase
 {

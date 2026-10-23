@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Unit\Output\Inspection;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\Inspection\ConfigCheckJsonFormatter;
-use Wtyd\GitHooks\Output\Inspection\ConfigCheckResult;
+use Wtyd\Alfil\Output\Inspection\ConfigCheckJsonFormatter;
+use Wtyd\Alfil\Output\Inspection\ConfigCheckResult;
 
 class ConfigCheckJsonFormatterTest extends UnitTestCase
 {

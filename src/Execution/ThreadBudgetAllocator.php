@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution;
+namespace Wtyd\Alfil\Execution;
 
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Distributes a total CPU budget across jobs, respecting each tool's

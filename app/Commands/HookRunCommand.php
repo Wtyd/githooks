@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\Hooks\HookRunner;
+use Wtyd\Alfil\Hooks\HookRunner;
 
 /**
  * Thin CLI adapter for `githooks hook:run <event>`. Phase 3 reduces handle()

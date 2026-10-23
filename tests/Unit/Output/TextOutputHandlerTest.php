@@ -7,8 +7,8 @@ namespace Tests\Unit\Output;
 use Mockery;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Output\TextOutputHandler;
-use Wtyd\GitHooks\Utils\Printer;
+use Wtyd\Alfil\Output\TextOutputHandler;
+use Wtyd\Alfil\Utils\Printer;
 
 class TextOutputHandlerTest extends UnitTestCase
 {

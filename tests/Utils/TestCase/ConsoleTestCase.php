@@ -8,8 +8,8 @@ use Tests\Zero\{
     ZeroTestCase,
     PendingCommand
 };
-use Wtyd\GitHooks\Utils\GitStagerInterface;
-use Wtyd\GitHooks\Output\ProgressOutputHandler;
+use Wtyd\Alfil\Utils\GitStagerInterface;
+use Wtyd\Alfil\Output\ProgressOutputHandler;
 
 abstract class ConsoleTestCase extends ZeroTestCase
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\Diagnostics;
+namespace Wtyd\Alfil\Output\Diagnostics;
 
-use Wtyd\GitHooks\Execution\Diagnostics;
+use Wtyd\Alfil\Execution\Diagnostics;
 
 /**
  * Renders a {@see Diagnostics} snapshot in two shapes (FEAT-14):

@@ -13,14 +13,14 @@ use Tests\Doubles\EmittingOutputHandler;
 use Tests\Doubles\NoOpOutputHandler;
 use Tests\Doubles\StreamingMarkerOutputHandler;
 use Tests\Doubles\ThrowsOnJobStartOutputHandler;
-use Wtyd\GitHooks\Configuration\JobConfiguration;
-use Wtyd\GitHooks\Configuration\OptionsConfiguration;
-use Wtyd\GitHooks\Execution\FlowExecutor;
-use Wtyd\GitHooks\Execution\FlowPlan;
-use Wtyd\GitHooks\Jobs\PhpstanJob;
-use Wtyd\GitHooks\Output\CI\GitLabCIDecorator;
-use Wtyd\GitHooks\Output\DashboardOutputHandler;
-use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\Alfil\Configuration\JobConfiguration;
+use Wtyd\Alfil\Configuration\OptionsConfiguration;
+use Wtyd\Alfil\Execution\FlowExecutor;
+use Wtyd\Alfil\Execution\FlowPlan;
+use Wtyd\Alfil\Jobs\PhpstanJob;
+use Wtyd\Alfil\Output\CI\GitLabCIDecorator;
+use Wtyd\Alfil\Output\DashboardOutputHandler;
+use Wtyd\Alfil\Output\OutputHandler;
 
 /**
  * The decorator buffers each job's body and emits the collapsible section

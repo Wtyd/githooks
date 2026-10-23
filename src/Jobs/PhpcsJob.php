@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Jobs;
+namespace Wtyd\Alfil\Jobs;
 
-use Wtyd\GitHooks\Execution\ThreadCapability;
+use Wtyd\Alfil\Execution\ThreadCapability;
 
 class PhpcsJob extends JobAbstract
 {

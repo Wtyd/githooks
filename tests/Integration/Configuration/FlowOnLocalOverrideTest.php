@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Integration\Configuration;
 
 use PHPUnit\Framework\TestCase;
-use Wtyd\GitHooks\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\ConfigurationParser;
 
 /**
  * FEAT-2 · Group E — override of `on` via githooks.local.php.
@@ -206,7 +206,7 @@ PHP;
         file_put_contents($this->fixturesPath . '/githooks.local.php', $contents);
     }
 
-    /** @return \Wtyd\GitHooks\Configuration\FlowOnRule[]|null */
+    /** @return \Wtyd\Alfil\Configuration\FlowOnRule[]|null */
     private function parseFlowOn(string $flowName): ?array
     {
         $parser = new ConfigurationParser($this->fixturesPath);

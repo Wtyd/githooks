@@ -1,12 +1,12 @@
 <?php
 
-namespace Wtyd\GitHooks\App\Commands;
+namespace Wtyd\Alfil\App\Commands;
 
 use LaravelZero\Framework\Commands\Command;
-use Wtyd\GitHooks\Hooks;
-use Wtyd\GitHooks\Hooks\HookInstaller;
-use Wtyd\GitHooks\Utils\Printer;
-use Wtyd\GitHooks\Utils\Storage;
+use Wtyd\Alfil\Hooks;
+use Wtyd\Alfil\Hooks\HookInstaller;
+use Wtyd\Alfil\Utils\Printer;
+use Wtyd\Alfil\Utils\Storage;
 
 class CleanHookCommand extends Command
 {

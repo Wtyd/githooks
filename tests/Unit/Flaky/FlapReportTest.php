@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Flaky;
 
 use Tests\Utils\TestCase\UnitTestCase;
-use Wtyd\GitHooks\Flaky\FlapReport;
+use Wtyd\Alfil\Flaky\FlapReport;
 
 /**
  * Exit policy of table A (tests/Unit/Flaky/factors.md): the classes that fail

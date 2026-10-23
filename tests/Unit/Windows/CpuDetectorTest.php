@@ -9,7 +9,7 @@ use Tests\Doubles\UnixCpuDetectorStub;
 use Tests\Doubles\WindowsCpuDetectorNoExecStub;
 use Tests\Doubles\WindowsCpuDetectorScriptedExecStub;
 use Tests\Doubles\WindowsCpuDetectorStub;
-use Wtyd\GitHooks\Utils\CpuDetector;
+use Wtyd\Alfil\Utils\CpuDetector;
 
 /**
  * Tests CPU detection logic including Windows paths.

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Execution\Admission;
+namespace Wtyd\Alfil\Execution\Admission;
 
-use Wtyd\GitHooks\Jobs\JobAbstract;
+use Wtyd\Alfil\Jobs\JobAbstract;
 
 /**
  * Snapshot of live resources passed to AdmissionStrategy::pickNext().

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Doubles;
 
-use Wtyd\GitHooks\Execution\Memory\MemorySampler;
+use Wtyd\Alfil\Execution\Memory\MemorySampler;
 
 /**
  * Test double for MemorySampler: returns a configurable per-job RSS map

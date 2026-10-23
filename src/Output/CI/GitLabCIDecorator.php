@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Wtyd\GitHooks\Output\CI;
+namespace Wtyd\Alfil\Output\CI;
 
 use Closure;
-use Wtyd\GitHooks\Output\OutputHandler;
+use Wtyd\Alfil\Output\OutputHandler;
 
 /**
  * GitLab CI decorator.
