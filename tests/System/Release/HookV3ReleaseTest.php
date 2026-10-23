@@ -47,6 +47,10 @@ class HookV3ReleaseTest extends ReleaseTestCase
         $this->assertStringContainsString('installed', $this->getActualOutput());
         $this->assertDirectoryExists('.githooks');
         $this->assertFileExists('.githooks/pre-commit');
+        // 4.0: the generated script drives the alfil binary (default hooks.command).
+        $script = (string) file_get_contents('.githooks/pre-commit');
+        $this->assertStringContainsString('php vendor/bin/alfil hook:run', $script);
+        $this->assertStringNotContainsString('vendor/bin/githooks', $script);
     }
 
     /**
