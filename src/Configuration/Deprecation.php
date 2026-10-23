@@ -18,6 +18,15 @@ final class Deprecation
     /** The configuration file was found under its pre-4.0 name (githooks.php). */
     public const KIND_CONFIG_FILE_RENAME = 'config-file-rename';
 
+    /** An environment variable was read under its pre-4.0 name (GITHOOKS_*). */
+    public const KIND_ENV_VAR_RENAME = 'env-var-rename';
+
+    /** The branch came from GITHOOKS_BRANCH instead of ALFIL_BRANCH. */
+    public static function forLegacyBranchEnvVar(): self
+    {
+        return new self('', 'GITHOOKS_BRANCH', 'ALFIL_BRANCH', '5.0', self::KIND_ENV_VAR_RENAME);
+    }
+
     private string $job;
 
     private string $oldKey;

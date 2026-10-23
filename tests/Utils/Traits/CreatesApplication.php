@@ -37,19 +37,19 @@ trait CreatesApplication
     private static function assertNotInsideRecursivePhpunit(): void
     {
         $self = (string) getmypid();
-        $parent = getenv('GITHOOKS_PHPUNIT_GUARD_PID');
+        $parent = getenv('ALFIL_PHPUNIT_GUARD_PID');
 
         if ($parent !== false && $parent !== '' && $parent !== $self) {
             fwrite(
                 STDERR,
-                "\n[GITHOOKS_PHPUNIT_GUARD] Recursive PHPUnit invocation detected "
+                "\n[ALFIL_PHPUNIT_GUARD] Recursive PHPUnit invocation detected "
                 . "(parent PID {$parent}, this PID {$self}). Aborting to prevent fork-bomb cascade.\n"
             );
             exit(99);
         }
 
-        putenv('GITHOOKS_PHPUNIT_GUARD_PID=' . $self);
-        $_ENV['GITHOOKS_PHPUNIT_GUARD_PID'] = $self;
-        $_SERVER['GITHOOKS_PHPUNIT_GUARD_PID'] = $self;
+        putenv('ALFIL_PHPUNIT_GUARD_PID=' . $self);
+        $_ENV['ALFIL_PHPUNIT_GUARD_PID'] = $self;
+        $_SERVER['ALFIL_PHPUNIT_GUARD_PID'] = $self;
     }
 }

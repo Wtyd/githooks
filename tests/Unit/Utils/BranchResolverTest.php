@@ -15,7 +15,7 @@ use Wtyd\Alfil\Utils\Exception\DetachedHeadException;
  *
  * Cascade order (first match wins):
  *   1. $cliBranch (--branch=X)
- *   2. $GITHOOKS_BRANCH env var
+ *   2. $ALFIL_BRANCH env var (then the pre-4.0 $GITHOOKS_BRANCH)
  *   3. CI vars in fixed order: CI_COMMIT_REF_NAME, GITHUB_REF_NAME,
  *      BUILDKITE_BRANCH, BITBUCKET_BRANCH, CIRCLE_BRANCH,
  *      DRONE_COMMIT_BRANCH, TRAVIS_PULL_REQUEST_BRANCH, TRAVIS_BRANCH
@@ -25,6 +25,7 @@ use Wtyd\Alfil\Utils\Exception\DetachedHeadException;
 class BranchResolverTest extends UnitTestCase
 {
     private const CI_VARS = [
+        'ALFIL_BRANCH',
         'GITHOOKS_BRANCH',
         'CI_COMMIT_REF_NAME',
         'GITHUB_REF_NAME',
@@ -82,6 +83,51 @@ class BranchResolverTest extends UnitTestCase
 
         $this->assertSame('develop', $resolution->getBranch());
         $this->assertSame('env', $resolution->getSource());
+    }
+
+    /**
+     * @test
+     * @dataProvider envVarRenameProvider
+     *
+     * Factor table B (4.0 rename): ALFIL_BRANCH and the pre-4.0 GITHOOKS_BRANCH,
+     * each unset / empty / set. ALFIL_BRANCH wins whenever it has a value; the
+     * old name is only read when the new one gives nothing, and only then is
+     * the resolution flagged so the caller can report the deprecation. Empty
+     * counts as unset for both (CI templates export empty variables).
+     */
+    public function C2b_alfil_branch_and_its_pre_4_0_name(
+        ?string $alfil,
+        ?string $githooks,
+        string $expectedBranch,
+        string $expectedSource,
+        bool $expectLegacy
+    ) {
+        if ($alfil !== null) {
+            putenv("ALFIL_BRANCH=$alfil");
+        }
+        if ($githooks !== null) {
+            putenv("GITHOOKS_BRANCH=$githooks");
+        }
+        $this->fileUtils->setCurrentBranch('from-git');
+
+        $resolution = $this->resolver->resolve(null, $this->fileUtils);
+
+        $this->assertSame($expectedBranch, $resolution->getBranch());
+        $this->assertSame($expectedSource, $resolution->getSource());
+        $this->assertSame($expectLegacy, $resolution->isFromLegacyEnvVar());
+    }
+
+    public function envVarRenameProvider(): array
+    {
+        return [
+            'only ALFIL_BRANCH'                     => ['new', null, 'new', 'env', false],
+            'ALFIL_BRANCH wins over GITHOOKS_BRANCH' => ['new', 'old', 'new', 'env', false],
+            'only GITHOOKS_BRANCH: legacy'          => [null, 'old', 'old', 'env', true],
+            'empty ALFIL_BRANCH falls to the old'   => ['', 'old', 'old', 'env', true],
+            'ALFIL_BRANCH with an empty old one'    => ['new', '', 'new', 'env', false],
+            'both empty: git'                       => ['', '', 'from-git', 'git', false],
+            'neither set: git'                      => [null, null, 'from-git', 'git', false],
+        ];
     }
 
     /** @test */
@@ -193,7 +239,7 @@ class BranchResolverTest extends UnitTestCase
         $this->expectException(DetachedHeadException::class);
         $this->expectExceptionMessage(
             "Could not determine current branch: detached HEAD. "
-            . "Use --branch=<name> or set the GITHOOKS_BRANCH environment variable."
+            . "Use --branch=<name> or set the ALFIL_BRANCH environment variable."
         );
 
         $this->resolver->resolve(null, $this->fileUtils);

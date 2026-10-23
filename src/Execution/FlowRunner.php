@@ -6,6 +6,7 @@ namespace Wtyd\Alfil\Execution;
 
 use Symfony\Component\Console\Output\OutputInterface;
 use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\Deprecation;
 use Wtyd\Alfil\Exception\AlfilExceptionInterface;
 use Wtyd\Alfil\Execution\Concerns\EmitsRunnerStderr;
 use Wtyd\Alfil\Flaky\FlapAggregator;
@@ -518,6 +519,9 @@ class FlowRunner
                 );
             } catch (DetachedHeadException $e) {
                 return FlowPreparation::failure([$e->getMessage()]);
+            }
+            if ($branchResolution->isFromLegacyEnvVar()) {
+                $config->getValidation()->addDeprecation(Deprecation::forLegacyBranchEnvVar());
             }
         }
 

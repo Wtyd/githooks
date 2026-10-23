@@ -43,6 +43,7 @@ class FlowsRunnerTest extends UnitTestCase
      * set) does not override the branch the test pins via setCurrentBranch().
      */
     private const CI_BRANCH_VARS = [
+        'ALFIL_BRANCH',
         'GITHOOKS_BRANCH',
         'CI_COMMIT_REF_NAME',
         'GITHUB_REF_NAME',
@@ -300,6 +301,61 @@ class FlowsRunnerTest extends UnitTestCase
         $this->assertTrue($prep->success);
         $this->assertSame(ExecutionMode::FAST_BRANCH, $prep->resolution->getExecutionMode());
         $this->assertSame(ExecutionMode::FAST_BRANCH, $prep->plan->getExecutionMode());
+    }
+
+    /**
+     * 4.0 rename: a branch taken from the pre-4.0 GITHOOKS_BRANCH still drives
+     * `on`, and the run reports an env-var-rename deprecation through the
+     * config validation (so text, JSON and SARIF all carry it). ALFIL_BRANCH
+     * drives it without one.
+     *
+     * @test
+     * @dataProvider branchEnvVarProvider
+     */
+    public function the_branch_env_var_drives_on_and_its_old_name_is_deprecated(
+        string $envVar,
+        array $expectedDeprecations
+    ): void {
+        $validation = new ValidationResult();
+        $ci = FlowConfiguration::fromArray('ci', [
+            'jobs' => ['phpcs_src'],
+            'on'   => ['feature/*' => ['execution' => 'fast-branch'], '*' => ['execution' => 'full']],
+        ], ['phpcs_src'], $validation);
+        $config = new ConfigurationResult(
+            '/tmp/alfil.php',
+            new OptionsConfiguration(false, 1),
+            ['phpcs_src' => new JobConfiguration('phpcs_src', 'custom', ['script' => 'true'])],
+            ['ci' => $ci],
+            null,
+            $validation
+        );
+        $this->fileUtils->setCurrentBranch('main');
+        putenv("$envVar=feature/x");
+
+        $prep = $this->makeRunner($this->fakeParser(fn() => $config), $this->createMock(FlowExecutor::class))
+            ->prepare($this->req(['flowNames' => ['ci']]), new RoutingBufferedOutput());
+
+        $this->assertTrue($prep->success);
+        $this->assertSame(ExecutionMode::FAST_BRANCH, $prep->resolution->getExecutionMode());
+        $this->assertSame($expectedDeprecations, array_map(function ($d) {
+            return $d->toArray();
+        }, $validation->getDeprecations()));
+    }
+
+    public function branchEnvVarProvider(): array
+    {
+        return [
+            'ALFIL_BRANCH' => ['ALFIL_BRANCH', []],
+            'GITHOOKS_BRANCH (pre-4.0)' => ['GITHOOKS_BRANCH', [[
+                'job' => '',
+                'oldKey' => 'GITHOOKS_BRANCH',
+                'newKey' => 'ALFIL_BRANCH',
+                'removalVersion' => '5.0',
+                'kind' => 'env-var-rename',
+            ]
+            ]
+            ],
+        ];
     }
 
     /**

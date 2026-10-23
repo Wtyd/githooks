@@ -10,8 +10,9 @@ use Wtyd\Alfil\Utils\Exception\DetachedHeadException;
  * Resolve the current branch from the canonical cascade (FEAT-2):
  *
  *   1. `$cliBranch` (e.g. `--branch=X` from the CLI command).
- *   2. `$GITHOOKS_BRANCH` env var — explicit user override, useful in custom
- *      automation that cannot rely on a known CI variable.
+ *   2. `$ALFIL_BRANCH` env var — explicit user override, useful in custom
+ *      automation that cannot rely on a known CI variable. The pre-4.0 name
+ *      `$GITHOOKS_BRANCH` is still read when `$ALFIL_BRANCH` is unset (until 5.0).
  *   3. CI variables in fixed order (GitLab → GitHub → Buildkite → Bitbucket →
  *      Circle → Drone → Travis). The order is documented; when several are
  *      simultaneously present, the higher-precedence one wins.
@@ -54,9 +55,9 @@ class BranchResolver
             return new BranchResolution($cliBranch, 'cli');
         }
 
-        $envOverride = getenv('GITHOOKS_BRANCH');
-        if (is_string($envOverride) && $envOverride !== '') {
-            return new BranchResolution($envOverride, 'env');
+        $envOverride = $this->fromEnvOverride();
+        if ($envOverride !== null) {
+            return $envOverride;
         }
 
         foreach (self::CI_VARS as [$var, $source]) {
@@ -73,7 +74,26 @@ class BranchResolver
 
         throw new DetachedHeadException(
             "Could not determine current branch: detached HEAD. "
-            . "Use --branch=<name> or set the GITHOOKS_BRANCH environment variable."
+            . "Use --branch=<name> or set the ALFIL_BRANCH environment variable."
         );
+    }
+
+    /**
+     * ALFIL_BRANCH, else the pre-4.0 GITHOOKS_BRANCH (read until 5.0; the
+     * caller reports the deprecation). Empty counts as unset for both.
+     */
+    private function fromEnvOverride(): ?BranchResolution
+    {
+        $value = getenv('ALFIL_BRANCH');
+        if (is_string($value) && $value !== '') {
+            return new BranchResolution($value, 'env');
+        }
+
+        $legacy = getenv('GITHOOKS_BRANCH');
+        if (is_string($legacy) && $legacy !== '') {
+            return BranchResolution::fromLegacyEnvVar($legacy);
+        }
+
+        return null;
     }
 }

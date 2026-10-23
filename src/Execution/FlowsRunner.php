@@ -7,6 +7,7 @@ namespace Wtyd\Alfil\Execution;
 use LogicException;
 use Symfony\Component\Console\Output\OutputInterface;
 use Wtyd\Alfil\Configuration\ConfigurationParser;
+use Wtyd\Alfil\Configuration\Deprecation;
 use Wtyd\Alfil\Configuration\ConfigurationResult;
 use Wtyd\Alfil\Exception\AlfilExceptionInterface;
 use Wtyd\Alfil\Execution\Concerns\EmitsRunnerStderr;
@@ -383,7 +384,7 @@ class FlowsRunner
      * flow that declares an `on` map.
      *
      * @throws DetachedHeadException when `on` must be evaluated but the branch
-     *         cannot be detected and no --branch / $GITHOOKS_BRANCH was given.
+     *         cannot be detected and no --branch / $ALFIL_BRANCH was given.
      */
     private function resolveBranchForSingleFlow(
         FlowsRunRequest $request,
@@ -403,10 +404,15 @@ class FlowsRunner
             return null;
         }
 
-        return (new BranchResolver())->resolve(
+        $resolution = (new BranchResolver())->resolve(
             $request->cliBranch !== null && $request->cliBranch !== '' ? $request->cliBranch : null,
             $this->fileUtils
         );
+        if ($resolution->isFromLegacyEnvVar()) {
+            $config->getValidation()->addDeprecation(Deprecation::forLegacyBranchEnvVar());
+        }
+
+        return $resolution;
     }
 
     /**

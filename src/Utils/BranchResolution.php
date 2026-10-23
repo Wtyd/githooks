@@ -16,10 +16,27 @@ class BranchResolution
 
     private string $source;
 
+    /** Read from GITHOOKS_BRANCH, the pre-4.0 name of ALFIL_BRANCH. */
+    private bool $legacyEnvVar = false;
+
     public function __construct(string $branch, string $source)
     {
         $this->branch = $branch;
         $this->source = $source;
+    }
+
+    /** A branch taken from GITHOOKS_BRANCH, read until 5.0. */
+    public static function fromLegacyEnvVar(string $branch): self
+    {
+        $resolution = new self($branch, 'env');
+        $resolution->legacyEnvVar = true;
+
+        return $resolution;
+    }
+
+    public function isFromLegacyEnvVar(): bool
+    {
+        return $this->legacyEnvVar;
     }
 
     public function getBranch(): string

@@ -10,7 +10,7 @@ namespace Wtyd\Alfil\Jobs\CommitMessage;
  *
  *   1. explicit path — Git hook arg `$1` or `--message-file=PATH`
  *   2. inline string — `--message=STRING` (materialised to a temp file)
- *   3. environment   — `GITHOOKS_COMMIT_MSG_FILE` (only consulted via flow/flows)
+ *   3. environment   — `$envFile`, a caller-supplied path (no caller passes one today)
  *   4. fallback      — `<rootPath>/.git/COMMIT_EDITMSG`
  *
  * `resolve()` returns a path candidate, or `null` only when no explicit/inline/
