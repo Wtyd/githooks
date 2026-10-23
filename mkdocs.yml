@@ -1,11 +1,11 @@
 site_name: GitHooks
-site_url: https://wtyd.github.io/githooks/
+site_url: https://wtyd.github.io/alfil/
 site_dir: public
 site_description: >-
   Standalone CLI tool for managing git hooks and running QA tools in PHP projects.
   One config file. Every QA tool. Every git hook.
-repo_url: https://github.com/Wtyd/githooks
-repo_name: Wtyd/githooks
+repo_url: https://github.com/Wtyd/alfil
+repo_name: Wtyd/alfil
 edit_uri: edit/master/docs/
 
 copyright: Copyright &copy; 2020-2026 Wtyd/GitHooks contributors
@@ -94,7 +94,7 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/Wtyd/githooks
+      link: https://github.com/Wtyd/alfil
   generator: false
 
 nav:

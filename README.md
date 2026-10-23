@@ -1,16 +1,16 @@
 
 
 <p align="center">
-    <a href="https://github.com/Wtyd/githooks/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/githooks"></a>
-    <a href="https://github.com/Wtyd/githooks/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/githooks"></a>
-    <a href="https://github.com/Wtyd/githooks/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/githooks"></a>
+    <a href="https://github.com/Wtyd/alfil/commits/" title="Last Commit"><img src="https://img.shields.io/github/last-commit/Wtyd/alfil"></a>
+    <a href="https://github.com/Wtyd/alfil/issues" title="Open Issues"><img src="https://img.shields.io/github/issues/Wtyd/alfil"></a>
+    <a href="https://github.com/Wtyd/alfil/blob/master/LICENSE" title="License"><img src="https://img.shields.io/github/license/Wtyd/alfil"></a>
     <a href="#2-requirements" title="PHP Versions Supported"><img alt="PHP Versions Supported" src="https://img.shields.io/badge/php-7.4%20to%208.5-777bb3.svg?logo=php&logoColor=white&labelColor=555555"></a> 
-    <img src="https://img.shields.io/github/v/release/Wtyd/githooks">
+    <img src="https://img.shields.io/github/v/release/Wtyd/alfil">
 </p>
 <p align="center">
-  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Code Analysis%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Code Analysis/badge.svg"></a>
-  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Main Tests%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Main Tests/badge.svg"></a>
-  <a href="https://github.com/Wtyd/githooks/actions?query=workflow%3A%22Schedule CI%22" title="Build"><img src="https://github.com/Wtyd/githooks/workflows/Schedule CI/badge.svg"></a>
+  <a href="https://github.com/Wtyd/alfil/actions?query=workflow%3A%22Code Analysis%22" title="Build"><img src="https://github.com/Wtyd/alfil/workflows/Code Analysis/badge.svg"></a>
+  <a href="https://github.com/Wtyd/alfil/actions?query=workflow%3A%22Main Tests%22" title="Build"><img src="https://github.com/Wtyd/alfil/workflows/Main Tests/badge.svg"></a>
+  <a href="https://github.com/Wtyd/alfil/actions?query=workflow%3A%22Schedule CI%22" title="Build"><img src="https://github.com/Wtyd/alfil/workflows/Schedule CI/badge.svg"></a>
 </p>
 
 # 1. Wtyd/GitHooks
@@ -210,7 +210,7 @@ return [
 * **Jobs** are individual QA tasks. Each declares a `type` and its arguments. Jobs can inherit from other jobs with `extends`. When `executable-path` is omitted, GitHooks auto-detects the binary in `vendor/bin/`. Per-job thresholds (`warn-after`, `fail-after`, `memory`, `cores`) cap regressions.
 * **Execution modes**: `full` (default), `--fast` (only staged files), `--fast-branch` (only files changed vs base branch), `--fast-dirty` (unified working tree: dirty vs `HEAD` ∪ untracked — ideal for AI agentic hooks), `--files` / `--files-from` (explicit list).
 
-See the [documentation site](https://wtyd.github.io/githooks/) for the full configuration reference.
+See the [documentation site](https://wtyd.github.io/alfil/) for the full configuration reference.
 
 # 6. Supported Tools
 
@@ -272,23 +272,23 @@ Two ways to run non-PHP tools:
 | `--warn-after=N`, `--fail-after=N`, `--no-time-budget` | Override flow time-budget thresholds (seconds). |
 | `--memory-warn-above=MB`, `--memory-fail-above=MB`, `--no-memory-budget`, `--allocator=fifo\|greedy` | Override memory-budget thresholds and 2D allocator strategy. |
 
-See the [documentation site](https://wtyd.github.io/githooks/) for the full command reference.
+See the [documentation site](https://wtyd.github.io/alfil/) for the full command reference.
 
 # 8. Documentation
 
-Full documentation is available at **[wtyd.github.io/githooks](https://wtyd.github.io/githooks/)**, including:
+Full documentation is available at **[wtyd.github.io/alfil](https://wtyd.github.io/alfil/)**, including:
 
-- [Getting Started](https://wtyd.github.io/githooks/getting-started/installation/) — installation, first config, first hook.
-- [Configuration Reference](https://wtyd.github.io/githooks/configuration/) — hooks, flows, jobs, options.
-- [Tools Reference](https://wtyd.github.io/githooks/tools/) — all keywords for each QA tool.
-- [CLI Reference](https://wtyd.github.io/githooks/cli/) — every command with options and examples.
-- [How-To Guides](https://wtyd.github.io/githooks/how-to/) — parallel execution, CI/CD, frontend tools, [AI agent hooks](https://wtyd.github.io/githooks/how-to/ai-hooks/), etc.
-- [Migration](https://wtyd.github.io/githooks/migration/v2-to-v3/) — from v2, GrumPHP, or CaptainHook.
-- [Comparison](https://wtyd.github.io/githooks/comparison/) — GitHooks vs GrumPHP vs CaptainHook.
-- [Changelog](https://wtyd.github.io/githooks/changelog/) — what's new in each version.
+- [Getting Started](https://wtyd.github.io/alfil/getting-started/installation/) — installation, first config, first hook.
+- [Configuration Reference](https://wtyd.github.io/alfil/configuration/) — hooks, flows, jobs, options.
+- [Tools Reference](https://wtyd.github.io/alfil/tools/) — all keywords for each QA tool.
+- [CLI Reference](https://wtyd.github.io/alfil/cli/) — every command with options and examples.
+- [How-To Guides](https://wtyd.github.io/alfil/how-to/) — parallel execution, CI/CD, frontend tools, [AI agent hooks](https://wtyd.github.io/alfil/how-to/ai-hooks/), etc.
+- [Migration](https://wtyd.github.io/alfil/migration/v2-to-v3/) — from v2, GrumPHP, or CaptainHook.
+- [Comparison](https://wtyd.github.io/alfil/comparison/) — GitHooks vs GrumPHP vs CaptainHook.
+- [Changelog](https://wtyd.github.io/alfil/changelog/) — what's new in each version.
 
 # 9. Contributing
-Contributions are welcome! Send a [pull request](https://github.com/Wtyd/githooks/pulls) or open an [issue](https://github.com/Wtyd/githooks/issues). See the [Contributing](https://github.com/Wtyd/githooks/wiki/Contributing) guide.
+Contributions are welcome! Send a [pull request](https://github.com/Wtyd/alfil/pulls) or open an [issue](https://github.com/Wtyd/alfil/issues). See the [Contributing](https://github.com/Wtyd/alfil/wiki/Contributing) guide.
 
 # 10. License
 The MIT License (MIT). Please see [License File](/LICENSE) for more information.
