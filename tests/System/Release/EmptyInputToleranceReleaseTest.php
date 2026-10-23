@@ -46,7 +46,7 @@ class EmptyInputToleranceReleaseTest extends ReleaseTestCase
     /** @test */
     public function phpstan_job_with_all_inputs_excluded_is_reported_as_skipped_in_json()
     {
-        // Build a v3-style githooks.php declaring a single phpstan job that
+        // Build a v3-style alfil.php declaring a single phpstan job that
         // analyses testsDir/src — and whose .neon excludes that path entirely.
         // Without the BUG-1 fix this returns failed; with the fix it returns skipped.
         $githooksPhp = $this->configurationFileBuilder
@@ -65,14 +65,14 @@ class EmptyInputToleranceReleaseTest extends ReleaseTestCase
             ->buildV3Php();
 
         // ReleaseTestCase::tearDown() cleans this up.
-        file_put_contents('githooks.php', $githooksPhp);
+        file_put_contents('alfil.php', $githooksPhp);
 
         $output = [];
         $exitCode = 1;
         exec("$this->alfil job phpstan_excl --format=json 2>/dev/null", $output, $exitCode);
         $json = implode("\n", $output);
 
-        $this->assertSame(0, $exitCode, "githooks job exit code (raw output:\n$json)");
+        $this->assertSame(0, $exitCode, "alfil job exit code (raw output:\n$json)");
 
         $decoded = json_decode($json, true);
         $this->assertIsArray($decoded, "JSON output must parse (raw:\n$json)");

@@ -24,6 +24,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         @unlink('githooks.php');
         @unlink('alfil.php');
         @unlink('githooks.yml');
+        @unlink('qa/alfil.php');
         @unlink('qa/githooks.php');
         @unlink('qa/githooks.yml');
 
@@ -45,6 +46,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
         @unlink('githooks.php');
         @unlink('alfil.php');
         @unlink('githooks.yml');
+        @unlink('qa/alfil.php');
         @unlink('qa/githooks.php');
         @unlink('qa/githooks.yml');
 
@@ -62,9 +64,12 @@ class CreateConfigurationFileTest extends ReleaseTestCase
     function it_not_creates_configuration_file_when_already_exists()
     {
         $this->deleteDirStructure('./vendor/wtyd');
+        // Only the file this test writes may exist, or the verdict is this
+        // repository's own qa/alfil.php (restored by tearDown).
+        @unlink('qa/alfil.php');
 
         $this->configurationFileBuilder
-                ->setName('githooks.php')
+                ->setName('alfil.php')
                 ->buildInFileSystem('./', true);
 
         $this->configurationFileBuilder

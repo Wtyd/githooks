@@ -69,7 +69,7 @@ class ProcessTreeKillReleaseTest extends ReleaseTestCase
 
         $output = [];
         exec(
-            sprintf('cd %s && ./githooks flow qa --format=json --config=githooks.php 2>/dev/null', self::TESTS_PATH),
+            sprintf('cd %s && ./alfil flow qa --format=json --config=githooks.php 2>/dev/null', self::TESTS_PATH),
             $output,
             $exitCode
         );

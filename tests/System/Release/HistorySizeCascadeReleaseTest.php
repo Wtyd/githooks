@@ -65,7 +65,7 @@ class HistorySizeCascadeReleaseTest extends ReleaseTestCase
         ]);
 
         passthru(
-            sprintf('cd %s && ./githooks flow qa --format=json --config=githooks.php 2>/dev/null', self::TESTS_PATH),
+            sprintf('cd %s && ./alfil flow qa --format=json --config=githooks.php 2>/dev/null', self::TESTS_PATH),
             $exitCode
         );
 
@@ -95,7 +95,7 @@ class HistorySizeCascadeReleaseTest extends ReleaseTestCase
         ]);
 
         passthru(
-            sprintf('cd %s && ./githooks flows ci --format=json --config=githooks.php 2>/dev/null', self::TESTS_PATH),
+            sprintf('cd %s && ./alfil flows ci --format=json --config=githooks.php 2>/dev/null', self::TESTS_PATH),
             $exitCode
         );
 

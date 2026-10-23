@@ -5,6 +5,10 @@ namespace Tests\System\Release;
 use Tests\ReleaseTestCase;
 
 /**
+ * Root configurations are written as alfil.php: since 4.0 the new name wins
+ * over the location, so a githooks.php in the root would lose to this
+ * repository's own qa/alfil.php and the command would check the wrong file.
+ *
  * @group release
  */
 class CheckConfigurationFileTest extends ReleaseTestCase
@@ -12,7 +16,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_checks_the_configuration_file_and_return_exit_0()
     {
-        $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('./', true);
+        $this->configurationFileBuilder->enableV3Mode()->setName('alfil.php')->buildInFileSystem('./', true);
         passthru("$this->alfil conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
@@ -24,6 +28,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     {
         $this->configurationFileBuilder->enableV3Mode()
             ->addV3Job('lint', 'phpstan', ['paths' => ['src'], 'invalidOptionTest' => 1])
+            ->setName('alfil.php')
             ->buildInFileSystem('./', true);
         passthru("$this->alfil conf:check", $exitCode);
 
@@ -38,6 +43,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->configurationFileBuilder->enableV3Mode()
             ->setV3Jobs(['bad_job' => ['type' => 'nonexistent']])
             ->setV3Flows(['qa' => ['jobs' => ['bad_job']]])
+            ->setName('alfil.php')
             ->buildInFileSystem('./', true);
 
         passthru("$this->alfil conf:check", $exitCode);
@@ -52,12 +58,13 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->configurationFileBuilder->enableV3Mode()
             ->setV3Jobs(['bad_job' => ['type' => 'nonexistent']])
             ->setV3Flows(['qa' => ['jobs' => ['bad_job']]])
+            ->setName('alfil.php')
             ->buildInFileSystem('./', true);
 
         // Create valid config in custom folder
         $this->createDirStructure('custom');
 
-        $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('custom', true);
+        $this->configurationFileBuilder->enableV3Mode()->setName('alfil.php')->buildInFileSystem('custom', true);
 
         // Check root config with errors
         passthru("$this->alfil conf:check", $exitCode);
@@ -65,7 +72,7 @@ class CheckConfigurationFileTest extends ReleaseTestCase
         $this->assertStringContainsString("type 'nonexistent' is not a supported tool", $this->getActualOutput());
 
         // Check valid config in custom folder
-        passthru("$this->alfil conf:check --config=custom/githooks.php", $exitCode);
+        passthru("$this->alfil conf:check --config=custom/alfil.php", $exitCode);
 
         $this->assertStringContainsString('The configuration file has the correct format.', $this->getActualOutput());
 
@@ -75,11 +82,11 @@ class CheckConfigurationFileTest extends ReleaseTestCase
     /** @test */
     function it_shows_configuration_file_path()
     {
-        $this->configurationFileBuilder->enableV3Mode()->buildInFileSystem('./', true);
+        $this->configurationFileBuilder->enableV3Mode()->setName('alfil.php')->buildInFileSystem('./', true);
         passthru("$this->alfil conf:check", $exitCode);
 
         $this->assertEquals(0, $exitCode);
-        $this->assertStringContainsString('Configuration file: githooks.php', $this->getActualOutput());
+        $this->assertStringContainsString('Configuration file: alfil.php', $this->getActualOutput());
     }
 
     /** @test */
