@@ -79,7 +79,7 @@ class SystemInfoCommand extends Command
 
         if ($parseError) {
             $this->line('');
-            $this->line("  No configuration file found. Set 'processes' in githooks.php to control CPU usage.");
+            $this->line("  No configuration file found. Set 'processes' in alfil.php to control CPU usage.");
         } elseif ($processes !== null) {
             $this->line("  Configured processes:  $processes");
             $this->line('');

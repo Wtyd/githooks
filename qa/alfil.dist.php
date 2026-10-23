@@ -1,7 +1,7 @@
 <?php
 
 /**
- * GitHooks v3 configuration file.
+ * Alfil configuration file.
  *
  * Structure: hooks -> flows -> jobs
  *   - hooks:  Map git events to flows/jobs (optional, only needed for git hooks)
@@ -9,9 +9,9 @@
  *   - jobs:   Individual QA tasks with their configuration
  *
  * Usage:
- *   githooks flow <name>       Run a flow
- *   githooks job <name>        Run a single job
- *   githooks hook              Install git hooks from the 'hooks' section
+ *   alfil flow <name>       Run a flow
+ *   alfil job <name>        Run a single job
+ *   alfil hook              Install git hooks from the 'hooks' section
  *
  * All jobs support these common options:
  *   - executablePath:       Path to the tool binary (default: tool name from PATH)

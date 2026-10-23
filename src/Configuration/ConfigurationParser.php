@@ -16,9 +16,25 @@ use Wtyd\Alfil\Jobs\JobRegistry;
  */
 class ConfigurationParser
 {
+    /** Configuration file name since 4.0. */
+    public const FILE_NAME = 'alfil.php';
+
+    /** Pre-4.0 name: still looked up, with a deprecation, until 5.0. */
+    public const LEGACY_FILE_NAME = 'githooks.php';
+
     private string $rootPath;
 
     private JobRegistry $jobRegistry;
+
+    /**
+     * Notices found while locating the file and its override, before the
+     * ValidationResult they belong to exists; attached to it once parsed.
+     *
+     * @var string[]
+     */
+    private array $lookupWarnings = [];
+
+    private ?Deprecation $lookupDeprecation = null;
 
     public function __construct(string $rootPath = '', ?JobRegistry $jobRegistry = null)
     {
@@ -49,6 +65,15 @@ class ConfigurationParser
 
         $configResult = $this->parseV3($raw, $filePath);
         $configResult->setLocalFilePath($localFilePath);
+
+        $validation = $configResult->getValidation();
+        if ($this->lookupDeprecation !== null) {
+            $validation->addDeprecation($this->lookupDeprecation);
+        }
+        foreach ($this->lookupWarnings as $warning) {
+            $validation->addWarning($warning);
+        }
+
         return $configResult;
     }
 
@@ -520,6 +545,9 @@ class ConfigurationParser
 
     protected function resolveFilePath(string $configFile): string
     {
+        $this->lookupWarnings = [];
+        $this->lookupDeprecation = null;
+
         if (!empty($configFile)) {
             if ($configFile[0] === '/' || preg_match('/^[a-zA-Z]:[\\\\\/]/', $configFile)) {
                 return $configFile;
@@ -536,10 +564,35 @@ class ConfigurationParser
      */
     protected function findConfigurationFile(): string
     {
-        foreach (["$this->rootPath/githooks.php", "$this->rootPath/qa/githooks.php"] as $path) {
-            if (file_exists($path)) {
-                return $path;
+        // The new name wins over the location: qa/alfil.php beats githooks.php.
+        $candidates = [];
+        foreach ([self::FILE_NAME, self::LEGACY_FILE_NAME] as $name) {
+            foreach (['', 'qa/'] as $dir) {
+                $candidates[] = "$dir$name";
             }
+        }
+        $existing = array_values(array_filter($candidates, function (string $relative): bool {
+            return file_exists("$this->rootPath/$relative");
+        }));
+
+        if (!empty($existing)) {
+            $chosen = $existing[0];
+            if (basename($chosen) === self::LEGACY_FILE_NAME) {
+                $this->lookupDeprecation = new Deprecation(
+                    '',
+                    self::LEGACY_FILE_NAME,
+                    self::FILE_NAME,
+                    '5.0',
+                    Deprecation::KIND_CONFIG_FILE_RENAME
+                );
+            }
+            foreach (array_slice($existing, 1) as $ignored) {
+                if (basename($ignored) === self::LEGACY_FILE_NAME) {
+                    $this->lookupWarnings[] = "'$ignored' is ignored: '$chosen' takes precedence. "
+                        . "Remove it or merge it into '$chosen'.";
+                }
+            }
+            return "$this->rootPath/$chosen";
         }
 
         // A YAML file is no longer looked up, but one left behind by 3.x gets
@@ -568,6 +621,7 @@ class ConfigurationParser
 
         $localPath = substr($filePath, 0, -4) . '.local.php';
         if (!file_exists($localPath)) {
+            $this->warnAboutOrphanLocalOverride($filePath);
             return [$raw, null];
         }
 
@@ -577,5 +631,25 @@ class ConfigurationParser
         $merged = array_replace_recursive($raw, $localRaw);
 
         return [$merged, $localPath];
+    }
+
+    /**
+     * The override is paired with the main file by name, so a rename of one of
+     * the two leaves the other silently unused (alfil.php next to
+     * githooks.local.php, or the reverse). Say so instead.
+     */
+    private function warnAboutOrphanLocalOverride(string $filePath): void
+    {
+        $names = [self::FILE_NAME => self::LEGACY_FILE_NAME, self::LEGACY_FILE_NAME => self::FILE_NAME];
+        $mainName = basename($filePath);
+        if (!array_key_exists($mainName, $names)) {
+            return;
+        }
+
+        $otherLocal = substr($names[$mainName], 0, -4) . '.local.php';
+        if (file_exists(dirname($filePath) . DIRECTORY_SEPARATOR . $otherLocal)) {
+            $expected = substr($mainName, 0, -4) . '.local.php';
+            $this->lookupWarnings[] = "'$otherLocal' is ignored next to '$mainName': rename it to '$expected'.";
+        }
     }
 }

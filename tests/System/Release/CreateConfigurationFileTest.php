@@ -13,6 +13,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
     {
         shell_exec("git checkout -- 'qa/*'");
         @unlink('githooks.php');
+        @unlink('alfil.php');
         parent::tearDown();
     }
 
@@ -21,18 +22,19 @@ class CreateConfigurationFileTest extends ReleaseTestCase
     {
         $this->deleteDirStructure('./vendor/wtyd');
         @unlink('githooks.php');
+        @unlink('alfil.php');
         @unlink('githooks.yml');
         @unlink('qa/githooks.php');
         @unlink('qa/githooks.yml');
 
         $this->configurationFileBuilder
-                ->setName('githooks.dist.php')
+                ->setName('alfil.dist.php')
                 ->buildInFileSystem('./vendor/wtyd/alfil/qa/', true);
 
         passthru("$this->alfil conf:init -n", $exitCode);
-        $this->assertStringContainsString('Configuration file githooks.php has been created in root path', $this->getActualOutput());
+        $this->assertStringContainsString('Configuration file alfil.php has been created in root path', $this->getActualOutput());
         $this->assertEquals(0, $exitCode);
-        $this->assertFileExists('githooks.php');
+        $this->assertFileExists('alfil.php');
 
         $this->deleteDirStructure('vendor/wtyd');
     }
@@ -41,6 +43,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
     function it_creates_config_interactively_when_tools_detected()
     {
         @unlink('githooks.php');
+        @unlink('alfil.php');
         @unlink('githooks.yml');
         @unlink('qa/githooks.php');
         @unlink('qa/githooks.yml');
@@ -52,7 +55,7 @@ class CreateConfigurationFileTest extends ReleaseTestCase
 
         $this->assertEquals(0, $exitCode);
         $this->assertStringContainsString('created with', $this->getActualOutput());
-        $this->assertFileExists('githooks.php');
+        $this->assertFileExists('alfil.php');
     }
 
     /** @test */
@@ -65,16 +68,16 @@ class CreateConfigurationFileTest extends ReleaseTestCase
                 ->buildInFileSystem('./', true);
 
         $this->configurationFileBuilder
-                ->setName('githooks.dist.php')
+                ->setName('alfil.dist.php')
                 ->buildInFileSystem('./vendor/wtyd/alfil/qa/', true);
 
         // stdin closed: `conf:init` prompts when it has a terminal to prompt
         // on, and a local run of the suite would sit there for ever. CI never
         // has one, which is why this only bites in local runs.
         passthru("$this->alfil conf:init < /dev/null", $exitCode);
-        $this->assertStringContainsString('githooks configuration file already exists', $this->getActualOutput());
+        $this->assertStringContainsString('Alfil configuration file already exists', $this->getActualOutput());
         $this->assertEquals(1, $exitCode);
-        $this->assertFileExists('githooks.php');
+        $this->assertFileExists('alfil.php');
 
         $this->deleteDirStructure('vendor/wtyd');
     }

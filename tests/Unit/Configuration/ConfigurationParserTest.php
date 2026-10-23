@@ -20,6 +20,8 @@ class ConfigurationParserTest extends UnitTestCase
 
     protected function tearDown(): void
     {
+        array_map('unlink', glob($this->fixturesPath . '/qa/*') ?: []);
+        @rmdir($this->fixturesPath . '/qa');
         array_map('unlink', glob($this->fixturesPath . '/*') ?: []);
         @rmdir($this->fixturesPath);
     }
@@ -31,7 +33,7 @@ class ConfigurationParserTest extends UnitTestCase
 
         $this->expectException(\Wtyd\Alfil\Configuration\Exception\ConfigurationFileNotFoundException::class);
         $this->expectExceptionMessage(
-            'Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).'
+            'Configuration file not found. Expected alfil.php in the project root or in qa/ (or pass --config=PATH).'
         );
 
         $parser->parse();
@@ -102,9 +104,9 @@ class ConfigurationParserTest extends UnitTestCase
         ?string $local,
         string $strayKey
     ): void {
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
         if ($local !== null) {
-            file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+            file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
         }
 
         $result = (new ConfigurationParser($this->fixturesPath))->parse();
@@ -130,37 +132,137 @@ class ConfigurationParserTest extends UnitTestCase
         ];
     }
 
-    /** @test The default lookup prefers githooks.php over a .yml left behind by 3.x. */
-    public function it_prefers_githooks_php_over_a_leftover_yml(): void
+    /** @test The default lookup prefers alfil.php over a .yml left behind by 3.x. */
+    public function it_prefers_alfil_php_over_a_leftover_yml(): void
     {
         file_put_contents(
-            $this->fixturesPath . '/githooks.php',
+            $this->fixturesPath . '/alfil.php',
             "<?php return ['jobs' => ['phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']]]];"
         );
         file_put_contents($this->fixturesPath . '/githooks.yml', "Tools:\n  - phpstan\n");
 
         $result = (new ConfigurationParser($this->fixturesPath))->parse();
 
-        $this->assertSame($this->fixturesPath . '/githooks.php', $result->getFilePath());
+        $this->assertSame($this->fixturesPath . '/alfil.php', $result->getFilePath());
     }
 
-    /** @test The default lookup also finds qa/githooks.php. */
+    /** @test The default lookup also finds qa/alfil.php. */
     public function it_finds_the_configuration_file_in_the_qa_directory(): void
     {
         mkdir($this->fixturesPath . '/qa');
         file_put_contents(
-            $this->fixturesPath . '/qa/githooks.php',
+            $this->fixturesPath . '/qa/alfil.php',
             "<?php return ['jobs' => ['phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']]]];"
         );
 
         try {
             $result = (new ConfigurationParser($this->fixturesPath))->parse();
 
-            $this->assertSame($this->fixturesPath . '/qa/githooks.php', $result->getFilePath());
+            $this->assertSame($this->fixturesPath . '/qa/alfil.php', $result->getFilePath());
         } finally {
-            unlink($this->fixturesPath . '/qa/githooks.php');
+            unlink($this->fixturesPath . '/qa/alfil.php');
             rmdir($this->fixturesPath . '/qa');
         }
+    }
+
+    /**
+     * @test
+     * @dataProvider configurationFileNameProvider
+     *
+     * Factor table A (4.0 rename): which file the lookup picks between
+     * alfil.php and the pre-4.0 githooks.php, in the root or in qa/, with or
+     * without --config, and how a .local.php of either name pairs with it.
+     * The new name wins over the location; githooks.php still works with a
+     * config-file-rename deprecation, but only when the lookup fell back to it
+     * (an explicit --config is the user's choice).
+     *
+     * @param array<string, string> $files relative path => content
+     * @param string[] $expectedWarnings substrings, in order
+     */
+    public function it_resolves_the_configuration_file_name(
+        array $files,
+        string $configArg,
+        string $expectedFile,
+        bool $expectDeprecation,
+        array $expectedWarnings,
+        ?string $expectedLocal
+    ): void {
+        @mkdir($this->fixturesPath . '/qa');
+        foreach ($files as $relative => $content) {
+            file_put_contents("$this->fixturesPath/$relative", $content);
+        }
+
+        $result = (new ConfigurationParser($this->fixturesPath))->parse($configArg);
+
+        $this->assertSame("$this->fixturesPath/$expectedFile", $result->getFilePath());
+        $this->assertSame(
+            $expectedLocal === null ? null : "$this->fixturesPath/$expectedLocal",
+            $result->getLocalFilePath()
+        );
+
+        $deprecations = array_map(function ($d) {
+            return $d->toArray();
+        }, $result->getValidation()->getDeprecations());
+        $this->assertSame($expectDeprecation ? [[
+            'job' => '',
+            'oldKey' => 'githooks.php',
+            'newKey' => 'alfil.php',
+            'removalVersion' => '5.0',
+            'kind' => 'config-file-rename',
+        ]
+        ] : [], $deprecations);
+
+        $warnings = array_values(array_filter($result->getValidation()->getWarnings(), function ($w) {
+            return strpos($w, 'Deprecated:') !== 0;
+        }));
+        $this->assertCount(count($expectedWarnings), $warnings, implode("\n", $warnings));
+        foreach ($expectedWarnings as $i => $expected) {
+            $this->assertStringContainsString($expected, $warnings[$i]);
+        }
+    }
+
+    public function configurationFileNameProvider(): array
+    {
+        $v3 = "<?php return ['jobs' => ['phpstan_src' => ['type' => 'phpstan', 'paths' => ['src']]]];";
+        $local = "<?php return ['flows' => ['options' => ['processes' => 3]]];";
+
+        return [
+            '1 alfil.php' => [['alfil.php' => $v3], '', 'alfil.php', false, [], null],
+            '2 only qa/alfil.php' => [['qa/alfil.php' => $v3], '', 'qa/alfil.php', false, [], null],
+            '3 only githooks.php: deprecated fallback' => [
+                ['githooks.php' => $v3], '', 'githooks.php', true, [], null,
+            ],
+            '4 only qa/githooks.php' => [['qa/githooks.php' => $v3], '', 'qa/githooks.php', true, [], null],
+            '5 both in the root: the new name wins' => [
+                ['alfil.php' => $v3, 'githooks.php' => $v3], '', 'alfil.php', false,
+                ["'githooks.php' is ignored: 'alfil.php' takes precedence."], null,
+            ],
+            '6 the new name wins over the location' => [
+                ['qa/alfil.php' => $v3, 'githooks.php' => $v3], '', 'qa/alfil.php', false,
+                ["'githooks.php' is ignored: 'qa/alfil.php' takes precedence."], null,
+            ],
+            '7 alfil.php + alfil.local.php: merged' => [
+                ['alfil.php' => $v3, 'alfil.local.php' => $local], '', 'alfil.php', false, [], 'alfil.local.php',
+            ],
+            '8 alfil.php + orphan githooks.local.php' => [
+                ['alfil.php' => $v3, 'githooks.local.php' => $local], '', 'alfil.php', false,
+                ["'githooks.local.php' is ignored next to 'alfil.php': rename it to 'alfil.local.php'."], null,
+            ],
+            '8b githooks.php + orphan alfil.local.php' => [
+                ['githooks.php' => $v3, 'alfil.local.php' => $local], '', 'githooks.php', true,
+                ["'alfil.local.php' is ignored next to 'githooks.php': rename it to 'githooks.local.php'."], null,
+            ],
+            '9 githooks.php + githooks.local.php: merged, deprecated' => [
+                ['githooks.php' => $v3, 'githooks.local.php' => $local], '', 'githooks.php', true, [],
+                'githooks.local.php',
+            ],
+            '12 explicit --config=githooks.php: no deprecation' => [
+                ['githooks.php' => $v3], 'githooks.php', 'githooks.php', false, [], null,
+            ],
+            '12b explicit --config wins over a default-named file' => [
+                ['alfil.php' => $v3, 'custom.php' => $v3], 'custom.php', 'custom.php', false, [], null,
+            ],
+        ];
     }
 
     /** @test A .yml that is the only configuration gets the migration message, not "not found". */
@@ -198,7 +300,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $result = (new ConfigurationParser($this->fixturesPath))->parse();
         $rejected = $result->getValidation()->getRejectedJobs();
@@ -222,7 +324,7 @@ return [
     'jobs' => ['good' => ['type' => 'phpcs', 'paths' => ['src'], 'standard' => 'PSR12']],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $result = (new ConfigurationParser($this->fixturesPath))->parse();
 
@@ -259,7 +361,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -293,7 +395,7 @@ return [
     'jobs' => [],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -317,7 +419,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -344,7 +446,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -370,7 +472,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -399,7 +501,7 @@ PHP;
     public function it_treats_empty_array_as_v3_with_errors()
     {
         $config = '<?php return [];';
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -441,8 +543,8 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -474,8 +576,8 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -507,8 +609,8 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -540,8 +642,8 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -573,8 +675,8 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -608,8 +710,8 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -642,8 +744,8 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -668,7 +770,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -693,14 +795,14 @@ return [
 PHP;
         $local = '<?php return [];';
 
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
-        file_put_contents($this->fixturesPath . '/githooks.local.php', $local);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.local.php', $local);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
 
         $this->assertNotNull($result->getLocalFilePath());
-        $this->assertStringContainsString('githooks.local.php', $result->getLocalFilePath());
+        $this->assertStringContainsString('alfil.local.php', $result->getLocalFilePath());
     }
 
     /** @test */
@@ -717,7 +819,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $main);
+        file_put_contents($this->fixturesPath . '/alfil.php', $main);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -739,7 +841,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -766,7 +868,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -795,7 +897,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -822,7 +924,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -848,7 +950,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -876,7 +978,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -910,7 +1012,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -939,7 +1041,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -967,7 +1069,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -994,7 +1096,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1021,7 +1123,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1048,7 +1150,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1074,7 +1176,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1109,7 +1211,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1143,7 +1245,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1179,7 +1281,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1211,7 +1313,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1240,7 +1342,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1273,7 +1375,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1304,7 +1406,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1351,7 +1453,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1388,7 +1490,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1423,7 +1525,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1455,7 +1557,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1485,7 +1587,7 @@ return [
     'jobs' => [],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1518,7 +1620,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1546,7 +1648,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1580,7 +1682,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1619,7 +1721,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1658,7 +1760,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1690,7 +1792,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1728,7 +1830,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1762,7 +1864,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1806,7 +1908,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1841,7 +1943,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1881,7 +1983,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1921,7 +2023,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();
@@ -1954,7 +2056,7 @@ return [
     ],
 ];
 PHP;
-        file_put_contents($this->fixturesPath . '/githooks.php', $config);
+        file_put_contents($this->fixturesPath . '/alfil.php', $config);
 
         $parser = new ConfigurationParser($this->fixturesPath);
         $result = $parser->parse();

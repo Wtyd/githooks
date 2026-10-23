@@ -79,7 +79,7 @@ class AppServiceProvider extends ServiceProvider
         if (defined('APP_ENV') && APP_ENV === 'testing') {
             // Same relative root the other fakes use, so a command that looks the
             // configuration up (conf:check, hook) finds the one the test built
-            // under testsDir instead of the project's own qa/githooks.php.
+            // under testsDir instead of the project's own qa/alfil.php.
             $this->app->singleton(ConfigurationParser::class, function ($app) {
                 return new ConfigurationParser(SystemTestCase::TESTS_PATH, $app->make(JobRegistry::class));
             });

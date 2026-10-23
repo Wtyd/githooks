@@ -11,10 +11,10 @@ use Wtyd\Alfil\Utils\Storage;
 class CreateConfigurationFileCommand extends Command
 {
     protected $signature = 'conf:init';
-    protected $description = 'Creates the configuration file githooks.php in the project path';
+    protected $description = 'Creates the configuration file alfil.php in the project path';
 
     /** The locations the runtime looks a configuration up in, in order. */
-    private const CONFIGURATION_FILES = ['githooks.php', 'qa/githooks.php'];
+    private const CONFIGURATION_FILES = ['alfil.php', 'qa/alfil.php', 'githooks.php', 'qa/githooks.php'];
 
     protected Printer $printer;
 
@@ -31,7 +31,7 @@ class CreateConfigurationFileCommand extends Command
     {
         foreach (self::CONFIGURATION_FILES as $candidate) {
             if (Storage::exists($candidate)) {
-                $this->printer->error('githooks configuration file already exists');
+                $this->printer->error('Alfil configuration file already exists');
                 return 1;
             }
         }
@@ -113,15 +113,15 @@ class CreateConfigurationFileCommand extends Command
         $generator = new ConfigurationGenerator();
         $content = $generator->generate($selectedTools, $paths, $hookEvents);
 
-        Storage::put('githooks.php', $content);
-        $this->printer->success('Configuration file githooks.php created with ' . count($selectedTools) . ' tool(s).');
+        Storage::put('alfil.php', $content);
+        $this->printer->success('Configuration file alfil.php created with ' . count($selectedTools) . ' tool(s).');
 
         return 0;
     }
 
     private function copyDistFile(): int
     {
-        $distFile = 'githooks.dist.php';
+        $distFile = 'alfil.dist.php';
 
         $origin = $this->resolveDistFile($distFile);
 
@@ -130,7 +130,7 @@ class CreateConfigurationFileCommand extends Command
             return 1;
         }
 
-        return $this->copyFile($origin, 'githooks.php');
+        return $this->copyFile($origin, 'alfil.php');
     }
 
     protected function resolveDistFile(string $distFile): ?string
@@ -153,7 +153,7 @@ class CreateConfigurationFileCommand extends Command
     {
         try {
             if (Storage::copy($origin, $destiny)) {
-                $this->printer->success('Configuration file githooks.php has been created in root path');
+                $this->printer->success('Configuration file alfil.php has been created in root path');
                 return 0;
             }
             $this->printer->error("Failed to copy $origin to $destiny");

@@ -12,23 +12,25 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     /** @test */
     function it_creates_the_configuration_file_in_the_root_of_the_project_using_the_template()
     {
-        // conf:init looks for qa/githooks.dist.php (local development path)
+        // conf:init looks for qa/alfil.dist.php (local development path)
         $templatePath = $this->path . '/qa/';
         mkdir($templatePath, 0777, true);
-        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+        file_put_contents($templatePath . 'alfil.dist.php', '<?php return [];');
 
         $this->artisan('conf:init', ['--no-interaction' => true])
-            ->containsStringInOutput('Configuration file githooks.php has been created in root path')
+            ->containsStringInOutput('Configuration file alfil.php has been created in root path')
             ->assertExitCode(0);
 
-        $this->assertFileEquals($templatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+        $this->assertFileEquals($templatePath . 'alfil.dist.php', $this->path . '/alfil.php');
     }
 
     public function configurationFileDataProvider()
     {
         return [
-            'The configuration file is in the root directory' => ['githooks.php'],
-            'The configuration file is in the qa directory' => ['qa/githooks.php'],
+            'alfil.php in the root directory' => ['alfil.php'],
+            'alfil.php in the qa directory' => ['qa/alfil.php'],
+            'pre-4.0 githooks.php in the root directory' => ['githooks.php'],
+            'pre-4.0 githooks.php in the qa directory' => ['qa/githooks.php'],
         ];
     }
 
@@ -41,7 +43,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
         Storage::put($path, 'Configuration file contents');
 
         $this->artisan('conf:init')
-            ->containsStringInOutput('githooks configuration file already exists')
+            ->containsStringInOutput('Alfil configuration file already exists')
             ->assertExitCode(1);
     }
 
@@ -50,7 +52,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     {
         $templatePath = $this->path . '/qa/';
         mkdir($templatePath, 0777, true);
-        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+        file_put_contents($templatePath . 'alfil.dist.php', '<?php return [];');
 
         $this->artisan('conf:init', ['--no-interaction' => true])->assertExitCode(0);
 
@@ -62,7 +64,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     {
         $templatePath = $this->path . '/qa/';
         mkdir($templatePath, 0777, true);
-        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+        file_put_contents($templatePath . 'alfil.dist.php', '<?php return [];');
         Storage::put('.gitignore', "vendor/\n.githooks/history/\n");
 
         $this->artisan('conf:init', ['--no-interaction' => true])->assertExitCode(0);
@@ -75,10 +77,10 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     function it_prints_an_error_message_when_dist_file_not_found()
     {
         $this->artisan('conf:init', ['--no-interaction' => true])
-            ->containsStringInOutput("Distribution file 'githooks.dist.php' not found")
+            ->containsStringInOutput("Distribution file 'alfil.dist.php' not found")
             ->assertExitCode(1);
 
-        $this->assertFileDoesNotExist($this->path . '/githooks.php');
+        $this->assertFileDoesNotExist($this->path . '/alfil.php');
     }
 
     /** @test */
@@ -86,13 +88,13 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     {
         $vendorTemplatePath = $this->path . '/vendor/wtyd/alfil/qa/';
         mkdir($vendorTemplatePath, 0777, true);
-        file_put_contents($vendorTemplatePath . 'githooks.dist.php', "<?php return ['source' => 'vendor'];");
+        file_put_contents($vendorTemplatePath . 'alfil.dist.php', "<?php return ['source' => 'vendor'];");
 
         $this->artisan('conf:init', ['--no-interaction' => true])
-            ->containsStringInOutput('Configuration file githooks.php has been created in root path')
+            ->containsStringInOutput('Configuration file alfil.php has been created in root path')
             ->assertExitCode(0);
 
-        $this->assertFileEquals($vendorTemplatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+        $this->assertFileEquals($vendorTemplatePath . 'alfil.dist.php', $this->path . '/alfil.php');
     }
 
     /** @test */
@@ -100,14 +102,14 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     {
         $templatePath = $this->path . '/qa/';
         mkdir($templatePath, 0777, true);
-        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+        file_put_contents($templatePath . 'alfil.dist.php', '<?php return [];');
 
         // ToolDetectorFake defaults to empty detected list
         $this->artisan('conf:init')
-            ->containsStringInOutput('Configuration file githooks.php has been created in root path')
+            ->containsStringInOutput('Configuration file alfil.php has been created in root path')
             ->assertExitCode(0);
 
-        $this->assertFileEquals($templatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+        $this->assertFileEquals($templatePath . 'alfil.dist.php', $this->path . '/alfil.php');
     }
 
     /** @test */
@@ -115,7 +117,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
     {
         $templatePath = $this->path . '/qa/';
         mkdir($templatePath, 0777, true);
-        file_put_contents($templatePath . 'githooks.dist.php', '<?php return [];');
+        file_put_contents($templatePath . 'alfil.dist.php', '<?php return [];');
 
         /** @var ToolDetectorFake $detector */
         $detector = $this->app->make(ToolDetector::class);
@@ -123,10 +125,10 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
 
         $this->artisan('conf:init')
             ->expectsConfirmation('  Include phpstan?', 'no')
-            ->containsStringInOutput('Configuration file githooks.php has been created in root path')
+            ->containsStringInOutput('Configuration file alfil.php has been created in root path')
             ->assertExitCode(0);
 
-        $this->assertFileEquals($templatePath . 'githooks.dist.php', $this->path . '/githooks.php');
+        $this->assertFileEquals($templatePath . 'alfil.dist.php', $this->path . '/alfil.php');
     }
 
     /** @test */
@@ -145,10 +147,10 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
                 'pre-commit',
                 ['pre-commit', 'pre-push', 'both', 'none']
             )
-            ->containsStringInOutput('Configuration file githooks.php created with 2 tool(s)')
+            ->containsStringInOutput('Configuration file alfil.php created with 2 tool(s)')
             ->assertExitCode(0);
 
-        $generated = file_get_contents($this->path . '/githooks.php');
+        $generated = file_get_contents($this->path . '/alfil.php');
         $this->assertStringContainsString('phpstan', $generated);
         $this->assertStringContainsString('phpcs', $generated);
         $this->assertStringContainsString('pre-commit', $generated);
@@ -171,7 +173,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
             )
             ->assertExitCode(0);
 
-        $this->assertStringContainsString('pre-push', file_get_contents($this->path . '/githooks.php'));
+        $this->assertStringContainsString('pre-push', file_get_contents($this->path . '/alfil.php'));
     }
 
     /** @test */
@@ -191,7 +193,7 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
             )
             ->assertExitCode(0);
 
-        $generated = file_get_contents($this->path . '/githooks.php');
+        $generated = file_get_contents($this->path . '/alfil.php');
         $this->assertStringContainsString('pre-commit', $generated);
         $this->assertStringContainsString('pre-push', $generated);
     }
@@ -213,6 +215,6 @@ class CreateConfigurationFileCommandTest extends SystemTestCase
             )
             ->assertExitCode(0);
 
-        $this->assertFileExists($this->path . '/githooks.php');
+        $this->assertFileExists($this->path . '/alfil.php');
     }
 }

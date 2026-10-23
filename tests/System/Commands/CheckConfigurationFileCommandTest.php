@@ -24,7 +24,7 @@ class CheckConfigurationFileCommandTest extends SystemTestCase
             ->assertExitCode(1)
             ->notContainsStringInOutput('Configuration file:')
             ->containsStringInOutput(
-                'Configuration file not found. Expected githooks.php in the project root or in qa/ (or pass --config=PATH).'
+                'Configuration file not found. Expected alfil.php in the project root or in qa/ (or pass --config=PATH).'
             );
     }
 

@@ -61,6 +61,7 @@ class ReleaseTestCase extends TestCase
     {
         $this->deleteDirStructure();
         @unlink('githooks.php');
+        @unlink('alfil.php');
         @unlink('githooks.yml');
         shell_exec('git restore -- ' . self::TESTS_PATH . "/.gitignore");
         self::restoreProjectHooks();

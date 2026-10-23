@@ -40,6 +40,42 @@ class CheckConfigurationFileJsonTest extends SystemTestCase
         return $decoded;
     }
 
+    /**
+     * @test
+     * Default lookup that falls back to the pre-4.0 name: the run works and the
+     * payload carries the structured config-file-rename deprecation.
+     */
+    public function it_reports_the_githooks_php_fallback_as_a_deprecation()
+    {
+        $this->configurationFileBuilder->enableV3Mode()->setName('githooks.php')->buildInFileSystem();
+
+        $payload = $this->runJsonCommand('conf:check --format=json');
+
+        $this->assertSame(0, $this->lastExit);
+        $this->assertTrue($payload['valid']);
+        $this->assertStringEndsWith('githooks.php', $payload['file']['path']);
+        $this->assertSame([[
+            'job' => '',
+            'oldKey' => 'githooks.php',
+            'newKey' => 'alfil.php',
+            'removalVersion' => '5.0',
+            'kind' => 'config-file-rename',
+        ]
+        ], $payload['deprecations']);
+    }
+
+    /** @test The 4.0 name: no deprecation. */
+    public function it_reads_alfil_php_without_deprecations()
+    {
+        $this->configurationFileBuilder->enableV3Mode()->setName('alfil.php')->buildInFileSystem();
+
+        $payload = $this->runJsonCommand('conf:check --format=json');
+
+        $this->assertSame(0, $this->lastExit);
+        $this->assertStringEndsWith('alfil.php', $payload['file']['path']);
+        $this->assertSame([], $payload['deprecations']);
+    }
+
     /** @test AC-001 */
     public function it_emits_parseable_json_for_a_valid_v3_config()
     {

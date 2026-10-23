@@ -32,6 +32,7 @@ src/dummy/
 
 /githooks.yml
 /githooks.php
+/alfil.php
 
 
 tools/tmp/

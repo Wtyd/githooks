@@ -12,7 +12,7 @@ class ConfigurationFileNotFoundException extends \RuntimeException implements Al
     {
         $this->message = !empty($message)
             ? $message
-            : 'Configuration file not found. Expected githooks.php in the project root or in qa/ '
+            : 'Configuration file not found. Expected alfil.php in the project root or in qa/ '
                 . '(or pass --config=PATH).';
     }
 }

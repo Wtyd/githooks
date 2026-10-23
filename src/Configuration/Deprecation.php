@@ -15,6 +15,9 @@ final class Deprecation
 {
     public const KIND_CONFIG_KEY_RENAME = 'config-key-rename';
 
+    /** The configuration file was found under its pre-4.0 name (githooks.php). */
+    public const KIND_CONFIG_FILE_RENAME = 'config-file-rename';
+
     private string $job;
 
     private string $oldKey;
